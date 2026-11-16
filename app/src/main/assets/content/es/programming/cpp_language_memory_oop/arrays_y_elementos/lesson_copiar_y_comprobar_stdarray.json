@@ -1,0 +1,2125 @@
+{
+  "id": "cpp_language_memory_oop__arrays_y_elementos__copiar_y_comprobar_stdarray",
+  "title": "Copiar y comprobar una secuencia fija con std::array",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una cantidad fija, con operaciones para trabajar con el conjunto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un array nativo como int medidas[4] conserva cuatro enteros. Ya sabemos cambiar y copiar sus elementos uno por uno. Ahora presentaremos std::array: otro tipo que guarda una cantidad fija de elementos y permite copiar todos sus valores al crear o asignar otro objeto del mismo tipo. No aumenta su cantidad de elementos al recibir valores nuevos (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Se necesita la cabecera <array>. En std::array<int, 4>, int es el tipo de cada elemento y 4 es la cantidad de elementos. Ambos aparecen dentro de los signos < y > y separados por una coma. Esa pareja forma parte del tipo completo. Los índices siguen empezando en cero."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> medidas{8, 3};\n    std::cout << medidas.size() << ':' << medidas[0] << ':'\n              << medidas[1] << ':' << medidas[2] << ':' << medidas[3];\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El ejemplo guarda 8 y 3 en los dos primeros elementos. Como la lista entre llaves sólo proporciona dos valores, los otros dos int comienzan en cero. size() devuelve la cantidad de elementos: cuatro. La salida es 4:8:3:0:0; cada dos puntos separa aquí dos resultados (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l6_leer_el_tipo",
+          "question": "¿Qué significa el 4 de std::array<int, 4> medidas{}?",
+          "options": [
+            "Todos los elementos comienzan con el valor 4.",
+            "El objeto tiene cuatro elementos de tipo int.",
+            "El índice más grande que se puede usar es 4."
+          ],
+          "correctIndex": 1,
+          "explanation": "El 4 indica la cantidad. Los índices válidos son 0, 1, 2 y 3. Las llaves vacías hacen que estos int comiencen en cero, no en cuatro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los elementos que faltan en la lista comienzan en cero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para los elementos int que estamos usando, {} inicializa todos en cero. Una lista como {6} proporciona el primer valor y deja los restantes en cero. Las llaves no significan «repetir el valor por todo el array». Si se dan más valores que elementos, la declaración es incorrecta (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "No confundas las llaves vacías con omitir la inicialización. Una declaración local como std::array<int, 3> datos; no da por sí sola valores iniciales utilizables a sus int. Antes de leerlos habría que escribirlos. En los ejemplos utilizamos {} o una lista para poder razonar con valores definidos."
+        },
+        {
+          "type": "paragraph",
+          "text": "empty() contesta si la cantidad de elementos es cero. Un array con tres ceros sigue teniendo tres elementos y no está vacío. Como ya ocurría con los vectores, el valor lógico se muestra como 0 o 1 si no se cambia el formato de la consola."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l6_inicializar_y_contar",
+          "language": "cpp",
+          "question": "Predice los cinco resultados. Distingue los valores de los elementos, la cantidad y la respuesta de empty().",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> primera{};\n    std::array<int, 3> segunda{6};\n    std::cout << primera[0] << ':' << segunda[0] << ':'\n              << segunda[1] << ':' << segunda.size() << ':' << segunda.empty();\n    return 0;\n}\n",
+          "answers": [
+            "0:6:0:3:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "primera tiene tres ceros. segunda contiene 6, 0 y 0; su cantidad sigue siendo tres. empty() da false y se muestra como 0 porque existen esos tres elementos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La cantidad forma parte del tipo y se conoce al compilar"
+        },
+        {
+          "type": "paragraph",
+          "text": "La cantidad debe poder obtenerse de una expresión constante entera no negativa durante la compilación y representarse como std::size_t. Puede escribirse como un literal, una operación constante o una constante apropiada. No tiene que estar escrita obligatoriamente con un número suelto. constexpr expresa que aquí el valor se calcula como constante, como ya estudiamos al declarar tamaños (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstddef>\n#include <array>\n#include <iostream>\n\nint main() {\n    constexpr std::size_t cantidad = 2 + 1;\n    std::array<int, cantidad> medidas{5, 9, 2};\n    std::cout << medidas.size() << ':' << medidas[2];\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "cantidad vale tres durante la compilación. Por eso medidas tiene el tipo std::array<int, 3> y muestra 3:2. En cambio, un número que se acaba de leer con std::cin no sirve para elegir esta cantidad: el tipo debe quedar determinado antes de ejecutar esa lectura. Añadir const a un valor leído no lo convierte en una constante calculada al compilar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l6_cantidad_leida",
+          "question": "Un programa necesita leer n y después conservar exactamente n mediciones; la cantidad puede ser distinta en cada ejecución. ¿Qué opción ya conocida permite hacerlo directamente?",
+          "options": [
+            "Declarar std::array<int, n> después de leer n.",
+            "Declarar un std::array<int, 4> y cambiar su size().",
+            "Crear un std::vector<int> con la cantidad leída, después de validarla."
+          ],
+          "correctIndex": 2,
+          "explanation": "El vector permite elegir su cantidad durante la ejecución. En std::array, la cantidad pertenece al tipo y size() la consulta: no es una orden para cambiarla."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Crear otra copia de todos los enteros"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::array<int, 3> copia = original; define copia y la inicializa con los valores que original tiene en ese momento. Se copian sus tres enteros en el mismo orden. Son dos objetos con sus propios elementos: cambiar después un int de copia no cambia el int correspondiente de original (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este caso el signo = aparece dentro de una definición. En la página siguiente lo utilizaremos también para asignar a un objeto que ya existe. Observa dónde se declara cada nombre para distinguir las dos acciones."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l6_crear_copia",
+          "language": "cpp",
+          "question": "El programa crea la copia y después modifica un elemento de cada objeto. Predice los cuatro valores que imprime.",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> original{4, 7, 9};\n    std::array<int, 3> copia = original;\n    copia[1] = 0;\n    original[2] = 5;\n    std::cout << original[1] << ':' << original[2] << ':'\n              << copia[1] << ':' << copia[2];\n    return 0;\n}\n",
+          "answers": [
+            "7:5:0:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Al copiar, ambos contenían 4, 7 y 9. El cambio de copia[1] sólo guarda 0 en copia. El cambio de original[2] sólo guarda 5 en original; copia[2] conserva 9."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Asignar todos los valores a un objeto que ya existe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de definir copia, la instrucción copia = original; sustituye sus valores por los de original. La asignación entre estos std::array de int copia todos los elementos, no sólo el primero. Los dos objetos siguen separados después de asignar (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l6_asignar_conjunto",
+          "language": "cpp",
+          "question": "Predice qué valores quedan después de la asignación y de los dos cambios posteriores.",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> original{2, 5, 8};\n    std::array<int, 3> copia{};\n    copia = original;\n    original[0] = 9;\n    copia[2] = 0;\n    std::cout << original[0] << ':' << original[2] << ':'\n              << copia[0] << ':' << copia[2];\n    return 0;\n}\n",
+          "answers": [
+            "9:8:2:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La asignación deja 2, 5 y 8 en copia. Luego original[0] cambia a 9 y copia[2] cambia a 0. No vuelven a copiarse los valores automáticamente al cambiar uno de los objetos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia y la asignación entre arrays que estamos estudiando requieren el mismo tipo completo. std::array<int, 3> y std::array<int, 4> son tipos diferentes; tampoco basta con que std::array<double, 3> tenga la misma cantidad. Para convertir cada elemento a otro tipo habría que escribir esa operación, no suponer que la asignación entre arrays la hace (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l6_tipos_distintos",
+          "question": "origen tiene tipo std::array<int, 3>. ¿Cuál puede recibir directamente destino = origen; si destino ya está definido y puede modificarse?",
+          "options": [
+            "Un destino de tipo std::array<int, 3>.",
+            "Un destino de tipo std::array<int, 4>.",
+            "Un destino de tipo std::array<double, 3>."
+          ],
+          "correctIndex": 0,
+          "explanation": "El tipo completo coincide sólo en la primera opción. La asignación no cambia la cantidad ni convierte un array de int en otro de double. El array nativo tampoco adquiere esta asignación por parecerse en su escritura."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir tres objetos sin mezclar sus valores"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este ejemplo, candidata empieza como copia de original. guardada comienza con otros datos. Asignar guardada = candidata copia los valores que candidata tiene en ese instante; los cambios posteriores no viajan entre esos objetos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> original{2, 5, 8};\n    std::array<int, 3> candidata = original;\n    std::array<int, 3> guardada{1, 1, 1};\n    candidata[0] = 6;\n    guardada = candidata;\n    candidata[1] = 0;\n    original[2] = 4;\n    std::cout << original[0] << ':' << original[2] << ':'\n              << candidata[1] << ':' << guardada[1];\n    return 0;\n}\n"
+        },
+        {
+          "type": "math_puzzle",
+          "id": "p3_u2l6_seguir_tres_copias",
+          "schemaVersion": 1,
+          "prompt": "Completa los cuatro valores finales que consulta la última instrucción de salida. Las filas describen cuándo ocurre cada cambio; los nombres de las columnas identifican objetos distintos.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Momento",
+                "original",
+                "candidata",
+                "guardada"
+              ],
+              "rows": [
+                [
+                  "Tras las tres definiciones",
+                  "2, 5, 8",
+                  "2, 5, 8",
+                  "1, 1, 1"
+                ],
+                [
+                  "candidata[0] = 6",
+                  "Sin cambio",
+                  "Cambia el primer elemento",
+                  "Sin cambio"
+                ],
+                [
+                  "guardada = candidata",
+                  "Sin cambio",
+                  "Sin cambio",
+                  "Recibe tres valores"
+                ],
+                [
+                  "candidata[1] = 0",
+                  "Sin cambio",
+                  "Cambia el segundo elemento",
+                  "Sin cambio"
+                ],
+                [
+                  "original[2] = 4",
+                  "Cambia el tercer elemento",
+                  "Sin cambio",
+                  "Sin cambio"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "original[0]",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "original[2]",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "candidata[1]",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "guardada[1]",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "original acaba en 2, 5, 4; candidata, en 6, 0, 8; guardada, en 6, 5, 8. La asignación ocurrió antes de cambiar candidata[1], por lo que guardada[1] conserva 5.",
+            "incorrect": "Sigue un objeto a la vez. guardada sólo recibe datos cuando se ejecuta guardada = candidata. El cambio posterior de candidata[1] no se repite en guardada. original sólo cambia en la última asignación a su índice 2."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "fill cambia cada valor, pero conserva la cantidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para dar el mismo valor a todos los elementos, se puede llamar a fill. En datos.fill(4), fill asigna 4 a cada elemento que datos ya tiene. No añade elementos. Para nuestros int, esto permite distinguir dos acciones: {4} al definir sólo proporciona el primer valor; fill(4) después de definir escribe en todos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l6_rellenar_y_cambiar",
+          "language": "cpp",
+          "question": "Compara la inicialización de primera con el relleno de segunda. Predice los cinco valores.",
+          "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> primera{4};\n    std::array<int, 3> segunda{};\n    segunda.fill(4);\n    segunda[1] = 2;\n    std::cout << primera[0] << ':' << primera[1] << ':'\n              << segunda[0] << ':' << segunda[1] << ':' << segunda[2];\n    return 0;\n}\n",
+          "answers": [
+            "4:0:4:2:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "primera queda en 4, 0, 0. fill pone los tres elementos de segunda en 4; después sólo su índice 1 pasa a 2. Las dos cantidades siguen siendo tres."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u2l6_rellenar_todos",
+          "language": "cpp",
+          "question": "datos ya tiene tipo std::array<int, 5>. Completa la operación que escribe -2 en sus cinco elementos sin cambiar la cantidad.",
+          "template": "datos.[](-2);",
+          "answers": [
+            "fill"
+          ],
+          "explanation": "fill asigna -2 a cada uno de los cinco int. La cantidad pertenece al tipo y sigue siendo cinco."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recorrer sólo los elementos que existen"
+        },
+        {
+          "type": "paragraph",
+          "text": "size() devuelve std::size_t. Podemos usar la condición i < valores.size() para recorrer desde cero hasta el último índice válido. i == valores.size() ya queda fuera. Antes de acceder con [], hay que garantizar que el índice es válido. Un acceso fuera de esos límites tiene comportamiento indefinido en C++23: no podemos prometer una salida ni contar con que se lance una excepción (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "front() da acceso al primer elemento y back() al último. Para llamarlos tiene que existir al menos un elemento. En un array no vacío equivalen, para este propósito, a acceder a los índices cero y size() - 1. No se deben usar para intentar obtener un valor de un array vacío."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l6_recorrido_y_extremos",
+          "language": "cpp",
+          "question": "Cada repetición suma el índice al elemento de esa posición. Todos los índices son válidos y estas sumas pequeñas caben en int. Predice los tres resultados.",
+          "code": "#include <cstddef>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> valores{3, 1, 4};\n    for (std::size_t i = 0; i < valores.size(); ++i) {\n        valores[i] = valores[i] + static_cast<int>(i);\n    }\n    std::cout << valores.front() << ':' << valores[1] << ':' << valores.back();\n    return 0;\n}\n",
+          "answers": [
+            "3:2:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se ejecutan los índices 0, 1 y 2. Los valores resultan 3 + 0, 1 + 1 y 4 + 2. front() consulta el primero y back() consulta el tercero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el índice viene de un int leído, comprueba primero si es negativo. En el Windows x64 de esta práctica, todo int no negativo cabe en std::size_t; después de excluir los negativos se puede convertir y comprobar el límite del array. En otro entorno también habría que comprobar que el valor cabe en el tipo del índice. No conviertas primero un negativo y supongas que conservará su signo: ya estudiamos que la conversión a un tipo sin signo cambia ese valor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "at comprueba el índice y puede avisar mediante una excepción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya utilizamos at y try-catch con los vectores. En un std::array, at(i) también comprueba el índice: si i es menor que size(), permite acceder al elemento; si i es igual o mayor, lanza std::out_of_range. En ese segundo caso no escribe un elemento fuera del array (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La cabecera <stdexcept> declara ese tipo de error. El bloque try contiene las operaciones que queremos intentar. Si una lanza ese error, se dejan de ejecutar las instrucciones restantes de ese try y se pasa al catch correspondiente. La forma catch (const std::out_of_range&) captura aquí ese error sin darle un nombre, porque sólo necesitamos mostrar un mensaje propio."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <stdexcept>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> valores{3, 6};\n    try {\n        valores.at(valores.size()) = 9;\n        std::cout << \"Cambio realizado\\n\";\n    } catch (const std::out_of_range&) {\n        std::cout << \"Indice invalido\\n\";\n    }\n    std::cout << valores[0] << ':' << valores[1];\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "valores.size() vale dos, pero sólo existen los índices cero y uno. La llamada lanza el error y no llega a imprimir Cambio realizado. El catch imprime Indice invalido y después se muestran 3:6. El programa puede continuar porque capturó la excepción. No exigimos un mensaje interno concreto de la biblioteca: el texto visible lo escribe nuestro programa."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l6_excepcion_no_deshace",
+          "language": "cpp",
+          "question": "Este otro programa realiza tres intentos de escritura dentro del try. Predice el rótulo y los valores que llega a mostrar.",
+          "code": "#include <stdexcept>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 3> valores{2, 5, 8};\n    try {\n        valores.at(0) = 7;\n        valores.at(3) = 1;\n        valores.at(1) = 9;\n    } catch (const std::out_of_range&) {\n        std::cout << \"Rechazo:\";\n    }\n    std::cout << valores[0] << ':' << valores[1] << ':' << valores[2];\n    return 0;\n}\n",
+          "answers": [
+            "Rechazo:7:5:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El índice 0 es válido y su elemento pasa a 7. at(3) falla porque sólo hay tres elementos y el último índice es 2. Se salta la escritura posterior de 9. Capturar el error no deshace la primera escritura: el 7 permanece."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cero elementos es un caso válido de std::array"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::array<int, 0> es válido. Su size() da cero y empty() da true. fill puede llamarse, pero no tiene elementos que cambiar. No hay primer elemento, último elemento ni índice cero válido. front(), back() y [] no se deben usar en ese caso; at(0) sí comprueba la situación y lanza std::out_of_range (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "No es lo mismo que escribir int datos[0], que no declara un array nativo válido en C++23. El std::array vacío sigue siendo un objeto completo y sizeof da un tamaño mayor que cero. Por tanto, sizeof del objeto dividido entre sizeof(int) no es la manera de consultar su cantidad de elementos. Utiliza size()."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l6_sin_elementos",
+          "language": "cpp",
+          "question": "El programa no accede con [] ni con front o back. Predice la salida de la consulta, el manejo del error y la comparación de sizeof.",
+          "code": "#include <stdexcept>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 0> vacio{};\n    vacio.fill(6);\n    std::cout << vacio.size() << ':' << vacio.empty() << ':';\n    try {\n        vacio.at(0) = 9;\n    } catch (const std::out_of_range&) {\n        std::cout << \"Sin elemento:\";\n    }\n    std::cout << (sizeof vacio > 0);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:Sin elemento:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "No hay elementos, así que size() muestra 0 y empty() muestra 1. fill no escribe nada. at(0) lanza el error y el catch muestra Sin elemento. sizeof vacio es positivo aunque la cantidad de elementos sea cero."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l6_comprobar_antes_del_extremo",
+          "question": "datos puede ser un std::array con cero elementos. ¿Qué condición permite llamar a datos.front() sólo cuando existe un primer elemento?",
+          "options": [
+            "sizeof datos > 0",
+            "datos.empty()",
+            "!datos.empty()"
+          ],
+          "correctIndex": 2,
+          "explanation": "El objeto existe y ocupa un tamaño positivo incluso cuando no contiene elementos. !empty() comprueba precisamente que haya al menos uno."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir dos cambios sin perder el conjunto anterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor conserva dos conjuntos de cuatro int. original contiene 10, 20, 30 y 40 y no debe cambiar. guardada contiene inicialmente 1, 2, 3 y 4. La entrada aporta cuatro enteros válidos para int, en este orden: indice1, valor1, indice2 y valor2. El código ya los lee y muestra Error de entrada si esa extracción falla."
+        },
+        {
+          "type": "paragraph",
+          "text": "Crea una candidata como copia de original. Intenta sustituir su elemento indice1 por valor1 y después su elemento indice2 por valor2. Utiliza at para esos dos accesos. Comprueba antes los índices negativos y no los conviertas a std::size_t como si fueran índices aceptables."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo si las dos posiciones son válidas, asigna el conjunto candidato a guardada y deja aceptado en true. Si cualquiera de las posiciones es inválida, conserva íntegra la guardada anterior y aceptado en false. Captura std::out_of_range para poder imprimir el informe después de un índice demasiado grande."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los cambios se aplican en el orden de entrada. Si los dos índices coinciden, el segundo valor sustituye al primero en la candidata. No se suman valores ni se amplía el array. Las posiciones no modificadas deben proceder de original, no de la guardada anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa la zona indicada. Conserva la lectura y el informe final: tres líneas, con los espacios y rótulos mostrados. No imprimas mensajes adicionales durante el rechazo."
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se cambia el índice 1 y después el índice 3. Los cuatro elementos de la nueva guardada proceden de la copia de original con esos dos cambios."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "1 7 3 -2\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original: 10 20 30 40\nGuardada: 10 7 30 -2\nAceptado: 1\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint main() {\n    const std::array<int, 4> original{10, 20, 30, 40};\n    std::array<int, 4> guardada{1, 2, 3, 4};\n    int indice1 = 0;\n    int valor1 = 0;\n    int indice2 = 0;\n    int valor2 = 0;\n    if (!(std::cin >> indice1 >> valor1 >> indice2 >> valor2)) {\n        std::cout << \"Error de entrada\\n\";\n        return 0;\n    }\n\n    bool aceptado = false;\n    // Construye aqui una copia candidata de original.\n    // Aplica los dos cambios con at() y guarda el conjunto solo si ambos sirven.\n    // Conserva original y guardada ante cualquier indice invalido.\n\n    std::cout << \"Original:\";\n    for (std::size_t i = 0; i < original.size(); ++i) {\n        std::cout << ' ' << original[i];\n    }\n    std::cout << \"\\nGuardada:\";\n    for (std::size_t i = 0; i < guardada.size(); ++i) {\n        std::cout << ' ' << guardada[i];\n    }\n    std::cout << \"\\nAceptado: \" << aceptado << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1 7 3 -2\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1 7 3 -2\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 10 7 30 -2\nAceptado: 1\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              },
+              {
+                "standardInput": "0 0 3 90\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 0 20 30 90\nAceptado: 1\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              },
+              {
+                "standardInput": "2 7 2 -3\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 10 20 -3 40\nAceptado: 1\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              },
+              {
+                "standardInput": "0 8 4 9\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 1 2 3 4\nAceptado: 0\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              },
+              {
+                "standardInput": "4 8 1 9\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 1 2 3 4\nAceptado: 0\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              },
+              {
+                "standardInput": "-1 8 1 9\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 1 2 3 4\nAceptado: 0\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              },
+              {
+                "standardInput": "0 8 -1 9\n",
+                "outputs": [
+                  "Original: 10 20 30 40\nGuardada: 1 2 3 4\nAceptado: 0\n"
+                ],
+                "explanation": "Aplicar los dos cambios en orden a una copia de original; sustituir guardada sólo si ambos índices son válidos. Ante rechazo, conservar 1, 2, 3 y 4."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo el primer caso correcto es obligatorio para avanzar. Los siguientes son ensayos opcionales e independientes; cada ejecución empieza con los mismos dos conjuntos iniciales."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: extremos y dos cambios en la misma posición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los índices cero y tres existen. El valor cero también es un dato válido. Si los índices coinciden, el segundo cambio decide el valor final de esa posición."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se sustituyen el primer y el último elemento. El cero recibido no significa que la lectura haya fallado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0 0 3 90\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original: 10 20 30 40\nGuardada: 0 20 30 90\nAceptado: 1\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos sustituciones corresponden al índice 2; se aplica primero 7 y después -3."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "2 7 2 -3\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original: 10 20 30 40\nGuardada: 10 20 -3 40\nAceptado: 1\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: un índice inválido antes o después de un cambio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuatro es la cantidad, pero no un índice válido. En el primer ensayo se puede haber cambiado un elemento de candidata antes del error. Esa modificación no debe llegar a guardada. En el segundo, falla ya el primer acceso."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El índice 0 es válido y el índice 4 no lo es. Se rechaza el conjunto entero de cambios."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0 8 4 9\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original: 10 20 30 40\nGuardada: 1 2 3 4\nAceptado: 0\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer índice ya queda fuera; la guardada anterior debe permanecer intacta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "4 8 1 9\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original: 10 20 30 40\nGuardada: 1 2 3 4\nAceptado: 0\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: índices negativos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rechaza ambos casos antes de tratar los valores negativos como índices sin signo. Un valor nuevo negativo sí puede guardarse en un int: lo que aquí se prohíbe es una posición negativa."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer índice es negativo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-1 8 1 9\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original: 10 20 30 40\nGuardada: 1 2 3 4\nAceptado: 0\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El segundo índice es negativo aunque el primero sea válido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0 8 -1 9\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original: 10 20 30 40\nGuardada: 1 2 3 4\nAceptado: 0\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: cambiar la candidata y conservar la guardada hasta el final"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <stdexcept>\n\nint main() {\n    const std::array<int, 4> original{10, 20, 30, 40};\n    std::array<int, 4> guardada{1, 2, 3, 4};\n    int indice1 = 0;\n    int valor1 = 0;\n    int indice2 = 0;\n    int valor2 = 0;\n    if (!(std::cin >> indice1 >> valor1 >> indice2 >> valor2)) {\n        std::cout << \"Error de entrada\\n\";\n        return 0;\n    }\n\n    bool aceptado = false;\n    std::array<int, 4> candidata = original;\n    if (indice1 >= 0 && indice2 >= 0) {\n        try {\n            candidata.at(static_cast<std::size_t>(indice1)) = valor1;\n            candidata.at(static_cast<std::size_t>(indice2)) = valor2;\n            guardada = candidata;\n            aceptado = true;\n        } catch (const std::out_of_range&) {\n            // El informe conserva la guardada anterior.\n        }\n    }\n\n    std::cout << \"Original:\";\n    for (std::size_t i = 0; i < original.size(); ++i) {\n        std::cout << ' ' << original[i];\n    }\n    std::cout << \"\\nGuardada:\";\n    for (std::size_t i = 0; i < guardada.size(); ++i) {\n        std::cout << ' ' << guardada[i];\n    }\n    std::cout << \"\\nAceptado: \" << aceptado << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La candidata empieza con 10, 20, 30 y 40. En el primer caso, la primera escritura pone 7 en el índice 1 y la segunda pone -2 en el índice 3. Sólo entonces se copia 10, 7, 30, -2 a guardada y aceptado pasa a true. original conserva los cuatro valores con los que empezó."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con 0 8 4 9, candidata puede haber recibido 8 en su primer elemento cuando el segundo at lanza el error. El catch no deshace ese 8; tampoco necesita hacerlo para conservar guardada, porque aún no se ejecutó guardada = candidata. El informe muestra la guardada anterior, 1, 2, 3 y 4."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con un índice negativo no se entra en el try. Con dos índices iguales y válidos se realizan ambas asignaciones en orden y queda el segundo valor. La validación de posiciones y el momento de guardar son dos decisiones distintas: at comprueba cada acceso; el lugar de guardada = candidata decide cuándo se sustituye el conjunto."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l6_publicar_demasiado_pronto",
+          "question": "Una variante copia candidata a guardada inmediatamente después del primer at y luego intenta el segundo. ¿Por qué falla con 0 8 4 9?",
+          "options": [
+            "Porque el segundo at impide ejecutar el informe, aunque exista un catch para ese error.",
+            "Porque guardada ya recibe el primer cambio antes del rechazo del segundo índice.",
+            "Porque std::array comparte los mismos int con todas sus copias."
+          ],
+          "correctIndex": 1,
+          "explanation": "El primer at cambia candidata[0] a 8. Si se copia enseguida a guardada, el error de at(4) llega después de que se sustituyera el conjunto anterior. La copia debe ocurrir sólo después de completar las dos escrituras."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir entre cantidad fija y cantidad que puede cambiar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Array nativo: cantidad fija y acceso por índice; hemos copiado los valores escribiendo cada elemento.\nstd::array: cantidad fija incluida en el tipo, consulta con size(), copia del conjunto y accesos con [] o at.\nstd::vector: cantidad que puede elegirse durante la ejecución y cambiar mediante operaciones como push_back."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas diferencias no bastan para afirmar en qué zona de memoria estará cada objeto ni cuál será más rápido en cualquier programa. Elige según la cantidad que necesita tu programa. Si debes guardar una medida en cada una de cuatro posiciones fijas, std::array permite hacerlo. Si necesitas añadir registros a una lista, std::vector permite aumentar su cantidad (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l6_comparar_cantidades",
+          "language": "cpp",
+          "question": "Recupera push_back de los vectores y compáralo con fill del array fijo. Predice los cuatro resultados.",
+          "code": "#include <vector>\n#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 2> fija{3, 6};\n    std::vector<int> variable{3, 6};\n    variable.push_back(9);\n    fija.fill(0);\n    std::cout << fija.size() << ':' << fija.empty() << ':'\n              << variable.size() << ':' << variable.back();\n    return 0;\n}\n",
+          "answers": [
+            "2:0:3:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "fill cambia los dos valores de fija a cero, pero siguen existiendo dos elementos y empty() da false. push_back añade 9 al vector, que pasa a tener tres elementos; back() consulta ese último valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia nos ha permitido preparar un conjunto independiente y conservar el anterior si aparece un error. Ese razonamiento se reutilizará al trabajar con series completas. En la siguiente lección organizaremos elementos en filas y columnas, indicando por separado qué índice elige la fila y cuál el elemento dentro de ella."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1537be30bbd07a1976de8b280a5433571bcf3997cc532cdd820a80c7c1286781"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "072960a4ebb81437a8f77dc910e898c6d47e9170ee710092416d9a737688ea09"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "2f66f0b6b545fe5e4c1b32f472e8d4277bb8d1bcaf30b7be4e1bbea01400d951"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "bbcdf506d2ae2afbaf99083e5a0c490e6ba92653db3177ca20c6b0458c21b17b"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "77943450ba70da4dc3480da34b57856c9d6014b9789836d414170730b61c1b9b"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "2556b1a4e02e95788d366a564a2377cfe35efbcb426457a75e62fd3be51c2725"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "ee9a68f0a04264ad9a4e6f530ac4a0b5c2040de890a9b2d2a40cdd1bf4b9ab0d"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "4f379a75824f2100fc4e5888f4c98a8352f2011fc489f31bd5101d6fc59906b8"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "0a4d2090ee8e861d04c7e38acc46211864589b84171c5894a1a378f7fc2da2a4"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "858d826f2c094d44530e40d8fdfd264ee50e53295912861283942127713f38b0"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "a05f6698c070d9ff2f264dffbb90ec54fc88818084788d480a6855c513e5ca21"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "14faa3e8157663f7b7547f5ec7e4c2fe1eb4ea4b0ba85641cf60c7f89aa5cd73"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "c43bd3a42abbc95901a14996bdc241e63a4133823ff1c75a74b0a8868dc77484"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "d345b7af84e7e3740a775045fa2e70913fea52620843fcfba86443147e47a62d"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "45fd0806c13282b753f146c7827512cd6fedf21d0557f244dd0c2d1206ac99b4"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "5217740c1a0dfd446f0831fd0cb87ec0f554cba7fde902a068264d9cb8f3fa3b"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "5b6ca3b4a770401dadb387c2383e63cf70a580ea3d825a6469b029351ecdd412"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0009",
+            "sha256": "2ac9b3615a697b42d231431d03ca178bcc464b88ce145d4e2d524f10bc7c74ad"
+          },
+          {
+            "id": "block_0010_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0011",
+            "sha256": "502caa134d95a6b69377437c8eb00bff2bb5b93bfdec56e956cd59b043bd93d5"
+          },
+          {
+            "id": "block_0010_0012",
+            "sha256": "01b8e5da1afa1aaff26120f5ac3caee32c2edf0b4945c75f42e854a98bd35c34"
+          },
+          {
+            "id": "block_0010_0013",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "baa1eb01da195531c63cd6c462064e25bee6910130b0152cc2ba7f1d09c1e854"
+          },
+          {
+            "id": "block_0011_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0007",
+            "sha256": "0f4640561149ec9eacbb1af3b77522a692f7812fe41362b11c73eb29d9195569"
+          },
+          {
+            "id": "block_0011_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0011",
+            "sha256": "5129826d840a42aa0d9608e26d50d5832de1393ae6414a000e94649b4fd20c62"
+          },
+          {
+            "id": "block_0011_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0013",
+            "sha256": "e5bfe1f17df0514438b9eb42f19823fb56243fbeac2ac02ffeedf9bde1795b40"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0005",
+            "sha256": "793fd4885a5ef0fd81eff8a257f5706fec9caf0ca00a95409bc2d0f63785ded5"
+          },
+          {
+            "id": "block_0012_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0007",
+            "sha256": "69ba0a01193712fb063b5040b57bfc7c2fac29b159345044fb7f878b48185102"
+          },
+          {
+            "id": "block_0012_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0011",
+            "sha256": "a561cdac0683beef7465dd1e124a253fa2186fda3c59cad046604ab31f2ae614"
+          },
+          {
+            "id": "block_0012_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0013",
+            "sha256": "69ba0a01193712fb063b5040b57bfc7c2fac29b159345044fb7f878b48185102"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0005",
+            "sha256": "18e6f57c875320b9a7c8ebb73b8ac3a9352c86e81ab4c9fddcb4495c169ab68b"
+          },
+          {
+            "id": "block_0013_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0007",
+            "sha256": "69ba0a01193712fb063b5040b57bfc7c2fac29b159345044fb7f878b48185102"
+          },
+          {
+            "id": "block_0013_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0011",
+            "sha256": "4379d8b413844c9de2f5e1d294bb387931a7fd42f454f2bd9d586c13a7ffe00b"
+          },
+          {
+            "id": "block_0013_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0013",
+            "sha256": "69ba0a01193712fb063b5040b57bfc7c2fac29b159345044fb7f878b48185102"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "d16be5eef713297c035b85b17f6c29d1e05b4843d77f5047d2ea494a0132b7b0"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "cf795c60b85f32c261f65276d4e2242e7f525d316e3b1f9c8a42eb73d6c6cebb"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "8d4fa375d5700800312b873cc089f8ebeb8a8c0b75d9d366725681b72b49ba4a"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004",
+          "block_0010_0005",
+          "block_0010_0006",
+          "block_0010_0007",
+          "block_0010_0008",
+          "block_0010_0009",
+          "block_0010_0010",
+          "block_0010_0011",
+          "block_0010_0012",
+          "block_0010_0013"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005",
+          "block_0011_0006",
+          "block_0011_0007",
+          "block_0011_0008",
+          "block_0011_0009",
+          "block_0011_0010",
+          "block_0011_0011",
+          "block_0011_0012",
+          "block_0011_0013"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004",
+          "block_0012_0005",
+          "block_0012_0006",
+          "block_0012_0007",
+          "block_0012_0008",
+          "block_0012_0009",
+          "block_0012_0010",
+          "block_0012_0011",
+          "block_0012_0012",
+          "block_0012_0013"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004",
+          "block_0013_0005",
+          "block_0013_0006",
+          "block_0013_0007",
+          "block_0013_0008",
+          "block_0013_0009",
+          "block_0013_0010",
+          "block_0013_0011",
+          "block_0013_0012",
+          "block_0013_0013"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "cd9ef596992a8aabc12c5954eb9b1e66e771d663c8baaed4cbd3ba6d0925cb4d",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1537be30bbd07a1976de8b280a5433571bcf3997cc532cdd820a80c7c1286781"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "072960a4ebb81437a8f77dc910e898c6d47e9170ee710092416d9a737688ea09"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "2f66f0b6b545fe5e4c1b32f472e8d4277bb8d1bcaf30b7be4e1bbea01400d951"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "bbcdf506d2ae2afbaf99083e5a0c490e6ba92653db3177ca20c6b0458c21b17b"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "77943450ba70da4dc3480da34b57856c9d6014b9789836d414170730b61c1b9b"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "2556b1a4e02e95788d366a564a2377cfe35efbcb426457a75e62fd3be51c2725"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "ee9a68f0a04264ad9a4e6f530ac4a0b5c2040de890a9b2d2a40cdd1bf4b9ab0d"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "4f379a75824f2100fc4e5888f4c98a8352f2011fc489f31bd5101d6fc59906b8"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "0a4d2090ee8e861d04c7e38acc46211864589b84171c5894a1a378f7fc2da2a4"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "858d826f2c094d44530e40d8fdfd264ee50e53295912861283942127713f38b0"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "a05f6698c070d9ff2f264dffbb90ec54fc88818084788d480a6855c513e5ca21"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "14faa3e8157663f7b7547f5ec7e4c2fe1eb4ea4b0ba85641cf60c7f89aa5cd73"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "c43bd3a42abbc95901a14996bdc241e63a4133823ff1c75a74b0a8868dc77484"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "d345b7af84e7e3740a775045fa2e70913fea52620843fcfba86443147e47a62d"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "45fd0806c13282b753f146c7827512cd6fedf21d0557f244dd0c2d1206ac99b4"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "5217740c1a0dfd446f0831fd0cb87ec0f554cba7fde902a068264d9cb8f3fa3b"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "5b6ca3b4a770401dadb387c2383e63cf70a580ea3d825a6469b029351ecdd412"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0009",
+                "sha256": "2ac9b3615a697b42d231431d03ca178bcc464b88ce145d4e2d524f10bc7c74ad"
+              },
+              {
+                "id": "block_0010_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0011",
+                "sha256": "502caa134d95a6b69377437c8eb00bff2bb5b93bfdec56e956cd59b043bd93d5"
+              },
+              {
+                "id": "block_0010_0012",
+                "sha256": "01b8e5da1afa1aaff26120f5ac3caee32c2edf0b4945c75f42e854a98bd35c34"
+              },
+              {
+                "id": "block_0010_0013",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "baa1eb01da195531c63cd6c462064e25bee6910130b0152cc2ba7f1d09c1e854"
+              },
+              {
+                "id": "block_0011_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0007",
+                "sha256": "0f4640561149ec9eacbb1af3b77522a692f7812fe41362b11c73eb29d9195569"
+              },
+              {
+                "id": "block_0011_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0011",
+                "sha256": "5129826d840a42aa0d9608e26d50d5832de1393ae6414a000e94649b4fd20c62"
+              },
+              {
+                "id": "block_0011_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0013",
+                "sha256": "e5bfe1f17df0514438b9eb42f19823fb56243fbeac2ac02ffeedf9bde1795b40"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0005",
+                "sha256": "793fd4885a5ef0fd81eff8a257f5706fec9caf0ca00a95409bc2d0f63785ded5"
+              },
+              {
+                "id": "block_0012_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0007",
+                "sha256": "69ba0a01193712fb063b5040b57bfc7c2fac29b159345044fb7f878b48185102"
+              },
+              {
+                "id": "block_0012_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0011",
+                "sha256": "a561cdac0683beef7465dd1e124a253fa2186fda3c59cad046604ab31f2ae614"
+              },
+              {
+                "id": "block_0012_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0013",
+                "sha256": "69ba0a01193712fb063b5040b57bfc7c2fac29b159345044fb7f878b48185102"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0005",
+                "sha256": "18e6f57c875320b9a7c8ebb73b8ac3a9352c86e81ab4c9fddcb4495c169ab68b"
+              },
+              {
+                "id": "block_0013_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0007",
+                "sha256": "69ba0a01193712fb063b5040b57bfc7c2fac29b159345044fb7f878b48185102"
+              },
+              {
+                "id": "block_0013_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0011",
+                "sha256": "4379d8b413844c9de2f5e1d294bb387931a7fd42f454f2bd9d586c13a7ffe00b"
+              },
+              {
+                "id": "block_0013_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0013",
+                "sha256": "69ba0a01193712fb063b5040b57bfc7c2fac29b159345044fb7f878b48185102"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "d16be5eef713297c035b85b17f6c29d1e05b4843d77f5047d2ea494a0132b7b0"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "cf795c60b85f32c261f65276d4e2242e7f525d316e3b1f9c8a42eb73d6c6cebb"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "8d4fa375d5700800312b873cc089f8ebeb8a8c0b75d9d366725681b72b49ba4a"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

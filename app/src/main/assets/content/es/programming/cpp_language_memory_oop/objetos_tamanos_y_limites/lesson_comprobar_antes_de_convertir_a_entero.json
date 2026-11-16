@@ -1,0 +1,2027 @@
+{
+  "id": "cpp_language_memory_oop__objetos_tamanos_y_limites__comprobar_antes_de_convertir_a_entero",
+  "title": "Comprobar antes de convertir a entero",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Quitar una fracción y conservar un valor son contratos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Programación 1 construimos una conversión exacta para datos entre −100 y 100. Ese intervalo era una condición del problema. Ahora ampliaremos la comprobación hasta los límites reales de int en el entorno Windows estudiado. Primero decidiremos si está permitido quitar una fracción; después comprobaremos qué entero puede obtenerse."
+        },
+        {
+          "type": "paragraph",
+          "text": "Convertir double a int descarta la parte fraccionaria hacia cero, siempre que el entero resultante quepa en int. Por ejemplo:\n6.75 pasa a 6.\n−6.75 pasa a −6.\n−0.75 pasa a 0.\n\nHacia cero significa conservar la parte entera sin la fracción; para un negativo no significa elegir el entero menor. No se elige automáticamente el entero más cercano (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l10_hacia_cero",
+          "question": "Predice la salida de estas conversiones. Todos sus resultados enteros caben en int.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double positiva = 6.75;\n    double negativa = -6.75;\n    std::cout << static_cast<int>(positiva) << ':'\n              << static_cast<int>(negativa) << ':'\n              << static_cast<int>(-0.75);\n    return 0;\n}\n",
+          "answers": [
+            "6:-6:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se descarta la fracción sin cambiar de lado respecto de cero: 6.75 da 6 y −6.75 da −6. El valor entre −1 y 0 produce el entero 0. No se aplica el redondeo al más cercano."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La comprobación de seguridad corresponde al entero truncado"
+        },
+        {
+          "type": "paragraph",
+          "text": "El lenguaje permite la conversión si el valor obtenido al quitar la fracción se puede representar en el entero destino. Si no cabe, la conversión tiene comportamiento no definido: C++ no garantiza un resultado ni una ejecución correcta. Un cast no comprueba el intervalo ni promete lanzar una excepción que avise del problema (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Usaremos int desde −2147483648 hasta 2147483647 y double binary64, como en el MSVC de estas lecciones. Todos esos enteros, incluidos los extremos, se representan exactamente como double. Esto permite preparar los límites int como double para compararlos con el candidato sin cambiar su valor (Microsoft, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera los valores matemáticos de estos cuatro casos:\n2147483647.5 pierde la fracción y queda 2147483647: cabe.\n−2147483648.5 pierde la fracción y queda −2147483648: cabe.\n2147483648.0 no tiene fracción que quitar: queda fuera por arriba.\n−2147483649.0 tampoco tiene fracción: queda fuera por abajo.\n\nLas mitades utilizadas se representan exactamente en double en esta zona. Los dos primeros originales están fuera de los extremos enteros, pero sus resultados truncados sí caben."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l10_frontera_truncada",
+          "question": "El contrato permite quitar la fracción. Con int en el intervalo indicado, ¿qué debe hacer con −2147483648.5?",
+          "options": [
+            "Rechazarlo sólo por ser menor que el mínimo int antes de truncar.",
+            "Aceptarlo y obtener −2147483648, porque el valor truncado cabe.",
+            "Convertirlo al máximo int mediante la regla de módulo."
+          ],
+          "correctIndex": 1,
+          "explanation": "Truncar hacia cero quita la mitad y deja exactamente el mínimo int. Comprobar el original contra ese mínimo sería una restricción adicional que este contrato no pide."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Obtener la parte entera sin convertir todavía a int"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función std::trunc, declarada en <cmath>, permite quitar la fracción y conservar el resultado en coma flotante. Si recibe un double, devuelve un double con valor entero. Para −3.75 devuelve el valor −3 como double: todavía no se ha hecho una conversión a int (ISO/IEC JTC 1/SC 22/WG 14, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cmath>\n#include <iostream>\n\nint main() {\n    double dato = -3.75;\n    double candidato = std::trunc(dato);\n    std::cout << dato << ':' << candidato << ':'\n              << (dato == candidato);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-3.75:-3:0"
+        },
+        {
+          "type": "paragraph",
+          "text": "dato conserva −3.75. candidato contiene −3 y no es igual al original. Que cout lo escriba sin punto decimal no lo convierte en int. También un double muy grande puede quedar sin fracción al aplicar trunc y seguir siendo demasiado grande para int. Esa función prepara el candidato, pero no valida el rango del destino."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l10_tipo_truncado",
+          "question": "Después de double candidato = std::trunc(dato);, ¿qué falta comprobar antes de convertir candidato a int?",
+          "options": [
+            "Que candidato se muestre sin decimales en la consola.",
+            "Nada: quitar la fracción ya lo convierte al tipo int.",
+            "Que candidato esté dentro del intervalo representable por int."
+          ],
+          "correctIndex": 2,
+          "explanation": "std::trunc devuelve aquí un double. Puede tener valor entero y quedar fuera del rango de int. Su presentación en consola no demuestra que el cast sea seguro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rechazar los valores no finitos antes de preparar el candidato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera la comprobación de finitud de Programación 1. Un valor finito es una cantidad numérica acotada del formato: puede ser negativa, cero o positiva. El formato double de este entorno también admite valores especiales como infinito positivo, infinito negativo y NaN. NaN significa «no es un número» y no representa un entero ni una fracción que podamos convertir a int (Microsoft, 2021)."
+        },
+        {
+          "type": "paragraph",
+          "text": "std::isfinite(dato), de <cmath>, devuelve true para un valor finito y false para infinito o NaN. Comprueba esto antes de preparar y convertir el candidato. Un negativo ordinario, como −3.75, es finito; esta prueba no impone que el dato sea positivo (ISO/IEC JTC 1/SC 22/WG 14, 2023; ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el programa prepararemos los valores especiales con numeric_limits<double>::infinity() y quiet_NaN(). La primera llamada proporciona el infinito positivo; negarlo proporciona el negativo. La segunda proporciona un NaN para esta comprobación. No necesitamos fabricarlos mediante una división por cero. Son posibilidades del formato verificado, no valores que se deban aceptar como cantidades enteras."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l10_no_finitos",
+          "question": "Predice las dos líneas en el entorno estudiado. La primera comprueba finitud; la segunda compara un NaN con los límites de int.",
+          "language": "cpp",
+          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nint main() {\n    double infinito = std::numeric_limits<double>::infinity();\n    double no_numero = std::numeric_limits<double>::quiet_NaN();\n    double minimo = static_cast<double>(std::numeric_limits<int>::lowest());\n    double maximo = static_cast<double>(std::numeric_limits<int>::max());\n\n    std::cout << std::isfinite(-3.75) << ':'\n              << std::isfinite(infinito) << ':'\n              << std::isfinite(-infinito) << ':'\n              << std::isfinite(no_numero) << '\\n';\n    std::cout << (no_numero < minimo) << ':'\n              << (no_numero > maximo);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:0:0\n0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "−3.75 es finito; los dos infinitos y NaN no lo son. Las dos comparaciones de NaN con los límites son falsas. Por eso comprobar sólo dato < minimo o dato > maximo no sustituye la comprobación de finitud."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar, convertir y escribir en ese orden"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construiremos bool truncar_a_int(double dato, int& destino). Su contrato permite quitar la fracción. Acepta si dato es finito y su valor truncado cabe en int. Devuelve true y guarda ese entero al aceptar. Devuelve false sin cambiar destino en cualquier otro caso. Cero es un resultado válido y no debe confundirse con un rechazo."
+        },
+        {
+          "type": "paragraph",
+          "text": "El procedimiento separa estas acciones:\nPrimero rechazar lo no finito.\nObtener el candidato double con std::trunc.\nComparar ese candidato con los dos límites int preparados exactamente como double.\nRechazar si queda por debajo del mínimo o por encima del máximo.\nConvertir a int y escribir destino sólo cuando las comprobaciones hayan pasado.\n\nTodavía no se debe haber convertido a int al comparar el candidato."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u1l10_extremos_candidato",
+          "language": "cpp",
+          "question": "truncado, minimo y maximo son double. Completa < o > para rechazar un candidato exterior y permitir ambos extremos.",
+          "template": "if (truncado [] minimo || truncado [] maximo) {\n    return false;\n}\n",
+          "answers": [
+            "<",
+            ">"
+          ],
+          "explanation": "Se rechaza lo menor que el mínimo o lo mayor que el máximo. <= o >= también rechazarían un extremo válido. Estas comparaciones se hacen antes del cast a int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir la conversión con truncamiento permitido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa truncar_a_int en el editor. El inicio rechaza de forma segura algunos valores que el contrato debe aceptar: compara el original con los extremos enteros. Cambia la preparación y la comprobación del candidato para admitir toda fracción cuyo truncamiento quepa. Conserva la comprobación de finitud y no escribas destino en un rechazo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mantén main. Su comprobación inicial limita esta práctica al modelo estudiado: int con 31 cifras binarias de valor y double con 53. Si no se cumple, termina con código 2 antes de preparar los casos. Cada selector ejecuta una sola llamada y comienza con destino igual a 17. Aceptado imprime el bool y Destino imprime el entero que queda después de llamar."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la entrada escribe el selector, no el valor de dato. Así los ensayos de infinito y NaN no dependen de que cin reconozca esas palabras. Un rechazo previsto termina normalmente desde main; no es un fallo de ejecución."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer caso, obligatorio:\nEntrada: 1\nDato preparado: maximo + 0.5 = 2147483647.5.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nDestino=2147483647\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    // Este control descarta tambien algunas fracciones convertibles.\n    if (dato < minimo || dato > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(dato);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    switch (caso) {\n    case 1: dato = maximo + 0.5; break;\n    case 2: dato = minimo - 0.5; break;\n    case 3: dato = maximo + 1.0; break;\n    case 4: dato = minimo - 1.0; break;\n    case 5: dato = -3.75; break;\n    case 6: dato = -0.75; break;\n    case 7: dato = std::numeric_limits<double>::infinity(); break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); break;\n    case 9: dato = -std::numeric_limits<double>::infinity(); break;\n    case 10: dato = 0.0; break;\n    default: return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = truncar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=2147483647\n"
+                ],
+                "explanation": "maximo + 0.5 = 2147483647.5"
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=-2147483648\n"
+                ],
+                "explanation": "minimo - 0.5 = -2147483648.5"
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=17\n"
+                ],
+                "explanation": "maximo + 1.0 = 2147483648"
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=17\n"
+                ],
+                "explanation": "minimo - 1.0 = -2147483649"
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=-3\n"
+                ],
+                "explanation": "-3.75"
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=0\n"
+                ],
+                "explanation": "-0.75"
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=17\n"
+                ],
+                "explanation": "infinito positivo"
+              },
+              {
+                "standardInput": "8\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=17\n"
+                ],
+                "explanation": "NaN"
+              },
+              {
+                "standardInput": "9\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=17\n"
+                ],
+                "explanation": "infinito negativo"
+              },
+              {
+                "standardInput": "10\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=0\n"
+                ],
+                "explanation": "0.0"
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo el primer caso correcto es obligatorio para avanzar. Los demás son ensayos opcionales e independientes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: ambos extremos y sus vecinos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Utiliza cada entrada por separado en el editor anterior. No cambies la función entre los ensayos. Las salidas corresponden al int de 32 bits y al double binary64 indicados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 2\nDato preparado: minimo - 0.5 = -2147483648.5.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nDestino=-2147483648\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 3\nDato preparado: maximo + 1.0 = 2147483648.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nDestino=17\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 4\nDato preparado: minimo - 1.0 = -2147483649.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nDestino=17\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: negativos, cero y valores especiales"
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas ejecuciones también comienzan con destino igual a 17. La entrada selecciona el dato que prepara main; no es una colección de comprobaciones obligatorias."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 5\nDato preparado: -3.75.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nDestino=-3\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 6\nDato preparado: -0.75.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nDestino=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 7\nDato preparado: infinito positivo.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nDestino=17\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 8\nDato preparado: NaN.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nDestino=17\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 9\nDato preparado: infinito negativo.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nDestino=17\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 10\nDato preparado: 0.0.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nDestino=0\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: el candidato sigue siendo double hasta superar los límites"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    switch (caso) {\n    case 1: dato = maximo + 0.5; break;\n    case 2: dato = minimo - 0.5; break;\n    case 3: dato = maximo + 1.0; break;\n    case 4: dato = minimo - 1.0; break;\n    case 5: dato = -3.75; break;\n    case 6: dato = -0.75; break;\n    case 7: dato = std::numeric_limits<double>::infinity(); break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); break;\n    case 9: dato = -std::numeric_limits<double>::infinity(); break;\n    case 10: dato = 0.0; break;\n    default: return 1;\n    }\n\n    int destino = 17;\n    const bool aceptado = truncar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con el selector 1, el inicial rechaza 2147483647.5 al compararlo directamente con 2147483647. La referencia prepara antes el double 2147483647 mediante trunc, comprueba que coincide con el máximo y lo convierte de forma válida a int. El selector 2 recupera el mismo razonamiento junto al extremo negativo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con 2147483648 o −2147483649, trunc no reduce el valor porque ya no hay fracción. El candidato queda fuera y se conserva 17 sin ejecutar el cast. Con infinito o NaN se retorna false todavía antes. Con −0.75 se acepta el entero 0: la aceptación la expresa el bool y no el hecho de que destino sea distinto de cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "El código utiliza límites double exactos porque todos los int del modelo estudiado caben exactamente en double. Esa justificación forma parte de la solución. No basta con cambiar int por otro entero y dar por supuesto que la preparación de sus límites sigue siendo exacta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Exigir que no se pierda ninguna fracción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora cambia el requisito. conservar_a_int sólo debe aceptar un dato finito, dentro del rango y sin parte fraccionaria. Es una ampliación del contrato exacto de Programación 1 hasta los límites int estudiados. −3.0 se acepta como −3; −3.75 debe rechazarse. No utilizaremos una tolerancia: aceptar una fracción pequeña ya incumpliría este contrato."
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos reutilizar truncar_a_int para preparar un candidato int local. Si rechaza, no existe un candidato aceptado. Si acepta, convertimos ese candidato de vuelta a double y lo comparamos exactamente con dato. La vuelta conserva cualquier int de este entorno. Si los valores difieren, había una fracción y todavía debemos rechazar."
+        },
+        {
+          "type": "paragraph",
+          "text": "La llamada auxiliar debe escribir en una variable local, no en el destino definitivo. Sólo después de comprobar la igualdad se copia el candidato a destino. Así podemos comprobar el resultado sin publicar un cambio que después tendríamos que rechazar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l10_contrato_exacto",
+          "question": "dato vale −3.75 y destino comienza en 61. conservar_a_int exige conservar el valor sin fracción perdida. ¿Qué resultado cumple el contrato?",
+          "options": [
+            "Retornar false y conservar destino igual a 61.",
+            "Retornar false y dejar destino igual a −3.",
+            "Retornar true y guardar −3."
+          ],
+          "correctIndex": 0,
+          "explanation": "El dato tiene fracción y debe rechazarse. El rechazo también exige conservar el destino previo. Obtener correctamente el truncamiento no autoriza a escribirlo como si fuera una conversión exacta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar un rechazo que cambia el destino"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función truncar_a_int del editor ya es correcta. Repara únicamente conservar_a_int. El inicio llama a la auxiliar con destino y puede cambiarlo antes de descubrir una fracción. Utiliza un candidato local, decide si el valor se conserva y asigna el destino definitivo sólo al aceptar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mantén main y la función auxiliar. Los selectores preparan diferentes destinos previos para comprobar que un rechazo conserva el recibido, no una constante elegida dentro de la función. Los valores aceptados deben escribirse también cuando el resultado es cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer caso, obligatorio:\nEntrada: 1\nDato preparado: -3.75; destino previo 61.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nDestino=61\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\nbool conservar_a_int(double dato, int& destino) {\n    // Este inicio puede cambiar destino antes de decidir el rechazo.\n    if (!truncar_a_int(dato, destino)) {\n        return false;\n    }\n    return static_cast<double>(destino) == dato;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    int destino = 61;\n    switch (caso) {\n    case 1: dato = -3.75; break;\n    case 2: dato = -3.0; destino = -7; break;\n    case 3: dato = maximo + 0.5; destino = 11; break;\n    case 4: dato = maximo; destino = -7; break;\n    case 5: dato = minimo; destino = 11; break;\n    case 6: dato = 0.0; destino = 42; break;\n    case 7: dato = minimo - 0.5; destino = -8; break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); destino = -9; break;\n    case 9: dato = std::numeric_limits<double>::infinity(); destino = 10; break;\n    default: return 1;\n    }\n\n    const bool aceptado = conservar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=61\n"
+                ],
+                "explanation": "-3.75; destino previo 61"
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=-3\n"
+                ],
+                "explanation": "-3.0; destino previo -7"
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=11\n"
+                ],
+                "explanation": "2147483647.5; destino previo 11"
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=2147483647\n"
+                ],
+                "explanation": "2147483647.0; destino previo -7"
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=-2147483648\n"
+                ],
+                "explanation": "-2147483648.0; destino previo 11"
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=1\nDestino=0\n"
+                ],
+                "explanation": "0.0; destino previo 42"
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=-8\n"
+                ],
+                "explanation": "-2147483648.5; destino previo -8"
+              },
+              {
+                "standardInput": "8\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=-9\n"
+                ],
+                "explanation": "NaN; destino previo -9"
+              },
+              {
+                "standardInput": "9\n",
+                "outputs": [
+                  "Aceptado=0\nDestino=10\n"
+                ],
+                "explanation": "infinito positivo; destino previo 10"
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo el primer caso correcto es obligatorio para avanzar. Los demás selectores son ensayos adicionales opcionales."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales de conservación exacta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta cada selector por separado en el editor anterior. Los límites corresponden al entorno indicado y los destinos previos se muestran en cada caso."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 2\nDato preparado: -3.0; destino previo -7.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nDestino=-3\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 3\nDato preparado: 2147483647.5; destino previo 11.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nDestino=11\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 4\nDato preparado: 2147483647.0; destino previo -7.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nDestino=2147483647\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 5\nDato preparado: -2147483648.0; destino previo 11.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nDestino=-2147483648\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 6\nDato preparado: 0.0; destino previo 42.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nDestino=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 7\nDato preparado: -2147483648.5; destino previo -8.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nDestino=-8\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 8\nDato preparado: NaN; destino previo -9.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nDestino=-9\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 9\nDato preparado: infinito positivo; destino previo 10.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nDestino=10\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: comprobar una copia local antes de asignar"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\nbool conservar_a_int(double dato, int& destino) {\n    int candidato = 0;\n    if (!truncar_a_int(dato, candidato)) {\n        return false;\n    }\n    if (static_cast<double>(candidato) != dato) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    double dato = 0.0;\n    int destino = 61;\n    switch (caso) {\n    case 1: dato = -3.75; break;\n    case 2: dato = -3.0; destino = -7; break;\n    case 3: dato = maximo + 0.5; destino = 11; break;\n    case 4: dato = maximo; destino = -7; break;\n    case 5: dato = minimo; destino = 11; break;\n    case 6: dato = 0.0; destino = 42; break;\n    case 7: dato = minimo - 0.5; destino = -8; break;\n    case 8: dato = std::numeric_limits<double>::quiet_NaN(); destino = -9; break;\n    case 9: dato = std::numeric_limits<double>::infinity(); destino = 10; break;\n    default: return 1;\n    }\n\n    const bool aceptado = conservar_a_int(dato, destino);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con el selector 1, truncar_a_int guarda −3 en candidato y devuelve true. Al volver a double, −3 no coincide con −3.75. conservar_a_int retorna false sin haber asignado destino, que sigue en 61. El inicial también retorna false, pero ya había cambiado destino a −3: el bool correcto no basta para cumplir todo el contrato."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con el selector 4, el dato es exactamente el máximo int y se acepta. Con el selector 5 se acepta el mínimo. Con cero, la comparación es verdadera y se guarda 0. En los casos fraccionarios o no finitos se conserva cada destino previo indicado. La igualdad se refiere al valor numérico recibido; no se promete conservar la escritura decimal ni el signo del cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el contrato antes de utilizar el resultado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llamadas siguientes comparten destino. Una conversión exacta acepta −3; la siguiente rechaza una fracción y conserva ese valor. Después el contrato que permite truncar acepta −0.75 y guarda 0. La última llamada rechaza un dato cuyo truncamiento no cabe. No debemos utilizar un destino conservado como si un rechazo acabara de producir un entero nuevo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l10_secuencia_contratos",
+          "question": "Predice cada bool y el destino posterior en el entorno de la práctica. Las cuatro llamadas se ejecutan en orden y comparten el mismo objeto destino.",
+          "language": "cpp",
+          "code": "#include <cmath>\n#include <iostream>\n#include <limits>\n\nbool truncar_a_int(double dato, int& destino) {\n    if (!std::isfinite(dato)) {\n        return false;\n    }\n\n    const double truncado = std::trunc(dato);\n    const double minimo =\n        static_cast<double>(std::numeric_limits<int>::lowest());\n    const double maximo =\n        static_cast<double>(std::numeric_limits<int>::max());\n    if (truncado < minimo || truncado > maximo) {\n        return false;\n    }\n\n    destino = static_cast<int>(truncado);\n    return true;\n}\nbool conservar_a_int(double dato, int& destino) {\n    int candidato = 0;\n    if (!truncar_a_int(dato, candidato)) {\n        return false;\n    }\n    if (static_cast<double>(candidato) != dato) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<int>::radix != 2\n        || std::numeric_limits<int>::digits != 31\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int destino = 42;\n    bool aceptado = conservar_a_int(-3.0, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = conservar_a_int(-0.75, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = truncar_a_int(-0.75, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = truncar_a_int(2147483648.0, destino);\n    std::cout << aceptado << ':' << destino;\n    return 0;\n}\n",
+          "answers": [
+            "1:-3\n0:-3\n1:0\n0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "−3.0 se conserva exactamente. −0.75 no cumple el contrato exacto y deja −3. La misma fracción sí cumple el contrato de truncamiento y guarda 0. 2147483648 no cabe tras truncar y deja ese cero anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un destino sin signo no aplica aquí la regla de módulo"
+        },
+        {
+          "type": "paragraph",
+          "text": "En las conversiones entre enteros estudiamos qué ocurre al convertir −1 de tipo int a un entero sin signo. Esa regla no describe una conversión desde double. Si el truncado de un dato de coma flotante no cabe en el entero destino, tampoco se obtiene una conversión válida por elegir unsigned (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El double −1.0 se trunca a −1 y no cabe en unsigned int: no debemos realizar ese cast para buscar una salida. En cambio, −0.75 se trunca a 0, que sí cabe. No todos los negativos de coma flotante tienen el mismo resultado de truncamiento."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l10_unsigned_cero",
+          "question": "Este programa sólo convierte −0.75, cuyo truncado cabe en unsigned int. Predice la salida.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double dato = -0.75;\n    unsigned int copia = static_cast<unsigned int>(dato);\n    std::cout << copia;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "−0.75 pierde su fracción hacia cero y el entero obtenido es 0. Cero cabe en unsigned int. Esto no autoriza a convertir −1.0 ni otros datos cuyo truncado sea negativo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Las llaves no sustituyen la comprobación durante la ejecución"
+        },
+        {
+          "type": "paragraph",
+          "text": "La excepción de expresión constante que vimos para ciertos enteros no se extiende a convertir double a int entre llaves. int copia{3.0}; requiere un diagnóstico de estrechamiento aunque el valor matemático sea tres. El origen sigue siendo un literal double (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int copia{3.0};  // Esta inicialización se rechaza por estrechamiento.\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "int copia{static_cast<int>(3.0)}; sí es válido: el cast de esta constante conocida produce primero un int con valor 3 y las llaves reciben ese int. El cast es seguro aquí porque conocemos el valor. Escribirlo con un dato recibido no añade ninguna comprobación automática de finitud ni de rango."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l10_llaves_flotante",
+          "question": "¿Qué afirmación describe correctamente int copia{static_cast<int>(dato)}; cuando dato es un double recibido?",
+          "options": [
+            "Las llaves rechazan durante la ejecución cualquier valor que no quepa.",
+            "El cast convierte antes de que las llaves reciban el resultado; es necesario justificarlo previamente.",
+            "La excepción de constante permite todos los valores double."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las llaves reciben un int que ya produjo el cast. No comprueban el double original ni evitan un cast fuera de su dominio. La comprobación debe preceder a la conversión."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué se ha comprobado y qué debe justificarse en otro tipo"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comprobación desarrollada cubre los datos double del modelo indicado que pueden truncarse de forma válida a int, y la segunda función exige además conservar el valor numérico. Ambas conservan destino al rechazar. Esa conclusión depende de que los límites int usados en las comparaciones se hayan preparado exactamente como double."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l10_cambiar_tipo",
+          "question": "Quieres adaptar la función a un entero con un rango mayor. ¿Qué debes revisar antes de reutilizar las mismas comparaciones?",
+          "options": [
+            "Sólo el nombre del tipo de retorno.",
+            "Sólo cuántas cifras imprime cout.",
+            "Si el tipo de coma flotante representa exactamente los límites que vas a comparar."
+          ],
+          "correctIndex": 2,
+          "explanation": "Si preparar un límite lo aproxima a otro número, la comparación puede admitir un dato exterior. El cast debe seguir estando justificado por límites correctos, no sólo por haber reutilizado el patrón."
+        },
+        {
+          "type": "paragraph",
+          "text": "Continuaremos con las conversiones desde enteros a coma flotante. Así podremos comprobar qué ocurre al preparar un límite entero que ya no se representa exactamente en double y por qué las comprobaciones del modelo int de esta lección no se trasladan sin cambios a cualquier otro destino."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "7750cca28638fa8cd90826599d035431c30db7bbfa0ceb94724811ad62e25a5d"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "984536e42627a44fa9d234f4388bc2e23f8abb42f79b940ff63eaa7d0dff8094"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "cffe84ded878a6b8c658138e771a2684fe5062bfa4a62851d6e95bbfa537ccf8"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "2d75a8652b2f88a668abea4d335f8d0a8f4abcc7c0e65c0e21bcf096163b5c5c"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "d5f6e6dde26dc1b922df527f9b95f04f32331aedd297b5bc5f9456610a39c0d9"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "6466568d725f8ffa8b36edde3d2c81979b4a1ed74c21e893163824aee37c42eb"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "5e744fb2fc62a9532cd9f0323e708623069c756be96c9549d863310747d43992"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "bc24ec69d233c6501be9b41f942a916393d37cc8f218128b140409ccbfea92cc"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "5954c2bce108bc4d08501125049225ed5f5ff3ffc8c2f404e86e4a65a240cda0"
+          },
+          {
+            "id": "block_0005_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "34584031ca25ba0884c800ef84620a192b4c665342a302775b0a459628eb5068"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "8605ca3fd02c1ee2fc2ae61486d7e0a258e16fb531fd68088fe7fea369c6cc26"
+          },
+          {
+            "id": "block_0006_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0007",
+            "sha256": "8605ca3fd02c1ee2fc2ae61486d7e0a258e16fb531fd68088fe7fea369c6cc26"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "bd8605e251f830b9c259616b0bbfd6ea3ea9dc9b9709bf5b4992c216875ef76a"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "81f5b160f42e07a8a2ac454e786df37ca40781e5b37281f8d4b0b9b173a7d1c0"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "8605ca3fd02c1ee2fc2ae61486d7e0a258e16fb531fd68088fe7fea369c6cc26"
+          },
+          {
+            "id": "block_0007_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0009",
+            "sha256": "8605ca3fd02c1ee2fc2ae61486d7e0a258e16fb531fd68088fe7fea369c6cc26"
+          },
+          {
+            "id": "block_0007_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0011",
+            "sha256": "8605ca3fd02c1ee2fc2ae61486d7e0a258e16fb531fd68088fe7fea369c6cc26"
+          },
+          {
+            "id": "block_0007_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0013",
+            "sha256": "81f5b160f42e07a8a2ac454e786df37ca40781e5b37281f8d4b0b9b173a7d1c0"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "af13405080dec954c41ea80aaf34edf47962c50350e96ca1d8c910a5b9ca28e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "335fdfc7525c6fea229ab89e3da32b32a9975ebc7d60733f2bc4c6d7e9fc78dc"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "0ff33bfe7abd2ccc433d357d7366224d257b86189aae6fc2c04fd33abbedfdb2"
+          },
+          {
+            "id": "block_0010_0005",
+            "sha256": "03f82bbb16dddd52f4a6bded032b813232fece29a5513ff4da8d8a7074d602a9"
+          },
+          {
+            "id": "block_0010_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "bd8605e251f830b9c259616b0bbfd6ea3ea9dc9b9709bf5b4992c216875ef76a"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "b8e6669ed4128d5b30b95954781934ad686503d477743ec3dfe8b54856ae9b5d"
+          },
+          {
+            "id": "block_0011_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0007",
+            "sha256": "bc24ec69d233c6501be9b41f942a916393d37cc8f218128b140409ccbfea92cc"
+          },
+          {
+            "id": "block_0011_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0009",
+            "sha256": "34584031ca25ba0884c800ef84620a192b4c665342a302775b0a459628eb5068"
+          },
+          {
+            "id": "block_0011_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0011",
+            "sha256": "81f5b160f42e07a8a2ac454e786df37ca40781e5b37281f8d4b0b9b173a7d1c0"
+          },
+          {
+            "id": "block_0011_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0013",
+            "sha256": "93a27566ab20b846d0be73f751e781a1bdb15e3189ca3431883312943cd0e710"
+          },
+          {
+            "id": "block_0011_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0015",
+            "sha256": "588ab952303c94eda8aeee3a382b46f23257250730c908cda5b44650e650d18d"
+          },
+          {
+            "id": "block_0011_0016",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0017",
+            "sha256": "039080b43c44e906dea33733b24bcee182e4fc7df9381d578118e5b7fe9616c2"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "e6b78b43fd00bc0faf5a68bf203e66f19611c6c1c58ea48ae4977bb45472316b"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "8ccd6f77963e8601939ab609709d895766ddaa124d1379e750e35a9a28cf9948"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "50b01b5bc4d5a16a5eb3c93d35ceb06121fa461e1d4ca7982dc4ff80309647fc"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "f16683d7e61ccc543796293e161a4255ca9b339374ae4e24fe03e6ab1926bd2b"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "37a48fe2452c9db5d30d99d4d47932836a65baa0018e45f2eb3943bd8d1b2921"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "b79866449ee2882b7924e224f8dc86c2ff21436b7b9d3416c3533961d3e51663"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006",
+          "block_0005_0007"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005",
+          "block_0006_0006",
+          "block_0006_0007"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007",
+          "block_0007_0008",
+          "block_0007_0009",
+          "block_0007_0010",
+          "block_0007_0011",
+          "block_0007_0012",
+          "block_0007_0013"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004",
+          "block_0010_0005",
+          "block_0010_0006"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005",
+          "block_0011_0006",
+          "block_0011_0007",
+          "block_0011_0008",
+          "block_0011_0009",
+          "block_0011_0010",
+          "block_0011_0011",
+          "block_0011_0012",
+          "block_0011_0013",
+          "block_0011_0014",
+          "block_0011_0015",
+          "block_0011_0016",
+          "block_0011_0017"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "32ef0752e42bcfa9dbc20003722302e424861c0022ae16747e8d8feab689b5b6",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "7750cca28638fa8cd90826599d035431c30db7bbfa0ceb94724811ad62e25a5d"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "984536e42627a44fa9d234f4388bc2e23f8abb42f79b940ff63eaa7d0dff8094"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "cffe84ded878a6b8c658138e771a2684fe5062bfa4a62851d6e95bbfa537ccf8"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "2d75a8652b2f88a668abea4d335f8d0a8f4abcc7c0e65c0e21bcf096163b5c5c"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "d5f6e6dde26dc1b922df527f9b95f04f32331aedd297b5bc5f9456610a39c0d9"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "6466568d725f8ffa8b36edde3d2c81979b4a1ed74c21e893163824aee37c42eb"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "5e744fb2fc62a9532cd9f0323e708623069c756be96c9549d863310747d43992"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "bc24ec69d233c6501be9b41f942a916393d37cc8f218128b140409ccbfea92cc"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "5954c2bce108bc4d08501125049225ed5f5ff3ffc8c2f404e86e4a65a240cda0"
+              },
+              {
+                "id": "block_0005_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "34584031ca25ba0884c800ef84620a192b4c665342a302775b0a459628eb5068"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "8605ca3fd02c1ee2fc2ae61486d7e0a258e16fb531fd68088fe7fea369c6cc26"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0007",
+                "sha256": "8605ca3fd02c1ee2fc2ae61486d7e0a258e16fb531fd68088fe7fea369c6cc26"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "bd8605e251f830b9c259616b0bbfd6ea3ea9dc9b9709bf5b4992c216875ef76a"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "81f5b160f42e07a8a2ac454e786df37ca40781e5b37281f8d4b0b9b173a7d1c0"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "8605ca3fd02c1ee2fc2ae61486d7e0a258e16fb531fd68088fe7fea369c6cc26"
+              },
+              {
+                "id": "block_0007_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0009",
+                "sha256": "8605ca3fd02c1ee2fc2ae61486d7e0a258e16fb531fd68088fe7fea369c6cc26"
+              },
+              {
+                "id": "block_0007_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0011",
+                "sha256": "8605ca3fd02c1ee2fc2ae61486d7e0a258e16fb531fd68088fe7fea369c6cc26"
+              },
+              {
+                "id": "block_0007_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0013",
+                "sha256": "81f5b160f42e07a8a2ac454e786df37ca40781e5b37281f8d4b0b9b173a7d1c0"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "af13405080dec954c41ea80aaf34edf47962c50350e96ca1d8c910a5b9ca28e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "335fdfc7525c6fea229ab89e3da32b32a9975ebc7d60733f2bc4c6d7e9fc78dc"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "0ff33bfe7abd2ccc433d357d7366224d257b86189aae6fc2c04fd33abbedfdb2"
+              },
+              {
+                "id": "block_0010_0005",
+                "sha256": "03f82bbb16dddd52f4a6bded032b813232fece29a5513ff4da8d8a7074d602a9"
+              },
+              {
+                "id": "block_0010_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "bd8605e251f830b9c259616b0bbfd6ea3ea9dc9b9709bf5b4992c216875ef76a"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "b8e6669ed4128d5b30b95954781934ad686503d477743ec3dfe8b54856ae9b5d"
+              },
+              {
+                "id": "block_0011_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0007",
+                "sha256": "bc24ec69d233c6501be9b41f942a916393d37cc8f218128b140409ccbfea92cc"
+              },
+              {
+                "id": "block_0011_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0009",
+                "sha256": "34584031ca25ba0884c800ef84620a192b4c665342a302775b0a459628eb5068"
+              },
+              {
+                "id": "block_0011_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0011",
+                "sha256": "81f5b160f42e07a8a2ac454e786df37ca40781e5b37281f8d4b0b9b173a7d1c0"
+              },
+              {
+                "id": "block_0011_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0013",
+                "sha256": "93a27566ab20b846d0be73f751e781a1bdb15e3189ca3431883312943cd0e710"
+              },
+              {
+                "id": "block_0011_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0015",
+                "sha256": "588ab952303c94eda8aeee3a382b46f23257250730c908cda5b44650e650d18d"
+              },
+              {
+                "id": "block_0011_0016",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0017",
+                "sha256": "039080b43c44e906dea33733b24bcee182e4fc7df9381d578118e5b7fe9616c2"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "e6b78b43fd00bc0faf5a68bf203e66f19611c6c1c58ea48ae4977bb45472316b"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "8ccd6f77963e8601939ab609709d895766ddaa124d1379e750e35a9a28cf9948"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "50b01b5bc4d5a16a5eb3c93d35ceb06121fa461e1d4ca7982dc4ff80309647fc"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "f16683d7e61ccc543796293e161a4255ca9b339374ae4e24fe03e6ab1926bd2b"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "37a48fe2452c9db5d30d99d4d47932836a65baa0018e45f2eb3943bd8d1b2921"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "b79866449ee2882b7924e224f8dc86c2ff21436b7b9d3416c3533961d3e51663"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

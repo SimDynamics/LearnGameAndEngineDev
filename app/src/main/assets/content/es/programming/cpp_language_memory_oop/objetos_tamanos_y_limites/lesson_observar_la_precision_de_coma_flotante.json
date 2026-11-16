@@ -1,0 +1,1581 @@
+{
+  "id": "cpp_language_memory_oop__objetos_tamanos_y_limites__observar_la_precision_de_coma_flotante",
+  "title": "Observar la precisión de coma flotante",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir el dato, el cálculo y su presentación"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Programación 1 vimos que double puede guardar cantidades con parte fraccionaria, pero no todos los decimales se conservan exactamente. Ahora vamos a observar dónde aparece la aproximación. Para conservar un número exactamente, no basta con que esté entre el mínimo y el máximo del tipo: también debe haber una representación exacta para ese número (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Seguiremos tres pasos distintos:\nQué valor se guarda al preparar el dato.\nCon qué tipo se realiza cada operación y qué resultado puede guardar ese tipo.\nCómo se escribe el valor almacenado en la consola.\n\nCambiar el formato del último paso no vuelve a realizar los dos anteriores. Convertir después un resultado tampoco equivale a calcular desde el principio con el tipo de destino."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l9_tres_momentos",
+          "question": "Un cálculo en float ya perdió un incremento. Después se copia el resultado a double y se imprime con más cifras. ¿Qué operación recupera por sí sola el incremento perdido?",
+          "options": [
+            "Imprimir con más cifras lo reconstruye.",
+            "Ninguna: habría que cambiar el cálculo que perdió el incremento.",
+            "La copia a double lo reconstruye."
+          ],
+          "correctIndex": 1,
+          "explanation": "La copia conserva el float que quedó después de calcular. El formato escribe ese valor. Para conservar el incremento debemos revisar el tipo con el que se hizo la suma."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Por qué unas fracciones caben exactamente y otras no"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una escritura binaria las cifras sólo pueden ser 0 o 1. A la derecha del punto, sus posiciones valen sucesivamente la mitad, la cuarta parte, la octava parte y así sucesivamente. Cada nueva posición vale la mitad de la anterior. El punto de esta explicación separa la parte entera de la fraccionaria; no es un separador de miles (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos comprobar algunas cantidades sin aproximar:\n0.5 = 1/2; se escribe 0.1 en binario.\n0.25 = 1/4; se escribe 0.01 en binario.\n0.75 = 1/2 + 1/4; se escribe 0.11 en binario.\n\nEn esos tres casos bastan unas pocas posiciones. En cambio, 0.1 decimal necesita una secuencia binaria que continúa repitiéndose. Podemos verlo multiplicando por 2 la parte fraccionaria y separando cada vez la parte entera obtenida:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0.1 x 2 = 0.2   cifra 0; queda 0.2\n0.2 x 2 = 0.4   cifra 0; queda 0.4\n0.4 x 2 = 0.8   cifra 0; queda 0.8\n0.8 x 2 = 1.6   cifra 1; queda 0.6\n0.6 x 2 = 1.2   cifra 1; queda 0.2\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al volver a quedar 0.2, se repiten los pasos que ya partían de esa cantidad. Las cifras obtenidas comienzan 0.000110011… en binario. Este razonamiento utiliza los valores matemáticos exactos, no una ejecución con float. Un formato binario con un número finito de cifras no puede conservar toda esa expansión. Guardará un valor representable próximo a 0.1."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l9_fraccion_exacta",
+          "question": "En el formato binario de float de este entorno, ¿cuál de estas cantidades tiene una representación exacta con unas pocas posiciones fraccionarias?",
+          "options": [
+            "0.1 decimal, porque tiene una sola cifra decimal.",
+            "Cualquier fracción entre 0 y 1.",
+            "0.75 decimal, porque es 1/2 + 1/4."
+          ],
+          "correctIndex": 2,
+          "explanation": "0.75 se forma con dos posiciones binarias: 0.11. Tener pocas cifras decimales no garantiza tener pocas cifras binarias; 0.1 es el contraejemplo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cifras que describen el valor y una escala que las desplaza"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una notación con escala separa las cifras de un factor que las hace mayores o menores. En decimal, 1250 = 1.25 × 1000 y 0.125 = 1.25 × 0.1. Las cifras 1.25 son las mismas; cambia el factor. En notación científica escribimos esos factores como potencias: 10³ significa 10 × 10 × 10 y 10⁻¹ significa 1/10 (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los formatos binarios estudiados utilizan potencias de 2. Por ejemplo, 6 = 1.5 × 4, donde 4 = 2². La parte que contiene las cifras que distinguen un valor de otro se llama significando. El exponente indica la potencia usada como escala. No necesitas memorizar el reparto de bits para seguir las operaciones; sí distinguir que la cantidad de cifras y la escala tienen límites diferentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el ejemplo de 6, el significando 1.5 decimal se escribe 1.1 en binario y se multiplica por 4. Su parte entera es 1. Representar un valor no nulo con ese 1 inicial, separando el signo y utilizando una escala admitida por el formato, se llama forma normalizada. Un valor que utiliza esa forma es un valor normal. Más adelante distinguiremos los valores muy próximos a cero que requieren otra forma."
+        },
+        {
+          "type": "paragraph",
+          "text": "En MSVC para Windows, float utiliza el formato binario de 32 bits conocido como binary32 y double utiliza binary64. Para los valores normales, el significando de float tiene 24 cifras binarias de precisión y el de double tiene 53. El signo y la escala también ocupan parte de la representación: los 32 bits completos no son 32 cifras de precisión (Microsoft, 2021)."
+        },
+        {
+          "type": "paragraph",
+          "text": "C++ no obliga a que todas las implementaciones tengan estos formatos concretos. double representa todos los valores de float y ofrece al menos su precisión; long double ofrece al menos la de double. En MSVC, long double es un tipo distinto, pero utiliza la misma representación que double. No podemos deducir que siempre tenga más precisión por el nombre (ISO/IEC JTC 1/SC 22/WG 21, 2023; Microsoft, 2021)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Consultar la base y las cifras disponibles"
+        },
+        {
+          "type": "paragraph",
+          "text": "numeric_limits permite consultar propiedades del tipo sin calcular un desbordamiento. Aquí utilizamos dos miembros nuevos:\nradix indica la base de la representación; 2 significa base binaria.\ndigits indica cuántas cifras de esa base forman la precisión del significando.\n\nCon base 2, digits cuenta cifras binarias, no cifras decimales (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nint main() {\n    std::cout << std::numeric_limits<float>::radix << ':'\n              << std::numeric_limits<float>::digits << '\\n';\n    std::cout << std::numeric_limits<double>::radix << ':'\n              << std::numeric_limits<double>::digits << '\\n';\n    std::cout << std::numeric_limits<long double>::digits << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el entorno MSVC estudiado, la salida es:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "2:24\n2:53\n53\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos primeras líneas corresponden a float y double. La última consulta la precisión de long double. Tener 24 cifras binarias no permite conservar cualquier secuencia de 24 cifras decimales. Tampoco significa que todos los números dentro del rango de float estén separados por una unidad."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l9_interpretar_digits",
+          "question": "El programa obtiene radix = 2 y digits = 24 para float. ¿Cómo se interpreta?",
+          "options": [
+            "Dispone de 24 cifras binarias de precisión en el significando.",
+            "Conserva exactamente cualquier decimal con hasta 24 cifras.",
+            "Puede guardar sólo los enteros desde 0 hasta 24."
+          ],
+          "correctIndex": 0,
+          "explanation": "La base consultada es 2, de modo que digits cuenta posiciones binarias de precisión. El exponente permite cambiar la escala y el rango; no añade más posiciones al significando."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un número grande puede caber sin admitir el entero siguiente"
+        },
+        {
+          "type": "paragraph",
+          "text": "2²⁴ significa multiplicar 24 veces por 2 y vale 16777216. En binary32, todos los enteros desde −16777216 hasta 16777216 tienen una representación exacta. Esto no significa que los enteros siguientes también la tengan."
+        },
+        {
+          "type": "paragraph",
+          "text": "A partir de 16777216, antes de llegar a 33554432, el formato necesita la escala 2²⁴. Sus 24 cifras de precisión permiten una cifra inicial y 23 posiciones fraccionarias en el significando. La última posición aporta 1/2²³; al multiplicarla por 2²⁴, su aportación al número completo es 2. Por eso los valores consecutivos de float en esa zona avanzan de dos en dos:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "16777216\n16777218\n16777220\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "16777217 está entre los dos primeros y no tiene representación exacta como float en este formato. En cambio, 16777218 sí la tiene. Ambos son muy inferiores al máximo float: el problema es la separación entre valores representables, no llegar al extremo del rango."
+        },
+        {
+          "type": "paragraph",
+          "text": "En los ejemplos numéricos siguientes usaremos la configuración habitual de MSVC en Windows, con redondeo al representable más cercano. Si dos valores quedan exactamente a la misma distancia, se elige aquel cuya última cifra conservada del significando es 0. En esta escala esa posición vale 2: en 16777216 contiene 0 y en 16777218 contiene 1. Por eso el empate se resuelve con 16777216. Esta regla se llama redondeo al más cercano con empates al par; no debemos atribuirla a cualquier implementación o modo de redondeo de C++."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l9_vecino",
+          "question": "Para float binary32 en la zona descrita, ¿cuál es el primer valor representable mayor que 16777216?",
+          "options": [
+            "16777217",
+            "16777218",
+            "33554432"
+          ],
+          "correctIndex": 1,
+          "explanation": "La separación allí es 2. El número 16777217 queda a mitad de camino y no cabe exactamente; 16777218 sí es el vecino inmediato superior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir la suma antes de guardar su resultado"
+        },
+        {
+          "type": "paragraph",
+          "text": "El literal 1.0 tiene tipo double. El sufijo f hace que 1.0f tenga tipo float. También podríamos escribir F. Así elegimos el tipo del literal antes de que participe en una expresión; no cambia el número matemático que intentamos expresar (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el programa, base contiene exactamente 16777216 como float. La expresión base + 1.0f suma dos operandos float. El resultado matemático 16777217 no cabe exactamente en ese formato y, con el redondeo indicado, suma queda con 16777216. Después se copia ese valor a double: sigue siendo 16777216."
+        },
+        {
+          "type": "paragraph",
+          "text": "La otra expresión convierte primero base a double. Esa conversión conserva exactamente el float almacenado. Después se suma 1.0 con tipo double, que dispone de precisión suficiente para representar aquí 16777217. El orden de estas dos acciones es lo que distingue los resultados (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l9_antes_y_despues",
+          "question": "Predice las tres líneas en el entorno y redondeo indicados. Se imprimen base, despues y antes, en ese orden. fixed y setprecision(0) muestran estos valores enteros sin parte decimal.",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    float base = 16777216.0f;\n    float suma = base + 1.0f;\n    double despues = suma;\n    double antes = static_cast<double>(base) + 1.0;\n\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << base << '\\n' << despues << '\\n' << antes;\n    return 0;\n}\n",
+          "answers": [
+            "16777216\n16777216\n16777217"
+          ],
+          "outputComparison": "exact",
+          "explanation": "base conserva 16777216. La suma float no puede guardar 16777217 y queda en 16777216; copiarla después a double mantiene ese resultado. Convertir el operando antes permite hacer la suma double y guardar exactamente 16777217."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El tipo de retorno no decide el tipo de la suma"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una función retorna double, una expresión que suma dos float no pasa por eso a calcularse como double. Primero se evalúa la expresión con los tipos de sus operandos. Después se convierte su resultado al tipo de retorno cuando sea necesario. Es la misma separación entre cálculo y destino que ya utilizamos con los enteros (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con base de tipo float:\nbase + 1.0f realiza aquí una suma float.\nbase + 1.0 convierte el operando float a double y realiza una suma double.\nstatic_cast<double>(base) + 1.0 expresa de forma explícita esa ampliación antes de sumar.\n\nLas dos últimas formas pueden cumplir el mismo objetivo. Un cast aplicado al resultado de base + 1.0f llega después de la suma float."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l9_tipo_de_suma",
+          "question": "Una función retorna double y base es float. ¿Qué expresión sigue realizando la suma como float antes de convertir el resultado?",
+          "options": [
+            "static_cast<double>(base) + 1.0",
+            "base + 1.0",
+            "static_cast<double>(base + 1.0f)"
+          ],
+          "correctIndex": 2,
+          "explanation": "Dentro del último cast se suma base con 1.0f: ambos son float. El cast recibe el resultado de esa suma. Las otras expresiones disponen de un operando double antes de sumar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir el siguiente consecutivo sin perder la unidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa siguiente_consecutivo. Recibe un float cuyo valor ya almacenado es entero y está entre −33554432 y 33554432, incluidos ambos extremos. Debe devolver como double ese valor más una unidad, exactamente. No debe modificar base ni devolver el dato sin incrementarlo. En binary64 todos los enteros de este intervalo y sus consecutivos caben exactamente."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicio calcula y guarda la suma como float. Modifica la función para que el cálculo conserve la unidad también cuando float no puede representar el entero siguiente. Puedes cambiar sus variables locales o escribir directamente la expresión del retorno. Mantén main y su entrada: cada selector prepara un solo dato, que ya es un float exacto. No uses respuestas especiales para cada selector."
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa imprime el dato anterior, el retorno de la función y la diferencia entre ambos. Utiliza fixed y setprecision(0) porque en este contrato todos son enteros. El formato permite verlos sin cifras decimales; no corrige el cálculo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer caso, obligatorio:\nEntrada: 1\nEl selector prepara base con valor 16777216.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Anterior=16777216\nNuevo=16777217\nCambio=1\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iomanip>\n#include <iostream>\n\ndouble siguiente_consecutivo(float base) {\n    // La suma actual se calcula como float.\n    float resultado = base + 1.0f;\n    return resultado;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    float base = 0.0f;\n    switch (caso) {\n    case 1:\n        base = 16777216.0f;\n        break;\n    case 2:\n        base = 33554432.0f;\n        break;\n    case 3:\n        base = -33554432.0f;\n        break;\n    case 4:\n        base = 0.0f;\n        break;\n    case 5:\n        base = 16777215.0f;\n        break;\n    default:\n        return 1;\n    }\n\n    const double nuevo = siguiente_consecutivo(base);\n    const double cambio = nuevo - static_cast<double>(base);\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Anterior=\" << base << '\\n';\n    std::cout << \"Nuevo=\" << nuevo << '\\n';\n    std::cout << \"Cambio=\" << cambio << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Anterior=16777216\nNuevo=16777217\nCambio=1\n"
+                ],
+                "explanation": "El float almacenado vale 16777216; el siguiente entero es 16777217 y el cambio debe ser 1."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Anterior=33554432\nNuevo=33554433\nCambio=1\n"
+                ],
+                "explanation": "El float almacenado vale 33554432; el siguiente entero es 33554433 y el cambio debe ser 1."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Anterior=-33554432\nNuevo=-33554431\nCambio=1\n"
+                ],
+                "explanation": "El float almacenado vale -33554432; el siguiente entero es -33554431 y el cambio debe ser 1."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Anterior=0\nNuevo=1\nCambio=1\n"
+                ],
+                "explanation": "El float almacenado vale 0; el siguiente entero es 1 y el cambio debe ser 1."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Anterior=16777215\nNuevo=16777216\nCambio=1\n"
+                ],
+                "explanation": "El float almacenado vale 16777215; el siguiente entero es 16777216 y el cambio debe ser 1."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo el primer caso correcto es obligatorio para avanzar. Los selectores siguientes son ensayos adicionales opcionales e independientes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: otra escala, negativos y un caso que ya cabía"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambia la entrada del editor anterior para ejecutar cada ensayo por separado. Cada ejecución vuelve a preparar base y no hereda resultados de las demás."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 2\nEl selector prepara base con valor 33554432.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Anterior=33554432\nNuevo=33554433\nCambio=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 3\nEl selector prepara base con valor -33554432.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Anterior=-33554432\nNuevo=-33554431\nCambio=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 4\nEl selector prepara base con valor 0.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Anterior=0\nNuevo=1\nCambio=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 5\nEl selector prepara base con valor 16777215.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Anterior=16777215\nNuevo=16777216\nCambio=1\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: ampliar antes de hacer la suma"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n\ndouble siguiente_consecutivo(float base) {\n    return static_cast<double>(base) + 1.0;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    float base = 0.0f;\n    switch (caso) {\n    case 1:\n        base = 16777216.0f;\n        break;\n    case 2:\n        base = 33554432.0f;\n        break;\n    case 3:\n        base = -33554432.0f;\n        break;\n    case 4:\n        base = 0.0f;\n        break;\n    case 5:\n        base = 16777215.0f;\n        break;\n    default:\n        return 1;\n    }\n\n    const double nuevo = siguiente_consecutivo(base);\n    const double cambio = nuevo - static_cast<double>(base);\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Anterior=\" << base << '\\n';\n    std::cout << \"Nuevo=\" << nuevo << '\\n';\n    std::cout << \"Cambio=\" << cambio << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El cast conserva el float de entrada como double. La suma se calcula entonces con dos double. Como el contrato limita base a valores enteros de este intervalo, sumar una unidad da otro entero exactamente representable en binary64. No estamos prometiendo que sumar 1 sea exacto para cualquier float posible."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con el selector 1, el inicial devuelve 16777216 y la diferencia es 0: perdió la unidad al calcular como float. La referencia devuelve 16777217 y la diferencia es 1. Con el selector 5, incluso el inicial obtiene 16777216 a partir de 16777215: ese caso cabe y no permite descubrir por sí solo el error de los otros. Por eso se ha elegido el límite como primer caso."
+        },
+        {
+          "type": "paragraph",
+          "text": "También puede ser válida una implementación que sume base + 1.0: el literal double provoca la ampliación antes de la operación. Que el resultado se asigne a una variable double sólo ayuda si la suma ya se hizo con precisión suficiente; el destino no modifica retroactivamente los tipos de los operandos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ampliar un decimal ya aproximado conserva su aproximación"
+        },
+        {
+          "type": "paragraph",
+          "text": "El incremento anterior partía de un entero que float guardaba exactamente. Ahora partimos de 0.1f. Su representación float ya es una aproximación de un décimo. Cuando la copiamos a double, se conserva exactamente esa aproximación; no se sustituye por el décimo matemático ni por el valor que se obtendría al escribir directamente un literal double 0.1 (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para ver la diferencia recuperamos setprecision de Programación 1. Con defaultfloat, el número indicado controla las cifras significativas que se muestran. numeric_limits<double>::max_digits10 da suficientes cifras decimales para distinguir los valores double al escribirlos y volver a leerlos con una conversión adecuada. En este entorno vale 17. No significa que 17 cifras de cualquier decimal puedan conservarse exactamente como double (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nint main() {\n    float medida = 0.1f;\n    double copia = medida;\n    double directa = 0.1;\n\n    std::cout << std::defaultfloat\n              << std::setprecision(std::numeric_limits<double>::max_digits10);\n    std::cout << copia << '\\n' << directa << '\\n';\n    std::cout << (copia == static_cast<double>(medida)) << ':'\n              << (copia == directa);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con el entorno estudiado se obtiene:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0.10000000149011612\n0.10000000000000001\n1:0"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera línea hace visible la aproximación que procedía de float. La segunda corresponde al literal double: también aproxima un décimo, pero con más precisión. En la última línea, la copia coincide con el float ampliado y no coincide con directa. Pedir 17 cifras sólo cambia su presentación; las variables conservan sus valores."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l9_copia_decimal",
+          "question": "¿Por qué copia y directa pueden diferir aunque ambos datos se hayan escrito inicialmente con los dígitos 0.1?",
+          "options": [
+            "copia conserva la aproximación preparada primero como float; directa parte de un literal double.",
+            "Al convertir a double se recuperan cifras decimales desconocidas del float.",
+            "setprecision cambia las variables antes de compararlas."
+          ],
+          "correctIndex": 0,
+          "explanation": "0.1f y 0.1 preparan valores en tipos diferentes. La ampliación conserva el valor float y no vuelve a interpretar su escritura decimal. El manipulador afecta a la salida, no a los datos comparados."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "epsilon describe un salto concreto, no todos los saltos"
+        },
+        {
+          "type": "paragraph",
+          "text": "numeric_limits<float>::epsilon() es la diferencia entre 1 y el siguiente valor float representable mayor que 1. En binary32 esa diferencia es 1/8388608. No es la distancia entre cualquier pareja de valores consecutivos: al aumentar la escala también puede aumentar su separación (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Justo por encima de 2, el salto es el doble del salto que hay por encima de 1. Si a 2 le sumamos sólo epsilon, el resultado matemático queda a mitad de ese salto. Con el redondeo al más cercano y empates al par que venimos usando, vuelve a quedar 2. Para alcanzar el vecino superior, primero calculamos 2 * epsilon y después sumamos ese incremento a 2. No equivale a sumar epsilon a 2 y volver a sumar epsilon al resultado ya redondeado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l9_salto_segun_escala",
+          "question": "Predice las tres comparaciones para el formato y redondeo indicados. Se imprime 1 para verdadero y 0 para falso.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nint main() {\n    float paso = std::numeric_limits<float>::epsilon();\n    float uno = 1.0f;\n    float dos = 2.0f;\n\n    float sobre_uno = uno + paso;\n    float medio_salto = dos + paso;\n    float salto_completo = dos + 2.0f * paso;\n\n    std::cout << (sobre_uno > uno) << ':'\n              << (medio_salto == dos) << ':'\n              << (salto_completo > dos);\n    return 0;\n}\n",
+          "answers": [
+            "1:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "En 1, sumar epsilon alcanza el vecino superior. En 2, una sola epsilon queda a medio salto y se redondea a 2. Calcular primero 2 * epsilon y sumar ese incremento alcanza el vecino superior de 2. La separación no es constante."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esto no convierte epsilon en una tolerancia universal para aceptar resultados. Antes de elegir una tolerancia necesitamos saber qué magnitudes tratamos, qué operaciones se hicieron y qué error admite el problema. Tampoco significa que == esté siempre mal: comparar dos copias exactas o resultados exactos conocidos puede ser precisamente lo que se quiere comprobar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "min no tiene el mismo significado para enteros y coma flotante"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para los enteros con signo consultamos el extremo inferior mediante lowest() o min(). En coma flotante debemos distinguirlos. Cuando decimos valor finito, hablamos de un valor numérico acotado del formato:\nlowest() da el menor valor finito del tipo, es decir, el extremo negativo.\nmax() da el mayor valor finito.\nmin() da el menor valor positivo normal del formato estudiado (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En binary32, los valores normales distintos de cero utilizan una cifra binaria inicial 1 en el significando y permiten las 24 cifras de precisión explicadas. La escala tiene un extremo inferior. Para acercarse todavía más a cero, el formato también dispone de valores positivos llamados subnormales: utilizan posiciones iniciales con cero y conservan menos cifras de precisión. denorm_min() permite consultar el menor positivo subnormal en este entorno. Por eso pueden existir valores positivos menores que min() (Microsoft, 2021)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estamos consultando extremos de ese conjunto de valores, sin provocar operaciones fuera de rango. Las comparaciones siguientes permiten distinguir los extremos sin imprimir sus desarrollos decimales."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l9_extremos_flotantes",
+          "question": "Predice las cuatro comparaciones en el entorno binary32 estudiado, que dispone de subnormales.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nint main() {\n    std::cout << (std::numeric_limits<float>::lowest() < 0.0f) << ':'\n              << (std::numeric_limits<float>::min() > 0.0f) << ':'\n              << (std::numeric_limits<float>::denorm_min() > 0.0f) << ':'\n              << (std::numeric_limits<float>::denorm_min()\n                  < std::numeric_limits<float>::min());\n    return 0;\n}\n",
+          "answers": [
+            "1:1:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "lowest() es negativo. min() es positivo y normal. denorm_min() también es positivo y queda entre cero y min(). Confundir min() con el extremo negativo daría una comprobación de intervalo incorrecta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una vuelta por un tipo de menor precisión puede cambiar el dato"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el programa siguiente, original guarda exactamente 16777217 como double. La conversión a float no se sale de su rango, pero ese entero no tiene representación exacta en binary32. Con la configuración indicada, reducida recibe 16777216. Al volver a double se conserva ese valor, no el que todavía guarda original. Esta conversión no modifica el objeto de origen (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l9_ida_y_vuelta",
+          "question": "Predice original, reducida y vuelta, separados por dos puntos, con el entorno y redondeo de la lección.",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    double original = 16777217.0;\n    float reducida = static_cast<float>(original);\n    double vuelta = reducida;\n\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << original << ':' << reducida << ':' << vuelta;\n    return 0;\n}\n",
+          "answers": [
+            "16777217:16777216:16777216"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El double original conserva 16777217. El cast a float aproxima ese valor con 16777216. La ampliación posterior mantiene el float obtenido. Original no se reasigna en ningún momento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir qué revisar cuando un resultado pierde cifras"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una operación no conserva lo que esperabas, sigue los datos en este orden:\nComprueba qué valores quedaron almacenados al leer o inicializar.\nIdentifica el tipo de los operandos antes de cada operación.\nComprueba si el resultado matemático cabe exactamente en ese formato.\nDistingue una ampliación previa de una conversión del resultado.\nRevisa al final el formato que escribe la consola.\n\nNo sustituyas estos pasos por aumentar los decimales visibles o añadir un cast sin identificar qué recibe."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l9_diagnostico_final",
+          "question": "Una función recibe un float que ya contiene la aproximación de 0.1f. Su contrato nuevo exige trabajar desde el valor que se leería directamente como double. ¿Qué cambio permite conservar desde el principio la precisión de esa lectura double?",
+          "options": [
+            "Mantener la lectura float y mostrar 17 cifras al final.",
+            "Leer el dato como double y pasarlo a una interfaz double antes del cálculo.",
+            "Mantener la lectura float y convertir únicamente el retorno."
+          ],
+          "correctIndex": 1,
+          "explanation": "Si primero se lee como float, la aproximación ya pertenece a ese formato. Cambiar la lectura y la interfaz permite que el dato se prepare como double. Eso mejora la precisión disponible, pero no hace exacto el décimo en base binaria."
+        },
+        {
+          "type": "paragraph",
+          "text": "En las próximas conversiones tendremos que combinar dos preguntas: si un valor está dentro del rango de destino y si se conserva la información que exige el contrato. Lo visto aquí no autoriza a convertir cualquier double a entero: antes estudiaremos las reglas y las comprobaciones propias de esa conversión."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1b22cbd05de7b212497c260677a862618c7eaf25caf4a139bc146c16c98cf7e8"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "2b69458c1a1a8b62a061ef881c78e52646311c6275e7a0e5be907a3554acf726"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "fdf869ccd58c1de1696a93bfb21c72eff269ddfbc2ceedcb0f57c2bb0f280fcb"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "8d27ff797dc9251fdc042299707c7e0878d22af164008bdac00f5ba95534a648"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "dfcf2e0fea4fcc3c6b00ba866f3b5d8079c11ea4a213fa70c8ff2fc77fe2cfd7"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "55a9d312445a74e6526e32648f0077090afa80f0996d5fe57c7117d01eaeda56"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "07aa1f1117b142296895aef3f29e8c8db5ab021f3c51f865b8f59090f4c32a5a"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "cd4522ef686c91853cd3ea70a19e450a96bb7c10cfd258db8bbd3f46c424f427"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "4b9e2f5892acccc72e462928e97054ff1294830275e37b2b5c382073d4e4107f"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1d292bdd32786f8e30a9823c9ca47f389c815a6ca0e1df31c3cbf2eda3bc7729"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "f574eb24b901ebb073f236c7093f508c74d376cbcfd711ab9fb47efed5c4c6fd"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "4907babb764502305e66282cf1f085bd943ac86378ccf5d17d607d9982a96a1d"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "3a0d93d3863f50b1c90bca31bfcf07c83f0d7a0883120673d7877bc3e11e1823"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "95b97077398fbe2ad07260d950da9c17cdd75972fbc3a79d258cddcf4ddacd2e"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0007",
+            "sha256": "ae7bf6a4aa67bf005513d5d4a5054a7d243bed3cc4d117bafde5c856c9f929c3"
+          },
+          {
+            "id": "block_0008_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0009",
+            "sha256": "32f6b389362a51263d7e4a507ed5b3be5d06f0d909479c2d60edec160c6a5fd5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "d51e87d2e0aafba749b8152f178039595ecdc13bdbed99ad111f6bcec937323b"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "e240779a51c58a5ee9c7e9ff3fc117618b2de480b7851e71943ae8c0b25db05a"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0005",
+            "sha256": "7501e0aa1f99136a4c785a81d9983539342e8f2395d2795a41e4f953c3ea1fc8"
+          },
+          {
+            "id": "block_0010_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0007",
+            "sha256": "42c77494bd71ff6f9248430341d6c01cc1e6258c3eae8018fc9b930fc82351e6"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "14732d8c5b6560d2bacfbe6ecdf9f7485ae11fcca1c439c78e45039d8c070ee6"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "9c17c957e57f9d9f856c706d8416e88cc462698474e8056598e5f1ad7f17df68"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "7e31a36dff2bb33918fd77404b1b6acba8ab2f940894dfeb5711ed695fa6b48b"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "f74cda6de3fef41c6c196238c038831fc9d200ee572af2b956329af3b956026b"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006",
+          "block_0008_0007",
+          "block_0008_0008",
+          "block_0008_0009"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004",
+          "block_0010_0005",
+          "block_0010_0006",
+          "block_0010_0007"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "a13d16214008a131bdfd3841b10a7e70c491f67ed983b1fc7d875bd578c6af6e",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1b22cbd05de7b212497c260677a862618c7eaf25caf4a139bc146c16c98cf7e8"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "2b69458c1a1a8b62a061ef881c78e52646311c6275e7a0e5be907a3554acf726"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "fdf869ccd58c1de1696a93bfb21c72eff269ddfbc2ceedcb0f57c2bb0f280fcb"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "8d27ff797dc9251fdc042299707c7e0878d22af164008bdac00f5ba95534a648"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "dfcf2e0fea4fcc3c6b00ba866f3b5d8079c11ea4a213fa70c8ff2fc77fe2cfd7"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "55a9d312445a74e6526e32648f0077090afa80f0996d5fe57c7117d01eaeda56"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "07aa1f1117b142296895aef3f29e8c8db5ab021f3c51f865b8f59090f4c32a5a"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "cd4522ef686c91853cd3ea70a19e450a96bb7c10cfd258db8bbd3f46c424f427"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "4b9e2f5892acccc72e462928e97054ff1294830275e37b2b5c382073d4e4107f"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1d292bdd32786f8e30a9823c9ca47f389c815a6ca0e1df31c3cbf2eda3bc7729"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "f574eb24b901ebb073f236c7093f508c74d376cbcfd711ab9fb47efed5c4c6fd"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "4907babb764502305e66282cf1f085bd943ac86378ccf5d17d607d9982a96a1d"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "3a0d93d3863f50b1c90bca31bfcf07c83f0d7a0883120673d7877bc3e11e1823"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "95b97077398fbe2ad07260d950da9c17cdd75972fbc3a79d258cddcf4ddacd2e"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0007",
+                "sha256": "ae7bf6a4aa67bf005513d5d4a5054a7d243bed3cc4d117bafde5c856c9f929c3"
+              },
+              {
+                "id": "block_0008_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0009",
+                "sha256": "32f6b389362a51263d7e4a507ed5b3be5d06f0d909479c2d60edec160c6a5fd5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "d51e87d2e0aafba749b8152f178039595ecdc13bdbed99ad111f6bcec937323b"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "e240779a51c58a5ee9c7e9ff3fc117618b2de480b7851e71943ae8c0b25db05a"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0005",
+                "sha256": "7501e0aa1f99136a4c785a81d9983539342e8f2395d2795a41e4f953c3ea1fc8"
+              },
+              {
+                "id": "block_0010_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0007",
+                "sha256": "42c77494bd71ff6f9248430341d6c01cc1e6258c3eae8018fc9b930fc82351e6"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "14732d8c5b6560d2bacfbe6ecdf9f7485ae11fcca1c439c78e45039d8c070ee6"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "9c17c957e57f9d9f856c706d8416e88cc462698474e8056598e5f1ad7f17df68"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "7e31a36dff2bb33918fd77404b1b6acba8ab2f940894dfeb5711ed695fa6b48b"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "f74cda6de3fef41c6c196238c038831fc9d200ee572af2b956329af3b956026b"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

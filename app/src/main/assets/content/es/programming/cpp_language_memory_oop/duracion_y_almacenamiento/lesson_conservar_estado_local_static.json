@@ -1,0 +1,2039 @@
+{
+  "id": "cpp_language_memory_oop__duracion_y_almacenamiento__conservar_estado_local_static",
+  "title": "Conservar un valor entre llamadas con static local",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuándo necesitamos que un valor continúe después de una llamada"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la lección anterior, cada llamada preparaba sus propios locales de duración automática. Recuperemos ese comportamiento con agregar: recibe una cantidad, define total con cero y le suma esa cantidad."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    int total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "agregar(3) comienza con un total nuevo de valor cero y devuelve 3. Al salir de esa llamada termina ese objeto local. agregar(2) define otro total con cero y devuelve 2. La salida es 3:2. El segundo resultado no incluye lo que recibió la primera llamada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora cambia el objetivo: queremos reunir las cantidades que llegan en llamadas sucesivas. Después de recibir 3 y después 2, el total debe pasar de cero a 3 y después a 5. Para conseguirlo, hace falta conservar el objeto que guarda la suma."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "static cambia la duración del almacenamiento del local"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dentro de una función podemos escribir static int total = 0;. Sigue siendo una variable local, pero tiene almacenamiento de duración estática: ese almacenamiento se conserva durante la ejecución del programa. El objeto inicializado no termina al salir del cuerpo de esta función. Por eso podemos recuperar su valor en una llamada posterior (Prata, 2012; ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    static int total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este programa hay un total correspondiente a esa declaración static. La primera llamada le suma 3 y devuelve 3. Al regresar a main, total conserva 3. La segunda llamada suma 2 al mismo objeto: ahora contiene 5 y devuelve 5. La inicialización con cero no vuelve a sustituir el valor conservado."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u3l2_escribir_static",
+          "question": "Completa la palabra que permite que total conserve su valor entre llamadas. No cambies su tipo int ni su valor inicial cero.",
+          "template": "[] int total = 0;",
+          "answers": [
+            "static"
+          ],
+          "explanation": "static da duración estática al almacenamiento de este local. La definición sigue dentro de la función; no crea un total automático nuevo en cada llamada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar el objeto no hace visible su nombre desde main"
+        },
+        {
+          "type": "paragraph",
+          "text": "El ámbito del nombre sigue siendo el bloque donde se declara. En el ejemplo anterior, las instrucciones de agregar pueden usar total desde su declaración. Las de main no pueden utilizar directamente ese nombre. main conoce los int que recibe por retorno; conservar el objeto entre llamadas no convierte el cuerpo de agregar en parte del ámbito de main (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La duración responde durante cuánto tiempo se conserva el almacenamiento. El ámbito responde dónde puede encontrarse la declaración al escribir un nombre. static cambia aquí la primera propiedad, pero no amplía la segunda a todo el programa."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l2_nombre_local",
+          "question": "Sólo agregar declara static int total = 0;. main llama a agregar y después escribe std::cout << total;. ¿Qué ocurre con ese uso del nombre en main?",
+          "options": [
+            "Muestra el último valor porque la duración es estática.",
+            "Es un error de compilación: ese total no está declarado en el ámbito de main.",
+            "Crea otro total y lo inicializa automáticamente con cero."
+          ],
+          "correctIndex": 1,
+          "explanation": "El objeto conservado no proporciona un nombre utilizable desde cualquier función. main puede usar un resultado devuelto por agregar, pero no encontrar directamente su nombre local."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valor inicial constante no significa objeto inmodificable"
+        },
+        {
+          "type": "paragraph",
+          "text": "En static int valor = 4;, el valor inicial se obtiene mediante una expresión constante. C++ realiza su inicialización constante como parte de la preparación inicial del programa, antes de entrar en main. Esta preparación se incluye en la inicialización estática (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En una inicialización dinámica, en cambio, se realizan otras operaciones durante la ejecución para obtener el valor inicial. Por ejemplo, una función puede usar el argumento de esa llamada y mostrar un mensaje mientras prepara el dato. Veremos ese caso en las siguientes páginas. La inicialización estática ocurre antes de las dinámicas: no todo local static espera a la primera llamada para recibir su valor inicial (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí constante describe cómo puede prepararse el valor inicial. No convierte valor en const: el objeto tiene tipo int y las instrucciones posteriores pueden modificarlo. En cambio, const int valor = 4; declara un int que no se puede modificar por ese nombre. Son decisiones distintas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l2_constante_no_const",
+          "language": "cpp",
+          "question": "Predice los resultados de las dos llamadas. La suma posterior a la declaración sí se ejecuta en cada llamada.",
+          "code": "#include <iostream>\n\nint siguiente() {\n    static int valor = 4;\n    valor += 2;\n    return valor;\n}\n\nint main() {\n    const int primero = siguiente();\n    const int segundo = siguiente();\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "6:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "valor comienza con 4. La primera suma lo deja en 6. La segunda llamada encuentra ese 6 y lo aumenta hasta 8. El inicializador constante no impide modificar este int ni vuelve a colocarlo en 4."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tampoco confundas static con constexpr. La palabra static de esta declaración pide la duración del almacenamiento; el código que actualiza valor se sigue ejecutando cuando hacemos cada llamada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un int local static sin inicializador comienza en cero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si escribimos static int total; sin proporcionar un inicializador, la inicialización estática lo inicializa en cero. Ésta es una diferencia frente a un int local de duración automática sin inicializador: no podemos suponer que ese otro int contenga cero ni leerlo como si estuviera preparado. Para que la intención resulte visible, en nuestras sumas escribiremos normalmente static int total = 0; (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l2_cero_sin_inicializador",
+          "language": "cpp",
+          "question": "Este total es local static y no tiene inicializador escrito. Predice los dos resultados.",
+          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    static int total;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "3:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El total estático comienza en cero. La primera llamada lo deja en 3 y la segunda le suma 2 hasta llegar a 5. No se lee un int automático sin inicializar."
+        },
+        {
+          "type": "paragraph",
+          "text": "La regla habla del valor inicial del objeto. No necesitamos suponer una dirección de memoria ni describirlo como una cantidad de bits físicos puestos a cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuando el valor inicial requiere ejecutar una preparación"
+        },
+        {
+          "type": "paragraph",
+          "text": "En otros casos, obtener el valor inicial exige ejecutar operaciones durante el programa. En el siguiente ejemplo, preparar imprime un mensaje y calcula a partir del parámetro recibido. Llamamos inicialización dinámica a la preparación que no forma parte de la inicialización estática. Para un local static, esa inicialización dinámica se realiza la primera vez que la ejecución alcanza su declaración; después de completarse correctamente, no se repite al volver a pasar por ella (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l2_primera_declaracion_alcanzada",
+          "language": "cpp",
+          "question": "Predice la salida completa. Distingue una llamada que sale antes de la declaración, la primera que la alcanza y la llamada posterior.",
+          "code": "#include <iostream>\n\nint preparar(int semilla) {\n    std::cout << \"Preparar:\" << semilla << ';';\n    return semilla + 1;\n}\n\nint conservar(int semilla) {\n    if (semilla < 0) {\n        return -1;\n    }\n    static int base = preparar(semilla);\n    return base;\n}\n\nint main() {\n    const int omitido = conservar(-2);\n    std::cout << omitido << ':';\n    const int primero = conservar(4);\n    std::cout << primero << ':';\n    const int segundo = conservar(9);\n    std::cout << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "-1:Preparar:4;5:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "conservar(-2) devuelve -1 antes de alcanzar static y no llama a preparar. conservar(4) alcanza por primera vez la declaración: imprime Preparar:4; e inicializa base con 5. conservar(9) tiene un parámetro nuevo de valor 9, pero base ya está inicializada y conserva 5."
+        },
+        {
+          "type": "paragraph",
+          "text": "semilla es un parámetro por valor de cada llamada: recibe -2, después 4 y después 9. base es el objeto conservado. El parámetro que se utiliza en su inicialización dinámica es el de la llamada que realmente alcanza esa preparación por primera vez. Los argumentos posteriores no son nuevas órdenes de inicialización."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una preparación que lanza una excepción puede volver a intentarse"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recordemos las excepciones: throw interrumpe el camino normal y un catch compatible permite atender el fallo. Si la inicialización dinámica de un local static termina lanzando una excepción, no se considera completada. Al volver a alcanzar la declaración se intenta otra vez. Una vez que sí termina correctamente, las llamadas siguientes conservan el objeto inicializado (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l2_reintentar_inicializacion",
+          "language": "cpp",
+          "question": "El primer intento falla y main lo atiende. Predice los mensajes y los dos valores que se obtienen después.",
+          "code": "#include <stdexcept>\n#include <iostream>\n\nint preparar(int semilla) {\n    std::cout << \"Intento:\" << semilla << ';';\n    if (semilla < 0) {\n        throw std::runtime_error(\"Sin base\");\n    }\n    return semilla + 1;\n}\n\nint conservar(int semilla) {\n    static int base = preparar(semilla);\n    return base;\n}\n\nint main() {\n    try {\n        conservar(-1);\n    } catch (const std::exception& error) {\n        std::cout << error.what() << ';';\n    }\n    const int primero = conservar(4);\n    std::cout << \"Valor:\" << primero << ';';\n    const int segundo = conservar(9);\n    std::cout << \"Final:\" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "Intento:-1;Sin base;Intento:4;Valor:5;Final:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El intento con -1 imprime su mensaje y lanza Sin base. base no queda inicializada con éxito. La llamada con 4 vuelve a ejecutar preparar y obtiene 5. La llamada con 9 ya no repite esa preparación y devuelve el 5 conservado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Repetir el intento no deshace por sí mismo todo lo que hizo preparar antes del fallo. El mensaje del intento con -1 ya se imprimió. Este programa no modifica otros datos antes de lanzar la excepción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La inicialización se conserva; una asignación posterior se repite"
+        },
+        {
+          "type": "paragraph",
+          "text": "La declaración static no repite su inicialización después de completarla. En cambio, las demás instrucciones del cuerpo se ejecutan cada vez que la llamada las alcanza. Observa la diferencia entre el inicializador = 0 de la declaración y la asignación total = 0; escrita en la línea siguiente."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l2_asignacion_repetida",
+          "language": "cpp",
+          "question": "Predice los dos resultados. Hay una asignación a cero después de la declaración static.",
+          "code": "#include <iostream>\n\nint agregar(int cantidad) {\n    static int total = 0;\n    total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(2);\n    std::cout << primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "3:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada pone total en cero mediante la asignación y después suma 3. La segunda conserva el objeto, pero vuelve a ejecutar la asignación total = 0; antes de sumar 2. static no impide que una instrucción sustituya el valor conservado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l2_quitar_borrado_incondicional",
+          "question": "Queremos que esas dos llamadas devuelvan 3 y 5. ¿Qué cambio conserva la suma anterior?",
+          "options": [
+            "Quitar static y mantener las dos operaciones que colocan cero.",
+            "Cambiar int por const int y mantener la suma posterior.",
+            "Conservar static int total = 0; y quitar la asignación incondicional total = 0; que viene después."
+          ],
+          "correctIndex": 2,
+          "explanation": "La inicialización prepara el valor inicial una vez. La asignación posterior lo borra en cada llamada. Quitar esa asignación permite sumar la segunda cantidad al 3 conservado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reiniciar significa cambiar el objeto que ya existe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos pedir expresamente un reinicio. En registrar, el parámetro reiniciar decide si se asigna cero al total conservado. Después se suma cantidad. No se crea otro total al reiniciar: se cambia el valor del mismo objeto."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint registrar(int cantidad, bool reiniciar) {\n    static int total = 0;\n    if (reiniciar) {\n        total = 0;\n    }\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int a = registrar(3, false);\n    const int b = registrar(2, false);\n    const int c = registrar(4, true);\n    const int d = registrar(1, false);\n    std::cout << a << ':' << b << ':' << c << ':' << d;\n    return 0;\n}\n"
+        },
+        {
+          "type": "math_puzzle",
+          "id": "p3_u3l2_seguir_reinicio",
+          "schemaVersion": 1,
+          "prompt": "Completa los cuatro resultados que imprime main, en orden. Cuando reiniciar vale true, se coloca cero antes de sumar la cantidad de esa llamada.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Llamada",
+                "cantidad",
+                "reiniciar",
+                "Orden de las acciones"
+              ],
+              "rows": [
+                [
+                  "a",
+                  "3",
+                  "false",
+                  "Sumar al total conservado"
+                ],
+                [
+                  "b",
+                  "2",
+                  "false",
+                  "Sumar al total conservado"
+                ],
+                [
+                  "c",
+                  "4",
+                  "true",
+                  "Asignar cero y después sumar"
+                ],
+                [
+                  "d",
+                  "1",
+                  "false",
+                  "Sumar al total conservado"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Resultado de a",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Resultado de b",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Resultado de c",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Resultado de d",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las dos primeras llamadas llevan el total de 0 a 3 y después a 5. La tercera asigna cero y suma 4. La última suma 1 al 4 conservado y devuelve 5.",
+            "incorrect": "No reinicies en todas las llamadas ni sumes 4 al total anterior cuando reiniciar es true. Sigue el orden: reinicio solicitado, suma de esa llamada y retorno del nuevo total."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos funciones que llaman a la misma operación comparten ese total"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un local static de esta función no se crea por separado para cada función que la llama. clienteA y clienteB llaman a la misma siguiente. Por tanto, ambos pasan por la misma declaración de turno y actualizan el mismo objeto (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l2_distintos_llamadores",
+          "language": "cpp",
+          "question": "Predice las tres respuestas: primero llama clienteA, después clienteB y después clienteA otra vez.",
+          "code": "#include <iostream>\n\nint siguiente() {\n    static int turno = 0;\n    turno += 1;\n    return turno;\n}\n\nint clienteA() {\n    return siguiente();\n}\n\nint clienteB() {\n    return siguiente();\n}\n\nint main() {\n    const int a = clienteA();\n    const int b = clienteB();\n    const int c = clienteA();\n    std::cout << a << ':' << b << ':' << c;\n    return 0;\n}\n",
+          "answers": [
+            "1:2:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada aumenta turno de 0 a 1. La segunda lo aumenta de 1 a 2 aunque proceda de clienteB. La tercera lo deja en 3. No hay un contador distinto para cada cliente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dar a siguiente un parámetro con el nombre o número del cliente tampoco crearía automáticamente un objeto static por cada valor de ese parámetro. La misma declaración conservaría su mismo objeto. Si el requisito pide totales independientes, tenemos que representar esa separación mediante datos distintos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos declaraciones en funciones distintas sí definen objetos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora sumarA y sumarB contienen sus propias definiciones de total. Aunque el nombre y el tipo coinciden, son dos declaraciones locales diferentes. Cada función encuentra su propio nombre y modifica su propio objeto conservado (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l2_distintas_declaraciones",
+          "language": "cpp",
+          "question": "Predice las respuestas. No confundas estas dos definiciones con los dos clientes de la página anterior.",
+          "code": "#include <iostream>\n\nint sumarA(int cantidad) {\n    static int total = 0;\n    total += cantidad;\n    return total;\n}\n\nint sumarB(int cantidad) {\n    static int total = 0;\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    const int a = sumarA(2);\n    const int b = sumarB(3);\n    const int c = sumarA(1);\n    std::cout << a << ':' << b << ':' << c;\n    return 0;\n}\n",
+          "answers": [
+            "2:3:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El total de sumarA pasa de 0 a 2. El de sumarB empieza con su propio cero y pasa a 3. La última llamada vuelve a sumarA y aumenta su 2 hasta 3. Los dos objetos no se fusionan por tener el mismo nombre."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dentro de una repetición también se conserva el static"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el siguiente for, la ejecución pasa tres veces por las mismas declaraciones del cuerpo. acumulado es static y conserva su valor de una repetición a otra. actual tiene duración automática: cada repetición que alcanza su definición prepara un objeto nuevo con cero."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l2_duracion_en_repeticiones",
+          "language": "cpp",
+          "question": "Predice las tres parejas. En cada una se muestra primero acumulado y después actual.",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 3; ++i) {\n        static int acumulado = 0;\n        int actual = 0;\n        acumulado += 2;\n        actual += 2;\n        std::cout << acumulado << ':' << actual << ';';\n    }\n    return 0;\n}\n",
+          "answers": [
+            "2:2;4:2;6:2;"
+          ],
+          "outputComparison": "exact",
+          "explanation": "acumulado recibe las tres sumas de 2 y pasa por 2, 4 y 6. Cada actual comienza en cero y sólo recibe la suma de su repetición: siempre muestra 2. Las dos declaraciones están en el mismo bloque, pero tienen distinta duración del almacenamiento."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mover una declaración cambia qué objeto se conserva y durante qué parte del cálculo. Elige su duración según el requisito: sumar las cantidades de varias llamadas y preparar un dato nuevo en cada repetición son tareas diferentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar entre llamadas no significa guardar entre ejecuciones"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint siguiente() {\n    static int numero = 0;\n    numero += 1;\n    return numero;\n}\n\nint main() {\n    const int a = siguiente();\n    const int b = siguiente();\n    std::cout << a << ':' << b;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si ejecutamos este programa completo, las dos llamadas producen 1:2. Si el programa termina y lo iniciamos de nuevo, comienza otra ejecución con su propio numero inicializado en cero. Vuelve a producir 1:2. Un local static no guarda automáticamente un archivo ni recupera el valor de un proceso que terminó."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l2_nueva_ejecucion",
+          "question": "El programa anterior termina normalmente después de mostrar 1:2. Lo volvemos a ejecutar desde su comienzo, sin leer ningún archivo. ¿Qué muestra?",
+          "options": [
+            "1:2, porque static conserva entre llamadas dentro de cada ejecución.",
+            "3:4, porque la duración estática también conserva el número después de terminar el programa.",
+            "1:1, porque cada llamada crea un numero automático nuevo."
+          ],
+          "correctIndex": 0,
+          "explanation": "La segunda ejecución tiene sus propios objetos. Conservar datos entre ejecuciones requiere el almacenamiento persistente y la lectura que ya estudiamos en Programación 1."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Antes de conservar un cambio, comprobar si se permite"
+        },
+        {
+          "type": "paragraph",
+          "text": "La práctica reunirá cantidades en un total que debe permanecer entre 0 y 20. Cada adición permitida estará entre 1 y 5. Si el total actual es 19 y llega una petición de añadir 2, no debemos dejar 21 ni borrar el 19. Debemos rechazar esa petición y conservar 19."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero comprobamos la cantidad solicitada. Después calculamos el espacio restante: 20 - total. Con total igual a 19 queda espacio para 1 unidad; como 2 es mayor que 1, no hacemos la suma. Con total igual a 15 queda espacio para 5 unidades; añadir 5 sí se permite y deja exactamente 20."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mantener siempre el total entre 0 y 20 permite calcular con seguridad esa resta. No necesitamos sumar primero para descubrir después que el resultado incumple el límite. Recuperamos así el criterio de comprobar antes de modificar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l2_rechazo_conserva",
+          "question": "total contiene 19 y se solicita sumar 2. El máximo es 20. ¿Qué secuencia respeta el contrato?",
+          "options": [
+            "Sumar 2 y devolver -1, dejando el total en 21.",
+            "Comprobar que sólo queda espacio para 1, devolver -1 y dejar total en 19.",
+            "Poner total en cero y devolver -1 para indicar el rechazo."
+          ],
+          "correctIndex": 1,
+          "explanation": "Rechazar no es reiniciar ni aceptar parcialmente. La petición no se aplica: el objeto conserva 19 y la respuesta -1 informa del rechazo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una operación que conserva el total de una secuencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un puesto reúne cantidades durante una secuencia de órdenes. El editor recibe primero el número de órdenes, entre 1 y 15. Después recibe una pareja de enteros por orden: orden y cantidad. Todo se procesa en una misma ejecución; cada orden utiliza el total que dejaron las anteriores. No son comprobaciones independientes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa solamente gestionar(int orden, int cantidad). Debe conservar un único total local static, inicialmente cero. Mantén la firma y el código de main. La función devuelve el total cuando acepta una orden y devuelve -1 cuando la rechaza. No imprime mensajes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Orden 0: consultar. Sólo se acepta con cantidad igual a 0. Devuelve el total sin modificarlo.\nOrden 1: sumar. Sólo se acepta con cantidad entre 1 y 5 y si el nuevo total no supera 20. Aplica la suma y devuelve el nuevo total.\nOrden 2: reiniciar. Sólo se acepta con cantidad igual a 0. Coloca el total en cero y devuelve cero.\nCualquier otra pareja: devolver -1 y conservar el total anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "main llama primero a gestionar con la pareja recibida. Después llama a gestionar(0, 0) para consultar el estado que realmente quedó. Por eso la consulta debe conservarlo. Si la primera respuesta es -1, imprime Rechazo; en otro caso imprime Aceptado: seguido del valor devuelto. Después imprime ;Total: y el valor consultado, todo en una misma línea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba las condiciones antes de cambiar el total. En particular, una orden 2 acompañada de una cantidad distinta de cero se rechaza: no debe reiniciar nada. Una suma rechazada tampoco debe alterar lo acumulado."
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "La secuencia consulta, acumula, rechaza un reinicio mal formado, continúa acumulando, rechaza una suma que excede el máximo y finalmente reinicia y empieza otra suma."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "9\n0 0\n1 4\n1 5\n2 1\n1 5\n1 5\n1 2\n2 0\n1 3\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado:0;Total:0\nAceptado:4;Total:4\nAceptado:9;Total:9\nRechazo;Total:9\nAceptado:14;Total:14\nAceptado:19;Total:19\nRechazo;Total:19\nAceptado:0;Total:0\nAceptado:3;Total:3\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint gestionar(int orden, int cantidad) {\n    // Conserva aqui un unico total entre llamadas.\n    // Aplica el contrato de consultar, sumar o reiniciar.\n    // Devuelve -1 al rechazar y conserva el total anterior.\n    if (orden == 0) {\n        return 0;\n    }\n    return cantidad;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 15) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int orden = 0;\n        int cantidad = 0;\n        if (!(std::cin >> orden >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const int respuesta = gestionar(orden, cantidad);\n        const int totalActual = gestionar(0, 0);\n        if (respuesta == -1) {\n            std::cout << \"Rechazo\";\n        } else {\n            std::cout << \"Aceptado:\" << respuesta;\n        }\n        std::cout << \";Total:\" << totalActual << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "9\n0 0\n1 4\n1 5\n2 1\n1 5\n1 5\n1 2\n2 0\n1 3\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "9\n0 0\n1 4\n1 5\n2 1\n1 5\n1 5\n1 2\n2 0\n1 3\n",
+                "outputs": [
+                  "Aceptado:0;Total:0\nAceptado:4;Total:4\nAceptado:9;Total:9\nRechazo;Total:9\nAceptado:14;Total:14\nAceptado:19;Total:19\nRechazo;Total:19\nAceptado:0;Total:0\nAceptado:3;Total:3\n"
+                ],
+                "explanation": "Procesar las órdenes en secuencia, conservar el total entre llamadas y rechazos, aplicar sólo las órdenes válidas y mostrar el resultado y el estado consultado."
+              },
+              {
+                "standardInput": "7\n1 5\n1 5\n1 5\n1 5\n1 1\n0 0\n2 0\n",
+                "outputs": [
+                  "Aceptado:5;Total:5\nAceptado:10;Total:10\nAceptado:15;Total:15\nAceptado:20;Total:20\nRechazo;Total:20\nAceptado:20;Total:20\nAceptado:0;Total:0\n"
+                ],
+                "explanation": "Procesar las órdenes en secuencia, conservar el total entre llamadas y rechazos, aplicar sólo las órdenes válidas y mostrar el resultado y el estado consultado."
+              },
+              {
+                "standardInput": "8\n1 2\n1 0\n1 -1\n1 6\n3 0\n0 1\n2 -1\n0 0\n",
+                "outputs": [
+                  "Aceptado:2;Total:2\nRechazo;Total:2\nRechazo;Total:2\nRechazo;Total:2\nRechazo;Total:2\nRechazo;Total:2\nRechazo;Total:2\nAceptado:2;Total:2\n"
+                ],
+                "explanation": "Procesar las órdenes en secuencia, conservar el total entre llamadas y rechazos, aplicar sólo las órdenes válidas y mostrar el resultado y el estado consultado."
+              },
+              {
+                "standardInput": "7\n1 5\n2 0\n0 0\n2 0\n1 1\n1 4\n0 0\n",
+                "outputs": [
+                  "Aceptado:5;Total:5\nAceptado:0;Total:0\nAceptado:0;Total:0\nAceptado:0;Total:0\nAceptado:1;Total:1\nAceptado:5;Total:5\nAceptado:5;Total:5\n"
+                ],
+                "explanation": "Procesar las órdenes en secuencia, conservar el total entre llamadas y rechazos, aplicar sólo las órdenes válidas y mostrar el resultado y el estado consultado."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo este primer caso correcto es obligatorio para avanzar. Los siguientes son ensayos opcionales. Cada uno inicia otra ejecución completa con un total inicial cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: límite exacto y órdenes rechazadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Estos casos permiten revisar otras condiciones sin cambiar el contrato. En cada línea de entrada se procesa una orden; el resultado de esa orden debe conservarse para la siguiente."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se llega exactamente a 20. Añadir una unidad más se rechaza; una consulta conserva 20 y el reinicio válido lo lleva a cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "7\n1 5\n1 5\n1 5\n1 5\n1 1\n0 0\n2 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado:5;Total:5\nAceptado:10;Total:10\nAceptado:15;Total:15\nAceptado:20;Total:20\nRechazo;Total:20\nAceptado:20;Total:20\nAceptado:0;Total:0\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de acumular 2, se rechazan cantidades fuera del intervalo, una orden desconocida y consultas o reinicios mal formados. Ninguno debe borrar el 2."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n1 2\n1 0\n1 -1\n1 6\n3 0\n0 1\n2 -1\n0 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado:2;Total:2\nRechazo;Total:2\nRechazo;Total:2\nRechazo;Total:2\nRechazo;Total:2\nRechazo;Total:2\nRechazo;Total:2\nAceptado:2;Total:2\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayo opcional: consultar y reiniciar sin perder la regla"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reiniciar cuando el total ya es cero también se acepta. Consultar no añade una cantidad ni inicia otra suma. Después de un reinicio, las adiciones posteriores se acumulan sobre el cero que se solicitó."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se reinicia dos veces, se consulta el cero y después se suman 1 y 4. La consulta final debe devolver 5."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "7\n1 5\n2 0\n0 0\n2 0\n1 1\n1 4\n0 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado:5;Total:5\nAceptado:0;Total:0\nAceptado:0;Total:0\nAceptado:0;Total:0\nAceptado:1;Total:1\nAceptado:5;Total:5\nAceptado:5;Total:5\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: conservar el objeto y aceptar sólo los cambios válidos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint gestionar(int orden, int cantidad) {\n    static int total = 0;\n    if (orden == 0 && cantidad == 0) {\n        return total;\n    }\n    if (orden == 2 && cantidad == 0) {\n        total = 0;\n        return total;\n    }\n    if (orden != 1 || cantidad < 1 || cantidad > 5 ||\n        cantidad > 20 - total) {\n        return -1;\n    }\n    total += cantidad;\n    return total;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 15) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int orden = 0;\n        int cantidad = 0;\n        if (!(std::cin >> orden >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const int respuesta = gestionar(orden, cantidad);\n        const int totalActual = gestionar(0, 0);\n        if (respuesta == -1) {\n            std::cout << \"Rechazo\";\n        } else {\n            std::cout << \"Aceptado:\" << respuesta;\n        }\n        std::cout << \";Total:\" << totalActual << '\\n';\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "total es el objeto que conserva la suma entre llamadas. orden y cantidad son parámetros por valor: cada llamada recibe sus propias peticiones. Las dos primeras condiciones atienden únicamente las parejas válidas de consulta y reinicio. Una pareja como 2 1 no entra en el reinicio válido y se rechaza después sin modificar el total."
+        },
+        {
+          "type": "paragraph",
+          "text": "En una suma válida, se comprueba primero que la cantidad está entre 1 y 5. Se compara después con 20 - total. Sólo si se cumplen ambas condiciones se ejecuta total += cantidad;. El objeto permanece entre 0 y 20, así que -1 sirve como respuesta de rechazo sin confundirse con un total aceptado."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el caso obligatorio, el total pasa por 0, 4 y 9. El reinicio mal formado conserva 9. Las siguientes sumas lo llevan a 14 y 19. Añadir 2 se rechaza y conserva 19. El reinicio válido lo lleva a cero y la última adición lo deja en 3. Las consultas de main permiten observar esos mismos estados."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l2_error_local_automatico",
+          "question": "Una variante conserva todas las condiciones, pero cambia static int total = 0; por int total = 0;. ¿Qué requisito deja de cumplir?",
+          "options": [
+            "Rechazar cantidades mayores que 5.",
+            "Distinguir las órdenes 0, 1 y 2.",
+            "Conservar el total entre llamadas; incluso la consulta de main encontraría un total nuevo con cero."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cada llamada de la variante define otro total automático con cero. La petición y la consulta posterior ya no acceden al mismo estado conservado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la duración según los datos que deben compartir las llamadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un local automático prepara un objeto para la ejecución de su bloque. Un local static conserva su almacenamiento entre las llamadas o repeticiones que pasan por esa misma declaración. Los dos pueden tener ámbito de bloque: conservar durante más tiempo no hace visible el nombre en cualquier parte."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si todas las llamadas deben reunir cantidades en un único total, el local static permite esa continuidad. Si dos series deben conservar totales independientes, no basta con llamar a esa misma función con dos nombres de cliente. Necesitaremos representar cada serie mediante sus propios datos. A medida que avancemos, aprenderemos a reunir esos datos en objetos que se puedan crear y utilizar por separado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al revisar una función, identifica cuatro cosas: qué recibe en esta llamada, qué objeto conserva de las anteriores, qué instrucciones pueden modificarlo y qué resultado devuelve. Distingue también iniciar un objeto, asignarle otro valor y comenzar una ejecución nueva del programa."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l2_elegir_estado_independiente",
+          "question": "Dos series deben acumular cantidades sin afectarse entre sí. Una única función contiene un único static int total y recibe un número de serie que no utiliza para seleccionar otros datos. ¿Qué problema sigue existiendo?",
+          "options": [
+            "Las llamadas de ambas series siguen modificando el mismo total; el parámetro por sí solo no crea dos estados.",
+            "Al cambiar de serie, static vuelve a ejecutar su inicializador y el total regresa a cero.",
+            "Los dos totales ya son independientes porque cambió el argumento."
+          ],
+          "correctIndex": 0,
+          "explanation": "La declaración define un objeto conservado en esa función. Cambiar un argumento no duplica ese objeto. La independencia debe estar representada por datos separados, de acuerdo con el requisito."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "302a76ad7aef789cb512cb5ac5dc7d0801d8d564848c5cf3168698ed4932077a"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "15014934a9e381c68ca3e3e3dfc27cdee3010defe33d3aee5a41be7339fc9a2f"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "d843408e5a80e66fd578fb9df272694e8521746e25f0a21921b8f341b1c6f26a"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "35874680ca04cbcc96eb8eb46a0381ed5268e8cad3fb3dbfdcb283d51297261f"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "c65774f3c6f778c22e330c67dbff0f8d410543cc2cf5e8d78ff8744319ad3be9"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "490ddd4c84682e96f6706ecfdd50f3a9eeea796f34083e6a05f4bd45e22d638f"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "b4b3b4aa8881a7b2dc778887837a79b016703f97c3f191c1840c224de8bb5b76"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "d482cddfff692e37f19c27b44b9b9761156aad1c27b863d83a9906b00aae4e01"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "283b70f841bd5443b7bd0e6105e2864c4ed47685d64a43996646bc21ad291032"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "78aed16ec20c6f3571d3262ad6434ea42311f00c66e7b40fcffc392c83b7c0ab"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "a6d313eaff0d71eedea2c625cee70b7d9756703574325b3e8d1e64b16371627b"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "440b0fcfc5cebccb7278d0960c91dc5c26f441f0513b861c96d225d19dfb9930"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "112d7d0ec632a6a748045ae282fe7dc4a7f30845d85563afe9ac56db80ff19a7"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "5fcee71744f43e6601f6907b3d664572742eaa35193a0a77bfccf93d30af9fa7"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "68198c0f64f1bec901b14fa5a9f72e0fa8cec2e1b8702bddb4c62385e23f18d9"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "48ebaf9c17851dcf3617ca1106352af15d6bf1f1ee6b6444a2625d4560b34ba0"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "f6338d8e2fbd594bd641df5532a5b2eaaaec2da48218b15ee2f292b85b5820db"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "def5dc04b431c073400b888e26fd8a1de044627444befd9c17f19f3847fb8045"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0009",
+            "sha256": "17b3d16ee9870b080b0de4ebb095abed26b862d8858d7145691914a6224b3071"
+          },
+          {
+            "id": "block_0014_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0011",
+            "sha256": "d78ae61f4cdd74d8508fdaaca72df73e8f0ed84389753610029894eb9781ad1b"
+          },
+          {
+            "id": "block_0014_0012",
+            "sha256": "e79b5ec45608bbd61ab2205ac4504b911d779992e140feadd8146972474b6a1f"
+          },
+          {
+            "id": "block_0014_0013",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0005",
+            "sha256": "9e9d0ccfc2d36fb0373549e091f8787121748da7a989ae2b029161cbaffaf535"
+          },
+          {
+            "id": "block_0015_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0007",
+            "sha256": "13f3f2c264f4733b15ffd1193c4fd9b020e4eaba10e47138bca7da65138125c6"
+          },
+          {
+            "id": "block_0015_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0011",
+            "sha256": "3c3d3094bfc25619d083596d2ba69af2a18b8a17e9300aa4b5cdfc40f1ca319e"
+          },
+          {
+            "id": "block_0015_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0013",
+            "sha256": "d5e6e55547cd5f9f6473266905f5c5f73883b352befeb239f7070ed1b7b56c7e"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "d0ccb16346a55b8a652c4b44b0b12e5cc1638c3f23d98f4720cb1861188b1641"
+          },
+          {
+            "id": "block_0016_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0007",
+            "sha256": "d51c94a447de6345f49fcf027785b09dd8f4b0d6100b44b5fa1fd2cdfdd49cfe"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "8651079dc3ab3702f45045cb41aa5f906b20efb1deaa1d75414f590d0fd12345"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "7b322905cbed10b8cca55c403487ff3ace0e0ded0d1b5dbf9db739fb3ae1a2e1"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "0022f7d2fb3610c363da4f4a57866fe6905c3d3bd74150b9097b9f4a27db7da7"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005",
+          "block_0014_0006",
+          "block_0014_0007",
+          "block_0014_0008",
+          "block_0014_0009",
+          "block_0014_0010",
+          "block_0014_0011",
+          "block_0014_0012",
+          "block_0014_0013"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004",
+          "block_0015_0005",
+          "block_0015_0006",
+          "block_0015_0007",
+          "block_0015_0008",
+          "block_0015_0009",
+          "block_0015_0010",
+          "block_0015_0011",
+          "block_0015_0012",
+          "block_0015_0013"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005",
+          "block_0016_0006",
+          "block_0016_0007"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "4bf8bab9b64071e13177536f2fe2097a8d1ee9fadcaf6ce025e7bdc58dacccc2",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "302a76ad7aef789cb512cb5ac5dc7d0801d8d564848c5cf3168698ed4932077a"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "15014934a9e381c68ca3e3e3dfc27cdee3010defe33d3aee5a41be7339fc9a2f"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "d843408e5a80e66fd578fb9df272694e8521746e25f0a21921b8f341b1c6f26a"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "35874680ca04cbcc96eb8eb46a0381ed5268e8cad3fb3dbfdcb283d51297261f"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "c65774f3c6f778c22e330c67dbff0f8d410543cc2cf5e8d78ff8744319ad3be9"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "490ddd4c84682e96f6706ecfdd50f3a9eeea796f34083e6a05f4bd45e22d638f"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "b4b3b4aa8881a7b2dc778887837a79b016703f97c3f191c1840c224de8bb5b76"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "d482cddfff692e37f19c27b44b9b9761156aad1c27b863d83a9906b00aae4e01"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "283b70f841bd5443b7bd0e6105e2864c4ed47685d64a43996646bc21ad291032"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "78aed16ec20c6f3571d3262ad6434ea42311f00c66e7b40fcffc392c83b7c0ab"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "a6d313eaff0d71eedea2c625cee70b7d9756703574325b3e8d1e64b16371627b"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "440b0fcfc5cebccb7278d0960c91dc5c26f441f0513b861c96d225d19dfb9930"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "112d7d0ec632a6a748045ae282fe7dc4a7f30845d85563afe9ac56db80ff19a7"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "5fcee71744f43e6601f6907b3d664572742eaa35193a0a77bfccf93d30af9fa7"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "68198c0f64f1bec901b14fa5a9f72e0fa8cec2e1b8702bddb4c62385e23f18d9"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "48ebaf9c17851dcf3617ca1106352af15d6bf1f1ee6b6444a2625d4560b34ba0"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "f6338d8e2fbd594bd641df5532a5b2eaaaec2da48218b15ee2f292b85b5820db"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "def5dc04b431c073400b888e26fd8a1de044627444befd9c17f19f3847fb8045"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0009",
+                "sha256": "17b3d16ee9870b080b0de4ebb095abed26b862d8858d7145691914a6224b3071"
+              },
+              {
+                "id": "block_0014_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0011",
+                "sha256": "d78ae61f4cdd74d8508fdaaca72df73e8f0ed84389753610029894eb9781ad1b"
+              },
+              {
+                "id": "block_0014_0012",
+                "sha256": "e79b5ec45608bbd61ab2205ac4504b911d779992e140feadd8146972474b6a1f"
+              },
+              {
+                "id": "block_0014_0013",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0005",
+                "sha256": "9e9d0ccfc2d36fb0373549e091f8787121748da7a989ae2b029161cbaffaf535"
+              },
+              {
+                "id": "block_0015_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0007",
+                "sha256": "13f3f2c264f4733b15ffd1193c4fd9b020e4eaba10e47138bca7da65138125c6"
+              },
+              {
+                "id": "block_0015_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0011",
+                "sha256": "3c3d3094bfc25619d083596d2ba69af2a18b8a17e9300aa4b5cdfc40f1ca319e"
+              },
+              {
+                "id": "block_0015_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0013",
+                "sha256": "d5e6e55547cd5f9f6473266905f5c5f73883b352befeb239f7070ed1b7b56c7e"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "d0ccb16346a55b8a652c4b44b0b12e5cc1638c3f23d98f4720cb1861188b1641"
+              },
+              {
+                "id": "block_0016_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0007",
+                "sha256": "d51c94a447de6345f49fcf027785b09dd8f4b0d6100b44b5fa1fd2cdfdd49cfe"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "8651079dc3ab3702f45045cb41aa5f906b20efb1deaa1d75414f590d0fd12345"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "7b322905cbed10b8cca55c403487ff3ace0e0ded0d1b5dbf9db739fb3ae1a2e1"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "0022f7d2fb3610c363da4f4a57866fe6905c3d3bd74150b9097b9f4a27db7da7"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

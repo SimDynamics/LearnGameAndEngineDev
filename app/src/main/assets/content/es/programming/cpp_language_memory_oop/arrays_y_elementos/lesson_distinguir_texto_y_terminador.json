@@ -1,0 +1,1697 @@
+{
+  "id": "cpp_language_memory_oop__arrays_y_elementos__distinguir_texto_y_terminador",
+  "title": "Distinguir el texto, la capacidad y el terminador",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Guardar texto en elementos char"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Programación 1 utilizamos std::string para conservar texto. Ahora estudiaremos otra representación: un array de char que guarda los elementos del texto y, a continuación, un char de valor cero para indicar su final. Esa representación se llama cadena de estilo C o cadena C terminada en nulo (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, char texto[4]{'s', 'o', 'l', '\\0'}; contiene cuatro elementos. Los índices 0, 1 y 2 contienen s, o y l. El índice 3 contiene el carácter nulo, escrito '\\0', que señala el final. La longitud de esta cadena C es tres: cuenta los char anteriores al terminador y no incluye el terminador (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Índice:       0     1     2      3\nValor:        s     o     l     NUL\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "NUL es el rótulo que usaremos para mostrar ese valor en tablas e informes. No son tres letras guardadas en el elemento. '\\0' tampoco guarda una barra, un cero ni las comillas: es la escritura de un solo carácter de valor cero en el código."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l3_longitud_y_terminador",
+          "question": "El array del ejemplo tiene cuatro elementos. ¿Qué cuenta la longitud tres de su cadena C?",
+          "options": [
+            "Los tres char anteriores al primer NUL.",
+            "Todos sus elementos menos los que tengan letras repetidas.",
+            "Los cuatro elementos, porque el terminador también se imprime."
+          ],
+          "correctIndex": 0,
+          "explanation": "La longitud cuenta s, o y l. El terminador ocupa otro elemento del array, pero no forma parte de esos tres char."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El dígito '0' no es el terminador '\\0'"
+        },
+        {
+          "type": "paragraph",
+          "text": "El carácter '0' representa el dígito que podemos leer en un texto, por ejemplo en A0. El carácter '\\0' tiene valor cero y desempeña la función de terminador en una cadena C. El dígito '0' tiene un valor distinto de cero; no hay que memorizar su código numérico para distinguirlos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al escribir std::cout << datos; con este array de char, se utiliza la cadena C que comienza en su primer elemento. Se muestran los char anteriores al primer NUL. datos[3] sigue existiendo, pero no se muestra como continuación de esa cadena (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l3_cero_y_digito",
+          "language": "cpp",
+          "question": "Predice el texto y las tres comparaciones. El array sí contiene un terminador antes de su último elemento.",
+          "code": "#include <iostream>\n\nint main() {\n    char datos[4]{'A', '0', '\\0', 'B'};\n    std::cout << datos << ':' << (datos[1] == '0') << ':'\n              << (datos[1] == '\\0') << ':' << (datos[2] == '\\0');\n    return 0;\n}\n",
+          "answers": [
+            "A0:1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El texto es A0: el dígito se incluye y el primer NUL detiene esa salida. datos[1] coincide con '0', no con '\\0'. datos[2] sí coincide con '\\0'. La B permanece en el array después del terminador."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Inicializar el array con un literal de texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "En char justo[]{\"sol\"};, los valores del literal inicializan otro array. El literal aporta s, o, l y un terminador final, por lo que se deducen cuatro elementos. En char amplio[6]{\"sol\"}; se reservan seis: los primeros cuatro reciben esos mismos valores y los otros dos se inicializan con cero, que en char es el valor nulo (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "sizeof(char) es 1. Por eso sizeof justo mide cuatro bytes y sizeof amplio mide seis, independientemente de cuántos bits tenga un byte en una implementación. Estas medidas cuentan el almacenamiento completo, no la longitud del texto."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l3_inicializacion",
+          "language": "cpp",
+          "question": "Predice los dos tamaños en bytes y si amplio[3] y amplio[5] contienen '\\0'.",
+          "code": "#include <iostream>\n\nint main() {\n    char justo[]{\"sol\"};\n    char amplio[6]{\"sol\"};\n\n    std::cout << sizeof justo << ':' << sizeof amplio << ':'\n              << (amplio[3] == '\\0') << ':' << (amplio[5] == '\\0');\n    return 0;\n}\n",
+          "answers": [
+            "4:6:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "justo contiene tres char del texto y el terminador: cuatro elementos. amplio contiene seis y sus índices 3, 4 y 5 son nulos. No hay seis letras en esa cadena."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reservar espacio también para el terminador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para inicializar un array con el literal \"sol\" hacen falta al menos cuatro elementos: tres para el texto y uno para el terminador implícito. char texto[3]{\"sol\"}; no es una definición válida en C++23: la lista de valores del literal no cabe. No se elimina automáticamente el terminador para hacerla caber (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cambio, char letras[3]{'s', 'o', 'l'}; sí define un array de tres char, todos inicializados, pero no contiene un terminador. Podemos consultar sus tres elementos por sus índices válidos. No debemos proporcionarlo a una operación que espera una cadena C terminada, como std::cout << letras;."
+        },
+        {
+          "type": "paragraph",
+          "text": "La cadena C vacía también necesita almacenamiento para su terminador: char vacio[]{\"\"}; tiene un elemento, de valor nulo, y longitud cero. Un array char vacio[6]{}; tiene seis elementos nulos y también una cadena C vacía al comienzo. Ninguno es un array nativo de extensión cero."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l3_minimo_vacio",
+          "question": "¿Cuántos elementos tiene el array definido mediante char vacio[]{\"\"};?",
+          "options": [
+            "Cero: no se escribió texto entre las comillas.",
+            "Dos: uno por cada comilla.",
+            "Uno: contiene el terminador del literal vacío."
+          ],
+          "correctIndex": 2,
+          "explanation": "Las comillas delimitan el literal en el código. Su contenido vacío aporta el terminador, por lo que se deduce un array de un char."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modificar el array local sin modificar el literal"
+        },
+        {
+          "type": "paragraph",
+          "text": "El literal ordinario \"sol\" tiene tipo const char[4]: sus cuatro char no son modificables. En char texto[]{\"sol\"}; se define otro array local de cuatro char, sin const. Cambiar texto[0] modifica ese elemento del array local, no el objeto del literal (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l3_array_modificable",
+          "language": "cpp",
+          "question": "Predice las dos palabras separadas por dos puntos.",
+          "code": "#include <iostream>\n\nint main() {\n    char texto[]{\"sol\"};\n    texto[0] = 'S';\n    std::cout << texto << ':' << \"sol\";\n    return 0;\n}\n",
+          "answers": [
+            "Sol:sol"
+          ],
+          "outputComparison": "exact",
+          "explanation": "texto[0] recibe la S mayúscula y la copia local pasa a contener Sol. El literal que se escribe después sigue proporcionando sol."
+        },
+        {
+          "type": "paragraph",
+          "text": "La propiedad const del literal no se transmite a ese array declarado como char. Tampoco escribir un literal entre comillas crea por sí solo un std::string: ese tipo es otra forma de conservar texto, ya utilizada en el curso anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Unir literales vecinos al compilar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos literales ordinarios de texto escritos uno junto al otro, separados sólo por espacios, tabuladores o saltos de línea del código, se unen al traducir el programa. No se necesita + y no se añade un espacio entre sus contenidos. \"Ruta \" \"7\" aporta el mismo texto que \"Ruta 7\"; el espacio ya está dentro del primer literal (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l3_literales_vecinos",
+          "language": "cpp",
+          "question": "Predice el texto y el tamaño completo del array en bytes.",
+          "code": "#include <iostream>\n\nint main() {\n    char texto[]{\"Ruta \" \"7\"};\n    std::cout << texto << ':' << sizeof texto;\n    return 0;\n}\n",
+          "answers": [
+            "Ruta 7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El texto contiene seis char: R, u, t, a, un espacio y 7. El literal unido aporta además un terminador final. El array deducido contiene siete elementos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta unión pertenece al código de los literales. No concatena automáticamente dos arrays cuyos valores se conocen durante la ejecución. Las reglas de asignación de arrays nativos de la lección anterior siguen vigentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Medir la longitud de una cadena C"
+        },
+        {
+          "type": "paragraph",
+          "text": "La cabecera <cstring> permite utilizar std::strlen. La llamada std::strlen(texto) cuenta los char que hay desde el principio de la cadena C hasta el primer NUL, sin incluirlo. Devuelve std::size_t, un entero sin signo, como sizeof. El argumento texto debe proporcionar una cadena correctamente terminada; la llamada no recibe aquí la capacidad del array para limitar la búsqueda (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de usarla debemos saber que se encontrará un terminador dentro del almacenamiento válido y que los valores leídos están establecidos. Un array local char texto[6]; sin inicializador no garantiza ni texto vacío ni un terminador disponible. No hay que llamar a strlen para averiguarlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "La longitud cuenta char, incluidos espacios o saltos de línea anteriores al NUL; no cuenta sólo letras visibles. En estos ejemplos utilizamos letras latinas sin acento, dígitos y signos sencillos. En otras codificaciones una letra o un emoji puede necesitar varios elementos char. Ese recuento tampoco equivale siempre a la cantidad de símbolos que una persona ve (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l3_condicion_strlen",
+          "question": "¿Qué necesitamos comprobar antes de llamar a std::strlen sobre un array local de char?",
+          "options": [
+            "Que tenga al menos seis elementos y empiece por una letra.",
+            "Que un NUL esté dentro del array y los elementos anteriores tengan valores establecidos.",
+            "Que no haya ningún NUL, para contar todos los elementos."
+          ],
+          "correctIndex": 1,
+          "explanation": "El tamaño por sí solo no garantiza la terminación. El primer carácter puede ser un dígito o el propio NUL, que representa una cadena C vacía."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un cero interior no tiene la misma función en todas las representaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Programación 1 conservamos NUL dentro de un std::string y recorrimos todos sus elementos. Aquí debemos distinguir esa cadena de una cadena C: std::string conserva su propia longitud y puede incluir el cero como dato; strlen termina su recuento en el primer NUL. No se aplica esa parada a cualquier clase de texto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, el literal \"nube\\0Z\" aporta n, u, b, e, NUL, Z y otro NUL final implícito. Un array cuya extensión se deduce de él contiene siete char. La cadena C que comienza en su primer elemento es nube y tiene longitud cuatro. En cambio, std::string ejemplo{'n', 'u', 'b', 'e', '\\0', 'Z'}; conserva los seis elementos de su lista, incluido el NUL interior y la Z posterior. ejemplo.size() devuelve seis. Aplica esa diferencia a los datos del programa siguiente."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l3_cero_interior",
+          "language": "cpp",
+          "question": "Predice la capacidad de datos, su longitud como cadena C, la longitud del std::string y el carácter de datos[2].",
+          "code": "#include <cstring>\n#include <iostream>\n#include <string>\n\nint main() {\n    char datos[]{\"a\\0b\"};\n    std::string cadena{'a', '\\0', 'b'};\n\n    std::cout << sizeof datos << ':' << std::strlen(datos) << ':'\n              << cadena.size() << ':' << datos[2];\n    return 0;\n}\n",
+          "answers": [
+            "4:1:3:b"
+          ],
+          "outputComparison": "exact",
+          "explanation": "sizeof datos mide los cuatro char. strlen cuenta sólo la a anterior al primer NUL. cadena.size() cuenta los tres elementos de la lista, y datos[2] sigue conteniendo b."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Acortar el texto no borra el resto del array"
+        },
+        {
+          "type": "paragraph",
+          "text": "Guardar '\\0' antes del terminador anterior hace que una operación de cadena C se detenga antes. Sólo cambia el elemento asignado: los posteriores siguen existiendo con sus valores anteriores. Tampoco cambia la capacidad del array (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l3_acortar",
+          "language": "cpp",
+          "question": "Se sustituye la l por NUL. Predice el texto entre corchetes, su longitud, los dos char posteriores que se consultan por índice y la capacidad.",
+          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char texto[6]{\"solar\"};\n    texto[2] = '\\0';\n\n    std::cout << '[' << texto << ']' << ':' << std::strlen(texto) << ':'\n              << texto[3] << texto[4] << ':' << sizeof texto;\n    return 0;\n}\n",
+          "answers": [
+            "[so]:2:ar:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La cadena C pasa a ser so y mide dos. Los índices 3 y 4 siguen conteniendo a y r. El array mantiene seis elementos. Consultarlos por índices válidos no los convierte en continuación de la cadena C acortada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir un terminador de un dígito al cambiar un elemento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si después se sustituye un NUL interior por '0', ese elemento deja de señalar el final. Los valores que seguían guardados pueden volver a formar parte de la cadena C, hasta el siguiente NUL. Busca de nuevo el primer terminador; no supongas que los valores posteriores se borraron."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u2l3_cambiar_terminador",
+          "prompt": "La tabla muestra los seis elementos iniciales de char datos[6]. NUL representa el valor '\\0'. Primero se ejecuta datos[1] = '\\0'; y se mide la longitud de la cadena C. Después se ejecuta datos[1] = '0'; y se vuelve a medir. No se escribe en ningún otro elemento. Completa las tres cantidades.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Índice",
+                "Valor inicial"
+              ],
+              "rows": [
+                [
+                  "0",
+                  "r"
+                ],
+                [
+                  "1",
+                  "o"
+                ],
+                [
+                  "2",
+                  "c"
+                ],
+                [
+                  "3",
+                  "a"
+                ],
+                [
+                  "4",
+                  "NUL"
+                ],
+                [
+                  "5",
+                  "NUL"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "capacidad",
+                  "type": "numeric",
+                  "label": "Capacidad del array después de los dos cambios",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "corta",
+                  "type": "numeric",
+                  "label": "Longitud tras guardar '\\0' en datos[1]",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "nueva",
+                  "type": "numeric",
+                  "label": "Longitud tras guardar '0' en datos[1]",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "capacidad": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "corta": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "nueva": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El primer cambio deja el primer NUL en el índice 1, después de r. El segundo lo sustituye por el dígito 0; como c y a seguían guardados, el primer NUL vuelve a estar en el índice 4. La extensión continúa siendo seis.",
+            "incorrect": "El terminador cambia dónde termina la cadena C; no borra los elementos posteriores ni cambia la extensión. El dígito '0' no es un terminador. Busca el primer NUL después de cada cambio."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Buscar el terminador sin salir del array"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando no sabemos si un array está terminado, podemos inspeccionar sus elementos con un límite explícito. longitud empieza en 0 y el recorrido sólo avanza mientras longitud < capacidad y datos[longitud] no sea '\\0'. El operador && comprueba primero el límite; si éste falla, no se evalúa el acceso de la derecha."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al salir, longitud < capacidad confirma que se encontró un NUL. longitud == capacidad significa que se inspeccionaron todos los elementos disponibles y no se encontró ninguno. En ese segundo caso el número obtenido no autoriza a usar el array como cadena C. Todos los elementos que se inspeccionan deben tener sus valores establecidos."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u2l3_limitar_busqueda",
+          "language": "cpp",
+          "question": "capacidad vale 6 y longitud empieza en 0. Completa ambos operadores para comprobar el límite antes de leer y detenerte al encontrar el primer '\\0'.",
+          "template": "while (longitud [] capacidad && datos[longitud] [] '\\0') {\n    ++longitud;\n}\n",
+          "answers": [
+            "<",
+            "!="
+          ],
+          "explanation": "La primera comparación impide consultar datos[6]. La segunda hace que el recorrido termine en el primer NUL. Invertir estas comprobaciones podría leer fuera antes de comprobar el límite."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l3_sin_terminacion",
+          "language": "cpp",
+          "question": "El programa no utiliza strlen ni envía datos como cadena C. Predice el contador final, la confirmación de terminación y los seis char mostrados uno a uno.",
+          "code": "#include <iostream>\n\nint main() {\n    char datos[6]{'s', 'o', 'l', 'A', 'X', 'Y'};\n    const int capacidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n    int longitud = 0;\n    while (longitud < capacidad && datos[longitud] != '\\0') {\n        ++longitud;\n    }\n\n    std::cout << longitud << ':' << (longitud < capacidad) << ':';\n    for (int i = 0; i < capacidad; ++i) {\n        std::cout << datos[i];\n    }\n    return 0;\n}\n",
+          "answers": [
+            "6:0:solAXY"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se inspeccionan los índices 0 a 5 sin encontrar NUL. Con longitud igual a 6 falla la primera comparación antes de otro acceso. La confirmación es falsa. El for posterior consulta seis char por sus índices válidos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una ampliación conservando el terminador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa la parte indicada del editor para añadir un carácter al final de una cadena C, sin cambiar su capacidad. La entrada contiene modo y nuevo: un selector entre 0 y 4 y un carácter sencillo, no blanco y distinto de NUL. Puede ser una letra, un dígito o un signo. La lectura de char obtiene ese carácter como dato, no las comillas de un literal."
+        },
+        {
+          "type": "paragraph",
+          "text": "El selector prepara seis char en este orden. NUL representa el carácter nulo:\nModo 0: s o l NUL X Y.\nModo 1: s o l a r NUL.\nModo 2: s o l A X Y.\nModo 3: NUL o l NUL X Y.\nModo 4: s NUL l NUL X Y."
+        },
+        {
+          "type": "paragraph",
+          "text": "El código inicial ya calcula capacidad y busca de forma acotada el primer NUL. terminada indica si lo encontró; longitud señala su índice cuando existe. Para añadir nuevo hacen falta dos elementos consecutivos: el del terminador actual, que recibirá nuevo, y el siguiente, que debe recibir el nuevo terminador. Ambos deben existir antes de escribir."
+        },
+        {
+          "type": "paragraph",
+          "text": "Acepta sólo si terminada es true y longitud es menor que capacidad - 1. Al aceptar, guarda nuevo en datos[longitud], guarda '\\0' en el elemento siguiente y deja aceptado en true. No cambies los demás elementos. Si no hay terminador o no queda ese espacio adicional, conserva los seis char y deja aceptado en false."
+        },
+        {
+          "type": "paragraph",
+          "text": "capacidad vale 6, de modo que capacidad - 1 es 5. Si la longitud ya es 5, sustituir su NUL por una letra dejaría el array sin terminador y no existe un elemento siguiente donde guardarlo. Si la longitud es 0, la cadena C está vacía y sí puede ampliarse; eso no exige que los demás elementos sean cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mantén la preparación, la lectura y el informe. El informe vuelve a buscar el terminador con límite antes de imprimir Texto. Si falta, escribe (sin terminador) y muestra por separado los elementos en Datos, usando el rótulo NUL. No llama a una operación de cadena C sobre datos sin terminación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer caso, obligatorio:\nEntrada: 0 Z\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nTexto=solZ\nDatos=s o l Z NUL Y\nCapacidad=6\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int modo = 0;\n    char nuevo = 'A';\n    if (!(std::cin >> modo >> nuevo)) {\n        return 1;\n    }\n    char datos[6]{'s', 'o', 'l', '\\0', 'X', 'Y'};\n    if (modo == 1) {\n        datos[3] = 'a';\n        datos[4] = 'r';\n        datos[5] = '\\0';\n    } else if (modo == 2) {\n        datos[3] = 'A';\n    } else if (modo == 3) {\n        datos[0] = '\\0';\n    } else if (modo == 4) {\n        datos[1] = '\\0';\n    } else if (modo != 0) {\n        return 1;\n    }\n    const int capacidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n    int longitud = 0;\n    while (longitud < capacidad && datos[longitud] != '\\0') {\n        ++longitud;\n    }\n    const bool terminada = longitud < capacidad;\n\n    bool aceptado = false;\n    if (terminada) {\n        // Comprueba el espacio antes de escribir.\n        // Anade nuevo y el terminador siguiente solo al aceptar.\n    }\n\n    int longitudActual = 0;\n    while (longitudActual < capacidad && datos[longitudActual] != '\\0') {\n        ++longitudActual;\n    }\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Texto=\";\n    if (longitudActual < capacidad) {\n        std::cout << datos;\n    } else {\n        std::cout << \"(sin terminador)\";\n    }\n    std::cout << '\\n' << \"Datos=\";\n    for (int i = 0; i < capacidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        if (datos[i] == '\\0') {\n            std::cout << \"NUL\";\n        } else {\n            std::cout << datos[i];\n        }\n    }\n    std::cout << '\\n' << \"Capacidad=\" << capacidad << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "0 Z\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 Z\n",
+                "outputs": [
+                  "Aceptado=1\nTexto=solZ\nDatos=s o l Z NUL Y\nCapacidad=6\n"
+                ],
+                "explanation": "Comprobar terminación y espacio antes de escribir; añadir el dato y el nuevo terminador. Conservar el resto del array y rechazar sin cambios cuando no quepa o falte terminación."
+              },
+              {
+                "standardInput": "0 0\n",
+                "outputs": [
+                  "Aceptado=1\nTexto=sol0\nDatos=s o l 0 NUL Y\nCapacidad=6\n"
+                ],
+                "explanation": "Comprobar terminación y espacio antes de escribir; añadir el dato y el nuevo terminador. Conservar el resto del array y rechazar sin cambios cuando no quepa o falte terminación."
+              },
+              {
+                "standardInput": "1 Z\n",
+                "outputs": [
+                  "Aceptado=0\nTexto=solar\nDatos=s o l a r NUL\nCapacidad=6\n"
+                ],
+                "explanation": "Comprobar terminación y espacio antes de escribir; añadir el dato y el nuevo terminador. Conservar el resto del array y rechazar sin cambios cuando no quepa o falte terminación."
+              },
+              {
+                "standardInput": "2 B\n",
+                "outputs": [
+                  "Aceptado=0\nTexto=(sin terminador)\nDatos=s o l A X Y\nCapacidad=6\n"
+                ],
+                "explanation": "Comprobar terminación y espacio antes de escribir; añadir el dato y el nuevo terminador. Conservar el resto del array y rechazar sin cambios cuando no quepa o falte terminación."
+              },
+              {
+                "standardInput": "3 Q\n",
+                "outputs": [
+                  "Aceptado=1\nTexto=Q\nDatos=Q NUL l NUL X Y\nCapacidad=6\n"
+                ],
+                "explanation": "Comprobar terminación y espacio antes de escribir; añadir el dato y el nuevo terminador. Conservar el resto del array y rechazar sin cambios cuando no quepa o falte terminación."
+              },
+              {
+                "standardInput": "4 K\n",
+                "outputs": [
+                  "Aceptado=1\nTexto=sK\nDatos=s K NUL NUL X Y\nCapacidad=6\n"
+                ],
+                "explanation": "Comprobar terminación y espacio antes de escribir; añadir el dato y el nuevo terminador. Conservar el resto del array y rechazar sin cambios cuando no quepa o falte terminación."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo el primer caso correcto es obligatorio para avanzar. Los demás son ensayos opcionales e independientes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: dígito, capacidad agotada y falta de terminador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta cada entrada por separado. El carácter escrito como 0 en la entrada es el dígito '0', no NUL. El modo 1 tiene terminador pero no espacio para otro char del texto; el modo 2 no tiene terminador. Ambos rechazos deben conservar los seis elementos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 0 0\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nTexto=sol0\nDatos=s o l 0 NUL Y\nCapacidad=6\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 1 Z\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nTexto=solar\nDatos=s o l a r NUL\nCapacidad=6\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 2 B\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nTexto=(sin terminador)\nDatos=s o l A X Y\nCapacidad=6\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: texto vacío y terminador interior"
+        },
+        {
+          "type": "paragraph",
+          "text": "En modo 3 se añade el primer carácter del texto y se coloca NUL después de él; los elementos posteriores permanecen. En modo 4 el primer NUL está en el índice 1 y no en el 3. Cada ejecución empieza de nuevo con la preparación de su modo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 3 Q\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nTexto=Q\nDatos=Q NUL l NUL X Y\nCapacidad=6\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 4 K\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nTexto=sK\nDatos=s K NUL NUL X Y\nCapacidad=6\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: comprobar espacio y escribir los dos elementos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int modo = 0;\n    char nuevo = 'A';\n    if (!(std::cin >> modo >> nuevo)) {\n        return 1;\n    }\n    char datos[6]{'s', 'o', 'l', '\\0', 'X', 'Y'};\n    if (modo == 1) {\n        datos[3] = 'a';\n        datos[4] = 'r';\n        datos[5] = '\\0';\n    } else if (modo == 2) {\n        datos[3] = 'A';\n    } else if (modo == 3) {\n        datos[0] = '\\0';\n    } else if (modo == 4) {\n        datos[1] = '\\0';\n    } else if (modo != 0) {\n        return 1;\n    }\n    const int capacidad =\n        static_cast<int>(sizeof datos / sizeof datos[0]);\n    int longitud = 0;\n    while (longitud < capacidad && datos[longitud] != '\\0') {\n        ++longitud;\n    }\n    const bool terminada = longitud < capacidad;\n\n    bool aceptado = false;\n    if (terminada && longitud < capacidad - 1) {\n        datos[longitud] = nuevo;\n        datos[longitud + 1] = '\\0';\n        aceptado = true;\n    }\n\n    int longitudActual = 0;\n    while (longitudActual < capacidad && datos[longitudActual] != '\\0') {\n        ++longitudActual;\n    }\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Texto=\";\n    if (longitudActual < capacidad) {\n        std::cout << datos;\n    } else {\n        std::cout << \"(sin terminador)\";\n    }\n    std::cout << '\\n' << \"Datos=\";\n    for (int i = 0; i < capacidad; ++i) {\n        if (i != 0) {\n            std::cout << ' ';\n        }\n        if (datos[i] == '\\0') {\n            std::cout << \"NUL\";\n        } else {\n            std::cout << datos[i];\n        }\n    }\n    std::cout << '\\n' << \"Capacidad=\" << capacidad << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En modo 0 la longitud es 3. Al añadir Z se guardan Z en el índice 3 y NUL en el 4. El índice 5 conserva Y. El texto pasa a ser solZ, pero el array sigue teniendo seis elementos. El dígito 0 se añade del mismo modo porque su valor es distinto de NUL."
+        },
+        {
+          "type": "paragraph",
+          "text": "En modo 1 la longitud es 5 y falla longitud < capacidad - 1. No se sustituye el último terminador ni se escribe fuera del array. En modo 2 la búsqueda termina en 6 sin encontrar NUL y terminada es false. Ese caso tampoco modifica datos ni se imprime como cadena C."
+        },
+        {
+          "type": "paragraph",
+          "text": "En modo 3 la longitud inicial es 0. Se guarda Q en el índice 0 y NUL en el 1; los índices 2 a 5 conservan sus valores. En modo 4 la longitud inicial es 1. Añadir K cambia sólo los índices 1 y 2; el NUL anterior del índice 3 y los demás elementos quedan como estaban. La primera terminación es la que determina el texto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar una cadena C incluye su terminador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copiar tres letras de sol a otro array no basta para asegurar que éste contenga una cadena C. Hay que guardar también un terminador en el destino. Si origen tiene cuatro elementos con sol y su NUL, y copia tiene al menos cuatro elementos, podemos copiar los índices 0, 1, 2 y 3."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí longitud vale 3 y es el índice del terminador, no la capacidad de ninguno de los arrays. Copiar desde i igual a 0 hasta i igual a longitud, ambos incluidos, transfiere cuatro char. Esta vez la comparación incluye longitud precisamente para copiar ese elemento final. Antes se ha comprobado que existe en los dos arrays."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u2l3_copiar_terminador",
+          "language": "cpp",
+          "question": "origen contiene sol y NUL en cuatro elementos. copia tiene cinco elementos inicializados. longitud vale 3. Completa < o <= para copiar también el NUL, sin modificar copia[4].",
+          "template": "for (int i = 0; i [] longitud; ++i) {\n    copia[i] = origen[i];\n}\n",
+          "answers": [
+            "<="
+          ],
+          "explanation": "i <= longitud incluye el índice 3, donde está el terminador. Los accesos 0 a 3 caben en ambos arrays. Usar i < longitud copiaría sólo las tres letras; aquí el destino no tiene garantizado un NUL posterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar almacenamiento, texto y operaciones"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l3_comprobar_sin_terminador",
+          "question": "Un array de seis char tiene todos sus elementos inicializados y ninguno es NUL. ¿Qué operación permite examinarlo sin exigir que sea una cadena C?",
+          "options": [
+            "Llamar a std::strlen para que encuentre el tamaño del array.",
+            "Enviar el nombre del array a cout y esperar que se detenga al llegar al sexto.",
+            "Consultar los seis elementos con índices entre 0 y 5."
+          ],
+          "correctIndex": 2,
+          "explanation": "Un recorrido acotado utiliza sólo los elementos existentes. strlen y la salida de cadena C necesitan terminación; no deducen ese límite a partir de la extensión del array."
+        },
+        {
+          "type": "paragraph",
+          "text": "Capacidad: cantidad fija de elementos del array.\nLongitud de cadena C: cantidad de char anteriores al primer NUL.\nTerminador: un char de valor cero que ocupa un elemento.\nDatos posteriores: elementos que siguen existiendo aunque no formen parte de esa cadena C."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un acceso fuera del almacenamiento válido no tiene una salida de prueba garantizada. No se utiliza un ejemplo sin terminación para observar hasta dónde imprime. En la siguiente lección estudiaremos cómo leer texto en estos arrays con límites y cómo tratar la entrada que quede pendiente."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "67cad4c9c5eeb3bb688585e842026cdbbc858e0eb2fecf52c093b5a7feb71f96"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "5da30798426b529cc7dd7f8927313f88d570370b5635a58374e60a7208f0de1d"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "af5f68ff429e76a22a03e2f572ff92bcaaf8edc6c9a662d520205082c1d7cfd2"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "716949d8dd5613acb46dbf9447eec5611887a87c1695ba6cf6c6e0f8133f02da"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "bbef5b5548bff2bbc56179bd6fa247df3c991946a1b991a37bc5167cc4414d73"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1f2a8b16718c07da88df0b0687d20ef4abaae97919ecec3db531b79a4e360a71"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "6040b22a19aaede1e40d57f34b60a3da09ebf4b894dd169e097ca9c538bf9eaf"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "0bf100f13fe3e24cb849180e4b8697b7af6c2f36974ec39707e629d56362bc26"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "56f4de9092724d65348f53431c63aa807f8637b0f1c425370c0e736ba2eea839"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "8b19b6de3e6c9d311cf3c0d147edb58a758a528bb9681e57f2d2c4dd6ca578a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "fc59da7076c35565e5d7dfed93e0e1ba1cef4d6a88154559806f887dd914b0bf"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "85fc73db325c66cca81839b42e0395e7cf069d98558b6496d23bcbbeeba30b34"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "44cc745c111a5c872c12078c4cc9b8fc2d6c458a1c4ce91fe5f99a58fb7ac209"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0008",
+            "sha256": "86e3d6d030b0cd9406f768ea4d66cba96a2ffd5be49ccc93123a4c76078c363b"
+          },
+          {
+            "id": "block_0011_0009",
+            "sha256": "1eaf2e4276479e67abaaa2c9f6e48b7c202b50a7636345829563295613c0ae7f"
+          },
+          {
+            "id": "block_0011_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "d44fb944abc338f0067f12b8f83028cad015e7eb2a4b6e1291fff406839ff401"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0005",
+            "sha256": "96385a627cdbcaa90c1276e14440a060d188f9273b79a7d4ffc1e2112393245b"
+          },
+          {
+            "id": "block_0012_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0007",
+            "sha256": "379f93363108f5965e422c298992baf2adeb242392572a3a193502939a80a3a8"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "321aa824fdc1ccbd97266d837b195ee99555b7561578742dc2a79e8b702f401f"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0005",
+            "sha256": "c2ff4095200dc0b3456f0bd7b09edeb77d28675ee778037480058a7dd79e487e"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "e98a28d763142eaa982532ddff0da6d390be8fb5dab1f8a14c24549d2d280861"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "77a10636cc8d3366efde8fe7db783f4a1b81f2c9336ca8da8d6ee7f920b327a5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "bbcaa8b14c90746097ab00b931e066db25d511de16a34d977046785447dd6394"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005",
+          "block_0011_0006",
+          "block_0011_0007",
+          "block_0011_0008",
+          "block_0011_0009",
+          "block_0011_0010"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004",
+          "block_0012_0005",
+          "block_0012_0006",
+          "block_0012_0007"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004",
+          "block_0013_0005"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "5c4f65905fa3cb82c71a92084d12a0711449acbcbded23baa22f3a58904ad440",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "67cad4c9c5eeb3bb688585e842026cdbbc858e0eb2fecf52c093b5a7feb71f96"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "5da30798426b529cc7dd7f8927313f88d570370b5635a58374e60a7208f0de1d"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "af5f68ff429e76a22a03e2f572ff92bcaaf8edc6c9a662d520205082c1d7cfd2"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "716949d8dd5613acb46dbf9447eec5611887a87c1695ba6cf6c6e0f8133f02da"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "bbef5b5548bff2bbc56179bd6fa247df3c991946a1b991a37bc5167cc4414d73"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1f2a8b16718c07da88df0b0687d20ef4abaae97919ecec3db531b79a4e360a71"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "6040b22a19aaede1e40d57f34b60a3da09ebf4b894dd169e097ca9c538bf9eaf"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "0bf100f13fe3e24cb849180e4b8697b7af6c2f36974ec39707e629d56362bc26"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "56f4de9092724d65348f53431c63aa807f8637b0f1c425370c0e736ba2eea839"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "8b19b6de3e6c9d311cf3c0d147edb58a758a528bb9681e57f2d2c4dd6ca578a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "fc59da7076c35565e5d7dfed93e0e1ba1cef4d6a88154559806f887dd914b0bf"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "85fc73db325c66cca81839b42e0395e7cf069d98558b6496d23bcbbeeba30b34"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "44cc745c111a5c872c12078c4cc9b8fc2d6c458a1c4ce91fe5f99a58fb7ac209"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0008",
+                "sha256": "86e3d6d030b0cd9406f768ea4d66cba96a2ffd5be49ccc93123a4c76078c363b"
+              },
+              {
+                "id": "block_0011_0009",
+                "sha256": "1eaf2e4276479e67abaaa2c9f6e48b7c202b50a7636345829563295613c0ae7f"
+              },
+              {
+                "id": "block_0011_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "d44fb944abc338f0067f12b8f83028cad015e7eb2a4b6e1291fff406839ff401"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0005",
+                "sha256": "96385a627cdbcaa90c1276e14440a060d188f9273b79a7d4ffc1e2112393245b"
+              },
+              {
+                "id": "block_0012_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0007",
+                "sha256": "379f93363108f5965e422c298992baf2adeb242392572a3a193502939a80a3a8"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "321aa824fdc1ccbd97266d837b195ee99555b7561578742dc2a79e8b702f401f"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0005",
+                "sha256": "c2ff4095200dc0b3456f0bd7b09edeb77d28675ee778037480058a7dd79e487e"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "e98a28d763142eaa982532ddff0da6d390be8fb5dab1f8a14c24549d2d280861"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "77a10636cc8d3366efde8fe7db783f4a1b81f2c9336ca8da8d6ee7f920b327a5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "bbcaa8b14c90746097ab00b931e066db25d511de16a34d977046785447dd6394"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

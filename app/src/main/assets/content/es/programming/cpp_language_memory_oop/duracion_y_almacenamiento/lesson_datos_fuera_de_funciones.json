@@ -1,0 +1,1840 @@
+{
+  "id": "cpp_language_memory_oop__duracion_y_almacenamiento__datos_fuera_de_funciones",
+  "title": "Datos fuera de las funciones y nombres calificados",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un objeto que pueden utilizar varias funciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya agrupamos funciones mediante espacios de nombres en Programación 1. Ahora estudiaremos los objetos definidos fuera de los cuerpos de las funciones. Empezaremos por una definición situada directamente en el espacio global: int total = 2;. Ese nombre puede encontrarse desde las funciones escritas después de ella, mientras no lo oculte una declaración más cercana (Prata, 2012)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint total = 2;\n\nint agregar(int cantidad) {\n    total += cantidad;\n    return total;\n}\n\nint consultar() {\n    return total;\n}\n\nint main() {\n    const int primero = agregar(3);\n    const int segundo = agregar(1);\n    std::cout << primero << ':' << segundo << ':' << consultar();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "agregar y consultar utilizan el mismo objeto total. agregar(3) cambia su valor de 2 a 5 y devuelve 5. agregar(1) utiliza ese 5 y lo cambia a 6. consultar no define otro total: devuelve el 6 que ya conserva el objeto. La salida es 5:6:6."
+        },
+        {
+          "type": "paragraph",
+          "text": "No hemos pasado total como argumento ni lo hemos declarado dentro de agregar. Su definición está fuera de ambas funciones. A esta región de declaraciones la llamamos espacio global; es un caso de ámbito de espacio de nombres (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Duración estática aunque no se escriba static"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los int que estamos definiendo fuera de las funciones tienen almacenamiento de duración estática, aunque no escribamos static. Su almacenamiento se conserva durante el programa: terminar una llamada a agregar o consultar no lo libera. Si escribiéramos int total = 2; dentro de una función, sin static, se definiría un local automático nuevo cada vez que se ejecute esa declaración. La ubicación de la definición cambia lo que se conserva (Prata, 2012; ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el siguiente programa, pendientes no tiene inicializador escrito y comienza en cero. limite tiene un inicializador constante con 6. Estas preparaciones forman parte de la inicialización estática y están realizadas antes de entrar en main. No traslademos esa conclusión a cualquier inicializador más complejo: la inicialización dinámica tiene otras reglas (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l3_cero_y_constante",
+          "language": "cpp",
+          "question": "Predice los tres valores. pendientes está definido fuera de main; no es un int automático sin inicializar.",
+          "code": "#include <iostream>\n\nint pendientes;\nconstexpr int limite = 6;\n\nint main() {\n    std::cout << pendientes << ':' << limite << ':';\n    pendientes = limite - 2;\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "answers": [
+            "0:6:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "pendientes comienza en cero y limite contiene 6. La asignación de main calcula 6 menos 2 y guarda 4 en pendientes. La definición de limite con constexpr no convierte pendientes en una constante."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La duración del objeto no sustituye una declaración disponible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para utilizar un nombre, su declaración debe estar disponible en ese punto del código. Escribir una definición más abajo no permite encontrarla desde el cuerpo de una función anterior. Debemos revisar dónde está escrita cada declaración, no sólo cuándo llamará main a la función (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l3_declaracion_posterior",
+          "question": "Una función consultar contiene return total;. Sólo después del cuerpo de consultar aparece int total = 7;. No hay ninguna declaración anterior de total. ¿Qué ocurre?",
+          "options": [
+            "consultar recibe el 7 porque main siempre se ejecuta después de las definiciones.",
+            "Es un error de compilación: en ese cuerpo todavía no hay una declaración disponible de total.",
+            "consultar crea automáticamente un total propio con cero."
+          ],
+          "correctIndex": 1,
+          "explanation": "El compilador debe poder encontrar una declaración al analizar ese uso del nombre. En este ejemplo se corrige colocando la definición antes de la función. Más adelante veremos cómo declarar un dato cuya definición está en otro lugar."
+        },
+        {
+          "type": "paragraph",
+          "text": "En nuestros ejemplos colocaremos primero los datos que necesitan las funciones. Cuando intervengan varios archivos, distinguiremos las declaraciones que permiten usar un nombre de la definición que proporciona el objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir expresamente el objeto del espacio global con ::"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un local puede ocultar el nombre de un objeto global sin destruir ese objeto. Escribir ::total pide buscar total en el espacio global. El operador :: al principio no tiene un nombre a su izquierda porque selecciona expresamente ese espacio global (Prata, 2012; ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l3_global_y_local",
+          "language": "cpp",
+          "question": "Predice los tres valores. En main, total identifica al local; ::total identifica al global. consultar está definida fuera de main.",
+          "code": "#include <iostream>\n\nint total = 9;\n\nint consultar() {\n    return total;\n}\n\nint main() {\n    int total = 2;\n    ::total -= total;\n    const int observado = consultar();\n    std::cout << total << ':' << ::total << ':' << observado;\n    return 0;\n}\n",
+          "answers": [
+            "2:7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El local de main contiene 2. ::total -= total resta ese 2 al global de valor 9, que queda en 7. consultar encuentra el global de su propio contexto, no el local de quien la llama, y devuelve 7."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función consultar no se convierte en un bloque interior de main por recibir una llamada. Su uso de total sigue correspondiendo al global declarado antes de su definición. La variable local de main continúa siendo un objeto distinto."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l3_global_no_local_exterior",
+          "question": "main tiene un int dato en su bloque y otro int dato en un bloque interior. No hay ningún dato global. ¿Permite ::dato elegir el dato del bloque exterior de main?",
+          "options": [
+            "Sí: :: siempre retrocede exactamente un bloque.",
+            "Sí: :: elige el objeto que existe desde hace más tiempo.",
+            "No: ::dato busca un nombre global; no selecciona ese local exterior."
+          ],
+          "correctIndex": 2,
+          "explanation": "El operador inicial :: no significa «el bloque anterior». Sin una declaración global de dato, ese uso es un error. Para evitar la ocultación de los dos locales conviene darles nombres distintos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos espacios de nombres pueden contener datos con el mismo nombre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperemos namespace: agrupa declaraciones bajo un nombre. En origen::total, origen identifica el espacio y total el miembro que elegimos. En destino::total elegimos otra declaración. Son nombres calificados. Los dos objetos de estos espacios tienen duración estática, aunque ninguno escriba static (Stroustrup, 2024; ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l3_tres_objetos",
+          "language": "cpp",
+          "question": "Predice el total local y después los dos totales de los espacios de nombres.",
+          "code": "#include <iostream>\n\nnamespace origen {\n    int total = 4;\n}\n\nnamespace destino {\n    int total = 9;\n}\n\nint main() {\n    int total = 30;\n    origen::total += 1;\n    destino::total -= 2;\n    std::cout << total << ':' << origen::total << ':' << destino::total;\n    return 0;\n}\n",
+          "answers": [
+            "30:5:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El local conserva 30. origen::total pasa de 4 a 5. destino::total pasa de 9 a 7. Repetir el nombre corto total no hace que los tres objetos compartan su valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llaves de namespace delimitan declaraciones en el código. No son un bloque de instrucciones que se abra y cierre en cada llamada. Cerrar esas llaves no termina la vida de los objetos definidos allí."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una función busca los datos de su contexto, no los locales de quien llama"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dentro de taller, retirar puede encontrar existencias sin repetir taller::. Su cuerpo pertenece a ese contexto. Fuera de él, main puede elegir expresamente taller::retirar y taller::existencias. Un local de main con el mismo nombre corto no cambia qué objeto utiliza el cuerpo de retirar (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l3_funcion_en_namespace",
+          "language": "cpp",
+          "question": "En este programa completo sólo se retiran dos unidades. Predice el local de main, el resultado y las existencias del taller.",
+          "code": "#include <iostream>\n\nnamespace taller {\n    int existencias = 6;\n\n    int retirar(int cantidad) {\n        existencias -= cantidad;\n        return existencias;\n    }\n}\n\nint main() {\n    int existencias = 20;\n    const int resultado = taller::retirar(2);\n    std::cout << existencias << ':' << resultado << ':' << taller::existencias;\n    return 0;\n}\n",
+          "answers": [
+            "20:4:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "retirar recibe 2 y resta esa cantidad al 6 de taller::existencias. Devuelve 4. El local de main continúa en 20 porque no fue el objeto que modificó retirar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta función breve sólo ilustra la elección del objeto con la llamada mostrada. Una operación de retirada para entradas arbitrarias necesitaría comprobar sus condiciones antes de restar. La práctica posterior incorporará esas comprobaciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reabrir un namespace no prepara otra copia de sus datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos declaraciones namespace deposito en este archivo continúan el mismo espacio. La primera define cantidad. La segunda añade funciones que utilizan ese objeto. Reabrirlo no ejecuta una orden de reinicio ni crea otro deposito independiente (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l3_reabrir_mismo_objeto",
+          "language": "cpp",
+          "question": "Predice la cantidad anterior, la posterior y la consulta directa al terminar.",
+          "code": "#include <iostream>\n\nnamespace deposito {\n    int cantidad = 4;\n}\n\nnamespace deposito {\n    int consultar() {\n        return cantidad;\n    }\n\n    void agregarTres() {\n        cantidad += 3;\n    }\n}\n\nint main() {\n    const int antes = deposito::consultar();\n    deposito::agregarTres();\n    const int despues = deposito::consultar();\n    std::cout << antes << ':' << despues << ':' << deposito::cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "4:7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "consultar devuelve primero 4. agregarTres cambia el único deposito::cantidad a 7. La segunda consulta y la consulta directa encuentran ese mismo 7. Los dos cuerpos namespace no son dos instancias separadas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l3_no_redefinir_en_reapertura",
+          "question": "En un mismo archivo ya está definido namespace deposito { int cantidad = 4; }. Al reabrir deposito, ¿qué ocurriría si añadimos otra definición int cantidad = 0;?",
+          "options": [
+            "Intentaríamos definir de nuevo el mismo deposito::cantidad; el compilador rechaza esa duplicación.",
+            "Se crearía otra copia independiente porque hay otro par de llaves.",
+            "Se reiniciaría automáticamente el objeto anterior al llegar main."
+          ],
+          "correctIndex": 0,
+          "explanation": "Reabrir el espacio permite añadir declaraciones; no autoriza otra definición ordinaria del mismo objeto en el archivo. Para cambiar su valor durante el programa hace falta una asignación dentro del código que se ejecuta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una declaración using no copia el objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "using inventario::piezas permite utilizar ese miembro por su nombre corto en este bloque. No define un int nuevo ni copia el valor. En cambio, int copia = inventario::piezas; sí define otro int inicializado con el valor leído. La calificación del nombre y la copia del dato son acciones distintas (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l3_using_y_copia",
+          "language": "cpp",
+          "question": "Predice los tres valores: el nombre corto, el nombre calificado y la variable copia.",
+          "code": "#include <iostream>\n\nnamespace inventario {\n    int piezas = 4;\n}\n\nint main() {\n    int copia = inventario::piezas;\n    using inventario::piezas;\n    piezas += 2;\n    copia += 1;\n    std::cout << piezas << ':' << inventario::piezas << ':' << copia;\n    return 0;\n}\n",
+          "answers": [
+            "6:6:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia comienza con 4. piezas += 2; modifica inventario::piezas y lo deja en 6; ambos modos de nombrarlo muestran 6. copia += 1; modifica el int separado y lo deja en 5."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u3l3_calificar_miembro",
+          "question": "Completa el nombre calificado que consulta piezas dentro de inventario, sin depender de una declaración using.",
+          "template": "std::cout << [];",
+          "answers": [
+            "inventario::piezas"
+          ],
+          "answerAlternatives": [
+            [
+              "inventario::piezas",
+              "::inventario::piezas"
+            ]
+          ],
+          "explanation": "inventario::piezas elige el miembro de ese espacio. ::inventario::piezas también es válido: el :: inicial empieza la búsqueda desde el espacio global. No se escribe inventario.piezas porque inventario es un espacio de nombres, no una variable."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una directiva using namespace amplía la búsqueda de nombres sin calificar; tampoco duplica objetos. Si dos espacios ofrecen distintos objetos llamados piezas y no hay una elección única, usar sólo piezas puede resultar ambiguo. Calificar el nombre permite indicar cuál se quiere. Para los datos de la práctica conservaremos la calificación explícita."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar un global, un local static y un local automático"
+        },
+        {
+          "type": "paragraph",
+          "text": "total está definido fuera de las funciones. conservado es un local static de avanzar. Los dos conservan sus valores entre las llamadas, pero sus nombres pertenecen a ámbitos distintos. actual es un local automático nuevo en cada llamada. Sigue las sumas a partir de los valores iniciales escritos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint total = 1;\n\nvoid avanzar() {\n    static int conservado = 4;\n    int actual = 0;\n    total += 2;\n    conservado += 1;\n    actual += 3;\n    std::cout << total << ':' << conservado << ':' << actual << ';';\n}\n\nint main() {\n    avanzar();\n    avanzar();\n    return 0;\n}\n"
+        },
+        {
+          "type": "math_puzzle",
+          "id": "p3_u3l3_seguir_tres_objetos",
+          "schemaVersion": 1,
+          "prompt": "Completa las dos ternas que imprime avanzar. En cada una se muestran total, conservado y actual, en ese orden.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Objeto",
+                "Definición",
+                "Qué se conserva entre llamadas"
+              ],
+              "rows": [
+                [
+                  "total",
+                  "Fuera de las funciones, comienza con 1",
+                  "El mismo objeto del espacio global"
+                ],
+                [
+                  "conservado",
+                  "Local static, comienza con 4",
+                  "El mismo objeto local de avanzar"
+                ],
+                [
+                  "actual",
+                  "Local automático, comienza con 0",
+                  "Se define un objeto nuevo en cada llamada"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Primera llamada: total",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Primera llamada: conservado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Primera llamada: actual",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Segunda llamada: total",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Segunda llamada: conservado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Segunda llamada: actual",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "total recibe dos sumas de 2 y pasa por 3 y 5. conservado recibe dos sumas de 1 y pasa por 5 y 6. Cada actual comienza con cero y recibe una sola suma de 3: ambos muestran 3.",
+            "incorrect": "No reinicies total ni conservado en la segunda llamada. Tampoco conserves el actual anterior: su definición automática se ejecuta de nuevo con cero."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El namespace organiza nombres; no obliga a pasar por una función"
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos escribir una función que rechace datos incorrectos. Eso no hace privados los datos del namespace. Si otra instrucción puede nombrar directamente un int modificable, también puede asignarle un valor sin llamar a esa función. Agrupar los nombres no impone por sí solo las condiciones del programa (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l3_asignacion_directa",
+          "language": "cpp",
+          "question": "poner rechaza el valor 12 porque la capacidad es 10. Después main asigna 12 directamente. Predice los dos pares que imprime.",
+          "code": "#include <iostream>\n\nnamespace deposito {\n    constexpr int capacidad = 10;\n    int nivel = 4;\n\n    bool poner(int nuevo) {\n        if (nuevo < 0 || nuevo > capacidad) {\n            return false;\n        }\n        nivel = nuevo;\n        return true;\n    }\n}\n\nint main() {\n    const bool aceptado = deposito::poner(12);\n    std::cout << aceptado << ':' << deposito::nivel << ';';\n    deposito::nivel = 12;\n    std::cout << deposito::nivel << ':' << deposito::capacidad;\n    return 0;\n}\n",
+          "answers": [
+            "0:4;12:10"
+          ],
+          "outputComparison": "exact",
+          "explanation": "poner devuelve false, que se imprime como 0, y conserva el nivel 4. La asignación directa de main sí escribe 12. El compilador permite ese int, aunque incumpla la capacidad de nuestro depósito. El namespace no bloquea esa asignación."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l3_no_privacidad_por_namespace",
+          "question": "¿Por qué deposito::nivel = 12; no llama automáticamente a poner ni rechaza ese valor?",
+          "options": [
+            "Porque una función sólo puede validar datos recibidos desde main.",
+            "Porque es una asignación directa al int; pertenecer al namespace no hace que pase por poner.",
+            "Porque constexpr convierte cualquier int del mismo namespace en una constante."
+          ],
+          "correctIndex": 1,
+          "explanation": "La comprobación está dentro del cuerpo de poner. Otra instrucción que modifica directamente nivel no ejecuta ese cuerpo. Tendremos que diseñar el acceso a los datos según el requisito, no suponer una protección que namespace no proporciona."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Antes de trasladar personas, comprobar las dos salas"
+        },
+        {
+          "type": "paragraph",
+          "text": "La práctica tendrá una sala A con capacidad para 8 personas y otra B con capacidad para 12. Inicialmente A contiene 3 y B contiene 7: hay 10 personas en total. Trasladar 2 de B a A debe dejar A con 5 y B con 5. No se crean ni desaparecen personas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para aceptar un traslado, la sala de origen debe tener la cantidad solicitada y la de destino debe tener sitio. Son dos condiciones diferentes. Si A contiene 1 y B contiene 9, trasladar 2 desde A falla por falta de personas en A, aunque B tenga sitio para recibirlas. Si A contiene 4 y B contiene 6, trasladar 4 desde B sí se permite: A llega exactamente a su capacidad de 8 y B queda con 2."
+        },
+        {
+          "type": "paragraph",
+          "text": "Calcula el espacio libre restando la ocupación de la capacidad de la sala de destino. Comprueba ambas condiciones antes de cambiar ninguna ocupación. Si una falla, conserva los dos valores. Una vez aceptado, resta en el origen y suma la misma cantidad en el destino."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l3_comprobar_ambas",
+          "question": "A contiene 5 de un máximo de 8 y B contiene 5 de un máximo de 12. Se solicita trasladar 4 de B a A. ¿Qué corresponde hacer?",
+          "options": [
+            "Restar 4 de B y rechazar después, dejando las personas fuera de ambas salas.",
+            "Aceptar porque B tiene al menos 4 personas, aunque A llegue a 9.",
+            "Rechazar antes de modificar: A sólo tiene sitio para 3. Conservar A en 5 y B en 5."
+          ],
+          "correctIndex": 2,
+          "explanation": "La cantidad cabe en el origen, pero no en el destino. Cambiar sólo una sala perdería personas; aceptar las dos modificaciones excedería la capacidad de A."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir traslados usando los datos de cada espacio de nombres"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor ya define sala_a::ocupadas con 3 y sala_b::ocupadas con 7. También define sus capacidades: 8 y 12. Son los datos compartidos por las llamadas de este programa. Completa sólo trasladar(int origen, int cantidad), sin cambiar los espacios de nombres, las capacidades ni main."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada comienza con el número de órdenes, entre 1 y 12. Después hay una pareja de enteros por orden: origen y cantidad. Todas las órdenes de un caso forman una secuencia en la misma ejecución; cada una recibe las ocupaciones que dejó la anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "origen igual a 0: trasladar de A a B.\norigen igual a 1: trasladar de B a A.\nOtro valor de origen: rechazar.\nLa cantidad debe estar entre 1 y 4; fuera de ese intervalo se rechaza."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función devuelve true sólo cuando el origen contiene suficientes personas y el destino dispone de espacio para todas. Entonces modifica ambas ocupaciones usando los nombres calificados de sus salas. Si algo incumple el contrato, devuelve false y conserva las dos ocupaciones. La función no imprime mensajes."
+        },
+        {
+          "type": "paragraph",
+          "text": "main muestra Aceptado o Rechazo según el bool devuelto, seguido de las ocupaciones reales de A y B. Al terminar muestra la suma de ambas. Esa suma debe seguir siendo 10 después de cualquier traslado o rechazo. No declares copias locales para sustituir los datos que main tiene que consultar."
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se alternan traslados válidos, falta de personas en el origen, falta de sitio en el destino y una orden de origen desconocido. Todo pertenece a una única secuencia de ocupaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n1 2\n0 4\n0 2\n1 4\n1 4\n1 3\n0 1\n2 1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado;A:5;B:5\nAceptado;A:1;B:9\nRechazo;A:1;B:9\nAceptado;A:5;B:5\nRechazo;A:5;B:5\nAceptado;A:8;B:2\nAceptado;A:7;B:3\nRechazo;A:7;B:3\nTotal:10\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nnamespace sala_a {\n    constexpr int capacidad = 8;\n    int ocupadas = 3;\n}\n\nnamespace sala_b {\n    constexpr int capacidad = 12;\n    int ocupadas = 7;\n}\n\nbool trasladar(int origen, int cantidad) {\n    // Comprueba la orden antes de modificar las dos salas.\n    // Usa los datos de sala_a y sala_b; conserva ambos al rechazar.\n    return origen == 0 && cantidad == 0;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 12) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int origen = 0;\n        int cantidad = 0;\n        if (!(std::cin >> origen >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = trasladar(origen, cantidad);\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\");\n        std::cout << \";A:\" << sala_a::ocupadas\n                  << \";B:\" << sala_b::ocupadas << '\\n';\n    }\n    std::cout << \"Total:\" << sala_a::ocupadas + sala_b::ocupadas << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "8\n1 2\n0 4\n0 2\n1 4\n1 4\n1 3\n0 1\n2 1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8\n1 2\n0 4\n0 2\n1 4\n1 4\n1 3\n0 1\n2 1\n",
+                "outputs": [
+                  "Aceptado;A:5;B:5\nAceptado;A:1;B:9\nRechazo;A:1;B:9\nAceptado;A:5;B:5\nRechazo;A:5;B:5\nAceptado;A:8;B:2\nAceptado;A:7;B:3\nRechazo;A:7;B:3\nTotal:10\n"
+                ],
+                "explanation": "Aplicar los traslados válidos a los datos de ambas salas, rechazar sin modificar y conservar diez personas en total."
+              },
+              {
+                "standardInput": "6\n0 3\n0 1\n1 4\n1 4\n1 1\n0 4\n",
+                "outputs": [
+                  "Aceptado;A:0;B:10\nRechazo;A:0;B:10\nAceptado;A:4;B:6\nAceptado;A:8;B:2\nRechazo;A:8;B:2\nAceptado;A:4;B:6\nTotal:10\n"
+                ],
+                "explanation": "Aplicar los traslados válidos a los datos de ambas salas, rechazar sin modificar y conservar diez personas en total."
+              },
+              {
+                "standardInput": "6\n0 0\n1 -1\n0 5\n2 1\n-1 2\n1 1\n",
+                "outputs": [
+                  "Rechazo;A:3;B:7\nRechazo;A:3;B:7\nRechazo;A:3;B:7\nRechazo;A:3;B:7\nRechazo;A:3;B:7\nAceptado;A:4;B:6\nTotal:10\n"
+                ],
+                "explanation": "Aplicar los traslados válidos a los datos de ambas salas, rechazar sin modificar y conservar diez personas en total."
+              },
+              {
+                "standardInput": "5\n1 2\n0 2\n1 2\n0 2\n1 2\n",
+                "outputs": [
+                  "Aceptado;A:5;B:5\nAceptado;A:3;B:7\nAceptado;A:5;B:5\nAceptado;A:3;B:7\nAceptado;A:5;B:5\nTotal:10\n"
+                ],
+                "explanation": "Aplicar los traslados válidos a los datos de ambas salas, rechazar sin modificar y conservar diez personas en total."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo el primer caso correcto es obligatorio para avanzar. Los siguientes son ensayos opcionales. Cada caso inicia otra ejecución con A igual a 3 y B igual a 7."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: límites y órdenes que no deben cambiar nada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las capacidades pertenecen a cada sala; no son iguales. Comprueba el origen y el destino de la orden actual, conservando los resultados de las anteriores."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se vacía A y B recibe a las diez personas. Después se alcanza exactamente la capacidad de A. Se rechaza salir de A cuando está vacía o superar su capacidad al entrar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "6\n0 3\n0 1\n1 4\n1 4\n1 1\n0 4\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado;A:0;B:10\nRechazo;A:0;B:10\nAceptado;A:4;B:6\nAceptado;A:8;B:2\nRechazo;A:8;B:2\nAceptado;A:4;B:6\nTotal:10\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se rechazan cantidades no permitidas y orígenes desconocidos. El traslado válido final debe partir todavía de A con 3 y B con 7."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "6\n0 0\n1 -1\n0 5\n2 1\n-1 2\n1 1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Rechazo;A:3;B:7\nRechazo;A:3;B:7\nRechazo;A:3;B:7\nRechazo;A:3;B:7\nRechazo;A:3;B:7\nAceptado;A:4;B:6\nTotal:10\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayo opcional: regresar y volver a trasladar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un traslado válido en sentido contrario puede recuperar las ocupaciones anteriores. Eso ocurre por las operaciones solicitadas, no porque las variables se inicialicen de nuevo al entrar en trasladar."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se trasladan dos personas de B a A y después de A a B, alternando. Las ocupaciones vuelven a 3 y 7 cada vez que se deshace ese traslado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "5\n1 2\n0 2\n1 2\n0 2\n1 2\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado;A:5;B:5\nAceptado;A:3;B:7\nAceptado;A:5;B:5\nAceptado;A:3;B:7\nAceptado;A:5;B:5\nTotal:10\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: seleccionar los datos y conservarlos al rechazar"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace sala_a {\n    constexpr int capacidad = 8;\n    int ocupadas = 3;\n}\n\nnamespace sala_b {\n    constexpr int capacidad = 12;\n    int ocupadas = 7;\n}\n\nbool trasladar(int origen, int cantidad) {\n    if ((origen != 0 && origen != 1) || cantidad < 1 || cantidad > 4) {\n        return false;\n    }\n    if (origen == 0) {\n        if (cantidad > sala_a::ocupadas ||\n            cantidad > sala_b::capacidad - sala_b::ocupadas) {\n            return false;\n        }\n        sala_a::ocupadas -= cantidad;\n        sala_b::ocupadas += cantidad;\n    } else {\n        if (cantidad > sala_b::ocupadas ||\n            cantidad > sala_a::capacidad - sala_a::ocupadas) {\n            return false;\n        }\n        sala_b::ocupadas -= cantidad;\n        sala_a::ocupadas += cantidad;\n    }\n    return true;\n}\n\nint main() {\n    int numeroDeOrdenes = 0;\n    if (!(std::cin >> numeroDeOrdenes) ||\n        numeroDeOrdenes < 1 || numeroDeOrdenes > 12) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeOrdenes; ++i) {\n        int origen = 0;\n        int cantidad = 0;\n        if (!(std::cin >> origen >> cantidad)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = trasladar(origen, cantidad);\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\");\n        std::cout << \";A:\" << sala_a::ocupadas\n                  << \";B:\" << sala_b::ocupadas << '\\n';\n    }\n    std::cout << \"Total:\" << sala_a::ocupadas + sala_b::ocupadas << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera condición descarta orígenes desconocidos y cantidades fuera de 1 a 4. Después se elige el sentido. Cuando origen vale cero, se consulta sala_a::ocupadas y se compara la cantidad con el espacio libre de B. Cuando vale uno, se consulta la ocupación de B y el espacio libre de A."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las comprobaciones se hacen antes de modificar ninguna sala. Una vez aceptado el traslado, se resta del origen y se suma al destino. Las dos operaciones usan los objetos de los espacios de nombres, que son los mismos que imprime main. Las capacidades son constantes; las ocupaciones son int modificables."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el caso obligatorio, las dos primeras órdenes dejan A con 1 y B con 9. El siguiente intento de sacar 2 de A se rechaza sin cambios. Después se llega a 5 y 5; trasladar 4 hacia A también se rechaza porque sólo hay sitio para 3. Tras los dos traslados válidos siguientes se llega a 7 y 3. El origen desconocido final conserva ese estado y el total sigue siendo 10."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l3_copias_no_actualizan",
+          "question": "Una variante calcula las ocupaciones nuevas en dos int locales y devuelve true, pero nunca las asigna a sala_a::ocupadas ni sala_b::ocupadas. ¿Qué falla?",
+          "options": [
+            "main sigue leyendo los objetos compartidos sin modificar; devolver true no copia por sí mismo los resultados locales.",
+            "Los int locales son otros nombres de los objetos del namespace y sus cambios se reflejan automáticamente en main.",
+            "Devolver true transfiere automáticamente los dos valores locales a las ocupaciones de sus salas."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los locales son objetos separados. Para que main observe el traslado, deben modificarse los datos que su código consulta. El bool comunica aceptación; no transporta esas dos ocupaciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decidir quién debe poder modificar cada dato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Duración estática: el almacenamiento continúa entre llamadas.\nÁmbito global o de un namespace: dónde puede encontrarse su nombre.\nNombre calificado: qué declaración elegimos expresamente.\nCambio del estado: qué instrucciones asignan valores al objeto que se consulta después."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compartir datos modificables entre muchas funciones también facilita que una cambie algo que las otras necesitan conservar. Debemos revisar quién lee, quién escribe y qué condiciones mantiene. Las variables locales y los datos que una función recibe expresamente permiten limitar esa dependencia cuando el problema no necesita un estado común (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l3_datos_por_serie",
+          "question": "Queremos crear una cantidad variable de series independientes, cada una con sus propias mediciones. ¿Qué demuestra lo estudiado sobre un único namespace con un único total modificable?",
+          "options": [
+            "Que basta con volver a abrir el mismo namespace para crear otra serie independiente.",
+            "Que todas las llamadas que usen ese total compartirán un objeto; las series independientes necesitarán sus propios datos.",
+            "Que usar un nombre calificado copia el total cada vez y separa las series."
+          ],
+          "correctIndex": 1,
+          "explanation": "El namespace agrupa nombres; no crea automáticamente un objeto nuevo por cada serie. Mantendremos esa independencia como requisito al aprender a representar y administrar los objetos del proyecto."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la siguiente lección estudiaremos un programa repartido entre archivos: cómo permitir que varias partes se refieran a un mismo objeto y cómo distinguir esa declaración de su definición. Conservaremos la separación entre encontrar un nombre, compartir un objeto y decidir quién puede modificarlo."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "859a00c6e4c227abcd78cf9d53ded8e404de79b84808d017f8ccf112c86b1c66"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "83aaa772d312bd28822b1b911162455cc166a8174e8dc40068603b54545543fa"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "4171968a81c37a6c4bdf7487f65d4dcf0b2e2dd2f60d711ee032479d78ee54ce"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "95fcb63dcc7324539650489bff6a6dead5913871fe773fa44a0a9924ba1c591b"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "cfa5cac61831b4aed84f131d3bf5c2600a1a4fc848571d39f491ea1c5e439896"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "c14adfc5e56caba099fd540c816fa2e5d22e88ae64a75d25e3809ec96dcb5404"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "3851ee2ac4fe3d2cbb3d1446c71790aadacdd67e953a4fd11896e2137adc54dd"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "fefdf480300c101425caa7fb934021c4c9a54cd11024af72d93b84e8211dda5c"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "c86eadb306c502d33a2dc50ab0607de2672544006e895390f2cb414dfe708271"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "838303ddbe3b46724c5375850b9010e27958c6a72c5d18bf42574b98b24107ec"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "68b01596b5f61ecdd3e4f5c02da6a582d7cdf81c21a3a53cbf239f2bbcaf382e"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "678e66d529c0fc1e8bf32fb7c3e9064a2566f8566b4736dcd75f0fb8a43a1c5c"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "7583b641d07a18646704d38907291a5d4104486ae2c6e9d4555b34c3d64b2b8d"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "24fa094b455d95c3f88cc7d405564e3e6813e24c90d7005f6408f34f94f29dfb"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "a310a3406cef8832192a3df6ce608d3712ff67aeab2ba3ea8fbc45b7eebbc86f"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "037392aae1d0336092352b874fd8c70ec6f5ff3bdec908e91ba7a0e570923120"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0009",
+            "sha256": "4eaccd2fbdfd75efd0f2e5f7849a80f47e77a614f14aec8dee1672eaaf74a6d3"
+          },
+          {
+            "id": "block_0011_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0011",
+            "sha256": "c34d57e969888d425e6424d2cb9b456f65ddda26f39849c8317d846050d9b8ab"
+          },
+          {
+            "id": "block_0011_0012",
+            "sha256": "0a67824ed1386c42b4fac56145d65d62b952a113cc267336ca3afe1a0dafc0ee"
+          },
+          {
+            "id": "block_0011_0013",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0005",
+            "sha256": "dad64cf5a4d1991c0aa23632f8d0f707c0b7b446737639050c11e0765fe15291"
+          },
+          {
+            "id": "block_0012_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0007",
+            "sha256": "b8a44942a0e41b141f4ec7e18a3a501c1fb0a7b241e5aa9cc3b30d6349cce1f8"
+          },
+          {
+            "id": "block_0012_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0011",
+            "sha256": "90100529c34679ec1c66ea0c7e3aafb9c5a5bd08eef89fc0d20598bb05bbe305"
+          },
+          {
+            "id": "block_0012_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0013",
+            "sha256": "906c218744a2584283e143b83decd6a9d9e285ecef8a029a9dbd4e15e665fd9a"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0005",
+            "sha256": "de6412cf757e2280130a8bf457459d0a3e8e375f629045966f866de614ba506b"
+          },
+          {
+            "id": "block_0013_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0007",
+            "sha256": "722c9e6a5a9cfbc427c4ebf8cf7d1d22bcc1e7892267144ed0a942e46bb440be"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "2f26245e1bdd312bfd5b34d02a27a5a68397c68623c430fe2d441dcc69a4e145"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "2d300a91e0a1e0ca1ca243f8a875000afe2efec58b50059cd02570eeb8246797"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "34e52cad76abeca7a5f52a48ddcac44b2078301e4db10bd2e59b6999840eac27"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005",
+          "block_0011_0006",
+          "block_0011_0007",
+          "block_0011_0008",
+          "block_0011_0009",
+          "block_0011_0010",
+          "block_0011_0011",
+          "block_0011_0012",
+          "block_0011_0013"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004",
+          "block_0012_0005",
+          "block_0012_0006",
+          "block_0012_0007",
+          "block_0012_0008",
+          "block_0012_0009",
+          "block_0012_0010",
+          "block_0012_0011",
+          "block_0012_0012",
+          "block_0012_0013"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004",
+          "block_0013_0005",
+          "block_0013_0006",
+          "block_0013_0007"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "e8aef702ca7452d26895b3acf2ab9bb0b4222294281604fb1f5cf002153edc20",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "859a00c6e4c227abcd78cf9d53ded8e404de79b84808d017f8ccf112c86b1c66"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "83aaa772d312bd28822b1b911162455cc166a8174e8dc40068603b54545543fa"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "4171968a81c37a6c4bdf7487f65d4dcf0b2e2dd2f60d711ee032479d78ee54ce"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "95fcb63dcc7324539650489bff6a6dead5913871fe773fa44a0a9924ba1c591b"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "cfa5cac61831b4aed84f131d3bf5c2600a1a4fc848571d39f491ea1c5e439896"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "c14adfc5e56caba099fd540c816fa2e5d22e88ae64a75d25e3809ec96dcb5404"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "3851ee2ac4fe3d2cbb3d1446c71790aadacdd67e953a4fd11896e2137adc54dd"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "fefdf480300c101425caa7fb934021c4c9a54cd11024af72d93b84e8211dda5c"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "c86eadb306c502d33a2dc50ab0607de2672544006e895390f2cb414dfe708271"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "838303ddbe3b46724c5375850b9010e27958c6a72c5d18bf42574b98b24107ec"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "68b01596b5f61ecdd3e4f5c02da6a582d7cdf81c21a3a53cbf239f2bbcaf382e"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "678e66d529c0fc1e8bf32fb7c3e9064a2566f8566b4736dcd75f0fb8a43a1c5c"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "7583b641d07a18646704d38907291a5d4104486ae2c6e9d4555b34c3d64b2b8d"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "24fa094b455d95c3f88cc7d405564e3e6813e24c90d7005f6408f34f94f29dfb"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "a310a3406cef8832192a3df6ce608d3712ff67aeab2ba3ea8fbc45b7eebbc86f"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "037392aae1d0336092352b874fd8c70ec6f5ff3bdec908e91ba7a0e570923120"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0009",
+                "sha256": "4eaccd2fbdfd75efd0f2e5f7849a80f47e77a614f14aec8dee1672eaaf74a6d3"
+              },
+              {
+                "id": "block_0011_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0011",
+                "sha256": "c34d57e969888d425e6424d2cb9b456f65ddda26f39849c8317d846050d9b8ab"
+              },
+              {
+                "id": "block_0011_0012",
+                "sha256": "0a67824ed1386c42b4fac56145d65d62b952a113cc267336ca3afe1a0dafc0ee"
+              },
+              {
+                "id": "block_0011_0013",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0005",
+                "sha256": "dad64cf5a4d1991c0aa23632f8d0f707c0b7b446737639050c11e0765fe15291"
+              },
+              {
+                "id": "block_0012_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0007",
+                "sha256": "b8a44942a0e41b141f4ec7e18a3a501c1fb0a7b241e5aa9cc3b30d6349cce1f8"
+              },
+              {
+                "id": "block_0012_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0011",
+                "sha256": "90100529c34679ec1c66ea0c7e3aafb9c5a5bd08eef89fc0d20598bb05bbe305"
+              },
+              {
+                "id": "block_0012_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0013",
+                "sha256": "906c218744a2584283e143b83decd6a9d9e285ecef8a029a9dbd4e15e665fd9a"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0005",
+                "sha256": "de6412cf757e2280130a8bf457459d0a3e8e375f629045966f866de614ba506b"
+              },
+              {
+                "id": "block_0013_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0007",
+                "sha256": "722c9e6a5a9cfbc427c4ebf8cf7d1d22bcc1e7892267144ed0a942e46bb440be"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "2f26245e1bdd312bfd5b34d02a27a5a68397c68623c430fe2d441dcc69a4e145"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "2d300a91e0a1e0ca1ca243f8a875000afe2efec58b50059cd02570eeb8246797"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "34e52cad76abeca7a5f52a48ddcac44b2078301e4db10bd2e59b6999840eac27"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

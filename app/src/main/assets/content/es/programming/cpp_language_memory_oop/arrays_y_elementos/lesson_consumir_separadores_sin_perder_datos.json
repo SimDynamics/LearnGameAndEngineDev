@@ -1,0 +1,2013 @@
+{
+  "id": "cpp_language_memory_oop__arrays_y_elementos__consumir_separadores_sin_perder_datos",
+  "title": "Consumir separadores sin perder datos",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir si el próximo blanco es un dato o un separador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de una lectura queda una posición concreta en la entrada. El carácter siguiente puede ser un espacio, un salto, un signo que el formato exige o una parte del dato que todavía no se ha leído. No conviene consumirlo por costumbre: hay que identificar qué función tiene en ese formato."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con get(caracter), la lectura intenta extraer exactamente el próximo char, incluso si es un blanco o un salto, y guardarlo en esa variable. En cambio, >> aplicado a un char omite normalmente los blancos iniciales antes de obtenerlo. La diferencia afecta a la conservación de espacios y líneas vacías (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l5_blanco_con_get",
+          "language": "cpp",
+          "question": "Predice si primero recibe un espacio y qué carácter recibe segundo.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\" \\nZ\"};\n    char primero = '?';\n    char segundo = '?';\n    entrada.get(primero);\n    entrada >> segundo;\n    std::cout << (primero == ' ') << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "1:Z"
+          ],
+          "outputComparison": "exact",
+          "explanation": "get guarda el espacio inicial en primero. La extracción >> siguiente omite el salto y guarda Z. No son dos formas intercambiables si ese blanco forma parte del dato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer un array dejando el delimitador pendiente"
+        },
+        {
+          "type": "paragraph",
+          "text": "entrada.get(texto, n) guarda como máximo n - 1 char y añade NUL si n es positivo. Su delimitador habitual es el salto de línea, pero no lo extrae: queda pendiente. El límite n debe caber en el array real, igual que al usar getline. Los espacios anteriores al salto sí se guardan (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "gcount() cuenta sólo los caracteres que get extrajo. El salto pendiente no forma parte de esa cuenta. Si ya sabemos que ese salto es el siguiente, podemos extraerlo con get(caracter) y comprobar qué valor recibimos antes de empezar otra línea."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l5_delimitador_pendiente",
+          "language": "cpp",
+          "question": "Predice el primer texto, el recuento capturado, si separador contiene el salto y el segundo texto.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"sol\\nfin\\n\"};\n    char primera[5]{};\n    char segunda[5]{};\n    entrada.get(primera, 5);\n    const auto cuenta = entrada.gcount();\n    char separador = '?';\n    entrada.get(separador);\n    entrada.get(segunda, 5);\n    std::cout << '[' << primera << \"]:\" << cuenta << ':'\n              << (separador == '\\n') << \":[\" << segunda << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[sol]:3:1:[fin]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada extrae sol y deja su salto. get(separador) consume ese salto. La lectura del segundo array comienza entonces en fin y deja pendiente el salto de esa segunda línea."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una línea vacía hace fallar get al array"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el próximo carácter ya es el delimitador, get al array no guarda ningún char de texto, no extrae el delimitador y marca fallo. Esto es distinto de getline: getline puede extraer el salto de una línea vacía y tener éxito. En ambos casos, con un límite positivo se escribe NUL al comienzo del destino (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mientras el flujo continúe fallado, get(caracter) no extrae ese salto y no sustituye el valor anterior de la variable. clear() permite intentar otra extracción; no consume el salto por sí mismo. En el programa se restaura primero el estado y después se extrae el carácter pendiente."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l5_vacia_y_recuperacion",
+          "language": "cpp",
+          "question": "Predice el texto, el fallo y recuento iniciales, el éxito del get anterior a clear, la comparación del salto después de clear y la línea siguiente.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\nfin\\n\"};\n    char texto[4]{'X', 'Y', 'Z', '\\0'};\n    entrada.get(texto, 4);\n    const bool fallo = entrada.fail();\n    const auto cuenta = entrada.gcount();\n    char salto = '?';\n    const bool antes = static_cast<bool>(entrada.get(salto));\n    entrada.clear();\n    entrada.get(salto);\n    std::string siguiente;\n    std::getline(entrada, siguiente);\n    std::cout << '[' << texto << \"]:\" << fallo << ':' << cuenta << ':'\n              << antes << ':' << (salto == '\\n') << \":[\" << siguiente << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[]:1:0:0:1:[fin]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El primer get al array no extrae nada y escribe NUL. Antes de clear no se puede extraer el salto. Tras clear, get lo obtiene y permite que std::getline reciba fin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Llegar al límite de get no significa recibir la línea completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si get al array guarda n - 1 char, puede detenerse sin fallo aunque todavía quede texto de esa misma línea. Por eso no se puede deducir que lo siguiente sea un salto. La capacidad protege el destino; no acredita que se recibió el dato entero."
+        },
+        {
+          "type": "paragraph",
+          "text": "La notación entrada.get(texto, n).get() encadena dos llamadas. La primera devuelve el propio flujo, que se utiliza para la segunda. Esa segunda llamada intenta extraer un carácter: consume el salto sólo si el salto está realmente en esa posición y el flujo permite extraer (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l5_cadena_no_general",
+          "language": "cpp",
+          "question": "Este programa aplica el encadenamiento sin comprobar qué carácter queda. Predice el prefijo, el fallo consultado y el resto de esa línea.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"solar\\nfin\\n\"};\n    char texto[4]{};\n    entrada.get(texto, 4).get();\n    const bool fallo = entrada.fail();\n    std::string resto;\n    std::getline(entrada, resto);\n    std::cout << '[' << texto << \"]:\" << fallo << \":[\" << resto << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[sol]:0:[r]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "En el array caben tres char del texto: sol. Todavía queda ar y el salto. get() consume la a, no el salto; std::getline recibe la r restante. No hay fallo que detecte por sí solo esa pérdida lógica."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El valor devuelto por get() no es un indicador de éxito"
+        },
+        {
+          "type": "paragraph",
+          "text": "get() sin argumentos devuelve un valor que representa el carácter extraído o una marca especial de fin. No devuelve el flujo como get(caracter). Por eso if (entrada.get()) comprueba ese valor, no el éxito de la lectura. Es preferible consultar el estado o usar get(caracter) cuando se necesite conservar el dato (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el programa siguiente, el primer dato es NUL, que sí se puede leer y tiene valor cero. Se guarda el resultado con auto y se consulta fail() por separado. No se imprime ese carácter de control ni se convierte una marca de fin a char."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l5_valor_y_estado",
+          "language": "cpp",
+          "question": "Predice si el valor leído es cero, si la lectura no falló y el carácter siguiente.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    const std::string fuente{'\\0', 'Q'};\n    std::istringstream entrada{fuente};\n    const auto valor = entrada.get();\n    const bool exito = !entrada.fail();\n    char siguiente = '?';\n    entrada.get(siguiente);\n    std::cout << (valor == 0) << ':' << exito << ':' << siguiente;\n    return 0;\n}\n",
+          "answers": [
+            "1:1:Q"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se leyó NUL correctamente. Su valor es cero y fail() sigue siendo false. Interpretar sólo ese valor como bool confundiría un dato cero con un fallo. Después se extrae Q."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar límite, delimitador y fin"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aplica las reglas de get al array a cuatro entradas independientes. Compáralas con getline de la lección anterior: aquí el salto no se extrae y una línea vacía no produce el mismo resultado de éxito."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u2l5_get_con_limite",
+          "prompt": "Cada fila utiliza un flujo inicialmente correcto, char texto[4]{} y entrada.get(texto, 4), sin llamadas posteriores antes de consultar el estado. LF representa un salto y EOF el fin de entrada. Completa el recuento o indicador solicitado; escribe 1 para true y 0 para false.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Caso",
+                "Entrada disponible"
+              ],
+              "rows": [
+                [
+                  "A",
+                  "sol + LF"
+                ],
+                [
+                  "B",
+                  "solar + LF"
+                ],
+                [
+                  "C",
+                  "LF"
+                ],
+                [
+                  "D",
+                  "EOF inmediato"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a_cuenta",
+                  "type": "numeric",
+                  "label": "Caso A: gcount()",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b_fallo",
+                  "type": "numeric",
+                  "label": "Caso B: fail()",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c_fallo",
+                  "type": "numeric",
+                  "label": "Caso C: fail()",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d_fin",
+                  "type": "numeric",
+                  "label": "Caso D: eof()",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a_cuenta": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "b_fallo": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "c_fallo": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "d_fin": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A extrae tres char y deja el salto. B guarda tres char y termina por el límite sin fallo: queda ar y el salto. C no extrae nada ante el salto y falla. D encuentra el fin y lo indica; tampoco obtuvo datos.",
+            "incorrect": "Recuerda las reglas de get al array: no extrae el delimitador, llegar al límite no equivale a fallar, y no guardar ningún char sí provoca fallo. Consulta los indicadores antes de otra operación."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El número no consume automáticamente el salto posterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "La extracción >> de un entero obtiene sus caracteres numéricos y deja el carácter que detuvo esa lectura. Si la entrada contiene un entero y después un salto, ese salto queda pendiente. Una llamada inmediata a getline lo extrae y obtiene una línea vacía; no empieza directamente en la línea posterior (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l5_numero_y_linea",
+          "language": "cpp",
+          "question": "Predice el número, el primer texto obtenido con getline y el texto de la lectura siguiente. Conserva los espacios entre corchetes.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12\\n  Sol\\n\"};\n    int numero = 0;\n    char texto[6]{};\n    entrada >> numero;\n    entrada.getline(texto, 6);\n    std::string siguiente;\n    std::getline(entrada, siguiente);\n    std::cout << numero << \":[\" << texto << \"]:[\" << siguiente << ']';\n    return 0;\n}\n",
+          "answers": [
+            "12:[]:[  Sol]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La extracción numérica deja el primer salto. La lectura al array consume sólo ese salto y obtiene un texto vacío. La siguiente sí recibe los dos espacios y Sol."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Consumir un carácter no equivale a descartar hasta el salto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el contrato garantiza que después del entero aparece inmediatamente un salto, extraer ese carácter y comprobarlo puede preparar la lectura de la línea siguiente. Si permite espacios antes del salto, una llamada a get() sólo consume el primero. Si el texto va en la misma línea, descartar hasta el salto lo perdería."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l5_un_caracter",
+          "language": "cpp",
+          "question": "Aquí hay tres espacios entre el número y el salto. Predice el número, el texto guardado y la línea siguiente.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12   \\nLuna\\n\"};\n    int numero = 0;\n    char texto[6]{};\n    entrada >> numero;\n    entrada.get();\n    entrada.getline(texto, 6);\n    std::string siguiente;\n    std::getline(entrada, siguiente);\n    std::cout << numero << \":[\" << texto << \"]:[\" << siguiente << ']';\n    return 0;\n}\n",
+          "answers": [
+            "12:[  ]:[Luna]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "get() consume sólo uno de los tres espacios. getline conserva los otros dos antes de extraer el salto. No se obtiene todavía la línea Luna en ese array."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l5_contrato_del_separador",
+          "question": "El texto debe estar en la misma línea que el entero, después de un punto y coma. ¿Qué debe guiar la próxima extracción?",
+          "options": [
+            "Descartar siempre hasta el salto para limpiar la entrada.",
+            "Comprobar el punto y coma exacto y conservar después el texto de esa línea.",
+            "Extraer cualquier blanco que aparezca hasta encontrar una letra."
+          ],
+          "correctIndex": 1,
+          "explanation": "El punto y coma pertenece al formato, y el texto posterior pertenece al dato. Descartar la línea completa o eliminar blancos sin ese criterio puede borrar parte de la etiqueta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Omitir blancos puede borrar líneas vacías y espacios de un texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::ws pide al flujo que extraiga los blancos iniciales hasta encontrar un carácter que no sea blanco o el fin. Puede consumir espacios, tabuladores y varios saltos. Es útil cuando el contrato permite omitirlos; no es una solución general para combinar >> y getline (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l5_blancos_con_significado",
+          "language": "cpp",
+          "question": "El programa aplica ws después del entero. Predice el número y el texto que termina conservando.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12\\n\\n  Sol\\n\"};\n    int numero = 0;\n    entrada >> numero;\n    entrada >> std::ws;\n    std::string texto;\n    std::getline(entrada, texto);\n    std::cout << numero << \":[\" << texto << ']';\n    return 0;\n}\n",
+          "answers": [
+            "12:[Sol]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "ws consume el salto pendiente, la línea vacía siguiente y los dos espacios anteriores a Sol. Si esa línea vacía o esos espacios eran datos, ya se perdieron antes de getline."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para conservar una línea vacía no basta con que getline la admita: también hay que evitar que una operación anterior ya haya consumido su salto. Decide qué blancos pertenecen al separador y cuáles al dato antes de elegir la operación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar un separador inmediato y conservar el texto posterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "La práctica utilizará un formato concreto: un entero decimal extraído con >>, un punto y coma inmediato, una etiqueta y un salto final obligatorio. Después del punto y coma, los espacios forman parte de la etiqueta. La etiqueta puede estar vacía y admite hasta cinco char de texto, sin NUL interiores."
+        },
+        {
+          "type": "paragraph",
+          "text": "La extracción numérica habitual puede omitir blancos iniciales, incluidos saltos. Este formato permite esos blancos anteriores al entero; no afirma que >> compruebe su ausencia. Después del entero no permite blancos antes del punto y coma: 3 ;Sol y 3x;Sol incumplen el separador inmediato aunque la extracción numérica haya obtenido 3."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l5_texto_misma_linea",
+          "language": "cpp",
+          "question": "El ejemplo ya contiene el separador esperado y un salto final. Predice el número, la comparación del separador y el texto.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"12; Luz\\n\"};\n    int numero = 0;\n    char separador = '?';\n    char texto[6]{};\n    entrada >> numero;\n    entrada.get(separador);\n    entrada.getline(texto, 6);\n    std::cout << numero << ':' << (separador == ';') << \":[\" << texto << ']';\n    return 0;\n}\n",
+          "answers": [
+            "12:1:[ Luz]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "get obtiene el punto y coma sin saltar caracteres. getline recibe el espacio y Luz: cuatro char de texto que caben junto al terminador. Descartar hasta el salto en este punto eliminaría toda esa etiqueta."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u2l5_comprobar_separador",
+          "language": "cpp",
+          "question": "Completa el operador que exige que el carácter extraído sea el punto y coma. El acceso al segundo operando sólo ocurre si get tiene éxito.",
+          "template": "if (entrada.get(separador) && separador [] ';') {\n    // Leer la etiqueta.\n}\n",
+          "answers": [
+            "=="
+          ],
+          "explanation": "La comparación == comprueba el valor exacto que get obtuvo. get conserva los blancos, por lo que un espacio anterior al punto y coma también provoca el rechazo exigido por este formato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rechazar sin descartar por error la línea siguiente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo se sustituirá el par número y etiqueta del registro cuando todo el registro cumpla el formato. Si el entero, el separador, la capacidad de la etiqueta o el salto final fallan, se conservan ambos valores anteriores. Una etiqueta parcial terminada en NUL no basta para aceptar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al rechazar, se descarta sólo el resto de la línea del registro que todavía esté pendiente. Si get(separador) ya obtuvo '\\n' en lugar de ';', esa línea ya terminó y el salto ya se consumió. No se debe descartar otra línea. Hay que registrar ese hecho sólo si la extracción de separador tuvo éxito."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el punto y coma era correcto, getline recibe la etiqueta con un array de seis char y límite 6. En esta práctica se exige su salto final: sólo una lectura sin fallo y sin eof() confirma que se extrajo ese salto (ISO/IEC JTC 1/SC 22/WG 21, 2023). Una última etiqueta sin salto se rechaza aunque getline haya recibido datos sin marcar fail(). Es una condición del formato, distinta del contrato de la práctica anterior."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l5_salto_ya_consumido",
+          "question": "La entrada contiene 4, un salto y después fin en la línea siguiente. get ya extrajo ese salto al buscar el punto y coma. ¿Cómo se continúa tras rechazar?",
+          "options": [
+            "Descartando otra línea completa para asegurar que no quede entrada vieja.",
+            "Actualizando el número porque la extracción numérica tuvo éxito.",
+            "Conservando el registro y leyendo la línea siguiente desde su comienzo actual."
+          ],
+          "correctIndex": 2,
+          "explanation": "El salto que terminó la línea del registro ya se consumió. La posición actual es el comienzo de fin; aplicar ignore hasta otro salto descartaría esa línea que debemos observar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir la lectura de un registro y conservar el siguiente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa la zona indicada del editor. El registro empieza con número 42 y etiqueta base. El código ya intenta extraer nuevoNumero con >> y guarda su éxito en numeroLeido. La entrada usa los blancos y los caracteres sencillos ya descritos; no contiene NUL interiores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se obtuvo el entero, extrae exactamente el carácter siguiente con get y comprueba el punto y coma. Si corresponde, lee la etiqueta en un array de seis elementos mediante getline con límite 6. Conserva los espacios y la etiqueta vacía. Acepta sólo si también se obtuvo el salto final; entonces actualiza numero y registro y deja aceptado en true."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cualquier rechazo conserva el número 42 y la etiqueta base. Lleva cuenta de si ya se consumió el salto de la línea del registro. Si queda resto pendiente y no se alcanzó el fin, restaura el estado y descarta sólo hasta el salto de esa línea. Si el salto ya se consumió, no descartes otra línea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mantén el intento final de std::getline y el informe. Siguiente debe mostrar la línea que viene después del registro, con su éxito de lectura, tanto si el registro se aceptó como si se rechazó. Comprueba también bad() antes de la posible recuperación; si ya está indicado, detén el programa. No utilices clear para tratar esa avería como un dato válido."
+        },
+        {
+          "type": "paragraph",
+          "text": "No uses ws para eliminar espacios de la etiqueta ni >> para saltar blancos al buscar el separador. Decide el rechazo antes de actualizar cualquiera de los dos valores del registro."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer caso, obligatorio. La etiqueta contiene dos espacios iniciales y Sol: cinco char. Ambas líneas terminan con salto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada preparada, con sus caracteres finales exactos:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "7;  Sol\nfin\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nRegistro=7:[  Sol]\nSiguiente=1:[fin]\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    int nuevoNumero = 0;\n    const bool numeroLeido = static_cast<bool>(std::cin >> nuevoNumero);\n    if (std::cin.bad()) {\n        return 2;\n    }\n    int numero = 42;\n    std::string registro = \"base\";\n    bool aceptado = false;\n\n    if (numeroLeido) {\n        // Comprueba el separador y lee la etiqueta con limite.\n    }\n    // Conserva o actualiza el registro segun el contrato.\n    // Descarta solo el resto rechazado que siga pendiente.\n\n    std::string siguiente;\n    const bool haySiguiente = static_cast<bool>(std::getline(std::cin, siguiente));\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=\" << numero << \":[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n    return 0;\n}\n",
+          "initialStandardInput": "7;  Sol\nfin\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "7;  Sol\nfin\n",
+                "outputs": [
+                  "Aceptado=1\nRegistro=7:[  Sol]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "0;\nfin\n",
+                "outputs": [
+                  "Aceptado=1\nRegistro=0:[]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "3 ;Sol\nfin\n",
+                "outputs": [
+                  "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "3x;Sol\nfin\n",
+                "outputs": [
+                  "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "4\nfin\n",
+                "outputs": [
+                  "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "8;abcdef\nfin\n",
+                "outputs": [
+                  "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "9;Sol",
+                "outputs": [
+                  "Aceptado=0\nRegistro=42:[base]\nSiguiente=0:[]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              },
+              {
+                "standardInput": "oops;Sol\nfin\n",
+                "outputs": [
+                  "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+                ],
+                "explanation": "Comprobar el separador inmediato, la etiqueta y su salto; actualizar el par sólo al aceptar y conservar la siguiente línea al recuperar un rechazo."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo el primer caso correcto es obligatorio para avanzar. Los demás son ensayos opcionales e independientes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: etiqueta vacía y separadores incorrectos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada entrada se ejecuta por separado. La etiqueta vacía es válida porque el salto final sí está presente. En los otros casos, el carácter que sigue al número incumple el separador exacto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional. Después del punto y coma aparece inmediatamente el salto. La línea fin también termina con salto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada preparada, con sus caracteres finales exactos:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0;\nfin\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nRegistro=0:[]\nSiguiente=1:[fin]\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional. Hay un espacio entre el entero y el punto y coma; ambas líneas terminan con salto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada preparada, con sus caracteres finales exactos:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "3 ;Sol\nfin\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional. La extracción numérica puede leer 3, pero x no es el separador; ambas líneas terminan con salto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada preparada, con sus caracteres finales exactos:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "3x;Sol\nfin\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: salto ya consumido y etiqueta larga"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el primer caso, comprobar el separador ya extrae el salto. En el segundo, getline deja un resto de etiqueta que se debe descartar. Los dos rechazos deben conservar fin como línea siguiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional. La primera línea contiene sólo 4 y su salto. La segunda contiene fin y su salto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada preparada, con sus caracteres finales exactos:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "4\nfin\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional. La etiqueta tiene seis char antes del salto y sólo admite cinco; fin está en otra línea con salto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada preparada, con sus caracteres finales exactos:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8;abcdef\nfin\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: falta de salto y fallo numérico"
+        },
+        {
+          "type": "paragraph",
+          "text": "El registro requiere el salto final de su propia línea. Un entero válido no basta por sí solo para aceptar el par."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional. Sólo hay 9;Sol, sin salto final ni línea posterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada preparada, con sus caracteres finales exactos:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "9;Sol"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nRegistro=42:[base]\nSiguiente=0:[]\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional. oops no es un entero; después de esa línea con salto viene fin y su salto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada preparada, con sus caracteres finales exactos:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "oops;Sol\nfin\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nRegistro=42:[base]\nSiguiente=1:[fin]\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: registrar el separador que ya se consumió"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n#include <string>\n\nint main() {\n    int nuevoNumero = 0;\n    const bool numeroLeido = static_cast<bool>(std::cin >> nuevoNumero);\n    if (std::cin.bad()) {\n        return 2;\n    }\n    int numero = 42;\n    std::string registro = \"base\";\n    bool aceptado = false;\n\n    bool saltoConsumido = false;\n    if (numeroLeido) {\n        char separador = '?';\n        if (std::cin.get(separador)) {\n            if (separador == ';') {\n                char candidato[6]{};\n                std::cin.getline(candidato, 6);\n                saltoConsumido = !std::cin.fail() && !std::cin.eof();\n                if (saltoConsumido) {\n                    numero = nuevoNumero;\n                    registro = candidato;\n                    aceptado = true;\n                }\n            } else {\n                saltoConsumido = separador == '\\n';\n            }\n        }\n    }\n    if (std::cin.bad()) {\n        return 2;\n    }\n    if (!aceptado && !saltoConsumido && !std::cin.eof()) {\n        std::cin.clear();\n        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\\n');\n    }\n\n    std::string siguiente;\n    const bool haySiguiente = static_cast<bool>(std::getline(std::cin, siguiente));\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"Registro=\" << numero << \":[\" << registro << \"]\\n\";\n    std::cout << \"Siguiente=\" << haySiguiente << \":[\" << siguiente << \"]\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con 7;  Sol se extrae el punto y coma exacto, se conservan los dos espacios y se reciben cinco char de etiqueta más el salto. Entonces se actualizan juntos los dos valores. Con 0; y salto se acepta la etiqueta vacía; el cero es un número válido, no una señal de fallo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con 3 ;Sol o 3x;Sol se consume un separador incorrecto y queda parte de la misma línea. Se conserva el registro, se descarta ese resto y la lectura final obtiene fin. Con 4 y salto, el carácter incorrecto ya era el salto: saltoConsumido evita que ignore descarte fin."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con una etiqueta demasiado larga se conserva base y se descarta el resto pendiente tras restaurar el estado. Con 9;Sol sin salto, getline marca el fin y el formato rechaza el registro. Ningún caso publica el número nuevo antes de comprobar también su etiqueta."
+        },
+        {
+          "type": "paragraph",
+          "text": "saltoConsumido se determina después de una extracción comprobada. No se deduce del valor viejo de una variable char si get falló. Después de getline, la combinación sin fallo y sin fin confirma el salto porque este código usa el delimitador habitual y no ha ocurrido una avería."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Relacionar cada descarte con su contrato"
+        },
+        {
+          "type": "paragraph",
+          "text": "get(caracter): obtiene el próximo char sin omitir blancos.\nget(array, n): obtiene un prefijo acotado y deja el delimitador.\ngetline(array, n): consume el delimitador al encontrarlo.\nignore hasta un delimitador: descarta también ese delimitador.\nws: elimina blancos iniciales, que pueden incluir varias líneas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de consumir, identifica qué carácter quedó pendiente y si pertenece al formato o al dato. Después de consumir, conserva el resultado que necesitarás para decidir el siguiente paso. Una lectura puede respetar los límites de memoria y aun así incumplir el formato o borrar texto válido."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la siguiente lección veremos otra forma de guardar una cantidad fija de elementos: std::array. Podremos copiar el conjunto con una asignación y comprobar qué ocurre al modificar la copia."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "c6da8a8b65d35d2abf02df9cb2ec96aa288519a488f7093a3bd7bfe29c4b3008"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "ec2f7a739e8d74d5157484e5a945073a849f2964726cb3c2f2b977f1fa4183de"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "aa309142fe97dd057ea1917b1116830b74d5a732433a6c1f1426c5b43a75d36d"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "cc1f715ac44af3fdc9b3e828557426f39bf0d8477746ff65a8c472201dfb977b"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "3166b69a284453554235b1510916a08ec616a34bbce3833893081be0b3c9642a"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "2ce408ce0301342b12980bd7e48a413c32eb5736fc517cf94a00a77c3f494973"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "45c740a99d106a9229ee494bbb3fcd3e3247196045e895b48d7875e99360c6e3"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "45891b0753d5dfec351aeba21d5d03a1baf625ae65ad920350b0a3f6ca69ec47"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "a526f3b9eeb0c0fabb044fd47e3e98bde9441d70644a814d1d66a061fa394042"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "b844568e4d6787e9ac9fcbed4464533affc43cd6a9776dcccb439f07db310983"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "a4fa69ab28f7c2f0b37031fbc370c7acfdc89094db7acc9923abb39144580cd2"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "4107acc85d69b1e8ba0aa4ecd66a1758d35cab9bdac7e79b8901a45c9bb05280"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "8de3f8e923b93cc96cb04fe92bf47958db6ff832069a774cc0da187e2de08ede"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0008",
+            "sha256": "e942176f0bdd761db6bf7de9a4cb83ca24a1b8e0989019e346e76515284e7e66"
+          },
+          {
+            "id": "block_0011_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0010",
+            "sha256": "bc8301305b153899ae90dd000b5e100d68cbb30acb1d837e4ad19f1415c39318"
+          },
+          {
+            "id": "block_0011_0011",
+            "sha256": "7444e34f178199ca0c91b868add5e1701d529290fbb76e7ed3878c18fe56b427"
+          },
+          {
+            "id": "block_0011_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "4233824e885a4df6d5518951ecded6ee066a40152efd9b93def72736488638bb"
+          },
+          {
+            "id": "block_0012_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0006",
+            "sha256": "819f6794ddebca494b0bca0a0ac5eab70f3bcedaf322626015c150d4dbf35628"
+          },
+          {
+            "id": "block_0012_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0009",
+            "sha256": "8e157f655c5442cbc2fbc7e795af9f25e1cc81f9b1b94cb70718331f60cf2d0c"
+          },
+          {
+            "id": "block_0012_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0011",
+            "sha256": "783b75652521b26f34789ce5497a6fa7238fbc92dc9fb17d5dc5029b3fb7c3fe"
+          },
+          {
+            "id": "block_0012_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0013",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0014",
+            "sha256": "c0b698cb3dfa2e7ab379aece265cb8c8adc66884c68f10fe90214c82de6027ef"
+          },
+          {
+            "id": "block_0012_0015",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0016",
+            "sha256": "783b75652521b26f34789ce5497a6fa7238fbc92dc9fb17d5dc5029b3fb7c3fe"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "17197f09a63f66ecd826c69d089bcf6234ade1673ac21cf0dd147b8d41b8558d"
+          },
+          {
+            "id": "block_0013_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0006",
+            "sha256": "783b75652521b26f34789ce5497a6fa7238fbc92dc9fb17d5dc5029b3fb7c3fe"
+          },
+          {
+            "id": "block_0013_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0009",
+            "sha256": "1594ccc4d2815985c01ce9ddf664fa242dd572f7086f3342a2f975558ed1f5aa"
+          },
+          {
+            "id": "block_0013_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0011",
+            "sha256": "783b75652521b26f34789ce5497a6fa7238fbc92dc9fb17d5dc5029b3fb7c3fe"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "e2df8a854263f21900c7c843bf2d575157f884f81a35fcfc469f6b71c3ce05e2"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0006",
+            "sha256": "f695da2c0d9004b1738726237d003b0ede4be193f07ec097093316e5c70ee1d1"
+          },
+          {
+            "id": "block_0014_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0009",
+            "sha256": "e7b3ab8e5c9ea7dde452deb9a8cbbadb21b39217f5c2e8ad2c4ba304c1b8fec0"
+          },
+          {
+            "id": "block_0014_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0011",
+            "sha256": "783b75652521b26f34789ce5497a6fa7238fbc92dc9fb17d5dc5029b3fb7c3fe"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "e89fc4e65a0b010856485035b97581ee5615054b626b9ec0088d1f791e0b5308"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005",
+          "block_0011_0006",
+          "block_0011_0007",
+          "block_0011_0008",
+          "block_0011_0009",
+          "block_0011_0010",
+          "block_0011_0011",
+          "block_0011_0012"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004",
+          "block_0012_0005",
+          "block_0012_0006",
+          "block_0012_0007",
+          "block_0012_0008",
+          "block_0012_0009",
+          "block_0012_0010",
+          "block_0012_0011",
+          "block_0012_0012",
+          "block_0012_0013",
+          "block_0012_0014",
+          "block_0012_0015",
+          "block_0012_0016"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004",
+          "block_0013_0005",
+          "block_0013_0006",
+          "block_0013_0007",
+          "block_0013_0008",
+          "block_0013_0009",
+          "block_0013_0010",
+          "block_0013_0011"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005",
+          "block_0014_0006",
+          "block_0014_0007",
+          "block_0014_0008",
+          "block_0014_0009",
+          "block_0014_0010",
+          "block_0014_0011"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004",
+          "block_0015_0005"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "cd5ca57865a408aeb425cb44b332efcd0c60845ebdb5a865489753922de4a7ad",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "c6da8a8b65d35d2abf02df9cb2ec96aa288519a488f7093a3bd7bfe29c4b3008"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "ec2f7a739e8d74d5157484e5a945073a849f2964726cb3c2f2b977f1fa4183de"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "aa309142fe97dd057ea1917b1116830b74d5a732433a6c1f1426c5b43a75d36d"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "cc1f715ac44af3fdc9b3e828557426f39bf0d8477746ff65a8c472201dfb977b"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "3166b69a284453554235b1510916a08ec616a34bbce3833893081be0b3c9642a"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "2ce408ce0301342b12980bd7e48a413c32eb5736fc517cf94a00a77c3f494973"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "45c740a99d106a9229ee494bbb3fcd3e3247196045e895b48d7875e99360c6e3"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "45891b0753d5dfec351aeba21d5d03a1baf625ae65ad920350b0a3f6ca69ec47"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "a526f3b9eeb0c0fabb044fd47e3e98bde9441d70644a814d1d66a061fa394042"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "b844568e4d6787e9ac9fcbed4464533affc43cd6a9776dcccb439f07db310983"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "a4fa69ab28f7c2f0b37031fbc370c7acfdc89094db7acc9923abb39144580cd2"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "4107acc85d69b1e8ba0aa4ecd66a1758d35cab9bdac7e79b8901a45c9bb05280"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "8de3f8e923b93cc96cb04fe92bf47958db6ff832069a774cc0da187e2de08ede"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0008",
+                "sha256": "e942176f0bdd761db6bf7de9a4cb83ca24a1b8e0989019e346e76515284e7e66"
+              },
+              {
+                "id": "block_0011_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0010",
+                "sha256": "bc8301305b153899ae90dd000b5e100d68cbb30acb1d837e4ad19f1415c39318"
+              },
+              {
+                "id": "block_0011_0011",
+                "sha256": "7444e34f178199ca0c91b868add5e1701d529290fbb76e7ed3878c18fe56b427"
+              },
+              {
+                "id": "block_0011_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "4233824e885a4df6d5518951ecded6ee066a40152efd9b93def72736488638bb"
+              },
+              {
+                "id": "block_0012_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0006",
+                "sha256": "819f6794ddebca494b0bca0a0ac5eab70f3bcedaf322626015c150d4dbf35628"
+              },
+              {
+                "id": "block_0012_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0009",
+                "sha256": "8e157f655c5442cbc2fbc7e795af9f25e1cc81f9b1b94cb70718331f60cf2d0c"
+              },
+              {
+                "id": "block_0012_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0011",
+                "sha256": "783b75652521b26f34789ce5497a6fa7238fbc92dc9fb17d5dc5029b3fb7c3fe"
+              },
+              {
+                "id": "block_0012_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0013",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0014",
+                "sha256": "c0b698cb3dfa2e7ab379aece265cb8c8adc66884c68f10fe90214c82de6027ef"
+              },
+              {
+                "id": "block_0012_0015",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0016",
+                "sha256": "783b75652521b26f34789ce5497a6fa7238fbc92dc9fb17d5dc5029b3fb7c3fe"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "17197f09a63f66ecd826c69d089bcf6234ade1673ac21cf0dd147b8d41b8558d"
+              },
+              {
+                "id": "block_0013_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0006",
+                "sha256": "783b75652521b26f34789ce5497a6fa7238fbc92dc9fb17d5dc5029b3fb7c3fe"
+              },
+              {
+                "id": "block_0013_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0009",
+                "sha256": "1594ccc4d2815985c01ce9ddf664fa242dd572f7086f3342a2f975558ed1f5aa"
+              },
+              {
+                "id": "block_0013_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0011",
+                "sha256": "783b75652521b26f34789ce5497a6fa7238fbc92dc9fb17d5dc5029b3fb7c3fe"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "e2df8a854263f21900c7c843bf2d575157f884f81a35fcfc469f6b71c3ce05e2"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0006",
+                "sha256": "f695da2c0d9004b1738726237d003b0ede4be193f07ec097093316e5c70ee1d1"
+              },
+              {
+                "id": "block_0014_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0009",
+                "sha256": "e7b3ab8e5c9ea7dde452deb9a8cbbadb21b39217f5c2e8ad2c4ba304c1b8fec0"
+              },
+              {
+                "id": "block_0014_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0011",
+                "sha256": "783b75652521b26f34789ce5497a6fa7238fbc92dc9fb17d5dc5029b3fb7c3fe"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "e89fc4e65a0b010856485035b97581ee5615054b626b9ec0088d1f791e0b5308"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
