@@ -638,7 +638,7 @@ void native_hit_geometry(HWND parent) {
         POINT zero{};SendMessageW(target.value,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&zero));
         SendMessageW(target.value,EM_SETREADONLY,readonly,0);
     };
-    const auto verify=[&](POINT point,bool expected,const char* reason){
+    const auto verify=[&](POINT point,bool expected,const char* reason,LONG begin=-1,LONG end=-1){
         RECT client{};GetClientRect(target.value,&client);
         check(PtInRect(&client,point)!=FALSE,"The independent hit-test point must be inside the live client rectangle");
         const auto text=edit_text(target.value);CHARRANGE selected{};POINT scroll{};
@@ -649,8 +649,48 @@ void native_hit_geometry(HWND parent) {
         const auto focus=GetFocus(),capture=GetCapture();
         int numerator=0,denominator=0;SendMessageW(target.value,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
         const bool actual=rich_text_hit_test(target.value,point);
-        if(actual!=expected)std::cerr<<"Native hit point "<<point.x<<','<<point.y<<" zoom "<<numerator<<'/'<<denominator
-            <<" scroll "<<scroll.x<<','<<scroll.y<<" expected="<<expected<<" actual="<<actual<<'\n';
+        if(actual!=expected){
+            POINTL query{point.x,point.y};
+            const auto nearest=SendMessageW(target.value,EM_CHARFROMPOS,0,reinterpret_cast<LPARAM>(&query));
+            std::cerr<<"Native hit point "<<point.x<<','<<point.y<<" zoom "<<numerator<<'/'<<denominator
+                <<" scroll "<<scroll.x<<','<<scroll.y<<" expected="<<expected<<" actual="<<actual
+                <<" probe="<<checks<<" span="<<begin<<','<<end<<" nearest="<<nearest
+                <<" dpi="<<GetDpiForWindow(target.value)<<" readonly="<<((GetWindowLongPtrW(target.value,GWL_STYLE)&ES_READONLY)!=0)<<'\n';
+            if(begin>=0&&end>begin){
+                const auto units=wide(text);const auto newline=units.find(L'\n');
+                const auto a=position(begin),b=position(end),first=position(0);
+                POINTL second{LONG_MIN,LONG_MIN};
+                if(newline!=std::wstring::npos)SendMessageW(target.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&second),static_cast<LPARAM>(newline+1));
+                std::cerr<<"Native span start="<<a.x<<','<<a.y<<" end="<<b.x<<','<<b.y
+                    <<" first="<<first.x<<','<<first.y<<" second="<<second.x<<','<<second.y<<'\n';
+                for(LONG at=begin;at<end;++at)std::cerr<<"UTF16["<<at<<"]="<<static_cast<unsigned>(units.at(at))<<'\n';
+                const auto raw_range=[&](LONG at,LONG count){
+                    if(at<0||at>static_cast<LONG>(units.size()))return;
+                    POINTL at_point{LONG_MIN,LONG_MIN};
+                    SendMessageW(target.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&at_point),at);
+                    std::cerr<<"Native candidate="<<at<<" point="<<at_point.x<<','<<at_point.y;
+                    if(at<static_cast<LONG>(units.size())){
+                        wchar_t copied_units[8]{};
+                        TEXTRANGEW request{{at,at+std::min<LONG>(count,static_cast<LONG>(units.size())-at)},copied_units};
+                        const auto copied=SendMessageW(target.value,EM_GETTEXTRANGE,0,reinterpret_cast<LPARAM>(&request));
+                        std::cerr<<" requested="<<request.chrg.cpMin<<','<<request.chrg.cpMax<<" copied="<<copied<<" units=";
+                        for(LRESULT unit=0;unit<std::min<LRESULT>(copied,7);++unit)std::cerr<<static_cast<unsigned>(copied_units[unit])<<',';
+                    }
+                    std::cerr<<'\n';
+                };
+                raw_range(begin,2);raw_range(static_cast<LONG>(nearest),1);raw_range(static_cast<LONG>(nearest)-1,1);
+                Microsoft::WRL::ComPtr<IRichEditOle> rich;Microsoft::WRL::ComPtr<ITextDocument> document;
+                Microsoft::WRL::ComPtr<ITextRange> range;Microsoft::WRL::ComPtr<ITextFont> font;
+                SendMessageW(target.value,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
+                if(rich&&SUCCEEDED(rich.As(&document))&&SUCCEEDED(document->Range(begin,end,&range))&&range){
+                    if(SUCCEEDED(range->GetFont(&font))&&font){float size=0;BSTR face=nullptr;font->GetSize(&size);font->GetName(&face);
+                        std::cerr<<"TOM font="<<utf8(face?std::wstring_view(face,SysStringLen(face)):std::wstring_view{})<<" size="<<size<<'\n';SysFreeString(face);}
+                    for(const auto alignment:{TA_LEFT|TA_TOP,TA_RIGHT|TA_TOP,TA_LEFT|TA_BOTTOM,TA_RIGHT|TA_BOTTOM}){
+                        LONG x=LONG_MIN,y=LONG_MIN;const auto result=range->GetPoint(tomStart|tomClientCoord|tomAllowOffClient|alignment,&x,&y);
+                        std::cerr<<"TOM start alignment="<<alignment<<" result="<<result<<" point="<<x<<','<<y<<'\n';}
+                }
+            }
+        }
         check(actual==expected,reason);
         CHARRANGE after{};POINT after_scroll{};int after_numerator=0,after_denominator=0;
         SendMessageW(target.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
@@ -673,8 +713,8 @@ void native_hit_geometry(HWND parent) {
         const auto span=[&](LONG first_index,LONG after_index,bool expected,const char* reason){
             const auto a=position(first_index),b=position(after_index);
             check(a.y==b.y&&b.x>a.x+1,"The independently measured character span is not on one visual row");
-            verify({a.x+1,a.y+height/2},expected,reason);
-            verify({a.x+std::min<LONG>(b.x-a.x-1,3*(b.x-a.x)/4),a.y+height/2},expected,reason);
+            verify({a.x+1,a.y+height/2},expected,reason,first_index,after_index);
+            verify({a.x+std::min<LONG>(b.x-a.x-1,3*(b.x-a.x)/4),a.y+height/2},expected,reason,first_index,after_index);
         };
         // Native positions choose the points, never the hit-test under test.
         // Cover a following letter, space, tab, CR and complete surrogate pair.
