@@ -914,44 +914,81 @@ void use_plain_text_input(HWND edit) {
     // Both are released by native destruction, regardless of callback order.
 }
 bool rich_text_hit_test(HWND edit,POINT point) {
+    RECT client{};
+    if(!IsWindow(edit)||!GetClientRect(edit,&client)||!PtInRect(&client,point))return false;
+    GETTEXTLENGTHEX length_request{GTL_PRECISE|GTL_NUMCHARS,1200};
+    const auto length=static_cast<LONG>(SendMessageW(edit,EM_GETTEXTLENGTHEX,
+        reinterpret_cast<WPARAM>(&length_request),0));
+    if(length<=0)return false;
     const auto px=[&](int dip){return MulDiv(dip,static_cast<int>(GetDpiForWindow(edit)),96);};
     POINTL location{point.x,point.y};
-    const auto character=static_cast<LONG>(SendMessageW(edit,EM_CHARFROMPOS,0,reinterpret_cast<LPARAM>(&location)));
-    if(character<0)return false;
-    wchar_t value[2]{};TEXTRANGEW range{{character,character+1},value};
-    SendMessageW(edit,EM_GETTEXTRANGE,0,reinterpret_cast<LPARAM>(&range));
-    if(!value[0]||value[0]==L'\r'||value[0]==L'\n'||value[0]==L' '||value[0]==L'\t')return false;
-    POINTL start{},end{};
-    SendMessageW(edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&start),character);
-    SendMessageW(edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&end),character+1);
-    // Read this character's actual font without selecting it. Selecting a
-    // range would change the caret/history while deciding gesture ownership.
-    int height=px(24),advance=px(14);
+    const auto nearest=static_cast<LONG>(SendMessageW(edit,EM_CHARFROMPOS,0,reinterpret_cast<LPARAM>(&location)));
+    if(nearest<0)return false;
+    const auto unit=[&](LONG at){
+        wchar_t value[2]{};
+        if(at>=0&&at<length){TEXTRANGEW range{{at,at+1},value};
+            SendMessageW(edit,EM_GETTEXTRANGE,0,reinterpret_cast<LPARAM>(&range));}
+        return value[0];
+    };
+    const auto first_unit=[&](LONG at){
+        if(at>0&&at<length&&IS_LOW_SURROGATE(unit(at))&&IS_HIGH_SURROGATE(unit(at-1)))--at;
+        return at;
+    };
     Microsoft::WRL::ComPtr<IRichEditOle> ole;
     SendMessageW(edit,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(ole.GetAddressOf()));
     Microsoft::WRL::ComPtr<ITextDocument> document;
-    Microsoft::WRL::ComPtr<ITextRange> text_range;
-    Microsoft::WRL::ComPtr<ITextFont> text_font;
-    if(ole&&SUCCEEDED(ole.As(&document))&&SUCCEEDED(document->Range(character,character+1,&text_range))
-        &&SUCCEEDED(text_range->GetFont(&text_font))){
-        float points=18;BSTR face=nullptr;
-        text_font->GetSize(&points);text_font->GetName(&face);
-        int numerator=0,denominator=0;
-        SendMessageW(edit,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
-        const int zoom=denominator>0?MulDiv(numerator,100,denominator):100;
-        const auto font=CreateFontW(-MulDiv(static_cast<int>(points*20+.5f)*zoom,
-            static_cast<int>(GetDpiForWindow(edit)),1440*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,
-            DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH,face?face:L"Segoe UI");
-        if(font){
-            const auto dc=GetDC(edit);const auto previous=SelectObject(dc,font);TEXTMETRICW metrics{};SIZE glyph{};
-            if(GetTextMetricsW(dc,&metrics))height=metrics.tmHeight+metrics.tmExternalLeading;
-            if(GetTextExtentPoint32W(dc,value,1,&glyph))advance=glyph.cx;
-            SelectObject(dc,previous);ReleaseDC(edit,dc);DeleteObject(font);
+    if(ole)ole.As(&document);
+    const auto contains=[&](LONG character){
+        if(character<0||character>=length)return false;
+        wchar_t value[3]{};TEXTRANGEW range{{character,character+std::min<LONG>(2,length-character)},value};
+        SendMessageW(edit,EM_GETTEXTRANGE,0,reinterpret_cast<LPARAM>(&range));
+        if(!value[0]||value[0]==L'\r'||value[0]==L'\n'||value[0]==L' '||value[0]==L'\t')return false;
+        const int units=IS_HIGH_SURROGATE(value[0])&&IS_LOW_SURROGATE(value[1])?2:1;
+        constexpr auto absent=std::numeric_limits<LONG>::min();
+        POINTL start{absent,absent},end{absent,absent};
+        SendMessageW(edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&start),character);
+        SendMessageW(edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&end),character+units);
+        if(start.x==absent||start.y==absent)return false;
+        // Observe the complete UTF-16 character without selecting it. The
+        // native positions already include formatting margins, zoom and scroll.
+        int height=px(24),advance=px(14);
+        Microsoft::WRL::ComPtr<ITextRange> text_range;
+        Microsoft::WRL::ComPtr<ITextFont> text_font;
+        if(document&&SUCCEEDED(document->Range(character,character+units,&text_range))
+            &&text_range&&SUCCEEDED(text_range->GetFont(&text_font))&&text_font){
+            float points=18;BSTR face=nullptr;
+            text_font->GetSize(&points);text_font->GetName(&face);
+            int numerator=0,denominator=0;
+            SendMessageW(edit,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            const int zoom=denominator>0?MulDiv(numerator,100,denominator):100;
+            const auto font=CreateFontW(-MulDiv(static_cast<int>(points*20+.5f)*zoom,
+                static_cast<int>(GetDpiForWindow(edit)),1440*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,
+                DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH,face?face:L"Segoe UI");
+            if(font){
+                const auto dc=GetDC(edit);const auto previous=SelectObject(dc,font);TEXTMETRICW metrics{};SIZE glyph{};
+                if(GetTextMetricsW(dc,&metrics))height=metrics.tmHeight+metrics.tmExternalLeading;
+                if(GetTextExtentPoint32W(dc,value,units,&glyph))advance=glyph.cx;
+                SelectObject(dc,previous);ReleaseDC(edit,dc);DeleteObject(font);
+            }
+            SysFreeString(face);
         }
-        SysFreeString(face);
-    }
-    const int right=end.y==start.y&&end.x>start.x?end.x:start.x+advance;
-    return point.x>=start.x&&point.x<right&&point.y>=start.y&&point.y<start.y+height;
+        LONG left=start.x,right=start.x+advance;
+        if(character+units<length&&end.y==start.y&&end.x!=absent&&end.x!=start.x){left=std::min(start.x,end.x);right=std::max(start.x,end.x);}
+        else if(text_range){
+            // At EOF or a wrap, the next character need not have a usable
+            // position on this row. TOM supplies this native character's edges.
+            POINTL a{},b{};constexpr long coordinates=tomStart|tomClientCoord|tomAllowOffClient|TA_TOP;
+            if(text_range->GetPoint(coordinates|TA_LEFT,&a.x,&a.y)==S_OK
+                &&text_range->GetPoint(coordinates|TA_RIGHT,&b.x,&b.y)==S_OK
+                &&a.y==start.y&&b.y==start.y&&a.x!=b.x){left=std::min(a.x,b.x);right=std::max(a.x,b.x);}
+        }
+        return point.x>=left&&point.x<right&&point.y>=start.y&&point.y<start.y+height;
+    };
+    // EM_CHARFROMPOS identifies the nearest character, not necessarily the
+    // cell containing the point. Its right half can resolve to the next space,
+    // CR or end position; inspect the predecessor before yielding the gesture.
+    const auto candidate=first_unit(std::min(nearest,length));
+    return contains(candidate)||contains(first_unit(candidate-1));
 }
 std::string edit_text(HWND edit) {
     GETTEXTLENGTHEX length{GTL_PRECISE | GTL_NUMCHARS, 1200};

@@ -12,6 +12,7 @@
 #include <wrl/client.h>
 #include <algorithm>
 #include <array>
+#include <climits>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -603,8 +604,125 @@ void unmarked_prose_keeps_its_role() {
     check(!IsWindowVisible(parent.value)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=parent.value,"The isolated prose check activated the desktop");
     std::cout<<"PASS unmarked prose in four roles/three locales, exact delimited and authored references, numeric/citation boundaries and real C++ source; hidden controls only, no input/audio.\n";
 }
+void native_hit_geometry(HWND parent) {
+    using namespace lgaed::presentation;
+    Window target{CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|ES_MULTILINE|ES_AUTOHSCROLL|ES_AUTOVSCROLL|WS_HSCROLL|WS_VSCROLL,
+        0,0,520,220,parent,nullptr,GetModuleHandleW(nullptr),nullptr)};
+    check(target.value!=nullptr,"Create the independent native hit-test geometry fixture");
+    const RECT format{28,16,490,196};
+    std::size_t checks=0;
+    const auto position=[&](LONG at){
+        POINTL value{LONG_MIN,LONG_MIN};
+        SendMessageW(target.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&value),at);
+        check(value.x!=LONG_MIN&&value.y!=LONG_MIN,"The independent native character position is unavailable");
+        return value;
+    };
+    const auto setup=[&](std::string_view source,int zoom,bool readonly){
+        SendMessageW(target.value,EM_SETREADONLY,FALSE,0);
+        set_edit_text(target.value,source);
+        CHARFORMAT2W font{};font.cbSize=sizeof(font);font.dwMask=CFM_FACE|CFM_SIZE|CFM_BOLD|CFM_ITALIC;font.yHeight=240;
+        std::copy_n(L"Consolas",9,font.szFaceName);
+        SendMessageW(target.value,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&font));
+        SendMessageW(target.value,EM_SETSEL,0,-1);
+        PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);
+        paragraph.dwMask=PFM_SPACEBEFORE|PFM_SPACEAFTER|PFM_LINESPACING;
+        SendMessageW(target.value,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
+        check(SendMessageW(target.value,EM_SETZOOM,zoom,100)!=FALSE,"Set the native geometry fixture zoom");
+        SendMessageW(target.value,EM_SETRECT,0,reinterpret_cast<LPARAM>(&format));
+        SendMessageW(target.value,EM_EMPTYUNDOBUFFER,0,0);
+        SendMessageW(target.value,EM_SETSEL,-1,-1);
+        SendMessageW(target.value,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"!"));
+        check(SendMessageW(target.value,EM_UNDO,0,0)!=FALSE&&SendMessageW(target.value,EM_CANREDO,0,0)!=FALSE
+            &&edit_text(target.value)==source,"Prepare real native redo history without changing the geometry source");
+        CHARRANGE selected{1,4};SendMessageW(target.value,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+        POINT zero{};SendMessageW(target.value,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&zero));
+        SendMessageW(target.value,EM_SETREADONLY,readonly,0);
+    };
+    const auto verify=[&](POINT point,bool expected,const char* reason){
+        RECT client{};GetClientRect(target.value,&client);
+        check(PtInRect(&client,point)!=FALSE,"The independent hit-test point must be inside the live client rectangle");
+        const auto text=edit_text(target.value);CHARRANGE selected{};POINT scroll{};
+        SendMessageW(target.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
+        SendMessageW(target.value,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+        const auto modified=SendMessageW(target.value,EM_GETMODIFY,0,0),events=SendMessageW(target.value,EM_GETEVENTMASK,0,0);
+        const auto undo=SendMessageW(target.value,EM_CANUNDO,0,0),redo=SendMessageW(target.value,EM_CANREDO,0,0);
+        const auto focus=GetFocus(),capture=GetCapture();
+        int numerator=0,denominator=0;SendMessageW(target.value,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+        const bool actual=rich_text_hit_test(target.value,point);
+        if(actual!=expected)std::cerr<<"Native hit point "<<point.x<<','<<point.y<<" zoom "<<numerator<<'/'<<denominator
+            <<" scroll "<<scroll.x<<','<<scroll.y<<" expected="<<expected<<" actual="<<actual<<'\n';
+        check(actual==expected,reason);
+        CHARRANGE after{};POINT after_scroll{};int after_numerator=0,after_denominator=0;
+        SendMessageW(target.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+        SendMessageW(target.value,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after_scroll));
+        SendMessageW(target.value,EM_GETZOOM,reinterpret_cast<WPARAM>(&after_numerator),reinterpret_cast<LPARAM>(&after_denominator));
+        check(edit_text(target.value)==text&&after.cpMin==selected.cpMin&&after.cpMax==selected.cpMax
+            &&after_scroll.x==scroll.x&&after_scroll.y==scroll.y&&focus==GetFocus()&&capture==GetCapture()
+            &&modified==SendMessageW(target.value,EM_GETMODIFY,0,0)&&events==SendMessageW(target.value,EM_GETEVENTMASK,0,0)
+            &&undo==SendMessageW(target.value,EM_CANUNDO,0,0)&&redo==SendMessageW(target.value,EM_CANREDO,0,0)
+            &&numerator==after_numerator&&denominator==after_denominator,
+            "Hit testing changed text, selection, focus, capture, scroll, zoom, Modify, events or native Undo/Redo");
+        ++checks;
+    };
+    for(const int zoom:{100,150,200})for(const bool readonly:{false,true}){
+        const std::string source="WW WW\tW\nW𐐀W";
+        setup(source,zoom,readonly);
+        const auto first=position(0),next=position(1),second_row=position(8);
+        const auto height=second_row.y-first.y,advance=next.x-first.x;
+        check(height>2&&advance>2,"The independent native monospace geometry has no visible character cell");
+        const auto span=[&](LONG first_index,LONG after_index,bool expected,const char* reason){
+            const auto a=position(first_index),b=position(after_index);
+            check(a.y==b.y&&b.x>a.x+1,"The independently measured character span is not on one visual row");
+            verify({a.x+1,a.y+height/2},expected,reason);
+            verify({a.x+std::min<LONG>(b.x-a.x-1,3*(b.x-a.x)/4),a.y+height/2},expected,reason);
+        };
+        // Native positions choose the points, never the hit-test under test.
+        // Cover a following letter, space, tab, CR and complete surrogate pair.
+        for(const auto [begin,end]:std::array<std::pair<LONG,LONG>,5>{{{0,1},{1,2},{4,5},{6,7},{9,11}}})
+            span(begin,end,true,"A left/right native glyph cell was misclassified as gesture whitespace");
+        span(2,3,false,"Actual space cells must remain available to gestures");
+        span(5,6,false,"Actual tab cells must remain available to gestures");
+        // EOF may have no EM_POSFROMCHAR endpoint. The preceding identical W
+        // supplies its independent native advance without a GDI estimate.
+        const auto last=position(11);
+        verify({last.x+3*advance/4,last.y+height/2},true,"The right half of the final glyph was mistaken for empty EOF");
+        const auto line_end=position(7);
+        verify({line_end.x+2*advance,line_end.y+height/2},false,"Trailing row whitespace became a text hit");
+        verify({format.left-5,first.y+height/2},false,"The formatting margin became a text hit");
+        verify({format.left+advance,last.y+2*height},false,"The empty area below the document became a text hit");
+        std::string scrolling(90,'W');scrolling+='\n';
+        for(int row=0;row<24;++row)scrolling+="WW WW\tW\n";
+        scrolling+="W𐐀W";setup(scrolling,zoom,readonly);
+        POINT wanted{10*advance,0};SendMessageW(target.value,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&wanted));
+        POINT actual_scroll{};SendMessageW(target.value,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&actual_scroll));
+        check(actual_scroll.x>0,"The horizontal hit-test fixture did not actually scroll");
+        span(30,31,true,"Horizontal scrolling changed ownership of a native glyph cell");
+        const auto end=static_cast<LONG>(wide(scrolling).size());
+        const auto unscrolled_end=position(end-1);wanted={0,unscrolled_end.y};
+        SendMessageW(target.value,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&wanted));
+        SendMessageW(target.value,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&actual_scroll));
+        check(actual_scroll.y>0,"The vertical hit-test fixture did not actually scroll");
+        span(end-3,end-1,true,"Vertical scrolling split or lost the surrogate character");
+        const auto visible_end=position(end-1);
+        verify({visible_end.x+3*advance/4,visible_end.y+height/2},true,"Scrolling lost the final native glyph before EOF");
+        SendMessageW(target.value,EM_SETREADONLY,FALSE,0);set_edit_text(target.value,"");
+        SendMessageW(target.value,EM_SETREADONLY,readonly,0);
+        verify({format.left+advance,format.top+height/2},false,"An empty RichEdit document acquired a text hit");
+    }
+    std::cout<<"PASS native glyph hit geometry: "<<checks<<" independent position probes, right halves/CR/EOF/surrogates, "
+        "100/150/200% zoom, real horizontal/vertical scroll, editable/readonly and unchanged selection/focus/history\n";
+}
 int main(int argc,char** argv) {
     if(argc>1){try{
+        if(argc==2&&std::string_view(argv[1])=="--native-hit-geometry"){
+            const auto module=LoadLibraryW(L"Msftedit.dll");check(module!=nullptr,"Load isolated native hit geometry QA");
+            Window parent{CreateWindowExW(WS_EX_NOACTIVATE,L"STATIC",L"Native hit geometry QA",WS_OVERLAPPEDWINDOW,
+                0,0,640,480,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr)};
+            check(parent.value!=nullptr,"Create the hidden native hit geometry host");
+            native_hit_geometry(parent.value);
+            check(!IsWindowVisible(parent.value)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=parent.value,
+                "The isolated native hit geometry check activated the desktop");
+            FreeLibrary(module);return 0;}
         if((argc==2||argc==3)&&std::string_view(argv[1])=="--technical-background"){
             const auto module=LoadLibraryW(L"Msftedit.dll");check(module!=nullptr,"Load the native synthetic background fixture");
             technical_background_geometry(argc==3?argv[2]:nullptr);FreeLibrary(module);return 0;}
@@ -638,6 +756,7 @@ int main(int argc,char** argv) {
         Window editor{CreateWindowExW(0, MSFTEDIT_CLASS, L"", WS_CHILD | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
             0, 0, 500, 300, parent.value, nullptr, GetModuleHandleW(nullptr), nullptr)};
         check(editor.value != nullptr, "Cannot create real RichEdit");
+        native_hit_geometry(parent.value);
         {
             Window live{CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|WS_VISIBLE|ES_MULTILINE,
                 0,0,320,120,parent.value,nullptr,GetModuleHandleW(nullptr),nullptr)};

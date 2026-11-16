@@ -624,8 +624,208 @@ void console_fullscreen_zoom_escape() {
     std::cout<<"PASS readonly and empty/populated output consoles: empty-area fullscreen, persistent zoom, Escape priority, explicit close/reopen and retained text/selection/source history\n";
 }
 
+void console_queued_mouse_focus_and_hit_regions() {
+    // Exercise the real HWNDs through the thread's Win32 message queue. This
+    // covers the complete delivered mouse sequence, focus/capture and the
+    // normal keyboard route, not desktop-global SendInput timing or hit-testing.
+    // CS_DBLCLKS below independently verifies that the actual class opts in.
+    for(const int surface:{0,1,2,3,4}) {
+        const bool compiler=surface!=0,output=surface==1||surface==2,editable=surface>=3;
+        Fixture fixture([](state::StateData& data,const curriculum::Lesson&) {
+            data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{125};
+            data.preferences["console_queue_qa"]["unrelated"]=std::string("conservar");
+        },[&](const curriculum::Lesson&) {
+            if(surface==0)return windows::parse_lesson_json(
+                R"json({"id":"qa_console_queue_code","title":"Código y ratón","pages":[{"blocks":[{"type":"code","language":"cpp","code":"int main() { return 0; }\n// consoleword\n// finalword"}]}]})json");
+            if(surface==4)return windows::parse_lesson_json(
+                R"json({"id":"qa_console_queue_cmake","title":"Editor de proyecto y ratón","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"","projectFiles":[{"path":"main.cpp","initialCode":"int main() { return 0; }\n// consoleword\n// finalword"},{"path":"CMakeLists.txt","initialCode":"cmake_minimum_required(VERSION 3.25)\nproject(ConsoleGesture LANGUAGES CXX)\nadd_executable(console_gesture main.cpp)\n"}],"cmake":{"target":"console_gesture"}}]}]})json");
+            return windows::parse_lesson_json(
+                R"json({"id":"qa_console_queue_cpp","title":"Consola y editor C++","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"int main() { return 0; }\n// consoleword\n// finalword"}]}]})json");
+        });
+        ShowWindow(fixture.host,SW_SHOWNORMAL);SetActiveWindow(fixture.host);pump(fixture.host);
+        const auto display=fixture.control(0,editable?10:output?14:1);
+        const auto source=compiler?fixture.control(0,10):nullptr;
+        const auto check=[&](bool condition,std::string_view message) {
+            if(!condition)throw std::runtime_error(std::string(message)+": surface="+std::to_string(surface)+
+                ", focus="+std::to_string(GetFocus()?GetDlgCtrlID(GetFocus()):-1)+
+                ", capture="+std::to_string(GetCapture()?GetDlgCtrlID(GetCapture()):-1));
+        };
+        check(!(GetWindowLongPtrW(fixture.host,GWL_EXSTYLE)&WS_EX_NOACTIVATE),
+            "The queued mouse fixture must allow normal activation");
+        check(GetClassLongPtrW(display,GCL_STYLE)&CS_DBLCLKS,
+            "The actual console class does not request native double-click messages");
+        std::string original_source,draft;
+        if(source) {
+            original_source=fixture.text(0,10);
+            check(original_source.find("consoleword")!=std::string::npos,
+                "The project did not open its real C++ client in the existing source editor");
+            fixture.replace(0,10,original_source+"\n// undoword");draft=fixture.text(0,10);
+            SendMessageW(fixture.view,WM_COMMAND,MAKEWPARAM(id(0,72),0),0);
+            if(surface==2)set_rich_text(display,"consoleword\nfinalword",{},true);
+            RECT area{};GetClientRect(fixture.view,&area);
+            SendMessageW(fixture.view,WM_SIZE,SIZE_RESTORED,MAKELPARAM(area.right,area.bottom));pump(fixture.host);
+        }
+        const auto text=edit_text(display),raw=fixture.lesson.raw_json;
+        const auto native_text=wide(text);
+        const auto script=reading_script(fixture.view);
+        const auto selection=[&] {
+            CHARRANGE result{};SendMessageW(display,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&result));return result;
+        };
+        const auto scale=[&] {
+            int numerator=0,denominator=0;
+            SendMessageW(display,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            return denominator?MulDiv(numerator,100,denominator):100;
+        };
+        const auto position=[&](LONG character) {
+            POINTL result{};
+            SendMessageW(display,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&result),character);
+            return result;
+        };
+        const auto line_height=[&] {
+            const auto newline=native_text.find(L'\n');
+            check(newline!=std::wstring::npos,"The nonempty queued mouse fixture needs two real document lines");
+            const auto first=position(0),second=position(static_cast<LONG>(newline+1));
+            check(second.y>first.y,"The document's independent line positions have no positive height");
+            return second.y-first.y;
+        };
+        const auto inside=[&](POINT point) {
+            RECT client{};GetClientRect(display,&client);
+            check(PtInRect(&client,point),"The queued gesture point lies outside the actual console client");
+            return point;
+        };
+        const auto glyph_point=[&](LONG character,bool right_half) {
+            const auto start=position(character),next=position(character+1);
+            LONG width=next.y==start.y?next.x-start.x:0;
+            if(width<=1&&character>0) {
+                const auto previous=position(character-1);
+                if(previous.y==start.y)width=start.x-previous.x;
+            }
+            check(width>1,"The independent glyph endpoints have no usable advance");
+            return inside({start.x+std::max<LONG>(1,right_half?width*3/4:width/4),start.y+line_height()/2});
+        };
+        const auto blank_point=[&](bool below) {
+            RECT client{};GetClientRect(display,&client);
+            if(native_text.empty())return inside({client.right-12,below?client.bottom-8:8});
+            const auto height=line_height();
+            if(!below) {
+                const auto newline=static_cast<LONG>(native_text.find(L'\n'));
+                const auto end=position(newline),start=position(0);
+                check(client.right-12>end.x+2,"The first document line has no independent trailing blank area");
+                return inside({client.right-12,start.y+height/2});
+            }
+            const auto last=position(static_cast<LONG>(native_text.size()-1));
+            const LONG first_blank=last.y+height;
+            check(first_blank<client.bottom-1,"The document has no visible blank area below its last line");
+            return inside({position(0).x+4,first_blank+(client.bottom-first_blank)/2});
+        };
+        const auto retained=[&] {
+            check(fixture.control(0,editable?10:output?14:1)==display&&edit_text(display)==text&&
+                fixture.page()==0&&fixture.lesson.raw_json==raw&&reading_script(fixture.view)==script,
+                "A queued console gesture changed its HWND, text, lesson, page or narration");
+            if(source)check(fixture.control(0,10)==source&&fixture.text(0,10)==draft&&fixture.text(0,4).empty(),
+                "A queued console gesture edited the source draft or fabricated a compiler verdict");
+        };
+        const auto focused=[&] {
+            check(GetFocus()==display,"The completed console gesture lost its actual keyboard focus");
+            check(GetCapture()==nullptr,"The completed console gesture retained mouse capture");
+        };
+        const auto click_sequence=[&](POINT point,bool on_text,bool preserve_first_click) {
+            // Begin with another actual control focused and a selection already
+            // present. Never repair focus or selection between mouse messages.
+            const auto elsewhere=fixture.fullscreen()?fixture.view:fixture.control(107);
+            SetFocus(elsewhere);check(GetFocus()==elsewhere,"Cannot focus the independent control before the gesture");
+            const CHARRANGE previous{native_text.empty()?0:1,native_text.empty()?0:4};
+            SendMessageW(display,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));
+            POINT screen=point;ClientToScreen(display,&screen);
+            const auto mouse=[&](UINT message,WPARAM keys) {
+                // Fullscreen can move the HWND during DBLCLK. The physical
+                // screen point stays fixed; the final UP needs its new client coordinates.
+                POINT local=screen;ScreenToClient(display,&local);
+                check(PostMessageW(display,message,keys,MAKELPARAM(local.x,local.y))!=FALSE,
+                    "Cannot queue a real console mouse message");
+                pump(fixture.host);
+            };
+            mouse(WM_LBUTTONDOWN,MK_LBUTTON);
+            if(on_text)check(GetFocus()==display,"A text DOWN was withheld from the native RichEdit and lost focus");
+            mouse(WM_LBUTTONUP,0);
+            check(GetCapture()==nullptr,"The first native click retained mouse capture");
+            const auto after_first=selection();
+            mouse(WM_LBUTTONDBLCLK,MK_LBUTTON);mouse(WM_LBUTTONUP,0);
+            focused();retained();
+            if(preserve_first_click) {
+                // A normal first click may relocate the caret. The fullscreen/
+                // zoom action must preserve that native result through the final UP.
+                const auto after=selection();
+                check(after.cpMin==after_first.cpMin&&after.cpMax==after_first.cpMax,
+                    "The double-click console action changed the first click's native selection");
+            }
+        };
+        const int base=scale();check(base>0,"The queued console fixture has no valid original scale");
+        const auto text_points=[&](bool full,int expected_scale) {
+            if(native_text.empty())return;
+            const auto word=native_text.find(L"consoleword");
+            check(word!=std::wstring::npos,"The queued text fixture lost its known independent word");
+            const std::array<LONG,3> characters{static_cast<LONG>(word+4),
+                static_cast<LONG>(word+10),static_cast<LONG>(native_text.size()-1)};
+            for(const auto character:characters)for(const bool right_half:{false,true}) {
+                click_sequence(glyph_point(character,right_half),true,false);
+                const auto selected=selection();
+                check(fixture.fullscreen()==full&&scale()==expected_scale,
+                    "A delivered double click on a glyph changed fullscreen or zoom");
+                check(selected.cpMin<=character&&selected.cpMax>character&&selected.cpMax-selected.cpMin>1,
+                    "A delivered text double click did not preserve native word selection");
+            }
+        };
+        const auto gutter=[&](bool full,int expected_scale) {
+            if(output)return;
+            const auto band=windows::code_gutter_snapshot(display);
+            check(band.active&&band.width>2,"The source gesture fixture has no real line-number gutter");
+            const auto first=position(0);
+            click_sequence(inside({band.width/2,first.y+line_height()/2}),false,false);
+            check(fixture.fullscreen()==full&&scale()==expected_scale,
+                "A delivered double click on a line number opened fullscreen or zoom");
+        };
+        const auto escape=[&] {
+            const auto target=GetFocus();check(target==display,"Escape has no focused console to receive it");
+            check(PostMessageW(target,WM_KEYDOWN,VK_ESCAPE,1)!=FALSE,"Cannot queue Escape to the observed focus");
+            pump(fixture.host);
+            const auto released=GetFocus();check(released==display,"Escape moved focus away from the retained console");
+            check(PostMessageW(released,WM_KEYUP,VK_ESCAPE,(LPARAM{1}<<31)|(LPARAM{1}<<30)|1)!=FALSE,
+                "Cannot queue Escape key-up to the observed focus");
+            pump(fixture.host);focused();retained();
+        };
+        RECT normal{};GetWindowRect(display,&normal);
+        text_points(false,base);gutter(false,base);
+        for(const bool below:{false,true}) {
+            click_sequence(blank_point(below),false,true);
+            check(fixture.fullscreen()&&scale()==base,"A complete blank double click did not open fullscreen without zoom");
+            if(!below){text_points(true,base);gutter(true,base);}
+            click_sequence(blank_point(!below),false,true);
+            check(fixture.fullscreen()&&scale()==2*base,"A complete fullscreen blank double click did not enable zoom");
+            if(!below){text_points(true,2*base);gutter(true,2*base);}
+            click_sequence(blank_point(below),false,true);
+            check(fixture.fullscreen()&&scale()==2*base,"A repeated complete blank double click removed zoom");
+            escape();check(fixture.fullscreen()&&scale()==base,"Focused Escape skipped the unzoomed fullscreen state");
+            click_sequence(blank_point(!below),false,true);
+            check(fixture.fullscreen()&&scale()==2*base,"Blank double click after focused Escape did not restore zoom");
+            escape();escape();
+            RECT restored{};GetWindowRect(display,&restored);
+            check(!fixture.fullscreen()&&scale()==base&&EqualRect(&normal,&restored),
+                "Focused Escape did not restore the console's original normal geometry and scale");
+        }
+        if(source) {
+            SendMessageW(source,WM_UNDO,0,0);pump(fixture.host);
+            check(fixture.text(0,10)==original_source,"Queued console gestures damaged the original source Undo history");
+        }
+        check(state::string_value(read_lesson_state(fixture.view),"console_queue_qa","unrelated")=="conservar",
+            "Queued console gestures modified unrelated profile data");
+    }
+    std::cout<<"PASS queued native mouse DOWN/UP/DBLCLK/UP: glyph halves, line/document ends, independent trailing/below blanks, line-number gutters, real focus/capture/Escape, readonly/output/CPP/CMake sources and Undo; no desktop-global input injection\n";
+}
+
 void lesson_menu_retains_import_pages_and_settings_with_hooks() {
     console_fullscreen_zoom_escape();
+    console_queued_mouse_focus_and_hit_regions();
     for (const auto locale : {"es","en","fr"}) {
         Fixture fixture([locale](state::StateData& data,const curriculum::Lesson&) {
             data.preferences["native_windows"]["ui_language"] = std::string(locale);

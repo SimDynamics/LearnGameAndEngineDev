@@ -631,6 +631,11 @@ struct LessonView {
             const bool choice_label=choice_labels.contains(item);
             bool editor = false;
             if (rich_control) {
+                const bool console=std::ranges::any_of(controls,[item](const auto& vm){
+                    return vm.console==item||vm.simulated_code==item||vm.source==item;});
+                // Text owns its native mouse sequence from the first down.
+                // Delaying it until button-up loses focus/selection context.
+                if(console&&hits_text(item,{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}))return {};
                 CHARRANGE selection{}; SendMessageW(item,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
                 if (!(GetWindowLongPtrW(item,GWL_STYLE) & ES_READONLY)) {
                     editor = std::ranges::any_of(controls,[&](const auto& vm) { return vm.source == item && vm.source_editor; });
@@ -741,7 +746,7 @@ struct LessonView {
     bool restore_fullscreen_zoom() {
         if(!fullscreen_block)return false;
         const auto& vm=controls[*fullscreen_block];
-        const auto item=fullscreen_output?vm.console:vm.simulated_code;
+        const auto item=fullscreen_output?vm.console:vm.source?vm.source:vm.simulated_code;
         const auto found=zoomed.find(item);
         if(found==zoomed.end())return false;
         SendMessageW(item,EM_SETZOOM,found->second,100);zoomed.erase(found);
@@ -749,9 +754,15 @@ struct LessonView {
     }
     bool double_click_zoom(HWND item,POINT point) {
         if(choice_labels.contains(item))return true;
-        const auto display=std::ranges::find_if(controls,[&](const auto& vm){return vm.simulated_code==item||vm.console==item;});
-        if(display==controls.end()||hits_text(item,point))return false;
+        const auto display=std::ranges::find_if(controls,[&](const auto& vm){return vm.simulated_code==item||vm.console==item||vm.source==item;});
+        if(display==controls.end()||!IsWindowEnabled(item))return false;
+        const auto gutter=windows::code_gutter_snapshot(item);
+        if((gutter.active&&point.x>=0&&point.x<gutter.width)||hits_text(item,point))return false;
         end_drag();
+        // The gesture belongs to this console, including readonly output.
+        // Keep its focus and native selection across fullscreen reparenting.
+        SetFocus(item);
+        const auto focused=capture_console_focus();
         const auto index=static_cast<std::size_t>(display-controls.begin());
         const bool output=display->console==item;
         if(fullscreen_block!=index||fullscreen_output!=output){
@@ -763,7 +774,7 @@ struct LessonView {
         int numerator=0,denominator=0;SendMessageW(item,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
         const int previous=denominator?MulDiv(numerator,100,denominator):100;
         zoomed[item]=previous;SendMessageW(item,EM_SETZOOM,std::min(previous*2,6400),100);
-        reflow();return true;
+        reflow();restore_console_focus(focused,true);return true;
     }
     HWND find_item(int id) const {
         if(const auto found=GetDlgItem(pane,id))return found;
@@ -1618,9 +1629,11 @@ struct LessonView {
         wchar_t kind[32]{};GetClassNameW(focused,kind,32);
         const bool native=_wcsnicmp(kind,L"RichEdit",8)==0||_wcsicmp(kind,L"EDIT")==0;
         if(!native&&!(route=="math_physics"&&_wcsicmp(kind,L"LearnGameAndEngineDev.MathExpressionEditor")==0))return snapshot;
-        // Android's code-input TextViews retain their focused input when a
-        // toolbar icon is touched. Readonly prose does not become an editor.
-        if(route=="programming"&&(GetWindowLongPtrW(focused,GWL_STYLE)&ES_READONLY))return snapshot;
+        // Preserve input and console selections when their toolbar or a blank
+        // console gesture changes layout. Ordinary readonly prose stays out.
+        const bool console=std::ranges::any_of(controls,[focused](const auto& vm){
+            return vm.console==focused||vm.simulated_code==focused;});
+        if(route=="programming"&&(GetWindowLongPtrW(focused,GWL_STYLE)&ES_READONLY)&&!console)return snapshot;
         snapshot.editor=focused;snapshot.native_selection=native;
         if(native)SendMessageW(focused,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&snapshot.selection));return snapshot;
     }
