@@ -789,6 +789,7 @@ class OriginalCmakeExpressionRepairTest(unittest.TestCase):
                 ordinary = deepcopy(after)
                 ordinary["compilerCmakeGraphChecks"][-1]["sourceIntegrity"].pop(
                     "replaceExpression")
+                ordinary["compilerCmakeGraphChecks"][-1].pop("initialObservation", None)
                 state.validate(ordinary)
                 state.validate_transition(before, ordinary)
                 self.assertEqual(ordinary["pages"], before["pages"])
@@ -899,6 +900,9 @@ class OriginalCmakeExpressionRepairTest(unittest.TestCase):
             for change in changes:
                 candidate = deepcopy(after)
                 change(candidate)
+                for rule in candidate.get("compilerCmakeGraphChecks", []):
+                    if "replaceExpression" not in rule.get("sourceIntegrity", {}):
+                        rule.pop("initialObservation", None)
                 if not candidate["compilerCmakeGraphChecks"]:
                     candidate.pop("compilerCmakeGraphChecks")
                 state.validate(candidate)
@@ -949,6 +953,241 @@ class OriginalCmakeExpressionRepairTest(unittest.TestCase):
             with self.subTest(mutate=mutate), self.assertRaises(state.LayoutError):
                 expression_fixture(candidate, expression_declaration(case))
             self.assertEqual(candidate, snapshot)
+
+
+def initial_observation_declaration(case) -> dict:
+    """Expected original failures, authored independently of runtime results."""
+    rule = expression_declaration(case)
+    if case[1] == "block_0002_0004":
+        output = (
+            "dato=-1 esperado=0 obtenido=1 ERROR\n"
+            "dato=0 esperado=1 obtenido=1 OK\n"
+            "dato=20 esperado=1 obtenido=1 OK\n"
+            "dato=21 esperado=0 obtenido=1 ERROR\n"
+            "Bateria: ERROR\n"
+        )
+    else:
+        output = (
+            "Caso=1 Acepta=1 Ajuste=1 EsperaAcepta=1 EsperaAjuste=1 OK\n"
+            "Caso=2 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\n"
+            "Caso=3 Acepta=1 Ajuste=2 EsperaAcepta=1 EsperaAjuste=-2 FALLO\n"
+            "Caso=4 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\n"
+            "Caso=5 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=40 OK\n"
+            "Caso=6 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=-40 FALLO\n"
+            "Caso=7 Acepta=0 Ajuste=77 EsperaAcepta=0 EsperaAjuste=77 OK\n"
+            "Caso=8 Acepta=0 Ajuste=-8 EsperaAcepta=0 EsperaAjuste=-8 OK\n"
+            "Caso=9 Acepta=0 Ajuste=19 EsperaAcepta=0 EsperaAjuste=19 OK\n"
+            "Caso=10 Acepta=0 Ajuste=-4 EsperaAcepta=0 EsperaAjuste=-4 OK\n"
+            "Caso=11 Acepta=0 Ajuste=8 EsperaAcepta=0 EsperaAjuste=8 OK\n"
+            "Fallos=2\n"
+        )
+    rule["initialObservation"] = {
+        "executable": case[5], "input": "", "output": output, "exitCode": 1,
+    }
+    if case[1] == "block_0002_0004":
+        rule["targets"][1]["requireExplicitMsvcWarnings"] = True
+        rule["initialObservation"]["warning"] = {"code": "C4804", "path": case[2]}
+    return rule
+
+
+def initial_observation_fixture(current: dict, case) -> tuple[dict, dict]:
+    expected = initial_observation_declaration(case)
+    before, after = expression_fixture(current, expected)
+    rule = after["compilerCmakeGraphChecks"][-1]
+    if "initialObservation" in rule:
+        state.require(rule["initialObservation"] == expected["initialObservation"],
+                      "The live fixture has a different initial failure contract")
+    else:
+        rule["initialObservation"] = deepcopy(expected["initialObservation"])
+    if "warning" in expected["initialObservation"]:
+        library = next(target for target in rule["targets"] if case[2] in target.get("sources", []))
+        if not (library.get("requireExplicitMsvcWarnings") or
+                any(option in ("/W1", "/W2", "/W3", "/W4", "/Wall",
+                               "-W1", "-W2", "-W3", "-W4", "-Wall")
+                    for option in library.get("authoredCompileOptions", []))):
+            library["requireExplicitMsvcWarnings"] = True
+    state.validate(after)
+    state.validate_transition(before, after)
+    return before, after
+
+
+class CmakeInitialObservationTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.lessons = []
+        for case in EXPRESSION_LESSONS:
+            path = ROOT / (
+                "app/src/main/assets/content/es/programming/programming_practice_tools/"
+                "comprobaciones_repetibles") / case[0]
+            current = json.loads(path.read_text(encoding="utf-8"))
+            before, after = initial_observation_fixture(current, case)
+            cls.lessons.append((case, current, before, after))
+
+    def test_both_original_owners_add_only_an_immutable_root_observation(self):
+        for case, current, before, after in self.lessons:
+            with self.subTest(lesson=case[0]):
+                self.assertEqual(current["pages"], after["pages"])
+                self.assertEqual(current["stateLayout"], after["stateLayout"])
+                self.assertEqual(state.validate(before), state.validate(after))
+                for identity, block in state._blocks(before).items():
+                    self.assertEqual(state.state_fingerprint(block),
+                                     state.state_fingerprint(state._blocks(after)[identity]))
+                self.assertEqual(after["compilerCmakeGraphChecks"][-1]["initialObservation"],
+                                 initial_observation_declaration(case)["initialObservation"])
+
+    def test_absent_observation_keeps_the_prior_expression_contract(self):
+        for _, _, before, after in self.lessons:
+            ordinary = deepcopy(after)
+            ordinary["compilerCmakeGraphChecks"][-1].pop("initialObservation")
+            state.validate(ordinary)
+            state.validate_transition(before, ordinary)
+            self.assertEqual(ordinary["pages"], after["pages"])
+            self.assertEqual(ordinary["stateLayout"], after["stateLayout"])
+            with self.assertRaises(state.LayoutError):
+                state.validate_transition(ordinary, after)
+
+    def test_complete_closed_schema_and_normal_failure_return_are_required(self):
+        changes = [lambda rule: rule.update(initialObservation=None),
+                   lambda rule: rule.update(initialObservation=[]),
+                   lambda rule: rule["initialObservation"].update(extra=True),
+                   lambda rule: rule.pop("sourceIntegrity"),
+                   lambda rule: rule["sourceIntegrity"].pop("replaceExpression")]
+        changes += [lambda rule, key=key: rule["initialObservation"].pop(key)
+                    for key in ("executable", "input", "output", "exitCode")]
+        changes += [lambda rule, code=code: rule["initialObservation"].update(exitCode=code)
+                    for code in (True, False, 0, -1, 256, 0xC0000005, 1.5,
+                                 float("nan"), float("inf"), float("-inf"), "1", None)]
+        for change in changes:
+            candidate = deepcopy(self.lessons[0][3])
+            change(candidate["compilerCmakeGraphChecks"][-1])
+            with self.subTest(change=change), self.assertRaises(state.LayoutError):
+                state.validate(candidate)
+
+        for code in (1, 255, 1.0, 255.0):
+            candidate = deepcopy(self.lessons[0][3])
+            candidate["compilerCmakeGraphChecks"][-1]["initialObservation"]["exitCode"] = code
+            with self.subTest(code=code):
+                state.validate(candidate)
+
+    def test_target_must_be_the_declared_existing_checker(self):
+        for case, _, _, after in self.lessons:
+            for target in (case[4], "missing_checker", "", "../checker", "é", 3, None):
+                changed = deepcopy(after)
+                changed["compilerCmakeGraphChecks"][-1]["initialObservation"]["executable"] = target
+                with self.subTest(lesson=case[0], target=target), self.assertRaises(state.LayoutError):
+                    state.validate(changed)
+        changed = deepcopy(self.lessons[0][3])
+        rule = changed["compilerCmakeGraphChecks"][-1]
+        rule["targets"].append({"name": "another_checker", "type": "EXECUTABLE"})
+        rule["initialObservation"]["executable"] = "another_checker"
+        with self.assertRaises(state.LayoutError):
+            state.validate(changed)
+
+    def test_stream_limits_count_utf8_bytes_and_reject_nul_and_invalid_unicode(self):
+        for field in ("input", "output"):
+            for value in ("", "a" * 65536, "é" * 32768, "😀" * 16384):
+                changed = deepcopy(self.lessons[0][3])
+                changed["compilerCmakeGraphChecks"][-1]["initialObservation"][field] = value
+                with self.subTest(field=field, bytes=len(value.encode("utf-8"))):
+                    state.validate(changed)
+            for value in (0, None, [], "x\x00y", "a" * 65537, "é" * 32769,
+                          "😀" * 16385, "\ud800", "\udfff"):
+                changed = deepcopy(self.lessons[0][3])
+                changed["compilerCmakeGraphChecks"][-1]["initialObservation"][field] = value
+                with self.subTest(field=field, value_type=type(value)), self.assertRaises(state.LayoutError):
+                    state.validate(changed)
+
+    def test_warning_is_bound_to_the_protected_expression_and_compiling_target(self):
+        changes = [lambda rule: rule["initialObservation"].update(warning=None),
+                   lambda rule: rule["initialObservation"]["warning"].update(firstLine=4),
+                   lambda rule: rule["initialObservation"]["warning"].pop("path"),
+                   lambda rule: rule["initialObservation"]["warning"].pop("code"),
+                   lambda rule: rule["targets"][1].pop("requireExplicitMsvcWarnings"),
+                   lambda rule: rule["targets"][1].update(requireExplicitMsvcWarnings=False)]
+        changes += [lambda rule, code=code: rule["initialObservation"]["warning"].update(code=code)
+                    for code in ("", "C4804 quoted", "C480", "C48044", "C499A", "c4804",
+                                 "D9002", "C2143", "LNK2019", "C4４８０", 4804, None)]
+        changes += [lambda rule, path=path: rule["initialObservation"]["warning"].update(path=path)
+                    for path in ("comprobar.cpp", "cantidad.hpp", "../cantidad.cpp", "", 3, None)]
+        for change in changes:
+            candidate = deepcopy(self.lessons[0][3])
+            change(candidate["compilerCmakeGraphChecks"][-1])
+            with self.subTest(change=change), self.assertRaises(state.LayoutError):
+                state.validate(candidate)
+        misplaced = deepcopy(self.lessons[0][3])
+        rule = misplaced["compilerCmakeGraphChecks"][-1]
+        rule["targets"][1].pop("requireExplicitMsvcWarnings")
+        rule["targets"][0]["requireExplicitMsvcWarnings"] = True
+        with self.assertRaises(state.LayoutError):
+            state.validate(misplaced)
+
+    def test_warning_accepts_explicit_levels_on_the_definition_owner(self):
+        for option in ("/W1", "/W2", "/W3", "/W4", "/Wall", "-W4", "-Wall"):
+            candidate = deepcopy(self.lessons[0][3])
+            target = candidate["compilerCmakeGraphChecks"][-1]["targets"][1]
+            target.pop("requireExplicitMsvcWarnings")
+            target["authoredCompileOptions"] = [option]
+            with self.subTest(option=option):
+                state.validate(candidate)
+        for option in ("/W0", "/w", "/WX", "/permissive-", "-Wextra"):
+            candidate = deepcopy(self.lessons[0][3])
+            target = candidate["compilerCmakeGraphChecks"][-1]["targets"][1]
+            target.pop("requireExplicitMsvcWarnings")
+            target["authoredCompileOptions"] = [option]
+            with self.subTest(option=option), self.assertRaises(state.LayoutError):
+                state.validate(candidate)
+
+    def test_existing_failure_cannot_be_removed_replaced_or_weakened(self):
+        for case, _, _, after in self.lessons:
+            changes = [lambda rule: rule.pop("initialObservation"),
+                       lambda rule: rule["initialObservation"].update(input="another input\n"),
+                       lambda rule: rule["initialObservation"].update(output="another failure\n"),
+                       lambda rule: rule["initialObservation"].update(exitCode=2)]
+            if "warning" in after["compilerCmakeGraphChecks"][-1]["initialObservation"]:
+                changes += [lambda rule: rule["initialObservation"].pop("warning"),
+                            lambda rule: rule["initialObservation"]["warning"].update(code="C4999")]
+            for change in changes:
+                changed = deepcopy(after)
+                change(changed["compilerCmakeGraphChecks"][-1])
+                state.validate(changed)
+                with self.subTest(lesson=case[0], change=change), self.assertRaises(state.LayoutError):
+                    state.validate_transition(after, changed)
+
+    def test_initial_observation_cannot_share_a_named_rule_probe_owner(self):
+        case, _, _, after = self.lessons[0]
+        candidate = deepcopy(after)
+        candidate["compilerNamedRuleChecks"] = [{
+            "activity": case[1], "path": case[2],
+            "rules": [{"function": "cantidad_admitida", "value": 20,
+                       "purposeWords": ["limite"], "minUses": 1}],
+            "executionProbe": {"harness": case[6], "header": "cantidad.hpp",
+                               "cases": [{"function": "cantidad_admitida",
+                                          "input": 21, "expected": 0}]},
+        }]
+        ordinary = deepcopy(candidate)
+        ordinary["compilerCmakeGraphChecks"][-1].pop("initialObservation")
+        state.validate(ordinary)
+        with self.assertRaisesRegex(state.LayoutError, "cannot share its owner"):
+            state.validate(candidate)
+        # This scoped check must not inspect a different owner's runtime
+        # contract; that record remains the responsibility of its validator.
+        candidate["compilerNamedRuleChecks"][0]["activity"] = "another_owner"
+        state._validate_compiler_cmake_graph_checks(candidate)
+
+    def test_future_activation_keeps_every_live_owner_and_never_hides_a_different_failure(self):
+        for case, _, _, after in self.lessons:
+            current = deepcopy(after)
+            snapshot = deepcopy(current)
+            before, candidate = initial_observation_fixture(current, case)
+            self.assertEqual(current, snapshot)
+            self.assertEqual(candidate, current)
+            self.assertEqual(before["pages"], current["pages"])
+            wrong = deepcopy(current)
+            wrong["compilerCmakeGraphChecks"][-1]["initialObservation"]["output"] += "Extra\n"
+            preserved = deepcopy(wrong)
+            with self.assertRaises(state.LayoutError):
+                initial_observation_fixture(wrong, case)
+            self.assertEqual(wrong, preserved)
 
 
 if __name__ == "__main__":

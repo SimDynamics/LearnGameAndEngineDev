@@ -74,6 +74,14 @@ void validate_compiler_puzzle_state(const state::StateData&, const curriculum::L
 [[nodiscard]] bool record_compiler_integer_battery_client(state::StateData&,
     const curriculum::Lesson&, const curriculum::Block&, const CppRunRequest&,
     const curriculum::FreshExecution&);
+// Automatic observation of the authentic faulty CMake source. Build warnings
+// and the subsequent normal failing run remain separate, artifact-bound facts.
+// The final repaired request must capture this prerequisite before it starts.
+[[nodiscard]] std::string compiler_cmake_initial_observation_prerequisite(const state::StateData&,
+    const curriculum::Lesson&, const curriculum::Block&, const CppRunRequest&);
+[[nodiscard]] bool record_compiler_cmake_initial_observation(state::StateData&,
+    const curriculum::Lesson&, const curriculum::Block&, const CppRunRequest&,
+    const CppRunResult&);
 /* For the exact U3 recovery owner, a saved stdout proof remains historical;
    a new independent sequence receipt requires authentic record, comparisons,
    selective restore, both builds and both runs. Never infer it from stdout. */

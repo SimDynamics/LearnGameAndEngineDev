@@ -61,6 +61,7 @@ RepairLessons repair_lessons(const lgaed::curriculum::Lesson& published,
     const auto legacy_record=[](const JsonObject& value) {
         auto result=JsonObject::Parse(value.Stringify());
         result.Remove(L"sourceIntegrity");
+        if(result.HasKey(L"initialObservation"))result.Remove(L"initialObservation");
         return result;
     };
     for(const auto& value:records) {
@@ -83,7 +84,12 @@ RepairLessons repair_lessons(const lgaed::curriculum::Lesson& published,
             "The published expression-repair owner changed its authenticated source");
         // Work may publish a more complete valid graph. Retain that contract
         // and its order instead of replacing it with this QA reference.
-        reviewed_records.Append(value);
+        auto expression_only=JsonObject::Parse(item.Stringify());
+        // This QA view represents the already published expression-only
+        // capability. Automatic initial observation is exercised separately.
+        if(expression_only.HasKey(L"initialObservation"))
+            expression_only.Remove(L"initialObservation");
+        reviewed_records.Append(expression_only);
         legacy_records.Append(legacy_record(item));
     }
     if(!present) {
@@ -124,6 +130,211 @@ void replace_repair_text(std::string& source,std::string_view from,std::string_v
         "The original repair fixture no longer has one matching source fragment");
     source.replace(at,from.size(),to);
 }
+lgaed::curriculum::Lesson initial_observation_lesson(
+        const lgaed::curriculum::Lesson& lesson,std::string_view activity,
+        std::string_view expected_failure,bool warning) {
+    using namespace winrt::Windows::Data::Json;
+    const auto& owner=repair_owner(lesson,activity);
+    const auto root=JsonObject::Parse(winrt::to_hstring(lesson.raw_json));
+    auto records=root.GetNamedArray(L"compilerCmakeGraphChecks");
+    bool inserted=false;
+    for(const auto& raw:records) {
+        const auto record=raw.GetObject();
+        if(winrt::to_string(record.GetNamedString(L"activity"))!=activity)continue;
+        JsonObject observation;
+        observation.Insert(L"executable",JsonValue::CreateStringValue(winrt::to_hstring(
+            owner.output_check->cases.front().executable.value_or(owner.cmake->target))));
+        observation.Insert(L"input",JsonValue::CreateStringValue(L""));
+        observation.Insert(L"output",JsonValue::CreateStringValue(winrt::to_hstring(expected_failure)));
+        observation.Insert(L"exitCode",JsonValue::CreateNumberValue(1));
+        if(warning) {
+            JsonObject diagnostic;
+            diagnostic.Insert(L"code",JsonValue::CreateStringValue(L"C4804"));
+            diagnostic.Insert(L"path",JsonValue::CreateStringValue(winrt::to_hstring(
+                owner.cmake_graph_check->expression_repair->path)));
+            observation.Insert(L"warning",diagnostic);
+        }
+        record.Insert(L"initialObservation",observation);inserted=true;
+    }
+    check(inserted,"Initial observation lost its original mapped owner");
+    auto result=lgaed::windows::parse_lesson_json(winrt::to_string(root.Stringify()),"es");
+    const auto metadata=lgaed::windows::parse_lesson_progress_metadata(result.raw_json,"es");
+    const auto& observed=repair_owner(result,activity);
+    check(observed.cmake_graph_check==repair_owner(metadata,activity).cmake_graph_check&&
+        observed.project_files==owner.project_files&&observed.raw_json==owner.raw_json&&
+        result.state_layout.signatures==lesson.state_layout.signatures&&
+        lgaed::curriculum::exercise_key(result,observed)==
+            lgaed::curriculum::exercise_key(lesson,owner)&&
+        lgaed::curriculum::draft_key("programming",result,observed)==
+            lgaed::curriculum::draft_key("programming",lesson,owner)&&
+        lgaed::curriculum::reference_objective_frame(result,observed)!=
+            lgaed::curriculum::reference_objective_frame(lesson,owner),
+        "Initial observation changed learner identity/source or inherited the old objective");
+    return result;
+}
+
+void verify_cmake_initial_observation(const RepairLessons& previous,
+        const lgaed::curriculum::Lesson& lesson,std::string_view activity,
+        const lgaed::windows::CppRunRequest& original,
+        const lgaed::windows::CppRunResult& failed,
+        const lgaed::windows::CppRunRequest& repair,
+        const lgaed::windows::CppRunResult& repaired,
+        const lgaed::windows::CppRunRequest* build_request=nullptr,
+        const lgaed::windows::CppRunResult* build_result=nullptr) {
+    using namespace lgaed;using namespace windows;
+    const auto& owner=repair_owner(lesson,activity);
+    const auto& old_owner=repair_owner(previous.reviewed,activity);
+    const auto& spec=*owner.cmake_graph_check->initial_observation;
+    state::StateData saved;state::prepare_lesson_state(saved,previous.reviewed);
+    const auto draft_key=curriculum::draft_key("programming",lesson,owner);
+    state::Draft draft;draft.source="// Personal draft stays intact\r\n";
+    draft.input="personal input";state::put_draft(saved,draft_key,draft);
+    auto historical=repair;historical.cmake_graph_check=old_owner.cmake_graph_check;
+    historical.cmake_initial_observation_prerequisite.clear();
+    check(record_compiler_puzzle_case(saved,previous.reviewed,old_owner,historical,
+            capture_cpp_execution(historical,repaired),"Reparación histórica auténtica"),
+        "The earlier real repaired execution lost its historical proof");
+    state::prepare_lesson_state(saved,lesson);
+    check(!compiler_puzzle_completed(saved,lesson,owner)&&
+        compiler_puzzle_completed(saved,previous.reviewed,old_owner),
+        "An earlier repair receipt falsely proved observing its initial defect");
+    const auto seed=state::encode(saved);
+    const auto early=capture_cpp_execution(repair,repaired);
+    check(early.cmake_graph_correct&&
+        evaluate_cpp_output_check(*owner.output_check,early,repair.revision).verdict==
+            curriculum::OutputVerdict::correct&&
+        !record_compiler_puzzle_case(saved,lesson,owner,repair,early,"Sin observación")&&
+        state::encode(saved)==seed,
+        "Correct output alone bypassed the required earlier faulty run");
+    const auto reject_observation=[&](const CppRunRequest& request,
+            const CppRunResult& result,std::string_view reason) {
+        check(!record_compiler_cmake_initial_observation(saved,lesson,owner,request,result)&&
+            state::encode(saved)==seed,
+            "An invalid initial observation changed learner state: "+std::string(reason));
+    };
+    reject_observation(repair,repaired,"The already repaired source");
+    auto changed=original;++changed.request_id;
+    reject_observation(changed,failed,"Another request");
+    changed=original;++changed.revision;
+    reject_observation(changed,failed,"Another revision");
+    changed=original;changed.stdin_utf8="another input";
+    reject_observation(changed,failed,"Another input");
+    changed=original;changed.cmake->build_type="Release";
+    reject_observation(changed,failed,"Another configuration");
+    changed=original;changed.project_key+="/other-owner";
+    reject_observation(changed,failed,"Another editor");
+    auto broken=failed;broken.cmake_initial_observation_request_fingerprint.clear();
+    reject_observation(original,broken,"Missing request binding");
+    broken=failed;broken.execution.status=CppPhaseStatus::timed_out;
+    reject_observation(original,broken,"Timeout is not a normal faulty result");
+    broken=failed;broken.execution.exit_code=0xc0000005u;
+    reject_observation(original,broken,"Abnormal termination is not the declared fault");
+    broken=failed;broken.execution.stdout_bytes="Fallos=2\n";
+    reject_observation(original,broken,"A partial or fabricated failure report");
+    broken=failed;broken.execution.stderr_bytes="runtime diagnostic";
+    reject_observation(original,broken,"Unexpected runtime stderr");
+    if(spec.warning) {
+        check(build_request&&build_result,"Warning QA requires a real separate build");
+        reject_observation(original,failed,"Execute before its warning build was recorded");
+        auto misplaced=*build_result;
+        misplaced.execution.stdout_bytes=misplaced.compilation.stdout_bytes;
+        misplaced.execution.stderr_bytes=misplaced.compilation.stderr_bytes;
+        misplaced.compilation.stdout_bytes.clear();misplaced.compilation.stderr_bytes.clear();
+        reject_observation(*build_request,misplaced,"Warning printed by the program");
+        misplaced=*build_result;
+        misplaced.configuration.stdout_bytes+=misplaced.compilation.stdout_bytes;
+        misplaced.configuration.stderr_bytes+=misplaced.compilation.stderr_bytes;
+        misplaced.compilation.stdout_bytes.clear();misplaced.compilation.stderr_bytes.clear();
+        reject_observation(*build_request,misplaced,"Warning printed during configuration");
+        for(const auto& diagnostic:std::array<std::string,4>{
+                "cantidad.cpp(999999): warning C4804: wrong line\n",
+                "other.cpp(1): warning C4804: wrong source\n",
+                "cantidad.cpp(1): warning D9002: unsupported option mentions C4804:\n",
+                "cantidad.cpp(1): warning C4999: text quotes C4804:\n"}) {
+            misplaced=*build_result;misplaced.compilation.stdout_bytes=diagnostic;
+            misplaced.compilation.stderr_bytes.clear();
+            reject_observation(*build_request,misplaced,"Wrong primary diagnostic or location");
+        }
+        check(record_compiler_cmake_initial_observation(saved,lesson,owner,
+                *build_request,*build_result)&&
+            compiler_cmake_initial_observation_prerequisite(saved,lesson,owner,repair).empty()&&
+            !compiler_puzzle_completed(saved,lesson,owner),
+            "A warning build either failed to persist or granted a repaired achievement");
+        const auto after_build=state::encode(saved);
+        auto wrong_artifact=failed;
+        wrong_artifact.cmake_artifact_fingerprint=std::string(64,'a');
+        check(!record_compiler_cmake_initial_observation(saved,lesson,owner,original,wrong_artifact)&&
+            state::encode(saved)==after_build,
+            "The recorded warning was borrowed for another executable artifact");
+        saved=state::decode(after_build);
+    }
+    check(record_compiler_cmake_initial_observation(saved,lesson,owner,original,failed)&&
+        !compiler_puzzle_completed(saved,lesson,owner),
+        "The authentic initial normal failure was lost or incorrectly granted completion");
+    const auto prerequisite=compiler_cmake_initial_observation_prerequisite(saved,lesson,owner,repair);
+    check(!prerequisite.empty(),"A real original failure did not produce the next-request prerequisite");
+    const auto observed=state::encode(saved);
+    check(record_compiler_cmake_initial_observation(saved,lesson,owner,original,failed)&&
+        state::encode(saved)==observed,
+        "Repeated original observation rewrote the earlier sealed token");
+    saved=state::decode(observed);
+    invalidate_compiler_puzzle_attempt(saved,lesson,owner,repair);
+    check(compiler_cmake_initial_observation_prerequisite(saved,lesson,owner,repair)==prerequisite,
+        "Editing/reopening erased the automatic initial observation");
+    auto late=repair;late.cmake_initial_observation_prerequisite=prerequisite;
+    const auto before_late=state::encode(saved);
+    check(!record_compiler_puzzle_case(saved,lesson,owner,repair,early,"Resultado anterior")&&
+        !record_compiler_puzzle_case(saved,lesson,owner,late,early,"Token posterior")&&
+        !record_compiler_puzzle_case(saved,lesson,owner,late,
+            capture_cpp_execution(late,repaired),"Recaptura posterior")&&
+        state::encode(saved)==before_late,
+        "Recording the original later retroactively credited an earlier repaired execution");
+    ++late.request_id;late.action=CppRunRequest::Action::execute;
+    const auto final_run=run_cpp(late);ran(final_run);
+    const auto final_capture=capture_cpp_execution(late,final_run);
+    check(record_compiler_puzzle_case(saved,lesson,owner,late,final_capture,
+            "Fallo inicial y reparación comprobados")&&
+        compiler_puzzle_completed(saved,lesson,owner)&&
+        compiler_puzzle_case_count(saved,lesson,owner)==1,
+        "The first freshly repaired case did not earn its own observation-bound receipt");
+    const auto earned=state::encode(saved);
+    auto missing=late;missing.cmake_initial_observation_prerequisite.clear();
+    check(!record_compiler_puzzle_case(saved,lesson,owner,missing,final_capture,"Token ausente")&&
+        state::encode(saved)==earned,
+        "Missing provenance erased or replaced the earned receipt");
+    auto reopened=state::decode(earned);
+    const auto restored=state::get_draft(reopened,draft_key,"","");
+    check(compiler_puzzle_completed(reopened,lesson,owner)&&
+        compiler_puzzle_completed(reopened,previous.reviewed,old_owner)&&
+        restored.has_saved&&restored.source==draft.source&&restored.input==draft.input,
+        "Reopening lost an old/new achievement or the personal draft");
+    // Additional declared cases stay optional even when the first case needs
+    // an earlier observed fault. One additional execution, no new build.
+    auto optional=owner;auto extra=optional.output_check->cases.front();
+    extra.standard_input="optional unexecuted input";extra.outputs={"optional output"};
+    optional.output_check->cases.push_back(std::move(extra));
+    state::StateData first_only;state::prepare_lesson_state(first_only,lesson);
+    if(spec.warning)check(record_compiler_cmake_initial_observation(first_only,lesson,optional,
+        *build_request,*build_result),"Optional-case fixture lost its warning");
+    check(record_compiler_cmake_initial_observation(first_only,lesson,optional,original,failed),
+        "Optional-case fixture lost its original fault");
+    auto optional_request=late;++optional_request.request_id;
+    optional_request.cmake_initial_observation_prerequisite=
+        compiler_cmake_initial_observation_prerequisite(first_only,lesson,optional,optional_request);
+    const auto optional_run=run_cpp(optional_request);ran(optional_run);
+    check(record_compiler_puzzle_case(first_only,lesson,optional,optional_request,
+            capture_cpp_execution(optional_request,optional_run),"Sólo el primer caso")&&
+        compiler_puzzle_case_count(first_only,lesson,optional)==1&&
+        compiler_puzzle_completed(first_only,lesson,optional),
+        "Automatic initial observation made a second case mandatory");
+    reset_compiler_puzzle(first_only,lesson,optional);
+    check(compiler_cmake_initial_observation_prerequisite(first_only,lesson,optional,optional_request).empty(),
+        "Explicit reset did not clear this owner's observation");
+    std::cout<<"PASS automatic initial CMake observation "<<activity<<": "
+        <<(spec.warning?"real Build/Execute warning and artifact":"real Compile+Run failure")
+        <<", chronological prerequisite, first case, reopen, draft and historical receipt retained\n";
+}
+
 void verify_cmake_expression_repair(const RepairLessons& lessons,
         std::string_view activity,const lgaed::windows::CppRunRequest& positive,
         const lgaed::windows::CppRunResult& positive_result,
@@ -2456,6 +2667,13 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         warning_block.project_files.size()==4,
         "Original U3L7 warning/repair lesson no longer matches its source");
     const auto warning_original=warning_block.project_files;
+    const auto warning_observation=initial_observation_lesson(warning_lessons.reviewed,
+        "block_0002_0004",
+        "dato=-1 esperado=0 obtenido=1 ERROR\n"
+        "dato=0 esperado=1 obtenido=1 OK\n"
+        "dato=20 esperado=1 obtenido=1 OK\n"
+        "dato=21 esperado=0 obtenido=1 ERROR\nBateria: ERROR\n",true);
+    const auto& warning_observation_owner=repair_owner(warning_observation,"block_0002_0004");
     CppRunRequest warning_request;
     warning_request.projects_directory=environment.paths.projects;
     warning_request.project_key="qa/p2-u3-warning-repair/original-owner";
@@ -2489,10 +2707,27 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     const auto warning_options=*warning_reviewed.cmake_graph_check;
     warning_request.cmake_graph_check=warning_options;
     warning_request.capture_cmake_graph=true;
-    const auto faulty_warning_run=run_cpp(warning_request);
+    auto warning_initial=warning_request;
+    warning_initial.cmake_graph_check=warning_observation_owner.cmake_graph_check;
+    auto warning_configuration=warning_initial;
+    warning_configuration.request_id=3299;
+    warning_configuration.action=CppRunRequest::Action::configure;
+    const auto configured_warning=run_cpp(warning_configuration);
+    check(configured_warning.error_utf8.empty()&&configured_warning.configuration.succeeded(),
+        "The original warning fixture could not be configured separately");
+    // Simulate adoption with a valid original artifact already cached by the
+    // earlier expression-only lesson. Enabling observation must not leave a
+    // no-op Ninja build unable to emit the requested real source warning.
+    auto cached_warning=warning_request;
+    cached_warning.request_id=3298;cached_warning.action=CppRunRequest::Action::build;
+    const auto preexisting_warning=run_cpp(cached_warning);built(preexisting_warning);
+    auto warning_build=warning_initial;
+    warning_build.request_id=3300;warning_build.action=CppRunRequest::Action::build;
+    const auto built_warning=run_cpp(warning_build);built(built_warning);
+    warning_initial.action=CppRunRequest::Action::execute;
+    const auto faulty_warning_run=run_cpp(warning_initial);
     const auto warning_output=
-        faulty_warning_run.compilation.stdout_bytes+
-        faulty_warning_run.compilation.stderr_bytes;
+        built_warning.compilation.stdout_bytes+built_warning.compilation.stderr_bytes;
     // Record the *emitted* MSVC warning code, never an assumed GCC warning
     // or a fixed diagnostic inferred from the lesson's faulty expression.
     const auto warning_at=warning_output.find("warning C");
@@ -2513,10 +2748,10 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         "U3L7 MSVC did not emit a source-owned warning with its numeric code");
     const auto warning_code=warning_output.substr(warning_at+8,5);
     const auto actual_warning_graph=evaluate_cmake_graph(
-        warning_request,faulty_warning_run,warning_options);
+        warning_initial,faulty_warning_run,*warning_initial.cmake_graph_check);
     check(actual_warning_graph.correct&&
         faulty_warning_run.error_utf8.empty()&&
-        faulty_warning_run.configuration.succeeded()&&
+        configured_warning.configuration.succeeded()&&built_warning.compilation.succeeded()&&
         faulty_warning_run.compilation.succeeded()&&
         faulty_warning_run.execution.status==CppPhaseStatus::completed&&
         faulty_warning_run.execution.exit_code==1&&
@@ -2543,7 +2778,9 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     check(warning_repaired,"U3L7 original defective function disappeared");
     warning_request.request_id=3302;
     ++warning_request.revision;
-    const auto corrected_warning_run=run_cpp(warning_request);
+    auto warning_repair=warning_request;
+    warning_repair.cmake_graph_check=warning_observation_owner.cmake_graph_check;
+    const auto corrected_warning_run=run_cpp(warning_repair);
     ran(corrected_warning_run);
     const auto expected_warning_output=
         warning_block.output_check->cases.front().outputs.front();
@@ -2554,6 +2791,9 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             capture_cpp_execution(warning_request,corrected_warning_run),
             warning_request.revision).verdict==curriculum::OutputVerdict::correct,
         "U3L7 repaired inclusive condition did not pass all original cases");
+    verify_cmake_initial_observation(warning_lessons,warning_observation,"block_0002_0004",
+        warning_initial,faulty_warning_run,warning_repair,corrected_warning_run,
+        &warning_build,&built_warning);
     // PUBLIC is a valid target-owned declaration: the library receives the
     // options itself and may also propagate them to its consumers.
     auto public_warning=warning_request;
@@ -2787,6 +3027,20 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         adjustments_before.project_files.size()==5,
         "U3L10 original eleven-case checker or its stable owner changed");
     const auto adjustments_files=adjustments_before.project_files;
+    const auto adjustments_observation=initial_observation_lesson(adjustments_lessons.reviewed,
+        "block_0006_0008",
+        "Caso=1 Acepta=1 Ajuste=1 EsperaAcepta=1 EsperaAjuste=1 OK\n"
+        "Caso=2 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\n"
+        "Caso=3 Acepta=1 Ajuste=2 EsperaAcepta=1 EsperaAjuste=-2 FALLO\n"
+        "Caso=4 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\n"
+        "Caso=5 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=40 OK\n"
+        "Caso=6 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=-40 FALLO\n"
+        "Caso=7 Acepta=0 Ajuste=77 EsperaAcepta=0 EsperaAjuste=77 OK\n"
+        "Caso=8 Acepta=0 Ajuste=-8 EsperaAcepta=0 EsperaAjuste=-8 OK\n"
+        "Caso=9 Acepta=0 Ajuste=19 EsperaAcepta=0 EsperaAjuste=19 OK\n"
+        "Caso=10 Acepta=0 Ajuste=-4 EsperaAcepta=0 EsperaAjuste=-4 OK\n"
+        "Caso=11 Acepta=0 Ajuste=8 EsperaAcepta=0 EsperaAjuste=8 OK\nFallos=2\n",false);
+    const auto& adjustments_observation_owner=repair_owner(adjustments_observation,"block_0006_0008");
     CppRunRequest adjustments;
     adjustments.projects_directory=environment.paths.projects;
     adjustments.project_key="qa/p2-u3-adjustments/eleven-original-cases";
@@ -2993,7 +3247,9 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     std::cout<<"PASS U3L10 initial empty CMake task: real project graph and "
         "MSVC build, unimplemented client remains uncredited, direct-source "
         "bypass refused, unchanged learner state\n";
-    const auto faulty_adjustments=run_cpp(adjustments);
+    auto adjustments_initial=adjustments;
+    adjustments_initial.cmake_graph_check=adjustments_observation_owner.cmake_graph_check;
+    const auto faulty_adjustments=run_cpp(adjustments_initial);
     check(faulty_adjustments.error_utf8.empty()&&
         faulty_adjustments.configuration.succeeded()&&
         faulty_adjustments.compilation.succeeded()&&
@@ -3043,7 +3299,9 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     check(repaired_adjustment,"U3L10 faulty function was replaced unexpectedly");
     adjustments.request_id=3502;
     ++adjustments.revision;
-    const auto correct_adjustments=run_cpp(adjustments);
+    auto adjustments_repair=adjustments;
+    adjustments_repair.cmake_graph_check=adjustments_observation_owner.cmake_graph_check;
+    const auto correct_adjustments=run_cpp(adjustments_repair);
     ran(correct_adjustments);
     const auto adjustments_expected=
         adjustments_before.output_check->cases.front().outputs.front();
@@ -3056,6 +3314,8 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             adjustments_capture,adjustments.revision).verdict==
                 curriculum::OutputVerdict::correct,
         "U3L10 corrected library failed the published eleven original cases");
+    verify_cmake_initial_observation(adjustments_lessons,adjustments_observation,"block_0006_0008",
+        adjustments_initial,faulty_adjustments,adjustments_repair,correct_adjustments);
     state::StateData adjustments_saved;
     state::prepare_lesson_state(adjustments_saved,adjustments_lesson);
     check(record_compiler_puzzle_case(adjustments_saved,adjustments_lesson,

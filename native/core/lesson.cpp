@@ -325,9 +325,10 @@ Block compiler_case_order_previous_block(
     previous.raw_json=revision.raw_json;
     previous.initial_code=revision.previous_initial_code;
     previous.project_files=revision.previous_project_files;
-    // Keep independently derived root probes; only the authored case contract
-    // is reconstructed here. A stronger current prerequisite cannot inherit an
-    // old receipt that never proved it.
+    // Keep independent root prerequisites. A source-bound graph retains the
+    // same authored contract with hashes derived from this exact predecessor.
+    if(revision.previous_cmake_graph_check)
+        previous.cmake_graph_check=revision.previous_cmake_graph_check;
     previous.output_check->input_comparison=revision.previous_output_check.input_comparison;
     previous.output_check->cases=revision.previous_output_check.cases;
     previous.source_format_original_initial_code=revision.previous_source_format_initial_code;
@@ -347,6 +348,8 @@ Block compiler_case_revision_previous_block(
     previous.raw_json=revision.raw_json;
     previous.initial_code=revision.previous_initial_code;
     previous.project_files=revision.previous_project_files;
+    if(revision.previous_cmake_graph_check)
+        previous.cmake_graph_check=revision.previous_cmake_graph_check;
     previous.output_check->input_comparison=revision.previous_output_check.input_comparison;
     previous.output_check->cases=revision.previous_output_check.cases;
     previous.source_format_original_initial_code=revision.previous_source_format_initial_code;
@@ -379,6 +382,10 @@ Block compiler_case_revision_after_block(
         revised.source_format_original_initial_code=client.revised_source_format_initial_code;
         revised.source_format_original_project_files=client.revised_source_format_project_files;
     }
+    // An unavailable historical derivation preserves the current stronger
+    // requirement; it must never degrade a new graph objective to stdout.
+    revised.cmake_graph_check=revision.revised_cmake_graph_check
+        ?revision.revised_cmake_graph_check:owner.cmake_graph_check;
     return revised;
 }
 std::string reference_objective_frame(const Lesson& lesson, const Block& activity) {
@@ -580,6 +587,8 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         }
         if(graph.expression_repair)
             token(cpp_expression_repair_frame(*graph.expression_repair));
+        if(graph.initial_observation)
+            token(cmake_initial_observation_frame(*graph.initial_observation));
         if(graph.option_selection) {
             token("cmake-option-default-off-v1");
             token(graph.option_selection->name);

@@ -79,6 +79,52 @@ void validate_integer_client_receipt(const state::StateData& data,
        !integer_client_receipt(data,lesson,block))
         throw std::runtime_error("Invalid integer battery client provenance; data was preserved.");
 }
+
+std::string cmake_initial_prefix(const curriculum::Lesson& lesson,
+        const curriculum::Block& block,bool build) {
+    // Deliberately outside base(): editing an unfinished repair must retain
+    // its independently observed original. Reset still owns the whole root.
+    return root(lesson,block)+(build?"cmake-initial-build/v1/":"cmake-initial-run/v1/")+
+        state::sha256(curriculum::reference_objective_frame(lesson,block))+'/';
+}
+std::string cmake_initial_seal(std::string_view key,const std::vector<std::string>& fields) {
+    return state::sha256("compiler-cmake-initial-observation-v1/"+token(key)+
+        token(fields[0])+token(fields[1])+token(fields[2])+token(fields[3]));
+}
+const std::vector<std::string>* cmake_initial_receipt(const state::StateData& data,
+        const std::string& key) {
+    const auto value=state::find(data,"native_windows",key);
+    if(!value)return nullptr;
+    const auto fields=std::get_if<std::vector<std::string>>(value);
+    const auto digest=[](const std::string& text) {
+        return text.size()==64&&std::ranges::all_of(text,[](unsigned char c) {
+            return (c>='0'&&c<='9')||(c>='a'&&c<='f');
+        });
+    };
+    return fields&&fields->size()==5&&digest((*fields)[0])&&digest((*fields)[1])&&
+        digest((*fields)[2])&&((*fields)[3].empty()||digest((*fields)[3]))&&
+        (*fields)[4]==cmake_initial_seal(key,*fields)?fields:nullptr;
+}
+void validate_cmake_initial_receipts(const state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    if(!block.cmake_graph_check||!block.cmake_graph_check->initial_observation)return;
+    const auto domain=data.preferences.find("native_windows");
+    if(domain==data.preferences.end())return;
+    const auto build_prefix=cmake_initial_prefix(lesson,block,true);
+    const auto run_prefix=cmake_initial_prefix(lesson,block,false);
+    const bool warning=block.cmake_graph_check->initial_observation->warning.has_value();
+    for(const auto& [key,value]:domain->second) {
+        const bool build=key.starts_with(build_prefix),run=key.starts_with(run_prefix);
+        if(!build&&!run)continue;
+        const auto fields=cmake_initial_receipt(data,key);
+        if(!fields||key!=(build?build_prefix:run_prefix)+(*fields)[0]+
+                (build?'/'+(*fields)[1]:std::string{})||
+           (build&&(!warning||!(*fields)[3].empty()))||
+           (run&&(warning==(*fields)[3].empty())))
+            throw std::runtime_error("Invalid initial CMake observation; learner data was preserved.");
+    }
+}
+
 bool integer_battery_project_matches(const curriculum::Block& block,const CppRunRequest& request) {
     if(!block.integer_battery_probe||block.integer_battery_probe!=request.integer_battery_probe||
        !block.cmake||!request.cmake||
@@ -571,7 +617,9 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
            request.cmake->options!=block.cmake->options||
            request.backend!=CppRunRequest::Backend::native_msvc||
            (request.action!=CppRunRequest::Action::compile_run&&
-            request.action!=CppRunRequest::Action::execute)||
+            request.action!=CppRunRequest::Action::execute&&
+            !(block.cmake_graph_check->initial_observation&&
+              request.action==CppRunRequest::Action::build))||
            !request.capture_cmake_graph||request.diagnostic)
             return false;
         // A published editor may start on the client while its mandatory
@@ -893,6 +941,7 @@ std::string compiler_puzzle_historical_feedback(const state::StateData& data,con
 void validate_compiler_puzzle_state(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     // Client provenance is independent of the optional editorial case history.
     validate_integer_client_receipt(data,lesson,block);
+    validate_cmake_initial_receipts(data,lesson,block);
     // Never erase a malformed additional receipt. The original stdout proof
     // stays intact; the new record must be independently authenticated.
     if(selective_history_owner(lesson,block)&&
@@ -984,6 +1033,7 @@ void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::
     // Validate every reusable version before the staged store changes any receipt.
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks)
         if((block.integer_battery_probe&&block.integer_battery_probe->prerequisite)||
+           (block.cmake_graph_check&&block.cmake_graph_check->initial_observation)||
            block.compiler_revision||!block.compiler_case_order_revisions.empty()||!block.compiler_case_revisions.empty())
             validate_compiler_puzzle_state(data,lesson,block);
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks) {
@@ -1031,7 +1081,11 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
              (captured.integer_battery_prerequisite.empty()||
               captured.integer_battery_prerequisite!=
                 compiler_integer_battery_prerequisite(data,lesson,block,captured)))))||
-       (block.cmake_graph_check&&!execution.cmake_graph_correct))return false;
+       (block.cmake_graph_check&&(!execution.cmake_graph_correct||
+            (block.cmake_graph_check->initial_observation&&
+             (captured.cmake_initial_observation_prerequisite.empty()||
+              captured.cmake_initial_observation_prerequisite!=
+                compiler_cmake_initial_observation_prerequisite(data,lesson,block,captured))))))return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
     clear_compiler_puzzle_review(data,lesson,block);
@@ -1109,6 +1163,58 @@ bool record_compiler_integer_battery_client(state::StateData& data,
     const auto& capture=execution.integer_battery_request_fingerprint;
     data.preferences["native_windows"][key]=std::vector<std::string>{
         component,capture,integer_client_seal(key,component,capture)};
+    return true;
+}
+
+std::string compiler_cmake_initial_observation_prerequisite(const state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block,
+        const CppRunRequest& current) {
+    if(!block.cmake_graph_check||!block.cmake_graph_check->initial_observation||
+       !compiler_runtime_request_allowed(block,current))return {};
+    const auto component=cpp_cmake_initial_observation_component_fingerprint(current);
+    if(component.empty())return {};
+    const auto key=cmake_initial_prefix(lesson,block,false)+component;
+    const auto receipt=cmake_initial_receipt(data,key);
+    if(!receipt||(*receipt)[0]!=component||
+       block.cmake_graph_check->initial_observation->warning.has_value()==(*receipt)[3].empty())
+        return {};
+    return (*receipt)[4];
+}
+bool record_compiler_cmake_initial_observation(state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block,
+        const CppRunRequest& captured,const CppRunResult& result) {
+    if(!block.cmake_graph_check||!block.cmake_graph_check->initial_observation||
+       !compiler_runtime_request_allowed(block,captured))return false;
+    const auto observation=capture_cpp_cmake_initial_observation(captured,result);
+    if(!observation||observation->request_fingerprint.empty()||
+       observation->request_fingerprint!=cpp_cmake_initial_observation_request_fingerprint(captured)||
+       observation->component_fingerprint.empty()||observation->artifact_fingerprint.empty())return false;
+    const auto& component=observation->component_fingerprint;
+    const auto& artifact=observation->artifact_fingerprint;
+    const auto build_key=cmake_initial_prefix(lesson,block,true)+component+'/'+artifact;
+    const auto run_key=cmake_initial_prefix(lesson,block,false)+component;
+    const auto prior_build=cmake_initial_receipt(data,build_key);
+    const auto prior_run=cmake_initial_receipt(data,run_key);
+    // Preserve malformed stored data for validation; no partial write can
+    // silently replace it with an unrelated successful observation.
+    if((state::find(data,"native_windows",build_key)&&!prior_build)||
+       (state::find(data,"native_windows",run_key)&&!prior_run))return false;
+    const auto make_receipt=[&](const std::string& key,std::string prerequisite) {
+        std::vector<std::string> fields{component,artifact,observation->request_fingerprint,
+            std::move(prerequisite),{}};
+        fields[4]=cmake_initial_seal(key,fields);
+        return fields;
+    };
+    const bool needs_warning=block.cmake_graph_check->initial_observation->warning.has_value();
+    const bool new_warning=needs_warning&&observation->warning_observed;
+    auto build_receipt=prior_build?*prior_build:make_receipt(build_key,{});
+    const bool failure=observation->failure_observed&&
+        (!needs_warning||new_warning||prior_build);
+    if(!new_warning&&!failure)return false;
+    auto& values=data.preferences["native_windows"];
+    if(new_warning&&!prior_build)values[build_key]=build_receipt;
+    if(failure&&!prior_run)values[run_key]=make_receipt(run_key,
+        needs_warning?build_receipt[4]:std::string{});
     return true;
 }
 

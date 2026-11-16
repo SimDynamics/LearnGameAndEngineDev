@@ -644,21 +644,66 @@ std::string adjustment_graph_frame(const curriculum::CmakeGraphRequirement& grap
     // An absent repair retains every byte of the earlier graph frame.
     if(graph.expression_repair)
         field(curriculum::cpp_expression_repair_frame(*graph.expression_repair));
+    if(graph.initial_observation)
+        field(curriculum::cmake_initial_observation_frame(*graph.initial_observation));
     return result;
 }
-std::string cmake_graph_fingerprint(const CppRunRequest& request) {
+void validate_request_project(const CppRunRequest& request);
+bool authored_cmake_path(std::string_view value);
+bool cmake_initial_observation_context(const CppRunRequest& request) {
     if(!request.cmake||!request.cmake_graph_check||!request.capture_cmake_graph||
-       request.project_files.empty()||request.backend!=CppRunRequest::Backend::native_msvc||
-       request.diagnostic||
-       (request.action!=CppRunRequest::Action::compile_run&&
-        request.action!=CppRunRequest::Action::execute)||
-       (request.cmake_graph_check->expression_repair&&
-        !curriculum::cpp_expression_repair_valid(
-            *request.cmake_graph_check->expression_repair)))return {};
+       request.backend!=CppRunRequest::Backend::native_msvc||request.diagnostic||
+       request.boolean_battery_probe||request.reduction_probe||request.integer_battery_probe||
+       request.open_battery_probe||request.named_rule_probe||request.rejection_probe||
+       request.observation_probe||request.assertion_mode||request.adjustment_project_probe||
+       !curriculum::cmake_initial_observation_valid(*request.cmake_graph_check))return false;
+    try { validate_request_project(request); }
+    catch(const std::exception&) { return false; }
+    catch(const winrt::hresult_error&) { return false; }
+    return true;
+}
+std::string cmake_initial_observation_component(const CppRunRequest& request) {
+    if(!cmake_initial_observation_context(request))return {};
+    const auto& graph=*request.cmake_graph_check;
+    const auto& spec=*graph.initial_observation;
+    const auto& repair=*graph.expression_repair;
+    if(request.cmake->target!=spec.executable)return {};
+    auto normalized=request;
+    bool expression=false;
+    std::vector<std::string> protected_paths;
+    for(const auto& [path,digest]:graph.source_integrity) {
+        if(path==repair.path||authored_cmake_path(path)||digest.size()!=64||
+           std::ranges::find(protected_paths,path)!=protected_paths.end())return {};
+        const auto file=std::ranges::find_if(request.project_files,
+            [&](const auto& item){return item.first==path;});
+        if(file==request.project_files.end()||state::sha256(file->second)!=digest)return {};
+        protected_paths.push_back(path);
+    }
+    for(auto& [path,source]:normalized.project_files) {
+        if(path==repair.path) {
+            if(expression||!curriculum::cpp_expression_repair_matches(repair,source))return {};
+            source=repair.original_source;expression=true;
+        }else if(!authored_cmake_path(path)&&
+                 std::ranges::find(protected_paths,path)==protected_paths.end())return {};
+    }
+    if(!expression)return {};
     const auto field=[](std::string_view value) {
         return std::to_string(value.size())+":"+std::string(value);
     };
-    return state::sha256(std::string("windows-cmake-graph-capture-v1/")+
+    return state::sha256(std::string("windows-cmake-initial-observation-component-v1/")+
+        field(fingerprint(normalized))+field(fingerprint(normalized,true))+
+        field(utf8(request.projects_directory.wstring()))+field(request.project_key)+
+        field(adjustment_graph_frame(graph)));
+}
+std::string cmake_initial_observation_fingerprint(const CppRunRequest& request) {
+    if(!cmake_initial_observation_context(request)||
+       (request.action!=CppRunRequest::Action::build&&
+        request.action!=CppRunRequest::Action::compile_run&&
+        request.action!=CppRunRequest::Action::execute))return {};
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    return state::sha256(std::string("windows-cmake-initial-observation-capture-v1/")+
         field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
         field(request.source_utf8)+field(request.stdin_utf8)+field(fingerprint(request))+
         field(fingerprint(request,true))+
@@ -668,7 +713,37 @@ std::string cmake_graph_fingerprint(const CppRunRequest& request) {
         field(std::to_string(request.compile_timeout.count()))+
         field(std::to_string(request.execution_timeout.count()))+
         field(std::to_string(request.output_limit_bytes))+
-        field(adjustment_graph_frame(*request.cmake_graph_check)));
+        field(adjustment_graph_frame(*request.cmake_graph_check))+
+        field(request.cmake_initial_observation_prerequisite));
+}
+std::string cmake_graph_fingerprint(const CppRunRequest& request) {
+    if(!request.cmake||!request.cmake_graph_check||!request.capture_cmake_graph||
+       request.project_files.empty()||request.backend!=CppRunRequest::Backend::native_msvc||
+       request.diagnostic||
+       (request.action!=CppRunRequest::Action::compile_run&&
+        request.action!=CppRunRequest::Action::execute)||
+       (request.cmake_graph_check->expression_repair&&
+        !curriculum::cpp_expression_repair_valid(
+            *request.cmake_graph_check->expression_repair))||
+       (request.cmake_graph_check->initial_observation&&
+        !curriculum::cmake_initial_observation_valid(*request.cmake_graph_check)))return {};
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    auto frame=std::string("windows-cmake-graph-capture-v1/")+
+        field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+field(fingerprint(request))+
+        field(fingerprint(request,true))+
+        field(std::to_string(static_cast<int>(request.backend)))+
+        field(std::to_string(static_cast<int>(request.action)))+
+        field(utf8(request.projects_directory.wstring()))+field(request.project_key)+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes))+
+        field(adjustment_graph_frame(*request.cmake_graph_check));
+    if(request.cmake_graph_check->initial_observation)
+        frame+=field(request.cmake_initial_observation_prerequisite);
+    return state::sha256(frame);
 }
 std::string adjustment_project_fingerprint(const CppRunRequest& request) {
     if(!request.adjustment_project_probe||!request.cmake_graph_check||
@@ -1453,6 +1528,25 @@ void run_cmake_unlocked(const CppRunRequest& request,CppRunResult& result,
     if(action==CppRunRequest::Action::configure)return;
     if(!availability.configured)throw std::runtime_error("Configure and generate the current project before building or running it");
     if(action==CppRunRequest::Action::build||action==CppRunRequest::Action::compile_run){materialize(request.project_files,source);auto saved=read_json(state_file);
+        // An original project may already have a valid Ninja artifact from
+        // before this objective was activated. A no-op build cannot emit its
+        // requested warning. Refresh only this owned source copy, with its
+        // identical authenticated bytes, until the original observation has
+        // been obtained. Repaired sources and other objectives stay incremental;
+        // no generated cache, other target, learner draft or history is erased.
+        if(availability.built&&request.cmake_initial_observation_prerequisite.empty()&&
+           request.cmake_graph_check&&request.cmake_graph_check->initial_observation&&
+           request.cmake_graph_check->initial_observation->warning&&
+           !cmake_initial_observation_component(request).empty()) {
+            const auto& repair=*request.cmake_graph_check->expression_repair;
+            const auto original=std::ranges::find_if(request.project_files,
+                [&](const auto& file){return file.first==repair.path;});
+            if(original!=request.project_files.end()&&original->second==repair.original_source) {
+                const auto owned_source=source/project_path(repair.path);
+                state::require_safe_path(owned_source);
+                write_exact(owned_source,original->second);
+            }
+        }
         if(saved.HasKey(L"artifact")&&saved.HasKey(L"artifactSha256")){const auto old=contained(build_directory,project_path(json_text(saved,L"artifact")));const auto current_target=cmake_target(workspace,*request.cmake);
             // An unchanged Ninja build cannot certify a tampered old binary.
             // Remove only that proven changed generated artifact, owned by the
@@ -1465,6 +1559,10 @@ void run_cmake_unlocked(const CppRunRequest& request,CppRunResult& result,
             saved.Insert(L"built",JsonValue::CreateStringValue(winrt::to_hstring(result.project_fingerprint)));saved.Insert(L"artifact",JsonValue::CreateStringValue(result.artifact.lexically_relative(build_directory).generic_wstring()));saved.Insert(L"artifactSha256",JsonValue::CreateStringValue(winrt::to_hstring(state::sha256(state::read_bytes(result.artifact,128*1024*1024)))));save_json(state_file,saved);}
         availability=inspect_unlocked(request);
     }
+    if(availability.built&&request.cmake_graph_check&&
+       request.cmake_graph_check->initial_observation)
+        result.cmake_artifact_fingerprint=state::sha256(
+            state::read_bytes(availability.artifact,128*1024*1024));
     if(action==CppRunRequest::Action::build)return;
     if(!availability.built)throw std::runtime_error("Build the executable of the current project revision before running it");
     result.compilation.status=CppPhaseStatus::completed;result.compilation.exit_code=0;result.artifact=availability.artifact;result.target_type=availability.target_type;result.executable=request.cmake->target;
@@ -1490,7 +1588,8 @@ std::uint32_t diagnostic_number(std::string_view text) {
 // Parse the invariant MSVC code and source coordinates, never translated
 // severity labels or diagnostic prose. Only the first code on each row is a
 // primary diagnostic; a code quoted in its explanatory message is not another.
-std::vector<CppCompilerDiagnostic> compilation_errors(std::string_view stream,const std::filesystem::path& directory) {
+std::vector<CppCompilerDiagnostic> compilation_diagnostics(std::string_view stream,
+        const std::filesystem::path& directory,bool warnings) {
     std::vector<CppCompilerDiagnostic> errors;
     while(!stream.empty()) {
         const auto newline=stream.find('\n');const auto line=stream.substr(0,newline);
@@ -1501,11 +1600,25 @@ std::vector<CppCompilerDiagnostic> compilation_errors(std::string_view stream,co
             if(!prefix||offset+prefix+4>=line.size()||line[offset+prefix+4]!=':')continue;
             const auto digits=line.substr(offset+prefix,4);const auto number=diagnostic_number(digits);
             if(!number)continue;
-            const bool primary=(line[offset]=='C'&&number<4000)||(line[offset]=='D'&&number<9000)||prefix==3;
+            const bool primary=warnings?(line[offset]=='C'&&number>=4000&&number<5000):
+                (line[offset]=='C'&&number<4000)||(line[offset]=='D'&&number<9000)||prefix==3;
             if(primary) {
                 CppCompilerDiagnostic diagnostic;diagnostic.code=std::string(line.substr(offset,prefix+4));
                 const auto header=line.substr(0,offset);const auto close=header.rfind(')');
                 const auto open=close==header.npos?header.npos:header.rfind('(',close);
+                if(warnings) {
+                    // Require a primary source-location diagnostic. A code
+                    // quoted after other prose is not a warning observation.
+                    // The severity word can be localized, but cannot contain
+                    // quotation marks, another colon, digits or punctuation.
+                    if(open==header.npos||close<=open)break;
+                    auto severity=trim_ascii(header.substr(close+1));
+                    if(severity.empty()||severity.front()!=':')break;
+                    severity=trim_ascii(severity.substr(1));
+                    if(severity.empty()||!std::ranges::all_of(severity,[](unsigned char c) {
+                        return (c>='a'&&c<='z')||(c>='A'&&c<='Z')||c>=128||c==' '||c=='\t';
+                    }))break;
+                }
                 if(open!=header.npos&&close>open) {
                     const auto coordinates=header.substr(open+1,close-open-1);const auto comma=coordinates.find(',');
                     diagnostic.line=diagnostic_number(coordinates.substr(0,comma));
@@ -1525,6 +1638,9 @@ std::vector<CppCompilerDiagnostic> compilation_errors(std::string_view stream,co
         if(newline==stream.npos)break;stream.remove_prefix(newline+1);
     }
     return errors;
+}
+std::vector<CppCompilerDiagnostic> compilation_errors(std::string_view stream,const std::filesystem::path& directory) {
+    return compilation_diagnostics(stream,directory,false);
 }
 std::vector<CppCompilerDiagnostic> compilation_errors(const CppPhaseResult& phase,const std::filesystem::path& directory) {
     auto errors=compilation_errors(phase.stdout_bytes,directory);
@@ -2088,6 +2204,93 @@ std::string cpp_adjustment_project_request_fingerprint(const CppRunRequest& requ
 std::string cpp_cmake_graph_request_fingerprint(const CppRunRequest& request) {
     return cmake_graph_fingerprint(request);
 }
+std::string cpp_cmake_initial_observation_component_fingerprint(const CppRunRequest& request) {
+    return cmake_initial_observation_component(request);
+}
+std::string cpp_cmake_initial_observation_request_fingerprint(const CppRunRequest& request) {
+    return cmake_initial_observation_fingerprint(request);
+}
+std::optional<CppCmakeInitialObservationCapture>
+capture_cpp_cmake_initial_observation(const CppRunRequest& request,const CppRunResult& result) {
+    const auto binding=cmake_initial_observation_fingerprint(request);
+    const auto component=cmake_initial_observation_component(request);
+    const auto digest=[](std::string_view value) {
+        return value.size()==64&&std::ranges::all_of(value,[](unsigned char c) {
+            return (c>='0'&&c<='9')||(c>='a'&&c<='f');
+        });
+    };
+    if(binding.empty()||component.empty()||
+       result.cmake_initial_observation_request_fingerprint!=binding||
+       request.request_id!=result.request_id||request.revision!=result.revision||
+       !result.error_utf8.empty()||!result.compilation.succeeded()||
+       (result.configuration.status!=CppPhaseStatus::not_started&&
+        !result.configuration.succeeded())||
+       !result.cmake_graph||result.target_type!="EXECUTABLE"||
+       result.artifact.empty()||!digest(result.cmake_artifact_fingerprint)||
+       result.project_fingerprint!=fingerprint(request)||
+       result.configuration_fingerprint!=fingerprint(request,true)||
+       result.cmake_graph->project_fingerprint!=result.project_fingerprint||
+       result.cmake_graph->configuration_fingerprint!=result.configuration_fingerprint)
+        return {};
+    const auto& required=*request.cmake_graph_check;
+    const auto& spec=*required.initial_observation;
+    const auto& repair=*required.expression_repair;
+    const auto original=std::ranges::find_if(request.project_files,
+        [&](const auto& file){return file.first==repair.path;});
+    if(original==request.project_files.end()||original->second!=repair.original_source)return {};
+    const auto& graph=*result.cmake_graph;
+    const auto selected=std::ranges::find_if(graph.targets,
+        [&](const auto& target){return target.name==spec.executable&&target.type=="EXECUTABLE";});
+    if(selected==graph.targets.end()||!std::ranges::any_of(selected->artifacts,
+       [&](const auto& artifact) {
+            const auto relative=project_path(artifact);
+            if(relative.empty()||relative.is_absolute()||*relative.begin()==L"..")return false;
+            return same_diagnostic_source(result.artifact,cmake_workspace(request)/relative);
+        }))return {};
+    CppCmakeInitialObservationCapture capture{
+        binding,component,result.cmake_artifact_fingerprint,false,false};
+    if(spec.warning&&(request.action==CppRunRequest::Action::build||
+                     request.action==CppRunRequest::Action::compile_run)) {
+        const auto lines=curriculum::cmake_initial_observation_warning_lines(required);
+        const bool effective=std::ranges::any_of(required.targets,[&](const auto& wanted) {
+            if(std::ranges::find(wanted.sources,repair.path)==wanted.sources.end())return false;
+            const auto target=std::ranges::find_if(graph.targets,
+                [&](const auto& fact){return fact.name==wanted.name&&fact.type==wanted.type;});
+            return target!=graph.targets.end()&&target->msvc_warnings_effective&&
+                std::ranges::find(target->compiled_sources,repair.path)!=target->compiled_sources.end();
+        });
+        if(lines&&effective) {
+            const auto source_directory=cmake_workspace(request)/L"p";
+            const auto expected=source_directory/project_path(spec.warning->path);
+            const auto matches=[&](std::string_view stream) {
+                const auto warnings=compilation_diagnostics(stream,source_directory,true);
+                return std::ranges::any_of(warnings,[&](const auto& warning) {
+                    return warning.code==spec.warning->code&&warning.line>=lines->first&&
+                        warning.line<=lines->second&&same_diagnostic_source(warning.source,expected);
+                });
+            };
+            capture.warning_observed=matches(result.compilation.stdout_bytes)||
+                matches(result.compilation.stderr_bytes);
+        }
+    }
+    if(request.action==CppRunRequest::Action::compile_run||request.action==CppRunRequest::Action::execute) {
+        const auto matches_output=[&] {
+            if(result.execution.stdout_bytes==spec.standard_output)return true;
+            if(spec.standard_output.find('\r')!=spec.standard_output.npos)return false;
+            std::string native;
+            native.reserve(spec.standard_output.size());
+            for(const auto c:spec.standard_output) { if(c=='\n')native+='\r';native+=c; }
+            return result.execution.stdout_bytes==native;
+        };
+        capture.failure_observed=request.stdin_utf8==spec.standard_input&&
+            result.executable==spec.executable&&
+            result.execution.status==CppPhaseStatus::completed&&
+            result.execution.exit_code==spec.exit_code&&
+            result.execution.stderr_bytes.empty()&&matches_output()&&
+            evaluate_cmake_graph(request,result,required).correct;
+    }
+    return capture;
+}
 std::string cpp_integer_battery_component_fingerprint(const CppRunRequest& request) {
     if(!integer_battery_context(request)||!request.integer_battery_probe->prerequisite)
         return {};
@@ -2146,6 +2349,10 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
        (cmake_graph_fingerprint(request).empty()||
         result.project_fingerprint!=fingerprint(request)||
         result.configuration_fingerprint!=fingerprint(request,true)))return fresh;
+    if(request.cmake_graph_check&&request.cmake_graph_check->initial_observation&&
+       (cmake_initial_observation_fingerprint(request).empty()||
+        result.cmake_initial_observation_request_fingerprint!=
+            cmake_initial_observation_fingerprint(request)))return fresh;
     fresh.source_revision=result.revision;
     fresh.compilation_succeeded=result.compilation.succeeded()
         &&(result.configuration.status==CppPhaseStatus::not_started||result.configuration.succeeded());
@@ -3644,6 +3851,9 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             result.integer_battery_request_fingerprint=integer_battery_fingerprint(request);
         if(request.adjustment_project_probe)
             result.adjustment_project_request_fingerprint=adjustment_project_fingerprint(request);
+        if(request.cmake_graph_check&&request.cmake_graph_check->initial_observation)
+            result.cmake_initial_observation_request_fingerprint=
+                cmake_initial_observation_fingerprint(request);
         ensure_winrt_apartment();
         if (stop.stop_requested()) {
             (request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:request.cmake&&request.action==CppRunRequest::Action::execute?result.execution:result.compilation).status = CppPhaseStatus::cancelled;

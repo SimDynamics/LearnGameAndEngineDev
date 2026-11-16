@@ -188,6 +188,9 @@ struct CompilerCaseOrderRevision {
     std::map<std::string,TextSemantics> previous_case_text_semantics;
     // Derived from the last authenticated client-source transition, if any.
     std::string previous_client_epoch;
+    // Runtime-only derivation of the unchanged root graph contract against
+    // this authenticated predecessor, never an authored or stored field.
+    std::optional<CmakeGraphRequirement> previous_cmake_graph_check;
 };
 // A separately authored client adaptation changes one existing compiled file.
 // The loader derives its complete after-source and formatting provenance; no
@@ -212,6 +215,10 @@ struct CompilerCaseRevision {
     std::map<std::string,TextSemantics> previous_case_text_semantics, revised_case_text_semantics;
     std::string previous_client_epoch, revised_client_epoch;
     std::optional<CompilerClientRevision> client_revision;
+    // A client review may change a protected source. Each endpoint must keep
+    // the graph hashes derived from its own complete authenticated project.
+    std::optional<CmakeGraphRequirement> previous_cmake_graph_check;
+    std::optional<CmakeGraphRequirement> revised_cmake_graph_check;
 };
 // Derived only from a complete, closed mathematical label review. This is
 // reading provenance, never another authored field or response identity.

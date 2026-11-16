@@ -2297,6 +2297,10 @@ struct LessonView {
                 data,lesson,block(index),request);
         request.cmake_graph_check=block(index).cmake_graph_check;
         request.capture_cmake_graph=request.cmake_graph_check.has_value();
+        if(request.cmake_graph_check&&request.cmake_graph_check->initial_observation)
+            request.cmake_initial_observation_prerequisite=
+                windows::compiler_cmake_initial_observation_prerequisite(
+                    data,lesson,block(index),request);
         // All C++ exercises use the native MSVC backend while the optional WASI
         // alternative is not confirmed compatible with Windows app protection.
         if(block(index).compile_check){
@@ -4215,6 +4219,26 @@ struct LessonView {
             ||(cmake&&result->compilation.status!=windows::CppPhaseStatus::not_started&&!result->compilation.succeeded())) { vm.console_channels[2] = output; preferred_channel = 2; }
         else if (!result->execution.succeeded()&&!normal_execution) { vm.console_channels[1] = output; preferred_channel = 1; }
         console_present(index,preferred_channel);
+        bool initial_defect_observed=false;
+        if(block(index).cmake_graph_check&&block(index).cmake_graph_check->initial_observation&&
+           windows::record_compiler_cmake_initial_observation(
+               data,lesson,block(index),running_program,*result)) {
+            // Capture automatic build/run facts before an edit, without adding
+            // History actions or treating a deliberate normal failure as the
+            // final repaired case. Neither observation grants completion.
+            mark_dirty();flush();
+            const auto observed=windows::capture_cpp_cmake_initial_observation(running_program,*result);
+            initial_defect_observed=observed&&observed->failure_observed&&
+                !windows::compiler_cmake_initial_observation_prerequisite(
+                    data,lesson,block(index),running_program).empty();
+            if(vm.status)set_rich_text(vm.status,initial_defect_observed?ui(
+                "Fallo inicial observado. Repara la expresión y comprueba el primer caso.",
+                "Initial failure observed. Repair the expression and check the first case.",
+                "Échec initial observé. Corrigez l’expression et vérifiez le premier cas."):ui(
+                "Aviso de construcción observado. Ejecuta esta misma versión para comprobar el fallo.",
+                "Build warning observed. Run this same version to observe the failure.",
+                "Avertissement de compilation observé. Exécutez cette même version pour observer l’échec."));
+        }
         if(executed&&block(index).integer_battery_probe&&
            windows::record_compiler_integer_battery_client(
                data,lesson,block(index),running_program,fresh)) {
@@ -4227,7 +4251,7 @@ struct LessonView {
                 "Client verified. Select the checker and execute the requested test battery.",
                 "Client vérifié. Sélectionnez le vérificateur et exécutez la batterie demandée."));
         }
-        if (block(index).output_check&&executed) {
+        if (block(index).output_check&&executed&&!initial_defect_observed) {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
                     block(index),running_program);
@@ -4245,9 +4269,21 @@ struct LessonView {
                      (!block(index).adjustment_project_probe||fresh.adjustment_project_probe_correct);
                 const bool graph_ready=!block(index).cmake_graph_check||
                     fresh.cmake_graph_correct;
+                const bool observation_ready=!block(index).cmake_graph_check||
+                    !block(index).cmake_graph_check->initial_observation||
+                    (!running_program.cmake_initial_observation_prerequisite.empty()&&
+                     running_program.cmake_initial_observation_prerequisite==
+                        windows::compiler_cmake_initial_observation_prerequisite(
+                            data,lesson,block(index),running_program));
                 const bool correct=evaluation.verdict==curriculum::OutputVerdict::correct&&
-                    preserved_source&&independent&&graph_ready;
+                    preserved_source&&independent&&graph_ready&&observation_ready;
                 auto text = verdict_text(correct);
+                if(!observation_ready&&preserved_source&&graph_ready&&
+                   evaluation.verdict==curriculum::OutputVerdict::correct)
+                    text+='\n'+ui(
+                        "La reparación produce la salida esperada. Antes debes construir y ejecutar la versión inicial para observar el fallo solicitado; después vuelve a comprobar la reparación.",
+                        "The repair produces the expected output. First build and run the initial version to observe the required failure, then check the repair again.",
+                        "La correction produit la sortie attendue. Construisez et exécutez d’abord la version initiale pour observer l’échec demandé, puis vérifiez de nouveau la correction.");
                 if(!graph_ready&&preserved_source&&block(index).cmake_graph_check) {
                     const auto graph=windows::evaluate_cmake_graph(running_program,
                         *result,*block(index).cmake_graph_check);

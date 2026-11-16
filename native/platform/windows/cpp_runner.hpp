@@ -125,6 +125,9 @@ struct CppRunRequest {
     // A constructed component, client and battery are assessed together from
     // this immutable request; no prerequisite from another revision is used.
     std::optional<curriculum::AdjustmentProjectSpec> adjustment_project_probe;
+    // Copied from the owner's sealed initial observation before this request
+    // starts. A later faulty run cannot promote an already finished repair.
+    std::string cmake_initial_observation_prerequisite;
 };
 struct CppRejectionProbe {
     std::string source_sha256;
@@ -255,6 +258,15 @@ struct CppRunResult {
     std::string adjustment_project_request_fingerprint;
     std::vector<CppNamedRuleConstantVariationProbe> named_rule_constant_variation_probes;
     std::string named_rule_constant_variation_request_fingerprint;
+    std::string cmake_initial_observation_request_fingerprint;
+    // Captured inside the verified CMake workspace while holding its lock,
+    // before an eventual later revision can replace the generated executable.
+    std::string cmake_artifact_fingerprint;
+};
+struct CppCmakeInitialObservationCapture {
+    std::string request_fingerprint, component_fingerprint, artifact_fingerprint;
+    bool warning_observed = false;
+    bool failure_observed = false;
 };
 struct CppProjectAvailability {
     bool configured=false,built=false;
@@ -307,6 +319,16 @@ struct CppProjectAvailability {
 [[nodiscard]] std::string cpp_integer_battery_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_adjustment_project_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_cmake_graph_request_fingerprint(const CppRunRequest&);
+// The component normalizes only the permitted expression file to its original
+// bytes. The build description, other files, target and configuration remain
+// exact, while source revision/input/action are intentionally not part of it.
+[[nodiscard]] std::string cpp_cmake_initial_observation_component_fingerprint(const CppRunRequest&);
+[[nodiscard]] std::string cpp_cmake_initial_observation_request_fingerprint(const CppRunRequest&);
+// A Build may supply only its real warning; an Execute may supply only its
+// observed original failure. Completion joins them only for the same bound
+// component and artifact. No phases or diagnostics are synthesized here.
+[[nodiscard]] std::optional<CppCmakeInitialObservationCapture>
+capture_cpp_cmake_initial_observation(const CppRunRequest&, const CppRunResult&);
 // Stable client provenance includes all project paths and all protected file
 // bytes. Only the editable test file's contents are omitted from this frame.
 [[nodiscard]] std::string cpp_integer_battery_component_fingerprint(const CppRunRequest&);

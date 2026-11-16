@@ -2184,6 +2184,13 @@ las fuentes, los mapas, los borradores y los recibos previos se conservan, pero
 un acierto obtenido sin esta protección no acredita automáticamente el objetivo
 nuevo.
 
+Cuando `stateLayout.compilerCaseRevisions[].client` adapta un comprobador,
+la reconstrucción de cada etapa histórica deriva `sourceIntegrity` y la
+expresión protegida de los archivos autenticados de esa misma etapa. No
+reutiliza las huellas del cliente más reciente para buscar sus recibos
+anteriores. Esta conservación permite reconocer la acreditación que cada
+revisión obtuvo; no concede automáticamente requisitos incorporados después.
+
 Las capturas nuevas de comprobaciones CMake incluyen además una huella de la
 solicitud, los archivos, la configuración, el contrato y la revisión. La
 finalización exige que esa huella corresponda a la solicitud que se acredita.
@@ -2198,6 +2205,87 @@ prestadas y conservación del estado. El primer caso correcto que cumpla la
 rúbrica basta para avanzar; los demás casos permanecen opcionales. Registrar
 el recorrido de la ejecución defectuosa anterior es un criterio distinto de
 esta protección de fuentes y no se deduce de una reparación correcta.
+
+### Observación automática del defecto antes de reparar
+
+Una práctica de reparación puede declarar `initialObservation` junto a
+`sourceIntegrity.replaceExpression`, dentro del mismo propietario de
+`compilerCmakeGraphChecks`. El contrato identifica el comportamiento del
+programa original que el estudiante debe observar antes de corregirlo:
+
+```json
+"initialObservation": {
+  "executable": "comprobar_cantidad",
+  "input": "",
+  "output": "dato=-1 esperado=0 obtenido=1 ERROR\ndato=0 esperado=1 obtenido=1 OK\ndato=20 esperado=1 obtenido=1 OK\ndato=21 esperado=0 obtenido=1 ERROR\nBateria: ERROR\n",
+  "exitCode": 1,
+  "warning": {
+    "code": "C4804",
+    "path": "cantidad.cpp"
+  }
+}
+```
+
+El ejemplo corresponde a la expresión original `(0 <= dato) <= 20` y al
+comprobador histórico de cuatro valores. El autor declara el comportamiento
+que debe observarse a partir del programa y de la consigna. La ejecución
+capturada se contrasta con esa declaración; no proporciona sus propios valores
+esperados. Una revisión compatible del comprobador debe declarar la entrada y
+salida del caso pertinente, conservando los informes conjuntos históricos y
+la obligatoriedad exclusiva del primer caso correcto tras reparar.
+
+`executable` identifica un objetivo `EXECUTABLE` del grafo y un ejecutable
+utilizado por los casos existentes de `outputCheck`; un caso sin ejecutable
+explícito utiliza el objetivo inicial del editor. `input` y `output` admiten
+como máximo 65536 bytes UTF-8 cada uno, sin NUL. Ambos campos son obligatorios,
+incluso cuando están vacíos. `exitCode` es un entero entre 1 y 255: representa
+un proceso que termina normalmente y comunica el defecto. Un fallo de
+configuración, una opción inválida, un timeout, una cancelación, un límite de
+salida o una terminación anormal no cumplen esa observación. La salida se
+compara de forma exacta, admitiendo únicamente la conversión habitual de LF a
+CRLF de la consola Windows; el canal de errores de ejecución debe quedar vacío.
+
+`warning` es opcional. Cuando está presente, sólo contiene `code` y `path`.
+El código tiene la forma `C4xxx` de MSVC y el archivo debe ser el protegido
+por `replaceExpression`. La ubicación se obtiene de la expresión auténtica
+del archivo original; no se declaran números de línea alternativos. El objetivo
+que compila ese archivo debe exigir avisos mediante
+`requireExplicitMsvcWarnings: true` o una opción explícita `/W1`, `/W2`, `/W3`,
+`/W4` o `/Wall` —también se admiten sus variantes con `-`—. Durante la ejecución
+se comprueba que el nivel efectivo de ese objetivo sea válido y que la
+construcción haya emitido el aviso solicitado en la expresión. Un aviso sólo
+en el ejecutable consumidor, un código citado en otro diagnóstico o texto
+impreso por el programa no sustituyen esa evidencia.
+
+Este recorrido tiene un único contrato de ejecución: `initialObservation` no
+se combina en el mismo propietario con otros comprobadores privados, reglas
+nombradas ni requisitos de Historial. Los demás editores de la lección pueden
+conservar sus contratos independientes. El cargador y el validador rechazan
+las combinaciones que el ejecutor no puede acreditar.
+
+La app registra automáticamente la construcción pertinente y la ejecución
+defectuosa. Admite «Compilar y ejecutar» y las acciones separadas «Construir» y
+«Ejecutar»: el aviso de construcción se vincula al mismo proyecto,
+configuración y artefacto que se ejecuta después. La observación exige que
+todos los archivos no CMake sean los originales del propietario efectivo,
+incluida la expresión todavía defectuosa. Los archivos CMake se contrastan
+mediante el grafo y las opciones reales del proyecto.
+
+El recibo de observación se conserva al editar la expresión y al reabrir la
+lección. Antes de iniciar la ejecución reparada, la solicitud captura su
+prerrequisito; una observación posterior no convierte retroactivamente una
+ejecución anterior en logro. La primera comprobación correcta del primer caso
+declarado obtiene la acreditación cuando cumple el contrato y tiene esa
+procedencia. Los ensayos adicionales continúan siendo opcionales. El recorrido
+no requiere acciones de Historial.
+
+Omitir `initialObservation` conserva los objetivos anteriores. Añadirlo crea
+una exigencia propia y no atribuye una observación a los recibos antiguos de
+salida o de conservación de fuentes. Como las demás declaraciones de grafo,
+una vez publicado el contrato no puede eliminarse, sustituirse ni debilitarse
+silenciosamente. Las pruebas de autoría preparan estas declaraciones sobre
+los dos propietarios originales de U3L7 y U3L10 sólo en memoria; no activan
+campos ni reescriben contenidos curriculares.
 
 ### Opciones de compilación declaradas y efectivas por objetivo
 

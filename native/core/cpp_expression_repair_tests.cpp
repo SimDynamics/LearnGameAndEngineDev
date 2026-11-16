@@ -1,4 +1,5 @@
 #include "core/cpp_expression_repair.hpp"
+#include "core/cmake_graph_check.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -265,12 +266,158 @@ void framing() {
     try { (void)cpp_expression_repair_frame(bad); } catch(const std::invalid_argument&) { rejected = true; }
     require(rejected, "An unauthenticated selector acquired an objective frame");
 }
+
+CmakeGraphRequirement initial_observation_fixture() {
+    CmakeGraphRequirement graph;
+    CmakeRequiredTarget library;
+    library.name = "cantidad"; library.type = "STATIC_LIBRARY";
+    library.sources = {"src/cantidad.cpp"}; library.require_explicit_msvc_warnings = true;
+    CmakeRequiredTarget checker;
+    checker.name = "comprobar"; checker.type = "EXECUTABLE";
+    checker.sources = {"pruebas/casos.cpp"}; checker.links_to = {"cantidad"};
+    graph.targets = {library, checker};
+    graph.expression_repair = CppExpressionRepair{"src/cantidad.cpp",
+        "#include \"cantidad.h\"\n"
+        "// (0 <= dato) <= 20 aparece en un comentario.\n"
+        "const char* ejemplo = \"(0 <= dato) <= 20\";\n"
+        "bool cantidad(int dato) {\n"
+        "    return\n"
+        "        (0 <= dato) <=\n"
+        "        20;\n"
+        "}\n", "(0 <= dato) <= 20"};
+    CmakeInitialObservation observation;
+    observation.executable = "comprobar";
+    observation.standard_output = "Exterior -1: incorrecto\nExterior 21: incorrecto\n";
+    observation.warning = CmakeInitialWarning{"C4804", "src/cantidad.cpp"};
+    graph.initial_observation = observation;
+    return graph;
+}
+
+void initial_observation_contract() {
+    const auto graph = initial_observation_fixture();
+    const auto spec = *graph.initial_observation;
+    require(cmake_initial_observation_valid(graph), "An authentic initial warning/failure contract was rejected");
+    for(const auto exit : {0u, 256u, 0xffffffffu}) {
+        auto other = spec; other.exit_code = exit;
+        require(!cmake_initial_observation_values_valid(other), "An out-of-contract process exit was admitted");
+    }
+    auto last_exit = spec; last_exit.exit_code = 255;
+    require(cmake_initial_observation_values_valid(last_exit), "The inclusive initial exit-code limit was rejected");
+    for(const std::string_view name : {"", "with space", "../outside", "checker/child"}) {
+        auto other = spec; other.executable = name;
+        require(!cmake_initial_observation_values_valid(other), "An invalid executable identity was admitted");
+    }
+    auto long_name = spec; long_name.executable.assign(129, 'x');
+    require(!cmake_initial_observation_values_valid(long_name), "An overlong executable identity was admitted");
+    for(const bool input : {false, true}) {
+        auto other = spec;
+        auto& bytes = input ? other.standard_input : other.standard_output;
+        bytes = std::string(65534, 'x') + "\xC3\xB1";
+        require(cmake_initial_observation_values_valid(other), "The inclusive UTF-8 byte limit was rejected");
+        bytes += 'x';
+        require(!cmake_initial_observation_values_valid(other), "The text limit counted characters instead of UTF-8 bytes");
+        bytes = std::string("a\0b", 3);
+        require(!cmake_initial_observation_values_valid(other), "A NUL hid part of the observed input or output");
+    }
+    for(const std::string_view code : {"C480", "C48040", "c4804", "C58xx", "D9002", "C4804:\n"}) {
+        auto other = spec; other.warning->code = code;
+        require(!cmake_initial_observation_values_valid(other), "A non-primary MSVC warning identity was admitted");
+    }
+    auto missing = graph; missing.expression_repair.reset();
+    require(!cmake_initial_observation_valid(missing), "An initial failure without its original expression was admitted");
+    missing = graph; missing.expression_repair->expression = "missing";
+    require(!cmake_initial_observation_valid(missing), "An initial failure accepted an unauthenticated expression");
+    missing = graph; missing.initial_observation->executable = "cantidad";
+    require(!cmake_initial_observation_valid(missing), "A library was treated as the executed checker");
+    missing.initial_observation->executable = "other_checker";
+    require(!cmake_initial_observation_valid(missing), "An undeclared checker acquired the observation");
+    missing = graph; missing.initial_observation->warning->path = "pruebas/casos.cpp";
+    require(!cmake_initial_observation_valid(missing), "A warning in another source proved the original expression");
+    missing.initial_observation->warning->path = "../cantidad.cpp";
+    require(!cmake_initial_observation_values_valid(*missing.initial_observation), "An unsafe warning source was admitted");
+    missing = graph; missing.initial_observation->warning.reset();
+    missing.targets.front().require_explicit_msvc_warnings = false;
+    require(cmake_initial_observation_valid(missing), "A normal failure without a warning requirement demanded warning flags");
+    require(!cmake_initial_observation_warning_lines(missing), "A warning-free observation invented source line evidence");
+}
+
+void initial_observation_warning_binding() {
+    auto graph = initial_observation_fixture();
+    graph.targets.front().require_explicit_msvc_warnings = false;
+    require(!cmake_initial_observation_valid(graph), "An inherited warning profile replaced authored target requirements");
+    for(const std::string_view flag : {"/W1", "/W2", "/W3", "/W4", "/Wall", "-W1", "-W4", "-Wall"}) {
+        graph.targets.front().authored_compile_options = {std::string(flag)};
+        require(cmake_initial_observation_valid(graph), "An authored positive MSVC warning level was rejected");
+    }
+    for(const std::string_view flag : {"/W0", "-W0", "/W5", "/w4", "/WX", "/wd4804", "-Wextra", "-Wpedantic"}) {
+        graph.targets.front().authored_compile_options = {std::string(flag)};
+        require(!cmake_initial_observation_valid(graph), "An unsupported or warning-disabling flag proved the warning goal");
+    }
+    graph.targets.front().authored_compile_options.clear();
+    graph.targets.back().require_explicit_msvc_warnings = true;
+    require(!cmake_initial_observation_valid(graph), "Warning flags on the checker were borrowed by its library");
+    graph = initial_observation_fixture(); graph.targets.front().sources = {"other.cpp"};
+    require(!cmake_initial_observation_valid(graph), "An uncompiled expression source acquired warning provenance");
+
+    graph = initial_observation_fixture();
+    const auto lf = graph.expression_repair->original_source;
+    for(const std::string_view ending : {"\n", "\r\n"}) {
+        std::string source;
+        for(const char value : lf) { if(value == '\n') source += ending; else source += value; }
+        graph.expression_repair->original_source = std::move(source);
+        const auto lines = cmake_initial_observation_warning_lines(graph);
+        require(lines && lines->first == 6 && lines->second == 7,
+            "Warning coordinates used a comment/string occurrence or miscounted LF/CRLF");
+    }
+    graph.expression_repair->original_source = "bool cantidad(int dato) {\r    return (0 <= dato) <=\r        20;\r}\r";
+    const auto cr = cmake_initial_observation_warning_lines(graph);
+    require(cr && cr->first == 2 && cr->second == 3,
+        "A valid expression separated by CR lost its physical warning lines");
+    graph.expression_repair->original_source = "bool cantidad(int dato) { return (0 <= dato) <= 20; }\n";
+    const auto one_line = cmake_initial_observation_warning_lines(graph);
+    require(one_line && one_line->first == 1 && one_line->second == 1,
+        "An inline original expression acquired a wider warning interval");
+    graph.expression_repair->original_source += "// (0 <= dato) <= 20\n";
+    require(cmake_initial_observation_warning_lines(graph) == one_line,
+        "A later comment moved the authenticated warning interval");
+    graph.expression_repair->original_source = "const char* texto = \"(0 <= dato) <= 20\";\n";
+    require(!cmake_initial_observation_warning_lines(graph), "A string literal invented an executable warning interval");
+}
+
+void initial_observation_frames() {
+    const auto spec = *initial_observation_fixture().initial_observation;
+    const auto frame = cmake_initial_observation_frame(spec);
+    require(frame.find(cmake_initial_observation_objective_version) != frame.npos,
+        "Initial observation framing lost its independent version");
+    for(int field = 0; field < 7; ++field) {
+        auto other = spec;
+        if(field == 0) other.executable += "_other";
+        if(field == 1) other.standard_input = "0\n";
+        if(field == 2) other.standard_output += " ";
+        if(field == 3) other.exit_code = 2;
+        if(field == 4) other.warning.reset();
+        if(field == 5) other.warning->code = "C4805";
+        if(field == 6) other.warning->path = "other/cantidad.cpp";
+        require(cmake_initial_observation_frame(other) != frame,
+            "A distinct executable/input/output/exit/warning contract reused its observation frame");
+    }
+    auto first = spec, second = spec;
+    first.standard_input = "a"; first.standard_output = "bc";
+    second.standard_input = "ab"; second.standard_output = "c";
+    require(cmake_initial_observation_frame(first) != cmake_initial_observation_frame(second),
+        "Adjacent input/output fields produced an ambiguous observation frame");
+    auto invalid = spec; invalid.exit_code = 0;
+    bool rejected = false;
+    try { (void)cmake_initial_observation_frame(invalid); } catch(const std::invalid_argument&) { rejected = true; }
+    require(rejected, "An invalid successful-exit observation acquired a frame");
+}
 } // namespace
 
 int main() try {
     contract_and_equivalence(); compiled_equivalents(); unique_code_selection(); immutable_context();
     bounded_pure_expression(); source_and_limits(); framing();
-    std::cout << "PASS authenticated scalar expression repair, lexical boundaries, equivalents and immutable context\n";
+    initial_observation_contract(); initial_observation_warning_binding(); initial_observation_frames();
+    std::cout << "PASS authenticated scalar expression repair, lexical boundaries, equivalents, immutable context and initial CMake observation contracts\n";
     return 0;
 } catch(const std::exception& error) {
     std::cerr << error.what() << '\n'; return 1;

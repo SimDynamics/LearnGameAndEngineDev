@@ -916,6 +916,7 @@ struct ClientFixture {
 struct ClientCapture {
     CppRunRequest request;
     FreshExecution execution;
+    std::optional<CppRunResult> actual_result;
 };
 const std::string& client_file(const CppProjectFiles& files, std::string_view path) {
     const auto at = std::ranges::find_if(files, [&](const auto& item) { return item.first == path; });
@@ -1490,6 +1491,116 @@ void verify_client_mode(const ClientModeFixture& fixture) {
         && reference_objective_frame(fixture.after, after) != reference_objective_frame(fixture.returned_client, returned),
         "A single/CMake formatting change or client transition has the wrong receipt scope");
 }
+ClientModeFixture client_mode_graph_fixture(const ClientModeFixture& source,
+        std::string_view integrity_json, std::string_view observation_json = {}) {
+    require(source.spec && source.spec->mode == "cmake", "Graph history requires the authentic CMake client");
+    auto result = source;
+    for (auto* lesson : {&result.before, &result.after, &result.cases_only,
+            &result.changed_client, &result.returned_client, &result.formatted_client}) {
+        auto root = JsonObject::Parse(winrt::to_hstring(lesson->raw_json));
+        auto record = JsonObject::Parse(LR"({"activity":"block_0005_0012","project":"Preparacion",
+          "targets":[{"name":"faltantes","type":"STATIC_LIBRARY","sources":["faltantes.cpp"],"exactSources":true},
+                     {"name":"revisar","type":"EXECUTABLE","sources":["main.cpp"],"exactSources":true,"linksTo":["faltantes"]}]})");
+        record.SetNamedValue(L"sourceIntegrity", JsonObject::Parse(winrt::to_hstring(integrity_json)));
+        if (!observation_json.empty())
+            record.SetNamedValue(L"initialObservation", JsonObject::Parse(winrt::to_hstring(observation_json)));
+        auto declarations = root.HasKey(L"compilerCmakeGraphChecks")
+            ? root.GetNamedArray(L"compilerCmakeGraphChecks") : JsonArray{};
+        for (const auto& value : declarations)
+            require(winrt::to_string(value.GetObject().GetNamedString(L"activity")) != source.spec->owner,
+                "The independently pinned graph-history fixture already owns this declaration");
+        declarations.Append(record); root.SetNamedValue(L"compilerCmakeGraphChecks", declarations);
+        *lesson = parse_lesson_json(winrt::to_string(root.Stringify()), "es");
+        const auto metadata = parse_lesson_progress_metadata(lesson->raw_json, "es");
+        same_version(*lesson, editor(*lesson, source.spec->owner), metadata, editor(metadata, source.spec->owner));
+    }
+    return result;
+}
+void verify_client_mode_graph_history(const ClientModeFixture& fixture) {
+    const auto versions = client_mode_versions(fixture);
+    const auto identity = fixture.spec->owner;
+    std::size_t checked = 0;
+    for (const auto* publication : versions) {
+        const auto metadata = parse_lesson_progress_metadata(publication->raw_json, "es");
+        for (const auto* context : {publication, &metadata}) {
+            const auto& active = editor(*context, identity);
+            require(active.cmake_graph_check.has_value(), "A loaded graph-history fixture lost its root requirement");
+            for (const auto& revision : active.compiler_case_revisions) {
+                for (const auto& endpoint : {compiler_case_revision_previous_block(active, revision),
+                                            compiler_case_revision_after_block(active, revision)}) {
+                    const auto fingerprint = test::compile_check_test_fingerprint(
+                        JsonObject::Parse(winrt::to_hstring(endpoint.raw_json)));
+                    const Lesson* independent = nullptr;
+                    for (const auto* version : versions) {
+                        const auto& expected = editor(*version, identity);
+                        if (expected.compiler_client_epoch == endpoint.compiler_client_epoch &&
+                                test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(expected.raw_json)))
+                                    == fingerprint) { independent = version; break; }
+                    }
+                    require(independent, "A graph endpoint lost its independent complete publication");
+                    const auto& expected = editor(*independent, identity);
+                    require(endpoint.cmake_graph_check == expected.cmake_graph_check,
+                        "A historical graph borrowed current source hashes or an expression's source");
+                    same_version(*independent, expected, *context, endpoint);
+                    ++checked;
+                }
+            }
+        }
+    }
+    require(checked > 12, "Graph history omitted client, case-only, return or formatting endpoints");
+    // The permutation helper also receives a past project when a later client
+    // review follows it. Its runtime sidecar must retain that exact graph.
+    const auto& before = editor(fixture.before, identity);
+    const auto& after = editor(fixture.after, identity);
+    CompilerCaseOrderRevision order;
+    order.id = before.stable_id; order.raw_json = before.raw_json;
+    order.previous_initial_code = before.initial_code; order.previous_project_files = before.project_files;
+    order.previous_output_check = *before.output_check; order.previous_client_epoch = before.compiler_client_epoch;
+    order.previous_source_format_initial_code = before.source_format_original_initial_code;
+    order.previous_source_format_project_files = before.source_format_original_project_files;
+    order.previous_case_text_semantics = before.text_semantics;
+    order.previous_cmake_graph_check = before.cmake_graph_check;
+    const auto historical = compiler_case_order_previous_block(after, order);
+    same_version(fixture.before, before, fixture.after, historical);
+    require(historical.cmake_graph_check == before.cmake_graph_check,
+        "A past case permutation borrowed the current client graph");
+}
+ClientModeFixture verify_cmake_client_graph_publications(const ClientModeFixture& fixture) {
+    for (const std::string_view integrity : {
+            R"({"preserveNonCmake":true})",
+            R"({"preserveNonCmake":true,"removePrefix":{"path":"main.cpp","text":"#include \"faltantes.h\"\n"}})"})
+        verify_client_mode_graph_history(client_mode_graph_fixture(fixture, integrity));
+    auto protected_repair = client_mode_graph_fixture(fixture,
+        R"({"preserveNonCmake":true,"replaceExpression":{"path":"faltantes.cpp","original":"necesarias - disponibles + 1"}})");
+    verify_client_mode_graph_history(protected_repair);
+
+    // This expression exists only in the later guarded client. A new root
+    // prerequisite must neither invalidate old source archives nor turn its
+    // predecessor into a weaker stdout-only objective.
+    auto newest = fixture;
+    newest.before = newest.after = newest.cases_only = newest.returned_client = newest.formatted_client = fixture.changed_client;
+    newest = client_mode_graph_fixture(newest,
+        R"({"preserveNonCmake":true,"replaceExpression":{"path":"main.cpp","original":"1"}})",
+        R"({"executable":"revisar","input":"","output":"","exitCode":1})");
+    const auto& owner = editor(newest.changed_client, fixture.spec->owner);
+    require(owner.compiler_case_revisions.size() >= 2 && owner.cmake_graph_check &&
+            owner.cmake_graph_check->initial_observation.has_value(),
+        "A newly introduced graph requirement lost its authenticated client history");
+    const auto& first = owner.compiler_case_revisions.front();
+    require(!first.previous_cmake_graph_check && !first.revised_cmake_graph_check,
+        "A scalar selector absent from both old clients invented a historical source binding");
+    for (const auto& prior : {compiler_case_revision_previous_block(owner, first),
+                             compiler_case_revision_after_block(owner, first)}) {
+        require(prior.cmake_graph_check == owner.cmake_graph_check,
+            "A newly added repair silently weakened an old endpoint to stdout");
+        auto weak = prior; weak.cmake_graph_check.reset();
+        require(reference_objective_frame(newest.changed_client, prior) !=
+            reference_objective_frame(newest.changed_client, weak),
+            "An unproved new repair reused a historical stdout objective");
+    }
+    std::cout << "PASS CMake client graph history: immutable hashes, bounded prefix/expression repairs, both loaders, returns and stronger new prerequisites\n";
+    return protected_repair;
+}
 std::string repaired_single_client(std::string source) {
     constexpr std::string_view old = "return disponibles < minimo;";
     const auto at = source.find(old);
@@ -1603,6 +1714,8 @@ ClientCapture execute_client_mode(const ClientModeFixture& fixture, const Block&
     request.request_id = identity; request.revision = identity + 2000;
     request.source_utf8 = block.initial_code; request.project_files = block.project_files;
     request.source_files = block.source_files; request.cmake = block.cmake; request.stdin_utf8 = input;
+    request.cmake_graph_check = block.cmake_graph_check;
+    request.capture_cmake_graph = block.cmake_graph_check.has_value();
     request.action = CppRunRequest::Action::compile_run; request.backend = CppRunRequest::Backend::native_msvc;
     request.projects_directory = build_directory;
     request.project_key = std::string(spec.name) + (aggregate ? "/aggregate" : reference ? "/reference" : "/starter");
@@ -1630,6 +1743,11 @@ ClientCapture execute_client_mode(const ClientModeFixture& fixture, const Block&
         && capture.execution.standard_output == expected_output && capture.execution.standard_error.empty()
         && capture.execution.executable == (cmake ? std::optional<std::string>{"revisar"} : std::nullopt),
         "A real single/CMake client differs from its exact stdout/exit/target oracle: " + details);
+    if (request.cmake_graph_check) {
+        require(capture.execution.cmake_graph_correct,
+            "The actual client graph did not prove its immutable source contract: " + details);
+        capture.actual_result = result;
+    }
     std::cout << "PASS actual native client " << spec.mode << " input [" << input
         << "]: exact stdout, empty stderr, exit " << expected_exit << (cmake ? ", CMake revisar/Debug" : "") << '\n';
     return capture;
@@ -1821,6 +1939,45 @@ void client_mode_state_only(const ClientModeFixture& fixture, const ClientCaptur
             "catalog/navigation; callback-only focal delta without stored coeditor credit, ") << "original complete "
         "program and recipe, saved drafts, epoch return, format/cases, import/reopen/Reset and atomic refusal\n";
 }
+void verify_cmake_client_graph_receipt(const ClientModeFixture& fixture,
+        const ClientCapture& aggregate, const std::filesystem::path& directory) {
+    const auto identity = fixture.spec->owner;
+    const auto& before = editor(fixture.before, identity);
+    require(aggregate.actual_result && aggregate.execution.cmake_graph_correct &&
+            !aggregate.execution.cmake_graph_request_fingerprint.empty(),
+        "Graph receipt history requires its actual bound MSVC configure/build/run");
+    auto original = seeded_state(fixture.before, identity);
+    const auto key = draft_key("programming", fixture.before, before);
+    const auto draft = get_draft(original, key, before.initial_code);
+    require(record_compiler_puzzle_case(original, fixture.before, before, aggregate.request,
+            aggregate.execution, "Contrato CMake anterior comprobado"),
+        "The real protected aggregate did not earn its original graph receipt");
+    const auto old_values = original.preferences.at("native_windows");
+    std::size_t version_index = 0;
+    for (const auto* version : client_mode_versions(fixture)) {
+        if (version == &fixture.before) continue;
+        auto adopted = original;
+        const auto& owner = editor(*version, identity);
+        prepare_lesson_state(adopted, *version);
+        require(compiler_puzzle_historical_completed(adopted, *version, owner) &&
+                compiler_puzzle_historical_case_count(adopted, *version, owner) == 1 &&
+                !compiler_puzzle_completed(adopted, *version, owner),
+            "A protected graph receipt disappeared historically or falsely proved a new client");
+        require(same_draft(draft, get_draft(adopted, key, owner.initial_code)),
+            "Reconstructing a historical graph overwrote the student's saved source or input");
+        for (const auto& [old_key, value] : old_values)
+            require(find(adopted, "native_windows", old_key) &&
+                    *find(adopted, "native_windows", old_key) == value,
+                "Graph history changed a prior receipt, feedback or another owner's evidence");
+        validate_compiler_puzzle_state(adopted, *version, owner);
+        reopen_client_state(adopted, directory / "cmake-graph-history" / std::to_string(version_index++));
+        const auto metadata = parse_lesson_progress_metadata(version->raw_json, "es");
+        require(compiler_puzzle_historical_completed(adopted, metadata, editor(metadata, identity)) &&
+                !compiler_puzzle_completed(adopted, metadata, editor(metadata, identity)),
+            "Compact catalog metadata disagreed about historical and current graph completion");
+    }
+    std::cout << "PASS actual CMake graph receipt: retained through client/case/format/return revisions, full and metadata reopening; no new completion\n";
+}
 std::size_t actual_client_mode_runs(const ClientModeFixture& fixture, const std::filesystem::path& directory) {
     const auto& spec = *fixture.spec;
     const bool cmake = spec.mode == "cmake";
@@ -1829,7 +1986,19 @@ std::size_t actual_client_mode_runs(const ClientModeFixture& fixture, const std:
     const auto base = cmake ? 900U : 800U;
     const auto builds = client_mode_build_directory(directory, cmake);
     const auto aggregate_output = cmake ? "3:0:0" : "";
-    const auto aggregate = execute_client_mode(fixture, before, true, true, "", builds, base, aggregate_output, 0);
+    std::optional<ClientModeFixture> graph_fixture;
+    if (cmake) graph_fixture = verify_cmake_client_graph_publications(fixture);
+    auto aggregate = graph_fixture
+        ? execute_client_mode(*graph_fixture, editor(graph_fixture->before, spec.owner), true, true,
+            "", builds, base, aggregate_output, 0)
+        : execute_client_mode(fixture, before, true, true, "", builds, base, aggregate_output, 0);
+    if (graph_fixture) {
+        verify_cmake_client_graph_receipt(*graph_fixture, aggregate, directory);
+        // The exact same real execution also proves its ordinary stdout
+        // contract. Preserve the independent historical compatibility matrix.
+        aggregate.request.cmake_graph_check.reset(); aggregate.request.capture_cmake_graph = false;
+        aggregate.execution = capture_cpp_execution(aggregate.request, *aggregate.actual_result);
+    }
     require(evaluate_cpp_output_check(*before.output_check, aggregate.execution, aggregate.request.revision).verdict == OutputVerdict::correct,
         "The authentic single/CMake aggregate fails its own published output contract");
     const auto old_at_first = execute_client_mode(fixture, before, true, true, spec.inputs[0], builds, base + 1, aggregate_output, 0);

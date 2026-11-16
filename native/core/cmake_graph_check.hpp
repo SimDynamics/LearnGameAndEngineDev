@@ -6,6 +6,7 @@
 #include <charconv>
 #include <cstdint>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -75,6 +76,21 @@ struct CmakeTargetListRequirement {
     bool require_append=false;
     bool operator==(const CmakeTargetListRequirement&) const = default;
 };
+struct CmakeInitialWarning {
+    std::string code, path;
+    bool operator==(const CmakeInitialWarning&) const = default;
+};
+// An automatically captured observation of the original faulty expression.
+// It does not turn optional output cases into prerequisites or require a
+// separate History action. Source provenance comes from expression_repair.
+struct CmakeInitialObservation {
+    std::string executable, standard_input, standard_output;
+    std::uint32_t exit_code = 1;
+    std::optional<CmakeInitialWarning> warning;
+    bool operator==(const CmakeInitialObservation&) const = default;
+};
+inline constexpr std::string_view cmake_initial_observation_objective_version =
+    "cmake-original-failure-observation-v1";
 struct CmakeGraphRequirement {
     std::string project_name;
     std::vector<CmakeRequiredTarget> targets;
@@ -95,7 +111,91 @@ struct CmakeGraphRequirement {
     // All bytes outside that interval and all other non-CMake files stay
     // protected; equivalent replacement expressions are checked by execution.
     std::optional<CppExpressionRepair> expression_repair{};
+    std::optional<CmakeInitialObservation> initial_observation{};
     bool operator==(const CmakeGraphRequirement&) const = default;
 };
+
+inline bool cmake_initial_observation_values_valid(const CmakeInitialObservation& spec) {
+    const auto name = [](std::string_view value) {
+        return !value.empty() && value.size() <= 128 &&
+            std::ranges::all_of(value, [](unsigned char c) {
+                return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                    (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.' || c == '+';
+            });
+    };
+    const auto bounded = [](std::string_view value) {
+        return value.size() <= 65536 && value.find('\0') == value.npos;
+    };
+    if(!name(spec.executable) || !bounded(spec.standard_input) ||
+       !bounded(spec.standard_output) || spec.exit_code == 0 || spec.exit_code > 255)
+        return false;
+    if(spec.warning) {
+        const auto& code = spec.warning->code;
+        if(code.size() != 5 || !code.starts_with("C4") ||
+           !std::ranges::all_of(std::string_view(code).substr(2), [](unsigned char c) {
+               return c >= '0' && c <= '9';
+           }) || !cpp_expression_repair_detail::path_valid(spec.warning->path))
+            return false;
+    }
+    return true;
+}
+
+inline bool cmake_initial_observation_valid(const CmakeGraphRequirement& graph) {
+    if(!graph.initial_observation || !graph.expression_repair ||
+       !cpp_expression_repair_valid(*graph.expression_repair) ||
+       !cmake_initial_observation_values_valid(*graph.initial_observation)) return false;
+    const auto& spec = *graph.initial_observation;
+    if(!std::ranges::any_of(graph.targets, [&](const auto& target) {
+        return target.name == spec.executable && target.type == "EXECUTABLE";
+    })) return false;
+    if(spec.warning) {
+        if(spec.warning->path != graph.expression_repair->path) return false;
+        const auto level = [](std::string_view option) {
+            if(option.empty() || (option.front() != '/' && option.front() != '-')) return false;
+            option.remove_prefix(1);
+            return option == "Wall" || (option.size() == 2 && option.front() == 'W' &&
+                option.back() >= '1' && option.back() <= '4');
+        };
+        if(!std::ranges::any_of(graph.targets, [&](const auto& target) {
+            return std::ranges::find(target.sources, spec.warning->path) != target.sources.end() &&
+                (target.require_explicit_msvc_warnings ||
+                 std::ranges::any_of(target.authored_compile_options, level));
+        })) return false;
+    }
+    return true;
+}
+
+inline std::optional<std::pair<std::uint32_t, std::uint32_t>>
+cmake_initial_observation_warning_lines(const CmakeGraphRequirement& graph) {
+    if(!cmake_initial_observation_valid(graph) || !graph.initial_observation->warning) return {};
+    const auto& repair = *graph.expression_repair;
+    const auto selected = cpp_expression_repair_detail::select(repair);
+    if(!selected) return {};
+    const auto line_at = [&](std::size_t position) {
+        std::uint32_t line = 1;
+        for(std::size_t i = 0; i < position; ++i)
+            if(repair.original_source[i] == '\n' ||
+               (repair.original_source[i] == '\r' &&
+                (i + 1 == repair.original_source.size() || repair.original_source[i + 1] != '\n')))
+                ++line;
+        return line;
+    };
+    return std::pair{line_at(selected->source[selected->first].begin),
+        line_at(selected->source[selected->last].end - 1)};
+}
+
+inline std::string cmake_initial_observation_frame(const CmakeInitialObservation& spec) {
+    if(!cmake_initial_observation_values_valid(spec))
+        throw std::invalid_argument("Invalid original CMake failure observation");
+    std::string result;
+    const auto field = [&](std::string_view value) {
+        result += std::to_string(value.size()) + ':'; result += value;
+    };
+    field(cmake_initial_observation_objective_version);
+    field(spec.executable); field(spec.standard_input); field(spec.standard_output);
+    field(std::to_string(spec.exit_code)); field(spec.warning ? "warning" : "no-warning");
+    if(spec.warning) { field(spec.warning->code); field(spec.warning->path); }
+    return result;
+}
 
 } // namespace lgaed::curriculum

@@ -4621,7 +4621,7 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                 {"activity", "targets"} <= set(entry) <=
                 {"activity", "project", "minimumCmakeVersion", "minimumCmakeVersionAtLeast", "targets",
                  "optionSelection", "sourceIntegrity", "configureMessageOrder",
-                 "targetList"},
+                 "targetList", "initialObservation"},
                 "CMake graph owner needs bounded optional requirements")
         identity = _identity(entry["activity"])
         require(identity not in seen, "Repeated CMake graph activity")
@@ -4801,6 +4801,52 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
             require(any(expression_repair["path"] in target.get("sources", [])
                         for target in targets),
                     "CMake expression repair must own an original required C++ source")
+        if "initialObservation" in entry:
+            for field in ("compilerWorkflowChecks", "compilerRuntimeChecks",
+                          "compilerNamedRuleChecks", "compilerOpenBatteryChecks",
+                          "compilerReductionChecks"):
+                require(not any(type(record) is dict and record.get("activity") == identity
+                                for record in document.get(field, [])),
+                        "CMake initial observation cannot share its owner with another runtime or source prerequisite")
+            observation = entry["initialObservation"]
+            require(expression_repair is not None and
+                    type(observation) is dict and
+                    {"executable", "input", "output", "exitCode"} <= set(observation) <=
+                    {"executable", "input", "output", "exitCode", "warning"},
+                    "CMake initial observation needs a protected expression and a complete bounded failure contract")
+            executable = observation["executable"]
+            require(type(executable) is str and 0 < len(executable) <= 128 and
+                    re.fullmatch(r"[A-Za-z0-9_.+-]+", executable) and
+                    executable in targets_by_name and
+                    targets_by_name[executable]["type"] == "EXECUTABLE" and
+                    any(case.get("executable", block["cmake"].get("target")) == executable
+                        for case in block.get("outputCheck", {}).get("cases", [])),
+                    "CMake initial observation must use an existing output-case executable")
+            for channel in ("input", "output"):
+                value = observation[channel]
+                require(type(value) is str and "\x00" not in value and
+                        not any(0xD800 <= ord(c) <= 0xDFFF for c in value) and
+                        len(value.encode("utf-8")) <= 65536,
+                        "CMake initial observation input and output must fit 65536 UTF-8 bytes without NUL")
+            require(type(observation["exitCode"]) in (int, float) and
+                    1 <= observation["exitCode"] <= 255 and
+                    math.isfinite(observation["exitCode"]) and
+                    math.trunc(observation["exitCode"]) == observation["exitCode"],
+                    "CMake initial failure exit must be an integer in 1..255")
+            if "warning" in observation:
+                warning = observation["warning"]
+                require(type(warning) is dict and set(warning) == {"code", "path"} and
+                        type(warning["code"]) is str and
+                        re.fullmatch(r"C4[0-9]{3}", warning["code"]) and
+                        type(warning["path"]) is str and
+                        warning["path"] == expression_repair["path"],
+                        "CMake initial warning must identify an MSVC C4xxx diagnostic in the protected expression file")
+                require(any(warning["path"] in target.get("sources", []) and
+                            (target.get("requireExplicitMsvcWarnings") is True or
+                             any(re.fullmatch(r"[/-]W(?:[1-4]|all)", option)
+                                 for option in target.get("authoredCompileOptions", [])))
+                            for target in targets),
+                        "CMake initial warning requires authored warning options on the compiling target")
         for library in targets:
             if (library.get("publicIncludeRoots") or
                     library.get("privateIncludeRoots")):
