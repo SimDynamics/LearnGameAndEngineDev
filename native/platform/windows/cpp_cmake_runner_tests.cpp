@@ -31,7 +31,11 @@ void ran(const lgaed::windows::CppRunResult& result,std::string_view context={})
         " status="+std::to_string(static_cast<int>(result.execution.status))+
         " exit="+(result.execution.exit_code?std::to_string(*result.execution.exit_code):"none")+
         ": "+result.error_utf8+"\nstdout:\n"+result.execution.stdout_bytes+
-        "\nstderr:\n"+result.execution.stderr_bytes);
+        "\nstderr:\n"+result.execution.stderr_bytes+
+        "\nconfigure stdout:\n"+result.configuration.stdout_bytes+
+        "\nconfigure stderr:\n"+result.configuration.stderr_bytes+
+        "\nbuild stdout:\n"+result.compilation.stdout_bytes+
+        "\nbuild stderr:\n"+result.compilation.stderr_bytes);
 }
 // MSVC/UCRT converts source LF to console CRLF. Preserve captured raw bytes;
 // this test helper only recognizes the expected LF-to-CRLF transformation.
@@ -2790,6 +2794,31 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     auto warning_repair=warning_request;
     warning_repair.cmake_graph_check=warning_observation_owner.cmake_graph_check;
     const auto corrected_warning_run=run_cpp(warning_repair);
+    const auto repaired_workspace=inspect_cpp_project(warning_repair).workspace;
+    const auto repaired_source=read(repaired_workspace/L"p/cantidad.cpp");
+    const auto native_repaired_source=read(state::native_io_path(repaired_workspace/L"p/cantidad.cpp"));
+    const auto& requested_source=repair_file(warning_repair,"cantidad.cpp");
+    if(!corrected_warning_run.execution.succeeded()||repaired_source!=requested_source||
+       native_repaired_source!=requested_source) {
+        std::cerr<<"U3L7 requested source:\n"<<requested_source
+            <<"\nU3L7 materialized source:\n"<<repaired_source
+            <<"\nU3L7 native source:\n"<<native_repaired_source
+            <<"\nU3L7 workspace: "<<utf8(repaired_workspace.wstring())
+            <<"\nU3L7 actual compile commands:\n"<<actual_commands<<'\n';
+        for(const auto& entry:std::filesystem::recursive_directory_iterator(repaired_workspace)) {
+            if(!entry.is_regular_file())continue;
+            const auto extension=entry.path().extension();
+            if(extension!=L".obj"&&extension!=L".lib"&&extension!=L".exe"&&
+               entry.path().filename()!=L"cantidad.cpp")continue;
+            std::cerr<<"U3L7 generated file "<<entry.path().lexically_relative(repaired_workspace).generic_string()
+                <<" bytes="<<entry.file_size()<<" write="<<entry.last_write_time().time_since_epoch().count()<<'\n';
+        }
+        const auto ninja_log=repaired_workspace/L".ninja_log";
+        if(std::filesystem::is_regular_file(ninja_log))
+            std::cerr<<"U3L7 Ninja build log:\n"<<read(ninja_log)<<'\n';
+    }
+    check(repaired_source==requested_source&&native_repaired_source==requested_source,
+        "U3L7 failed to materialize its exact repaired source");
     ran(corrected_warning_run,"U3L7/first repaired build and run");
     const auto expected_warning_output=
         warning_block.output_check->cases.front().outputs.front();
