@@ -1647,6 +1647,9 @@ void client_mode_state_only(const ClientModeFixture& fixture, const ClientCaptur
     auto draft = get_draft(original, key, before.initial_code);
     draft.source = aggregate.request.source_utf8;
     draft.input = " \t entrada propia\r\n"; draft.indentation_json = make_indentation_metadata(draft.source, {});
+    // CMake's independent top-level source is empty; its QA caret must be valid.
+    // Project-file cursors remain separate and retain their saved positions.
+    if (cmake) draft.selection_start = draft.selection_end = 0;
     put_draft(original, key, draft);
     if (cmake) {
         original.preferences["cpp_lesson_drafts"][key + "/project"] =
