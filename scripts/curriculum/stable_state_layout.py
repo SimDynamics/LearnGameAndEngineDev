@@ -6214,9 +6214,12 @@ def resolve_base_commit(repository: Path, base_ref: str) -> str:
 
 
 def _git_document(repository: Path, commit: str, relative: str) -> dict:
-    result = subprocess.run(["git", "show", commit + ":" + relative], cwd=repository,
+    # The separator prevents Git from also statting SHA:path as a working-tree
+    # filename, which can exceed Windows MAX_PATH even when the real path fits.
+    result = subprocess.run(["git", "show", commit + ":" + relative, "--"], cwd=repository,
                             capture_output=True, text=True, encoding="utf-8")
-    require(result.returncode == 0, "Cannot read baseline lesson " + relative)
+    require(result.returncode == 0,
+            "Cannot read baseline lesson " + relative + ": " + result.stderr.strip())
     return parse_json(result.stdout.lstrip("\ufeff"))
 
 

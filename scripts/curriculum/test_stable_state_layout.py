@@ -354,6 +354,42 @@ class RepositoryGateTest(unittest.TestCase):
     def adopt(self):
         for path in self.files.values(): self.write(path, self.mapped())
 
+    @unittest.skipIf(sys.platform == 'win32', 'Windows filenames cannot contain the revision colon')
+    def test_baseline_blob_ignores_a_worktree_filename_ambiguity(self):
+        path = self.files['es']
+        relative = path.relative_to(self.root).as_posix()
+        shadow = self.root/(self.base + ':' + relative)
+        self.write(shadow, {'id': 'unversioned_shadow'})
+        self.write(path, {'id': 'working_tree_edit'})
+        self.assertEqual(m._git_document(self.root, self.base, relative), fixture())
+        self.assertEqual(m.load(shadow), {'id': 'unversioned_shadow'})
+        self.assertEqual(m.load(path), {'id': 'working_tree_edit'})
+
+    def test_baseline_blob_reads_a_long_path_without_a_filename_probe(self):
+        # The real file fits MAX_PATH; treating SHA:path as another filename does not.
+        self.git('config', 'core.longpaths', 'false')
+        directory = self.root/m.CONTENT_DIRECTORY/'es/programming/long_paths/unit'
+        padding = 240 - len(str(directory.resolve())) - 1 - len('lesson_.json')
+        self.assertGreater(padding, 0)
+        path = directory/('lesson_' + 'x' * padding + '.json')
+        self.write(path, fixture())
+        published = self.commit()
+        relative = path.relative_to(self.root).as_posix()
+        self.assertLess(len(str(path.resolve())), 260)
+        self.assertGreaterEqual(len(str(self.root/(published + ':' + relative))), 260)
+        self.write(path, {'id': 'working_tree_edit'})
+        self.assertEqual(m._git_document(self.root, published, relative), fixture())
+        self.assertEqual(m.load(path), {'id': 'working_tree_edit'})
+
+    def test_missing_baseline_blob_cannot_fall_back_to_the_working_tree(self):
+        path = self.files['es'].with_name('lesson_unpublished.json')
+        self.write(path, fixture())
+        relative = path.relative_to(self.root).as_posix()
+        with self.assertRaises(m.LayoutError) as error:
+            m._git_document(self.root, self.base, relative)
+        self.assertIn('Cannot read baseline lesson ' + relative, str(error.exception))
+        self.assertIn('fatal:', str(error.exception))
+
     def test_direct_upgrade_from_legacy_tree_needs_no_intermediate_release(self):
         self.adopt()
         report = m.check_repository(self.root, self.base)
