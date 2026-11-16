@@ -1,5 +1,6 @@
 #include "core/lesson.hpp"
 #include "core/named_rule_battery_check.hpp"
+#include "core/named_rule_constant_variation_check.hpp"
 
 #include <algorithm>
 #include <set>
@@ -459,6 +460,12 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             if(contract.execution_probe->battery_check)
                 token(named_rule_battery_spec_frame(
                     *contract.execution_probe->battery_check));
+            // Varying an authored agreement is a separate proof from using
+            // its original value. Preserve every historical frame when this
+            // optional requirement is absent.
+            if(contract.execution_probe->constant_variations)
+                token(named_rule_constant_variation_spec_frame(
+                    *contract.execution_probe->constant_variations));
         }
     }
     if(activity.open_battery_probe) {

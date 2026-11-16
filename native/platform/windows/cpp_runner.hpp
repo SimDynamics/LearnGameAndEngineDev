@@ -144,6 +144,12 @@ struct CppNamedRuleProbe {
     std::string source_sha256, project_sha256;
     CppPhaseResult compilation, execution;
 };
+struct CppNamedRuleConstantVariationProbe {
+    std::size_t index=0;
+    // The generated private driver and the complete varied program are both
+    // regenerated from the authenticated original request before capture.
+    CppNamedRuleProbe proof;
+};
 struct CppNamedRuleBatteryEvidence {
     std::string original_program_fingerprint;
     std::vector<curriculum::NamedRuleBatteryRun> runs;
@@ -247,6 +253,8 @@ struct CppRunResult {
     std::string integer_battery_request_fingerprint;
     std::optional<CppAdjustmentProjectEvidence> adjustment_project_evidence;
     std::string adjustment_project_request_fingerprint;
+    std::vector<CppNamedRuleConstantVariationProbe> named_rule_constant_variation_probes;
+    std::string named_rule_constant_variation_request_fingerprint;
 };
 struct CppProjectAvailability {
     bool configured=false,built=false;
@@ -294,6 +302,7 @@ struct CppProjectAvailability {
 // It does not change any existing persisted program or CMake receipt frame.
 [[nodiscard]] std::string cpp_boolean_battery_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_named_rule_battery_request_fingerprint(const CppRunRequest&);
+[[nodiscard]] std::string cpp_named_rule_constant_variation_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_reduction_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_integer_battery_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_adjustment_project_request_fingerprint(const CppRunRequest&);

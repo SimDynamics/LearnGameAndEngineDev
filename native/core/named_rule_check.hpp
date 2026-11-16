@@ -48,10 +48,26 @@ struct NamedRuleBatterySpec {
     std::uint32_t failure_exit_code = 1;
     bool operator==(const NamedRuleBatterySpec&) const = default;
 };
+// Optional counterfactuals change one authenticated local agreement, then
+// execute independently authored answers. The source path and requirements
+// are derived from NamedRuleSourceCheck; they are not separately authored.
+struct NamedRuleConstantVariation {
+    std::string function;
+    int value = 0;
+    std::vector<NamedRuleProbeCase> cases;
+    bool operator==(const NamedRuleConstantVariation&) const = default;
+};
+struct NamedRuleConstantVariationSpec {
+    std::string source_path;
+    std::vector<NamedRuleRequirement> requirements;
+    std::vector<NamedRuleConstantVariation> variations;
+    bool operator==(const NamedRuleConstantVariationSpec&) const = default;
+};
 struct NamedRuleExecutionProbe {
     std::string harness_path, header;
     std::vector<NamedRuleProbeCase> cases;
     std::optional<NamedRuleBatterySpec> battery_check = std::nullopt;
+    std::optional<NamedRuleConstantVariationSpec> constant_variations = std::nullopt;
     bool operator==(const NamedRuleExecutionProbe&) const = default;
 };
 
@@ -76,7 +92,14 @@ struct NamedRuleSourceCheck {
 namespace named_rule_detail {
 using Tokens = std::vector<std::string>;
 struct Bounds { std::size_t open, close; };
-struct LocalRule { std::string name; std::size_t end; int value; };
+struct LocalRule {
+    std::string name;
+    std::size_t end;
+    int value;
+    // Token bounds, excluding =/{/( and the terminating ;/}/). Retaining
+    // the whole expression admits equivalent literal bases and arithmetic.
+    std::size_t initializer_first = 0, initializer_last = 0;
+};
 
 // Independent probes recompile the submitted source under a private main.
 // Compile-time location/build identifiers can reveal that second compilation
@@ -333,14 +356,14 @@ inline std::optional<LocalRule> constant(
         while(end<limit&&!op(t[end],";"))++end;
         if(end>=limit)return {};
         const auto value=arithmetic_constant(t,assignment+1,end);
-        if(value)return LocalRule{name,end,*value};
+        if(value)return LocalRule{name,end,*value,assignment+1,end};
     }
     if(op(t[assignment],"{")||op(t[assignment],"(")) {
         const bool brace=op(t[assignment],"{");
         const auto end=closing(t,assignment,brace?"{":"(",brace?"}":")");
         if(!end||*end+1>=limit||!op(t[*end+1],";"))return {};
         const auto value=arithmetic_constant(t,assignment+1,*end);
-        if(value)return LocalRule{name,*end+1,*value};
+        if(value)return LocalRule{name,*end+1,*value,assignment+1,*end};
     }
     return {};
 }

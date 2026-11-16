@@ -5,6 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 import json
 import unittest
+from unittest.mock import patch
 
 import stable_state_layout as state
 
@@ -16,7 +17,16 @@ LESSON = ROOT / (
 
 
 def original() -> dict:
-    return json.loads(LESSON.read_text(encoding="utf-8"))
+    return historical_fixture(state.load(LESSON))
+
+
+def historical_fixture(current: dict) -> dict:
+    """Validate published authoring before deriving the pre-declaration QA model."""
+    state.validate(current)
+    before = deepcopy(current)
+    before.pop("compilerNamedRuleChecks", None)
+    state.validate(before)
+    return before
 
 
 def declaration() -> list[dict]:
@@ -359,6 +369,199 @@ class NamedRuleBatteryAuthoringTest(unittest.TestCase):
                         driver + '\nint lgaed_named_rule_battery_counter = 0;\n'):
             with self.assertRaises(state.LayoutError):
                 state._named_rule_battery_driver(changed)
+
+
+def declaration_with_variations() -> list[dict]:
+    checks = declaration_with_batteries()
+    checks[0]["executionProbe"]["constantVariations"] = [{
+        "function": "cajas_para", "value": 6,
+        "cases": [{"function": "cajas_para", "input": value, "expected": expected}
+                  for value, expected in ((0, 0), (4, 1), (7, 2), (19, 4))],
+    }]
+    checks[1]["executionProbe"]["constantVariations"] = [
+        {"function": "cajas_para", "value": 5, "cases": [
+            {"function": "cajas_para", "input": 5, "expected": 1},
+            {"function": "cajas_para", "input": 6, "expected": 2},
+            {"function": "cajas_para", "input": 19, "expected": 4},
+            {"function": "llega_a_tiempo", "input": 4, "expected": 1},
+            {"function": "llega_a_tiempo", "input": 5, "expected": 0},
+        ]},
+        {"function": "llega_a_tiempo", "value": 3, "cases": [
+            {"function": "cajas_para", "input": 6, "expected": 1},
+            {"function": "cajas_para", "input": 19, "expected": 4},
+            {"function": "llega_a_tiempo", "input": 4, "expected": 0},
+            {"function": "llega_a_tiempo", "input": 5, "expected": 0},
+        ]},
+    ]
+    for check in checks[2:]:
+        check["executionProbe"]["constantVariations"] = [
+            {"function": "precio_total", "value": 8, "cases": [
+                {"function": "precio_total", "input": 11, "expected": 88},
+                {"function": "alcanza_minimo", "input": 4, "expected": 0},
+                {"function": "alcanza_minimo", "input": 5, "expected": 1},
+            ]},
+            {"function": "alcanza_minimo", "value": 6, "cases": [
+                {"function": "precio_total", "input": 11, "expected": 77},
+                {"function": "alcanza_minimo", "input": 4, "expected": 0},
+                {"function": "alcanza_minimo", "input": 5, "expected": 0},
+            ]},
+        ]
+    return checks
+
+
+class NamedRuleConstantVariationAuthoringTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.before = original()
+        self.after = deepcopy(self.before)
+        self.after["compilerNamedRuleChecks"] = declaration_with_variations()
+
+    def test_initial_activation_preserves_all_original_content_and_state(self):
+        state.validate(self.after)
+        state.validate_transition(self.before, self.after)
+        for key in ("pages", "stateLayout", "textSemantics"):
+            self.assertEqual(self.before[key], self.after[key])
+        for record in self.after["compilerNamedRuleChecks"]:
+            self.assertIn("constantVariations", record["executionProbe"])
+
+    def test_absence_keeps_legacy_declarations_unchanged(self):
+        for records in (declaration(), declaration_with_batteries()):
+            current = deepcopy(self.before)
+            current["compilerNamedRuleChecks"] = records
+            preserved = deepcopy(current)
+            state.validate(current)
+            state.validate_transition(self.before, current)
+            self.assertEqual(preserved, current)
+            for record in records:
+                self.assertNotIn("constantVariations", record.get("executionProbe", {}))
+
+    def test_published_fixture_is_validated_before_extracting_history(self):
+        preserved = deepcopy(self.after)
+        with patch.object(state, "load", return_value=self.after):
+            self.assertEqual(self.before, original())
+        self.assertEqual(preserved, self.after)
+        invalid = deepcopy(self.after)
+        invalid["compilerNamedRuleChecks"][0]["executionProbe"]["constantVariations"] = []
+        with patch.object(state, "load", return_value=invalid), self.assertRaises(state.LayoutError):
+            original()
+
+    def test_published_variations_cannot_be_removed_or_rewritten(self):
+        mutations = (
+            lambda probe: probe.pop("constantVariations"),
+            lambda probe: probe["constantVariations"][0].update(value=7),
+            lambda probe: probe["constantVariations"][0]["cases"][2].update(expected=3),
+        )
+        for mutate in mutations:
+            changed = deepcopy(self.after)
+            mutate(changed["compilerNamedRuleChecks"][0]["executionProbe"])
+            state.validate(changed)
+            with self.subTest(mutate=mutate), self.assertRaises(state.LayoutError):
+                state.validate_transition(self.after, changed)
+
+    def test_numeric_values_accept_integral_json_only_in_the_new_extension(self):
+        changed = deepcopy(self.after)
+        for record in changed["compilerNamedRuleChecks"]:
+            for variation in record["executionProbe"]["constantVariations"]:
+                variation["value"] = float(variation["value"])
+                for case in variation["cases"]:
+                    case["input"], case["expected"] = float(case["input"]), float(case["expected"])
+        state.validate(state.parse_json(json.dumps(changed)))
+        for value in (-(2 ** 31), 2 ** 31 - 1, float(-(2 ** 31)), float(2 ** 31 - 1)):
+            current = deepcopy(self.after)
+            variation = current["compilerNamedRuleChecks"][0]["executionProbe"]["constantVariations"][0]
+            variation["value"] = value
+            variation["cases"].append({"function": "cajas_para", "input": value, "expected": value})
+            with self.subTest(value=value):
+                state.validate(current)
+        for field in ("value", "input", "expected"):
+            current = deepcopy(self.after)
+            record = current["compilerNamedRuleChecks"][0]
+            if field == "value":
+                record["rules"][0][field] = 4.0
+            else:
+                record["executionProbe"]["cases"][0][field] = 0.0
+            with self.subTest(legacy=field), self.assertRaises(state.LayoutError):
+                state.validate(current)
+
+    def test_numeric_values_reject_booleans_fractions_nonfinite_and_overflow(self):
+        invalid = (True, False, None, "6", [], {}, 6.5, float("nan"), float("inf"),
+                   -float("inf"), -(2 ** 31) - 1, 2 ** 31, 10 ** 400)
+        for field in ("value", "input", "expected"):
+            for value in invalid:
+                changed = deepcopy(self.after)
+                variation = changed["compilerNamedRuleChecks"][0]["executionProbe"]["constantVariations"][0]
+                target = variation if field == "value" else variation["cases"][0]
+                target[field] = value
+                with self.subTest(field=field, value=value), self.assertRaises(state.LayoutError):
+                    state.validate(changed)
+
+    def test_alternatives_and_cases_have_bounded_exact_structure(self):
+        changes = (
+            lambda values: values.clear(),
+            lambda values: values.extend(deepcopy(values) * 8),
+            lambda values: values.append(deepcopy(values[0])),
+            lambda values: values[0].update(value=4),
+            lambda values: values[0].update(function="otro"),
+            lambda values: values[0].update(function=[]),
+            lambda values: values[0].update(source_path="otro.cpp"),
+            lambda values: values[0].pop("value"),
+            lambda values: values[0].update(cases=[]),
+            lambda values: values[0].update(cases=[
+                {"function": "cajas_para", "input": i, "expected": i} for i in range(33)]),
+            lambda values: values[0]["cases"].append(deepcopy(values[0]["cases"][0])),
+            lambda values: values[0]["cases"][0].update(function="otro"),
+            lambda values: values[0]["cases"][0].update(function=[]),
+            lambda values: values[0]["cases"][0].update(extra=True),
+            lambda values: values[0]["cases"][0].pop("expected"),
+        )
+        for mutate in changes:
+            changed = deepcopy(self.after)
+            mutate(changed["compilerNamedRuleChecks"][0]["executionProbe"]["constantVariations"])
+            with self.subTest(mutate=mutate), self.assertRaises(state.LayoutError):
+                state.validate(changed)
+        for value in (None, {}, "alternatives"):
+            changed = deepcopy(self.after)
+            changed["compilerNamedRuleChecks"][0]["executionProbe"]["constantVariations"] = value
+            with self.subTest(value=value), self.assertRaises(state.LayoutError):
+                state.validate(changed)
+
+    def test_each_variation_changes_a_shared_target_and_preserves_every_other_function(self):
+        mutations = (
+            lambda variation: variation["cases"][1].update(expected=1),
+            lambda variation: variation["cases"][1].update(input=8),
+            lambda variation: variation.update(cases=variation["cases"][:3]),
+            lambda variation: variation["cases"][3].update(expected=0),
+            lambda variation: variation["cases"][4].update(expected=1),
+            lambda variation: (variation["cases"][3].update(input=8),
+                               variation["cases"][4].update(input=9)),
+        )
+        for mutate in mutations:
+            changed = deepcopy(self.after)
+            variation = changed["compilerNamedRuleChecks"][1]["executionProbe"]["constantVariations"][0]
+            mutate(variation)
+            with self.subTest(mutate=mutate), self.assertRaises(state.LayoutError):
+                state.validate(changed)
+
+    def test_new_structure_limits_match_the_portable_validator(self):
+        record = self.after["compilerNamedRuleChecks"][0]
+        probe = record["executionProbe"]
+        validate = state._validate_named_rule_constant_variations
+        for path in ("../cajas.cpp", "./cajas.cpp", "/cajas.cpp", "cájas.cpp", "cajas.cc", "a" * 253 + ".cpp"):
+            with self.subTest(path=path), self.assertRaises(state.LayoutError):
+                validate(path, record["rules"], probe["cases"], probe["constantVariations"])
+        for name in ("main", "a" * 129, "lgaed_named_rule_battery_x",
+                     "lgaed_boolean_battery_x", "lgaed_integer_battery_x"):
+            rules = deepcopy(record["rules"])
+            rules[0]["function"] = name
+            with self.subTest(name=name), self.assertRaises(state.LayoutError):
+                validate(record["path"], rules, probe["cases"], probe["constantVariations"])
+
+    def test_variations_do_not_require_empty_input_but_cannot_share_a_graph_owner(self):
+        changed = deepcopy(self.after)
+        changed["pages"][2]["blocks"][4]["initialStandardInput"] = "optional input"
+        state._validate_compiler_named_rule_checks(changed)
+        changed["compilerCmakeGraphChecks"] = [{"activity": "block_0002_0004"}]
+        with self.assertRaises(state.LayoutError):
+            state._validate_compiler_named_rule_checks(changed)
 
 
 if __name__ == "__main__":

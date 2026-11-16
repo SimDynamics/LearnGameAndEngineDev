@@ -1,6 +1,7 @@
 #include "platform/windows/cpp_runner.hpp"
 #include "core/lesson.hpp"
 #include "core/cmake_message_trace.hpp"
+#include "core/named_rule_constant_variation_check.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 #include "native_build_config.hpp"
@@ -428,6 +429,108 @@ bool named_rule_battery_context(const CppRunRequest& request) {
         spec.source_path!=request.named_rule_probe->harness_path;
     return request.project_files.empty()&&spec.source_path.empty()&&
         request.named_rule_probe->harness_path.empty()&&request.named_rule_probe->header.empty();
+}
+bool named_rule_constant_variations_requested(const CppRunRequest& request) {
+    return request.named_rule_probe&&
+        request.named_rule_probe->constant_variations.has_value();
+}
+std::string named_rule_constant_variation_fingerprint(const CppRunRequest& request) {
+    if(!named_rule_constant_variations_requested(request))return {};
+    const auto& probe=*request.named_rule_probe;
+    const auto& spec=*probe.constant_variations;
+    if(!curriculum::named_rule_constant_variation_spec_valid(spec,probe.cases))return {};
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    auto frame=std::string("windows-named-rule-constant-variation-capture-v1/")+
+        field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+field(fingerprint(request))+
+        field(std::to_string(static_cast<int>(request.backend)))+
+        field(std::to_string(static_cast<int>(request.action)))+
+        field(utf8(request.projects_directory.wstring()))+field(request.project_key)+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes))+
+        field(probe.harness_path)+field(probe.header)+
+        field(std::to_string(probe.cases.size()));
+    for(const auto& item:probe.cases)
+        frame+=field(item.function)+field(std::to_string(item.input))+
+            field(std::to_string(item.expected));
+    frame+=field(curriculum::named_rule_constant_variation_spec_frame(spec));
+    if(probe.battery_check)
+        frame+=field(curriculum::named_rule_battery_spec_frame(*probe.battery_check));
+    return state::sha256(frame);
+}
+bool named_rule_constant_variation_context(const CppRunRequest& request) {
+    if(!named_rule_constant_variations_requested(request)||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+       request.open_battery_probe||request.boolean_battery_probe||
+       request.reduction_probe||request.integer_battery_probe||request.adjustment_project_probe||
+       request.rejection_probe||request.observation_probe||request.assertion_mode||
+       request.cmake_graph_check||request.capture_cmake_graph||!request.source_files.empty())return false;
+    const auto& probe=*request.named_rule_probe;
+    const auto& spec=*probe.constant_variations;
+    if(!curriculum::named_rule_constant_variation_spec_valid(spec,probe.cases))return false;
+    if(request.cmake)return !request.project_files.empty()&&!spec.source_path.empty()&&
+        !probe.harness_path.empty()&&spec.source_path!=probe.harness_path;
+    return request.project_files.empty()&&spec.source_path.empty()&&
+        probe.harness_path.empty()&&probe.header.empty();
+}
+struct NamedRuleConstantVariationRequest {
+    CppRunRequest request;
+    std::string driver_sha256,program_sha256;
+};
+std::optional<NamedRuleConstantVariationRequest> named_rule_constant_variation_request(
+        const CppRunRequest& original,std::size_t index) {
+    if(!named_rule_constant_variation_context(original))return std::nullopt;
+    const auto& probe=*original.named_rule_probe;
+    const auto& spec=*probe.constant_variations;
+    const auto varied_probe=curriculum::named_rule_constant_variation_probe(probe,index);
+    if(!varied_probe)return std::nullopt;
+    std::string_view original_source=original.source_utf8;
+    if(original.cmake) {
+        const auto source=std::ranges::find(original.project_files,spec.source_path,
+            &curriculum::CppProjectFiles::value_type::first);
+        if(source==original.project_files.end())return std::nullopt;
+        original_source=source->second;
+    }
+    const auto varied=curriculum::named_rule_constant_variation_source(original_source,probe,index);
+    if(!varied)return std::nullopt;
+    const auto driver=original.cmake?curriculum::named_rule_probe_source(*varied_probe):
+        curriculum::named_rule_single_file_probe_source(*varied_probe,*varied);
+    if(!driver)return std::nullopt;
+    NamedRuleConstantVariationRequest phase{original,{},{}};
+    auto& request=phase.request;
+    request.named_rule_probe.reset();
+    request.stdin_utf8.clear();
+    request.request_id=~original.request_id^(static_cast<std::uint64_t>(index)+1);
+    // Include the exact original source and contract in the private workspace
+    // identity. A fast next attempt cannot inherit an incremental old object.
+    request.project_key="named-rule-constant-variation-v1/"+
+        named_rule_constant_variation_fingerprint(original)+"/"+std::to_string(index);
+    if(original.cmake) {
+        const auto source=std::ranges::find(request.project_files,spec.source_path,
+            &curriculum::CppProjectFiles::value_type::first);
+        const auto harness=std::ranges::find(request.project_files,probe.harness_path,
+            &curriculum::CppProjectFiles::value_type::first);
+        if(source==request.project_files.end()||harness==request.project_files.end())
+            return std::nullopt;
+        source->second=*varied;
+        harness->second=*driver;
+        phase.program_sha256=state::sha256(curriculum::cpp_project_frame(
+            request.project_files,request.source_files,request.cmake));
+    }else{
+        request.source_utf8=*driver;
+        phase.program_sha256=state::sha256(*varied);
+    }
+    phase.driver_sha256=state::sha256(*driver);
+    return phase;
+}
+bool named_rule_probe_completed(const CppNamedRuleProbe& probe) {
+    return probe.compilation.succeeded()&&probe.execution.succeeded()&&
+        probe.execution.stdout_bytes.empty()&&
+        probe.execution.stderr_bytes==curriculum::named_rule_probe_completion_marker;
 }
 std::string boolean_battery_fingerprint(const CppRunRequest& request) {
     if(!request.boolean_battery_probe)return {};
@@ -1933,6 +2036,9 @@ std::string cpp_boolean_battery_request_fingerprint(const CppRunRequest& request
 std::string cpp_named_rule_battery_request_fingerprint(const CppRunRequest& request) {
     return named_rule_battery_fingerprint(request);
 }
+std::string cpp_named_rule_constant_variation_request_fingerprint(const CppRunRequest& request) {
+    return named_rule_constant_variation_fingerprint(request);
+}
 std::string cpp_reduction_request_fingerprint(const CppRunRequest& request) {
     return reduction_fingerprint(request);
 }
@@ -1969,6 +2075,12 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(named_rule_battery_requested(request)) {
         const auto binding=named_rule_battery_fingerprint(request);
         if(binding.empty()||result.named_rule_battery_request_fingerprint!=binding||
+           (request.cmake&&(result.project_fingerprint!=fingerprint(request)||
+            result.configuration_fingerprint!=fingerprint(request,true))))return fresh;
+    }
+    if(named_rule_constant_variations_requested(request)) {
+        const auto binding=named_rule_constant_variation_fingerprint(request);
+        if(binding.empty()||result.named_rule_constant_variation_request_fingerprint!=binding||
            (request.cmake&&(result.project_fingerprint!=fingerprint(request)||
             result.configuration_fingerprint!=fingerprint(request,true))))return fresh;
     }
@@ -2282,13 +2394,48 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             fresh.named_rule_probe_correct=
                 probe.source_sha256==state::sha256(*independent)&&
                 probe.project_sha256==bound_source&&
-                probe.compilation.succeeded()&&probe.execution.succeeded()&&
-                probe.execution.stdout_bytes.empty()&&
                 // A student function may exit(0) before all comparisons
                 // run. Only the generated main emits this final witness.
-                probe.execution.stderr_bytes==
-                    curriculum::named_rule_probe_completion_marker;
+                named_rule_probe_completed(probe);
         }
+    }
+    if(named_rule_constant_variations_requested(request)) {
+        fresh.named_rule_constant_variation_request_fingerprint=
+            named_rule_constant_variation_fingerprint(request);
+        const auto& spec=*request.named_rule_probe->constant_variations;
+        const bool baseline_correct=fresh.named_rule_probe_correct;
+        bool complete=named_rule_constant_variation_context(request);
+        std::size_t failed_index=0;
+        bool observed_failure=false;
+        for(std::size_t index=0;complete&&index<spec.variations.size();++index) {
+            failed_index=index;
+            observed_failure=false;
+            if(index>=result.named_rule_constant_variation_probes.size()) {
+                complete=false;
+                break;
+            }
+            const auto expected=named_rule_constant_variation_request(request,index);
+            const auto& observed=result.named_rule_constant_variation_probes[index];
+            const bool bound=expected&&observed.index==index&&
+                observed.proof.source_sha256==expected->driver_sha256&&
+                observed.proof.project_sha256==expected->program_sha256;
+            complete=bound&&named_rule_probe_completed(observed.proof);
+            observed_failure=bound&&observed.proof.compilation.succeeded()&&
+                observed.proof.execution.status==CppPhaseStatus::completed;
+        }
+        if(result.named_rule_constant_variation_probes.size()>spec.variations.size()) {
+            complete=false;
+            observed_failure=false;
+        }
+        if(baseline_correct&&!complete&&failed_index<spec.variations.size()) {
+            const auto& function=spec.variations[failed_index].function;
+            fresh.named_rule_constant_variation_feedback=observed_failure?
+                "La constante de "+function+" no acreditó la relación pedida al cambiar su valor. "
+                "Deriva las cantidades relacionadas de ese acuerdo y conserva los otros acuerdos.":
+                "No se obtuvo una comprobación completa de la constante de "+function+
+                " al cambiar su valor. Revisa el código y vuelve a compilar.";
+        }
+        fresh.named_rule_probe_correct=fresh.named_rule_probe_correct&&complete;
     }
     if(named_rule_battery_requested(request)) {
         const auto frame=named_rule_battery_fingerprint(request);
@@ -2423,6 +2570,21 @@ void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result
             request.project_files,request.source_files,request.cmake)):
             state::sha256(request.source_utf8),
         proof.compilation,proof.execution};
+    if(!named_rule_constant_variations_requested(request)||
+       !named_rule_probe_completed(*result.named_rule_probe))return;
+    const auto& spec=*request.named_rule_probe->constant_variations;
+    for(std::size_t index=0;index<spec.variations.size();++index) {
+        if(stop.stop_requested())return;
+        const auto phase=named_rule_constant_variation_request(request,index);
+        if(!phase)return;
+        const auto observed=run_cpp(phase->request,stop);
+        if(!observed.error_utf8.empty())return;
+        result.named_rule_constant_variation_probes.push_back({index,{
+            phase->driver_sha256,phase->program_sha256,
+            observed.compilation,observed.execution}});
+        if(!named_rule_probe_completed(result.named_rule_constant_variation_probes.back().proof))
+            return;
+    }
 }
 
 // This proof runs only from the already isolated C++ project worker.
@@ -3426,6 +3588,9 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
     try {
         if(named_rule_battery_requested(request))
             result.named_rule_battery_request_fingerprint=named_rule_battery_fingerprint(request);
+        if(named_rule_constant_variations_requested(request))
+            result.named_rule_constant_variation_request_fingerprint=
+                named_rule_constant_variation_fingerprint(request);
         if(request.boolean_battery_probe)
             result.boolean_battery_request_fingerprint=boolean_battery_fingerprint(request);
         if(request.reduction_probe)

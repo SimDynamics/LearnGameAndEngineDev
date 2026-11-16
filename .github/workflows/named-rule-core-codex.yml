@@ -1,12 +1,21 @@
-name: Codex named-rule core (GCC, Clang and MSVC)
+name: Codex named-rule checks (GCC, Clang, MSVC and contracts)
 
 on:
   push:
     branches: [Codex]
     paths:
       - native/core/named_rule_check.hpp
+      - native/core/named_rule_battery_check.hpp
+      - native/core/named_rule_constant_variation_check.hpp
       - native/core/named_rule_check_tests.cpp
       - native/core/code_format_compat.hpp
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_named_rule_checks.py
+      - scripts/curriculum/code_format_compat.py
+      - scripts/curriculum/text_semantics.py
+      - scripts/curriculum/image_resources.py
+      - scripts/curriculum/bibliography_revision.py
+      - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json
       - .github/workflows/named-rule-core-codex.yml
   workflow_dispatch:
 
@@ -14,6 +23,17 @@ permissions:
   contents: read
 
 jobs:
+  named-rule-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Fetch exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify opt-in variations and published lesson preservation
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_named_rule_checks.py -v
+
   named-rule-core:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
@@ -34,7 +54,7 @@ jobs:
           "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
             native/core/named_rule_check_tests.cpp \
             -o "${RUNNER_TEMP}/lgaed_named_rule_core_tests"
-      - name: Run source-evidence, integrity and negative-case tests
+      - name: Run source-evidence, constant-variation and integrity regressions
         run: "${RUNNER_TEMP}/lgaed_named_rule_core_tests"
 
   named-rule-msvc:

@@ -2,6 +2,7 @@
 #include "platform/windows/cpp_history_training.hpp"
 #include "platform/windows/state_store.hpp"
 #include "core/code_format_compat.hpp"
+#include "core/named_rule_constant_variation_check.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -206,6 +207,10 @@ bool matches_runtime_capture(const CppRunRequest& captured,const curriculum::Fre
             (!execution.named_rule_battery_request_fingerprint.empty()&&
              execution.named_rule_battery_request_fingerprint==
                 cpp_named_rule_battery_request_fingerprint(captured)))
+        &&(!captured.named_rule_probe||!captured.named_rule_probe->constant_variations||
+            (!execution.named_rule_constant_variation_request_fingerprint.empty()&&
+             execution.named_rule_constant_variation_request_fingerprint==
+                cpp_named_rule_constant_variation_request_fingerprint(captured)))
         &&(!captured.boolean_battery_probe||
             (!execution.boolean_battery_request_fingerprint.empty()&&
              execution.boolean_battery_request_fingerprint==
@@ -595,6 +600,18 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
                request.observation_probe||request.assertion_mode||
                request.cmake_graph_check||request.capture_cmake_graph)return false;
         }
+        if(named.execution_probe&&named.execution_probe->constant_variations) {
+            const auto& variations=*named.execution_probe->constant_variations;
+            if(variations.source_path!=named.path||variations.requirements!=named.requirements||
+               !curriculum::named_rule_constant_variation_spec_valid(
+                    variations,named.execution_probe->cases)||
+               request.backend!=CppRunRequest::Backend::native_msvc||
+               request.open_battery_probe||request.boolean_battery_probe||
+               request.reduction_probe||request.integer_battery_probe||
+               request.adjustment_project_probe||request.rejection_probe||
+               request.observation_probe||request.assertion_mode||
+               request.cmake_graph_check||request.capture_cmake_graph)return false;
+        }
         if(!named.execution_probe&&std::ranges::any_of(named.editable_paths,
                 [](std::string_view path) {
                     return curriculum::is_cpp_source_file(path);
@@ -634,6 +651,11 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
             return false;
         if(!curriculum::analyze_named_rule_sources(source,named.requirements).source_evidence)
             return false;
+        if(named.execution_probe&&named.execution_probe->constant_variations)
+            for(std::size_t index=0;
+                    index<named.execution_probe->constant_variations->variations.size();++index)
+                if(!curriculum::named_rule_constant_variation_source(
+                        source,*named.execution_probe,index))return false;
     }
     const auto goal=block.compiler_workflow_check;
     if(goal==curriculum::CompilerWorkflowCheck::assertion_abort_wasi_v1||

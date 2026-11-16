@@ -2,6 +2,7 @@
 #include "platform/windows/bibliography_revision.hpp"
 #include "core/code_format_compat.hpp"
 #include "core/named_rule_battery_check.hpp"
+#include "core/named_rule_constant_variation_check.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -4089,7 +4090,8 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
         if(item.HasKey(L"executionProbe")) {
             const bool single_file=owner->project_files.empty();
             const auto declaration=item.GetNamedObject(L"executionProbe");
-            allowed_keys(declaration,{"harness","header","cases","batteryCheck"});
+            allowed_keys(declaration,{"harness","header","cases","batteryCheck",
+                "constantVariations"});
             require(declaration.HasKey(L"harness")&&declaration.HasKey(L"header")&&
                     declaration.HasKey(L"cases"),
                 "Independent named-rule probes require harness, header and cases");
@@ -4216,6 +4218,41 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
                         "Named-rule battery needs an instrumentable original checker");
                 }
                 probe.battery_check=std::move(battery);
+            }
+            if(declaration.HasKey(L"constantVariations")) {
+                if(root.HasKey(L"compilerCmakeGraphChecks"))
+                    for(const auto& graph:array(root,"compilerCmakeGraphChecks"))
+                        require(text(graph.GetObject(),"activity")!=identity,
+                            "Constant variations cannot share an owner with a CMake graph check");
+                const auto authored=array(declaration,"constantVariations");
+                require(authored.Size()>0&&authored.Size()<=8,
+                    "Constant variations require between 1 and 8 alternatives");
+                NamedRuleConstantVariationSpec variations;
+                variations.source_path=check.path;
+                variations.requirements=check.requirements;
+                for(const auto& value:authored) {
+                    const auto variation=value.GetObject();
+                    allowed_keys(variation,{"function","value","cases"},true);
+                    NamedRuleConstantVariation alternative;
+                    alternative.function=text(variation,"function");
+                    alternative.value=bounded_signed(variation.GetNamedValue(L"value"));
+                    const auto comparisons=array(variation,"cases");
+                    require(comparisons.Size()>0&&comparisons.Size()<=32,
+                        "Each constant variation needs between 1 and 32 comparisons");
+                    for(const auto& comparison_value:comparisons) {
+                        const auto comparison=comparison_value.GetObject();
+                        allowed_keys(comparison,{"function","input","expected"},true);
+                        alternative.cases.push_back({text(comparison,"function"),
+                            bounded_signed(comparison.GetNamedValue(L"input")),
+                            bounded_signed(comparison.GetNamedValue(L"expected"))});
+                    }
+                    variations.variations.push_back(std::move(alternative));
+                }
+                // The original starter need not contain the required local
+                // constant yet: the learner introduces it in the submitted source.
+                require(named_rule_constant_variation_spec_valid(variations,probe.cases),
+                    "Constant variations need distinct changed target witnesses and preserved other functions");
+                probe.constant_variations=std::move(variations);
             }
             check.execution_probe=std::move(probe);
         }

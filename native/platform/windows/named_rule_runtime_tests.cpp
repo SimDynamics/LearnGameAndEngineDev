@@ -3,7 +3,9 @@
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
+#include "core/named_rule_constant_variation_check.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <windows.h>
 #include <chrono>
@@ -125,9 +127,44 @@ void authored_root_roundtrip(const Lesson& original) {
                   {"function":"alcanza_minimo","value":5,
                    "purposeWords":["minimo","umbral","cantidad"],"minUses":1}]}
     ])json";
+    // load_lesson has already authenticated any published root declaration.
+    // Derive the historical comparison only in memory, so later editorial
+    // activation neither overwrites real content nor makes this QA obsolete.
     auto root=JsonObject::Parse(winrt::to_hstring(original.raw_json));
-    root.Insert(L"compilerNamedRuleChecks",
-        JsonArray::Parse(winrt::to_hstring(declarations)));
+    if(root.HasKey(L"compilerNamedRuleChecks"))root.Remove(L"compilerNamedRuleChecks");
+    const auto historical=parse_lesson_json(winrt::to_string(root.Stringify()),"es");
+    auto contracts=JsonArray::Parse(winrt::to_hstring(declarations));
+    const auto variations=JsonArray::Parse(LR"json([
+        [{"function":"cajas_para","value":6,"cases":[
+            {"function":"cajas_para","input":0,"expected":0},
+            {"function":"cajas_para","input":7,"expected":2},
+            {"function":"cajas_para","input":19,"expected":4}]}],
+        [{"function":"cajas_para","value":4,"cases":[
+            {"function":"cajas_para","input":0,"expected":0},
+            {"function":"cajas_para","input":6,"expected":2},
+            {"function":"cajas_para","input":19,"expected":5},
+            {"function":"llega_a_tiempo","input":4,"expected":1},
+            {"function":"llega_a_tiempo","input":5,"expected":0}]}],
+        [{"function":"precio_total","value":9,"cases":[
+            {"function":"precio_total","input":11,"expected":99},
+            {"function":"precio_total","input":5,"expected":45},
+            {"function":"alcanza_minimo","input":4,"expected":0},
+            {"function":"alcanza_minimo","input":5,"expected":1}]}],
+        [{"function":"precio_total","value":9,"cases":[
+            {"function":"precio_total","input":11,"expected":99},
+            {"function":"precio_total","input":5,"expected":45},
+            {"function":"alcanza_minimo","input":4,"expected":0},
+            {"function":"alcanza_minimo","input":5,"expected":1}]},
+         {"function":"alcanza_minimo","value":6,"cases":[
+            {"function":"precio_total","input":11,"expected":77},
+            {"function":"precio_total","input":5,"expected":35},
+            {"function":"alcanza_minimo","input":4,"expected":0},
+            {"function":"alcanza_minimo","input":5,"expected":0}]}]
+    ])json");
+    for(std::uint32_t i=0;i<contracts.Size();++i)
+        contracts.GetObjectAt(i).GetNamedObject(L"executionProbe")
+            .Insert(L"constantVariations",variations.GetArrayAt(i));
+    root.Insert(L"compilerNamedRuleChecks",contracts);
     const auto reviewed=winrt::to_string(root.Stringify());
     const auto after=parse_lesson_json(reviewed,"es");
     const auto metadata=parse_lesson_progress_metadata(reviewed,"es");
@@ -138,7 +175,7 @@ void authored_root_roundtrip(const Lesson& original) {
         "A root-only source role changed historical state or layout");
     for(const auto [page,index]:{
             std::pair<std::size_t,std::size_t>{2,4},{5,6},{7,4},{8,7}}) {
-        const auto& old=original.pages.at(page).blocks.at(index);
+        const auto& old=historical.pages.at(page).blocks.at(index);
         const auto& current=after.pages.at(page).blocks.at(index);
         const auto& read_only=metadata.pages.at(page).blocks.at(index);
         require(!old.named_rule_source_check&&current.named_rule_source_check&&
@@ -146,11 +183,17 @@ void authored_root_roundtrip(const Lesson& original) {
             current.named_rule_source_check->requirements.size()==
                 read_only.named_rule_source_check->requirements.size()&&
             current.named_rule_source_check==read_only.named_rule_source_check&&
+            current.named_rule_source_check->execution_probe&&
+            current.named_rule_source_check->execution_probe->constant_variations&&
+            current.named_rule_source_check->execution_probe->constant_variations->source_path==
+                current.named_rule_source_check->path&&
+            current.named_rule_source_check->execution_probe->constant_variations->requirements==
+                current.named_rule_source_check->requirements&&
             current.stable_id==old.stable_id&&
-            exercise_key(original,old)==exercise_key(after,current)&&
-            draft_key("programming",original,old)==
+            exercise_key(historical,old)==exercise_key(after,current)&&
+            draft_key("programming",historical,old)==
                 draft_key("programming",after,current)&&
-            reference_objective_frame(original,old)!=
+            reference_objective_frame(historical,old)!=
                 reference_objective_frame(after,current)&&
             !compiler_runtime_request_allowed(current,request_of(current)),
             "A root-authored named-rule objective was lost or credited the original");
@@ -186,6 +229,51 @@ void authored_root_roundtrip(const Lesson& original) {
     try {(void)parse_lesson_json(winrt::to_string(duplicate_single.Stringify()),"es");}
     catch(const std::exception&) {rejected=true;}
     require(rejected,"The Windows loader accepted duplicate single-file probe arguments");
+    auto unchanged=JsonObject::Parse(winrt::to_hstring(reviewed));
+    unchanged.GetNamedArray(L"compilerNamedRuleChecks").GetObjectAt(0)
+        .GetNamedObject(L"executionProbe").GetNamedArray(L"constantVariations")
+        .GetObjectAt(0).Insert(L"value",JsonValue::CreateNumberValue(4));
+    rejected=false;
+    try {(void)parse_lesson_json(winrt::to_string(unchanged.Stringify()),"es");}
+    catch(const std::exception&) {rejected=true;}
+    require(rejected,"The Windows loader accepted a constant variation with no value change");
+    auto coupled=JsonObject::Parse(winrt::to_hstring(reviewed));
+    coupled.GetNamedArray(L"compilerNamedRuleChecks").GetObjectAt(2)
+        .GetNamedObject(L"executionProbe").GetNamedArray(L"constantVariations")
+        .GetObjectAt(0).GetNamedArray(L"cases").GetObjectAt(3)
+        .Insert(L"expected",JsonValue::CreateNumberValue(0));
+    rejected=false;
+    try {(void)parse_lesson_json(winrt::to_string(coupled.Stringify()),"es");}
+    catch(const std::exception&) {rejected=true;}
+    require(rejected,"The Windows loader accepted a price variation that also changes the minimum");
+    const auto accepts_value=[&](std::wstring_view json) {
+        auto candidate=JsonObject::Parse(winrt::to_hstring(reviewed));
+        candidate.GetNamedArray(L"compilerNamedRuleChecks").GetObjectAt(0)
+            .GetNamedObject(L"executionProbe").GetNamedArray(L"constantVariations")
+            .GetObjectAt(0).Insert(L"value",JsonValue::Parse(winrt::hstring(json)));
+        try {(void)parse_lesson_json(winrt::to_string(candidate.Stringify()),"es");return true;}
+        catch(const std::exception&) {return false;}
+    };
+    require(accepts_value(L"6.0"),
+        "The Windows loader rejected an integral JSON number for a constant variation");
+    for(const auto invalid_value:{L"true",L"6.5",L"2147483648",L"-2147483649"})
+        require(!accepts_value(invalid_value),
+            "The Windows loader accepted a noninteger or out-of-int32 constant variation");
+    auto extra=JsonObject::Parse(winrt::to_hstring(reviewed));
+    extra.GetNamedArray(L"compilerNamedRuleChecks").GetObjectAt(0)
+        .GetNamedObject(L"executionProbe").GetNamedArray(L"constantVariations")
+        .GetObjectAt(0).Insert(L"unused",JsonValue::CreateBooleanValue(true));
+    rejected=false;
+    try {(void)parse_lesson_json(winrt::to_string(extra.Stringify()),"es");}
+    catch(const std::exception&) {rejected=true;}
+    require(rejected,"The Windows loader ignored an unknown constant-variation field");
+    auto empty=JsonObject::Parse(winrt::to_hstring(reviewed));
+    empty.GetNamedArray(L"compilerNamedRuleChecks").GetObjectAt(0)
+        .GetNamedObject(L"executionProbe").Insert(L"constantVariations",JsonArray{});
+    rejected=false;
+    try {(void)parse_lesson_json(winrt::to_string(empty.Stringify()),"es");}
+    catch(const std::exception&) {rejected=true;}
+    require(rejected,"The Windows loader accepted an explicitly empty constant-variation list");
 }
 
 void project_examples(const Lesson& lesson) {
@@ -474,6 +562,166 @@ std::string replace_unique(std::string source,std::string_view before,
     source.replace(at,before.size(),after);
     return source;
 }
+void add_constant_variations(Block& owner,std::vector<NamedRuleConstantVariation> variations) {
+    require(owner.named_rule_source_check&&owner.named_rule_source_check->execution_probe,
+        "Constant variations require the original reviewed source and independent probe");
+    auto& source=*owner.named_rule_source_check;
+    source.execution_probe->constant_variations=NamedRuleConstantVariationSpec{
+        source.path,source.requirements,std::move(variations)};
+    require(named_rule_constant_variation_spec_valid(
+        *source.execution_probe->constant_variations,source.execution_probe->cases),
+        "The native constant-variation fixture does not discriminate its declared rule");
+}
+void check_real_constant_variation_evidence(const Lesson& lesson,const Block& owner,
+        const CppRunRequest& request,const CppRunResult& real) {
+    require(request.named_rule_probe&&request.named_rule_probe->constant_variations,
+        "The native variation request lost its authored contract");
+    const auto& spec=*request.named_rule_probe->constant_variations;
+    const auto fresh=capture_cpp_execution(request,real);
+    require(real.compilation.succeeded()&&real.execution.succeeded()&&
+        real.named_rule_probe&&fresh.named_rule_probe_correct&&
+        real.named_rule_constant_variation_probes.size()==spec.variations.size()&&
+        !fresh.named_rule_constant_variation_request_fingerprint.empty()&&
+        fresh.named_rule_constant_variation_request_fingerprint==
+            cpp_named_rule_constant_variation_request_fingerprint(request)&&
+        fresh.named_rule_constant_variation_feedback.empty()&&
+        evaluate_cpp_output_check(*owner.output_check,fresh,request.revision).verdict==
+            OutputVerdict::correct,
+        "The real public program and all changed-constant phases did not complete");
+    for(std::size_t i=0;i<spec.variations.size();++i) {
+        const auto& phase=real.named_rule_constant_variation_probes[i];
+        require(phase.index==i&&phase.proof.compilation.succeeded()&&
+            phase.proof.execution.succeeded()&&phase.proof.execution.stdout_bytes.empty()&&
+            phase.proof.execution.stderr_bytes==named_rule_probe_completion_marker,
+            "A claimed constant variation lacks a separately compiled final witness");
+    }
+    auto forged=real;
+    forged.named_rule_constant_variation_probes.pop_back();
+    const auto missing=capture_cpp_execution(request,forged);
+    require(!missing.named_rule_probe_correct&&
+        missing.named_rule_constant_variation_feedback.find(spec.variations.back().function)!=
+            std::string::npos&&
+        missing.named_rule_constant_variation_feedback.find("No se obtuvo")!=std::string::npos,
+        "A missing constant variation was credited or attributed to the wrong function");
+    forged=real;
+    forged.named_rule_constant_variation_probes.front().proof.compilation.status=
+        CppPhaseStatus::not_started;
+    const auto uncompiled=capture_cpp_execution(request,forged);
+    require(!uncompiled.named_rule_probe_correct&&
+        uncompiled.named_rule_constant_variation_feedback.find("No se obtuvo")!=std::string::npos&&
+        uncompiled.named_rule_constant_variation_feedback.find("Deriva") == std::string::npos,
+        "An uncompiled private phase was mistaken for a failed calculation");
+    forged=real;
+    forged.named_rule_constant_variation_probes.front().index=spec.variations.size();
+    require(!capture_cpp_execution(request,forged).named_rule_probe_correct,
+        "A constant variation in another position was accepted");
+    forged=real;
+    forged.named_rule_constant_variation_probes.front().proof=*real.named_rule_probe;
+    require(!capture_cpp_execution(request,forged).named_rule_probe_correct,
+        "The unchanged baseline was substituted for a changed-constant compilation");
+    forged=real;
+    forged.named_rule_constant_variation_probes.front().proof.project_sha256="0";
+    require(!capture_cpp_execution(request,forged).named_rule_probe_correct,
+        "A constant variation from another program supplied evidence");
+    forged=real;
+    forged.named_rule_constant_variation_probes.front().proof.execution.stderr_bytes.clear();
+    require(!capture_cpp_execution(request,forged).named_rule_probe_correct,
+        "A constant variation without its final witness was accepted");
+    forged=real;
+    forged.named_rule_constant_variation_request_fingerprint.clear();
+    require(!capture_cpp_execution(request,forged).named_rule_probe_correct,
+        "A result without a constant-variation request binding was accepted");
+    if(spec.variations.size()>1) {
+        forged=real;
+        std::swap(forged.named_rule_constant_variation_probes[0],
+            forged.named_rule_constant_variation_probes[1]);
+        require(!capture_cpp_execution(request,forged).named_rule_probe_correct,
+            "Reordered private constant phases earned credit");
+        forged=real;
+        forged.named_rule_constant_variation_probes[1]=
+            forged.named_rule_constant_variation_probes[0];
+        require(!capture_cpp_execution(request,forged).named_rule_probe_correct,
+            "A duplicated private constant phase replaced a different variation");
+    }
+    auto changed=request;
+    ++changed.named_rule_probe->constant_variations->variations.front().value;
+    require(!capture_cpp_execution(changed,real).named_rule_probe_correct,
+        "Evidence was reused after changing the authored replacement value");
+    changed=request;
+    ++changed.revision;
+    forged=real;
+    forged.revision=changed.revision;
+    require(!capture_cpp_execution(changed,forged).named_rule_probe_correct,
+        "Relabeling an old result authenticated a new source revision");
+    changed=request;
+    changed.named_rule_probe->constant_variations->requirements.front().purpose_words.push_back("forged");
+    require(!compiler_runtime_request_allowed(owner,changed)&&
+        !capture_cpp_execution(changed,real).named_rule_probe_correct,
+        "A private variant changed the authenticated source requirement");
+
+    // Reuse only the actual unchanged baseline under its historical contract.
+    // The same public program must not promote that receipt into this goal.
+    auto legacy_owner=owner;
+    legacy_owner.named_rule_source_check->execution_probe->constant_variations.reset();
+    auto legacy_request=request;
+    legacy_request.named_rule_probe->constant_variations.reset();
+    const auto legacy=capture_cpp_execution(legacy_request,real);
+    require(legacy.named_rule_probe_correct&&
+        legacy.named_rule_constant_variation_request_fingerprint.empty()&&
+        legacy.named_rule_constant_variation_feedback.empty()&&
+        compiler_runtime_request_allowed(legacy_owner,legacy_request)&&
+        reference_objective_frame(lesson,legacy_owner)!=reference_objective_frame(lesson,owner)&&
+        exercise_key(lesson,legacy_owner)==exercise_key(lesson,owner)&&
+        draft_key("programming",lesson,legacy_owner)==draft_key("programming",lesson,owner),
+        "The optional variation altered the baseline contract or student identity");
+    state::StateData saved;
+    state::prepare_lesson_state(saved,lesson);
+    state::Draft draft;
+    draft.source=request.cmake?request.project_files.front().second:request.source_utf8;
+    draft.source+="\n// preserve my later unpublished edit\n";
+    draft.input="saved optional input";
+    const auto draft_address=draft_key("programming",lesson,owner);
+    state::put_draft(saved,draft_address,draft);
+    require(record_compiler_puzzle_case(saved,lesson,legacy_owner,legacy_request,legacy,
+            "actual historical function probe")&&
+        compiler_puzzle_completed(saved,lesson,legacy_owner)&&
+        !compiler_puzzle_completed(saved,lesson,owner),
+        "A historical function receipt disappeared or satisfied constant variation");
+    const auto before=state::encode(saved);
+    require(!record_compiler_puzzle_case(saved,lesson,owner,request,legacy,
+            "old capture without variation")&&state::encode(saved)==before,
+        "An old successful capture without the new fingerprint earned credit");
+    require(record_compiler_puzzle_case(saved,lesson,owner,request,fresh,
+            "actual varied constant evidence")&&
+        compiler_puzzle_completed(saved,lesson,owner)&&
+        compiler_puzzle_case_count(saved,lesson,owner)==1,
+        "The first public case with genuine constant variations did not earn its receipt");
+    const auto completed=state::encode(saved);
+    require(!record_compiler_puzzle_case(saved,lesson,owner,request,legacy,
+            "later old capture")&&state::encode(saved)==completed,
+        "A later rejected variation erased the achievement or its draft");
+    auto optional_owner=owner;
+    auto optional_case=optional_owner.output_check->cases.front();
+    optional_case.standard_input="optional later input\n";
+    optional_case.outputs={"optional output not executed\n"};
+    optional_owner.output_check->cases.push_back(std::move(optional_case));
+    state::StateData first_only;
+    state::prepare_lesson_state(first_only,lesson);
+    require(record_compiler_puzzle_case(first_only,lesson,optional_owner,request,fresh,
+            "actual varied constant evidence")&&
+        compiler_puzzle_completed(first_only,lesson,optional_owner)&&
+        compiler_puzzle_case_count(first_only,lesson,optional_owner)==1,
+        "Private constant variations made an optional second editor case mandatory");
+    const auto reopened=state::decode(state::encode(saved));
+    const auto restored=state::get_draft(reopened,draft_address,"","");
+    require(compiler_puzzle_completed(reopened,lesson,legacy_owner)&&
+        compiler_puzzle_completed(reopened,lesson,owner)&&
+        compiler_puzzle_case_count(reopened,lesson,owner)==1&&
+        restored.has_saved&&restored.source==draft.source&&restored.input==draft.input,
+        "Reopening lost the variation receipt, historical receipt or saved draft");
+    std::cout<<"PASS authentic constant variation "<<owner.stable_id
+        <<": private compilations, exact provenance, first case and history retained\n";
+}
 void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& projects) {
     // The original student's complete five-case program is a stronger
     // end-to-end check than a mocked stdout transcript.
@@ -488,6 +736,11 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
     owner.named_rule_source_check->execution_probe=NamedRuleExecutionProbe{
         "","",{{"precio_total",11,77},{"precio_total",5,35},
                {"alcanza_minimo",4,0},{"alcanza_minimo",5,1}}};
+    add_constant_variations(owner,{
+        {"precio_total",9,{{"precio_total",11,99},{"precio_total",5,45},
+            {"alcanza_minimo",4,0},{"alcanza_minimo",5,1}}},
+        {"alcanza_minimo",6,{{"precio_total",11,77},{"precio_total",5,35},
+            {"alcanza_minimo",4,0},{"alcanza_minimo",5,0}}}});
     auto passing=request_of(owner);
     passing.request_id=901;passing.revision=301;
     passing.projects_directory=projects;
@@ -531,6 +784,7 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
     require(evaluate_cpp_output_check(*owner.output_check,captured,passing.revision).verdict==
         OutputVerdict::correct,
         "The repaired program did not preserve the actual five-case authored output");
+    check_real_constant_variation_evidence(lesson,owner,passing,real);
     state::StateData saved;
     state::prepare_lesson_state(saved,lesson);
     require(!compiler_puzzle_completed(saved,lesson,owner),
@@ -567,7 +821,8 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
         "The forged five-case output control did not compile or run");
     const auto forged_capture=capture_cpp_execution(forged,forged_run);
     require(evaluate_cpp_output_check(*owner.output_check,forged_capture,forged.revision).verdict==
-        OutputVerdict::correct&&!forged_capture.named_rule_probe_correct,
+        OutputVerdict::correct&&!forged_capture.named_rule_probe_correct&&
+        forged_capture.named_rule_constant_variation_feedback.empty(),
         "A function with correct visible output passed an independent 11-item check");
     require(!record_compiler_puzzle_case(saved,lesson,owner,forged,forged_capture,
         "forged visible output")&&!compiler_puzzle_completed(saved,lesson,owner),
@@ -657,6 +912,9 @@ void real_independent_cmake_probe(const Lesson& lesson,
             {"cajas_para",7,2},{"cajas_para",19,4},
             {"llega_a_tiempo",4,1},{"llega_a_tiempo",5,0}
         }};
+    add_constant_variations(owner,{{"cajas_para",4,{
+        {"cajas_para",0,0},{"cajas_para",6,2},{"cajas_para",7,2},{"cajas_para",19,5},
+        {"llega_a_tiempo",4,1},{"llega_a_tiempo",5,0}}}});
     auto correct=request_of(owner);
     correct.request_id=1101;correct.revision=410;
     correct.project_key=draft_key("programming",lesson,original);
@@ -737,6 +995,7 @@ bool llega_a_tiempo(int dias) {
     require(evaluate_cpp_output_check(*owner.output_check,fresh,correct.revision).verdict
         ==OutputVerdict::correct,
         "The valid amended CMake battery did not produce all published comparisons");
+    check_real_constant_variation_evidence(lesson,owner,correct,real);
 
     // The editable harness can print the expected text directly. It is not
     // evidence of the functions: the independent executable must catch the
@@ -875,6 +1134,134 @@ bool llega_a_tiempo(int dias) {
         compiler_puzzle_case_count(reopened,lesson,owner)==1,
         "Independent CMake progress was not kept across reopening");
     std::cout<<"PASS original U3 CMake: forged matching stdout rejected by independent function tests\n";
+}
+
+void actual_constant_variation_controls(const Lesson& lesson,
+        const std::filesystem::path& projects) {
+    auto boxes=lesson.pages.at(2).blocks.at(4);
+    require(boxes.stable_id=="block_0002_0004"&&boxes.cmake&&boxes.output_check&&
+        boxes.output_check->cases.size()==1,
+        "The original four-place named-rule editor is unavailable");
+    boxes.named_rule_source_check=NamedRuleSourceCheck{
+        "componente/src/cajas.cpp",{{"cajas_para",4,{"capacidad","plaza","cupo"},2}}};
+    boxes.named_rule_source_check->execution_probe=NamedRuleExecutionProbe{
+        "pruebas/cajas_casos.cpp","envio/cajas.h",{
+            {"cajas_para",0,0},{"cajas_para",1,1},{"cajas_para",4,1},
+            {"cajas_para",7,2},{"cajas_para",19,5},{"cajas_para",20,5}}};
+    // Seven pieces is executed first in the private driver: both apparently
+    // dependent formulas below fail there (3 and 1), against the authored 2.
+    // Nineteen supplies the shared baseline witness whose expected value changes.
+    add_constant_variations(boxes,{{"cajas_para",6,{
+        {"cajas_para",7,2},{"cajas_para",19,4},{"cajas_para",0,0}}}});
+    auto correct=request_of(boxes);
+    correct.request_id=1801;correct.revision=1001;
+    correct.projects_directory=projects;
+    correct.project_key=draft_key("programming",lesson,boxes)+"/constant-control";
+    correct.compile_timeout=std::chrono::seconds(100);
+    correct.execution_timeout=std::chrono::seconds(8);
+    change_project(correct,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    int const capacidad{4};
+    int const ajuste{capacidad - 1};
+    return (piezas + ajuste) / capacidad;
+}
+)cpp");
+    require(compiler_runtime_request_allowed(boxes,correct),
+        "A valid east-const capacity with a derived intermediate was rejected");
+    const auto real=run_cpp(correct);
+    require(real.error_utf8.empty(),
+        "The actual four-place constant control failed: "+real.error_utf8+
+        real.configuration.stderr_bytes+real.compilation.stderr_bytes);
+    check_real_constant_variation_evidence(lesson,boxes,correct,real);
+
+    std::size_t ordinal=0;
+    for(const auto expression:{
+            "(piezas + capacidad - (capacidad / 4)) / 4",
+            "(piezas + 3) / (capacidad / 2 + capacidad / 2)"}) {
+        auto fixed=correct;
+        fixed.request_id+=++ordinal;fixed.revision+=ordinal;
+        fixed.project_key+="/fixed-"+std::to_string(ordinal);
+        change_project(fixed,"componente/src/cajas.cpp",
+            std::string("#include \"envio/cajas.h\"\nint cajas_para(int piezas) {\n")+
+            "    const int capacidad{4};\n    return "+expression+";\n}\n");
+        require(compiler_runtime_request_allowed(boxes,fixed),
+            "The false-dependency control did not preserve the original minUses contract");
+        const auto observed=run_cpp(fixed);
+        const auto captured=capture_cpp_execution(fixed,observed);
+        require(observed.error_utf8.empty()&&observed.compilation.succeeded()&&
+            observed.execution.succeeded()&&observed.named_rule_probe&&
+            observed.named_rule_probe->compilation.succeeded()&&
+            observed.named_rule_probe->execution.succeeded()&&
+            observed.named_rule_probe->execution.stderr_bytes==named_rule_probe_completion_marker&&
+            observed.named_rule_constant_variation_probes.size()==1&&
+            observed.named_rule_constant_variation_probes.front().proof.compilation.succeeded()&&
+            observed.named_rule_constant_variation_probes.front().proof.execution.status==
+                CppPhaseStatus::completed&&
+            observed.named_rule_constant_variation_probes.front().proof.execution.exit_code==1&&
+            !captured.named_rule_probe_correct&&
+            captured.named_rule_constant_variation_feedback.find("cajas_para")!=std::string::npos&&
+            captured.named_rule_constant_variation_feedback.find("relación pedida")!=std::string::npos&&
+            evaluate_cpp_output_check(*boxes.output_check,captured,fixed.revision).verdict==
+                OutputVerdict::correct,
+            "A fixed divisor/adjustment was not isolated by its real changed-constant execution");
+        auto legacy_owner=boxes;
+        legacy_owner.named_rule_source_check->execution_probe->constant_variations.reset();
+        auto legacy_request=fixed;
+        legacy_request.named_rule_probe->constant_variations.reset();
+        const auto legacy=capture_cpp_execution(legacy_request,observed);
+        require(legacy.named_rule_probe_correct&&
+            legacy.named_rule_constant_variation_feedback.empty()&&
+            compiler_runtime_request_allowed(legacy_owner,legacy_request),
+            "The counterexample did not actually pass the unchanged historical contract");
+        state::StateData saved;
+        state::prepare_lesson_state(saved,lesson);
+        require(record_compiler_puzzle_case(saved,lesson,legacy_owner,legacy_request,legacy,
+                "actual old-contract counterexample"),
+            "The historical counterexample no longer reproduces its former accreditation");
+        const auto before=state::encode(saved);
+        require(!record_compiler_puzzle_case(saved,lesson,boxes,fixed,captured,
+                "fixed numeric dependency")&&state::encode(saved)==before&&
+            !compiler_puzzle_completed(saved,lesson,boxes),
+            "A false constant dependency earned a new receipt or removed valid history");
+        const auto reopened=state::decode(state::encode(saved));
+        require(compiler_puzzle_completed(reopened,lesson,legacy_owner)&&
+            !compiler_puzzle_completed(reopened,lesson,boxes),
+            "Reopening promoted the old counterexample receipt to constant-dependence credit");
+        std::cout<<"PASS authentic constant counterexample "<<ordinal
+            <<": public/base correct, changed capacity rejected, no new receipt\n";
+    }
+
+    auto price=lesson.pages.at(7).blocks.at(4);
+    require(price.stable_id=="block_0007_0004"&&!price.cmake&&price.output_check&&
+        price.output_check->cases.size()==1,
+        "The original independent price/minimum editor is unavailable");
+    price.named_rule_source_check=NamedRuleSourceCheck{"",{
+        {"precio_total",7,{"precio","costo","tarifa","credito"},1},
+        {"alcanza_minimo",5,{"minimo","cantidad","umbral"},1}}};
+    price.named_rule_source_check->execution_probe=NamedRuleExecutionProbe{
+        "","",{{"precio_total",11,77},{"precio_total",5,35},
+            {"alcanza_minimo",4,0},{"alcanza_minimo",5,1}}};
+    add_constant_variations(price,{{"precio_total",9,{
+        {"precio_total",11,99},{"precio_total",5,45},
+        {"alcanza_minimo",4,0},{"alcanza_minimo",5,1}}}});
+    auto priced=request_of(price);
+    priced.request_id=1810;priced.revision=1010;
+    priced.projects_directory=projects;
+    priced.compile_timeout=std::chrono::seconds(60);
+    priced.execution_timeout=std::chrono::seconds(8);
+    const auto& reference=lesson.pages.at(8).blocks.at(1);
+    require(reference.type==BlockType::code&&!reference.code.empty(),
+        "The published complete price/minimum reference is unavailable");
+    priced.source_utf8=replace_unique(reference.code,
+        "return articulos * creditos_por_articulo;",
+        "int const total{creditos_por_articulo * articulos};\n    return total;");
+    require(compiler_runtime_request_allowed(price,priced),
+        "An equivalent result intermediate did not preserve separate price and minimum rules");
+    const auto priced_run=run_cpp(priced);
+    require(priced_run.error_utf8.empty(),
+        "The actual independent price variation failed: "+priced_run.error_utf8+
+        priced_run.compilation.stderr_bytes);
+    check_real_constant_variation_evidence(lesson,price,priced,priced_run);
 }
 
 
@@ -1249,6 +1636,7 @@ int main(int argc,char** argv) {
             // Keep CMakeScratch/TryCompile and MSVC object paths below the
             // verified Windows CMAKE_OBJECT_PATH_MAX limit on hosted runners.
             environment.paths.projects/L"u3-cmake");
+        actual_constant_variation_controls(lesson,environment.paths.projects/L"u3-var");
         actual_named_batteries(lesson,environment.paths.projects/L"u3-battery");
         std::cout<<"PASS original named-rule editors: source constraints, historic receipt and draft isolation\n";
         return 0;

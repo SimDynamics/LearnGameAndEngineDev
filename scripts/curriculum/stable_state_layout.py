@@ -3277,6 +3277,68 @@ def _named_rule_battery_driver(source: str) -> None:
             "Named-rule battery requires one original checker main")
 
 
+def _validate_named_rule_constant_variations(source: str, rules: list[dict],
+                                            base_cases: list[dict], variations: object) -> None:
+    """Validate the optional private variations without inspecting the starter's constants."""
+    require(source == "" or (len(source) <= 256 and
+            re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9_./-]*\.cpp", source) and ".." not in source),
+            "Constant variations require a safe original relative C++ source path")
+    requirements = {rule["function"]: rule for rule in rules}
+    require(all(len(name) <= 128 and name != "main" and not name.startswith((
+                "lgaed_named_rule_battery_", "lgaed_boolean_battery_",
+                "lgaed_integer_battery_")) for name in requirements),
+            "Constant variations require bounded non-reserved function names")
+    require(type(variations) is list and 1 <= len(variations) <= 8,
+            "Constant variations require 1..8 authored alternatives")
+
+    def signed_integer(value: object) -> bool:
+        # WinRT preserves numeric value, not whether JSON used 6, 6.0 or 6e0.
+        # Check the range before converting: a Python int may exceed float range.
+        return (type(value) in (int, float) and -(2 ** 31) <= value <= 2 ** 31 - 1
+                and (type(value) is int or value.is_integer()))
+
+    originals = {(case["function"], case["input"]): case["expected"] for case in base_cases}
+    seen_variations = set()
+    for variation in variations:
+        require(type(variation) is dict and set(variation) == {"function", "value", "cases"},
+                "Each constant variation requires function, value and cases only")
+        target, value = variation["function"], variation["value"]
+        require(type(target) is str and target in requirements and signed_integer(value),
+                "A constant variation must select a named function and an int32 alternative")
+        require(value != requirements[target]["value"],
+                "A constant variation must change its original agreement")
+        key = target, value
+        require(key not in seen_variations, "Repeated function/value constant variation")
+        seen_variations.add(key)
+        cases = variation["cases"]
+        require(type(cases) is list and 1 <= len(cases) <= 32,
+                "Each constant variation requires 1..32 comparisons")
+        seen_cases, covered, unchanged = set(), set(), set()
+        changed_target = False
+        for case in cases:
+            require(type(case) is dict and set(case) == {"function", "input", "expected"}
+                    and type(case["function"]) is str and case["function"] in requirements
+                    and signed_integer(case["input"]) and signed_integer(case["expected"]),
+                    "Constant-variation cases require named functions and int32 facts")
+            key = case["function"], case["input"]
+            require(key not in seen_cases, "A constant variation repeated a function/input pair")
+            seen_cases.add(key)
+            covered.add(case["function"])
+            if key in originals:
+                if case["function"] == target:
+                    changed_target |= case["expected"] != originals[key]
+                else:
+                    require(case["expected"] == originals[key],
+                            "A constant variation changed another function's shared expectation")
+                    unchanged.add(case["function"])
+        require(covered == set(requirements),
+                "Each constant variation must cover every named function")
+        require(changed_target,
+                "A constant variation needs a shared target input with a different expected result")
+        require(unchanged == set(requirements) - {target},
+                "Each non-target function needs a preserved shared input in every variation")
+
+
 def _validate_compiler_named_rule_checks(document: dict) -> None:
     """Validate source-role prerequisites without rewriting editor history."""
     if "compilerNamedRuleChecks" not in document:
@@ -3354,7 +3416,7 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
         if "executionProbe" in record:
             probe = record["executionProbe"]
             require(type(probe) is dict and {"harness", "header", "cases"} <= set(probe) <=
-                    {"harness", "header", "cases", "batteryCheck"},
+                    {"harness", "header", "cases", "batteryCheck", "constantVariations"},
                     "Independent named-rule probes require harness, header and cases")
             harness, header = probe["harness"], probe["header"]
             single_file = not bool(files)
@@ -3399,6 +3461,13 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
                 covered.add(case["function"])
             require(covered == functions,
                     "Every named function requires an independent execution case")
+            if "constantVariations" in probe:
+                graphs = document.get("compilerCmakeGraphChecks", [])
+                require(type(graphs) is list and not any(
+                    type(graph) is dict and graph.get("activity") == identity for graph in graphs),
+                    "Constant variations cannot share an owner with a CMake graph check")
+                _validate_named_rule_constant_variations(
+                    source, rules, comparisons, probe["constantVariations"])
             if "batteryCheck" in probe:
                 first_case = block["outputCheck"]["cases"][0]
                 require(block.get("initialStandardInput", "") == "" and

@@ -1720,6 +1720,143 @@ la sonda del primer caso forma parte de su propio criterio de corrección.
 Para los editores de un solo archivo, `path` y `editablePaths` deben
 ser vacíos; la prueba sigue evaluando el código que el estudiante editó.
 
+### Variaciones privadas de los acuerdos nombrados
+
+Una constante puede aparecer dos veces en una fórmula y, aun así, dejar
+una cifra relacionada escrita directamente. Con una capacidad de cuatro,
+`(piezas + capacidad - capacidad / 4) / 4` y
+`(piezas + 3) / (capacidad / 2 + capacidad / 2)` producen los resultados
+esperados en el dominio de cero a veinte. Ambas expresiones contienen usos
+reales de la constante. Contarlos no demuestra que el divisor y el ajuste
+se deriven correctamente de ella cuando cambia el acuerdo.
+
+Para comprobar esa relación, `executionProbe` admite el campo optativo
+`constantVariations`. Cada variación identifica una de las funciones
+declaradas en `rules`, propone otro valor para su constante y contiene
+los resultados esperados con ese acuerdo. Por ejemplo, para la regla de
+`cajas_para` cuyo valor original es cuatro:
+
+```json
+"executionProbe": {
+  "harness": "pruebas/cajas_casos.cpp",
+  "header": "envio/cajas.h",
+  "cases": [
+    {"function": "cajas_para", "input": 4, "expected": 1},
+    {"function": "cajas_para", "input": 7, "expected": 2},
+    {"function": "cajas_para", "input": 19, "expected": 5}
+  ],
+  "constantVariations": [
+    {
+      "function": "cajas_para",
+      "value": 6,
+      "cases": [
+        {"function": "cajas_para", "input": 4, "expected": 1},
+        {"function": "cajas_para", "input": 7, "expected": 2},
+        {"function": "cajas_para", "input": 19, "expected": 4}
+      ]
+    }
+  ]
+}
+```
+
+Este fragmento es un ejemplo técnico de autoría. No modifica los JSON
+existentes. En un editor de archivo único, `harness` y `header` permanecen
+vacíos, como en su sonda independiente ordinaria. Los datos esperados los
+declara el autor; el motor no los calcula llamando a la función evaluada.
+Las variaciones utilizan el backend nativo MSVC y la acción de compilar
+y ejecutar. No pueden compartir propietario con
+`compilerCmakeGraphChecks`; el cargador rechaza esa combinación.
+
+El motor primero comprueba el requisito de fuente y la sonda con el valor
+original. Después localiza la única constante local que cumple el valor,
+el propósito y los usos declarados de la función seleccionada. En una
+copia privada sustituye únicamente el intervalo del inicializador por el
+valor alternativo y compila otra sonda con los casos de esa variación.
+La selección utiliza los tokens y sus posiciones en el código original,
+sin sustituir globalmente números ni exigir un nombre literal único.
+Se admiten los inicializadores enteros equivalentes que reconoce el
+analizador, incluidos `0x4`, `04` y `2 + 2`, y las variables intermedias
+permitidas por el requisito de fuente. El significado de `minUses` no
+cambia.
+
+Cada variación parte de nuevo del programa original del intento. No
+acumula los cambios de las variaciones anteriores ni modifica el borrador,
+la batería del alumno, sus esperados o los archivos del proyecto guardado.
+La batería original, si se declara mediante `batteryCheck`, se comprueba
+por separado con el acuerdo original y conserva sus propias pruebas de
+sensibilidad. El nuevo requisito comprueba el cálculo al cambiar un
+acuerdo; `batteryCheck` comprueba las comparaciones del alumno.
+
+En el ejemplo, al variar cuatro por seis, las dos fórmulas defectuosas
+anteriores producen respectivamente tres y uno para siete piezas, cuando
+se necesitan dos cajas. El caso de diecinueve piezas, que pasa de cinco
+a cuatro cajas, demuestra además que la variación incluye un resultado
+que debe cambiar respecto a la sonda base. Una solución equivalente que
+derive correctamente las cantidades de la capacidad conserva esos
+resultados y puede obtener el acierto.
+
+El contrato de autoría se valida con estas condiciones:
+
+- `constantVariations` contiene entre una y ocho variaciones. Cada objeto
+  tiene exactamente `function`, `value` y `cases`. La función selecciona
+  su única regla ya declarada; no se admite otro nombre, ruta o selector
+  de constante en este campo.
+- `value` difiere del valor original de esa regla. No se repite un par
+  función y valor alternativo. Puede variarse un subconjunto de las reglas;
+  no es obligatorio declarar una variación para cada función.
+- Cada `cases` contiene entre uno y treinta y dos objetos con exactamente
+  `function`, `input` y `expected`. Sus pares función y entrada son únicos
+  y cubren todas las funciones declaradas en `rules`, incluida la
+  función cuyo acuerdo cambia.
+- Al menos un caso de la función seleccionada comparte la entrada con
+  `executionProbe.cases` y declara un esperado distinto del original.
+  Esto evita que una variación sin ningún resultado diferente acredite
+  sensibilidad al acuerdo.
+- Cada otra función tiene al menos un caso compartido con la sonda base.
+  Todos sus casos compartidos conservan el esperado original, para
+  contrastar que cambiar un acuerdo no cambie las reglas independientes.
+- Los nuevos campos numéricos son números JSON de valor entero dentro
+  del intervalo de `int` de 32 bits. No admiten booleanos, fracciones ni
+  valores fuera de ese intervalo. Las grafías JSON integrales, como
+  `6` y `6.0`, tienen el mismo valor en esta extensión. Un resultado
+  `bool` se expresa como el entero cero o uno.
+
+El cargador valida la declaración y su relación con las reglas y casos
+base. No exige que el código inicial ya contenga la constante correcta:
+introducirla puede ser precisamente el objetivo de la práctica. La
+localización de su inicializador se realiza sobre el código presentado
+por el alumno al intentar obtener el acierto.
+
+Todas las compilaciones y ejecuciones privadas deben completarse y
+cumplir sus casos. Cada fase conserva su procedencia, la fuente exacta,
+su identidad y el testigo final de la sonda. La acreditación queda ligada
+al contrato, al programa y a la revisión de la solicitud. Un resultado
+ausente, de otra variante o de un intento anterior no sustituye esa
+evidencia. Se mantienen las restricciones frente a terminación anticipada,
+macros y dependencias del entorno de la sonda; estas comprobaciones
+acotadas no constituyen una barrera frente a código nativo hostil ni una
+demostración de la fórmula para cualquier entrada posible.
+
+Si la sonda original pasa y una variación no acredita el requisito, la
+retroalimentación identifica la función afectada y pide revisar la
+relación entre su constante y las cantidades derivadas. No muestra los
+valores ni esperados privados y no confunde la falta de esa evidencia
+con un acierto del requisito nuevo.
+
+La extensión añade una huella propia al objetivo sólo cuando está
+presente. Su ausencia conserva exactamente los criterios y el alcance
+de los contratos históricos. Los IDs, mapas, claves de borrador y
+respuestas del editor permanecen iguales, y un recibo anterior no concede
+el nuevo requisito. La declaración completa sigue siendo inmutable una
+vez publicada: las variaciones se incorporan al autorizar inicialmente
+ese contrato, sin habilitar una excepción para alterar silenciosamente
+uno ya publicado.
+
+La sonda base y sus variaciones forman parte de la primera comprobación
+correcta del primer caso del editor. Los demás casos visibles de
+`outputCheck` conservan su carácter optativo y no pasan a ser requisitos
+adicionales para avanzar.
+
 ### Batería del estudiante con comparaciones sensibles a errores
 
 Comprobar las funciones con un `main` privado no demuestra que el

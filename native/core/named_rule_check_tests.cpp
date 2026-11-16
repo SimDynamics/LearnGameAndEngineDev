@@ -1,5 +1,6 @@
 #include "core/named_rule_check.hpp"
 #include "core/named_rule_battery_check.hpp"
+#include "core/named_rule_constant_variation_check.hpp"
 #include <array>
 #include <iostream>
 #include <stdexcept>
@@ -1513,11 +1514,265 @@ void real_battery_traces_and_verdicts() {
         "Mutations never overflow and remain representable as bool or int");
 }
 
+NamedRuleExecutionProbe constant_variation_example() {
+    NamedRuleExecutionProbe probe{"","",{
+        {"cajas_para",0,0},{"cajas_para",4,1},{"cajas_para",5,2},{"cajas_para",20,5},
+        {"llega_a_tiempo",4,1},{"llega_a_tiempo",5,0}}};
+    probe.constant_variations = NamedRuleConstantVariationSpec{"",{
+        {"cajas_para",4,{"capacidad","plaza","cupo"},2},
+        {"llega_a_tiempo",4,{"plazo"},1}}, {
+        {"cajas_para",3,{
+            {"cajas_para",0,0},{"cajas_para",4,2},{"cajas_para",5,2},{"cajas_para",20,7},
+            {"llega_a_tiempo",4,1},{"llega_a_tiempo",5,0}}},
+        {"cajas_para",5,{
+            {"cajas_para",0,0},{"cajas_para",4,1},{"cajas_para",5,1},{"cajas_para",20,4},
+            {"llega_a_tiempo",4,1},{"llega_a_tiempo",5,0}}}}};
+    return probe;
+}
+std::string constant_variation_candidate(std::string_view declaration,
+        std::string_view body="return (piezas + capacidad - 1) / capacidad;",
+        bool with_main=true) {
+    // Repeated numeric text, an unrelated agreement and a nested namesake
+    // must retain their exact bytes when the authentic initializer changes.
+    std::string source=R"cpp(// Información: capacidad 4; const int capacidad{4};
+const char* literal="const int capacidad{4}; 4";
+const char* raw=R"nota(const int capacidad{4}; /* 4 */)nota";
+int cajas_para(int piezas) {
+    )cpp";
+    source+=declaration;
+    source+=R"cpp(
+    { const int capacidad{4}; (void)capacidad; }
+    )cpp";
+    source+=body;
+    source+=R"cpp(
+}
+bool llega_a_tiempo(int dias) {
+    const int plazo{4};
+    return dias <= plazo;
+}
+)cpp";
+    if(with_main)source+="int main() { return 0; }\n";
+    return source;
+}
+void constant_variation_contract() {
+    const auto require=named_battery_require;
+    const auto probe=constant_variation_example();
+    const auto& spec=*probe.constant_variations;
+    require(named_rule_constant_variation_spec_valid(spec,probe.cases),
+        "Discriminating variations cover both independent functions");
+    const auto invalid=[&](const NamedRuleConstantVariationSpec& value,
+            std::string_view reason) {
+        require(!named_rule_constant_variation_spec_valid(value,probe.cases),reason);
+    };
+    auto changed=spec; changed.variations.clear();
+    invalid(changed,"Present variations cannot be empty");
+    changed=spec;
+    for(int i=0;i<7;++i) {
+        auto variation=changed.variations.front();variation.value=10+i;
+        changed.variations.push_back(std::move(variation));
+    }
+    invalid(changed,"Private recompilations are bounded to eight variations");
+    changed=spec;changed.variations.front().value=4;
+    invalid(changed,"Replacing an agreement with its original value proves nothing");
+    changed=spec;changed.variations.push_back(changed.variations.front());
+    invalid(changed,"A function/value pair cannot be repeated");
+    changed=spec;changed.variations.front().function="another_function";
+    invalid(changed,"A variation cannot select an unauthenticated function");
+    changed=spec;changed.source_path="../outside.cpp";
+    invalid(changed,"The authenticated source path cannot traverse the project");
+    changed=spec;changed.requirements.front().min_uses=0;
+    invalid(changed,"Derived source prerequisites must remain present");
+    changed=spec;changed.requirements.front().min_uses=9;
+    invalid(changed,"Derived minimum use count retains its authored bound");
+    changed=spec;changed.requirements.front().purpose_words={"capacidad; injected"};
+    invalid(changed,"Purpose vocabulary must remain an authored bounded identifier fragment");
+    changed=spec;changed.requirements.push_back(changed.requirements.front());
+    invalid(changed,"A derived function requirement must remain unique");
+    changed=spec;changed.variations.front().cases.clear();
+    invalid(changed,"A variation cannot omit its independent answers");
+    changed=spec;changed.variations.front().cases.resize(33,{"cajas_para",40,10});
+    invalid(changed,"Each private driver is bounded to 32 cases");
+    changed=spec;changed.variations.front().cases.push_back(changed.variations.front().cases.front());
+    invalid(changed,"A private function/input pair cannot be repeated");
+    changed=spec;changed.variations.front().cases.front().function="unknown";
+    invalid(changed,"Private cases cannot invoke an undeclared function");
+    changed=spec;changed.variations.front().cases.resize(4);
+    invalid(changed,"A variation must observe the functions that were not changed too");
+    changed=spec;
+    for(auto& item:changed.variations.front().cases)
+        if(item.function=="cajas_para") {
+            const auto original=std::ranges::find_if(probe.cases,[&](const auto& value) {
+                return value.function==item.function&&value.input==item.input;
+            });
+            item.expected=original->expected;
+        }
+    invalid(changed,"A shared target case must change its independently authored answer");
+    changed=spec;
+    for(auto& item:changed.variations.front().cases)
+        if(item.function=="cajas_para")item.input+=100;
+    invalid(changed,"New inputs alone do not witness changed behavior on a shared input");
+    changed=spec;
+    for(auto& item:changed.variations.front().cases)
+        if(item.function=="llega_a_tiempo")item.input+=100;
+    invalid(changed,"Every other function needs a shared independence witness");
+    changed=spec;changed.variations.front().cases.back().expected=1;
+    invalid(changed,"One unchanged observation cannot excuse another contradictory shared answer");
+    auto base=probe.cases;base.pop_back();
+    require(named_rule_constant_variation_spec_valid(spec,base),
+        "An additional authored case is allowed beside a shared independence witness");
+    base.pop_back();
+    require(!named_rule_constant_variation_spec_valid(spec,base),
+        "The base probe must cover each derived source function");
+    base=probe.cases;base.push_back(base.front());
+    require(!named_rule_constant_variation_spec_valid(spec,base),
+        "The base probe cannot supply duplicated witnesses");
+
+    const auto frame=named_rule_constant_variation_spec_frame(spec);
+    changed=spec;changed.source_path="src/reglas.cpp";
+    require(named_rule_constant_variation_spec_frame(changed)!=frame,
+        "The precise source path belongs to variation provenance");
+    changed=spec;changed.requirements.front().purpose_words.push_back("espacio");
+    require(named_rule_constant_variation_spec_frame(changed)!=frame,
+        "The authentic declaration selection vocabulary belongs to variation provenance");
+    changed=spec;changed.requirements.front().min_uses=1;
+    require(named_rule_constant_variation_spec_frame(changed)!=frame,
+        "The historic source prerequisite belongs to variation provenance");
+    changed=spec;changed.requirements.front().value=6;
+    require(named_rule_constant_variation_spec_frame(changed)!=frame,
+        "The original agreement belongs to variation provenance");
+    changed=spec;changed.variations.front().value=6;
+    require(named_rule_constant_variation_spec_frame(changed)!=frame,
+        "The counterfactual agreement belongs to variation provenance");
+    changed=spec;changed.variations.front().cases.front().expected=9;
+    require(named_rule_constant_variation_spec_frame(changed)!=frame,
+        "The independently authored answer belongs to variation provenance");
+    changed=spec;std::ranges::reverse(changed.variations);
+    require(named_rule_constant_variation_spec_frame(changed)!=frame,
+        "Phase order belongs to variation provenance");
+
+    const auto legacy_checks=named_rule_probe_checks(probe);
+    auto legacy=probe;legacy.constant_variations.reset();
+    require(named_rule_probe_checks(legacy)==legacy_checks,
+        "The optional extension must not change the original independent driver");
+    require(!named_rule_constant_variation_probe(legacy,0)&&
+        !named_rule_constant_variation_source(constant_variation_candidate(
+            "const int capacidad{4};"),legacy,0),
+        "Absent variation authoring must not invent private recompilations");
+    auto with_battery=probe;
+    with_battery.battery_check=NamedRuleBatterySpec{"",probe.cases,1};
+    const auto private_probe=named_rule_constant_variation_probe(with_battery,0);
+    require(private_probe&&!private_probe->constant_variations&&!private_probe->battery_check&&
+        private_probe->cases==spec.variations.front().cases&&
+        private_probe->header==probe.header&&private_probe->harness_path==probe.harness_path&&
+        with_battery.constant_variations==probe.constant_variations&&with_battery.battery_check,
+        "Each phase has its own facts and cannot recursively mutate the student battery");
+    require(!named_rule_constant_variation_probe(probe,2),
+        "An undeclared phase cannot be constructed");
+}
+
+void constant_variation_source_identity() {
+    const auto require=named_battery_require;
+    const auto probe=constant_variation_example();
+    struct Spelling {std::string_view before,after;};
+    constexpr Spelling spellings[]{
+        {"const int capacidad{4};","const int capacidad{(3)};"},
+        {"int const capacidad = (2 /* cálculo */ + 2);","int const capacidad = (3);"},
+        {"constexpr int capacidad(0b100);","constexpr int capacidad((3));"},
+        {"int constexpr capacidad{4'0 / 10};","int constexpr capacidad{(3)};"},
+        {"static const int capacidad = -(-4);","static const int capacidad = (3);"},
+        {"const int capacidad{ /* antes 4 */ 0x4 /* después 4 */ };",
+         "const int capacidad{ /* antes 4 */ (3) /* después 4 */ };"},
+        {"const int capacidad = 04;","const int capacidad = (3);"}};
+    for(const auto& spelling:spellings) {
+        const auto original=constant_variation_candidate(spelling.before);
+        const auto varied=named_rule_constant_variation_source(original,probe,0);
+        require(varied&&*varied==constant_variation_candidate(spelling.after),
+            "Only the genuine initializer changes across equivalent declarations, comments and literals");
+    }
+    const auto crlf=[](std::string text) {
+        std::string result;
+        for(const auto c:text){if(c=='\n')result+='\r';result+=c;}
+        return result;
+    };
+    const auto windows_source=crlf(constant_variation_candidate("const int capacidad = 2 +\n        2;"));
+    require(named_rule_constant_variation_source(windows_source,probe,0)==
+            crlf(constant_variation_candidate("const int capacidad = (3);")),
+        "Byte offsets retain CRLF and UTF-8 outside a multiline initializer");
+    for(const auto body:{
+            "return piezas / capacidad + (piezas % capacidad != 0);",
+            "const auto ajuste = capacidad - 1; return (piezas + ajuste) / capacidad;",
+            "if (piezas == 0) return 0; return (piezas + capacidad - 1) / capacidad;"}) {
+        const auto original=constant_variation_candidate("const int capacidad{4};",body);
+        require(named_rule_constant_variation_source(original,probe,0)==
+                constant_variation_candidate("const int capacidad{(3)};",body),
+            "Equivalent calculation, alias and normal domain guard retain the original minimum-use contract");
+    }
+    const auto renamed=constant_variation_candidate("const int plazas_por_caja{4};",
+        "return (piezas + plazas_por_caja - 1) / plazas_por_caja;");
+    require(named_rule_constant_variation_source(renamed,probe,0)==
+            constant_variation_candidate("const int plazas_por_caja{(3)};",
+                "return (piezas + plazas_por_caja - 1) / plazas_por_caja;"),
+        "Purpose vocabulary selects the student's equivalent local name");
+    for(const auto expression:{
+            "return (piezas + capacidad - (capacidad / 4)) / 4;",
+            "return (piezas + 3) / (capacidad / 2 + capacidad / 2);"}) {
+        const auto original=constant_variation_candidate("const int capacidad{4};",expression);
+        require(analyze_named_rule_sources(original,probe.constant_variations->requirements).source_evidence,
+            "Historic minUses remains a source prerequisite, not a universal dependence proof");
+        require(named_rule_constant_variation_source(original,probe,0)==
+                constant_variation_candidate("const int capacidad{(3)};",expression),
+            "A private change must not repair the student's hard-coded divisor or adjustment");
+    }
+    const auto original=constant_variation_candidate("const int capacidad{4};");
+    const auto first=named_rule_constant_variation_source(original,probe,0);
+    const auto second=named_rule_constant_variation_source(original,probe,1);
+    require(first&&second&&*second==constant_variation_candidate("const int capacidad{(5)};")&&
+        !named_rule_constant_variation_source(*first,probe,1),
+        "Each phase must originate in the authenticated original agreement");
+    for(const auto bound:{std::numeric_limits<int>::min(),std::numeric_limits<int>::max()}) {
+        auto bounded=probe;bounded.constant_variations->variations.front().value=bound;
+        const auto varied=named_rule_constant_variation_source(original,bounded,0);
+        require(varied&&*varied==constant_variation_candidate(
+                "const int capacidad{("+std::to_string(bound)+")};"),
+            "Signed int limits are emitted as complete canonical expressions without overflow");
+    }
+    auto project=probe;
+    project.harness_path="pruebas/casos.cpp";project.header="envio/reglas.h";
+    project.constant_variations->source_path="src/reglas.cpp";
+    const auto library=constant_variation_candidate("const int capacidad{4};",
+        "return (piezas + capacidad - 1) / capacidad;",false);
+    require(named_rule_constant_variation_source(library,project,0)==
+            constant_variation_candidate("const int capacidad{(3)};",
+                "return (piezas + capacidad - 1) / capacidad;",false),
+        "The same bounded initializer transformation applies to an authenticated CMake source");
+    const auto project_probe=named_rule_constant_variation_probe(project,0);
+    require(project_probe&&named_rule_probe_source(*project_probe).has_value(),
+        "The CMake phase reuses the independently generated driver");
+    const auto single_probe=named_rule_constant_variation_probe(probe,0);
+    require(single_probe&&first&&named_rule_single_file_probe_source(*single_probe,*first).has_value(),
+        "The single-file phase reuses the independently generated driver");
+
+    for(const auto& bad:{
+            constant_variation_candidate("const int capacidad{6};"),
+            constant_variation_candidate("const int capacidad{4}; const int cupo{4};"),
+            constant_variation_candidate("const int capacidad{4};","return (piezas + 3) / 4;"),
+            "const int capacidad{4};\n"+constant_variation_candidate(""),
+            "#define capacidad 4\n"+original,
+            "// continued\\\n"+original,
+            original+"\nconst int observed_line = __LINE__;\n",
+            original+"\nvoid finish() { auto end = &std::exit; end(0); }\n",
+            original+"\n/* unterminated",
+            original+std::string("\0hidden",7)})
+        require(!named_rule_constant_variation_source(bad,probe,0),
+            "Wrong, ambiguous, unproductive, global, spliced or unauthenticated source cannot yield a private variation");
+}
+
 int main() {
     try {
         capacity();separate_rules();price_and_minimum();
         comment_only_header_changes();independently_generated_probe();
         real_battery_contract_and_sources();real_battery_traces_and_verdicts();
+        constant_variation_contract();constant_variation_source_identity();
         std::cout<<"PASS local named rules: roles, values, uses and rejected shortcuts\n";
         return 0;
     }catch(const std::exception& e){

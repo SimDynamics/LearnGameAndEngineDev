@@ -4268,7 +4268,15 @@ struct LessonView {
                     fresh.named_rule_probe_correct&&!fresh.named_rule_battery_correct;
                 if(named_battery_pending&&preserved_source)
                     text+='\n'+fresh.named_rule_battery_feedback;
-                if(!independent&&!named_battery_pending&&preserved_source&&!block(index).open_battery_probe&&
+                const bool named_variation_pending=block(index).named_rule_source_check&&
+                    block(index).named_rule_source_check->execution_probe&&
+                    block(index).named_rule_source_check->execution_probe->constant_variations&&
+                    !fresh.named_rule_probe_correct&&
+                    !fresh.named_rule_constant_variation_feedback.empty();
+                if(named_variation_pending&&preserved_source)
+                    text+='\n'+fresh.named_rule_constant_variation_feedback;
+                if(!independent&&!named_battery_pending&&!named_variation_pending&&
+                   preserved_source&&!block(index).open_battery_probe&&
                    !block(index).boolean_battery_probe&&!block(index).reduction_probe&&
                    !block(index).integer_battery_probe&&!block(index).adjustment_project_probe)
                     text+='\n'+ui(
