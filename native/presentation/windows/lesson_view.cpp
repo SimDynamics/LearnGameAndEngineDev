@@ -738,19 +738,31 @@ struct LessonView {
             GC_PAN_WITH_GUTTER | GC_PAN_WITH_INERTIA};
         SetGestureConfig(item,0,1,&pan,sizeof(pan));
     }
+    bool restore_fullscreen_zoom() {
+        if(!fullscreen_block)return false;
+        const auto& vm=controls[*fullscreen_block];
+        const auto item=fullscreen_output?vm.console:vm.simulated_code;
+        const auto found=zoomed.find(item);
+        if(found==zoomed.end())return false;
+        SendMessageW(item,EM_SETZOOM,found->second,100);zoomed.erase(found);
+        return true;
+    }
     bool double_click_zoom(HWND item,POINT point) {
         if(choice_labels.contains(item))return true;
-        const bool display=std::ranges::any_of(controls,[&](const auto& vm){return vm.simulated_code==item||vm.console==item;});
-        if(!display||!fullscreen_block)return false;
-        if(hits_text(item,point))return false;
+        const auto display=std::ranges::find_if(controls,[&](const auto& vm){return vm.simulated_code==item||vm.console==item;});
+        if(display==controls.end()||hits_text(item,point))return false;
         end_drag();
-        if(const auto found=zoomed.find(item);found!=zoomed.end()){
-            SendMessageW(item,EM_SETZOOM,found->second,100);zoomed.erase(found);
-        }else{
-            int numerator=0,denominator=0;SendMessageW(item,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
-            const int previous=denominator?MulDiv(numerator,100,denominator):100;
-            zoomed[item]=previous;SendMessageW(item,EM_SETZOOM,std::min(previous*2,6400),100);
+        const auto index=static_cast<std::size_t>(display-controls.begin());
+        const bool output=display->console==item;
+        if(fullscreen_block!=index||fullscreen_output!=output){
+            toggle_fullscreen(index,output);return true;
         }
+        // Repeated empty-area double clicks keep the enlarged console open.
+        // Esc restores its previous scale before leaving full screen.
+        if(zoomed.contains(item))return true;
+        int numerator=0,denominator=0;SendMessageW(item,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+        const int previous=denominator?MulDiv(numerator,100,denominator):100;
+        zoomed[item]=previous;SendMessageW(item,EM_SETZOOM,std::min(previous*2,6400),100);
         reflow();return true;
     }
     HWND find_item(int id) const {
@@ -1984,6 +1996,7 @@ struct LessonView {
         auto focused=capture_console_focus();
         if(!focused.editor)for(const auto& [icon,snapshot]:icon_focus)if(snapshot.editor){focused=snapshot;break;}
         end_drag();
+        restore_fullscreen_zoom();
         restore_fullscreen_palette();
         restore_fullscreen_header();
         if (fullscreen_block == index && fullscreen_output == output) {
@@ -4482,7 +4495,10 @@ struct LessonView {
     }
     bool navigate_back(){
         if(import_open){close_import();return true;}
-        if(fullscreen_block){toggle_fullscreen(*fullscreen_block,fullscreen_output);return true;}
+        if(fullscreen_block){
+            if(restore_fullscreen_zoom()){reflow();return true;}
+            toggle_fullscreen(*fullscreen_block,fullscreen_output);return true;
+        }
         const auto root=GetAncestor(window,GA_ROOT),keyboard=math_keyboard_window(root);
         if(keyboard&&IsWindowVisible(keyboard)){hide_math_keyboard(root);reflow();return true;}
         if(!hooks.back_to_catalog)return false;
