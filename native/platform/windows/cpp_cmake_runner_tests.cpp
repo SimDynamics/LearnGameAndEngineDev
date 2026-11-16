@@ -7,6 +7,7 @@
 #include "native_build_config.hpp"
 #include <windows.h>
 #include <algorithm>
+#include <array>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -1691,9 +1692,20 @@ target_link_libraries(consultar_aforo PRIVATE aforo)
                     "Original flat CMake project changed before reorganization");
                 file.second=R"cmake(cmake_minimum_required(VERSION 3.20)
 project(EnviosComprobables LANGUAGES CXX)
-message(STATUS "raiz_antes")
+message(STATUS "raiz_" "antes")
 add_subdirectory(componente)
-message(STATUS "raiz_despues")
+message(STATUS raiz_;despues)
+message(
+  STATUS # preserve argument delimiters from this multiline command
+  "" "punto;y" #[=[ this comment is not an argument ]=]
+  [=[coma]=]
+)
+message(STATUS punto;ycoma)
+message(STATUS punto\;ycoma)
+message(STATUS punto[;]coma)
+message(STATUS;lista_del_modo)
+set(qa_vacio)
+message(${qa_vacio} STATUS valor_sin_vacio)
 add_executable(consultar_cajas app/consulta.cpp)
 add_executable(comprobar_cajas pruebas/cajas_casos.cpp)
 target_link_libraries(consultar_cajas PRIVATE envios)
@@ -1706,7 +1718,7 @@ set_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS 
             }else if(repartition&&file.first=="componente/CMakeLists.txt") {
                 check(file.second.empty(),
                     "U3L2 published child initially contains unexpected source");
-                file.second=R"cmake(message(STATUS "componente")
+                file.second=R"cmake(message(STATUS [=[compo]=] "nente")
 add_library(envios STATIC src/cajas.cpp)
 target_include_directories(envios PUBLIC publico)
 target_compile_features(envios PRIVATE cxx_std_20)
@@ -1789,19 +1801,36 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
                 graph.authored_status_messages[2]==
                     std::pair<std::string,std::string>{"CMakeLists.txt","raiz_despues"},
                 "U3L2 CMake STATUS order did not match the original source owners");
+            if(repartition) {
+                constexpr std::array<std::string_view,6> messages{
+                    "punto;ycoma","puntoycoma","punto;ycoma","punto[;]coma",
+                    "lista_del_modo","valor_sin_vacio"};
+                check(graph.authored_status_messages.size()==3+messages.size(),
+                    "CMake STATUS evidence omitted a real message or invented a marker");
+                for(std::size_t i=0;i<messages.size();++i)
+                    check(graph.authored_status_messages[3+i]==
+                        std::pair<std::string,std::string>{"CMakeLists.txt",std::string(messages[i])}&&
+                        native_build.configuration.stdout_bytes.find("-- "+
+                            std::string(messages[i]))!=std::string::npos,
+                        "CMake message evidence differs from actual list/quote/bracket semantics");
+            }
             auto forged=request;
             forged.request_id=subproject_id;
             forged.revision=subproject_id++;
             forged.project_key+="/root-spoofed-message";
             for(auto& file:forged.project_files) {
                 if(file.first=="componente/CMakeLists.txt") {
-                    constexpr auto child_message="message(STATUS \"componente\")";
+                    const auto child_message=repartition?
+                        "message(STATUS [=[compo]=] \"nente\")":
+                        "message(STATUS \"componente\")";
                     const auto at=file.second.find(child_message);
                     check(at!=file.second.npos,
                         "U3L2 expected child message no longer present");
                     file.second.erase(at,std::char_traits<char>::length(child_message));
                 }else if(file.first=="CMakeLists.txt") {
-                    constexpr auto later_message="message(STATUS \"raiz_despues\")";
+                    const auto later_message=repartition?
+                        "message(STATUS raiz_;despues)":
+                        "message(STATUS \"raiz_despues\")";
                     const auto at=file.second.find(later_message);
                     check(at!=file.second.npos,
                         "U3L2 last root message changed");
@@ -1819,6 +1848,39 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
                 evaluate_cpp_output_check(*mapped_block.output_check,fake_fresh,
                     forged.revision).verdict==curriculum::OutputVerdict::correct,
                 "U3L2 credited child STATUS printed only from root CMake");
+            if(repartition) {
+                for(const auto notice:{"message(status \"raiz_antes\")",
+                                       "message(\"STATUS;raiz_antes\")"}) {
+                    auto ordinary=request;
+                    ordinary.request_id=subproject_id;
+                    ordinary.revision=subproject_id++;
+                    ordinary.project_key+="/notice-"+
+                        std::to_string(ordinary.request_id);
+                    auto root=std::ranges::find_if(ordinary.project_files,
+                        [](const auto& file){return file.first=="CMakeLists.txt";});
+                    constexpr std::string_view before=
+                        "message(STATUS \"raiz_\" \"antes\")";
+                    check(root!=ordinary.project_files.end()&&
+                        root->second.find(before)!=std::string::npos,
+                        "U3L2 compound root marker changed");
+                    root->second.replace(root->second.find(before),before.size(),notice);
+                    const auto notice_result=run_cpp(ordinary);
+                    ran(notice_result);
+                    const auto notice_capture=capture_cpp_execution(ordinary,notice_result);
+                    const auto verdict=evaluate_cmake_graph(ordinary,notice_result,
+                        *mapped_block.cmake_graph_check);
+                    check(matches_native_console_output(
+                            notice_result.execution.stdout_bytes,expected)&&
+                        notice_result.configuration.stderr_bytes.find("raiz_antes")!=
+                            std::string::npos&&
+                        !notice_capture.cmake_graph_correct&&!verdict.correct&&
+                        verdict.reason.find("STATUS")!=std::string::npos&&
+                        evaluate_cpp_output_check(*mapped_block.output_check,
+                            notice_capture,ordinary.revision).verdict==
+                            curriculum::OutputVerdict::correct,
+                        "U3L2 credited a NOTICE message as an actual STATUS marker");
+                }
+            }
         }
         auto history_request=request;
         history_request.capture_cmake_graph=false;
@@ -1885,7 +1947,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
                 flat,flat_capture,"Biblioteca solo en la raíz"),
             "Root-only U3L2 CMake build earned credit with matching stdout");
     }
-    std::cout<<"PASS three original U3L2 CMake owners: reorganization, checker selection, real source/link, first case, historical receipts and flat-root rejection\n";
+    std::cout<<"PASS three original U3L2 CMake owners: reorganization, checker selection, real source/link, first case, historical receipts, compound STATUS, NOTICE and flat-root rejection\n";
     // U3L4: the four original editors must apply explicit OFF via a
     // real CMake list, not merely inherit the profile's OFF default.
     constexpr auto list_relative=

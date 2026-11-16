@@ -643,7 +643,143 @@ void verify_genuine_u3_first_prerequisites(HWND host,const std::filesystem::path
 
 
 
-void verify_real_u3_pages_six_to_history_gate(HWND view,const curriculum::Lesson& lesson) {
+curriculum::Lesson u3_cmake_structure_qa(const curriculum::Lesson& original) {
+    // Exercise the supported root contract only in this isolated QA model.
+    // The published curriculum, project seeds and stable draft identities stay intact.
+    std::string json=original.raw_json;
+    constexpr auto anchor="  \"stateLayout\": {";
+    const auto at=json.find(anchor);
+    require(at!=std::string::npos&&json.find(anchor,at+1)==std::string::npos&&
+            json.find("\"compilerCmakeGraphChecks\"")==std::string::npos,
+        "The original U3 root declaration changed before structural UI QA");
+    json.insert(at,R"json(  "compilerCmakeGraphChecks":[
+      {"activity":"block_0003_0004","project":"EnviosComprobables",
+       "minimumCmakeVersion":"3.20",
+       "sourceIntegrity":{"preserveNonCmake":true},
+       "configureMessageOrder":[
+         {"path":"CMakeLists.txt","text":"raiz_antes"},
+         {"path":"componente/CMakeLists.txt","text":"componente"},
+         {"path":"CMakeLists.txt","text":"raiz_despues"}
+       ],
+       "targets":[
+         {"name":"comprobar_cajas","type":"EXECUTABLE",
+          "sources":["pruebas/cajas_casos.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true},
+         {"name":"consultar_cajas","type":"EXECUTABLE",
+          "sources":["app/consulta.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true},
+         {"name":"envios","type":"STATIC_LIBRARY",
+          "sources":["componente/src/cajas.cpp"],
+          "sourceDirectory":"componente",
+          "publicIncludeRoots":["componente/publico"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true}
+       ]},
+      {"activity":"block_0006_0003","project":"EnviosComprobables",
+       "minimumCmakeVersion":"3.20",
+       "sourceIntegrity":{"preserveNonCmake":true},
+       "configureMessageOrder":[
+         {"path":"CMakeLists.txt","text":"raiz_antes"},
+         {"path":"componente/CMakeLists.txt","text":"componente"},
+         {"path":"CMakeLists.txt","text":"raiz_despues"}
+       ],
+       "targets":[
+         {"name":"comprobar_cajas","type":"EXECUTABLE",
+          "sources":["pruebas/cajas_casos.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true},
+         {"name":"consultar_cajas","type":"EXECUTABLE",
+          "sources":["app/consulta.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true},
+         {"name":"envios","type":"STATIC_LIBRARY",
+          "sources":["componente/src/cajas.cpp"],
+          "sourceDirectory":"componente",
+          "publicIncludeRoots":["componente/publico"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true}
+       ]},
+      {"activity":"block_0008_0003","project":"LotesLocales",
+       "minimumCmakeVersion":"3.20",
+       "sourceIntegrity":{"preserveNonCmake":true},
+       "targets":[
+         {"name":"verificar_lotes","type":"EXECUTABLE",
+          "sources":["pruebas/lotes_casos.cpp"],"linksTo":["lotes"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true},
+         {"name":"consultar_lotes","type":"EXECUTABLE",
+          "sources":["programa/consulta.cpp"],"linksTo":["lotes"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true},
+         {"name":"lotes","type":"STATIC_LIBRARY",
+          "sources":["codigo/lotes/motor/cantidad.cpp"],
+          "sourceDirectory":"codigo/lotes",
+          "publicIncludeRoots":["codigo/lotes/publico"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true}
+       ]}
+    ],
+)json");
+    const auto mapped=windows::parse_lesson_json(json,"es");
+    require(mapped.id==original.id&&mapped.pages.size()==original.pages.size()&&
+            mapped.state_layout.lineage==original.state_layout.lineage&&
+            mapped.state_layout.signatures==original.state_layout.signatures,
+        "Adding the QA CMake rubric changed the original lesson or state layout");
+    for(const auto [page,block]:{std::pair{3U,4U},std::pair{6U,3U},std::pair{8U,3U}}){
+        const auto& previous=original.pages.at(page).blocks.at(block);
+        const auto& owner=mapped.pages.at(page).blocks.at(block);
+        require(!previous.cmake_graph_check&&owner.cmake_graph_check&&
+                owner.raw_json==previous.raw_json&&owner.project_files==previous.project_files&&
+                owner.stable_id==previous.stable_id&&
+                curriculum::exercise_key(mapped,owner)==curriculum::exercise_key(original,previous)&&
+                curriculum::draft_key("programming",mapped,owner)==
+                    curriculum::draft_key("programming",original,previous),
+            "The QA structural contract replaced an original U3 source, activity or draft");
+    }
+    return mapped;
+}
+
+std::string u3_flat_cmake_root(std::string root,bool boxes) {
+    const std::string child_call=boxes?"add_subdirectory(componente)":"add_subdirectory(codigo/lotes)";
+    const auto at=root.find(child_call);
+    require(at!=std::string::npos&&root.find(child_call,at+1)==std::string::npos,
+        "The original U3 reference no longer declares its expected child");
+    // Identical source, targets and public interfaces; even the STATUS text
+    // appears in the expected order. Its library/message origin is still wrong.
+    root.replace(at,child_call.size(),boxes?
+        "message(STATUS \"componente\")\n"
+        "add_library(envios STATIC componente/src/cajas.cpp)\n"
+        "target_include_directories(envios PUBLIC componente/publico)\n"
+        "target_compile_features(envios PRIVATE cxx_std_20)\n"
+        "set_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)":
+        "add_library(lotes STATIC codigo/lotes/motor/cantidad.cpp)\n"
+        "target_include_directories(lotes PUBLIC codigo/lotes/publico)\n"
+        "target_compile_features(lotes PRIVATE cxx_std_20)\n"
+        "set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)");
+    return root;
+}
+
+void verify_u3_flat_cmake_rejected(HWND view,const curriculum::Lesson& lesson,
+        const curriculum::Block& owner,int first,std::size_t next_page) {
+    const auto run=child(view,first+11);
+    require(owner.cmake_graph_check&&owner.output_check&&run&&IsWindowEnabled(run)&&
+            windows::compiler_puzzle_case_count(read_lesson_state(view),lesson,owner)==0,
+        "The flat-project negative case inherited a prior result");
+    click(view,first+11);
+    await([&]{return IsWindowEnabled(run);},"The flat U3 project did not finish its real checked run");
+    const auto data=read_lesson_state(view);
+    require(edit_text(child(view,first+14))==owner.output_check->cases.front().outputs.front()&&
+            edit_text(child(view,first+34))=="Ejecución terminada (código 0)."&&
+            edit_text(child(view,first+4)).find("La estructura CMake")!=std::string::npos&&
+            windows::compiler_puzzle_case_count(data,lesson,owner)==0&&
+            !windows::compiler_puzzle_completed(data,lesson,owner)&&
+            !navigate_lesson_view(view,next_page),
+        "A root-only CMake project earned UI credit or failed to expose its real correct stdout");
+}
+
+void verify_real_u3_pages_six_to_history_gate(HWND view,const curriculum::Lesson& lesson,bool structure=false) {
     require(lesson_page_state(view).index==5&&lesson.pages.size()==13,
         "U3 later-page QA did not enter from the original page six");
     const auto answer=[&](std::size_t p,std::size_t b){
@@ -693,11 +829,18 @@ void verify_real_u3_pages_six_to_history_gate(HWND view,const curriculum::Lesson
         "The seven-page CMake repair is no longer the published editor");
     const auto project7=child(view,1305),source7=child(view,1310),run7=child(view,1311),config7=child(view,1306);
     require(project7&&source7&&run7&&config7,"The actual page-seven project controls are absent");
+    if(structure){
+        click(project7,1000);edit(source7,u3_flat_cmake_root(case7.project_files[0].second,true));
+        verify_u3_flat_cmake_rejected(view,lesson,case7,1300,7);
+        click(project7,1000);edit(source7,case7.project_files[0].second);
+    }
     // The initial CMake child uses nonexistent source/include roots.
-    phase(config7,405,"U3 initial invalid CMake generation did not terminate");
-    require(!IsWindowEnabled(child(config7,406))&&
-            !windows::compiler_puzzle_completed(read_lesson_state(view),lesson,case7),
-        "The original nonexistent CMake source incorrectly configured or granted progress");
+    if(!structure){
+        phase(config7,405,"U3 initial invalid CMake generation did not terminate");
+        require(!IsWindowEnabled(child(config7,406))&&
+                !windows::compiler_puzzle_completed(read_lesson_state(view),lesson,case7),
+            "The original nonexistent CMake source incorrectly configured or granted progress");
+    }
     click(project7,1001);
     auto draft=edit_text(source7);
     const std::string wrong_source="componente/src/cajas.cpp";
@@ -706,12 +849,14 @@ void verify_real_u3_pages_six_to_history_gate(HWND view,const curriculum::Lesson
         "The reviewed broken CMake source path is not unique");
     draft.replace(pos,wrong_source.size(),"src/cajas.cpp");
     edit(source7,draft);
-    phase(config7,405,"U3 source-path-only correction did not configure");
-    require(IsWindowEnabled(child(config7,406)),
-        "Fixing the CMake source path did not unlock the compilation phase");
-    phase(config7,406,"The expected U3 missing-public-header build did not finish");
-    require(!windows::compiler_puzzle_completed(read_lesson_state(view),lesson,case7),
-        "The missing-header build credited the U3 CMake objective");
+    if(!structure){
+        phase(config7,405,"U3 source-path-only correction did not configure");
+        require(IsWindowEnabled(child(config7,406)),
+            "Fixing the CMake source path did not unlock the compilation phase");
+        phase(config7,406,"The expected U3 missing-public-header build did not finish");
+        require(!windows::compiler_puzzle_completed(read_lesson_state(view),lesson,case7),
+            "The missing-header build credited the U3 CMake objective");
+    }
     const std::string wrong_include="componente/publico";
     const auto inc=draft.find(wrong_include);
     require(inc!=std::string::npos&&draft.find(wrong_include,inc+1)==std::string::npos,
@@ -725,9 +870,11 @@ void verify_real_u3_pages_six_to_history_gate(HWND view,const curriculum::Lesson
     execution(run7,"The real page-seven checker did not execute");
     proof(case7,1,1314,case7.output_check->cases[0].outputs[0]);
     require(!navigate_lesson_view(view,7),"The page-seven checker bypassed its unanswered same-page question");
-    set_edit_text(child(config7,400),"consultar_cajas");pump();
-    execution(run7,"The real page-seven client did not execute");
-    proof(case7,2,1314,case7.output_check->cases[1].outputs[0]);
+    if(!structure){
+        set_edit_text(child(config7,400),"consultar_cajas");pump();
+        execution(run7,"The real page-seven client did not execute");
+        proof(case7,2,1314,case7.output_check->cases[1].outputs[0]);
+    }
     require(navigate_lesson_view(view,5)&&navigate_lesson_view(view,6),
         "Page-seven reentry lost verified executions");
     answer(6,4);
@@ -745,6 +892,10 @@ void verify_real_u3_pages_six_to_history_gate(HWND view,const curriculum::Lesson
         "The nested lotes project or its published reference descriptions changed");
     const auto project9=child(view,1305),source9=child(view,1310),run9=child(view,1311),config9=child(view,1306);
     require(project9&&source9&&run9&&config9,"The original nested lotes editor is missing");
+    if(structure){
+        click(project9,1000);edit(source9,u3_flat_cmake_root(next.blocks[4].code,false));
+        verify_u3_flat_cmake_rejected(view,lesson,lotes,1300,9);
+    }
     // Only CMake descriptions are authored; the library and tests remain the
     // actual published original C++ files.
     click(project9,1000);edit(source9,next.blocks[4].code);
@@ -760,9 +911,11 @@ void verify_real_u3_pages_six_to_history_gate(HWND view,const curriculum::Lesson
     execution(run9,"The nested lotes checker did not execute");
     proof(lotes,1,1314,lotes.output_check->cases[0].outputs[0]);
     require(!navigate_lesson_view(view,9),"The lotes checker bypassed its unanswered same-page question");
-    set_edit_text(child(config9,400),"consultar_lotes");pump();
-    execution(run9,"The nested lotes client did not execute");
-    proof(lotes,2,1314,lotes.output_check->cases[1].outputs[0]);
+    if(!structure){
+        set_edit_text(child(config9,400),"consultar_lotes");pump();
+        execution(run9,"The nested lotes client did not execute");
+        proof(lotes,2,1314,lotes.output_check->cases[1].outputs[0]);
+    }
     require(navigate_lesson_view(view,7)&&navigate_lesson_view(view,8),
         "Page-nine reentry lost the genuine CMake cases");
     answer(8,4);
@@ -894,11 +1047,12 @@ void verify_real_u3_history_completion(HWND host,HWND view,const curriculum::Les
     }
 }
 
-void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path& authored_lesson,bool include_repair=false,bool reach_history=false,bool finish_original=false) {
+void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path& authored_lesson,bool include_repair=false,bool reach_history=false,bool finish_original=false,bool structure=false) {
     // A real student path from page one: five checked questions followed by
     // edits in BOTH original CMakeLists and two fresh compiled target runs.
     // The page-four project must not be substituted by a detached QA fixture.
-    const auto published=windows::load_lesson(authored_lesson);
+    const auto original=windows::load_lesson(authored_lesson);
+    const auto published=structure?u3_cmake_structure_qa(original):original;
     require(published.pages.size()==13&&published.pages[3].blocks.size()==6,
         "The published U3 reader lost its original CMake page");
     const auto& project_block=published.pages[3].blocks[4];
@@ -965,6 +1119,11 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
         require(project_block.project_files[0].second!=root &&
                 project_block.project_files[1].second.empty()&&!child_source.empty(),
             "The CMake lesson lost its initial flat project or reviewed child");
+        if(structure){
+            click(project,1000);edit(u3_flat_cmake_root(root,true));
+            set_edit_text(child(config,400),"comprobar_cajas");pump();
+            verify_u3_flat_cmake_rejected(view,published,project_block,1400,4);
+        }
         click(project,1000);edit(root);
         click(project,1001);edit(child_source);
         for(int i=2;i<6;++i){
@@ -997,26 +1156,28 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
             "The first real CMake target failed to unlock progress with one verified case");
         require(!navigate_lesson_view(view,4),
             "The verified checker incorrectly skipped the unanswered same-page question");
-        set_edit_text(target,"consultar_cajas");pump();
-        click(view,run_id);
-        await([&]{return IsWindowEnabled(run);},
-            "The real U3 client did not finish its checked CMake run");
-        state=read_lesson_state(view);
-        require(windows::compiler_puzzle_case_count(state,published,project_block)==2&&
-                windows::compiler_puzzle_completed(state,published,project_block)&&
-                edit_text(child(view,1414))==project_block.output_check->cases[1].outputs[0],
-            "The optional second CMake target failed to retain its own verified result");
+        if(!structure){
+            set_edit_text(target,"consultar_cajas");pump();
+            click(view,run_id);
+            await([&]{return IsWindowEnabled(run);},
+                "The real U3 client did not finish its checked CMake run");
+            state=read_lesson_state(view);
+            require(windows::compiler_puzzle_case_count(state,published,project_block)==2&&
+                    windows::compiler_puzzle_completed(state,published,project_block)&&
+                    edit_text(child(view,1414))==project_block.output_check->cases[1].outputs[0],
+                "The optional second CMake target failed to retain its own verified result");
+        }
         // Reopen this exact original page to make any same-page dependent
         // multiple-choice control visible before answering the next task.
         require(navigate_lesson_view(view,2)&&navigate_lesson_view(view,3),
-            "Page-four reentry failed after both target executions");
+            "Page-four reentry failed after the checked target execution");
         const auto& question=published.pages[3].blocks[5];
         require(question.type==curriculum::BlockType::multiple_choice&&question.correct_index,
             "The published CMake page lost its after-laboratory question");
         click(view,1000+5*100+20+static_cast<int>(*question.correct_index)*2);
         click(view,1000+5*100+3);
         require(navigate_lesson_view(view,4)&&lesson_page_state(view).index==4,
-            "Two CMake executions and the next real question did not unlock page five");
+            "The checked CMake execution and next real question did not unlock page five");
         require(!navigate_lesson_view(view,10)&&
             !windows::compiler_puzzle_completed(read_lesson_state(view),published,published.pages[10].blocks[3]),
             "The first CMake task falsely credited or unlocked U3 History");
@@ -1110,7 +1271,7 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
         if(reach_history){
             require(include_repair&&last_page==5,
                 "Later U3 gates require the two original checked CMake projects");
-            verify_real_u3_pages_six_to_history_gate(view,published);
+            verify_real_u3_pages_six_to_history_gate(view,published,structure);
             last_page=10;
             if(finish_original){
                 verify_real_u3_history_completion(host,view,published);
@@ -1118,6 +1279,7 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
             }
         }
         require(flush_lesson_view(view),"The CMake QA profile could not save its real progress");
+        const auto persisted=read_lesson_state(view);
         cleanup();
         view=create_lesson_view(host,environment,published);
         require(view!=nullptr,"Original U3 could not reopen after the two CMake targets");
@@ -1135,6 +1297,38 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
                  state::all_pages_reached(read_lesson_state(view),published)):
                 (reach_history?!navigate_lesson_view(view,11):!navigate_lesson_view(view,10))),
             "Reopening lost an authentic CMake or History achievement, or bypassed a later page");
+        if(structure){
+            require(reach_history&&!finish_original,
+                "Structural U3 QA must reach, but not complete, the separate History objective");
+            for(const auto [page,block]:{std::pair{3U,4U},std::pair{6U,3U},std::pair{8U,3U}}){
+                const auto& owner=published.pages[page].blocks[block];
+                const auto data=read_lesson_state(view);
+                const auto key=curriculum::draft_key("programming",published,owner);
+                const auto draft=state::string_value(persisted,"cpp_lesson_drafts",key+"/project");
+                require(!draft.empty()&&state::string_value(data,"cpp_lesson_drafts",key+"/project")==draft&&
+                        windows::compiler_puzzle_case_count(data,published,owner)==1&&
+                        windows::compiler_puzzle_completed(data,published,owner),
+                    "Reopening lost the exact structural draft or required the optional client case");
+                require(navigate_lesson_view(view,page),"The completed structural owner could not reopen");
+                const auto first=1000+static_cast<int>(block)*100;
+                const auto project=child(view,first+5),source=child(view,first+10);
+                require(project&&source&&edit_text(child(view,first+4)).starts_with("✓ Correcto"),
+                    "The reopened original editor lost its structural success feedback");
+                for(int file=0;file<6;++file){
+                    click(project,1000+file);
+                    const auto& expected=file==0?
+                        (page==8?published.pages[9].blocks[4].code:next_project.project_files[0].second):
+                        file==1?(page==8?published.pages[9].blocks[6].code:next_project.project_files[1].second):
+                        owner.project_files[static_cast<std::size_t>(file)].second;
+                    require(edit_text(source)==expected,
+                        "The reopened structural project lost a CMake repair or altered original C++");
+                }
+                require(navigate_lesson_view(view,page+1),
+                    "The first structural case did not preserve access without the optional client");
+            }
+            require(navigate_lesson_view(view,last_page)&&!navigate_lesson_view(view,last_page+1),
+                "Rechecking structural drafts falsely completed the independent History gate");
+        }
         cleanup();
         require(environment.paths.root.parent_path().filename()==L"qa"&&
                 environment.paths.root.parent_path().parent_path().filename()==L"Codex",
@@ -1329,9 +1523,10 @@ int main(int argc,char** argv){
     const bool u3_first_cmake_repair=argc==4&&std::string_view(argv[2])=="--u3-first-cmake-repair";
     const bool u3_real_history_gate=argc==4&&std::string_view(argv[2])=="--u3-real-history-gate";
     const bool u3_entire_original=argc==4&&std::string_view(argv[2])=="--u3-entire-original";
+    const bool u3_cmake_structure=argc==4&&std::string_view(argv[2])=="--u3-cmake-structure";
     const bool other_cases=argc==3&&std::string_view(argv[2])=="--other-cases";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_gates||u3_declaration||u3_prerequisites||u3_first_cmake||u3_first_cmake_repair||u3_real_history_gate||u3_entire_original||u2_exact_eof||other_cases,
+    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_gates||u3_declaration||u3_prerequisites||u3_first_cmake||u3_first_cmake_repair||u3_real_history_gate||u3_entire_original||u3_cmake_structure||u2_exact_eof||other_cases,
         "Provide isolated QA output, optionally --internal-dialogs, --other-cases, --u3-selective or --u3-gates <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
@@ -1459,6 +1654,7 @@ int main(int argc,char** argv){
         else if(u3_first_cmake_repair)verify_genuine_u3_first_cmake_project(host,std::filesystem::path(argv[3]),true);
         else if(u3_real_history_gate)verify_genuine_u3_first_cmake_project(host,std::filesystem::path(argv[3]),true,true);
         else if(u3_entire_original)verify_genuine_u3_first_cmake_project(host,std::filesystem::path(argv[3]),true,true,true);
+        else if(u3_cmake_structure)verify_genuine_u3_first_cmake_project(host,std::filesystem::path(argv[3]),true,true,false,true);
         else if(u3_selective)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]));
         else if(u3_selective_declared)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]),true);
         else if(!internal_only)integrated_lesson(host);
@@ -1468,6 +1664,7 @@ int main(int argc,char** argv){
         else if(u3_selective_declared)std::cout<<"PASS declared Win32 U3 History: original editor, record, failure, compare, recover, success and reopen\n";
         else if(u3_selective)std::cout<<"PASS actual Win32 U3 owner focused lesson: no stdout shortcut; record, build, failed checked run, two UI diffs, selective file restore, rebuild, completed checked run, persistent reopen and reset\n";
         else if(u3_entire_original)std::cout<<"PASS all original U3 thirteen pages: authentic CMake phases, History actions, fresh execution seals, final quizzes and persisted reopening\n";
+        else if(u3_cmake_structure)std::cout<<"PASS Win32 U3 structural CMake: three original owners, matching-stdout flat projects rejected, real child repairs accepted, first case sufficient and exact drafts retained after reopen\n";
         else if(u3_real_history_gate)std::cout<<"PASS original U3 pages 1 through 11: repaired source/include CMake, two lotes targets and History still gated\n";
         else if(u3_first_cmake_repair)std::cout<<"PASS original U3 pages one through six: two real CMake exercises, checked order and answers, rejected faulty run, repaired source and reopening\n";
         else if(u3_first_cmake)std::cout<<"PASS original U3 first CMake project: five true questions, distributed CMake, two target runs, page-five access and reopening\n";

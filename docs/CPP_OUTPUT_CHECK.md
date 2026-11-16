@@ -2144,6 +2144,18 @@ se rechaza, incluso si su biblioteca y los resultados son correctos.
 Se permiten otros mensajes intermedios, pero no omitir ni reordenar los
 hitos declarados.
 
+Los mensajes conservan la semántica de `message` de CMake: los argumentos de
+texto se concatenan sin separador, por lo que
+`message(STATUS "raiz_" "antes")` equivale a `message(STATUS "raiz_antes")`.
+Los puntos y coma dentro de un argumento entre comillas forman parte del
+texto. El modo debe ser exactamente `STATUS`; `message(status "raiz_antes")`
+es un mensaje ordinario y no acredita ese hito de configuración.
+Cuando la traza contiene argumentos vacíos o puntos y coma, se recuperan los
+delimitadores de la llamada `message(...)` en su archivo y línea originales.
+Una llamada indirecta ambigua que no permite recuperar esos límites no concede
+crédito. La referencia de la concatenación y los modos es la documentación
+oficial de [`message`](https://cmake.org/cmake/help/latest/command/message.html).
+
 ### Lista de objetivos aplicada a las propiedades CMake
 
 Los ejercicios U3L4 pueden incorporar un contrato en la raíz de la lección:

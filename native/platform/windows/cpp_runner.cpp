@@ -1,5 +1,6 @@
 #include "platform/windows/cpp_runner.hpp"
 #include "core/lesson.hpp"
+#include "core/cmake_message_trace.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 #include "native_build_config.hpp"
@@ -975,6 +976,7 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
             if(!event.HasKey(L"file")||!event.HasKey(L"args"))return;
             const auto origin=project_path(json_text(event,L"file")).lexically_normal();
             std::string authored_path;
+            std::string_view authored_text;
             for(const auto& file:request.project_files) {
                 if(!authored_cmake_path(file.first))continue;
                 const auto expected=(source/project_path(file.first))
@@ -984,6 +986,7 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                 if(!cmp(expected,observed_path)&&
                    !cmp(observed_path,expected)) {
                     authored_path=file.first;
+                    authored_text=file.second;
                     break;
                 }
             }
@@ -992,8 +995,8 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
             std::vector<std::string> args,property_args;
             for(const auto& value:event.GetNamedArray(L"args")) {
                 const auto expanded=winrt::to_string(value.GetString());
-                // Property values may themselves be semicolon-separated
-                // feature lists. Keep their original key/value boundaries.
+                // Keep original argument boundaries for property values and
+                // message text, including semicolons inside quoted strings.
                 property_args.push_back(expanded);
                 std::size_t begin=0;
                 for(;;) {
@@ -1054,9 +1057,16 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                 observed_lists.push_back(
                     {current->second.values,current->second.appended});
             };
-            if(equals(command,"message")&&args.size()==2&&
-               equals(args[0],"STATUS")) {
-                observed_messages.emplace_back(authored_path,args[1]);
+            if(equals(command,"message")) {
+                if(!event.HasKey(L"line"))continue;
+                const auto number=event.GetNamedNumber(L"line");
+                if(!std::isfinite(number)||number<1||
+                   std::trunc(number)!=number||number>1000000)continue;
+                // The trace has expanded values but not list delimiters.
+                // Resolve ambiguous arguments from this exact authored call.
+                if(auto text=curriculum::cmake_status_message_from_trace(
+                        authored_text,static_cast<std::size_t>(number),property_args))
+                    observed_messages.emplace_back(authored_path,std::move(*text));
             }else if(equals(command,"option")&&args.size()>=2) {
                 observed_options.emplace_back(args[0],
                     args.size()==2||off(args[2])?"OFF":"ON");
