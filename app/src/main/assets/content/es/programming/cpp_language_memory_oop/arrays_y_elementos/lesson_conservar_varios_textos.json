@@ -1,0 +1,1948 @@
+{
+  "id": "cpp_language_memory_oop__arrays_y_elementos__conservar_varios_textos",
+  "title": "Conservar varios textos sin mezclar sus límites",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una fila para cada texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos guardar varios textos en un array de filas de char. En char nombres[2][6]{\"Sol\", \"Luna\"}; hay dos filas y cada una contiene seis char. El primer literal inicializa la fila cero y el segundo la fila uno. Cada fila conserva su propio texto y su propio terminador NUL (Prata, 2012)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[2][6]{\"Sol\", \"Luna\"};\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1] << \"]:\"\n              << std::strlen(nombres[0]) << ':' << std::strlen(nombres[1]);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "nombres[0] es la fila que contiene Sol y su terminador. nombres[1] contiene Luna y su terminador. Al imprimir cada fila como cadena se muestra su texto hasta el primer NUL, sin mostrar el terminador. std::strlen cuenta los char anteriores a ese primer NUL, por lo que la salida es [Sol]:[Luna]:3:4."
+        },
+        {
+          "type": "paragraph",
+          "text": "En los ejemplos utilizaremos letras sin acentos, cifras, espacios y signos sencillos para contar sus char directamente. La cantidad de filas indica cuántos textos se guardan; los seis char de cada fila incluyen el espacio que necesita el terminador, no seis letras de texto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contar textos, capacidad y longitud por separado"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una fila de seis char caben hasta cinco de texto y después el NUL. Si el texto es más corto, los char que quedan disponibles no se suman a la capacidad de la otra fila. Cada fila tiene su propio límite."
+        },
+        {
+          "type": "math_puzzle",
+          "id": "p3_u2l8_contar_textos_y_char",
+          "schemaVersion": 1,
+          "prompt": "La tabla representa char nombres[2][6]{\"Sol\", \"\"};. Las etiquetas \\0 representan char NUL, no dos letras. Completa las cinco cantidades.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Fila",
+                "[0]",
+                "[1]",
+                "[2]",
+                "[3]",
+                "[4]",
+                "[5]"
+              ],
+              "rows": [
+                [
+                  "0",
+                  "S",
+                  "o",
+                  "l",
+                  "\\0",
+                  "\\0",
+                  "\\0"
+                ],
+                [
+                  "1",
+                  "\\0",
+                  "\\0",
+                  "\\0",
+                  "\\0",
+                  "\\0",
+                  "\\0"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Cantidad de textos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Capacidad de cada fila en char",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Máximo de char de texto por fila",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Longitud del texto de la fila 0",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Longitud del texto de la fila 1",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Hay dos textos y cada fila dispone de seis char. Cinco pueden ser texto y uno cierra la cadena. Sol tiene longitud tres; el texto de la otra fila tiene longitud cero porque su primer char es NUL.",
+            "incorrect": "No sumes la longitud de los textos para decidir la capacidad. Cuenta las dos filas, sus seis posiciones y los char anteriores al primer NUL de cada fila."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un terminador anterior puede acortar el texto visible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribir NUL en una posición anterior hace que la cadena termine allí. No borra automáticamente los demás char de la fila. Los char posteriores al primer NUL siguen almacenados, pero ya no forman parte del texto que imprime esta operación de salida (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l8_acortar_una_fila",
+          "language": "cpp",
+          "question": "Predice el texto de ambas filas, la nueva longitud y la comparación del char que quedó después del terminador.",
+          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[2][6]{\"Sol\", \"Luna\"};\n    nombres[0][1] = '\\0';\n    std::cout << '[' << nombres[0] << \"]:\" << std::strlen(nombres[0]) << ':'\n              << (nombres[0][2] == 'l') << \":[\" << nombres[1] << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[S]:1:1:[Luna]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La fila cero contiene S, NUL, l y otros ceros. La salida se detiene después de S y strlen cuenta uno. La l sigue en el índice 2, por lo que la comparación es true y se muestra como 1. La otra fila conserva Luna."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para representar una cadena vacía basta con tener NUL en la primera posición. Esa longitud cero no significa que hayan desaparecido la fila ni sus seis posiciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La inicialización debe dejar sitio para cada NUL"
+        },
+        {
+          "type": "paragraph",
+          "text": "Norte tiene cinco char de texto; al inicializar una fila de seis char también cabe el NUL que aporta el literal. Un literal de seis char de texto necesitaría siete posiciones y no cabe en esa fila. La declaración debe ser válida por fila, aunque otra fila tenga espacio sin usar (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l8_filas_no_inicializadas_explicitamente",
+          "language": "cpp",
+          "question": "El array declara tres filas y sólo proporciona dos literales. Predice la cantidad de filas, la capacidad de cada una y las dos longitudes.",
+          "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[3][6]{\"A\", \"BC\"};\n    std::cout << sizeof nombres / sizeof nombres[0] << ':'\n              << sizeof nombres[0] / sizeof nombres[0][0] << ':'\n              << std::strlen(nombres[1]) << ':' << std::strlen(nombres[2]);\n    return 0;\n}\n",
+          "answers": [
+            "3:6:2:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Hay tres filas de seis char. BC tiene longitud dos. Los char de la tercera fila se inicializan en cero, así que representa una cadena vacía."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l8_no_prestar_capacidad",
+          "question": "¿Por qué char nombres[2][6]{\"abcdef\", \"\"}; no es una declaración válida de C++23?",
+          "options": [
+            "Porque no se pueden mezclar un texto y un texto vacío.",
+            "Porque la primera fila necesita siete posiciones, incluido su NUL, y sólo dispone de seis.",
+            "Porque el array completo sólo admite seis char entre las dos filas."
+          ],
+          "correctIndex": 1,
+          "explanation": "La primera fila necesitaría los seis char de abcdef y otro para cerrar la cadena. No puede utilizar una posición de la segunda fila. Un texto vacío sí es válido y el conjunto completo dispone de doce char."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos extracciones no garantizan haber leído dos palabras completas"
+        },
+        {
+          "type": "paragraph",
+          "text": "En C++23, >> aplicado directamente a una de estas filas nativas de seis char limita esa extracción a cinco char de texto y escribe el NUL. Esa protección del array no implica que se haya recibido una palabra completa: un prefijo puede llenar la fila y dejar caracteres de la misma palabra para la extracción siguiente (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l8_palabra_partida",
+          "language": "cpp",
+          "question": "La primera palabra tiene seis letras. Predice las dos filas y la palabra que se lee después en el string.",
+          "code": "#include <sstream>\n#include <string>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    std::istringstream entrada{\"abcdef Z\\n\"};\n    char nombres[2][6]{};\n    entrada >> nombres[0] >> nombres[1];\n    std::string restante;\n    entrada >> restante;\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1]\n              << \"]:[\" << restante << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[abcde]:[f]:[Z]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera extracción guarda abcde y deja f pendiente. La segunda recibe esa f, que aún pertenece a la misma palabra. Sólo la extracción en restante llega a Z. No se escriben char fuera de las filas, pero no se obtuvieron las dos palabras que podría sugerir la entrada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer una línea en una fila de char"
+        },
+        {
+          "type": "paragraph",
+          "text": "entrada.getline(nombres[fila], 6) conserva espacios de la línea y utiliza el límite de esa fila: hasta cinco char de texto más el NUL. Si encuentra el salto, lo extrae sin guardarlo en el texto. Hay que comprobar cada lectura; si una falla, el estado de error afecta a las siguientes hasta tratarlo (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l8_lineas_en_filas",
+          "language": "cpp",
+          "question": "En este ejemplo ambas líneas caben; la segunda está vacía y tiene su salto. Predice los textos, la comprobación conjunta y la línea restante.",
+          "code": "#include <sstream>\n#include <string>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    std::istringstream entrada{\"A B\\n\\nfin\\n\"};\n    char nombres[2][6]{};\n    entrada.getline(nombres[0], 6);\n    const bool primera = !entrada.fail();\n    entrada.getline(nombres[1], 6);\n    const bool segunda = !entrada.fail();\n    std::string restante;\n    std::getline(entrada, restante);\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1] << \"]:\"\n              << (primera && segunda) << \":[\" << restante << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[A B]:[]:1:[fin]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera fila conserva A, el espacio y B. El segundo getline consume el salto de una línea vacía y deja una cadena vacía válida. Las dos lecturas tienen éxito; la línea siguiente sigue siendo fin."
+        },
+        {
+          "type": "paragraph",
+          "text": "El segundo argumento corresponde a la capacidad de una fila, no a los doce char del conjunto. Dar un límite que permita escribir más allá de esa fila no la hace más grande."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar una fila nativa conserva también su terminador"
+        },
+        {
+          "type": "paragraph",
+          "text": "nombres[0] y nombres[1] son arrays nativos de char, de modo que no podemos asignar una fila completa con nombres[0] = nombres[1];. Aquí podemos copiar sus seis char con un recorrido. La fila de origen ya contiene un NUL válido, por lo que esa copia conserva también el terminador (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l8_copiar_fila_texto",
+          "language": "cpp",
+          "question": "El programa copia la fila uno en la fila cero y después cambia una letra de la copia. Predice ambos textos y la longitud.",
+          "code": "#include <cstddef>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    char nombres[2][6]{\"Norte\", \"Sur\"};\n    for (std::size_t columna = 0; columna < 6; ++columna) {\n        nombres[0][columna] = nombres[1][columna];\n    }\n    nombres[0][0] = 'L';\n    std::cout << '[' << nombres[0] << \"]:[\" << nombres[1] << \"]:\"\n              << std::strlen(nombres[0]);\n    return 0;\n}\n",
+          "answers": [
+            "[Lur]:[Sur]:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se copian S, u, r, NUL y los dos ceros restantes. Cambiar el primer char de la fila cero a L sólo modifica esa fila. La fila uno conserva Sur y ambas siguen teniendo longitud tres."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Guardar dos objetos std::string en lugar de dos filas de char"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::array<std::string, 2> conserva dos objetos std::string. El 2 fija cuántos objetos hay, no cuántos char puede guardar cada uno. La longitud de cada texto se consulta por separado con nombres[fila].size(). Sus longitudes pueden cambiar mediante las operaciones del string, sin cambiar la cantidad de objetos del array (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia del conjunto copia esos dos string. Podemos asignar otro texto a uno de ellos y cambiar sus char válidos sin modificar el texto del objeto original. Un acceso como copia[1][0] elige primero el string uno y después su primer char; ese segundo acceso exige que el string no esté vacío."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l8_copiar_strings",
+          "language": "cpp",
+          "question": "Predice los cuatro textos después de crear la copia y modificar sus dos objetos.",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::array<std::string, 2> original{\"Sol\", \"Luna\"};\n    auto copia = original;\n    copia[0] = \"Bosque\";\n    copia[1][0] = 'C';\n    std::cout << '[' << original[0] << \"]:[\" << original[1] << \"]:[\"\n              << copia[0] << \"]:[\" << copia[1] << ']';\n    return 0;\n}\n",
+          "answers": [
+            "[Sol]:[Luna]:[Bosque]:[Cuna]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los originales conservan Sol y Luna. La primera cadena de la copia pasa a Bosque, de seis char; la segunda cambia su primera letra y queda Cuna. No existe en este tipo el límite de cinco char propio de nuestras filas nativas de seis."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer líneas en cada string con la otra forma de getline"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para un objeto std::string se llama a std::getline(entrada, nombres[fila]). Esta función recibe el flujo y el string como argumentos; no recibe el número seis ni el array exterior. Conserva los espacios del texto y ajusta la longitud del string al contenido que recibe. El salto se extrae y no forma parte del texto (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l8_lineas_en_strings",
+          "language": "cpp",
+          "question": "Predice la cantidad de objetos, las longitudes de los dos textos y la comprobación de ambas lecturas.",
+          "code": "#include <sstream>\n#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Bosque azul\\n\\n\"};\n    std::array<std::string, 2> nombres{};\n    const bool primera = static_cast<bool>(std::getline(entrada, nombres[0]));\n    const bool segunda = static_cast<bool>(std::getline(entrada, nombres[1]));\n    std::cout << nombres.size() << ':' << nombres[0].size() << ':'\n              << nombres[1].size() << ':' << (primera && segunda);\n    return 0;\n}\n",
+          "answers": [
+            "2:11:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El array conserva dos objetos. Bosque azul tiene once char, incluido el espacio; la segunda línea aporta un texto vacío y su salto. Ambas lecturas tienen éxito."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una última línea no vacía sin salto también puede obtenerse correctamente: getline alcanza el fin después de recibir texto y no necesita marcar fail(). En cambio, llegar al fin antes de recibir ningún char ni un salto no proporciona una línea vacía válida. Esa lectura falla (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un NUL interior de un string tiene un significado distinto al imprimir una fila"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un std::string puede conservar NUL entre sus elementos y size() cuenta también ese char, incluso si es el último elemento. Al copiar sus char a una fila terminada en NUL, el primer NUL interior ya actúa como fin de la cadena al imprimir esa fila. Que todos los char quepan no basta para conservar el mismo texto bajo esa forma de interpretación (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l8_nul_al_convertir",
+          "language": "cpp",
+          "question": "El string tiene tres elementos y la fila dispone de seis posiciones. Predice la longitud del string y el texto que llega a imprimirse entre corchetes.",
+          "code": "#include <string>\n#include <cstddef>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    const std::string texto{'A', '\\0', 'B'};\n    char fila[6]{};\n    for (std::size_t i = 0; i < texto.size(); ++i) {\n        fila[i] = texto[i];\n    }\n    fila[texto.size()] = '\\0';\n    std::cout << texto.size() << \":[\" << fila << ']';\n    return 0;\n}\n",
+          "answers": [
+            "3:[A]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El string contiene A, NUL y B: tres char. La copia incluye esos tres y otro NUL al final, pero imprimir fila se detiene en su primer NUL, el del índice uno. Por eso sólo muestra A."
+        },
+        {
+          "type": "paragraph",
+          "text": "La práctica pedirá textos que no contengan NUL interiores, para que esta conversión conserve todos sus char como texto. Será una condición del formato, no una prohibición general de std::string."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Validar antes de copiar y colocar el terminador después del texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para convertir un string a una fila de seis char, comprobaremos primero que tenga como máximo cinco elementos. El límite del recorrido es size(). Si aparece NUL antes de ese límite, hay que rechazar el texto, no interpretarlo como un final válido que permita aceptar sólo su prefijo. Al detectar ese motivo de rechazo ya se puede terminar la búsqueda; la referencia continúa el recorrido sin cambiar la decisión."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u2l8_validar_nul",
+          "language": "cpp",
+          "question": "El tamaño cabe en una fila, pero el programa comprueba otra condición del formato. Predice el tamaño y el valor lógico final.",
+          "code": "#include <string>\n#include <cstddef>\n#include <iostream>\n\nint main() {\n    const std::string texto{'S', '\\0', 'o', 'l'};\n    bool valido = texto.size() < 6;\n    for (std::size_t i = 0; i < texto.size(); ++i) {\n        if (texto[i] == '\\0') {\n            valido = false;\n        }\n    }\n    std::cout << texto.size() << ':' << valido;\n    return 0;\n}\n",
+          "answers": [
+            "4:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El string tiene cuatro elementos, incluido el NUL. La longitud cabe, pero la comprobación encuentra ese NUL en el índice uno y deja valido en false, que se muestra como 0."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una vez validado, copia los char de las posiciones cero a size() - 1. Escribe después el NUL en la posición size(). Si el texto está vacío, no se copia ningún char de texto y el NUL va en cero. Si tiene cinco char, el NUL va en el índice cinco, que todavía pertenece a la fila."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u2l8_escribir_terminador",
+          "language": "cpp",
+          "question": "El texto ya está validado y longitud contiene su size(). Completa el literal que cierra la cadena después de copiar los char de texto.",
+          "template": "candidatas[fila][longitud] = [];",
+          "answers": [
+            "'\\0'"
+          ],
+          "explanation": "El literal de carácter NUL cierra la cadena en la posición posterior al último char de texto. No debe escribirse la cifra visible cero, que sería otro dato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir dos nombres nuevos y conservar ambos anteriores ante un rechazo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor empieza con dos filas de seis char: Norte y Sur. Ya intenta leer dos líneas completas en propuestas, un std::array de dos string. primeraLeida y segundaLeida indican si se recibió cada línea. Los espacios son datos; el código no utiliza ws para eliminarlos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Acepta el cambio sólo si se leyeron ambas líneas y cada propuesta contiene hasta cinco char de texto y ningún NUL interior. Se admite un texto vacío cuando su línea se ha leído correctamente. También se admite que la segunda línea termine al llegar al fin después de recibir texto, sin un salto final."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba las dos propuestas antes de sustituir ninguna guardada. Si todas las condiciones se cumplen, construye dos filas candidatas con sus terminadores y copia ambos textos a guardadas; después deja aceptado en true. Si falla cualquier condición, conserva íntegros Norte y Sur y deja aceptado en false."
+        },
+        {
+          "type": "paragraph",
+          "text": "Respeta la capacidad de seis char en cada fila. No impongas condiciones a los char que queden después del primer NUL: no forman parte del texto pedido. Puedes organizar los recorridos de otra manera si conservas los dos textos completos y sus terminadores y cumples el rechazo conjunto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa la zona indicada y conserva el informe final. Cada fila se muestra con su índice, el texto entre corchetes y su longitud sin el NUL; después se muestra la aceptación. No imprimas mensajes adicionales."
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Mar acorta el texto Norte. Rio 2 utiliza los cinco char de texto de la otra fila y conserva su espacio. Ambas líneas tienen salto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Mar\nRio 2\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Guardadas\n0:[Mar]:3\n1:[Rio 2]:5\nAceptado: 1\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <cstring>\n#include <iostream>\n#include <string>\n\nint main() {\n    char guardadas[2][6]{\"Norte\", \"Sur\"};\n    std::array<std::string, 2> propuestas{};\n    const bool primeraLeida = static_cast<bool>(std::getline(std::cin, propuestas[0]));\n    const bool segundaLeida = static_cast<bool>(std::getline(std::cin, propuestas[1]));\n    bool aceptado = false;\n\n    if (primeraLeida && segundaLeida) {\n        // Valida ambas propuestas antes de sustituir ninguna fila guardada.\n        // Cada texto debe caber con su NUL final y no contener NUL interiores.\n        // Construye las candidatas y copia ambos textos solo si todo es valido.\n    }\n\n    std::cout << \"Guardadas\\n\";\n    for (std::size_t fila = 0; fila < 2; ++fila) {\n        std::cout << fila << \":[\" << guardadas[fila] << \"]:\"\n                  << std::strlen(guardadas[fila]) << '\\n';\n    }\n    std::cout << \"Aceptado: \" << aceptado << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "Mar\nRio 2\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "Mar\nRio 2\n",
+                "outputs": [
+                  "Guardadas\n0:[Mar]:3\n1:[Rio 2]:5\nAceptado: 1\n"
+                ],
+                "explanation": "Validar ambas lecturas y los dos textos, convertir sin perder char y sustituir ambos nombres sólo al aceptar; ante rechazo conservar Norte y Sur."
+              },
+              {
+                "standardInput": "\n\n",
+                "outputs": [
+                  "Guardadas\n0:[]:0\n1:[]:0\nAceptado: 1\n"
+                ],
+                "explanation": "Validar ambas lecturas y los dos textos, convertir sin perder char y sustituir ambos nombres sólo al aceptar; ante rechazo conservar Norte y Sur."
+              },
+              {
+                "standardInput": "Mar\nabcdef\n",
+                "outputs": [
+                  "Guardadas\n0:[Norte]:5\n1:[Sur]:3\nAceptado: 0\n"
+                ],
+                "explanation": "Validar ambas lecturas y los dos textos, convertir sin perder char y sustituir ambos nombres sólo al aceptar; ante rechazo conservar Norte y Sur."
+              },
+              {
+                "standardInput": "abcdef\nSol\n",
+                "outputs": [
+                  "Guardadas\n0:[Norte]:5\n1:[Sur]:3\nAceptado: 0\n"
+                ],
+                "explanation": "Validar ambas lecturas y los dos textos, convertir sin perder char y sustituir ambos nombres sólo al aceptar; ante rechazo conservar Norte y Sur."
+              },
+              {
+                "standardInput": " Mar \nSur  ",
+                "outputs": [
+                  "Guardadas\n0:[ Mar ]:5\n1:[Sur  ]:5\nAceptado: 1\n"
+                ],
+                "explanation": "Validar ambas lecturas y los dos textos, convertir sin perder char y sustituir ambos nombres sólo al aceptar; ante rechazo conservar Norte y Sur."
+              },
+              {
+                "standardInput": "Mar\n",
+                "outputs": [
+                  "Guardadas\n0:[Norte]:5\n1:[Sur]:3\nAceptado: 0\n"
+                ],
+                "explanation": "Validar ambas lecturas y los dos textos, convertir sin perder char y sustituir ambos nombres sólo al aceptar; ante rechazo conservar Norte y Sur."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo el primer caso correcto es obligatorio para avanzar. Los siguientes son ensayos opcionales e independientes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: textos vacíos y una segunda propuesta demasiado larga"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una línea vacía con salto sí aporta un texto. Una propuesta de seis char no cabe junto a su terminador en una fila de seis."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada contiene exactamente dos saltos: representa dos líneas vacías."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "\n\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Guardadas\n0:[]:0\n1:[]:0\nAceptado: 1\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera propuesta cabe, pero la segunda tiene seis char. No debe publicarse sólo Mar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Mar\nabcdef\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Guardadas\n0:[Norte]:5\n1:[Sur]:3\nAceptado: 0\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: rechazo de la primera propuesta y conservación de espacios"
+        },
+        {
+          "type": "paragraph",
+          "text": "La capacidad se comprueba por texto. Los espacios iniciales y finales cuentan y deben conservarse."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera propuesta tiene seis char, aunque la segunda sí quepa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "abcdef\nSol\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Guardadas\n0:[Norte]:5\n1:[Sur]:3\nAceptado: 0\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera línea tiene un espacio antes y otro después de Mar. La segunda tiene dos espacios después de Sur y termina sin salto. Cada texto contiene cinco char."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": " Mar \nSur  "
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Guardadas\n0:[ Mar ]:5\n1:[Sur  ]:5\nAceptado: 1\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayo opcional: falta la segunda línea"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después del salto que termina Mar ya no hay entrada. Eso no equivale a recibir otra línea vacía; para representarla haría falta su propio salto."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada contiene sólo Mar y un salto; se conserva el par anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Mar\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Guardadas\n0:[Norte]:5\n1:[Sur]:3\nAceptado: 0\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: validar ambos string y publicar sus cadenas completas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <cstring>\n#include <iostream>\n#include <string>\n\nint main() {\n    char guardadas[2][6]{\"Norte\", \"Sur\"};\n    std::array<std::string, 2> propuestas{};\n    const bool primeraLeida = static_cast<bool>(std::getline(std::cin, propuestas[0]));\n    const bool segundaLeida = static_cast<bool>(std::getline(std::cin, propuestas[1]));\n    bool aceptado = false;\n\n    bool validas = primeraLeida && segundaLeida;\n    for (std::size_t fila = 0; fila < propuestas.size(); ++fila) {\n        if (propuestas[fila].size() >= 6) {\n            validas = false;\n        }\n        for (std::size_t i = 0; i < propuestas[fila].size(); ++i) {\n            if (propuestas[fila][i] == '\\0') {\n                validas = false;\n            }\n        }\n    }\n    if (validas) {\n        char candidatas[2][6]{};\n        for (std::size_t fila = 0; fila < propuestas.size(); ++fila) {\n            for (std::size_t i = 0; i < propuestas[fila].size(); ++i) {\n                candidatas[fila][i] = propuestas[fila][i];\n            }\n            candidatas[fila][propuestas[fila].size()] = '\\0';\n        }\n        for (std::size_t fila = 0; fila < 2; ++fila) {\n            for (std::size_t i = 0; i < 6; ++i) {\n                guardadas[fila][i] = candidatas[fila][i];\n            }\n        }\n        aceptado = true;\n    }\n\n    std::cout << \"Guardadas\\n\";\n    for (std::size_t fila = 0; fila < 2; ++fila) {\n        std::cout << fila << \":[\" << guardadas[fila] << \"]:\"\n                  << std::strlen(guardadas[fila]) << '\\n';\n    }\n    std::cout << \"Aceptado: \" << aceptado << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La variable validas reúne el éxito de ambas lecturas. Cada longitud se comprueba antes de copiar a las filas acotadas y cada string se recorre buscando NUL. Un fallo mantiene false; ninguna comprobación posterior vuelve a convertirlo en true."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando las dos propuestas sirven, las candidatas reciben sus char y el NUL en la posición de su longitud. Con Mar, el terminador queda en el índice tres; con Rio 2, queda en el índice cinco. Después se copian las dos filas. La referencia copia también sus posiciones restantes, pero el objetivo no exige valores concretos después del primer NUL."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con Mar y abcdef, la primera propuesta es válida y la segunda no. Como todavía no se había sustituido ninguna guardada, el informe conserva Norte y Sur. Con dos líneas vacías válidas, las dos cadenas nuevas comienzan con NUL y muestran longitud cero."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u2l8_no_publicar_una_sola",
+          "question": "Una variante sustituye guardadas[0] antes de comprobar la segunda propuesta. ¿Por qué incumple el formato con Mar y abcdef?",
+          "options": [
+            "Porque un string no puede contener seis char.",
+            "Porque ya cambió Norte a Mar cuando el rechazo debería conservar ambos nombres anteriores.",
+            "Porque para cambiar dos nombres es obligatorio que tengan la misma longitud."
+          ],
+          "correctIndex": 1,
+          "explanation": "Mar cabe y puede sustituir Norte, pero el segundo texto provoca el rechazo conjunto. Si la primera sustitución ya ocurrió, el programa dejó de conservar el par original."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Relacionar cada tamaño con el objeto que lo conserva"
+        },
+        {
+          "type": "paragraph",
+          "text": "Filas de char: cada fila tiene una capacidad fija y cada cadena necesita su propio NUL.\nArray de string: la cantidad de objetos puede ser fija mientras cambia la longitud de cada texto.\nConversión entre ambos: comprobar capacidad y significado de NUL antes de copiar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una lectura completa, una representación válida y la decisión de sustituir datos son pasos distintos. El string permite recibir el texto; las condiciones del formato deciden si puede convertirse a la fila; el momento de copiar decide si se conserva el conjunto anterior ante un rechazo."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la siguiente unidad estudiaremos durante cuánto tiempo existe cada objeto y cómo se relaciona eso con el lugar donde declaramos su nombre. Recuperaremos los bloques y las funciones que ya utilizamos antes de trabajar con nuevas formas de acceder a sus objetos."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "08859753b08b93c7a0cddd5ecc64cd7480cd2094deb90507dafd5fb2a5996524"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "09d7ec4d7d2d64dc0fde027493af5a0cdafc59e46cc68732869ba15c5a93113d"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "97200e720f1e876f37e201b65a587ad4756ca5fa7e2ceda719a7c8e83f5c99a5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "2153244df449de13aceeeab247e3e26f56e2670e3586cbd756b3a855c0e53ce5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "09205daf0b77470b031363c38d7c18f518fa01f7e9de87fa2e29775b8dcbf45d"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "ee87bf0b6adf3c621e58e3914bfc791fb926648698608c6d8b2068b1575fc109"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "9deaa67635a9beea20ed209ae86da639a98bc0e765a33e55afad46b2b8a36abf"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "da66631b4f1eecbb4e4cc7db931e607f7c1198634f0482b635a058c2f69bd30b"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "a4ca782552bd5fbbe93bf0aa47f232be438556cc73674c53d56b9ad380413664"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "6ea57ecd68882ea4e30865b135d98c303d94ddfd00141a7138b7d66600fcf07e"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "ff07c67c8512ae3d309b5d8b2e3d08d8f999a945610a9d4d2257e03c392d9749"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "6d48380c6b4d1806cc2a2ce103356f19be8c172ad64a045dfa8264a9283a5725"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "165965d4ea0dd57b2d7378870e33b4ed7c10ac7a7c5b5504a8a5632700f4efb8"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0009",
+            "sha256": "2199917c74cad2f22216f67a13d6a00884b840f3f2a98f98b4ba5fc6aef8ebce"
+          },
+          {
+            "id": "block_0011_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0011",
+            "sha256": "398d33110faf5bc2b596a98e758ee1382030961b57c9dedf4c462223ff7ff25e"
+          },
+          {
+            "id": "block_0011_0012",
+            "sha256": "3b97019f54975d56fac25475fce7eb9aa550e4af66e0a5a8bf5ee019e40943c6"
+          },
+          {
+            "id": "block_0011_0013",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0005",
+            "sha256": "89213de7bf865010b10d4546ac4e98923a5842fe66d81a3af15d8224650621ed"
+          },
+          {
+            "id": "block_0012_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0007",
+            "sha256": "9ef8802439793b331df711b122d85c257536405dae3edde98528ee5a04c33955"
+          },
+          {
+            "id": "block_0012_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0011",
+            "sha256": "36b6a6f9c5e1a10aeed0d90b71ebd70c30f4be30f86a9971ce27e7c3fb639fb3"
+          },
+          {
+            "id": "block_0012_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0013",
+            "sha256": "5bf92afd3aece7493138b89a65fa6c02510baae5a6b1b142d3d44f887cc01344"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0005",
+            "sha256": "1d559cb5c84780f0a52a85ba806be39393f77472d41c937c6455eefe4e0472ad"
+          },
+          {
+            "id": "block_0013_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0007",
+            "sha256": "5bf92afd3aece7493138b89a65fa6c02510baae5a6b1b142d3d44f887cc01344"
+          },
+          {
+            "id": "block_0013_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0011",
+            "sha256": "f2f10b03f99cea26fcb9943253f0a4cdaa36d4e20a05a92bdabc8e722c44ced1"
+          },
+          {
+            "id": "block_0013_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0013",
+            "sha256": "247538e75567fb4e5e2775c595302f9a713dd7ad5fa55cd968d089b26210133d"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "5a4760219164d126ca470f51aa13a2c36fd662b7ab1d35b815b0029ee5104b59"
+          },
+          {
+            "id": "block_0014_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0007",
+            "sha256": "5bf92afd3aece7493138b89a65fa6c02510baae5a6b1b142d3d44f887cc01344"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "2b5f8a42177ef07941b5a12527aad73824cc0270e9a5df83ef6db90dcab02a5e"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0005",
+            "sha256": "67eda610012ebe5be6ca23d1a550afd7db61835035df3db2b4ec14c3c511d9ab"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005",
+          "block_0011_0006",
+          "block_0011_0007",
+          "block_0011_0008",
+          "block_0011_0009",
+          "block_0011_0010",
+          "block_0011_0011",
+          "block_0011_0012",
+          "block_0011_0013"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004",
+          "block_0012_0005",
+          "block_0012_0006",
+          "block_0012_0007",
+          "block_0012_0008",
+          "block_0012_0009",
+          "block_0012_0010",
+          "block_0012_0011",
+          "block_0012_0012",
+          "block_0012_0013"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004",
+          "block_0013_0005",
+          "block_0013_0006",
+          "block_0013_0007",
+          "block_0013_0008",
+          "block_0013_0009",
+          "block_0013_0010",
+          "block_0013_0011",
+          "block_0013_0012",
+          "block_0013_0013"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005",
+          "block_0014_0006",
+          "block_0014_0007"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004",
+          "block_0015_0005"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "edcb49287316de0f3c293ff60020b18cbdbc1151577d2915dc5fff69fdc7e822",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "08859753b08b93c7a0cddd5ecc64cd7480cd2094deb90507dafd5fb2a5996524"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "09d7ec4d7d2d64dc0fde027493af5a0cdafc59e46cc68732869ba15c5a93113d"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "97200e720f1e876f37e201b65a587ad4756ca5fa7e2ceda719a7c8e83f5c99a5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "2153244df449de13aceeeab247e3e26f56e2670e3586cbd756b3a855c0e53ce5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "09205daf0b77470b031363c38d7c18f518fa01f7e9de87fa2e29775b8dcbf45d"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "ee87bf0b6adf3c621e58e3914bfc791fb926648698608c6d8b2068b1575fc109"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "9deaa67635a9beea20ed209ae86da639a98bc0e765a33e55afad46b2b8a36abf"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "da66631b4f1eecbb4e4cc7db931e607f7c1198634f0482b635a058c2f69bd30b"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "a4ca782552bd5fbbe93bf0aa47f232be438556cc73674c53d56b9ad380413664"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "6ea57ecd68882ea4e30865b135d98c303d94ddfd00141a7138b7d66600fcf07e"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "ff07c67c8512ae3d309b5d8b2e3d08d8f999a945610a9d4d2257e03c392d9749"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "6d48380c6b4d1806cc2a2ce103356f19be8c172ad64a045dfa8264a9283a5725"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "165965d4ea0dd57b2d7378870e33b4ed7c10ac7a7c5b5504a8a5632700f4efb8"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0009",
+                "sha256": "2199917c74cad2f22216f67a13d6a00884b840f3f2a98f98b4ba5fc6aef8ebce"
+              },
+              {
+                "id": "block_0011_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0011",
+                "sha256": "398d33110faf5bc2b596a98e758ee1382030961b57c9dedf4c462223ff7ff25e"
+              },
+              {
+                "id": "block_0011_0012",
+                "sha256": "3b97019f54975d56fac25475fce7eb9aa550e4af66e0a5a8bf5ee019e40943c6"
+              },
+              {
+                "id": "block_0011_0013",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0005",
+                "sha256": "89213de7bf865010b10d4546ac4e98923a5842fe66d81a3af15d8224650621ed"
+              },
+              {
+                "id": "block_0012_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0007",
+                "sha256": "9ef8802439793b331df711b122d85c257536405dae3edde98528ee5a04c33955"
+              },
+              {
+                "id": "block_0012_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0011",
+                "sha256": "36b6a6f9c5e1a10aeed0d90b71ebd70c30f4be30f86a9971ce27e7c3fb639fb3"
+              },
+              {
+                "id": "block_0012_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0013",
+                "sha256": "5bf92afd3aece7493138b89a65fa6c02510baae5a6b1b142d3d44f887cc01344"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0005",
+                "sha256": "1d559cb5c84780f0a52a85ba806be39393f77472d41c937c6455eefe4e0472ad"
+              },
+              {
+                "id": "block_0013_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0007",
+                "sha256": "5bf92afd3aece7493138b89a65fa6c02510baae5a6b1b142d3d44f887cc01344"
+              },
+              {
+                "id": "block_0013_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0011",
+                "sha256": "f2f10b03f99cea26fcb9943253f0a4cdaa36d4e20a05a92bdabc8e722c44ced1"
+              },
+              {
+                "id": "block_0013_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0013",
+                "sha256": "247538e75567fb4e5e2775c595302f9a713dd7ad5fa55cd968d089b26210133d"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "5a4760219164d126ca470f51aa13a2c36fd662b7ab1d35b815b0029ee5104b59"
+              },
+              {
+                "id": "block_0014_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0007",
+                "sha256": "5bf92afd3aece7493138b89a65fa6c02510baae5a6b1b142d3d44f887cc01344"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "2b5f8a42177ef07941b5a12527aad73824cc0270e9a5df83ef6db90dcab02a5e"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0005",
+                "sha256": "67eda610012ebe5be6ca23d1a550afd7db61835035df3db2b4ec14c3c511d9ab"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

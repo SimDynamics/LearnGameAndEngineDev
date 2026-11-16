@@ -1,0 +1,2470 @@
+{
+  "id": "cpp_language_memory_oop__duracion_y_almacenamiento__compartir_datos_entre_archivos",
+  "title": "Declarar, definir y compartir datos entre archivos",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Declarar el nombre sin definir otro objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "En extern int saldo;, extern permite declarar este int sin definirlo: el compilador conoce el nombre y el tipo, pero esa línea no proporciona otro objeto saldo ni le asigna un valor. La definición int saldo = 7; proporciona el objeto y lo inicializa con 7. Las declaraciones compatibles pueden referirse a ese mismo objeto (Prata, 2012; ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l4_extern_mismo_archivo",
+          "language": "cpp",
+          "question": "Predice la salida. Hay dos declaraciones sin inicializador y una definición; las tres corresponden a saldo en el espacio global.",
+          "code": "#include <iostream>\n\nextern int saldo;\nextern int saldo;\n\nint consultar() {\n    return saldo;\n}\n\nint saldo = 7;\n\nint main() {\n    std::cout << consultar();\n    return 0;\n}\n",
+          "answers": [
+            "7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos declaraciones extern no crean dos saldos ni los reinician. Permiten que consultar encuentre el nombre antes de la definición posterior. Esa definición proporciona el único saldo, inicializado con 7 antes de main en este ejemplo."
+        },
+        {
+          "type": "paragraph",
+          "text": "extern no significa que la definición deba estar necesariamente en otro archivo. Este programa la contiene más abajo, en el mismo. Enseguida usaremos la misma idea para repartir el programa entre varios archivos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El inicializador cambia si esta declaración también es una definición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara estas formas en el espacio global:\nextern int saldo; declara sin definir.\nint saldo; define un int que en este contexto comienza en cero.\nint saldo = 6; define e inicializa con 6.\nextern int saldo = 6; también es una definición, porque proporciona un inicializador (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l4_extern_con_inicializador",
+          "language": "cpp",
+          "question": "Predice el valor. La presencia de extern no elimina el inicializador de esta definición.",
+          "code": "#include <iostream>\n\nextern int saldo = 6;\n\nint main() {\n    std::cout << saldo;\n    return 0;\n}\n",
+          "answers": [
+            "6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La declaración con inicializador define saldo y lo prepara con 6. No es la declaración sin definición que colocaremos en una cabecera compartida."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u3l4_declarar_sin_definir",
+          "question": "Completa la palabra que declara cantidad sin definirla en la cabecera. No añadas un inicializador.",
+          "template": "[] int cantidad;",
+          "answers": [
+            "extern"
+          ],
+          "explanation": "extern int cantidad; proporciona la declaración sin definir otro objeto. La definición con su valor inicial estará en un .cpp."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué recibe el compilador al incluir una cabecera"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperemos la unidad de traducción: es el código que se compila como una unidad después del preprocesamiento. En este uso de cabeceras, cada .cpp recibe el texto de las cabeceras que incluye. Compilar estado.cpp y consulta.cpp por separado no convierte sus dos textos en un solo archivo fuente (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En una cabecera común escribiremos las declaraciones necesarias. Un .cpp proporcionará la definición del dato. Los otros podrán utilizarlo mediante esas declaraciones. Para el int ordinario compartido de estos ejemplos, que no se declara inline, debe haber una sola definición en el programa cuando se utiliza su valor (Prata, 2012; ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l4_seleccionar_cpp",
+          "question": "Un proyecto tiene estado.hpp, estado.cpp, consulta.cpp y main.cpp. ¿Qué seleccionamos como fuentes que se compilan por separado?",
+          "options": [
+            "Sólo estado.hpp, porque contiene la declaración del dato.",
+            "Los tres .cpp; cada uno incluye la cabecera que necesita.",
+            "Sólo main.cpp; incluir la cabecera también compila automáticamente los otros .cpp."
+          ],
+          "correctIndex": 1,
+          "explanation": "La cabecera aporta declaraciones al .cpp que la incluye. No añade por sí sola los demás .cpp a la construcción; sus fuentes deben estar seleccionadas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ésta es una regla para el dato compartido de estos ejemplos, no una prohibición de toda definición en cabeceras. Las funciones constexpr y otras construcciones ya estudiadas tienen reglas propias que conservamos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una definición que observan tres archivos"
+        },
+        {
+          "type": "paragraph",
+          "text": "estado.hpp declara lote::nivel y las dos funciones. estado.cpp define nivel y una función que lo aumenta. consulta.cpp devuelve su valor. main.cpp llama a ambas funciones y también consulta el dato por su nombre calificado. Los tres .cpp incluyen la misma cabecera."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este proyecto, el nombre de lote::nivel tiene enlace externo: las declaraciones de esas unidades pueden identificar el mismo objeto. Para utilizarlo, cada una necesita su declaración; el enlace externo no hace aparecer automáticamente el nombre en los archivos que no la tienen (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "heading",
+          "text": "estado.hpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef P3_ESTADO_HPP\n#define P3_ESTADO_HPP\n\nnamespace lote {\n    extern int nivel;\n    void subirDos();\n    int consultar();\n}\n\n#endif\n"
+        },
+        {
+          "type": "heading",
+          "text": "estado.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estado.hpp\"\n\nnamespace lote {\n    int nivel = 4;\n\n    void subirDos() {\n        nivel += 2;\n    }\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "consulta.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estado.hpp\"\n\nnamespace lote {\n    int consultar() {\n        return nivel;\n    }\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "main.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estado.hpp\"\n#include <iostream>\n\nint main() {\n    const int antes = lote::consultar();\n    lote::subirDos();\n    const int despues = lote::consultar();\n    std::cout << antes << ':' << despues << ':' << lote::nivel;\n    return 0;\n}\n"
+        },
+        {
+          "type": "math_puzzle",
+          "id": "p3_u3l4_seguir_compartido",
+          "schemaVersion": 1,
+          "prompt": "Completa los tres valores que imprime main. La primera consulta ocurre antes de subirDos; la segunda y la directa ocurren después.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Paso",
+                "Acción"
+              ],
+              "rows": [
+                [
+                  "1",
+                  "consultar desde main"
+                ],
+                [
+                  "2",
+                  "subirDos modifica nivel en estado.cpp"
+                ],
+                [
+                  "3",
+                  "consultar desde consulta.cpp"
+                ],
+                [
+                  "4",
+                  "leer lote::nivel directamente en main"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Consulta anterior",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Consulta posterior",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Lectura directa",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El nivel comienza con 4. subirDos suma 2 al único objeto y lo deja en 6. consulta.cpp y main.cpp encuentran ese mismo 6 mediante sus declaraciones.",
+            "incorrect": "No prepares otro nivel por cada inclusión de extern. Hay una definición en estado.cpp; las consultas de los otros archivos se refieren a ese objeto."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Por qué quien define también debe incluir la cabecera"
+        },
+        {
+          "type": "paragraph",
+          "text": "La cabecera no es sólo para los consumidores. Si estado.cpp la incluye antes de definir nivel, el compilador puede comparar la declaración con la definición que ve en esa unidad. Declarar int en la cabecera y definir double en ese mismo namespace produciría una contradicción de tipos que debemos corregir (Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l4_tipos_coherentes",
+          "question": "La cabecera declara extern int nivel; dentro de lote. estado.cpp la incluye y después escribe double nivel = 4; dentro de lote. ¿Cómo se corrige la incoherencia para mantener el contrato int?",
+          "options": [
+            "Haciendo que la definición también sea int y conservando la inclusión de la cabecera.",
+            "Quitando la cabecera de estado.cpp para que el compilador deje de ver la contradicción.",
+            "Conservando ambos tipos y suponiendo que el enlazador los convertirá automáticamente."
+          ],
+          "correctIndex": 0,
+          "explanation": "La declaración y la definición deben acordar el tipo. Ocultar la declaración no corrige el programa. No debemos confiar en que el enlazador detecte o repare cualquier desacuerdo entre archivos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un programa que enlaza no queda por eso demostrado correcto. La cabecera compartida permite detectar antes muchas incoherencias y evita mantener a mano declaraciones que podrían dejar de coincidir."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una declaración utilizada necesita su definición en el programa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si quitamos int nivel = 4; de estado.cpp, las funciones todavía pueden compilar: conocen el nombre y su tipo por la cabecera. Pero sus lecturas y modificaciones necesitan un objeto definido. En esta construcción, el enlace no puede resolver ese dato ausente. El mismo síntoma puede aparecer si la definición existe en un .cpp que no se seleccionó para construir."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l4_falta_definicion",
+          "question": "Los .cpp del ejemplo compilan, pero al enlazar falta el símbolo correspondiente a lote::nivel. Se conserva extern int nivel; en la cabecera. ¿Qué debemos revisar?",
+          "options": [
+            "Que main vuelva a declarar int nivel = 0; como local, aunque las otras funciones no puedan usarlo.",
+            "Que bastaría volver a incluir estado.hpp para que aparezca automáticamente la definición que falta.",
+            "Que exista una definición compatible de lote::nivel y que su .cpp participe en la construcción."
+          ],
+          "correctIndex": 2,
+          "explanation": "extern declara el dato; no sustituye su definición. La definición debe corresponder al mismo namespace y tipo y estar en el programa construido. Un local de main sería otro objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "La necesidad aparece por utilizar realmente el dato. Una declaración extern que no se usa no obliga, por sí sola, a ejecutar una consulta ni a proporcionar un objeto que el programa nunca necesita. No utilizaremos una declaración aislada como prueba de una definición ausente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Las guardas no reúnen definiciones de archivos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una guarda como #ifndef P3_AVISO_HPP evita incluir de nuevo el contenido de aviso.hpp dentro de la misma unidad de traducción. Al comenzar a compilar otro .cpp, se procesa su propia unidad: no conserva por ello la marca de la compilación anterior (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por tanto, colocar int pendientes = 2; en esa cabecera y después incluirla en aviso.cpp y main.cpp proporciona dos definiciones del mismo dato externo. Las guardas no las convierten en una. La corrección consiste en declarar en la cabecera y definir una vez en un .cpp."
+        },
+        {
+          "type": "paragraph",
+          "text": "Repara el proyecto del editor: conserva ambas inclusiones, la guarda, sumarTres y main. Cambia la cabecera para que sólo declare pendientes y proporciona su definición con valor inicial 2 en aviso.cpp. Conserva aviso.cpp y main.cpp como fuentes seleccionadas. La construcción corregida debe mostrar 5, sin salto de línea obligatorio."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include \"aviso.hpp\"\n#include <iostream>\n\nint main() {\n    aviso::sumarTres();\n    std::cout << aviso::pendientes;\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "aviso.hpp",
+              "initialCode": "#ifndef P3_AVISO_HPP\n#define P3_AVISO_HPP\n\nnamespace aviso {\n    int pendientes = 2;\n    void sumarTres();\n}\n\n#endif\n"
+            },
+            {
+              "path": "aviso.cpp",
+              "initialCode": "#include \"aviso.hpp\"\n\nnamespace aviso {\n    void sumarTres() {\n        pendientes += 3;\n    }\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"aviso.hpp\"\n#include <iostream>\n\nint main() {\n    aviso::sumarTres();\n    std::cout << aviso::pendientes;\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "aviso.cpp",
+            "main.cpp"
+          ],
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "5"
+                ],
+                "explanation": "Construir todas las fuentes seleccionadas y observar el mismo estado desde sus consumidores."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de la reparación: la definición pertenece a un .cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "La cabecera puede aportar la declaración a las dos unidades. Sólo aviso.cpp proporciona el objeto inicializado. sumarTres lo cambia de 2 a 5 y main consulta el mismo 5."
+        },
+        {
+          "type": "heading",
+          "text": "aviso.hpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef P3_AVISO_HPP\n#define P3_AVISO_HPP\n\nnamespace aviso {\n    extern int pendientes;\n    void sumarTres();\n}\n\n#endif\n"
+        },
+        {
+          "type": "heading",
+          "text": "aviso.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"aviso.hpp\"\n\nnamespace aviso {\n    int pendientes = 2;\n\n    void sumarTres() {\n        pendientes += 3;\n    }\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "main.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"aviso.hpp\"\n#include <iostream>\n\nint main() {\n    aviso::sumarTres();\n    std::cout << aviso::pendientes;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l4_otra_definicion_sin_inicializador",
+          "question": "Si la cabecera corregida se cambiara a int pendientes; sin extern, ¿dejaría de ser una definición por no escribir = 2?",
+          "options": [
+            "Sí: en C++ sólo define una variable la declaración que lleva un valor inicial escrito.",
+            "No: ese int de ámbito de namespace también define; repetirlo en las dos unidades reproduce el problema.",
+            "Sí: la guarda lo transforma automáticamente en una declaración extern."
+          ],
+          "correctIndex": 1,
+          "explanation": "En este contexto int pendientes; es una definición y recibe inicialización a cero. Para declarar sin definir usamos extern int pendientes;, sin inicializador."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Objetos internos distintos en dos archivos"
+        },
+        {
+          "type": "paragraph",
+          "text": "A veces queremos que cada archivo conserve sus propios datos. En un nombre de variable de ámbito de namespace, static le da enlace interno: las declaraciones de otros archivos no se refieren a ese objeto mediante ese nombre. Su almacenamiento sigue teniendo duración estática. No se convierte en un local automático (Prata, 2012; ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este proyecto define un visitas interno en a.cpp y otro en b.cpp. contarA y contarB son funciones distintas que utilizan los datos de sus propios archivos. El programa se construye con a.cpp, b.cpp y main.cpp como unidades que se compilan por separado."
+        },
+        {
+          "type": "heading",
+          "text": "visitas.hpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef P3_VISITAS_HPP\n#define P3_VISITAS_HPP\n\nint contarA();\nint contarB();\n\n#endif\n"
+        },
+        {
+          "type": "heading",
+          "text": "a.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"visitas.hpp\"\n\nstatic int visitas = 0;\n\nint contarA() {\n    visitas += 1;\n    return visitas;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "b.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"visitas.hpp\"\n\nstatic int visitas = 0;\n\nint contarB() {\n    visitas += 1;\n    return visitas;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "main.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"visitas.hpp\"\n#include <iostream>\n\nint main() {\n    const int a = contarA();\n    const int b = contarB();\n    const int otraA = contarA();\n    std::cout << a << ':' << b << ':' << otraA;\n    return 0;\n}\n"
+        },
+        {
+          "type": "math_puzzle",
+          "id": "p3_u3l4_seguir_internos",
+          "schemaVersion": 1,
+          "prompt": "Completa las tres respuestas de main. La primera y la tercera llamada utilizan contarA; la segunda utiliza contarB.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Paso",
+                "Acción"
+              ],
+              "rows": [
+                [
+                  "1",
+                  "contarA aumenta el visitas de a.cpp"
+                ],
+                [
+                  "2",
+                  "contarB aumenta el visitas de b.cpp"
+                ],
+                [
+                  "3",
+                  "contarA vuelve al visitas de a.cpp"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Primera llamada a contarA",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Llamada a contarB",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Segunda llamada a contarA",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El objeto de a.cpp pasa de 0 a 1 y después a 2. El de b.cpp empieza con su propio cero y pasa a 1. Cada objeto conserva su valor entre las llamadas que lo utilizan.",
+            "incorrect": "No reúnas los dos contadores por tener el mismo nombre ni los reinicies al salir de contarA o contarB. Son objetos internos distintos, ambos de duración estática."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un espacio sin nombre también permite datos internos al archivo"
+        },
+        {
+          "type": "paragraph",
+          "text": "En lugar de escribir static en esos dos int, podemos colocar las definiciones en un namespace sin nombre. Recuperamos la organización interna al archivo utilizada en Programación 2: el espacio sin nombre de una unidad es distinto del de otra. En esta variante, visitas.hpp y main.cpp son los del ejemplo anterior; sólo los textos de a.cpp y b.cpp se sustituyen por los siguientes (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "heading",
+          "text": "a.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"visitas.hpp\"\n\nnamespace {\n    int visitas = 0;\n}\n\nint contarA() {\n    visitas += 1;\n    return visitas;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "b.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"visitas.hpp\"\n\nnamespace {\n    int visitas = 0;\n}\n\nint contarB() {\n    visitas += 1;\n    return visitas;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l4_espacios_sin_nombre",
+          "question": "Con estos cambios, ¿qué secuencia conserva main al llamar contarA, contarB y contarA?",
+          "options": [
+            "1:1:2, porque cada función modifica el contador interno de su unidad.",
+            "1:2:3, porque todos los namespaces sin nombre del programa son uno solo.",
+            "1:1:1, porque cerrar las llaves del namespace destruye su contador."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los dos objetos siguen siendo distintos y tienen duración estática. El espacio sin nombre no se convierte en un bloque de ejecución que reinicie el valor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "extern no cambia automáticamente un enlace interno anterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tampoco debemos aprender que toda aparición de extern crea siempre un nombre de enlace externo. En el siguiente archivo, static int propio = 4; ya establece enlace interno. La declaración extern posterior se refiere a ese mismo propio y conserva ese enlace. No publica otro objeto para el resto del programa (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u3l4_redeclarante_interno",
+          "language": "cpp",
+          "question": "Predice los dos valores. La declaración posterior no define otro propio ni borra el 4 inicial.",
+          "code": "#include <iostream>\n\nstatic int propio = 4;\nextern int propio;\n\nint aumentar() {\n    propio += 3;\n    return propio;\n}\n\nint main() {\n    const int resultado = aumentar();\n    std::cout << resultado << ':' << propio;\n    return 0;\n}\n",
+          "answers": [
+            "7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "aumentar suma 3 al objeto interno de valor 4 y devuelve 7. La lectura de main encuentra ese mismo 7. Esta redeclaración extern no transforma el enlace interno establecido por static."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Poner static en una cabecera cambia qué objetos existen"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este proyecto sí puede construirse: la cabecera proporciona un nivel interno a cada unidad que la incluye. Pero eso cambia el comportamiento frente al dato compartido. nivel.cpp modifica el suyo; main.cpp consulta otro. No es una forma de conservar un único nivel común."
+        },
+        {
+          "type": "heading",
+          "text": "nivel.hpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef P3_NIVEL_HPP\n#define P3_NIVEL_HPP\n\nnamespace lote {\n    static int nivel = 4;\n    int subir();\n}\n\n#endif\n"
+        },
+        {
+          "type": "heading",
+          "text": "nivel.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"nivel.hpp\"\n\nnamespace lote {\n    int subir() {\n        nivel += 2;\n        return nivel;\n    }\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "main.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"nivel.hpp\"\n#include <iostream>\n\nint main() {\n    const int devuelto = lote::subir();\n    std::cout << devuelto << ':' << lote::nivel;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l4_cabecera_interna",
+          "question": "Se compilan nivel.cpp y main.cpp. ¿Qué pareja imprime main?",
+          "options": [
+            "6:6: la guarda comparte el nivel de las dos unidades.",
+            "4:4: static impide modificar el nivel.",
+            "6:4: subir devuelve el 6 de nivel.cpp, mientras main conserva su propio 4."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cada inclusión aporta la definición de un objeto interno distinto. La función devuelve su resultado por valor; ese retorno no modifica automáticamente el nivel que existe en la unidad de main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar nombre, enlace y duración al revisar el programa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ámbito: dónde puede encontrarse una declaración al utilizar el nombre.\nEnlace: cuándo declaraciones de distintos ámbitos o unidades pueden identificar la misma entidad.\nDuración del almacenamiento: durante cuánto tiempo se conserva el almacenamiento del objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un int de estos ejemplos puede conservarse durante el programa y, al mismo tiempo, pertenecer sólo a una unidad mediante un nombre de enlace interno. También puede estar compartido por varias mediante declaraciones compatibles de enlace externo. La duración no decide por sí sola cuál de esos dos diseños estamos construyendo (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los ejemplos con static que acabamos de separar son variables de ámbito de namespace. No generalices «un objeto por archivo» a cualquier uso de static: el contexto de la declaración también importa. Conservamos las reglas de las funciones inline y constexpr ya estudiadas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un registro compartido entre escritura y consultas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El proyecto del editor recibe una secuencia de valores. registro.cpp acepta o rechaza cada uno y mantiene dos datos: cantidad de valores aceptados y suma de esos valores. consulta.cpp ofrece dos funciones que leen esos mismos datos. main.cpp utiliza esas funciones y además consulta directamente los nombres compartidos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa registro.hpp y registro.cpp. La cabecera debe declarar, sin definir, los int cantidad y suma dentro de registro. registro.cpp debe incluirla y definir ambos con cero dentro del mismo namespace. Conserva consulta.cpp, main.cpp y las firmas proporcionadas. No sustituyas los datos compartidos por copias locales ni por definiciones internas de cabecera."
+        },
+        {
+          "type": "paragraph",
+          "text": "agregar recibe un int y devuelve bool. Acepta un valor entre 0 y 9, incluidos ambos extremos, mientras haya menos de 4 valores aceptados. Un cero sí se cuenta, aunque no aumente la suma. Los valores repetidos también se cuentan por separado. Al aceptar, aumenta cantidad en uno y suma el valor a suma. Al rechazar, devuelve false y conserva ambos datos. No imprime mensajes."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada comienza con el número de valores, entre 1 y 8, seguido de esa cantidad de enteros. Cada caso es una secuencia en una sola ejecución. cantidad nunca supera 4 y suma nunca supera 36: las operaciones de esta práctica caben en int."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cada línea, Cantidad y Suma proceden de las funciones de consulta.cpp. Directo muestra los dos datos que main.cpp lee por sus nombres calificados, separados por dos puntos. Deben coincidir porque se refieren a los mismos objetos. Conserva los tres .cpp como fuentes seleccionadas; registro.hpp se incluye, no se selecciona como fuente independiente."
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "El cero cuenta, el negativo se rechaza sin cambios y se aceptan dos valores 3 distintos. Después de cuatro aceptaciones se conservan ambos datos al rechazar más entradas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "7\n0 3 -1 3 9 1 10\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado;Cantidad:1;Suma:0;Directo:1:0\nAceptado;Cantidad:2;Suma:3;Directo:2:3\nRechazo;Cantidad:2;Suma:3;Directo:2:3\nAceptado;Cantidad:3;Suma:6;Directo:3:6\nAceptado;Cantidad:4;Suma:15;Directo:4:15\nRechazo;Cantidad:4;Suma:15;Directo:4:15\nRechazo;Cantidad:4;Suma:15;Directo:4:15\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include \"registro.hpp\"\n#include <iostream>\n\nint main() {\n    int numeroDeValores = 0;\n    if (!(std::cin >> numeroDeValores) || numeroDeValores < 1 || numeroDeValores > 8) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeValores; ++i) {\n        int valor = 0;\n        if (!(std::cin >> valor)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = registro::agregar(valor);\n        const int cantidadLeida = registro::cantidadActual();\n        const int sumaLeida = registro::sumaActual();\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\")\n                  << \";Cantidad:\" << cantidadLeida << \";Suma:\" << sumaLeida\n                  << \";Directo:\" << registro::cantidad << ':' << registro::suma << '\\n';\n    }\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "registro.hpp",
+              "initialCode": "#ifndef P3_REGISTRO_HPP\n#define P3_REGISTRO_HPP\n\nnamespace registro {\n    // Declara aqui cantidad y suma sin definirlas.\n    bool agregar(int valor);\n    int cantidadActual();\n    int sumaActual();\n}\n\n#endif\n"
+            },
+            {
+              "path": "registro.cpp",
+              "initialCode": "#include \"registro.hpp\"\n\nnamespace registro {\n    // Define aqui cantidad y suma con valor inicial cero.\n\n    bool agregar(int valor) {\n        // Construye la validacion y actualiza los dos datos compartidos.\n        return valor == 0;\n    }\n}\n"
+            },
+            {
+              "path": "consulta.cpp",
+              "initialCode": "#include \"registro.hpp\"\n\nnamespace registro {\n    int cantidadActual() {\n        return cantidad;\n    }\n\n    int sumaActual() {\n        return suma;\n    }\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"registro.hpp\"\n#include <iostream>\n\nint main() {\n    int numeroDeValores = 0;\n    if (!(std::cin >> numeroDeValores) || numeroDeValores < 1 || numeroDeValores > 8) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeValores; ++i) {\n        int valor = 0;\n        if (!(std::cin >> valor)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = registro::agregar(valor);\n        const int cantidadLeida = registro::cantidadActual();\n        const int sumaLeida = registro::sumaActual();\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\")\n                  << \";Cantidad:\" << cantidadLeida << \";Suma:\" << sumaLeida\n                  << \";Directo:\" << registro::cantidad << ':' << registro::suma << '\\n';\n    }\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "registro.cpp",
+            "consulta.cpp",
+            "main.cpp"
+          ],
+          "initialStandardInput": "7\n0 3 -1 3 9 1 10\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "7\n0 3 -1 3 9 1 10\n",
+                "outputs": [
+                  "Aceptado;Cantidad:1;Suma:0;Directo:1:0\nAceptado;Cantidad:2;Suma:3;Directo:2:3\nRechazo;Cantidad:2;Suma:3;Directo:2:3\nAceptado;Cantidad:3;Suma:6;Directo:3:6\nAceptado;Cantidad:4;Suma:15;Directo:4:15\nRechazo;Cantidad:4;Suma:15;Directo:4:15\nRechazo;Cantidad:4;Suma:15;Directo:4:15\n"
+                ],
+                "explanation": "Construir todas las fuentes seleccionadas y observar el mismo estado desde sus consumidores."
+              },
+              {
+                "standardInput": "5\n2 2 2 2 2\n",
+                "outputs": [
+                  "Aceptado;Cantidad:1;Suma:2;Directo:1:2\nAceptado;Cantidad:2;Suma:4;Directo:2:4\nAceptado;Cantidad:3;Suma:6;Directo:3:6\nAceptado;Cantidad:4;Suma:8;Directo:4:8\nRechazo;Cantidad:4;Suma:8;Directo:4:8\n"
+                ],
+                "explanation": "Construir todas las fuentes seleccionadas y observar el mismo estado desde sus consumidores."
+              },
+              {
+                "standardInput": "5\n-1 10 -5 11 0\n",
+                "outputs": [
+                  "Rechazo;Cantidad:0;Suma:0;Directo:0:0\nRechazo;Cantidad:0;Suma:0;Directo:0:0\nRechazo;Cantidad:0;Suma:0;Directo:0:0\nRechazo;Cantidad:0;Suma:0;Directo:0:0\nAceptado;Cantidad:1;Suma:0;Directo:1:0\n"
+                ],
+                "explanation": "Construir todas las fuentes seleccionadas y observar el mismo estado desde sus consumidores."
+              },
+              {
+                "standardInput": "4\n9 9 9 9\n",
+                "outputs": [
+                  "Aceptado;Cantidad:1;Suma:9;Directo:1:9\nAceptado;Cantidad:2;Suma:18;Directo:2:18\nAceptado;Cantidad:3;Suma:27;Directo:3:27\nAceptado;Cantidad:4;Suma:36;Directo:4:36\n"
+                ],
+                "explanation": "Construir todas las fuentes seleccionadas y observar el mismo estado desde sus consumidores."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo este primer caso correcto es obligatorio para avanzar. Los demás son ensayos opcionales. Cada ejecución nueva comienza con cantidad y suma iguales a cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: repetidos y errores antes del primer acierto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las consultas deben observar lo que ocurrió realmente en registro.cpp. Rechazar no aumenta la cantidad ni borra una suma anterior."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuatro valores 2 se aceptan como cuatro entradas. El quinto se rechaza porque el registro ya está completo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "5\n2 2 2 2 2\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado;Cantidad:1;Suma:2;Directo:1:2\nAceptado;Cantidad:2;Suma:4;Directo:2:4\nAceptado;Cantidad:3;Suma:6;Directo:3:6\nAceptado;Cantidad:4;Suma:8;Directo:4:8\nRechazo;Cantidad:4;Suma:8;Directo:4:8\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los cuatro primeros datos están fuera del dominio. El cero final debe ser la primera aceptación, con suma todavía cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "5\n-1 10 -5 11 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Rechazo;Cantidad:0;Suma:0;Directo:0:0\nRechazo;Cantidad:0;Suma:0;Directo:0:0\nRechazo;Cantidad:0;Suma:0;Directo:0:0\nRechazo;Cantidad:0;Suma:0;Directo:0:0\nAceptado;Cantidad:1;Suma:0;Directo:1:0\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayo opcional: llegar al máximo permitido"
+        },
+        {
+          "type": "paragraph",
+          "text": "El límite de cuatro aceptaciones y el valor máximo 9 dan una suma máxima de 36. Alcanzar exactamente esos límites es válido."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las cuatro entradas tienen el valor máximo permitido. Las consultas y las lecturas directas deben coincidir después de cada una."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "4\n9 9 9 9\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado;Cantidad:1;Suma:9;Directo:1:9\nAceptado;Cantidad:2;Suma:18;Directo:2:18\nAceptado;Cantidad:3;Suma:27;Directo:3:27\nAceptado;Cantidad:4;Suma:36;Directo:4:36\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: declarar en común y actualizar una sola definición"
+        },
+        {
+          "type": "paragraph",
+          "text": "La cabecera proporciona las declaraciones a los tres .cpp. Sólo registro.cpp define cantidad y suma. La función agregar comprueba primero el dominio del valor y el límite de aceptaciones; sólo después cambia ambos datos."
+        },
+        {
+          "type": "heading",
+          "text": "registro.hpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef P3_REGISTRO_HPP\n#define P3_REGISTRO_HPP\n\nnamespace registro {\n    extern int cantidad;\n    extern int suma;\n    bool agregar(int valor);\n    int cantidadActual();\n    int sumaActual();\n}\n\n#endif\n"
+        },
+        {
+          "type": "heading",
+          "text": "registro.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"registro.hpp\"\n\nnamespace registro {\n    int cantidad = 0;\n    int suma = 0;\n\n    bool agregar(int valor) {\n        if (valor < 0 || valor > 9 || cantidad >= 4) {\n            return false;\n        }\n        cantidad += 1;\n        suma += valor;\n        return true;\n    }\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "consulta.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"registro.hpp\"\n\nnamespace registro {\n    int cantidadActual() {\n        return cantidad;\n    }\n\n    int sumaActual() {\n        return suma;\n    }\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "main.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"registro.hpp\"\n#include <iostream>\n\nint main() {\n    int numeroDeValores = 0;\n    if (!(std::cin >> numeroDeValores) || numeroDeValores < 1 || numeroDeValores > 8) {\n        std::cout << \"Datos invalidos\\n\";\n        return 0;\n    }\n    for (int i = 0; i < numeroDeValores; ++i) {\n        int valor = 0;\n        if (!(std::cin >> valor)) {\n            std::cout << \"Datos invalidos\\n\";\n            return 0;\n        }\n        const bool aceptado = registro::agregar(valor);\n        const int cantidadLeida = registro::cantidadActual();\n        const int sumaLeida = registro::sumaActual();\n        std::cout << (aceptado ? \"Aceptado\" : \"Rechazo\")\n                  << \";Cantidad:\" << cantidadLeida << \";Suma:\" << sumaLeida\n                  << \";Directo:\" << registro::cantidad << ':' << registro::suma << '\\n';\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el caso obligatorio, aceptar cero deja cantidad en 1 y suma en 0. Aceptar 3 produce 2 y 3. El negativo conserva ese estado. El siguiente 3 produce 3 y 6; el 9 produce 4 y 15. Las dos entradas posteriores se rechazan sin cambios. Las funciones y main observan los mismos resultados desde unidades distintas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l4_consulta_otro_estado",
+          "question": "Una variante conserva los datos correctos en registro.cpp, pero hace que las funciones de consulta devuelvan dos locales static propios, inicialmente cero. ¿Qué falla?",
+          "options": [
+            "Las consultas leerían otros objetos; no observarían las actualizaciones del registro compartido.",
+            "Esos locales se unirían automáticamente con los externos por tener el mismo nombre corto.",
+            "Todo int con duración estática recibe automáticamente las asignaciones hechas a otro int estático."
+          ],
+          "correctIndex": 0,
+          "explanation": "La duración estática conserva cada objeto; no reúne objetos distintos. Las funciones deben consultar las declaraciones que corresponden a las definiciones de registro.cpp."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir un fallo de construcción de un estado equivocado"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u3l4_clasificar_fallo",
+          "question": "Tras cambiar la cabecera a definiciones static y retirar las definiciones externas, el programa construye, pero las consultas de otro archivo muestran ceros mientras quien escribe conserva otros valores. ¿Qué debemos corregir?",
+          "options": [
+            "El formato de los números, porque un enlace correcto demuestra que se comparte el dato.",
+            "La identidad de los objetos: se crearon estados internos distintos cuando el contrato pedía uno compartido.",
+            "La cantidad de declaraciones extern: cada consulta necesitaría otra para unificar automáticamente los objetos internos."
+          ],
+          "correctIndex": 1,
+          "explanation": "No todos los errores de organización impiden construir. Los objetos internos pueden ser válidos en C++, pero incumplir el requisito de compartir el estado. Hay que recuperar la declaración común y la definición única del diseño solicitado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Revisa en orden: qué declara la cabecera, dónde está la definición, qué fuentes se compilan y qué objeto modifica o consulta cada función. Después comprueba el comportamiento. Ni una construcción correcta ni un nombre coincidente sustituyen esa revisión."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la próxima lección estudiaremos cómo intervienen const, constexpr e inline al organizar datos entre archivos. También distinguiremos los valores preparados con expresiones constantes de los que necesitan ejecutar una preparación dinámica. No cambiaremos por suposición las reglas de los objetos que acabamos de comprobar."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "a3bc37eb77a3ca4e18a7ec2d9079cafddab595a3b2fe1f9bbdfbcf53860ad3c3"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "9bf60feb4215c72e62d6297078f3c2b67a9d373458a1553f62c3aa367fe77280"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "3536b15b64ab30212511c9f18e11df512a08d7f48e38ccc5fbe1f7ef20448317"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "299c0884e4c90362f384ddedc4b5c47839c2bc00794be67ee2ee3185d755ec17"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "431e614e42ba1ee37a1472090ac76df624192f8bb652ed53728abf7e2e79dc7b"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "356643e74020d641130182b54e75bbaa4f664fb2fa2e4aa5d478ebf3b94c9b97"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0008",
+            "sha256": "2b8a02c953eef70d318ea696061193c9ac883d56aa31939c38ac464b09e944da"
+          },
+          {
+            "id": "block_0003_0009",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0010",
+            "sha256": "1d480ea388401553396f5f1ee5e9204cafe6309228ae45ee9bf7bc80abbf0382"
+          },
+          {
+            "id": "block_0003_0011",
+            "sha256": "f2a7dbd0d38888b1e49537fed9d138fd6a94b9816de1314e80016beb119b074a"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "4532fa26e06a262c734a0e535d6cb46598ded5843e22a0ffed3db24dfcb813f9"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "c31dc30d2e3e4c827956dd691668527612363bb9e1cb4d25d6cfd36a428d8c50"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "8be7678214283189888d4dc82f58a0057c59b8bf3720cab2cdbff4d5311460c5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "00bf990ed66c09bd65e593a36cdd0a024ebe671414a9a990f5eca940db16b407"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "bab8f5227e1eeb2bb08fc31cad5c92c4931cc7b3a589ef7f78c13bb57c63667f"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "8ceb2d64382839f8b8fd07cf68c6f885990f60868ac36e18654f4729f1a6f0ca"
+          },
+          {
+            "id": "block_0007_0008",
+            "sha256": "f10a7c476f69dfb706a131bc52fe2ab08fd7ba7e5ddac30265f78cd24eb26c05"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "c6e298720037afa095641c63d893c54f2f74ce1e8445187d03a57fdee5742b4a"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "1c7a6f31a0811d00efd947ab0e82bab6044066435b789cccb43167dc5e2fc830"
+          },
+          {
+            "id": "block_0008_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0008",
+            "sha256": "8700936f822888ce857b2996da783e8eab8a7a60eb01a646e678e4c15e2155c1"
+          },
+          {
+            "id": "block_0008_0009",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0010",
+            "sha256": "22967b0af8e5e81ce198a0cce0f0a39efab82b349bfcc27049af132574bfee05"
+          },
+          {
+            "id": "block_0008_0011",
+            "sha256": "6d80ad70dfc5a49acf5a31512dc47648115b4edcfe45054498a3c9b35b267190"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "2b516df882f1ab1c1a487c4e855d031bc71bfdd205cadf93d7e7cd8d996ad073"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "294e92868a83204444428c2d81b02df91a17a11fd7dc4be5e15e21c9fb072213"
+          },
+          {
+            "id": "block_0009_0006",
+            "sha256": "1850083abbdea727d09afc073eb5edbf4fe2eccbf7c2e6dbe33d7d981c6e4f14"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "33e267a9a3920f0cd2522dde2df4b4490d348d554b7e9f79fb8e8f54f2fe59c5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "f6c24666e492ec7916f541d0f541bccff6b1ecc2ef6ed792ee60e440612f5a10"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "efd3c7ec8504a4c337f503b7a2ed569ff36bca3304bdc71ca442f117b9a6bea2"
+          },
+          {
+            "id": "block_0011_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0007",
+            "sha256": "8ad8cb31f3f38cb87266a2d1667ac00946514fc2121238545bc41b496d83159b"
+          },
+          {
+            "id": "block_0011_0008",
+            "sha256": "e17dc2e7a7d4d6d5104b76d902618ac4a5366f40d7cfc8cd6815e60d9fb34ef0"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0009",
+            "sha256": "68c2fe26bf8bdd346125540441e7bd6ec761be767ef9676ce7683f1ad14e4402"
+          },
+          {
+            "id": "block_0013_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0011",
+            "sha256": "bea265e868cb24d6603dd8fb5733f5418d132edc431df9b8f83595e8c8f73bfb"
+          },
+          {
+            "id": "block_0013_0012",
+            "sha256": "8b5657597de6a39753e61d42f2b8212d6a1d053a5db8a25bf74a2ae06d076dfa"
+          },
+          {
+            "id": "block_0013_0013",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "b95750e7208a911003f46278f94177be77b0ddb0409100cc54d3c0f4155042f3"
+          },
+          {
+            "id": "block_0014_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0007",
+            "sha256": "6cbd7b9a5f6d3a491fa0238e954e724922e0811183bec7a4528696f47a78e38a"
+          },
+          {
+            "id": "block_0014_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0011",
+            "sha256": "405ca98a4380032159af6e8adeb46a20075becf4d41aa33fbf9d14bec1bd5bb5"
+          },
+          {
+            "id": "block_0014_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0013",
+            "sha256": "2d5ab2e40d57fb18d030f7d87bd4c5cab620bc87854b68a8cf038acf816bfbb2"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0005",
+            "sha256": "c9a014c91960fe55fadeb7c1cf5a6231f7a2dac03b41a2fd224ef4eb82dd3565"
+          },
+          {
+            "id": "block_0015_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0007",
+            "sha256": "fa606d573109d65ded563b64988654b64ae5d9b89accec28774589a4f0658476"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "ecef072c63bfab29cfd01bf1c10984f57da53c0cac0164e20e01e432a06c9f66"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "41f40d8e1e409736ff051fc67f2d924b1c52cbf7848059b231c66e2d1ceb92eb"
+          },
+          {
+            "id": "block_0016_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0007",
+            "sha256": "b70522bbe87b2b88e91637da4fd1559ab14fbadfa751eb77824084a9ffbe0550"
+          },
+          {
+            "id": "block_0016_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0009",
+            "sha256": "45a7326f071917baf39444888117133c2a36c450ada569e597ee2a126f853603"
+          },
+          {
+            "id": "block_0016_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0011",
+            "sha256": "e73c12ede1a5734d0b29836156e8bbfa63150620bb8b76166a9bdfcbb70c8a8a"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "2a2d8ad204b5579a6aaf3c598884d79f30b0d3124963b8f46fafbf8f9ba2ae93"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007",
+          "block_0003_0008",
+          "block_0003_0009",
+          "block_0003_0010",
+          "block_0003_0011"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007",
+          "block_0007_0008"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006",
+          "block_0008_0007",
+          "block_0008_0008",
+          "block_0008_0009",
+          "block_0008_0010",
+          "block_0008_0011"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005",
+          "block_0009_0006"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005",
+          "block_0011_0006",
+          "block_0011_0007",
+          "block_0011_0008"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004",
+          "block_0013_0005",
+          "block_0013_0006",
+          "block_0013_0007",
+          "block_0013_0008",
+          "block_0013_0009",
+          "block_0013_0010",
+          "block_0013_0011",
+          "block_0013_0012",
+          "block_0013_0013"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005",
+          "block_0014_0006",
+          "block_0014_0007",
+          "block_0014_0008",
+          "block_0014_0009",
+          "block_0014_0010",
+          "block_0014_0011",
+          "block_0014_0012",
+          "block_0014_0013"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004",
+          "block_0015_0005",
+          "block_0015_0006",
+          "block_0015_0007"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005",
+          "block_0016_0006",
+          "block_0016_0007",
+          "block_0016_0008",
+          "block_0016_0009",
+          "block_0016_0010",
+          "block_0016_0011"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "7a4f260c897eba50597500ce79b50e16a6b9b3bb70fcd85844225ead6fab1754",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "a3bc37eb77a3ca4e18a7ec2d9079cafddab595a3b2fe1f9bbdfbcf53860ad3c3"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "9bf60feb4215c72e62d6297078f3c2b67a9d373458a1553f62c3aa367fe77280"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "3536b15b64ab30212511c9f18e11df512a08d7f48e38ccc5fbe1f7ef20448317"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "299c0884e4c90362f384ddedc4b5c47839c2bc00794be67ee2ee3185d755ec17"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "431e614e42ba1ee37a1472090ac76df624192f8bb652ed53728abf7e2e79dc7b"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "356643e74020d641130182b54e75bbaa4f664fb2fa2e4aa5d478ebf3b94c9b97"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0008",
+                "sha256": "2b8a02c953eef70d318ea696061193c9ac883d56aa31939c38ac464b09e944da"
+              },
+              {
+                "id": "block_0003_0009",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0010",
+                "sha256": "1d480ea388401553396f5f1ee5e9204cafe6309228ae45ee9bf7bc80abbf0382"
+              },
+              {
+                "id": "block_0003_0011",
+                "sha256": "f2a7dbd0d38888b1e49537fed9d138fd6a94b9816de1314e80016beb119b074a"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "4532fa26e06a262c734a0e535d6cb46598ded5843e22a0ffed3db24dfcb813f9"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "c31dc30d2e3e4c827956dd691668527612363bb9e1cb4d25d6cfd36a428d8c50"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "8be7678214283189888d4dc82f58a0057c59b8bf3720cab2cdbff4d5311460c5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "00bf990ed66c09bd65e593a36cdd0a024ebe671414a9a990f5eca940db16b407"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "bab8f5227e1eeb2bb08fc31cad5c92c4931cc7b3a589ef7f78c13bb57c63667f"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "8ceb2d64382839f8b8fd07cf68c6f885990f60868ac36e18654f4729f1a6f0ca"
+              },
+              {
+                "id": "block_0007_0008",
+                "sha256": "f10a7c476f69dfb706a131bc52fe2ab08fd7ba7e5ddac30265f78cd24eb26c05"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "c6e298720037afa095641c63d893c54f2f74ce1e8445187d03a57fdee5742b4a"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "1c7a6f31a0811d00efd947ab0e82bab6044066435b789cccb43167dc5e2fc830"
+              },
+              {
+                "id": "block_0008_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0008",
+                "sha256": "8700936f822888ce857b2996da783e8eab8a7a60eb01a646e678e4c15e2155c1"
+              },
+              {
+                "id": "block_0008_0009",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0010",
+                "sha256": "22967b0af8e5e81ce198a0cce0f0a39efab82b349bfcc27049af132574bfee05"
+              },
+              {
+                "id": "block_0008_0011",
+                "sha256": "6d80ad70dfc5a49acf5a31512dc47648115b4edcfe45054498a3c9b35b267190"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "2b516df882f1ab1c1a487c4e855d031bc71bfdd205cadf93d7e7cd8d996ad073"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "294e92868a83204444428c2d81b02df91a17a11fd7dc4be5e15e21c9fb072213"
+              },
+              {
+                "id": "block_0009_0006",
+                "sha256": "1850083abbdea727d09afc073eb5edbf4fe2eccbf7c2e6dbe33d7d981c6e4f14"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "33e267a9a3920f0cd2522dde2df4b4490d348d554b7e9f79fb8e8f54f2fe59c5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "f6c24666e492ec7916f541d0f541bccff6b1ecc2ef6ed792ee60e440612f5a10"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "efd3c7ec8504a4c337f503b7a2ed569ff36bca3304bdc71ca442f117b9a6bea2"
+              },
+              {
+                "id": "block_0011_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0007",
+                "sha256": "8ad8cb31f3f38cb87266a2d1667ac00946514fc2121238545bc41b496d83159b"
+              },
+              {
+                "id": "block_0011_0008",
+                "sha256": "e17dc2e7a7d4d6d5104b76d902618ac4a5366f40d7cfc8cd6815e60d9fb34ef0"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0009",
+                "sha256": "68c2fe26bf8bdd346125540441e7bd6ec761be767ef9676ce7683f1ad14e4402"
+              },
+              {
+                "id": "block_0013_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0011",
+                "sha256": "bea265e868cb24d6603dd8fb5733f5418d132edc431df9b8f83595e8c8f73bfb"
+              },
+              {
+                "id": "block_0013_0012",
+                "sha256": "8b5657597de6a39753e61d42f2b8212d6a1d053a5db8a25bf74a2ae06d076dfa"
+              },
+              {
+                "id": "block_0013_0013",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "b95750e7208a911003f46278f94177be77b0ddb0409100cc54d3c0f4155042f3"
+              },
+              {
+                "id": "block_0014_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0007",
+                "sha256": "6cbd7b9a5f6d3a491fa0238e954e724922e0811183bec7a4528696f47a78e38a"
+              },
+              {
+                "id": "block_0014_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0011",
+                "sha256": "405ca98a4380032159af6e8adeb46a20075becf4d41aa33fbf9d14bec1bd5bb5"
+              },
+              {
+                "id": "block_0014_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0013",
+                "sha256": "2d5ab2e40d57fb18d030f7d87bd4c5cab620bc87854b68a8cf038acf816bfbb2"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0005",
+                "sha256": "c9a014c91960fe55fadeb7c1cf5a6231f7a2dac03b41a2fd224ef4eb82dd3565"
+              },
+              {
+                "id": "block_0015_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0007",
+                "sha256": "fa606d573109d65ded563b64988654b64ae5d9b89accec28774589a4f0658476"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "ecef072c63bfab29cfd01bf1c10984f57da53c0cac0164e20e01e432a06c9f66"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "41f40d8e1e409736ff051fc67f2d924b1c52cbf7848059b231c66e2d1ceb92eb"
+              },
+              {
+                "id": "block_0016_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0007",
+                "sha256": "b70522bbe87b2b88e91637da4fd1559ab14fbadfa751eb77824084a9ffbe0550"
+              },
+              {
+                "id": "block_0016_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0009",
+                "sha256": "45a7326f071917baf39444888117133c2a36c450ada569e597ee2a126f853603"
+              },
+              {
+                "id": "block_0016_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0011",
+                "sha256": "e73c12ede1a5734d0b29836156e8bbfa63150620bb8b76166a9bdfcbb70c8a8a"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "2a2d8ad204b5579a6aaf3c598884d79f30b0d3124963b8f46fafbf8f9ba2ae93"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
