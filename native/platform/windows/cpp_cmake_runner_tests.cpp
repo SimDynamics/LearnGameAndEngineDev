@@ -5,9 +5,9 @@
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
 #include "native_build_config.hpp"
+#include <windows.h>
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
-#include <windows.h>
 #include <algorithm>
 #include <array>
 #include <fstream>
