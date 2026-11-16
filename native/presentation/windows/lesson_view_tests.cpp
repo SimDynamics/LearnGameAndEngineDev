@@ -548,7 +548,9 @@ void console_fullscreen_zoom_escape() {
         CHARRANGE selection{text.empty()?0:1,text.empty()?0:5},source_selection{2,7};
         SendMessageW(display,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
         if(source)SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&source_selection));
-        RECT normal_bounds{};GetWindowRect(display,&normal_bounds);
+        const auto pane=GetParent(display),header=fixture.control(0,output?30:16);
+        RECT normal_bounds{},normal_header{};GetWindowRect(display,&normal_bounds);GetWindowRect(header,&normal_header);
+        SCROLLINFO normal_scroll{sizeof(normal_scroll),SIF_POS};GetScrollInfo(pane,SB_VERT,&normal_scroll);
         const auto unchanged=[&] {
             CHARRANGE current{};SendMessageW(display,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&current));
             require(fixture.control(0,output?14:1)==display&&edit_text(display)==text&&
@@ -575,9 +577,22 @@ void console_fullscreen_zoom_escape() {
         fixture.escape();
         require(fixture.fullscreen()&&scale()==base,"Escape routed through the view skipped the unzoomed fullscreen state");unchanged();
         fixture.escape();
-        RECT restored{};GetWindowRect(display,&restored);
-        require(!fixture.fullscreen()&&scale()==base&&EqualRect(&normal_bounds,&restored),
-            "Escape without zoom did not restore the original normal console geometry and scale");unchanged();
+        RECT restored{},restored_header{};GetWindowRect(display,&restored);GetWindowRect(header,&restored_header);
+        SCROLLINFO restored_scroll{sizeof(restored_scroll),SIF_POS};GetScrollInfo(pane,SB_VERT,&restored_scroll);
+        require(!fixture.fullscreen(),"Escape without zoom did not leave console fullscreen");
+        require(scale()==base,"Escape without zoom changed the original normal console scale");
+        if(!EqualRect(&normal_bounds,&restored)) {
+            const auto bounds=[](const RECT& value) {
+                return "["+std::to_string(value.left)+","+std::to_string(value.top)+","+
+                    std::to_string(value.right)+","+std::to_string(value.bottom)+"]";
+            };
+            throw std::runtime_error("Escape without zoom did not restore the original normal console geometry: surface="+
+                std::to_string(surface)+", base="+std::to_string(base)+", scale="+std::to_string(scale())+
+                ", normal="+bounds(normal_bounds)+", restored="+bounds(restored)+
+                ", normal_header="+bounds(normal_header)+", restored_header="+bounds(restored_header)+
+                ", normal_scroll="+std::to_string(normal_scroll.nPos)+", restored_scroll="+std::to_string(restored_scroll.nPos));
+        }
+        unchanged();
         // Explicit fullscreen controls must not leave a stale zoom attached
         // to the same HWND when the console is expanded again.
         double_click();double_click();
@@ -1876,14 +1891,24 @@ void simulated_code_and_choice_cards() {
     require(notifications>0&&reading_script(fixture.view)==script_before_fullscreen,
         "A later content notification during fullscreen lost the page narration projection");
     require(fixture.fullscreen()&&!descendant(fixture.view,116),"Fullscreen retained the page toolbar or added an exit X");
+    const auto double_click_blank=[&] {
+        RECT client{};GetClientRect(code,&client);
+        // The old fixed point (40,20) can hit the first source line. Locate
+        // empty client space again after zoom changes its glyph geometry.
+        for(int y=4;y<client.bottom-4;y+=6)for(int x=client.right-24;x>client.right/2;x-=12)
+            if(!rich_text_hit_test(code,{x,y})) {
+                SendMessageW(code,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(x,y));pump(fixture.host);return;
+            }
+        throw std::runtime_error("The readonly fullscreen fixture has no observed empty client area");
+    };
     int before_n=0,before_d=0,after_n=0,after_d=0;
     SendMessageW(code,EM_GETZOOM,reinterpret_cast<WPARAM>(&before_n),reinterpret_cast<LPARAM>(&before_d));
-    SendMessageW(code,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(40,20));pump(fixture.host);
+    double_click_blank();
     SendMessageW(code,EM_GETZOOM,reinterpret_cast<WPARAM>(&after_n),reinterpret_cast<LPARAM>(&after_d));
     const auto base=before_d?MulDiv(before_n,100,before_d):100;
     require(after_d&&MulDiv(after_n,100,after_d)==2*base&&fixture.text(0,1)==original&&fixture.fullscreen(),
         "Double click failed to zoom the existing readonly code or incorrectly left fullscreen");
-    SendMessageW(code,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(40,20));pump(fixture.host);
+    double_click_blank();
     SendMessageW(code,EM_GETZOOM,reinterpret_cast<WPARAM>(&after_n),reinterpret_cast<LPARAM>(&after_d));
     require(after_d&&MulDiv(after_n,100,after_d)==2*base&&fixture.fullscreen(),
         "A repeated double click removed the readonly console zoom or left fullscreen");

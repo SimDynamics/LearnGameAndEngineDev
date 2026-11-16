@@ -399,7 +399,7 @@ if ($Suite -eq 'ReaderBuild') {
         (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
         throw 'ReaderBuild must register console fullscreen/zoom, menu/scroll, Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery, stateful reduction, integer CMake battery and original open-battery execution regressions.'
     }
-    & $qaCTest --test-dir $qaBuild --output-on-failure --no-tests=error --timeout 300
+    & $qaCTest --test-dir $qaBuild --output-on-failure --no-tests=error --timeout 300 --stop-on-failure
     if ($LASTEXITCODE -ne 0) { throw 'A focused native reader, catalog, compiler or Win32 regression failed.' }
     Write-Host 'PASS original reader/U6 executables compiled and linked; catalog, general-choice reading preservation, boolean battery execution/provenance, console fullscreen/zoom and Escape, actual Win32 History dialogs and focused published lesson execution/reopen/reset tested. No reader/audio playback executed.'
     return

@@ -459,6 +459,17 @@ if(LGAED_READER_BUILD_QA_ONLY)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     include(cmake/StateImportTests.cmake)
     lgaed_add_catalog_history_fixtures()
+    # Run the real-control menu/scroll cases before costly compiler probes.
+    # A failing gesture must report its native diagnostics immediately.
+    # These modes do not launch the app or synthesize/play narration.
+    add_executable(lgaed_lesson_view_tests
+        native/presentation/windows/lesson_view_tests.cpp)
+    target_link_libraries(lgaed_lesson_view_tests PRIVATE lgaed_curricular_windows)
+    add_dependencies(lgaed_lesson_view_tests lgaed_retirement_fixtures)
+    add_test(NAME native.lesson_scroll_render COMMAND lgaed_lesson_view_tests --scroll-repaint)
+    add_test(NAME native.lesson_menu COMMAND lgaed_lesson_view_tests --lesson-menu)
+    set_tests_properties(native.lesson_menu native.lesson_scroll_render
+        PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
     lgaed_add_catalog_test()
     lgaed_add_general_choice_editorial_tests()
     lgaed_add_boolean_battery_tests()
@@ -467,16 +478,6 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_open_battery_runtime_test()
     lgaed_add_semantic_retirement_view_test()
     lgaed_add_compiler_case_order_view_test()
-    # Reuse the existing real-control menu/scroll cases for console gestures.
-    # These modes do not launch the app or synthesize/play narration.
-    add_executable(lgaed_lesson_view_tests
-        native/presentation/windows/lesson_view_tests.cpp)
-    target_link_libraries(lgaed_lesson_view_tests PRIVATE lgaed_curricular_windows)
-    add_dependencies(lgaed_lesson_view_tests lgaed_retirement_fixtures)
-    add_test(NAME native.lesson_menu COMMAND lgaed_lesson_view_tests --lesson-menu)
-    add_test(NAME native.lesson_scroll_render COMMAND lgaed_lesson_view_tests --scroll-repaint)
-    set_tests_properties(native.lesson_menu native.lesson_scroll_render
-        PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
     # Run the real Win32 compiler view against thirteen authored inputs.
     # Exactly the first must unlock navigation; all others remain optional.
     add_executable(lgaed_compiler_first_case_view_tests
