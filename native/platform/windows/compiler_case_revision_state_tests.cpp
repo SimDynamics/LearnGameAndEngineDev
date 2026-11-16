@@ -1498,8 +1498,103 @@ std::string repaired_single_client(std::string source) {
     source.replace(at, old.size(), "return disponibles <= minimo;");
     return source;
 }
+std::filesystem::path client_mode_build_directory(const std::filesystem::path& qa, bool cmake) {
+    const auto original = qa / "client-modes-native";
+    std::array<wchar_t, 8> actions{};
+    if (!cmake || GetEnvironmentVariableW(L"GITHUB_ACTIONS", actions.data(),
+            static_cast<DWORD>(actions.size())) != 4 || std::wstring_view(actions.data()) != L"true")
+        return original;
+    // Actions' nested checkout/QA path exceeds MSVC's try_compile PDB limit.
+    // Keep local runs in their supplied QA root and shorten only this CI build;
+    // profiles, imported files and receipts still use the original QA tree.
+    const auto size = GetEnvironmentVariableW(L"RUNNER_TEMP", nullptr, 0);
+    require(size > 1, "Actions CMake QA needs its own existing RUNNER_TEMP directory");
+    std::wstring temporary(size, L'\0');
+    const auto copied = GetEnvironmentVariableW(L"RUNNER_TEMP", temporary.data(), size);
+    require(copied > 0 && copied < size, "The Actions temporary directory changed while reading it");
+    temporary.resize(copied);
+    const std::filesystem::path parent(temporary);
+    require(parent.is_absolute(), "Actions CMake QA requires an absolute temporary parent");
+    require_safe_path(parent);
+    const auto root = parent / ("lgaed-cr-" + std::to_string(GetCurrentProcessId()) + '-' + std::to_string(GetTickCount64()));
+    require_safe_path(root);
+    require(std::filesystem::create_directory(native_io_path(root)),
+        "Another process already owns this isolated Actions CMake build directory");
+    require_safe_path(root);
+    return root;
+}
+void check_client_mode_gate(const StateData& data, const Lesson& lesson,
+        const ClientModeSpec& spec, bool expected) {
+    if (spec.mode != "single") { check_gate(data, lesson, spec.owner, expected); return; }
+    constexpr std::string_view open_owner = "block_0004_0004";
+    require(lesson.id == client_mode_specs.front().lesson && spec.owner == "block_0004_0008",
+        "The open-coeditor catalog oracle belongs only to the authentic U1L1 pilot");
+    const auto completed = [&](const Block& block) { return compiler_puzzle_completed(data, lesson, block); };
+    const auto snapshot = compiler_completion_snapshot(lesson, completed);
+    require(snapshot.contains(std::string(spec.owner)) && snapshot.at(std::string(spec.owner)) == expected,
+        "A single-file client credited the wrong required first case or lost its prerequisite");
+    for (const auto& relation : lesson.reference_after) if (relation.activity == spec.owner)
+        for (const auto& identity : relation.blocks) {
+            const auto position = stable_block_position(lesson, identity);
+            require(position.has_value(), "The single-file client lost a dependent reference");
+            const auto& reference = lesson.pages[position->page].blocks[position->block];
+            require(compiler_reference_available(lesson, position->page, reference, snapshot, completed) == expected,
+                "A single-file reference gate disagrees with the required first case");
+        }
+    const auto inspect = [&](const Lesson& version) {
+        const auto& open = editor(version, open_owner);
+        const auto group = std::ranges::find_if(version.state_layout.origin,
+            [](const auto& item) { return item.id == "page_0004"; });
+        require(group != version.state_layout.origin.end()
+            && std::ranges::find(group->blocks, open_owner) != group->blocks.end()
+            && std::ranges::find(group->blocks, spec.owner) != group->blocks.end()
+            && open.type == BlockType::cpp_compiler && !open.output_check && !open.compile_check
+            && !compiler_puzzle_completed(data, version, open) && compiler_puzzle_case_count(data, version, open) == 0,
+            "The authentic historical group must retain its separate open editor without execution credit");
+        const auto progress = [&](std::optional<bool> focal, bool assume_open) {
+            return catalog_lesson_page_progress(data, version, [&](const Block& block) {
+                // This counterfactual observes the catalog callback only. It
+                // never writes a response, receipt or completion for the editor.
+                if (assume_open && block.stable_id == open_owner) return true;
+                if (focal && block.stable_id == spec.owner) return *focal;
+                if (block.type == BlockType::cpp_compiler)
+                    return compiler_puzzle_completed(data, version, block);
+                const auto response = get_response(data, version, block);
+                return response && response->correct;
+            });
+        };
+        const auto actual = progress(std::nullopt, false);
+        const auto pending = progress(false, false), earned = progress(true, false);
+        require(earned.completed == pending.completed && actual.completed == pending.completed
+            && actual.completed < actual.total,
+            "A focal receipt or old lesson flag incorrectly completed the group with an unproved open editor");
+        const auto focal_pending = progress(false, true), focal_earned = progress(true, true);
+        const auto isolated = progress(std::nullopt, true);
+        require(focal_pending.completed == pending.completed && focal_earned.completed == pending.completed + 1
+            && isolated.completed == (expected ? focal_earned.completed : focal_pending.completed),
+            "The observational catalog callback lost the required first-case distinction");
+        return std::array{actual, pending, earned, focal_pending, focal_earned, isolated};
+    };
+    const auto full = inspect(lesson);
+    const auto metadata = parse_lesson_progress_metadata(lesson.raw_json, lesson.locale);
+    const auto projected = inspect(metadata);
+    for (std::size_t i = 0; i < full.size(); ++i)
+        require(full[i].completed == projected[i].completed && full[i].total == projected[i].total,
+            "Full and metadata loaders disagree about the real or counterfactual single-file catalog progress");
+    std::vector<EntryRequirement> requirements;
+    for (std::size_t p = 0; p < lesson.pages.size(); ++p)
+        for (const auto& block : lesson.pages[p].blocks)
+            if (block.type == BlockType::cpp_compiler)
+                requirements.push_back({p, completed(block) ? EntryCompletion::complete : EntryCompletion::incomplete});
+    const auto decision = lesson_entry_decision(lesson.pages.size() - 1, lesson.pages.size(), requirements);
+    const auto position = stable_block_position(lesson, spec.owner);
+    const auto open_position = stable_block_position(lesson, open_owner);
+    require(position && open_position && decision.page <= open_position->page
+        && (expected || decision.page <= position->page),
+        "Restoring the bookmark bypassed the current first case or the independent open editor");
+}
 ClientCapture execute_client_mode(const ClientModeFixture& fixture, const Block& block, bool reference,
-        bool aggregate, std::string_view input, const std::filesystem::path& directory,
+        bool aggregate, std::string_view input, const std::filesystem::path& build_directory,
         std::uint64_t identity, std::string_view expected_output, std::uint32_t expected_exit) {
     const auto& spec = *fixture.spec;
     const bool cmake = spec.mode == "cmake";
@@ -1509,7 +1604,7 @@ ClientCapture execute_client_mode(const ClientModeFixture& fixture, const Block&
     request.source_utf8 = block.initial_code; request.project_files = block.project_files;
     request.source_files = block.source_files; request.cmake = block.cmake; request.stdin_utf8 = input;
     request.action = CppRunRequest::Action::compile_run; request.backend = CppRunRequest::Backend::native_msvc;
-    request.projects_directory = directory / "client-modes-native";
+    request.projects_directory = build_directory;
     request.project_key = std::string(spec.name) + (aggregate ? "/aggregate" : reference ? "/reference" : "/starter");
     request.compile_timeout = std::chrono::seconds(60); request.execution_timeout = std::chrono::seconds(5);
     if (reference && cmake) {
@@ -1578,7 +1673,7 @@ void client_mode_state_only(const ClientModeFixture& fixture, const ClientCaptur
         && !compiler_puzzle_success_feedback(pending, fixture.after, after)
         && proof_values(pending, fixture.before, before) == old_proofs,
         "A historical aggregate automatically accredited a new single/CMake client");
-    check_gate(pending, fixture.after, spec.owner, false);
+    check_client_mode_gate(pending, fixture.after, spec, false);
     const auto old_evaluation = evaluate_cpp_output_check(*after.output_check, old_at_first.execution, old_at_first.request.revision);
     auto newly_executed_old = pending;
     if (cmake) {
@@ -1653,7 +1748,7 @@ void client_mode_state_only(const ClientModeFixture& fixture, const ClientCaptur
     require(accept(first_only, 0) && compiler_puzzle_completed(first_only, fixture.after, after)
         && compiler_puzzle_case_count(first_only, fixture.after, after) == 1,
         "A new single/CMake first case required either optional trial");
-    check_gate(first_only, fixture.after, spec.owner, true);
+    check_client_mode_gate(first_only, fixture.after, spec, true);
     preserved_drafts(edited, first_only, fixture.after, fixture.after);
     require(proof_values(first_only, fixture.before, before) == old_proofs
         && string_value(first_only, "native_windows", receipt_base(fixture.before, before) + "program") == old_program,
@@ -1665,10 +1760,10 @@ void client_mode_state_only(const ClientModeFixture& fixture, const ClientCaptur
         && !compiler_puzzle_completed(optional_only, fixture.after, after)
         && compiler_puzzle_case_count(optional_only, fixture.after, after) == 2,
         "Two optional single/CMake cases replaced the first required case");
-    check_gate(optional_only, fixture.after, spec.owner, false);
+    check_client_mode_gate(optional_only, fixture.after, spec, false);
     require(accept(optional_only, 0) && compiler_puzzle_case_count(optional_only, fixture.after, after) == 3,
         "The first single/CMake input could not complete previously optional trials");
-    check_gate(optional_only, fixture.after, spec.owner, true);
+    check_client_mode_gate(optional_only, fixture.after, spec, true);
     for (const auto* version : {&fixture.cases_only, &fixture.formatted_client}) {
         auto data = first_only;
         prepare_lesson_state(data, *version);
@@ -1677,7 +1772,7 @@ void client_mode_state_only(const ClientModeFixture& fixture, const ClientCaptur
             && compiler_puzzle_completed(data, *version, active) && compiler_puzzle_case_count(data, *version, active) == 1,
             "A same-epoch single/CMake case or format review lost its valid first receipt");
         check_conservation(first_only, data, fixture.after, *version, spec.owner);
-        preserved_drafts(first_only, data, fixture.after, *version); check_gate(data, *version, spec.owner, true);
+        preserved_drafts(first_only, data, fixture.after, *version); check_client_mode_gate(data, *version, spec, true);
     }
     auto other_epoch = first_only;
     const Lesson* previous = &fixture.after;
@@ -1692,7 +1787,7 @@ void client_mode_state_only(const ClientModeFixture& fixture, const ClientCaptur
             && proof_values(other_epoch, fixture.before, before) == old_proofs,
             "A new client epoch or identical-source return borrowed a single/CMake receipt");
         check_conservation(prior, other_epoch, *previous, *version, spec.owner);
-        preserved_drafts(prior, other_epoch, *previous, *version); check_gate(other_epoch, *version, spec.owner, false);
+        preserved_drafts(prior, other_epoch, *previous, *version); check_client_mode_gate(other_epoch, *version, spec, false);
         const auto adopted = other_epoch; prepare_lesson_state(other_epoch, *version);
         require(other_epoch == adopted, "Replaying a client-mode publication changed its history");
         previous = version;
@@ -1718,7 +1813,9 @@ void client_mode_state_only(const ClientModeFixture& fixture, const ClientCaptur
     require(!get_draft(untouched, key, after.initial_code).has_saved
         && !find(untouched, "cpp_lesson_drafts", key + "/project") && !find(untouched, "cpp_lesson_drafts", key + "/cmake"),
         "Adopting a client-mode publication invented an untouched student draft");
-    std::cout << "PASS " << spec.mode << " client state-only reuse of real captures: first-only/optional gates, original complete "
+    std::cout << "PASS " << spec.mode << " client state-only reuse of real captures: "
+        << (cmake ? "first-only/optional gates, " : "first-case/optional receipts and references; actual open coeditor still blocks "
+            "catalog/navigation; callback-only focal delta without stored coeditor credit, ") << "original complete "
         "program and recipe, saved drafts, epoch return, format/cases, import/reopen/Reset and atomic refusal\n";
 }
 std::size_t actual_client_mode_runs(const ClientModeFixture& fixture, const std::filesystem::path& directory) {
@@ -1727,16 +1824,17 @@ std::size_t actual_client_mode_runs(const ClientModeFixture& fixture, const std:
     const auto& before = editor(fixture.before, spec.owner);
     const auto& after = editor(fixture.after, spec.owner);
     const auto base = cmake ? 900U : 800U;
+    const auto builds = client_mode_build_directory(directory, cmake);
     const auto aggregate_output = cmake ? "3:0:0" : "";
-    const auto aggregate = execute_client_mode(fixture, before, true, true, "", directory, base, aggregate_output, 0);
+    const auto aggregate = execute_client_mode(fixture, before, true, true, "", builds, base, aggregate_output, 0);
     require(evaluate_cpp_output_check(*before.output_check, aggregate.execution, aggregate.request.revision).verdict == OutputVerdict::correct,
         "The authentic single/CMake aggregate fails its own published output contract");
-    const auto old_at_first = execute_client_mode(fixture, before, true, true, spec.inputs[0], directory, base + 1, aggregate_output, 0);
-    const auto starter = execute_client_mode(fixture, after, false, false, spec.inputs[0], directory, base + 2,
+    const auto old_at_first = execute_client_mode(fixture, before, true, true, spec.inputs[0], builds, base + 1, aggregate_output, 0);
+    const auto starter = execute_client_mode(fixture, after, false, false, spec.inputs[0], builds, base + 2,
         cmake ? "4" : "Fallo: 5,5 esperado=1 obtenido=0\r\n", cmake ? 0 : 1);
     std::vector<ClientCapture> individual;
     for (std::size_t i = 0; i < spec.inputs.size(); ++i)
-        individual.push_back(execute_client_mode(fixture, after, true, false, spec.inputs[i], directory, base + 3 + i, spec.outputs[i], 0));
+        individual.push_back(execute_client_mode(fixture, after, true, false, spec.inputs[i], builds, base + 3 + i, spec.outputs[i], 0));
     client_mode_state_only(fixture, aggregate, old_at_first, starter, individual, directory);
     return 6;
 }
