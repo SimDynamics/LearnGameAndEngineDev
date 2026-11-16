@@ -1372,6 +1372,53 @@ aplican en su orden editorial, conservando sus archivos y las pruebas de cada
 versión. El reinicio explícito del editor elimina los recibos y marcadores de
 sus versiones, de forma que una reapertura no restaure un logro reiniciado.
 
+### Adaptar el cliente al separar los casos
+
+Cuando las llamadas independientes están escritas dentro del cliente de un
+proyecto C++, Work puede preparar una transición explícita con
+`revise_compiler_client_cases`. Recibe el propietario estable, un objeto
+`client: {path, source}`, la lista completa de casos y su semántica. El
+registro se incorpora a `stateLayout.compilerCaseRevisions`, con el bloque
+anterior íntegro y su procedencia editorial. El esquema y el comando
+`revise-compiler-client-cases` se describen en
+`docs/curriculum/STABLE_LESSON_STATE.md`.
+
+Esta modalidad admite un archivo C++ ya incluido en `sourceFiles`, dentro
+de un proyecto de varios archivos sin CMake ni `compileCheck`. Si existe
+`initialCode` en el bloque, debe ser el alias exacto de ese cliente y ambos
+se actualizan juntos. Conserva las rutas, los demás archivos, la selección
+de fuentes, la entrada inicial declarada, las reglas de comparación y el
+resto del editor. Los casos se suministran expresamente; pueden conservar
+sus valores cuando el cliente cambia. La API anterior
+`revise_compiler_cases` mantiene su contrato de revisión exclusiva de casos.
+
+Cada adaptación del cliente crea un objetivo de ejecución propio. Un logro
+anterior permanece en su historia, pero no acredita esa versión, aunque los
+casos sean idénticos o una adaptación posterior recupere exactamente los bytes
+de un cliente antiguo. Dentro de una misma versión del cliente, las revisiones
+exclusivas de casos y sus permutaciones pueden reutilizar recibos de casos
+completos idénticos del mismo programa, conforme a las reglas anteriores.
+
+Sólo el primer caso actual es obligatorio. Los demás ensayos siguen disponibles
+con sus entradas y resultados separados. Si el bloque no declaraba una entrada
+inicial y los casos nuevos contienen datos, el lector presenta el campo Entrada
+vacío mediante su regla existente. La carga de la publicación no cambia el
+código, la entrada ni los archivos de un borrador guardado. El estudiante adapta
+el cliente en el editor existente; sus auxiliares conservan su trabajo. Un
+editor sin borrador utiliza los archivos iniciales de la nueva publicación.
+
+Las revisiones de formato mantienen sus archivos originales. El cargador
+reconstruye la fuente canónica de cada versión del cliente y conserva por
+separado el formato histórico de los auxiliares. También utiliza el prefijo
+editorial de cada presentación archivada, de modo que un retiro de otros
+bloques no atribuya al historial una versión posterior del programa.
+
+La autenticación comprueba los archivos y la secuencia de cambios autorizados.
+Work conserva la responsabilidad de revisar el cliente, sus contratos, los
+datos y resultados de cada caso y las referencias posteriores. Esta capacidad
+no demuestra equivalencia general entre programas C++ ni realiza por sí misma
+la integración curricular.
+
 ## Actividad integrada
 
 En `programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json`,

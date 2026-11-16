@@ -40,6 +40,193 @@ SOURCES = {
 }
 OWNER = order_fixtures.SYNTHETIC_OWNER
 NOTE = order_fixtures.SYNTHETIC_NOTE
+CLIENT_COMMIT = "9871a39302b89b72f6469a73cf8cca97ca3919ca"
+CLIENT_ASSET = ("app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/"
+                "lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json")
+CLIENT_SHA256 = "ed784ae821b11d24df9c474a3cb2eae96b9ef213382506b249417abc2a123227"
+CLIENT_SOURCES = {
+    "es": (285042, CLIENT_SHA256),
+    "en": (35079, "d88080e6e1e2c07ffe50b9704681198a11e4532a0065458aa53dc176d495eb75"),
+    "fr": (37699, "220cb1602a099bdb1c91f476aa2a5fc22d4d6db938c6e4c72792e1ae6cc02833"),
+}
+CLIENT_OWNER = "block_0008_0008"
+CLIENT_REFERENCE = "series_cinco_referencia_cliente"
+CLIENT_INPUT_OWNER = "block_0020_0002"
+
+
+@lru_cache(maxsize=None)
+def client_historical_bytes(locale: str = "es") -> bytes:
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1", GIT_NO_REPLACE_OBJECTS="1",
+                       GIT_TERMINAL_PROMPT="0")
+    size, digest = CLIENT_SOURCES[locale]
+    asset = CLIENT_ASSET.replace("/es/", "/" + locale + "/")
+    raw = subprocess.check_output(
+        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show", f"{CLIENT_COMMIT}:{asset}"],
+        cwd=ROOT, env=environment, stderr=subprocess.PIPE)
+    if len(raw) != size or hashlib.sha256(raw).hexdigest() != digest:
+        raise ValueError("The client fixture differs from its complete pinned U6L19 publication")
+    return raw
+
+
+def client_publication() -> dict:
+    document = json.loads(client_historical_bytes())
+    layout.validate(document)
+    return document
+
+
+def client_cases() -> list[dict]:
+    # Independent oracles: a whole aggregate is never split into receipts.
+    return [{"standardInput": stdin, "outputs": [stdout, stdout + "\n"]}
+            for stdin, stdout in (("3 5", "En curso: 2"), ("0 0", "Terminada: 0"),
+                                  ("5 5", "Terminada: 0"), ("0 40", "En curso: 40"),
+                                  ("40 40", "Terminada: 0"))]
+
+
+def client_revised(document: dict, identity: str, source: str, cases: list[dict], *, return_to=None) -> dict:
+    return layout.revise_compiler_client_cases(document, identity, {"path": "main.cpp", "source": source},
+        cases, case_semantics=authored_fields(document, identity, cases), return_to=return_to)
+
+
+def client_formatted(document: dict, identity: str) -> dict:
+    changed = deepcopy(document)
+    block = layout._blocks(changed)[identity]
+    source = next(entry["initialCode"] for entry in block["projectFiles"] if entry["path"] == "main.cpp")
+    layout._compiler_client_replace_source(block, "main.cpp", source.replace("\n", "\n\n"))
+    family = {"es": document}
+    if set(document["stateLayout"]["family"]) != {"es"}:
+        family.update({locale: json.loads(client_historical_bytes(locale)) for locale in ("en", "fr")})
+    return layout.prepare_v2(changed, "es", family, document)
+
+
+def synthetic_client_publication() -> dict:
+    document = order_fixtures.synthetic_publication(marked=False)
+    block = layout._blocks(document)[OWNER]
+    block["projectFiles"] = [{"path": "helper.h", "initialCode": "// An unchanged auxiliary.\n"},
+                             {"path": "main.cpp", "initialCode": block["initialCode"]}]
+    block["sourceFiles"] = ["main.cpp"]
+    document.pop("stateLayout")
+    references = document.pop("referenceAfter")
+    result = layout.prepare_v2(document, "es", {"es": document})
+    result["referenceAfter"] = references
+    layout.validate(result)
+    return result
+
+
+def build_client_fixtures() -> tuple[dict, dict[str, str]]:
+    """Keep changed-client epochs separate from same-program case fixtures."""
+    manifest, payloads = {"clientCases": [], "clientValid": [], "invalid": []}, {}
+    def put(filename, document, *, raw=None):
+        payloads[filename] = raw.decode("utf-8") if raw is not None else json.dumps(document, ensure_ascii=False, indent=2) + "\n"
+        return filename
+    before = client_publication()
+    owner = layout._blocks(before)[CLIENT_OWNER]
+    source = layout._blocks(before)[CLIENT_INPUT_OWNER]["initialCode"]
+    cases = client_cases()
+    after = client_revised(before, CLIENT_OWNER, source, cases)
+    cases_only = revised(after, CLIENT_OWNER, cases[:-1])
+    changed_source = source.replace(
+        '    std::cout << estado_serie(hechas, total) << ": " << tareas_pendientes(hechas, total);',
+        '    const int pendientes{tareas_pendientes(hechas, total)};\n'
+        '    std::cout << estado_serie(hechas, total) << ": " << pendientes;')
+    if changed_source == source:
+        raise ValueError("The published individual client changed its independently selected expression")
+    changed_client = client_revised(after, CLIENT_OWNER, changed_source, cases)
+    prior = [edge for edge in changed_client["stateLayout"]["editorial"] if edge["id"] == CLIENT_OWNER]
+    nodes = [prior[0]["beforeSha256"], *[edge["afterSha256"] for edge in prior]]
+    returned = client_revised(changed_client, CLIENT_OWNER, source, cases,
+        return_to=nodes.index(layout.fingerprint(layout._blocks(after)[CLIENT_OWNER])))
+    formatted = client_formatted(after, CLIENT_OWNER)
+    manifest["clientCases"].append({
+        "name": "real-u6l19-client", "id": CLIENT_OWNER,
+        "before": put("u6l19-client.before.json", before, raw=client_historical_bytes()),
+        "after": put("u6l19-client.after.json", after),
+        "casesOnly": put("u6l19-client.cases-only.json", cases_only),
+        "changedClient": put("u6l19-client.changed-client.json", changed_client),
+        "returnedClient": put("u6l19-client.returned-client.json", returned),
+        "formattedClient": put("u6l19-client.formatted-client.json", formatted)})
+    for previous, current in ((before, after), (after, cases_only), (after, changed_client),
+                              (changed_client, returned), (after, formatted), (before, returned)):
+        layout.validate_transition(previous, current)
+
+    plain = synthetic_client_publication()
+    old = layout._blocks(plain)[OWNER]
+    newer = old["initialCode"].replace("int value{};", "int value{1};")
+    changed = client_revised(plain, OWNER, newer, old["outputCheck"]["cases"])
+    format_after = client_formatted(changed, OWNER)
+    format_before = client_formatted(plain, OWNER)
+    after_format = client_revised(format_before, OWNER, newer, old["outputCheck"]["cases"])
+    final_client = client_revised(format_after, OWNER, newer.replace("value{1}", "value{2}"),
+                                  old["outputCheck"]["cases"])
+    retired_before = layout.retire(plain, [NOTE])
+    after_retirement = client_revised(retired_before, OWNER, newer, old["outputCheck"]["cases"])
+    retired_after = layout.retire(changed, [NOTE])
+    for name, document in (("plain", changed), ("format-after", format_after),
+                           ("format-before", after_format), ("format-then-client", final_client),
+                           ("retirement-before", after_retirement), ("retirement-after", retired_after)):
+        layout.validate(document)
+        entry = {"name": name, "file": put("synthetic-client-" + name + ".json", document)}
+        if name.startswith("retirement-"):
+            predecessor = plain if name.endswith("before") else changed
+            entry.update(owner=OWNER, snapshotSource=put(
+                "synthetic-client-" + name + ".source.json", predecessor))
+        manifest["clientValid"].append(entry)
+    layout.validate_transition(plain, format_after)
+    layout.validate_transition(plain, final_client)
+
+    def invalid(name, operation, *, baseline=after):
+        bad = deepcopy(baseline)
+        item = bad["stateLayout"]["compilerCaseRevisions"][-1]
+        block = layout._blocks(bad)[item["id"]]
+        operation(bad, item, block)
+        try:
+            layout.validate(bad)
+        except (ValueError, TypeError, KeyError, IndexError):
+            manifest["invalid"].append({"name": "client-" + name,
+                "file": put("invalid-client-" + name + ".json", bad)})
+        else:
+            raise AssertionError("Invalid client history was accepted: " + name)
+    invalid("missing-declaration", lambda d,r,b: r.pop("client"))
+    invalid("unknown-field", lambda d,r,b: r["client"].__setitem__("automaticDraft", True))
+    invalid("missing-path", lambda d,r,b: r["client"].pop("path"))
+    invalid("missing-source", lambda d,r,b: r["client"].pop("source"))
+    invalid("unknown-file", lambda d,r,b: r["client"].__setitem__("path", "absent.cpp"))
+    invalid("header-client", lambda d,r,b: r["client"].__setitem__("path", "serie.h"))
+    invalid("wrong-source-client", lambda d,r,b: r["client"].__setitem__("path", "serie.cpp"))
+    invalid("empty-source", lambda d,r,b: r["client"].__setitem__("source", ""))
+    invalid("nul-source", lambda d,r,b: r["client"].__setitem__("source", r["client"]["source"] + "\0"))
+    invalid("unchanged-client", lambda d,r,b: r["client"].__setitem__("source", owner["initialCode"]))
+    invalid("previous-alias", lambda d,r,b: r["block"].__setitem__("initialCode", "int main() {}\n"))
+    invalid("extra-client-file-field", lambda d,r,b:
+            r["block"]["projectFiles"][-1].__setitem__("automaticDraft", True))
+    invalid("extra-auxiliary-field", lambda d,r,b:
+            r["block"]["projectFiles"][0].__setitem__("automaticDraft", True))
+    def current_source(d, r, b):
+        layout._compiler_client_replace_source(b, "main.cpp", b["initialCode"].replace("int hechas{0}", "int hechas{7}"))
+        d["stateLayout"]["editorial"][-1]["afterSha256"] = layout.fingerprint(b)
+    invalid("unrecorded-source", current_source)
+    def current_auxiliary(d, r, b):
+        b["projectFiles"][1]["initialCode"] += "int changed_auxiliary;\n"
+        d["stateLayout"]["editorial"][-1]["afterSha256"] = layout.fingerprint(b)
+    invalid("changed-auxiliary", current_auxiliary)
+    invalid("lost-history-prefix", lambda d,r,b: r.__setitem__("historySha256", "0" * 64))
+    invalid("stolen-editorial-edge", lambda d,r,b: r.__setitem__("editorialIndex", 0))
+    def unarchived_format(d, r, b):
+        previous = layout.fingerprint(b)
+        layout._compiler_client_replace_source(b, "main.cpp", b["initialCode"].replace("\n", "\n\n"))
+        d["stateLayout"]["editorial"].append({"id": OWNER, "beforeSha256": previous,
+                                             "afterSha256": layout.fingerprint(b)})
+    invalid("unarchived-format", unarchived_format, baseline=changed)
+    intermediate_source = newer.replace("value{1}", "value{7}")
+    intermediate = client_revised(changed, OWNER, intermediate_source, old["outputCheck"]["cases"])
+    middle = client_revised(intermediate, OWNER, newer.replace("value{1}", "value{2}"),
+                            old["outputCheck"]["cases"])
+    cyclic = client_revised(middle, OWNER, intermediate_source, old["outputCheck"]["cases"], return_to=2)
+    invalid("missing-event-before-return", lambda d,r,b:
+            d["stateLayout"]["compilerCaseRevisions"].pop(1), baseline=cyclic)
+    invalid("wrong-snapshot-epoch", lambda d,r,b:
+            d["stateLayout"]["retirementHistory"][0].__setitem__("editorialPrefix",
+                layout._retirement_editorial_prefix(d, 0)), baseline=retired_after)
+    return manifest, payloads
 
 
 @lru_cache(maxsize=None)
@@ -333,6 +520,11 @@ def build_fixtures() -> tuple[dict, dict[str, str]]:
             "lessonId": document["id"], "locale": document["stateLayout"]["locale"],
             "editorial": document["stateLayout"]["editorial"][:1]}))
     invalid("retirement-prefix-wrong-published-head", snapshot_after, wrong_head)
+    client_manifest, client_payloads = build_client_fixtures()
+    manifest["clientCases"] = client_manifest["clientCases"]
+    manifest["clientValid"] = client_manifest["clientValid"]
+    manifest["invalid"].extend(client_manifest["invalid"])
+    payloads.update(client_payloads)
     return manifest, payloads
 
 

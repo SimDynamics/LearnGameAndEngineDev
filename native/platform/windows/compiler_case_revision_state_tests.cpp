@@ -1,6 +1,7 @@
 // Isolated Windows QA for authenticated replacement of a compiler's case list.
 // Model captures prove state conservation only. actual_reference_runs performs
-// the six separately identified MSVC compilations/executions.
+// the six separately identified MSVC compilations/executions. The authentic
+// client-transition pilot adds eight native invocations, one failing to compile.
 #include "platform/windows/compiler_history_state_test_support.hpp"
 
 #include <functional>
@@ -151,6 +152,7 @@ void same_version(const Lesson& source, const Block& expected,
         && reference_objective_frame(context, historical) == reference_objective_frame(source, expected)
         && historical.initial_code == expected.initial_code
         && historical.project_files == expected.project_files
+        && historical.compiler_client_epoch == expected.compiler_client_epoch
         && historical.source_format_original_initial_code.value_or(historical.initial_code)
             == expected.source_format_original_initial_code.value_or(expected.initial_code)
         && historical.source_format_original_project_files.value_or(historical.project_files)
@@ -896,6 +898,502 @@ std::size_t actual_reference_runs(const Fixture& fixture, const std::filesystem:
     return executions;
 }
 
+// The U6L19 pilot has one genuine owner, its published three-file reference and
+// its already published stdin client. These tests do not rewrite the curriculum.
+constexpr std::string_view client_owner = "block_0008_0008";
+constexpr std::string_view client_lesson =
+    "cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos";
+constexpr std::array<std::string_view, 5> client_inputs{"3 5", "0 0", "5 5", "0 40", "40 40"};
+constexpr std::array<std::string_view, 5> client_outputs{
+    "En curso: 2", "Terminada: 0", "Terminada: 0", "En curso: 40", "Terminada: 0"};
+constexpr std::string_view client_aggregate =
+    "En curso: 2\r\nTerminada: 0\r\nTerminada: 0\r\nEn curso: 40\r\nTerminada: 0";
+struct ClientFixture {
+    std::string name;
+    Lesson before, after, cases_only, changed_client, returned_client, formatted_client;
+};
+struct ClientCapture {
+    CppRunRequest request;
+    FreshExecution execution;
+};
+const std::string& client_file(const CppProjectFiles& files, std::string_view path) {
+    const auto at = std::ranges::find_if(files, [&](const auto& item) { return item.first == path; });
+    require(at != files.end(), "The authentic client project lost a required file");
+    return at->second;
+}
+ClientFixture read_client_fixture(const JsonObject& entry, const std::filesystem::path& directory,
+        std::map<std::filesystem::path, std::string>& originals) {
+    ClientFixture result;
+    result.name = winrt::to_string(entry.GetNamedString(L"name"));
+    require(winrt::to_string(entry.GetNamedString(L"id")) == client_owner,
+        "The client-transition fixture must use its real U6L19 owner");
+    const auto load = [&](const wchar_t* key) {
+        const auto path = directory / winrt::to_string(entry.GetNamedString(key));
+        const auto raw = bytes(path);
+        originals.emplace(path, raw);
+        auto lesson = parse_lesson_json(raw, "es");
+        const auto metadata = parse_lesson_progress_metadata(raw, "es");
+        require(lesson.id == client_lesson && metadata.id == lesson.id,
+            "The client fixture is not the complete authentic U6L19 lesson");
+        const auto& full = editor(lesson, client_owner);
+        const auto& lean = editor(metadata, client_owner);
+        require(full.compiler_client_epoch == lean.compiler_client_epoch
+            && reference_objective_frame(lesson, full) == reference_objective_frame(metadata, lean)
+            && full.compiler_case_revisions.size() == lean.compiler_case_revisions.size(),
+            "Full and metadata loaders disagree about the explicit client transition");
+        return lesson;
+    };
+    result.before = load(L"before"); result.after = load(L"after");
+    result.cases_only = load(L"casesOnly"); result.changed_client = load(L"changedClient");
+    result.returned_client = load(L"returnedClient"); result.formatted_client = load(L"formattedClient");
+    return result;
+}
+void verify_client_publication(const ClientFixture& fixture) {
+    const auto& before = editor(fixture.before, client_owner);
+    const auto& after = editor(fixture.after, client_owner);
+    require(fixture.before.raw_json.size() == 285042
+        && sha256(fixture.before.raw_json) == "ed784ae821b11d24df9c474a3cb2eae96b9ef213382506b249417abc2a123227"
+        && before.project_files.size() == 3 && before.source_files == std::vector<std::string>{"serie.cpp", "main.cpp"}
+        && before.output_check && before.output_check->cases.size() == 1
+        && before.output_check->cases.front().standard_input.empty()
+        && before.compiler_client_epoch.empty(),
+        "The original pilot is not the published three-file, five-row aggregate");
+    const auto& header = editor(fixture.before, "block_0009_0002");
+    const auto& implementation = editor(fixture.before, "block_0009_0003");
+    const auto& aggregate = editor(fixture.before, "series_cinco_referencia_cliente");
+    require(header.type == BlockType::code && header.code.size() == 249
+        && sha256(header.code) == "d3a306e47ef5e104d9e8fd1d0ba958ebcdaa59d5045412ea8c9b352e74bd15ed"
+        && implementation.type == BlockType::code && implementation.code.size() == 278
+        && sha256(implementation.code) == "aaf77211aeb0f452931b57c873a4d61884e41151be56b7ef7380798ed6744d8f"
+        && aggregate.type == BlockType::code && aggregate.code.size() == 489
+        && sha256(aggregate.code) == "ffdc89d190df85194d3a677d2c0355ebc49924b32dc423653dbdaf180c6878f0",
+        "A client reference differs from the independently pinned published source");
+    require(after.initial_code == editor(fixture.before, "block_0020_0002").initial_code,
+        "The separated client must be the already published single-pair reader");
+    require(before.source_format_original_project_files
+        && client_file(*before.source_format_original_project_files, "serie.h") != client_file(before.project_files, "serie.h"),
+        "The real predecessor must retain its prior header-format publication");
+    const auto outside_client_cases = [](const Block& block) {
+        auto value = JsonObject::Parse(winrt::to_hstring(block.raw_json));
+        value.Remove(L"initialCode");
+        auto files = value.GetNamedArray(L"projectFiles");
+        for (unsigned i = 0; i < files.Size(); ++i) {
+            auto file = files.GetAt(i).GetObject();
+            if (file.GetNamedString(L"path") == L"main.cpp") {
+                file.Remove(L"initialCode"); files.SetAt(i, file);
+            }
+        }
+        value.SetNamedValue(L"projectFiles", files);
+        auto check = value.GetNamedObject(L"outputCheck");
+        check.Remove(L"cases"); value.SetNamedValue(L"outputCheck", check);
+        return test::compile_check_test_fingerprint(value);
+    };
+    const auto protected_fields = outside_client_cases(before);
+    const std::array versions{&fixture.before, &fixture.after, &fixture.cases_only,
+        &fixture.changed_client, &fixture.returned_client, &fixture.formatted_client};
+    for (const auto* lesson : versions) {
+        const auto& active = editor(*lesson, client_owner);
+        require(active.initial_code == client_file(active.project_files, "main.cpp")
+            && active.project_files.size() == 3 && active.source_files == before.source_files
+            && active.cmake == before.cmake && outside_client_cases(active) == protected_fields
+            && draft_key("programming", *lesson, active) == draft_key("programming", fixture.before, before)
+            && exercise_key(*lesson, active) == exercise_key(fixture.before, before),
+            "A client transition changed the initialCode alias, recipe or historical storage identity");
+        for (const auto* path : {"serie.h", "serie.cpp"}) {
+            require(client_file(active.project_files, path) == client_file(before.project_files, path),
+                "A client-only transition rewrote an auxiliary source");
+            const auto original_files = active.source_format_original_project_files.value_or(active.project_files);
+            require(client_file(original_files, path) == client_file(*before.source_format_original_project_files, path),
+                "A client transition borrowed or lost the original auxiliary formatting");
+        }
+        for (const auto& page : fixture.before.pages) for (const auto& block : page.blocks)
+            if (block.stable_id != client_owner)
+                require(test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(block.raw_json)))
+                    == test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(editor(*lesson, block.stable_id).raw_json))),
+                    "A client fixture changed another activity or an authentic published reference");
+        if (lesson != &fixture.before) {
+            const auto count = lesson == &fixture.cases_only ? 4U : 5U;
+            require(active.output_check && active.output_check->cases.size() == count
+                && active.output_check->input_comparison == TextComparison::tokens
+                && active.standard_input && active.standard_input->empty(),
+                "The pilot lost its declared independent input cases");
+            for (std::size_t i = 0; i < count; ++i) {
+                const auto& item = active.output_check->cases[i];
+                require(item.standard_input == client_inputs[i]
+                    && item.outputs == std::vector<std::string>{std::string(client_outputs[i]), std::string(client_outputs[i]) + '\n'}
+                    && item.exit_code == 0 && !item.standard_error_exact,
+                    "An independent client case differs from its published-pair oracle");
+            }
+        }
+        for (const auto& revision : active.compiler_case_revisions) {
+            const auto previous = compiler_case_revision_previous_block(active, revision);
+            const auto revised = compiler_case_revision_after_block(active, revision);
+            require(previous.compiler_client_epoch == revision.previous_client_epoch
+                && revised.compiler_client_epoch == revision.revised_client_epoch
+                && (revision.client_revision
+                    ? previous.compiler_client_epoch != revised.compiler_client_epoch
+                    : previous.compiler_client_epoch == revised.compiler_client_epoch),
+                "A historical endpoint has the wrong client execution epoch");
+            if (revision.client_revision) require(revision.client_revision->path == "main.cpp",
+                "The authentic client event changed a different project file");
+            for (const auto& endpoint : {previous, revised}) {
+                const auto fingerprint = test::compile_check_test_fingerprint(
+                    JsonObject::Parse(winrt::to_hstring(endpoint.raw_json)));
+                const bool after_edge = endpoint.raw_json == revised.raw_json;
+                const auto prefix = revision.editorial_index + static_cast<std::size_t>(after_edge);
+                const Lesson* publication = nullptr;
+                for (const auto* version : versions) {
+                    const auto editorial = JsonObject::Parse(winrt::to_hstring(version->state_layout.raw_json))
+                        .GetNamedArray(L"editorial").Size();
+                    if (editorial == prefix && fingerprint == test::compile_check_test_fingerprint(
+                            JsonObject::Parse(winrt::to_hstring(editor(*version, client_owner).raw_json)))) {
+                        publication = version; break;
+                    }
+                }
+                require(publication, "A client journal endpoint lost its independent complete publication");
+                same_version(*publication, editor(*publication, client_owner), *lesson, endpoint);
+            }
+        }
+    }
+    const auto& cases_only = editor(fixture.cases_only, client_owner);
+    const auto& changed = editor(fixture.changed_client, client_owner);
+    const auto& returned = editor(fixture.returned_client, client_owner);
+    const auto& formatted = editor(fixture.formatted_client, client_owner);
+    require(!after.compiler_client_epoch.empty()
+        && cases_only.compiler_client_epoch == after.compiler_client_epoch
+        && formatted.compiler_client_epoch == after.compiler_client_epoch
+        && changed.compiler_client_epoch != after.compiler_client_epoch
+        && returned.compiler_client_epoch != after.compiler_client_epoch
+        && returned.compiler_client_epoch != changed.compiler_client_epoch
+        && returned.initial_code == after.initial_code && returned.project_files == after.project_files,
+        "An identical-byte client return reused an earlier execution epoch");
+    require(reference_objective_frame(fixture.after, after) != reference_objective_frame(fixture.changed_client, changed)
+        && reference_objective_frame(fixture.after, after) != reference_objective_frame(fixture.returned_client, returned)
+        && reference_objective_frame(fixture.after, after) != reference_objective_frame(fixture.cases_only, cases_only)
+        && reference_objective_frame(fixture.after, after) == reference_objective_frame(fixture.formatted_client, formatted),
+        "Client epochs or formatting have the wrong execution-receipt scope");
+}
+CppProjectFiles client_reference_files(const ClientFixture& fixture, bool aggregate) {
+    return {{"serie.h", editor(fixture.before, "block_0009_0002").code},
+        {"serie.cpp", editor(fixture.before, "block_0009_0003").code},
+        {"main.cpp", aggregate ? editor(fixture.before, "series_cinco_referencia_cliente").code
+            : editor(fixture.after, client_owner).initial_code}};
+}
+ClientCapture execute_client(const Block& block, const CppProjectFiles& files, std::string_view input,
+        const std::filesystem::path& directory, std::uint64_t identity,
+        std::optional<std::string_view> expected_output) {
+    ClientCapture capture;
+    auto& request = capture.request;
+    request.request_id = identity; request.revision = identity + 1000;
+    request.project_files = files; request.source_files = block.source_files;
+    request.source_utf8 = client_file(files, "main.cpp"); request.stdin_utf8 = input;
+    request.projects_directory = directory / ("u6l19-native-" + std::to_string(identity));
+    request.compile_timeout = std::chrono::seconds(55); request.execution_timeout = std::chrono::seconds(5);
+    request.backend = CppRunRequest::Backend::native_msvc;
+    require(compiler_runtime_request_allowed(block, request), "The real U6L19 project is not an allowed runtime request");
+    const auto result = run_cpp(request);
+    const auto details = result.error_utf8 + '\n' + phase_detail("compile", result.compilation)
+        + '\n' + phase_detail("execute", result.execution);
+    capture.execution = capture_cpp_execution(request, result);
+    if (!expected_output) {
+        require(result.compilation.status == CppPhaseStatus::completed && result.compilation.exit_code
+            && *result.compilation.exit_code != 0 && !capture.execution.compilation_succeeded
+            && result.execution.status == CppPhaseStatus::not_started && !capture.execution.execution_completed,
+            "The incomplete real auxiliary files unexpectedly produced a runnable project: " + details);
+        std::cout << "PASS actual MSVC U6L19 starter: compilation rejected; no execution or stdout claim\n";
+    } else {
+        require(result.error_utf8.empty() && result.compilation.succeeded()
+            && capture.execution.execution_completed && capture.execution.exit_code == 0
+            && capture.execution.standard_error.empty() && capture.execution.standard_output == *expected_output,
+            "The real client program differs from its byte-exact stdout/exit/channel oracle: " + details);
+        std::cout << "PASS actual MSVC U6L19 input [" << input << "]: exact stdout, empty stderr, exit 0\n";
+    }
+    return capture;
+}
+std::string client_project_draft(const CppProjectFiles& files, const std::vector<std::string>& sources) {
+    JsonObject value, cursors, indentation;
+    JsonArray entries, selected;
+    for (const auto& [path, source] : files) {
+        JsonObject entry;
+        entry.SetNamedValue(L"path", JsonValue::CreateStringValue(winrt::to_hstring(path)));
+        entry.SetNamedValue(L"code", JsonValue::CreateStringValue(winrt::to_hstring(source)));
+        entries.Append(entry);
+        cursors.SetNamedValue(winrt::to_hstring(path), JsonValue::CreateNumberValue(4));
+        indentation.SetNamedValue(winrt::to_hstring(path),
+            JsonValue::CreateStringValue(winrt::to_hstring(make_indentation_metadata(source, {}))));
+    }
+    for (const auto& path : sources) selected.Append(JsonValue::CreateStringValue(winrt::to_hstring(path)));
+    value.SetNamedValue(L"files", entries); value.SetNamedValue(L"sources", selected);
+    value.SetNamedValue(L"selected", JsonValue::CreateStringValue(L"main.cpp"));
+    value.SetNamedValue(L"cursors", cursors); value.SetNamedValue(L"indentationV2", indentation);
+    return winrt::to_string(value.Stringify());
+}
+void reopen_client_state(const StateData& data, const std::filesystem::path& profile) {
+    StateStore store(profile);
+    require(store.load().preferences.empty(), "Client-transition QA needs a new isolated profile");
+    require(decode(encode(data)) == data, "The client-transition native codec changed typed state");
+    store.save(data); StateStore reopened(profile);
+    require(reopened.load() == data, "Physical reopening changed a client draft, receipt or historical source");
+}
+StateData seeded_client_state(const ClientFixture& fixture, bool save_draft = true) {
+    auto data = seeded_state(fixture.before, client_owner, save_draft);
+    // The real owner shares its page with this independent interface exercise.
+    // Seed its answer through the real evaluator so the catalog gate measures
+    // the compiler's first case, not an unrelated unanswered fill-code puzzle.
+    const auto& interface = editor(fixture.before, "block_0008_0003");
+    require(interface.type == BlockType::fill_code && interface.answers == std::vector<std::string>{"string"},
+        "The authentic U6L19 interface prerequisite changed");
+    Response answer;
+    answer.answer = "string"; answer.correct = evaluate_text_answer(interface, answer.answer).correct;
+    answer.raw_json = R"({"origin":"isolated U6L19 prerequisite QA","incorrectAttempts":2})";
+    require(answer.correct, "The real interface evaluator rejected its published answer");
+    put_response(data, fixture.before, interface, answer);
+    return data;
+}
+void client_state_only(const ClientFixture& fixture, const ClientCapture& aggregate,
+        const ClientCapture& rejected_aggregate, const ClientCapture& starter,
+        const std::vector<ClientCapture>& individual, const std::filesystem::path& directory) {
+    const auto& before = editor(fixture.before, client_owner);
+    const auto& after = editor(fixture.after, client_owner);
+    const auto key = draft_key("programming", fixture.before, before);
+    auto original = seeded_client_state(fixture);
+    auto draft = get_draft(original, key, before.initial_code);
+    draft.source = aggregate.request.source_utf8;
+    draft.input = " \t 3 5\r\n"; draft.indentation_json = make_indentation_metadata(draft.source, {});
+    put_draft(original, key, draft);
+    original.preferences["cpp_lesson_drafts"][key + "/project"] =
+        client_project_draft(aggregate.request.project_files, before.source_files);
+    require(record_compiler_puzzle_case(original, fixture.before, before, aggregate.request, aggregate.execution, "Correcto"),
+        "The real aggregate capture did not earn its original historical achievement");
+    const auto old_proofs = proof_values(original, fixture.before, before);
+    const auto old_program = string_value(original, "native_windows", receipt_base(fixture.before, before) + "program");
+    require(old_program == compiler_program_frame(aggregate.request),
+        "The original historical receipt lost one of its complete authentic source files");
+    reopen_client_state(original, directory / "u6l19-original-state");
+    auto pending = original;
+    validate_lesson_state(pending, fixture.after);
+    require(pending == original, "Read-only client publication validation changed the saved draft");
+    prepare_lesson_state(pending, fixture.after);
+    validate_lesson_state(pending, fixture.after);
+    check_conservation(original, pending, fixture.before, fixture.after, client_owner);
+    preserved_drafts(original, pending, fixture.before, fixture.after);
+    require(!compiler_puzzle_completed(pending, fixture.after, after)
+        && compiler_puzzle_case_count(pending, fixture.after, after) == 0
+        && !compiler_puzzle_success_feedback(pending, fixture.after, after)
+        && proof_values(pending, fixture.before, before) == old_proofs,
+        "The historical aggregate automatically credited an independent new case");
+    check_gate(pending, fixture.after, client_owner, false);
+    for (const auto* failure : {&rejected_aggregate, &starter}) {
+        auto state = pending;
+        const auto evaluation = evaluate_cpp_output_check(*after.output_check, failure->execution, failure->request.revision);
+        require(evaluation.verdict != OutputVerdict::correct
+            && !record_compiler_puzzle_case(state, fixture.after, after, failure->request, failure->execution, evaluation.feedback)
+            && state == pending, "A rejected real client attempt changed a historical achievement or draft");
+    }
+    // This is an explicit saved edit of main.cpp, not an automatic publication
+    // migration or a claim that a Win32 control was operated in this state test.
+    auto edited = pending;
+    const auto old_project = JsonObject::Parse(winrt::to_hstring(string_value(edited, "cpp_lesson_drafts", key + "/project")));
+    auto new_project = JsonObject::Parse(old_project.Stringify());
+    auto files = new_project.GetNamedArray(L"files");
+    for (unsigned i = 0; i < files.Size(); ++i) {
+        auto file = files.GetAt(i).GetObject();
+        if (winrt::to_string(file.GetNamedString(L"path")) == "main.cpp") {
+            file.SetNamedValue(L"code", JsonValue::CreateStringValue(winrt::to_hstring(after.initial_code)));
+            files.SetAt(i, file);
+        }
+    }
+    new_project.SetNamedValue(L"files", files);
+    auto indentation = new_project.GetNamedObject(L"indentationV2");
+    indentation.SetNamedValue(L"main.cpp",
+        JsonValue::CreateStringValue(winrt::to_hstring(make_indentation_metadata(after.initial_code, {}))));
+    new_project.SetNamedValue(L"indentationV2", indentation);
+    auto changed_draft = get_draft(edited, key, after.initial_code);
+    changed_draft.source = after.initial_code;
+    changed_draft.indentation_json = make_indentation_metadata(changed_draft.source, {});
+    put_draft(edited, key, changed_draft);
+    edited.preferences["cpp_lesson_drafts"][key + "/project"] = winrt::to_string(new_project.Stringify());
+    for (unsigned i = 0; i < files.Size(); ++i)
+        if (winrt::to_string(files.GetAt(i).GetObject().GetNamedString(L"path")) != "main.cpp")
+            require(files.GetAt(i).Stringify() == old_project.GetNamedArray(L"files").GetAt(i).Stringify(),
+                "Explicitly adapting the client overwrote a completed auxiliary file");
+    for (const auto* field : {L"sources", L"selected", L"cursors"})
+        require(new_project.GetNamedValue(field).Stringify() == old_project.GetNamedValue(field).Stringify(),
+            "Explicitly adapting main.cpp reset file selection, recipe or cursor data");
+    for (const auto* path : {L"serie.h", L"serie.cpp"})
+        require(indentation.GetNamedValue(path).Stringify()
+            == old_project.GetNamedObject(L"indentationV2").GetNamedValue(path).Stringify(),
+            "Explicitly adapting main.cpp reset another file's indentation metadata");
+    const auto accept = [&](StateData& data, std::size_t index) {
+        const auto& capture = individual.at(index);
+        const auto evaluation = evaluate_cpp_output_check(*after.output_check, capture.execution, capture.request.revision);
+        require(evaluation.verdict == OutputVerdict::correct, "An authentic single-pair capture fails its native evaluator");
+        return record_compiler_puzzle_case(data, fixture.after, after, capture.request, capture.execution, evaluation.feedback);
+    };
+    auto first_only = edited;
+    require(accept(first_only, 0) && compiler_puzzle_completed(first_only, fixture.after, after)
+        && compiler_puzzle_case_count(first_only, fixture.after, after) == 1,
+        "The new first case required any of its four optional trials");
+    check_gate(first_only, fixture.after, client_owner, true);
+    preserved_drafts(edited, first_only, fixture.after, fixture.after);
+    require(proof_values(first_only, fixture.before, before) == old_proofs
+        && string_value(first_only, "native_windows", receipt_base(fixture.before, before) + "program") == old_program,
+        "The new first-case receipt overwrote the historical three-file program");
+    for (const auto* failure : {&rejected_aggregate, &starter}) {
+        auto state = first_only;
+        require(!record_compiler_puzzle_case(state, fixture.after, after,
+                failure->request, failure->execution, "Intento rechazado")
+            && state == first_only,
+            "State-only replay of a failed capture revoked an earned client receipt or edited a draft");
+    }
+    reopen_client_state(first_only, directory / "u6l19-first-only-state");
+    auto optional_only = edited;
+    for (std::size_t i = 1; i < individual.size(); ++i)
+        require(!accept(optional_only, i), "An optional individual input replaced the required first case");
+    require(!compiler_puzzle_completed(optional_only, fixture.after, after)
+        && compiler_puzzle_case_count(optional_only, fixture.after, after) == 4,
+        "The four optional trials were discarded or completed the activity");
+    check_gate(optional_only, fixture.after, client_owner, false);
+    require(accept(optional_only, 0) && compiler_puzzle_case_count(optional_only, fixture.after, after) == 5,
+        "The required first input could not complete an editor with prior optional trials");
+    check_gate(optional_only, fixture.after, client_owner, true);
+    for (const auto* version : {&fixture.cases_only, &fixture.formatted_client}) {
+        auto data = first_only;
+        prepare_lesson_state(data, *version);
+        const auto& owner = editor(*version, client_owner);
+        require(owner.compiler_client_epoch == after.compiler_client_epoch
+            && compiler_puzzle_completed(data, *version, owner) && compiler_puzzle_case_count(data, *version, owner) == 1,
+            "A legitimate same-epoch case or formatting review lost the earned first case");
+        check_conservation(first_only, data, fixture.after, *version, client_owner);
+        preserved_drafts(first_only, data, fixture.after, *version);
+        check_gate(data, *version, client_owner, true);
+    }
+    auto other_epoch = first_only;
+    const Lesson* previous = &fixture.after;
+    for (const auto* version : {&fixture.changed_client, &fixture.returned_client}) {
+        const auto prior = other_epoch;
+        prepare_lesson_state(other_epoch, *version);
+        const auto& owner = editor(*version, client_owner);
+        require(!compiler_puzzle_completed(other_epoch, *version, owner)
+            && compiler_puzzle_case_count(other_epoch, *version, owner) == 0
+            && !compiler_puzzle_success_feedback(other_epoch, *version, owner)
+            && compiler_puzzle_completed(other_epoch, fixture.after, after)
+            && proof_values(other_epoch, fixture.before, before) == old_proofs,
+            "Equal cases or returning to identical client bytes borrowed a receipt from another source epoch");
+        check_conservation(prior, other_epoch, *previous, *version, client_owner);
+        preserved_drafts(prior, other_epoch, *previous, *version);
+        check_gate(other_epoch, *version, client_owner, false);
+        const auto adopted = other_epoch;
+        prepare_lesson_state(other_epoch, *version);
+        require(other_epoch == adopted, "Replaying a client transition changed history or revived old credit");
+        previous = version;
+    }
+    reopen_client_state(other_epoch, directory / "u6l19-returned-client-state");
+    auto corrupted = first_only;
+    auto pin = std::get<std::vector<std::string>>(*find(corrupted, "learning_progress", case_pin(fixture.after)));
+    require(!pin.empty(), "The real client transition has no authenticated native journal");
+    pin.front() = std::string(64, '0');
+    corrupted.preferences["learning_progress"][case_pin(fixture.after)] = pin;
+    const auto exact = corrupted;
+    rejects([&] { prepare_lesson_state(corrupted, fixture.after); }, "An altered client journal prefix was accepted");
+    require(corrupted == exact, "Refusing an altered client journal partially rewrote saved state");
+    auto downgrade = first_only;
+    rejects([&] { prepare_lesson_state(downgrade, fixture.before); }, "A client transition accepted a journal downgrade");
+    require(downgrade == first_only, "Refusing a client publication downgrade changed saved state");
+    Fixture shared;
+    shared.name = fixture.name; shared.id = std::string(client_owner);
+    shared.before = fixture.before; shared.after = fixture.after; shared.history = {fixture.after};
+    imported_state(shared, original, directory, "client");
+    check_reset(shared, edited, first_only);
+    auto untouched = seeded_client_state(fixture, false);
+    prepare_lesson_state(untouched, fixture.after);
+    require(!get_draft(untouched, key, after.initial_code).has_saved
+        && !find(untouched, "cpp_lesson_drafts", key + "/project"),
+        "Adopting a client publication invented an untouched personal draft");
+    std::cout << "PASS U6L19 state-only reuse of real captures: old aggregate/program, first-only/optional gates, "
+        "client epochs/return, auxiliary drafts, XML/JSON-v1 import, native reopen, atomic refusal and Reset\n";
+}
+std::size_t actual_client_runs(const ClientFixture& fixture, const std::filesystem::path& directory) {
+    const auto& before = editor(fixture.before, client_owner);
+    const auto& after = editor(fixture.after, client_owner);
+    const auto old_files = client_reference_files(fixture, true);
+    const auto new_files = client_reference_files(fixture, false);
+    const auto aggregate = execute_client(before, old_files, "", directory, 700, client_aggregate);
+    require(evaluate_cpp_output_check(*before.output_check, aggregate.execution, aggregate.request.revision).verdict
+        == OutputVerdict::correct, "The authentic five-row reference fails its historical aggregate");
+    const auto rejected = execute_client(after, old_files, client_inputs[0], directory, 701, client_aggregate);
+    require(evaluate_cpp_output_check(*after.output_check, rejected.execution, rejected.request.revision).verdict
+        == OutputVerdict::incorrect, "The real aggregate accidentally proves the new required first input");
+    const auto starter = execute_client(after, after.project_files, client_inputs[0], directory, 702, std::nullopt);
+    std::vector<ClientCapture> individual;
+    for (std::size_t i = 0; i < client_inputs.size(); ++i)
+        individual.push_back(execute_client(after, new_files, client_inputs[i], directory, 703 + i, client_outputs[i]));
+    client_state_only(fixture, aggregate, rejected, starter, individual, directory);
+    return 8;
+}
+std::size_t valid_client_documents(const JsonArray& entries, const std::filesystem::path& directory,
+        std::map<std::filesystem::path, std::string>& originals) {
+    require(entries.Size() != 0, "Client QA omitted formatting or retirement-prefix publications");
+    std::size_t retirement_sources = 0;
+    bool before_client_seen = false, after_client_seen = false;
+    for (const auto& item : entries) {
+        const auto entry = item.GetObject();
+        const auto path = directory / winrt::to_string(entry.GetNamedString(L"file"));
+        const auto raw = bytes(path);
+        originals.emplace(path, raw);
+        const auto full = parse_lesson_json(raw, "es");
+        const auto metadata = parse_lesson_progress_metadata(raw, "es");
+        for (const auto& page : full.pages) for (const auto& block : page.blocks)
+            if (block.type == BlockType::cpp_compiler) {
+                const auto& lean = editor(metadata, block.stable_id);
+                require(block.compiler_client_epoch == lean.compiler_client_epoch
+                    && reference_objective_frame(full, block) == reference_objective_frame(metadata, lean),
+                    "Full and metadata loaders disagree after client formatting or retirement");
+            }
+        if (entry.HasKey(L"snapshotSource")) {
+            const auto name = winrt::to_string(entry.GetNamedString(L"name"));
+            require(name == "retirement-before" || name == "retirement-after",
+                "A snapshot oracle must identify which side of the client transition it preserves");
+            const auto identity = winrt::to_string(entry.GetNamedString(L"owner"));
+            const auto source_path = directory / winrt::to_string(entry.GetNamedString(L"snapshotSource"));
+            const auto source_bytes = bytes(source_path);
+            originals.emplace(source_path, source_bytes);
+            const auto expected_source = parse_lesson_json(source_bytes, "es");
+            const auto& expected = editor(expected_source, identity);
+            const bool before_client = name == "retirement-before";
+            require(expected.compiler_client_epoch.empty() == before_client
+                && expected.compiler_case_revisions.size() == (before_client ? 0U : 1U),
+                "The independent snapshot oracle lost its pre-client or post-client publication");
+            const auto layout = JsonObject::Parse(winrt::to_hstring(expected_source.state_layout.raw_json));
+            const auto prefix = layout.HasKey(L"editorial") ? layout.GetNamedArray(L"editorial").Size() : 0U;
+            const auto records = [](const auto& revisions) {
+                std::vector<std::string> hashes;
+                for (const auto& revision : revisions) hashes.push_back(revision.record_sha256);
+                return hashes;
+            };
+            for (const auto* context : {&full, &metadata}) {
+                require(context->id == expected_source.id && context->state_layout.retirement_history.size() == 1,
+                    "Client retirement QA lost its one complete reading snapshot");
+                const auto& snapshot = context->state_layout.retirement_history.front();
+                require(snapshot.editorial_prefix && *snapshot.editorial_prefix == prefix,
+                    "A client reading snapshot borrowed a later editorial prefix");
+                const Block* archived = nullptr;
+                for (const auto& page : snapshot.pages) for (const auto& block : page.blocks)
+                    if (block.stable_id == identity) archived = &block;
+                require(archived, "The client reading snapshot lost its original compiler owner");
+                same_version(expected_source, expected, *context, *archived);
+                require(records(archived->compiler_case_revisions) == records(expected.compiler_case_revisions)
+                    && records(archived->compiler_case_order_revisions) == records(expected.compiler_case_order_revisions),
+                    "A client reading snapshot borrowed a later client event or lost its own source epoch");
+            }
+            if (before_client) before_client_seen = true; else after_client_seen = true;
+            ++retirement_sources;
+        }
+    }
+    require(retirement_sources == 2 && before_client_seen && after_client_seen,
+        "Client QA omitted an independently sourced snapshot before or after the client transition");
+    return entries.Size();
+}
 void retirement_epoch(const Fixture& fixture, const std::filesystem::path& directory) {
     require(fixture.snapshot_source && fixture.receipt_source
         && fixture.after.state_layout.retirement_history.size() == 1,
@@ -1027,7 +1525,9 @@ int main(int argc, char** argv) try {
     require(manifest.GetNamedNumber(L"version", 1) == 1, "Unsupported case-revision QA manifest version");
     std::map<std::filesystem::path, std::string> originals;
     std::vector<Fixture> cases;
+    std::vector<ClientFixture> clients;
     std::size_t failures = 0, scenarios = 0, invalid = 0, actual_runs = 0, returns = 0, version_programs = 0, gaps = 0, retirement_epochs = 0;
+    std::size_t client_runs = 0, valid_clients = 0;
     const auto run = [&](std::string_view label, const auto& action) {
         try { action(); return true; }
         catch (const winrt::hresult_error& error) {
@@ -1069,10 +1569,24 @@ int main(int argc, char** argv) try {
             require(found != cases.end(), "The U4L7 exact retained aggregate fixture is missing"); different_programs(*found, qa);
         });
     }
+    run("client fixture inventory", [&] {
+        const auto entries = manifest.GetNamedArray(L"clientCases");
+        require(entries.Size() == 1, "Client QA needs exactly the authentic U6L19 pilot");
+        for (const auto& item : entries) clients.push_back(read_client_fixture(item.GetObject(), fixtures, originals));
+    });
+    for (const auto& fixture : clients) {
+        if (!run(fixture.name + " client publication", [&] { verify_client_publication(fixture); })) continue;
+        run(fixture.name + " actual client MSVC/state", [&] { client_runs += actual_client_runs(fixture, qa); });
+    }
+    run("valid client documents", [&] {
+        valid_clients = valid_client_documents(manifest.GetNamedArray(L"clientValid"), fixtures, originals);
+    });
     run("invalid documents", [&] { invalid = invalid_documents(manifest.GetNamedArray(L"invalid"), fixtures); });
     run("coverage", [&] {
         require(actual_runs == 6 && returns > 0 && version_programs > 0 && gaps > 0 && retirement_epochs == 2,
             "QA omitted an actual MSVC run, authenticated return, cross-version program isolation or removed-case recovery");
+        require(client_runs == 8 && valid_clients != 0,
+            "QA omitted a real client invocation, first-only state check or full/metadata client publication");
         require(std::ranges::any_of(cases, [](const auto& fixture) {
             return fixture.name == "real-u11-closed-expansion";
         }), "QA omitted the authenticated closed compiler expansion followed by a case review");
@@ -1087,7 +1601,9 @@ int main(int argc, char** argv) try {
     }
     std::cout << "PASS compiler case revision: " << scenarios << " state models, " << invalid
         << " invalid documents in both loaders, " << actual_runs
-        << " actual MSVC first-case executions, coherent returns/import/reopen/Reset; original fixtures unchanged.\n";
+        << " actual MSVC first-case executions, " << client_runs
+        << " client MSVC invocations (one rejected compilation), " << valid_clients
+        << " valid client documents in both loaders, coherent returns/import/reopen/Reset; original fixtures unchanged.\n";
     return 0;
 } catch (const winrt::hresult_error& error) {
     std::cerr << winrt::to_string(error.message()) << '\n'; return 1;

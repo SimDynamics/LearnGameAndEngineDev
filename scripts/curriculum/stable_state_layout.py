@@ -1247,10 +1247,91 @@ def _validate_compiler_case_payload(block: dict) -> None:
                 claimed.update(values)
 
 
+def _compiler_client_project_index(block: dict, path: str) -> int:
+    """Select one existing compiled source without normalizing its authored path."""
+    require(type(block) is dict and block.get("type") == "cpp_compiler"
+            and "compileCheck" not in block and "cmake" not in block,
+            "A client revision requires an ordinary C++ output project")
+    files = block.get("projectFiles")
+    require(type(files) is list and 0 < len(files) <= 256,
+            "A client revision needs an existing C++ project with at most 256 files")
+    lower = str.maketrans("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")
+    def folded(value):
+        return value.translate(lower)
+    def valid_path(value):
+        if (type(value) is not str or not value or value != value.strip(" \t\r\n\v\f")
+                or any(ord(char) < 32 or ord(char) == 127 or char in '\\:<>"|?*' for char in value)):
+            return False
+        for part in value.split("/"):
+            if not part or part in {".", ".."} or part.endswith((".", " ")):
+                return False
+            stem = folded(part.split(".", 1)[0])
+            if (stem in {"con", "prn", "aux", "nul", "conin$", "conout$"}
+                    or re.fullmatch(r"(?:com|lpt)[1-9¹²³]", stem)):
+                return False
+        return True
+    def is_source(value):
+        return "." in value and folded(value.rsplit(".", 1)[1]) in {"cpp", "cc", "cxx", "c++"}
+    names, total = {}, 0
+    for index, entry in enumerate(files):
+        require(type(entry) is dict and set(entry) == {"path", "initialCode"}
+                and valid_path(entry.get("path")) and type(entry.get("initialCode")) is str,
+                "A client revision must retain exact valid project files")
+        key = folded(entry["path"])
+        require(key not in names, "A client project cannot contain ambiguous file paths")
+        size = len(entry["initialCode"].encode("utf-8"))
+        require(size <= 16 * 1024 * 1024, "A client project file exceeds 16 MiB")
+        total += size
+        names[key] = (index, entry["path"])
+    require(total <= 32 * 1024 * 1024, "A client project exceeds 32 MiB")
+    for name in names:
+        require(not any(name.startswith(other + "/") for other in names),
+                "A client project path cannot also be a directory")
+    inferred = [entry["path"] for entry in files if is_source(entry["path"])]
+    sources = block.get("sourceFiles", inferred)
+    require(type(sources) is list and sources, "A client project must compile at least one source")
+    selected = set()
+    for source in sources:
+        require(valid_path(source) and is_source(source) and folded(source) in names
+                and names[folded(source)][1] == source and folded(source) not in selected,
+                "A client project needs unique exact existing compiled sources")
+        selected.add(folded(source))
+    require(type(path) is str and path in sources,
+            "The revised client must be an existing selected C++ source")
+    index = names[folded(path)][0]
+    require("initialCode" not in block or (type(block["initialCode"]) is str
+            and block["initialCode"] == files[index]["initialCode"]),
+            "The client initialCode alias must match the selected source exactly")
+    return index
+
+
+def _compiler_client_replace_source(block: dict, path: str, source: str) -> None:
+    """Replace only a validated client's bytes and its existing legacy alias."""
+    matches = [entry for entry in block.get("projectFiles", []) if entry.get("path") == path]
+    require(len(matches) == 1, "A compiler client must keep its one exact existing file")
+    matches[0]["initialCode"] = source
+    if "initialCode" in block:
+        block["initialCode"] = source
+
+
+def _compiler_case_has_client(document: dict, identity: str) -> bool:
+    return any("client" in item for item in _compiler_case_revision_records(document, identity))
+
+
 def _compiler_case_revision_after(item: dict) -> dict:
     before = item["block"]
     _validate_compiler_case_payload(before)
     result = deepcopy(before)
+    if "client" in item:
+        client = item["client"]
+        require(type(client) is dict and set(client) == {"path", "source"},
+                "A client revision needs only its existing path and explicit source")
+        index = _compiler_client_project_index(before, client["path"])
+        require(type(client["source"]) is str and client["source"] and "\0" not in client["source"]
+                and client["source"] != before["projectFiles"][index]["initialCode"],
+                "A client revision must explicitly change its nonempty source")
+        _compiler_client_replace_source(result, client["path"], client["source"])
+        _compiler_client_project_index(result, client["path"])
     result["outputCheck"]["cases"] = deepcopy(item["cases"])
     _validate_compiler_case_payload(result)
     require(fingerprint(result) != fingerprint(before), "A case revision must change its declared cases")
@@ -1295,10 +1376,24 @@ def _compiler_case_order_projection(document: dict, identity: str, block: dict, 
                 and state_fingerprint(block) == state_fingerprint(original)):
             return block
         raise LayoutError("Compiler case ordering changed a case, channel, comparison mode or program")
+    if any("client" in item for _, item in events):
+        try:
+            if any(entry["id"] == identity for entry in document["stateLayout"].get("sourceFormatRevisions", [])):
+                code_format.require_source_lexical(expected, block)
+            else:
+                require(code_format.code_slots(expected) == code_format.code_slots(block),
+                        "A compiler client changed outside its authenticated source epoch")
+        except code_format.SourceFormatError as exc:
+            raise LayoutError(f"Unsafe compiler client source for {identity}: {exc}") from exc
     result = deepcopy(block)
     for kind, item in reversed(events[:epoch]):
         if kind == "cases":
             result["outputCheck"]["cases"] = deepcopy(item["block"]["outputCheck"]["cases"])
+            if "client" in item:
+                path = item["client"]["path"]
+                source = next(entry["initialCode"] for entry in item["block"]["projectFiles"]
+                              if entry["path"] == path)
+                _compiler_client_replace_source(result, path, source)
         else:
             cases = result.get("outputCheck", {}).get("cases")
             require(type(cases) is list and len(cases) == len(item["order"]),
@@ -1338,7 +1433,8 @@ def _validate_compiler_case_order_revisions(document: dict, storage: dict, diges
     for kind, item in events:
         fields = {"id", "block", "editorialIndex", "historySha256", "semanticBefore"}
         fields |= {"order"} if kind == "order" else {"cases", "semanticAfter"}
-        require(set(item) == fields,
+        allowed = fields | {"client"} if kind == "cases" else fields
+        require(fields <= set(item) <= allowed,
                 "A compiler case revision needs its exact owner, predecessor, edge, cases and semantics")
         identity = _identity(item["id"])
         require(identity in storage and identity in active,
@@ -1361,20 +1457,25 @@ def _validate_compiler_case_order_revisions(document: dict, storage: dict, diges
             _validate_compiler_case_semantics(item["semanticAfter"], identity, after)
         groups.setdefault(identity, []).append((kind, item))
     for identity, own in groups.items():
-        baseline = _compiler_case_order_contract(document, identity, own[0][1]["block"])
+        client_history = any("client" in item for _, item in own)
+        baseline = _compiler_case_order_contract(document, identity, own[0][1]["block"],
+            editorial_prefix=own[0][1]["editorialIndex"] if client_history else None)
         require(state_fingerprint(baseline) == digests[identity],
                 "The compiler case predecessor changed its owner's immutable contract")
-        sources = [item["block"] for _, item in own]
-        sources += [_compiler_case_event_after(kind, item) for kind, item in own]
-        sources.append(active[identity])
-        for block in sources:
-            epoch = _compiler_case_epoch(document, identity, block, own)
+        sources = [(item["block"], item["editorialIndex"]) for _, item in own]
+        sources += [(_compiler_case_event_after(kind, item), item["editorialIndex"] + 1) for kind, item in own]
+        sources.append((active[identity], len(editorial)))
+        for block, prefix in sources:
+            # Repeated bytes in an explicit return are different timeline nodes.
+            # A predecessor cannot borrow a future return to hide a missing client event.
+            prefix = prefix if client_history else None
+            epoch = _compiler_case_epoch(document, identity, block, own, editorial_prefix=prefix)
             expected = (own[0][1]["block"] if epoch == 0
                         else _compiler_case_event_after(*own[epoch - 1]))
             require(without_compiler_guidance(block).get("outputCheck")
                     == without_compiler_guidance(expected).get("outputCheck"),
                     "Compiler case ordering changed a case, channel, comparison mode or program")
-            projected = _compiler_case_order_contract(document, identity, block)
+            projected = _compiler_case_order_contract(document, identity, block, editorial_prefix=prefix)
             require(state_fingerprint(projected) == state_fingerprint(baseline),
                     "Compiler case ordering changed a case, channel, comparison mode or program")
             if any(kind == "cases" for kind, _ in own):
@@ -1388,6 +1489,8 @@ def _compiler_case_order_realign(previous: dict, current: dict, identity: str, b
     for kind, item in _compiler_case_events(previous, identity):
         if kind == "cases":
             result["outputCheck"]["cases"] = deepcopy(item["cases"])
+            if "client" in item:
+                _compiler_client_replace_source(result, item["client"]["path"], item["client"]["source"])
         else:
             cases = result["outputCheck"]["cases"]
             require(len(cases) == len(item["order"]), "Compiler case counts changed during alignment")
@@ -1470,6 +1573,25 @@ def revise_compiler_cases(document: dict, identity: str, cases=_UNSET_COMPILER_C
         require(case_semantics is _UNSET_COMPILER_CASES and return_to is None,
                 "The closed compiler API does not accept general revision options")
         return _revise_closed_compiler_cases(document, identity)
+    return _revise_compiler_case_record(document, identity, cases,
+                                      case_semantics=case_semantics, return_to=return_to)
+
+
+def revise_compiler_client_cases(document: dict, identity: str, client: dict, cases, *,
+                                 case_semantics=_UNSET_COMPILER_CASES,
+                                 return_to: int | None = None) -> dict:
+    """Authenticate one existing project client's new source and explicit cases.
+
+    This is a new objective, even when the case list or earlier client bytes
+    reappear. It neither edits student drafts nor authorizes old receipts.
+    """
+    return _revise_compiler_case_record(document, identity, cases, client=client,
+                                      case_semantics=case_semantics, return_to=return_to)
+
+
+def _revise_compiler_case_record(document: dict, identity: str, cases, *,
+                                 case_semantics, return_to: int | None,
+                                 client=_UNSET_COMPILER_CASES) -> dict:
     require(case_semantics is not _UNSET_COMPILER_CASES,
             "A general compiler case revision requires explicit case_semantics, including []")
     validate(document)
@@ -1487,6 +1609,8 @@ def revise_compiler_cases(document: dict, identity: str, cases=_UNSET_COMPILER_C
                                              "editorial": meta["editorial"]}),
               "semanticBefore": _compiler_case_order_fields(document, identity),
               "semanticAfter": deepcopy(case_semantics)}
+    if client is not _UNSET_COMPILER_CASES:
+        record["client"] = deepcopy(client)
     changed = _compiler_case_revision_after(record)
     _validate_compiler_case_semantics(record["semanticAfter"], identity, changed)
     result = deepcopy(document)
@@ -1517,8 +1641,44 @@ def revise_compiler_cases(document: dict, identity: str, cases=_UNSET_COMPILER_C
 
 
 
-def _compiler_case_order_contract(document: dict, identity: str, block: dict) -> dict:
-    result = _compiler_case_order_projection(document, identity, block)
+def _compiler_case_format_origin(document: dict, identity: str, archive: dict) -> dict:
+    """Keep the raw format archive intact, projecting only its contract lookup."""
+    return (_compiler_case_order_projection(document, identity, archive)
+            if _compiler_case_has_client(document, identity) else archive)
+
+
+def _compiler_case_format_changed(document: dict, identity: str, archive: dict) -> bool:
+    """Find a genuine source format inside the archive's authenticated client epoch.
+
+    A later client replacement may remove that formatting from the active
+    source. Its complete predecessor still records the end of the earlier
+    epoch. Cases are normalized independently; client bytes remain visible.
+    """
+    events = _compiler_case_events(document, identity)
+    case_edges = {item["editorialIndex"] for _, item in events}
+    signature = fingerprint(archive)
+    for index, proof in enumerate(document["stateLayout"]["editorial"]):
+        if proof["id"] != identity or proof["beforeSha256"] != signature or index in case_edges:
+            continue
+        following = next((item for _, item in events if "client" in item
+                          and item["editorialIndex"] > index), None)
+        target = following["block"] if following is not None else _all_blocks(document)[identity]
+        prefix = following["editorialIndex"] if following is not None else len(document["stateLayout"]["editorial"])
+        before = _compiler_case_order_projection(document, identity, archive, editorial_prefix=index)
+        after = _compiler_case_order_projection(document, identity, target, editorial_prefix=prefix)
+        before = code_format.source_projection(before, archive)
+        after = code_format.source_projection(after, target)
+        try:
+            if require_source_format_with_editorial(before, after):
+                return True
+        except (code_format.SourceFormatError, LayoutError):
+            continue
+    return False
+
+
+def _compiler_case_order_contract(document: dict, identity: str, block: dict, *,
+                                  editorial_prefix: int | None = None) -> dict:
+    result = _compiler_case_order_projection(document, identity, block, editorial_prefix=editorial_prefix)
     if _compiler_case_events(document, identity):
         require(all(type(case) is dict and ("exitCode" not in case or type(case["exitCode"]) is int)
                     for case in result["outputCheck"]["cases"]),
@@ -1526,11 +1686,12 @@ def _compiler_case_order_contract(document: dict, identity: str, block: dict) ->
     archive = next((entry["block"] for entry in document.get("stateLayout", {}).get(
         "sourceFormatRevisions", []) if entry["id"] == identity), None)
     if archive is not None:
+        original = _compiler_case_format_origin(document, identity, archive)
         try:
-            code_format.require_source_lexical(archive, block)
+            code_format.require_source_lexical(original, result if _compiler_case_has_client(document, identity) else block)
         except code_format.SourceFormatError as exc:
             raise LayoutError(f"Unsafe compiler case source for {identity}: {exc}") from exc
-        result = code_format.source_projection(result, archive)
+        result = code_format.source_projection(result, original)
     return result
 
 
@@ -1856,7 +2017,11 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             require(len(question_fields) == 1,
                     "Formatted question has no explicit authored source descriptor")
         try:
-            code_format.require_source_lexical(original, format_sources[identity])
+            if _compiler_case_has_client(document, identity):
+                code_format.require_source_lexical(ordered_original,
+                    _compiler_case_order_projection(document, identity, format_sources[identity]))
+            else:
+                code_format.require_source_lexical(original, format_sources[identity])
         except code_format.SourceFormatError as exc:
             raise LayoutError(f"Unsafe source formatting for {identity}: {exc}") from exc
         formatted[identity] = original
@@ -1989,7 +2154,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                         and CHOICE_OPTION_REVISIONS.get((document.get("id"), identity)) == reviewed,
                         "A revised choice requires its exact lesson, identity and original archive")
             ordered_source = _compiler_case_order_projection(document, identity, block)
-            source = (code_format.source_projection(ordered_source, formatted[identity])
+            source = (code_format.source_projection(ordered_source,
+                          _compiler_case_format_origin(document, identity, formatted[identity]))
                       if identity in formatted else ordered_source)
             compiler_reviewed = _reviewed_compiler(source)
             if compiler_reviewed is not None or identity in compilers:
@@ -2088,8 +2254,10 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             protected_previous = (_math_prompt_projection(math_texts[identity], previous_order)
                                   if identity in math_texts else previous_order)
             if identity in formatted:
-                protected_previous = code_format.source_projection(protected_previous, formatted[identity])
-            protected_current = (code_format.source_projection(current_order, formatted[identity])
+                protected_previous = code_format.source_projection(protected_previous,
+                    _compiler_case_format_origin(document, identity, formatted[identity]))
+            protected_current = (code_format.source_projection(current_order,
+                                     _compiler_case_format_origin(document, identity, formatted[identity]))
                                  if identity in formatted else current_order)
             if identity in math_texts:
                 protected_current = _math_prompt_projection(math_texts[identity], protected_current)
@@ -2464,8 +2632,9 @@ def _historical_source_format_contract(document: dict, identity: str, block: dic
             # The ordinary historical contract and paired-revision checks below
             # still verify answers, correctOrder, paths, objectives and owner.
             return ordered
-        code_format.require_source_lexical(original, block)
-        return code_format.source_projection(ordered, original)
+        origin = _compiler_case_format_origin(document, identity, original)
+        code_format.require_source_lexical(origin, ordered if _compiler_case_has_client(document, identity) else block)
+        return code_format.source_projection(ordered, origin)
     except code_format.SourceFormatError as exc:
         raise LayoutError(f"Unsafe historical source formatting for {identity}: {exc}") from exc
 
@@ -2512,7 +2681,7 @@ def _validate_retirement_history(document: dict) -> None:
     require(type(history) is list and len(history) <= 100_000, "Malformed retirement reading history")
     archived = [entry["id"] for entry in meta.get("retired", [])]
     available = _all_blocks(document)
-    archives = {item["id"]: item["block"]
+    archives = {item["id"]: _compiler_case_format_origin(document, item["id"], item["block"])
                 for item in meta.get("sourceFormatRevisions", [])}
     ordered_available = {identity: _compiler_case_order_projection(document, identity, block)
                          for identity, block in available.items()}
@@ -5086,9 +5255,21 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         predecessor = entry["block"]
         if predecessor != before[identity]:
             try:
-                require(not code_format.require_source_lexical(
-                            before[identity], predecessor),
-                        "An intermediate review cannot format its source before archiving")
+                if _compiler_case_has_client(current, identity):
+                    expected_source = _compiler_case_order_projection(
+                        current, identity, before[identity], editorial_prefix=len(old_editorial))
+                    events = _compiler_case_events(current, identity)
+                    epoch = _compiler_case_epoch(current, identity, predecessor, events)
+                    for _, item in events[:epoch]:
+                        if "client" in item:
+                            _compiler_client_replace_source(expected_source,
+                                item["client"]["path"], item["client"]["source"])
+                    require(code_format.code_slots(expected_source) == code_format.code_slots(predecessor),
+                            "An intermediate client cannot format its source before archiving")
+                else:
+                    require(not code_format.require_source_lexical(
+                                before[identity], predecessor),
+                            "An intermediate review cannot format its source before archiving")
                 require_source_format_with_editorial(
                     _compiler_case_order_projection(baseline, identity, before[identity]),
                     _compiler_case_order_projection(current, identity, predecessor))
@@ -5099,9 +5280,12 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                         if proof["id"] == identity},
                     "An intermediate source snapshot lacks its authenticated editorial node")
         try:
-            require(require_source_format_with_editorial(
-                        _compiler_case_order_projection(current, identity, predecessor),
-                        _compiler_case_order_projection(current, identity, after[identity])),
+            changed = (_compiler_case_format_changed(current, identity, predecessor)
+                       if _compiler_case_has_client(current, identity) else
+                       require_source_format_with_editorial(
+                           _compiler_case_order_projection(current, identity, predecessor),
+                           _compiler_case_order_projection(current, identity, after[identity])))
+            require(changed,
                     "Source formatting archive did not change any source")
         except code_format.SourceFormatError as exc:
             raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
@@ -5109,7 +5293,12 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     for identity in archived:
         if identity not in before or identity not in after: continue
         try:
-            code_format.require_source_lexical(before[identity], after[identity])
+            if _compiler_case_has_client(current, identity):
+                code_format.require_source_lexical(
+                    _compiler_case_order_projection(baseline, identity, before[identity]),
+                    _compiler_case_order_projection(current, identity, after[identity]))
+            else:
+                code_format.require_source_lexical(before[identity], after[identity])
         except code_format.SourceFormatError as exc:
             raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
     old_positions = {identity: (record["id"], index, record["blocks"])
@@ -5179,6 +5368,7 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         previous_source = _compiler_case_order_projection(baseline, identity, block)
         format_original = next((entry["block"] for entry in current_formats if entry["id"] == identity), None)
         if format_original is not None:
+            format_original = _compiler_case_format_origin(current, identity, format_original)
             previous_source = code_format.source_projection(previous_source, format_original)
             protected = code_format.source_projection(protected, format_original)
         if identity in archived:
@@ -5714,7 +5904,7 @@ def published_family(source: Path, locale: str, base_ref: str) -> tuple[dict, di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "revise-choice-editorial", "revise-ordinary-editorial", "revise-math-prompt-editorial", "revise-compiler-cases", "reorder-compiler-cases", "check", "check-tree"))
+    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "revise-choice-editorial", "revise-ordinary-editorial", "revise-math-prompt-editorial", "revise-compiler-cases", "revise-compiler-client-cases", "reorder-compiler-cases", "check", "check-tree"))
     parser.add_argument("source", type=Path, help="Lesson JSON; repository directory for check-tree")
     parser.add_argument("--plan", type=Path, help="JSON list of stable page/block IDs in display order")
     parser.add_argument("--output", type=Path, help="New path; never overwrite a Work/Codex file")
@@ -5726,6 +5916,7 @@ def main() -> None:
     parser.add_argument("--identity", help="Existing reviewed stable identity for a refinement/revision")
     parser.add_argument("--case-order", type=Path, help="JSON permutation: new case index to previous case index")
     parser.add_argument("--cases", type=Path, help="Explicit replacement outputCheck case list")
+    parser.add_argument("--client", type=Path, help='Explicit client JSON object: {"path":"main.cpp","source":"..."}')
     parser.add_argument("--case-semantics", type=Path, help="Explicit replacement case descriptors, including []")
     parser.add_argument("--option-index", type=int, help="Index of the existing multiple-choice option to clarify")
     parser.add_argument("--replacement", help="Exact revised nonblank choice or math prompt text")
@@ -5746,10 +5937,13 @@ def main() -> None:
                 "Replacement text belongs to a choice or mathematical prompt revision")
         require(args.action == "revise-math-prompt-editorial" or args.semantic_spans is None,
                 "Semantic spans belong only to revise-math-prompt-editorial")
-        require(args.action in {"revise-math-prompt-editorial", "reorder-compiler-cases", "revise-compiler-cases"}
+        require(args.action in {"revise-math-prompt-editorial", "reorder-compiler-cases", "revise-compiler-cases", "revise-compiler-client-cases"}
                 or args.return_to is None, "Return-to belongs to a supported authenticated editorial return")
-        require(args.action == "revise-compiler-cases" or (args.cases is None and args.case_semantics is None),
-                "Replacement cases and their semantics belong only to revise-compiler-cases")
+        require(args.action in {"revise-compiler-cases", "revise-compiler-client-cases"}
+                or (args.cases is None and args.case_semantics is None),
+                "Replacement cases and their semantics belong only to explicit case revisions")
+        require(args.action == "revise-compiler-client-cases" or args.client is None,
+                "An explicit client belongs only to revise-compiler-client-cases")
         require(args.action == "reorder-compiler-cases" or args.case_order is None,
                 "Case order belongs only to reorder-compiler-cases")
         require(args.action == "revise-ordinary-editorial" or args.editorial_fields is None,
@@ -5834,6 +6028,15 @@ def main() -> None:
                     "reorder-compiler-cases requires --identity and --case-order without move/addition plans")
             baseline = prepare_v2(source, locale, family, previous) if family is not None else source
             result = reorder_compiler_cases(baseline, args.identity, load(args.case_order), return_to=args.return_to)
+        elif args.action == "revise-compiler-client-cases":
+            require(args.identity is not None and args.client is not None
+                    and args.cases is not None and args.case_semantics is not None
+                    and args.plan is None and args.additions is None,
+                    "revise-compiler-client-cases requires --identity, --client, --cases and "
+                    "--case-semantics without a move/addition plan")
+            baseline = prepare_v2(source, locale, family, previous) if family is not None else source
+            result = revise_compiler_client_cases(baseline, args.identity, load(args.client), load(args.cases),
+                case_semantics=load(args.case_semantics), return_to=args.return_to)
         elif args.action == "revise-compiler-cases":
             require(args.identity is not None and args.plan is None and args.additions is None,
                     "revise-compiler-cases requires --identity without a move/addition plan")

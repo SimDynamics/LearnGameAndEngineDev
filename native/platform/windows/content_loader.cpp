@@ -1669,10 +1669,63 @@ JsonObject permuted_compiler_cases(const JsonObject& before,
     require(fingerprint(result)!=fingerprint(before),"Case ordering must change the declared order");
     return result;
 }
-JsonObject revised_compiler_cases(const JsonObject& before,const JsonArray& cases) {
+std::optional<unsigned> compiler_client_file(const JsonObject& block,std::string_view path) {
+    if(!block.HasKey(L"projectFiles"))return {};
+    const auto files=array(block,"projectFiles");
+    for(unsigned index=0;index<files.Size();++index)
+        if(text(files.GetObjectAt(index),"path")==path)return index;
+    return {};
+}
+void copy_compiler_client(const JsonObject& target,const JsonObject& source,std::string_view path) {
+    const auto target_file=compiler_client_file(target,path),source_file=compiler_client_file(source,path);
+    require(target_file&&source_file,"A compiler client must retain its exact existing file");
+    require(target.HasKey(L"initialCode")==source.HasKey(L"initialCode"),
+        "A compiler client must retain its authored initialCode alias");
+    array(target,"projectFiles").GetObjectAt(*target_file).Insert(L"initialCode",
+        array(source,"projectFiles").GetObjectAt(*source_file).GetNamedValue(L"initialCode"));
+    if(source.HasKey(L"initialCode"))target.Insert(L"initialCode",source.GetNamedValue(L"initialCode"));
+}
+bool compiler_client_matches(const JsonObject& source,const JsonObject& expected,
+        std::string_view path,bool allow_format) {
+    const auto actual_file=compiler_client_file(source,path),expected_file=compiler_client_file(expected,path);
+    if(!actual_file||!expected_file||source.HasKey(L"initialCode")!=expected.HasKey(L"initialCode"))return false;
+    const auto same=[&](const std::string& before,const std::string& after) {
+        return before==after||(allow_format&&curriculum::code_format::equivalent(
+            before,after,curriculum::code_format::Language::cpp));
+    };
+    return same(text(array(expected,"projectFiles").GetObjectAt(*expected_file),"initialCode"),
+            text(array(source,"projectFiles").GetObjectAt(*actual_file),"initialCode"))&&
+        (!expected.HasKey(L"initialCode")||same(text(expected,"initialCode"),text(source,"initialCode")));
+}
+JsonObject revised_compiler_client(const JsonObject& before,const JsonObject& client) {
+    allowed_keys(client,{"path","source"},true);
+    require(before.HasKey(L"projectFiles")&&!before.HasKey(L"cmake")&&!before.HasKey(L"compileCheck"),
+        "A compiler client revision requires an existing plain C++ project");
+    for(const auto& value:array(before,"projectFiles"))
+        allowed_keys(value.GetObject(),{"path","initialCode"},true);
+    const auto parsed=read_block(before,utf8(before.Stringify()));
+    const auto path=text(client,"path"),source=text(client,"source");
+    require(std::ranges::find(parsed.source_files,path)!=parsed.source_files.end(),
+        "A compiler client must be an existing selected C++ source");
+    const auto position=compiler_client_file(before,path);
+    require(position.has_value(),"A compiler client must retain its exact existing file");
+    const auto previous=text(array(before,"projectFiles").GetObjectAt(*position),"initialCode");
+    require(!source.empty()&&source.find('\0')==source.npos&&source!=previous,
+        "A compiler client revision needs a changed nonempty source without NUL");
+    require(!before.HasKey(L"initialCode")||text(before,"initialCode")==previous,
+        "The existing initialCode alias must exactly name the selected client");
+    auto result=JsonObject::Parse(before.Stringify());
+    array(result,"projectFiles").GetObjectAt(*position).Insert(L"initialCode",JsonValue::CreateStringValue(key(source)));
+    if(result.HasKey(L"initialCode"))result.Insert(L"initialCode",JsonValue::CreateStringValue(key(source)));
+    // Reuse the existing project path, source selection and byte limits.
+    (void)read_block(result,utf8(result.Stringify()));
+    return result;
+}
+JsonObject revised_compiler_cases(const JsonObject& before,const JsonArray& cases,
+        const std::optional<JsonObject>& client={}) {
     (void)compiler_case_contract(before);
     require(cases.Size()>0,"A compiler case revision needs explicit nonempty cases");
-    auto result=JsonObject::Parse(before.Stringify());
+    auto result=client?revised_compiler_client(before,*client):JsonObject::Parse(before.Stringify());
     result.GetNamedObject(L"outputCheck").Insert(L"cases",cases);
     require(fingerprint(result)!=fingerprint(before),"A compiler case revision must change its declared cases");
     return result;
@@ -1683,10 +1736,13 @@ struct CompilerCaseVersion {
     std::size_t journal_index=0;
     bool case_revision=false;
     std::size_t editorial_index=0;
+    std::string client_path,client_epoch;
 };
 struct CompilerCaseHistory {
     std::vector<CompilerCaseVersion> versions;
     std::map<std::string,std::set<std::size_t>> published_epochs;
+    std::set<std::string> client_paths;
+    bool source_formatted=false;
 };
 using CompilerCaseHistories=std::map<std::string,CompilerCaseHistory>;
 CompilerCaseHistories compiler_case_histories(
@@ -1697,6 +1753,7 @@ CompilerCaseHistories compiler_case_histories(
         std::string_view id,raw_json,after_raw_json,sha256,history_sha256;
         const std::vector<std::size_t>* order=nullptr;
         std::size_t journal_index=0;
+        std::string_view client_path,record_sha256;
     };
     std::map<std::size_t,Pending> indexed;
     std::optional<std::size_t> last_index;
@@ -1705,7 +1762,7 @@ CompilerCaseHistories compiler_case_histories(
         require(record.editorial_index<editorial.Size()&&
             (!last_index||*last_index<record.editorial_index)&&
             indexed.emplace(record.editorial_index,Pending{record.id,record.raw_json,record.after_raw_json,
-                record.sha256,record.history_sha256,&record.order,i}).second,
+                record.sha256,record.history_sha256,&record.order,i,{},record.record_sha256}).second,
             "Case-order archives must follow their exact editorial order");
         last_index=record.editorial_index;
     }
@@ -1715,7 +1772,8 @@ CompilerCaseHistories compiler_case_histories(
         require(record.editorial_index<editorial.Size()&&
             (!last_index||*last_index<record.editorial_index)&&
             indexed.emplace(record.editorial_index,Pending{record.id,record.raw_json,record.after_raw_json,
-                record.sha256,record.history_sha256,nullptr,i}).second,
+                record.sha256,record.history_sha256,nullptr,i,
+                record.client_revision?std::string_view(record.client_revision->path):std::string_view{},record.record_sha256}).second,
             "Compiler case archives must use distinct ordered editorial edges");
         last_index=record.editorial_index;
     }
@@ -1727,8 +1785,27 @@ CompilerCaseHistories compiler_case_histories(
                 "Case ordering changed an existing case, channel or comparison mode");
         const auto after=record.order?permuted_compiler_cases(before,*record.order):
             JsonObject::Parse(key(record.after_raw_json));
+        const auto client_epoch=!record.client_path.empty()?std::string(record.record_sha256):
+            history.versions.empty()?std::string{}:history.versions.back().client_epoch;
         history.versions.push_back({before,after,record.order?*record.order:std::vector<std::size_t>{},
-            record.journal_index,!record.order,index});
+            record.journal_index,!record.order,index,std::string(record.client_path),client_epoch});
+        if(!record.client_path.empty())history.client_paths.emplace(record.client_path);
+    }
+    // The full format archive is authenticated below. Its presence permits
+    // only lexical formatting at this step; source mutations still need their
+    // own exact client event before projection may restore earlier bytes.
+    const auto metadata=JsonObject::Parse(key(layout.raw_json));
+    if(metadata.HasKey(L"sourceFormatRevisions"))for(const auto& value:array(metadata,"sourceFormatRevisions")) {
+        const auto owner=text(value.GetObject(),"id");
+        if(const auto found=result.find(owner);found!=result.end())found->second.source_formatted=true;
+    }
+    for(const auto& [owner,history]:result) {
+        (void)owner;
+        for(std::size_t index=1;index<history.versions.size();++index)
+            for(const auto& path:history.client_paths)
+                require(compiler_client_matches(history.versions[index].before,history.versions[index-1].after,
+                    path,history.source_formatted),
+                    "Compiler client history changed a source outside its authenticated transition");
     }
     JsonArray prefix;std::map<std::string,std::size_t> epochs;
     for(unsigned index=0;index<editorial.Size();++index) {
@@ -1763,8 +1840,11 @@ std::size_t compiler_case_epoch(const JsonObject& source,
         std::optional<std::size_t> editorial_prefix={}) {
     const auto contract=compiler_case_contract(source);
     const auto matches=[&](std::size_t epoch) {
-        return contract==compiler_case_contract(epoch?history.versions.at(epoch-1).after:
-            history.versions.front().before);
+        const auto expected=epoch?history.versions.at(epoch-1).after:history.versions.front().before;
+        if(contract!=compiler_case_contract(expected))return false;
+        return std::ranges::all_of(history.client_paths,[&](const auto& path) {
+            return compiler_client_matches(source,expected,path,history.source_formatted);
+        });
     };
     if(!historical) {
         require(matches(history.versions.size()),
@@ -1797,6 +1877,11 @@ JsonObject compiler_case_projection(const JsonObject& source,
     // a four-case permutation never addresses a later sixteen-case array.
     for(std::size_t step=epoch;step>0;--step) {
         const auto& version=history.versions[step-1];
+        if(!version.client_path.empty()) {
+            require(compiler_client_matches(result,version.after,version.client_path,history.source_formatted),
+                "A compiler client differs from its authenticated source epoch");
+            copy_compiler_client(result,version.before,version.client_path);
+        }
         if(version.case_revision) {
             result.GetNamedObject(L"outputCheck").Insert(L"cases",
                 array(version.before.GetNamedObject(L"outputCheck"),"cases"));
@@ -2000,13 +2085,17 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         require(result.version==2&&records.Size()<=100000&&(!records.Size()||locale=="es"),
             "Compiler case revisions require Spanish stateLayout v2");
         for(const auto& value:records) {
-            const auto item=value.GetObject();allowed_keys(item,
+            const auto item=value.GetObject();
+            if(item.HasKey(L"client"))allowed_keys(item,
+                {"id","block","cases","editorialIndex","historySha256","semanticBefore","semanticAfter","client"},true);
+            else allowed_keys(item,
                 {"id","block","cases","editorialIndex","historySha256","semanticBefore","semanticAfter"},true);
             CompilerCaseRevision record;record.id=text(item,"id");
             require(valid_id(record.id)&&current_blocks.contains(record.id),
                 "Unknown or inactive compiler case-revision owner");
             const auto previous=item.GetNamedObject(L"block");
-            const auto revised=revised_compiler_cases(previous,array(item,"cases"));
+            const auto client=item.HasKey(L"client")?std::optional<JsonObject>{item.GetNamedObject(L"client")}:std::nullopt;
+            const auto revised=revised_compiler_cases(previous,array(item,"cases"),client);
             record.raw_json=utf8(previous.Stringify());record.after_raw_json=utf8(revised.Stringify());
             record.sha256=fingerprint(previous);record.record_sha256=fingerprint(item);
             record.history_sha256=text(item,"historySha256");
@@ -2020,6 +2109,12 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             record.previous_project_files=before_block.project_files;
             record.previous_output_check=*before_block.output_check;
             record.revised_output_check=*after_block.output_check;
+            if(client) {
+                CompilerClientRevision change;
+                change.path=text(*client,"path");change.revised_initial_code=after_block.initial_code;
+                change.revised_project_files=after_block.project_files;
+                record.client_revision=std::move(change);
+            }
             record.previous_case_text_semantics=read_case_order_semantics(previous,array(item,"semanticBefore"),record.id);
             record.revised_case_text_semantics=read_case_order_semantics(revised,array(item,"semanticAfter"),record.id);
             result.compiler_case_revisions.push_back(std::move(record));
@@ -2058,7 +2153,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             require(valid_id(id)&&result.signatures.contains(id)&&!source_format_originals.contains(id),
                 "Unknown or duplicated source-format owner");
             const auto previous=item.GetNamedObject(L"block");
-            const auto before=state_fingerprint(case_order_source(id,previous,true));
+            const auto projected=case_order_source(id,previous,true);
+            const auto before=state_fingerprint(projected);
             // A formatting archive can begin after an authenticated compiler,
             // reference, choice or order revision. Compare with that revised
             // contract, not the original pre-revision signature. The active
@@ -2072,7 +2168,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 refined_order_signatures.contains(id)?
                     refined_order_signatures.at(id):result.signatures.at(id);
             require(before==expected,"Source format archive does not match its authenticated pre-format contract");
-            source_format_originals.emplace(id,previous);
+            source_format_originals.emplace(id,projected);
             result.source_format_revisions.push_back({id,utf8(previous.Stringify()),fingerprint(previous)});
         }
     }
@@ -3048,14 +3144,41 @@ void resolve_addresses(Lesson& lesson) {
         earlier_source_versions.insert(revision.id);
         for(const auto& reference:revision.references)earlier_source_versions.insert(reference.id);
     }
-    const auto historical_format_source=[&](const std::string& owner,const JsonObject& source)->std::optional<JsonObject> {
+    const auto case_order_editorial=(!layout.compiler_case_order_revisions.empty()||!layout.compiler_case_revisions.empty())?
+        array(JsonObject::Parse(key(layout.raw_json)),"editorial"):JsonArray{};
+    const auto case_order_histories=compiler_case_histories(layout,case_order_editorial,lesson.id);
+    const auto original_format_source=[&](const std::string& owner) {
+        auto original=JsonObject::Parse(key(source_formats.at(owner)->raw_json));
+        if(const auto history=case_order_histories.find(owner);history!=case_order_histories.end()&&
+                !history->second.client_paths.empty())
+            original=compiler_case_projection(original,history->second,true);
+        return original;
+    };
+    const auto historical_format_source=[&](const std::string& owner,const JsonObject& source,
+            bool historical=true,std::optional<std::size_t> editorial_prefix={})->std::optional<JsonObject> {
         const auto format=source_formats.find(owner);
         if(format==source_formats.end())return {};
         // read_layout already authenticated the full historical node and
         // its exact contract. Do not attach a later starter/card identity
         // to a snapshot of the original closed expansion or refinement.
-        if(earlier_source_versions.contains(owner)&&state_fingerprint(source)==layout.signatures.at(owner))return {};
-        return JsonObject::Parse(key(format->second->raw_json));
+        if(historical&&earlier_source_versions.contains(owner)&&state_fingerprint(source)==layout.signatures.at(owner))return {};
+        auto original=original_format_source(owner);
+        if(const auto history=case_order_histories.find(owner);history!=case_order_histories.end()&&
+                !history->second.client_paths.empty()) {
+            const auto epoch=compiler_case_epoch(source,history->second,historical,editorial_prefix);
+            for(std::size_t index=0;index<epoch;++index) {
+                const auto& version=history->second.versions[index];
+                if(!version.client_path.empty())copy_compiler_client(original,version.after,version.client_path);
+            }
+        }
+        return original;
+    };
+    const auto client_epoch=[&](const std::string& owner,const JsonObject& source,
+            std::size_t editorial_prefix) {
+        const auto history=case_order_histories.find(owner);
+        if(history==case_order_histories.end()||history->second.client_paths.empty())return std::string{};
+        const auto epoch=compiler_case_epoch(source,history->second,true,editorial_prefix);
+        return epoch?history->second.versions[epoch-1].client_epoch:std::string{};
     };
     const auto apply_source_format=[&](Block& block,const JsonObject& source) {
         const auto original=read_block(source,utf8(source.Stringify()));
@@ -3077,9 +3200,6 @@ void resolve_addresses(Lesson& lesson) {
                 block.text_semantics.emplace("/prompt",*revision.semantic_before);
         }
     };
-    const auto case_order_editorial=(!layout.compiler_case_order_revisions.empty()||!layout.compiler_case_revisions.empty())?
-        array(JsonObject::Parse(key(layout.raw_json)),"editorial"):JsonArray{};
-    const auto case_order_histories=compiler_case_histories(layout,case_order_editorial,lesson.id);
     const auto format_precedes=[&](const std::string& owner,std::size_t editorial_index) {
         const auto format=source_formats.find(owner);if(format==source_formats.end())return false;
         for(std::size_t index=0;index<editorial_index;++index) {
@@ -3092,7 +3212,7 @@ void resolve_addresses(Lesson& lesson) {
     for(auto& revision:layout.compiler_case_order_revisions) {
         const auto source=JsonObject::Parse(key(revision.raw_json));
         const auto format=format_precedes(revision.id,revision.editorial_index)?
-            historical_format_source(revision.id,source):std::optional<JsonObject>{};
+            historical_format_source(revision.id,source,true,revision.editorial_index):std::optional<JsonObject>{};
         auto previous=read_block(source,revision.raw_json,format?&*format:nullptr);
         if(format)apply_source_format(previous,*format);
         revision.previous_initial_code=previous.initial_code;
@@ -3100,13 +3220,14 @@ void resolve_addresses(Lesson& lesson) {
         revision.previous_output_check=*previous.output_check;
         revision.previous_source_format_initial_code=previous.source_format_original_initial_code;
         revision.previous_source_format_project_files=previous.source_format_original_project_files;
+        revision.previous_client_epoch=client_epoch(revision.id,source,revision.editorial_index);
         case_orders[revision.id].push_back(revision);
     }
     std::map<std::string,std::vector<CompilerCaseRevision>> case_revisions;
     for(auto& revision:layout.compiler_case_revisions) {
         const auto source=JsonObject::Parse(key(revision.raw_json));
         const auto format=format_precedes(revision.id,revision.editorial_index)?
-            historical_format_source(revision.id,source):std::optional<JsonObject>{};
+            historical_format_source(revision.id,source,true,revision.editorial_index):std::optional<JsonObject>{};
         auto previous=read_block(source,revision.raw_json,format?&*format:nullptr);
         if(format)apply_source_format(previous,*format);
         revision.previous_initial_code=previous.initial_code;
@@ -3114,6 +3235,19 @@ void resolve_addresses(Lesson& lesson) {
         revision.previous_output_check=*previous.output_check;
         revision.previous_source_format_initial_code=previous.source_format_original_initial_code;
         revision.previous_source_format_project_files=previous.source_format_original_project_files;
+        revision.previous_client_epoch=client_epoch(revision.id,source,revision.editorial_index);
+        const auto after_source=JsonObject::Parse(key(revision.after_raw_json));
+        revision.revised_client_epoch=client_epoch(revision.id,after_source,revision.editorial_index+1);
+        if(revision.client_revision) {
+            const auto after_format=format_precedes(revision.id,revision.editorial_index+1)?
+                historical_format_source(revision.id,after_source,true,revision.editorial_index+1):std::optional<JsonObject>{};
+            auto after=read_block(after_source,revision.after_raw_json,after_format?&*after_format:nullptr);
+            if(after_format)apply_source_format(after,*after_format);
+            auto& client=*revision.client_revision;
+            client.revised_initial_code=after.initial_code;client.revised_project_files=after.project_files;
+            client.revised_source_format_initial_code=after.source_format_original_initial_code;
+            client.revised_source_format_project_files=after.source_format_original_project_files;
+        }
         case_revisions[revision.id].push_back(revision);
     }
     std::map<std::string,ChoiceRevision*> choices;
@@ -3143,8 +3277,9 @@ void resolve_addresses(Lesson& lesson) {
             auto& block = page.blocks[b];
             block.stable_id = layout.version ? layout.current[p].blocks[b] : "block_" + std::to_string(p) + '_' + std::to_string(b);
             block.address = layout.version ? addresses.at(block.stable_id) : StateAddress{p, b, {}, page.stable_id};
-            if(const auto format=source_formats.find(block.stable_id);format!=source_formats.end())
-                apply_source_format(block,JsonObject::Parse(key(format->second->raw_json)));
+            if(source_formats.contains(block.stable_id))
+                if(const auto format=historical_format_source(block.stable_id,JsonObject::Parse(key(block.raw_json)),false))
+                    apply_source_format(block,*format);
             if (const auto refinement = refinements.find(block.stable_id); refinement != refinements.end()) {
                 require(block.type == BlockType::order_code && sha256(order_representation_frame(block)) == refinement->second->representation_signature,
                     "An ordering refinement belongs to another visible representation");
@@ -3173,6 +3308,8 @@ void resolve_addresses(Lesson& lesson) {
                 block.compiler_case_order_revisions=history->second;
             if(const auto history=case_revisions.find(block.stable_id);history!=case_revisions.end())
                 block.compiler_case_revisions=history->second;
+            if(const auto history=case_order_histories.find(block.stable_id);history!=case_order_histories.end())
+                block.compiler_client_epoch=history->second.versions.back().client_epoch;
             if(block.compile_check) {
                 const auto spec=reviewed_compile_check(block.compile_check->diagnostic);
                 require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
@@ -3209,7 +3346,7 @@ void resolve_addresses(Lesson& lesson) {
             for(std::size_t b=0;b<snapshot.current[p].blocks.size();++b) {
                 const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
                 const auto& identity=snapshot.current[p].blocks[b];
-                const auto format_source=historical_format_source(identity,source);
+                const auto format_source=historical_format_source(identity,source,true,snapshot.editorial_prefix);
                 auto block=read_block(source,utf8(source.Stringify()),format_source?&*format_source:nullptr);
                 block.stable_id=identity;
                 if(format_source)apply_source_format(block,*format_source);
@@ -3221,6 +3358,7 @@ void resolve_addresses(Lesson& lesson) {
                             [&](const auto& version){return version.editorial_index<*snapshot.editorial_prefix;}));
                     if(!earlier_closed) {
                         const auto epoch=compiler_case_epoch(source,history->second,true,snapshot.editorial_prefix);
+                        block.compiler_client_epoch=epoch?history->second.versions[epoch-1].client_epoch:std::string{};
                         for(std::size_t index=0;index<epoch;++index) {
                             const auto& version=history->second.versions[index];
                             if(version.case_revision)
@@ -3231,7 +3369,8 @@ void resolve_addresses(Lesson& lesson) {
                         ordered_source=compiler_case_projection(source,history->second,true,snapshot.editorial_prefix);
                     }
                 }
-                const auto protected_source=format_source?source_format_projection(ordered_source,*format_source):ordered_source;
+                const auto protected_source=format_source?
+                    source_format_projection(ordered_source,original_format_source(identity)):ordered_source;
                 apply_math_text(block,true);
                 intentional_exit_owner(block);
                 crt_output_owner(block);

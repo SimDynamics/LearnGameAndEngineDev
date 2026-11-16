@@ -332,6 +332,7 @@ Block compiler_case_order_previous_block(
     previous.source_format_original_initial_code=revision.previous_source_format_initial_code;
     previous.source_format_original_project_files=revision.previous_source_format_project_files;
     previous.text_semantics=revision.previous_case_text_semantics;
+    previous.compiler_client_epoch=revision.previous_client_epoch;
     previous.compiler_case_order_revisions.clear();
     previous.compiler_case_revisions.clear();
     return previous;
@@ -350,17 +351,33 @@ Block compiler_case_revision_previous_block(
     previous.source_format_original_initial_code=revision.previous_source_format_initial_code;
     previous.source_format_original_project_files=revision.previous_source_format_project_files;
     previous.text_semantics=revision.previous_case_text_semantics;
+    previous.compiler_client_epoch=revision.previous_client_epoch;
     previous.compiler_case_order_revisions.clear();
     previous.compiler_case_revisions.clear();
     return previous;
 }
 Block compiler_case_revision_after_block(
         const Block& owner,const CompilerCaseRevision& revision) {
+    if(revision.client_revision) {
+        if(revision.record_sha256.empty()||revision.revised_client_epoch!=revision.record_sha256||
+           revision.revised_client_epoch==revision.previous_client_epoch)
+            throw std::invalid_argument("A client-source revision requires its own authenticated epoch");
+    } else if(revision.revised_client_epoch!=revision.previous_client_epoch) {
+        throw std::invalid_argument("A case-only revision cannot change its client-source epoch");
+    }
     auto revised=compiler_case_revision_previous_block(owner,revision);
     revised.raw_json=revision.after_raw_json;
     revised.output_check->input_comparison=revision.revised_output_check.input_comparison;
     revised.output_check->cases=revision.revised_output_check.cases;
     revised.text_semantics=revision.revised_case_text_semantics;
+    revised.compiler_client_epoch=revision.revised_client_epoch;
+    if(revision.client_revision) {
+        const auto& client=*revision.client_revision;
+        revised.initial_code=client.revised_initial_code;
+        revised.project_files=client.revised_project_files;
+        revised.source_format_original_initial_code=client.revised_source_format_initial_code;
+        revised.source_format_original_project_files=client.revised_source_format_project_files;
+    }
     return revised;
 }
 std::string reference_objective_frame(const Lesson& lesson, const Block& activity) {
@@ -387,6 +404,13 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         token("cpp-project-v1");
         const auto& files=activity.source_format_original_project_files.value_or(activity.project_files);
         token(cpp_project_frame(files,activity.source_files,activity.cmake));
+    }
+    // A client may later return to identical bytes or retain an old complete
+    // case as an optional trial. Neither situation carries an execution into
+    // a different authenticated source epoch. Formatting within that epoch
+    // continues to use its original source above.
+    if(!activity.compiler_client_epoch.empty()) {
+        token("compiler-client-epoch-v1");token(activity.compiler_client_epoch);
     }
     token(activity.output_check->input_comparison == TextComparison::tokens ? "tokens" : "exact");
     if(activity.output_check->rejection_operation)

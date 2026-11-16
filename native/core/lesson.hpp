@@ -186,9 +186,21 @@ struct CompilerCaseOrderRevision {
     std::optional<std::string> previous_source_format_initial_code;
     std::optional<CppProjectFiles> previous_source_format_project_files;
     std::map<std::string,TextSemantics> previous_case_text_semantics;
+    // Derived from the last authenticated client-source transition, if any.
+    std::string previous_client_epoch;
 };
-// An authored replacement of cases changes only outputCheck.cases. Complete
-// before/after sources and explicit case semantics own their historical views.
+// A separately authored client adaptation changes one existing compiled file.
+// The loader derives its complete after-source and formatting provenance; no
+// draft is rewritten when a lesson adopts this publication.
+struct CompilerClientRevision {
+    std::string path, revised_initial_code;
+    CppProjectFiles revised_project_files;
+    std::optional<std::string> revised_source_format_initial_code;
+    std::optional<CppProjectFiles> revised_source_format_project_files;
+};
+// Ordinary replacements change only outputCheck.cases. The explicit client
+// modality also owns a source epoch, distinct from every earlier execution.
+// Complete before/after archives retain all historical views.
 struct CompilerCaseRevision {
     std::string id, raw_json, after_raw_json, sha256, record_sha256, history_sha256;
     std::size_t editorial_index = 0;
@@ -198,6 +210,8 @@ struct CompilerCaseRevision {
     std::optional<std::string> previous_source_format_initial_code;
     std::optional<CppProjectFiles> previous_source_format_project_files;
     std::map<std::string,TextSemantics> previous_case_text_semantics, revised_case_text_semantics;
+    std::string previous_client_epoch, revised_client_epoch;
+    std::optional<CompilerClientRevision> client_revision;
 };
 // Derived only from a complete, closed mathematical label review. This is
 // reading provenance, never another authored field or response identity.
@@ -269,6 +283,9 @@ struct Block {
     std::optional<CmakeConfig> cmake;
     StateAddress address;
     std::optional<AdjustmentProjectSpec> adjustment_project_probe;
+    // Runtime-only provenance. Empty preserves all legacy objective bytes.
+    // Each explicit client revision creates its own execution-receipt scope.
+    std::string compiler_client_epoch;
 };
 struct Page {
     std::string stable_id;
