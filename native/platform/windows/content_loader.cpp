@@ -1677,47 +1677,79 @@ std::optional<unsigned> compiler_client_file(const JsonObject& block,std::string
     return {};
 }
 void copy_compiler_client(const JsonObject& target,const JsonObject& source,std::string_view path) {
+    require(target.HasKey(L"projectFiles")==source.HasKey(L"projectFiles")&&
+        target.HasKey(L"cmake")==source.HasKey(L"cmake"),
+        "A compiler client must retain its source mode");
+    if(!source.HasKey(L"projectFiles")) {
+        require(path=="main.cpp"&&!source.HasKey(L"cmake")&&!source.HasKey(L"sourceFiles")&&
+            !target.HasKey(L"sourceFiles")&&source.HasKey(L"initialCode")&&target.HasKey(L"initialCode"),
+            "A single-source compiler client uses only its virtual main.cpp source");
+        target.Insert(L"initialCode",source.GetNamedValue(L"initialCode"));
+        return;
+    }
     const auto target_file=compiler_client_file(target,path),source_file=compiler_client_file(source,path);
     require(target_file&&source_file,"A compiler client must retain its exact existing file");
-    require(target.HasKey(L"initialCode")==source.HasKey(L"initialCode"),
+    require(source.HasKey(L"cmake")||target.HasKey(L"initialCode")==source.HasKey(L"initialCode"),
         "A compiler client must retain its authored initialCode alias");
     array(target,"projectFiles").GetObjectAt(*target_file).Insert(L"initialCode",
         array(source,"projectFiles").GetObjectAt(*source_file).GetNamedValue(L"initialCode"));
-    if(source.HasKey(L"initialCode"))target.Insert(L"initialCode",source.GetNamedValue(L"initialCode"));
+    // CMake's top-level initialCode is independent metadata, not a client
+    // alias. Its own authenticated formatting must survive this projection.
+    if(!source.HasKey(L"cmake")&&source.HasKey(L"initialCode"))
+        target.Insert(L"initialCode",source.GetNamedValue(L"initialCode"));
 }
 bool compiler_client_matches(const JsonObject& source,const JsonObject& expected,
         std::string_view path,bool allow_format) {
-    const auto actual_file=compiler_client_file(source,path),expected_file=compiler_client_file(expected,path);
-    if(!actual_file||!expected_file||source.HasKey(L"initialCode")!=expected.HasKey(L"initialCode"))return false;
+    if(source.HasKey(L"projectFiles")!=expected.HasKey(L"projectFiles")||
+            source.HasKey(L"cmake")!=expected.HasKey(L"cmake"))return false;
     const auto same=[&](const std::string& before,const std::string& after) {
         return before==after||(allow_format&&curriculum::code_format::equivalent(
             before,after,curriculum::code_format::Language::cpp));
     };
+    if(!source.HasKey(L"projectFiles"))
+        return path=="main.cpp"&&!source.HasKey(L"cmake")&&!source.HasKey(L"sourceFiles")&&
+            !expected.HasKey(L"sourceFiles")&&source.HasKey(L"initialCode")&&expected.HasKey(L"initialCode")&&
+            same(text(expected,"initialCode"),text(source,"initialCode"));
+    const auto actual_file=compiler_client_file(source,path),expected_file=compiler_client_file(expected,path);
+    if(!actual_file||!expected_file)return false;
+    if(!source.HasKey(L"cmake")&&source.HasKey(L"initialCode")!=expected.HasKey(L"initialCode"))return false;
     return same(text(array(expected,"projectFiles").GetObjectAt(*expected_file),"initialCode"),
             text(array(source,"projectFiles").GetObjectAt(*actual_file),"initialCode"))&&
-        (!expected.HasKey(L"initialCode")||same(text(expected,"initialCode"),text(source,"initialCode")));
+        (source.HasKey(L"cmake")||!expected.HasKey(L"initialCode")||
+            same(text(expected,"initialCode"),text(source,"initialCode")));
 }
 JsonObject revised_compiler_client(const JsonObject& before,const JsonObject& client) {
     allowed_keys(client,{"path","source"},true);
-    require(before.HasKey(L"projectFiles")&&!before.HasKey(L"cmake")&&!before.HasKey(L"compileCheck"),
-        "A compiler client revision requires an existing plain C++ project");
-    for(const auto& value:array(before,"projectFiles"))
+    require(!before.HasKey(L"compileCheck"),"A compilation diagnostic cannot revise its runtime client");
+    if(before.HasKey(L"projectFiles"))for(const auto& value:array(before,"projectFiles"))
         allowed_keys(value.GetObject(),{"path","initialCode"},true);
     const auto parsed=read_block(before,utf8(before.Stringify()));
     const auto path=text(client,"path"),source=text(client,"source");
-    require(std::ranges::find(parsed.source_files,path)!=parsed.source_files.end(),
-        "A compiler client must be an existing selected C++ source");
-    const auto position=compiler_client_file(before,path);
-    require(position.has_value(),"A compiler client must retain its exact existing file");
-    const auto previous=text(array(before,"projectFiles").GetObjectAt(*position),"initialCode");
+    std::optional<unsigned> position;std::string previous;
+    if(!before.HasKey(L"projectFiles")) {
+        require(path=="main.cpp","A single-source compiler client uses the virtual main.cpp path");
+        previous=text(before,"initialCode");
+        require(previous.size()<=4*1024*1024&&source.size()<=4*1024*1024,
+            "A single-source compiler client exceeds the existing 4 MiB limit");
+    } else {
+        // CMake selects sources through its real description. The loader can
+        // authenticate an existing C++ file, not infer target membership.
+        if(parsed.cmake)require(is_cpp_source_file(path),"A CMake client must be an existing C++ source");
+        else require(std::ranges::find(parsed.source_files,path)!=parsed.source_files.end(),
+            "A compiler client must be an existing selected C++ source");
+        position=compiler_client_file(before,path);
+        require(position.has_value(),"A compiler client must retain its exact existing file");
+        previous=text(array(before,"projectFiles").GetObjectAt(*position),"initialCode");
+        if(!parsed.cmake)require(!before.HasKey(L"initialCode")||text(before,"initialCode")==previous,
+            "The existing initialCode alias must exactly name the selected client");
+    }
     require(!source.empty()&&source.find('\0')==source.npos&&source!=previous,
         "A compiler client revision needs a changed nonempty source without NUL");
-    require(!before.HasKey(L"initialCode")||text(before,"initialCode")==previous,
-        "The existing initialCode alias must exactly name the selected client");
     auto result=JsonObject::Parse(before.Stringify());
-    array(result,"projectFiles").GetObjectAt(*position).Insert(L"initialCode",JsonValue::CreateStringValue(key(source)));
-    if(result.HasKey(L"initialCode"))result.Insert(L"initialCode",JsonValue::CreateStringValue(key(source)));
-    // Reuse the existing project path, source selection and byte limits.
+    if(position)array(result,"projectFiles").GetObjectAt(*position).Insert(L"initialCode",JsonValue::CreateStringValue(key(source)));
+    if(!parsed.cmake&&result.HasKey(L"initialCode"))result.Insert(L"initialCode",JsonValue::CreateStringValue(key(source)));
+    // Reuse the existing project paths, source selection, CMake recipe and
+    // byte limits without altering any auxiliary file or build configuration.
     (void)read_block(result,utf8(result.Stringify()));
     return result;
 }

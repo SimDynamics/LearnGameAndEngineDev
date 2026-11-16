@@ -1375,7 +1375,7 @@ sus versiones, de forma que una reapertura no restaure un logro reiniciado.
 ### Adaptar el cliente al separar los casos
 
 Cuando las llamadas independientes están escritas dentro del cliente de un
-proyecto C++, Work puede preparar una transición explícita con
+editor C++, Work puede preparar una transición explícita con
 `revise_compiler_client_cases`. Recibe el propietario estable, un objeto
 `client: {path, source}`, la lista completa de casos y su semántica. El
 registro se incorpora a `stateLayout.compilerCaseRevisions`, con el bloque
@@ -1383,13 +1383,29 @@ anterior íntegro y su procedencia editorial. El esquema y el comando
 `revise-compiler-client-cases` se describen en
 `docs/curriculum/STABLE_LESSON_STATE.md`.
 
-Esta modalidad admite un archivo C++ ya incluido en `sourceFiles`, dentro
-de un proyecto de varios archivos sin CMake ni `compileCheck`. Si existe
-`initialCode` en el bloque, debe ser el alias exacto de ese cliente y ambos
-se actualizan juntos. Conserva las rutas, los demás archivos, la selección
-de fuentes, la entrada inicial declarada, las reglas de comparación y el
-resto del editor. Los casos se suministran expresamente; pueden conservar
-sus valores cuando el cliente cambia. La API anterior
+La operación conserva la modalidad de almacenamiento y construcción del editor:
+
+| Modalidad | Archivo seleccionado | Campos que conserva |
+|---|---|---|
+| Fuente única | La ruta virtual exacta `main.cpp` identifica `initialCode`. | No crea `projectFiles`, `sourceFiles` ni una receta CMake. |
+| Proyecto C++ ordinario | Un archivo existente de `sourceFiles`, o de su selección implícita de fuentes C++. | Conserva rutas, auxiliares y selección. Si existe un `initialCode` superior, debe coincidir exactamente con el cliente previo y ambos se actualizan juntos. |
+| Proyecto CMake | Un archivo C++ existente de `projectFiles`. | Conserva `CMakeLists.txt`, bibliotecas, auxiliares y la configuración `cmake`, incluidos objetivo, opciones y tipo de construcción. El `initialCode` superior es independiente y permanece intacto. |
+
+La fuente única mantiene el límite de 4 MiB. Los proyectos C++ ordinarios
+mantienen hasta 256 archivos, 16 MiB por archivo y 32 MiB en total. CMake
+conserva sus límites de 128 archivos y 8 MiB totales; la receta determina
+las fuentes y no admite `sourceFiles`. La autoría selecciona un archivo C++
+existente. CMake resuelve las fuentes de cada objetivo durante la construcción
+con la receta conservada; la transición no interpreta por adelantado esa descripción.
+
+Los diagnósticos `compileCheck` conservan su objetivo y quedan fuera de esta
+operación. Los requisitos adicionales de un recorrido tampoco se sustituyen
+por acertar la salida: `cmakeSelectiveRecoveryV1` mantiene su contrato de un
+caso y rechaza una desagregación que no lo respete.
+
+Las tres modalidades conservan la entrada inicial declarada, las reglas de
+comparación y los demás campos del editor. Los casos se suministran
+expresamente; pueden conservar sus valores cuando el cliente cambia. La API anterior
 `revise_compiler_cases` mantiene su contrato de revisión exclusiva de casos.
 
 Cada adaptación del cliente crea un objetivo de ejecución propio. Un logro

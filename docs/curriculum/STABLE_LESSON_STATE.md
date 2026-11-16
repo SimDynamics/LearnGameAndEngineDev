@@ -867,8 +867,9 @@ prueba, sin atribuir esa comprobación al motor matemático general.
 
 `revise_compiler_client_cases(document, identity, client, cases,
 case_semantics=..., return_to=None)` prepara una transición de un editor C++
-con archivos de proyecto. `client` es un objeto con exactamente `path` y
-`source`: la ruta de un archivo ya existente y su nuevo código completo.
+de fuente única, de un proyecto C++ ordinario o de un proyecto CMake.
+`client` es un objeto con exactamente `path` y `source`: el cliente existente
+que se revisa y su nuevo código completo.
 `cases` y `case_semantics` son explícitos, incluso cuando los descriptores sean
 `[]`. La API `revise_compiler_cases` conserva su contrato anterior: sigue
 permitiendo únicamente cambios en los casos.
@@ -880,23 +881,41 @@ Cada ejecución del nuevo cliente corresponde entonces a una entrada y una
 salida completas. Work redacta el cambio de actividad y sus referencias;
 la herramienta recibe el código y los casos que Work haya decidido utilizar.
 
-El ámbito inicial es un `cpp_compiler` activo, español, con mapa v2 y
-`projectFiles`. La ruta debe seleccionar exactamente uno de sus archivos
-C++ compilados: debe figurar en `sourceFiles` cuando esa lista existe, o en
-la selección implícita de archivos `.cpp`, `.cc`, `.cxx` o `.c++`. Se conservan
-la selección, el orden y las rutas de los archivos. Este contrato no admite
-`cmake` ni `compileCheck`.
+El ámbito es un `cpp_compiler` activo, español, con mapa v2 y `outputCheck`,
+sin `compileCheck`. La transición conserva su forma de almacenamiento:
+
+| Forma del editor | Selección del cliente | Fuente que se sustituye | Límites nativos |
+| --- | --- | --- | --- |
+| Fuente única, sin `projectFiles`, `sourceFiles` ni `cmake` | `path` debe ser exactamente `main.cpp`; es el nombre virtual del programa existente | Sólo `initialCode`; no se crean archivos de proyecto | Fuentes anterior y nueva no vacías, sin recortar espacios: hasta 4 MiB UTF-8 cada una |
+| Proyecto C++ ordinario, sin `cmake` | Un archivo existente seleccionado por `sourceFiles`, o por la selección implícita de extensiones C++ | Ese archivo y su alias superior `initialCode`, cuando ya existe y coincide exactamente con la fuente previa seleccionada | Hasta 256 archivos, 16 MiB por archivo y 32 MiB en total |
+| Proyecto CMake, con `projectFiles` y sin `sourceFiles` | Un archivo C++ existente; CMake determina sus relaciones reales de construcción | Sólo ese archivo; el `initialCode` superior es independiente y se conserva íntegro | Hasta 128 archivos y 8 MiB UTF-8 en total |
+
+Las extensiones C++ admitidas son `.cpp`, `.cc`, `.cxx` y `.c++`, sin distinguir
+mayúsculas ASCII. La ruta seleccionada conserva exactamente su escritura
+publicada. En proyectos se mantienen las reglas nativas de rutas portables,
+la ausencia de colisiones de nombres y de conflictos archivo/directorio;
+cada entrada de `projectFiles` conserva exactamente `path` e `initialCode`.
+La operación no convierte una forma de editor en otra, ni añade o retira
+archivos, rutas o selecciones.
+
+En CMake también se valida la configuración existente: objetivo admitido,
+tipo `Debug`, `Release`, `RelWithDebInfo` o `MinSizeRel`, y hasta 64 opciones
+con nombres no reservados y valores de hasta 4096 bytes UTF-8 sin controles
+ASCII. Se conservan exactamente `cmake.target`, las opciones, el tipo de
+construcción y todos los archivos de descripción. No se interpreta
+`CMakeLists.txt` para decidir si el cliente pertenece a un objetivo ni para
+reparar una receta: las descripciones incompletas o defectuosas que forman
+parte del ejercicio siguen llegando a CMake real.
 
 El código nuevo debe ser texto no vacío, sin NUL y diferente por bytes del
 código anterior de ese archivo. La lista de casos puede conservar las mismas
 expectativas: el cambio explícito del cliente sigue creando un objetivo
 nuevo. Se aplican las reglas de rutas portables y los límites del proyecto
-nativo: hasta 256 archivos, 16 MiB por archivo y 32 MiB de fuentes en total.
-Cada entrada de `projectFiles` conserva exactamente `path` e `initialCode`.
-Si el bloque ya tiene un `initialCode` superior, debe coincidir exactamente
-con el código previo del archivo seleccionado; la transición actualiza ambos
-campos juntos. Si no lo tiene, conserva su ausencia. El validador curricular
-ordinario mantiene sus requisitos de campos publicados.
+nativo correspondientes a su forma de almacenamiento. En el proyecto C++
+ordinario, el alias superior existente se actualiza junto al archivo; si
+no existe, conserva su ausencia. En CMake, un `initialCode` vacío, diferente
+del cliente o coincidente con él se conserva sin interpretarlo como alias.
+El validador curricular ordinario mantiene sus requisitos de campos publicados.
 
 El registro usa el mismo archivo acumulativo `compilerCaseRevisions`:
 
@@ -915,7 +934,8 @@ El registro usa el mismo archivo acumulativo `compilerCaseRevisions`:
 
 El ejemplo muestra la forma del registro; la API obtiene el bloque anterior,
 la arista y las huellas de la publicación real. El sucesor debe ser exactamente
-ese bloque con el archivo cliente, su alias existente y los casos sustituidos.
+ese bloque con la fuente cliente de su modo, su alias cuando corresponda y
+los casos sustituidos.
 Los demás campos permanecen íntegros: auxiliares, cabeceras, receta, comparación,
 entrada inicial y propiedades del editor. La ausencia histórica de
 `initialStandardInput` se conserva; el lector habilita la entrada cuando los
@@ -957,6 +977,12 @@ auténticos del mismo caso completo y programa capturado. El formato
 compatible también conserva la época. Los demás casos permanecen opcionales;
 las baterías pedagógicas conservan sus contratos separados. Sin `client`,
 las huellas y la conducta de las publicaciones anteriores permanecen iguales.
+Los objetivos adicionales de estructura CMake, reglas nombradas, ejecución o
+Historial conservan sus validadores y condiciones. Admitir un modo de fuente
+no autoriza a cambiar esos objetivos. Por ejemplo, `cmakeSelectiveRecoveryV1`
+mantiene su contrato revisado de un caso: la desagregación en varios casos de
+ese propietario sigue requiriendo una adaptación específica compatible con
+su secuencia de recuperación.
 
 Las pruebas comparten una sección `clientCases` del generador de fixtures,
 separada de los escenarios que conservan el mismo programa. El piloto toma
@@ -967,6 +993,19 @@ editor publicado `block_0020_0002` de esa misma lección. Las propuestas de
 QA no modifican los JSON curriculares. Los fixtures distinguen cliente nuevo,
 casos posteriores dentro de una época, otro cliente con los mismos casos,
 retorno explícito, formato y capturas de lectura históricas.
+
+`clientModes` añade pilotos independientes de las otras formas. U1L1 de
+Programación 2, `block_0004_0008`, conserva la función de reposición y su
+comparador dado; el cliente de QA recibe una pareja y un esperado explícito.
+U2L2, `block_0005_0012`, conserva la biblioteca estática, la receta y la función
+con el defecto de suma adicional; sólo su `main.cpp` recibe una pareja.
+Ambos parten de publicaciones completas fijadas en `51d37865`, con seis
+etapas equivalentes y fuentes e idiomas anteriores conservados. Las
+composiciones de formato y retirada de `clientModeValid` comprueban también
+el `initialCode` independiente de CMake. Un stdout vacío coincidente no
+demuestra qué llamadas ejecutó un programa: la conservación distingue el
+recibo de una época anterior de una comprobación nueva y no atribuye a la
+comparación de salida una instrumentación de llamadas que no realiza.
 
 ## Piezas independientes de una línea en Windows
 

@@ -1247,14 +1247,47 @@ def _validate_compiler_case_payload(block: dict) -> None:
                 claimed.update(values)
 
 
-def _compiler_client_project_index(block: dict, path: str) -> int:
-    """Select one existing compiled source without normalizing its authored path."""
-    require(type(block) is dict and block.get("type") == "cpp_compiler"
-            and "compileCheck" not in block and "cmake" not in block,
-            "A client revision requires an ordinary C++ output project")
+def _compiler_client_cmake_config(config) -> None:
+    """Mirror native CMake configuration limits without interpreting its files."""
+    require(type(config) is dict and {"target"} <= set(config) <= {"target", "options", "buildType"},
+            "A client revision needs an exact supported CMake configuration")
+    require(type(config["target"]) is str
+            and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.+\-]{0,127}", config["target"]) is not None,
+            "A client CMake target must be a valid native target name")
+    require(config.get("buildType", "Debug") in ("Debug", "Release", "RelWithDebInfo", "MinSizeRel"),
+            "A client CMake build type is unsupported")
+    options = config.get("options", {})
+    require(type(options) is dict and len(options) <= 64,
+            "A client CMake project supports at most 64 explicit options")
+    for name, value in options.items():
+        require(type(name) is str and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,127}", name) is not None
+                and not name.upper().startswith(("CMAKE_", "LGP_")),
+                "A client CMake option name is invalid or reserved")
+        require(type(value) is str and len(value.encode("utf-8")) <= 4096
+                and not any(ord(char) < 32 or ord(char) == 127 for char in value),
+                "A client CMake option must contain at most 4096 UTF-8 bytes without controls")
+
+
+def _compiler_client_project_index(block: dict, path: str) -> int | None:
+    """Select an existing C++ file, or virtual main.cpp in a single-source editor."""
+    require(type(block) is dict and block.get("type") == "cpp_compiler" and "compileCheck" not in block,
+            "A client revision requires a C++ output editor with no diagnostic objective")
+    if "projectFiles" not in block:
+        require("cmake" not in block and "sourceFiles" not in block and path == "main.cpp",
+                "A single-source client must keep its virtual main.cpp without project metadata")
+        require(type(block.get("initialCode")) is str and block["initialCode"]
+                and len(block["initialCode"].encode("utf-8")) <= 4 * 1024 * 1024,
+                "A single-source client requires nonempty initialCode within the native 4 MiB limit")
+        return None
+    cmake = "cmake" in block
+    if cmake:
+        _compiler_client_cmake_config(block["cmake"])
+        require("sourceFiles" not in block, "A CMake client cannot override sourceFiles")
+        require("initialCode" not in block or type(block["initialCode"]) is str,
+                "The independent CMake initialCode must remain text")
     files = block.get("projectFiles")
-    require(type(files) is list and 0 < len(files) <= 256,
-            "A client revision needs an existing C++ project with at most 256 files")
+    require(type(files) is list and 0 < len(files) <= (128 if cmake else 256),
+            "A client revision must retain a project within its native file count limit")
     lower = str.maketrans("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")
     def folded(value):
         return value.translate(lower)
@@ -1283,7 +1316,8 @@ def _compiler_client_project_index(block: dict, path: str) -> int:
         require(size <= 16 * 1024 * 1024, "A client project file exceeds 16 MiB")
         total += size
         names[key] = (index, entry["path"])
-    require(total <= 32 * 1024 * 1024, "A client project exceeds 32 MiB")
+    require(total <= (8 if cmake else 32) * 1024 * 1024,
+            "A client project exceeds its native total source byte limit")
     for name in names:
         require(not any(name.startswith(other + "/") for other in names),
                 "A client project path cannot also be a directory")
@@ -1299,18 +1333,34 @@ def _compiler_client_project_index(block: dict, path: str) -> int:
     require(type(path) is str and path in sources,
             "The revised client must be an existing selected C++ source")
     index = names[folded(path)][0]
-    require("initialCode" not in block or (type(block["initialCode"]) is str
+    require(cmake or "initialCode" not in block or (type(block["initialCode"]) is str
             and block["initialCode"] == files[index]["initialCode"]),
             "The client initialCode alias must match the selected source exactly")
     return index
 
 
+def _compiler_client_source(block: dict, path: str) -> str:
+    """Read the authored source slot without changing its storage mode."""
+    if "projectFiles" not in block:
+        require(path == "main.cpp" and type(block.get("initialCode")) is str,
+                "A single-source client must retain its virtual main.cpp")
+        return block["initialCode"]
+    matches = [entry for entry in block["projectFiles"] if entry.get("path") == path]
+    require(len(matches) == 1, "A compiler client must keep its one exact existing file")
+    return matches[0]["initialCode"]
+
+
 def _compiler_client_replace_source(block: dict, path: str, source: str) -> None:
-    """Replace only a validated client's bytes and its existing legacy alias."""
+    """Replace the validated client, preserving CMake's independent initialCode."""
+    if "projectFiles" not in block:
+        require(path == "main.cpp" and "initialCode" in block,
+                "A single-source client must retain its virtual main.cpp")
+        block["initialCode"] = source
+        return
     matches = [entry for entry in block.get("projectFiles", []) if entry.get("path") == path]
     require(len(matches) == 1, "A compiler client must keep its one exact existing file")
     matches[0]["initialCode"] = source
-    if "initialCode" in block:
+    if "cmake" not in block and "initialCode" in block:
         block["initialCode"] = source
 
 
@@ -1326,9 +1376,9 @@ def _compiler_case_revision_after(item: dict) -> dict:
         client = item["client"]
         require(type(client) is dict and set(client) == {"path", "source"},
                 "A client revision needs only its existing path and explicit source")
-        index = _compiler_client_project_index(before, client["path"])
+        _compiler_client_project_index(before, client["path"])
         require(type(client["source"]) is str and client["source"] and "\0" not in client["source"]
-                and client["source"] != before["projectFiles"][index]["initialCode"],
+                and client["source"] != _compiler_client_source(before, client["path"]),
                 "A client revision must explicitly change its nonempty source")
         _compiler_client_replace_source(result, client["path"], client["source"])
         _compiler_client_project_index(result, client["path"])
@@ -1391,8 +1441,7 @@ def _compiler_case_order_projection(document: dict, identity: str, block: dict, 
             result["outputCheck"]["cases"] = deepcopy(item["block"]["outputCheck"]["cases"])
             if "client" in item:
                 path = item["client"]["path"]
-                source = next(entry["initialCode"] for entry in item["block"]["projectFiles"]
-                              if entry["path"] == path)
+                source = _compiler_client_source(item["block"], path)
                 _compiler_client_replace_source(result, path, source)
         else:
             cases = result.get("outputCheck", {}).get("cases")
@@ -1580,7 +1629,7 @@ def revise_compiler_cases(document: dict, identity: str, cases=_UNSET_COMPILER_C
 def revise_compiler_client_cases(document: dict, identity: str, client: dict, cases, *,
                                  case_semantics=_UNSET_COMPILER_CASES,
                                  return_to: int | None = None) -> dict:
-    """Authenticate one existing project client's new source and explicit cases.
+    """Authenticate one existing C++ client's new source and explicit cases.
 
     This is a new objective, even when the case list or earlier client bytes
     reappear. It neither edits student drafts nor authorizes old receipts.
