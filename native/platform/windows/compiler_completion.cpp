@@ -1,6 +1,7 @@
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/cpp_history_training.hpp"
 #include "platform/windows/state_store.hpp"
+#include "core/code_format_compat.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -212,6 +213,10 @@ bool matches_runtime_capture(const CppRunRequest& captured,const curriculum::Fre
             (!execution.integer_battery_request_fingerprint.empty()&&
              execution.integer_battery_request_fingerprint==
                 cpp_integer_battery_request_fingerprint(captured)))
+        &&(!captured.adjustment_project_probe||
+            (!execution.adjustment_project_request_fingerprint.empty()&&
+             execution.adjustment_project_request_fingerprint==
+                cpp_adjustment_project_request_fingerprint(captured)))
         &&(captured.action==CppRunRequest::Action::compile_run||captured.action==CppRunRequest::Action::execute)
         &&captured.stdin_utf8==execution.standard_input
         &&(!captured.cmake||execution.executable==std::optional<std::string>{captured.cmake->target});
@@ -242,6 +247,8 @@ std::string review_rules(const curriculum::Block& block,bool legacy=false) {
     }
     if(check.integer_battery_check&&block.integer_battery_probe)
         frame+=token(curriculum::integer_battery_spec_frame(*block.integer_battery_probe));
+    if(check.adjustment_project_check&&block.adjustment_project_probe)
+        frame+=token(curriculum::adjustment_project_spec_frame(*block.adjustment_project_probe));
     if(check.rejection_operation)
         frame+=token(*check.rejection_operation==curriculum::RejectionOperation::boxes
             ? "semantic-rejection-boxes-v1" : "semantic-rejection-balances-v1");
@@ -441,6 +448,42 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(request.adjustment_project_probe!=block.adjustment_project_probe)return false;
+    if(block.adjustment_project_probe) {
+        const auto& spec=*block.adjustment_project_probe;
+        if(!block.cmake||!request.cmake||!block.cmake_graph_check||
+           !curriculum::adjustment_project_spec_valid(spec)||
+           !curriculum::adjustment_project_graph_valid(spec,*block.cmake_graph_check)||
+           request.cmake->target!=spec.test_target||
+           request.cmake->build_type!=block.cmake->build_type||
+           request.cmake->options!=block.cmake->options||
+           request.backend!=CppRunRequest::Backend::native_msvc||
+           (request.action!=CppRunRequest::Action::compile_run&&
+            request.action!=CppRunRequest::Action::execute)||
+           !request.stdin_utf8.empty()||request.diagnostic||
+           !request.capture_cmake_graph||
+           request.source_files!=block.source_files||!request.source_files.empty()||
+           request.project_files.size()!=block.project_files.size()||
+           request.open_battery_probe||request.boolean_battery_probe||
+           request.integer_battery_probe||request.reduction_probe||
+           request.named_rule_probe||request.rejection_probe||
+           request.observation_probe||request.assertion_mode)return false;
+        std::set<std::string> paths;
+        for(const auto& [path,source]:request.project_files) {
+            if(!paths.insert(path).second)return false;
+            const auto original=std::ranges::find_if(block.project_files,
+                [&](const auto& item){return item.first==path;});
+            if(original==block.project_files.end())return false;
+            if((path==spec.library_path||path==spec.client_path||path==spec.test_path)&&
+               !curriculum::adjustment_project_source_includes_header(source,spec))return false;
+            if(path==spec.header_path) {
+                if(!curriculum::code_format::equivalent(original->second,source,
+                        curriculum::code_format::Language::cpp))return false;
+            } else if(path!="CMakeLists.txt"&&path!=spec.library_path&&
+                      path!=spec.client_path&&path!=spec.test_path&&
+                      source!=original->second)return false;
+        }
+    }
     if(request.boolean_battery_probe!=block.boolean_battery_probe)return false;
     if(request.reduction_probe!=block.reduction_probe)return false;
     if(request.integer_battery_probe!=block.integer_battery_probe)return false;
@@ -906,6 +949,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
            block.named_rule_source_check->execution_probe&&
            !execution.named_rule_probe_correct)||
        (block.open_battery_probe&&!execution.open_battery_probe_correct)||
+       (block.adjustment_project_probe&&!execution.adjustment_project_probe_correct)||
         (block.boolean_battery_probe&&!execution.boolean_battery_probe_correct)||
        (block.reduction_probe&&!execution.reduction_probe_correct)||
         (block.integer_battery_probe&&(!execution.integer_battery_probe_correct||

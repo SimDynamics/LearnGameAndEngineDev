@@ -55,6 +55,9 @@ struct CmakeRequiredTarget {
     // Verify options authored on this target and present in its generated
     // compiler command, rather than flags inherited from the MSVC profile.
     std::vector<std::string> authored_compile_options;
+    // Require a nonzero MSVC warning level authored on this target without
+    // prescribing one particular level. Legacy exact options remain exact.
+    bool require_explicit_msvc_warnings = false;
     bool operator==(const CmakeRequiredTarget&) const = default;
 };
 // A binary option exercise verifies ON and an independent default-OFF build
@@ -83,6 +86,9 @@ struct CmakeGraphRequirement {
     // Ordered status markers bound to the exact original CMake source file.
     std::vector<std::pair<std::string,std::string>> configure_message_order;
     std::optional<CmakeTargetListRequirement> target_list;
+    // Opt-in floor semantics. Historical declarations retain their exact
+    // numeric requirement and their original receipt frame when this is false.
+    bool minimum_cmake_version_at_least = false;
     bool operator==(const CmakeGraphRequirement&) const = default;
 };
 

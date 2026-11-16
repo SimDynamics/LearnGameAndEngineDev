@@ -2242,6 +2242,7 @@ struct LessonView {
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
         request.integer_battery_probe=block(index).integer_battery_probe;
+        request.adjustment_project_probe=block(index).adjustment_project_probe;
         if(request.integer_battery_probe&&request.cmake&&
            request.cmake->target==request.integer_battery_probe->test_target)
             request.integer_battery_prerequisite=windows::compiler_integer_battery_prerequisite(
@@ -4087,7 +4088,8 @@ struct LessonView {
         const bool normal_execution=result->error_utf8.empty()&&
             result->execution.status==windows::CppPhaseStatus::completed&&
             result->execution.exit_code&&((block(index).boolean_battery_probe||
-                block(index).reduction_probe||block(index).integer_battery_probe)
+                block(index).reduction_probe||block(index).integer_battery_probe||
+                 block(index).adjustment_project_probe)
                 ?fresh.execution_completed:*result->execution.exit_code<=255);
         if(configuration_failed){output=diagnostic_text(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;}
         else if(cmake&&!executed){const auto& phase=running_action==windows::CppRunRequest::Action::configure?result->configuration:result->compilation;
@@ -4189,7 +4191,8 @@ struct LessonView {
                     (!block(index).boolean_battery_probe||
                      fresh.boolean_battery_probe_correct)&&
                     (!block(index).reduction_probe||fresh.reduction_probe_correct)&&
-                    (!block(index).integer_battery_probe||fresh.integer_battery_probe_correct);
+                    (!block(index).integer_battery_probe||fresh.integer_battery_probe_correct)&&
+                     (!block(index).adjustment_project_probe||fresh.adjustment_project_probe_correct);
                 const bool graph_ready=!block(index).cmake_graph_check||
                     fresh.cmake_graph_correct;
                 const bool correct=evaluation.verdict==curriculum::OutputVerdict::correct&&
@@ -4211,7 +4214,7 @@ struct LessonView {
                         "La batterie ne prouve pas les cas originaux et le nouveau cas par des exécutions indépendantes. Vérifiez les appels, les résultats attendus et tous les cas suivants.");
                 if(!independent&&preserved_source&&!block(index).open_battery_probe&&
                    !block(index).boolean_battery_probe&&!block(index).reduction_probe&&
-                   !block(index).integer_battery_probe)
+                   !block(index).integer_battery_probe&&!block(index).adjustment_project_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
@@ -4219,7 +4222,12 @@ struct LessonView {
                 // Reduction feedback already identifies its exact source or
                 // observation failure; do not append an unrelated project rule.
                 if(!preserved_source&&!block(index).reduction_probe) {
-                    if(block(index).integer_battery_probe)
+                    if(block(index).adjustment_project_probe)
+                        text+='\n'+ui(
+                            "Incluye la cabecera pública proporcionada en la biblioteca, el cliente y el comprobador, y conserva su interfaz y las rutas del proyecto. Ejecuta el comprobador con la entrada vacía y la configuración solicitada.",
+                            "Include the supplied public header in the library, client and checker, and preserve its interface and project paths. Run the checker with empty input and the requested configuration.",
+                            "Incluez l’en-tête public fourni dans la bibliothèque, le client et le vérificateur, et conservez son interface et les chemins du projet. Exécutez le vérificateur sans entrée avec la configuration demandée.");
+                    else if(block(index).integer_battery_probe)
                         text+='\n'+ui(
                             "Conserva la biblioteca, el cliente y la descripción CMake. Modifica únicamente el archivo de pruebas autorizado y ejecuta el objetivo correspondiente.",
                             "Preserve the library, client and CMake description. Edit only the authorized test file and execute the corresponding target.",

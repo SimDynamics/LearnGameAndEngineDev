@@ -471,6 +471,11 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         // to this independently authenticated objective.
         token(integer_battery_spec_frame(*activity.integer_battery_probe));
     }
+    if(activity.adjustment_project_probe) {
+        // Root authoring introduces a complete new objective without moving
+        // its saved draft or promoting any older successful execution.
+        token(adjustment_project_spec_frame(*activity.adjustment_project_probe));
+    }
     if(activity.cmake_graph_check) {
         const auto& graph=*activity.cmake_graph_check;
         token("cmake-generated-graph-v1");
@@ -481,6 +486,8 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             token("minimum-cmake-version-v1");
             token(graph.minimum_cmake_version);
         }
+        if(graph.minimum_cmake_version_at_least)
+            token("minimum-cmake-version-at-least-v1");
         token(std::to_string(graph.targets.size()));
         for(const auto& target:graph.targets) {
             token(target.name);token(target.type);
@@ -492,6 +499,8 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             if(target.require_explicit_cxx20)token("authored-cxx20-v1");
             if(target.require_explicit_extensions_off)
                 token("authored-extensions-off-v1");
+            if(target.require_explicit_msvc_warnings)
+                token("authored-msvc-warnings-v1");
             if(!target.authored_compile_options.empty()) {
                 token("cmake-authored-compiler-options-v1");
                 token(std::to_string(target.authored_compile_options.size()));
@@ -757,6 +766,25 @@ bool uses_single_line_answer(const Block& block) {
     return !block.answers.empty() && std::ranges::all_of(block.answers, [](const auto& text) { return text.find_first_of("\r\n") == text.npos; });
 }
 OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExecution& execution, std::uint64_t current_revision) {
+    if(check.adjustment_project_check) {
+        if(execution.source_revision!=current_revision||
+           !execution.compilation_succeeded||check.cases.size()!=1||
+           check.input_comparison!=TextComparison::exact)return {};
+        const auto& selected=check.cases.front();
+        if(!selected.standard_input.empty()||
+           selected.standard_input!=execution.standard_input||
+           !selected.executable||selected.executable!=execution.executable)return {};
+        const bool exit_correct=execution.execution_completed&&execution.exit_code==0;
+        const bool proved=execution.adjustment_project_probe_correct&&
+            execution.cmake_graph_correct;
+        const bool correct=proved&&exit_correct;
+        const auto feedback=correct?selected.explanation:
+            !execution.adjustment_project_probe_feedback.empty()
+                ?execution.adjustment_project_probe_feedback:
+                "El proyecto todavía no acredita el componente, el cliente y la batería de esta revisión.";
+        return {correct?OutputVerdict::correct:OutputVerdict::incorrect,
+            feedback,proved,proved,exit_correct};
+    }
     if(check.integer_battery_check) {
         if(execution.source_revision!=current_revision||
            !execution.compilation_succeeded||!execution.integer_battery_exit_code||

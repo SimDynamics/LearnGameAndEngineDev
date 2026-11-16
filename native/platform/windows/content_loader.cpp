@@ -3471,7 +3471,7 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
     std::set<std::string> owners;
     for(const auto& record:records) {
         const auto item=record.GetObject();
-        allowed_keys(item,{"activity","project","minimumCmakeVersion","targets",
+        allowed_keys(item,{"activity","project","minimumCmakeVersion","minimumCmakeVersionAtLeast","targets",
             "optionSelection","sourceIntegrity","configureMessageOrder",
             "targetList"});
         require(item.HasKey(L"activity")&&item.HasKey(L"targets"),
@@ -3501,6 +3501,13 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
             require(curriculum::cmake_numeric_version(
                 requirement.minimum_cmake_version).has_value(),
                 "CMake minimum requires a numeric major.minor version");
+        }
+        if(item.HasKey(L"minimumCmakeVersionAtLeast")) {
+            const auto value=item.GetNamedValue(L"minimumCmakeVersionAtLeast");
+            require(value.ValueType()==JsonValueType::Boolean&&
+                    item.HasKey(L"minimumCmakeVersion"),
+                "CMake minimum comparison requires a Boolean and numeric minimum");
+            requirement.minimum_cmake_version_at_least=value.GetBoolean();
         }
         if(item.HasKey(L"configureMessageOrder")) {
             const auto messages=array(item,"configureMessageOrder");
@@ -3533,7 +3540,7 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
         for(const auto& t:targets) {
             const auto source=t.GetObject();
             allowed_keys(source,{"name","type","sources","linksTo","exactSources",
-                "explicitCxx20","explicitCxxExtensionsOff",
+                "explicitCxx20","explicitCxxExtensionsOff","requireExplicitMsvcWarnings",
                 "publicIncludeRoots","privateIncludeRoots","sourceDirectory",
                 "authoredCompileOptions"});
             require(source.HasKey(L"name")&&source.HasKey(L"type"),
@@ -3576,7 +3583,9 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
             for(const auto [key,flag]:{
                     std::pair{L"explicitCxx20",&wanted.require_explicit_cxx20},
                     std::pair{L"explicitCxxExtensionsOff",
-                              &wanted.require_explicit_extensions_off}}) {
+                              &wanted.require_explicit_extensions_off},
+                    std::pair{L"requireExplicitMsvcWarnings",
+                              &wanted.require_explicit_msvc_warnings}}) {
                 if(!source.HasKey(key))continue;
                 const auto value=source.GetNamedValue(key);
                 require(value.ValueType()==JsonValueType::Boolean,
@@ -3787,6 +3796,9 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
             require(found_removal&&!requirement.source_integrity.empty(),
                 "CMake source integrity needs original non-CMake files");
         }
+        if(owner->adjustment_project_probe)
+            require(adjustment_project_graph_valid(*owner->adjustment_project_probe,requirement),
+                "Adjustment construction requires its complete shared CMake graph");
         owner->cmake_graph_check=std::move(requirement);
     }
 }
@@ -4005,6 +4017,75 @@ void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     std::set<std::string> used;
     for(const auto& entry:entries) {
         const auto item=entry.GetObject();
+        if(item.HasKey(L"kind")&&text(item,"kind")=="cmake-adjustment-project-v1") {
+            allowed_keys(item,{"activity","kind","libraryPath","headerPath","header",
+                "function","libraryTarget","clientPath","clientTarget","testPath","target"},true);
+            const auto identity=text(item,"activity");
+            require(valid_id(identity)&&used.insert(identity).second,
+                "Duplicate or invalid adjustment construction identity");
+            Block* owner=nullptr;
+            for(auto& page:lesson.pages)for(auto& block:page.blocks)
+                if(block.stable_id==identity) {
+                    require(!owner,"Adjustment construction has a duplicated mapped identity");
+                    owner=&block;
+                }
+            require(owner&&owner->type==BlockType::cpp_compiler&&owner->cmake&&
+                    !owner->project_files.empty()&&owner->source_files.empty()&&
+                    !owner->output_check&&!owner->compile_check&&
+                    !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                    !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                    !owner->reduction_probe&&!owner->integer_battery_probe&&
+                    !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+                "Adjustment construction requires an original unevaluated CMake editor");
+            const auto original=JsonObject::Parse(winrt::to_hstring(owner->raw_json));
+            require((!original.HasKey(L"language")||text(original,"language")=="cpp")&&
+                    !original.HasKey(L"sourceFiles"),
+                "Adjustment construction requires its original C++ project");
+            AdjustmentProjectSpec spec;
+            spec.library_path=text(item,"libraryPath");
+            spec.header_path=text(item,"headerPath");
+            spec.header=text(item,"header");
+            spec.function_name=text(item,"function");
+            spec.library_target=text(item,"libraryTarget");
+            spec.client_path=text(item,"clientPath");
+            spec.client_target=text(item,"clientTarget");
+            spec.test_path=text(item,"testPath");
+            spec.test_target=text(item,"target");
+            spec.client_input=owner->standard_input.value_or("");
+            require(adjustment_project_spec_valid(spec)&&
+                    owner->cmake->target==spec.client_target,
+                "Adjustment construction has invalid paths, names, input or initial client target");
+            const auto source=[&](std::string_view path)->const std::string* {
+                const auto found=std::ranges::find(owner->project_files,path,
+                    &CppProjectFiles::value_type::first);
+                return found==owner->project_files.end()?nullptr:&found->second;
+            };
+            const auto header=source(spec.header_path);
+            require(source("CMakeLists.txt")&&source(spec.library_path)&&
+                    source(spec.client_path)&&source(spec.test_path)&&header&&
+                    adjustment_project_header_valid(*header,spec),
+                "Adjustment construction needs its original sources and declared interface");
+            require(root.HasKey(L"compilerCmakeGraphChecks"),
+                "Adjustment construction requires its shared CMake graph declaration");
+            std::size_t graphs=0;
+            for(const auto& candidate:array(root,"compilerCmakeGraphChecks"))
+                if(text(candidate.GetObject(),"activity")==identity)++graphs;
+            require(graphs==1,
+                "Adjustment construction requires exactly one matching CMake graph");
+            OutputCheck runtime;
+            runtime.adjustment_project_check=true;
+            runtime.input_comparison=TextComparison::exact;
+            OutputCase first;
+            first.standard_input.clear();
+            first.executable=spec.test_target;
+            first.outputs={""};
+            first.explanation="El componente, el cliente y la batería cumplieron el contrato "
+                "en la misma revisión del proyecto.";
+            runtime.cases.push_back(std::move(first));
+            owner->adjustment_project_probe=std::move(spec);
+            owner->output_check=std::move(runtime);
+            continue;
+        }
         if(item.HasKey(L"kind")&&text(item,"kind")=="cmake-int-unary-v1") {
             allowed_keys(item,{"activity","kind","libraryPath","function",
                 "testPath","target","publishedResult","failureExitCode","cases","prerequisite"});

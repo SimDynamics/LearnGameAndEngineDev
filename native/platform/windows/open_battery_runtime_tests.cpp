@@ -1,4 +1,5 @@
 #include "core/compiler_flow.hpp"
+#include "core/adjustment_project_check.hpp"
 #include "core/lesson.hpp"
 #include "core/lesson_state.hpp"
 #include "core/open_battery_check.hpp"
@@ -240,6 +241,509 @@ void completion(const state::StateData& data,const Lesson& lesson,bool expected)
             compiler_completion_snapshot(lesson,solved).at(block.stable_id)==expected,
         "The open battery lost its mandatory completion gate");
 }
+
+constexpr std::string_view builder_activity="block_0002_0003";
+constexpr std::string_view builder_declaration=R"json({
+  "activity":"block_0002_0003","kind":"cmake-adjustment-project-v1",
+  "libraryPath":"src/ajuste.cpp","headerPath":"publico/control/ajuste.h",
+  "header":"control/ajuste.h","function":"intentar_ajuste",
+  "libraryTarget":"ajustes","clientPath":"app/consulta.cpp",
+  "clientTarget":"consultar_ajustes","testPath":"pruebas/casos.cpp",
+  "target":"comprobar_ajustes"
+})json";
+constexpr std::string_view builder_graph=R"json({
+  "activity":"block_0002_0003","minimumCmakeVersion":"3.20",
+  "minimumCmakeVersionAtLeast":true,
+  "targets":[
+    {"name":"ajustes","type":"STATIC_LIBRARY","sources":["src/ajuste.cpp"],
+     "exactSources":true,"publicIncludeRoots":["publico"],"explicitCxx20":true,
+     "explicitCxxExtensionsOff":true,"requireExplicitMsvcWarnings":true},
+    {"name":"consultar_ajustes","type":"EXECUTABLE","sources":["app/consulta.cpp"],
+     "exactSources":true,"linksTo":["ajustes"],"explicitCxx20":true,
+     "explicitCxxExtensionsOff":true,"requireExplicitMsvcWarnings":true},
+    {"name":"comprobar_ajustes","type":"EXECUTABLE","sources":["pruebas/casos.cpp"],
+     "exactSources":true,"linksTo":["ajustes"],"explicitCxx20":true,
+     "explicitCxxExtensionsOff":true,"requireExplicitMsvcWarnings":true}
+  ]
+})json";
+constexpr std::string_view builder_library=R"cpp(#include "control/ajuste.h"
+bool intentar_ajuste(int dato, int bajo, int alto, int& destino) {
+    const bool dominio = -20 <= dato && dato <= 20 &&
+        -20 <= bajo && bajo <= 20 && -20 <= alto && alto <= 20;
+    if (!dominio || alto < bajo) return false;
+    const int final = dato < bajo ? bajo : (alto < dato ? alto : dato);
+    destino = final - dato;
+    return true;
+}
+)cpp";
+constexpr std::string_view builder_checker=R"cpp(#include "control/ajuste.h"
+#include <iostream>
+struct Caso {
+    int valor, inferior, superior, inicial;
+    bool acepta;
+    int destino;
+};
+constexpr Caso casos[] = {
+    {-20,-15,20,11,true,5}, {0,-20,20,-9,true,0},
+    {20,-20,15,29,true,-5}, {-20,-20,10,4,true,0},
+    {20,-10,20,-7,true,0}, {4,4,4,12,true,0},
+    {-20,20,20,8,true,40}, {20,-20,-20,17,true,-40},
+    {-21,-3,7,31,false,31}, {21,-3,7,-32,false,-32},
+    {0,-21,7,33,false,33}, {0,21,7,-34,false,-34},
+    {0,-3,-21,35,false,35}, {0,-3,21,-36,false,-36},
+    {0,7,3,37,false,37}
+};
+int main() {
+    int fallos = 0;
+    int numero = 0;
+    for (const auto& caso : casos) {
+        int observado = caso.inicial;
+        const bool acepta = intentar_ajuste(
+            caso.valor, caso.inferior, caso.superior, observado);
+        const bool coincide = acepta == caso.acepta && observado == caso.destino;
+        std::cout << "Caso=" << ++numero << " Acepta=" << acepta
+                  << " Ajuste=" << observado << " EsperaAcepta=" << caso.acepta
+                  << " EsperaAjuste=" << caso.destino
+                  << (coincide ? " OK\n" : " FALLO\n");
+        if (!coincide) ++fallos;
+    }
+    std::cout << "Fallos=" << fallos << "\n";
+    return fallos ? 1 : 0;
+}
+)cpp";
+// This client really calls the shared component for every input. Only its
+// published report is copied; the six prepared rows alone cannot expose it.
+constexpr std::string_view copied_builder_client=R"cpp(#include "control/ajuste.h"
+#include <iostream>
+int main() {
+    int valor=0, inferior=0, superior=0, ajuste=77;
+    while (std::cin >> valor >> inferior >> superior)
+        (void)intentar_ajuste(valor,inferior,superior,ajuste);
+    std::cout << "Peticion=1 Ajuste=1\nPeticion=2 Ajuste=0\n"
+                 "Peticion=3 Ajuste=-2\nPeticion=5 Ajuste=0\n"
+                 "Aceptadas=4 Rechazadas=2 Suma=-1\n";
+    std::cerr << "Rechazo: peticion=4 valor=0 inferior=7 superior=3."
+                 " Se admiten valores de -20 a 20 con inferior <= superior."
+                 " Revise los tres valores.\n"
+                 "Rechazo: peticion=6 valor=21 inferior=3 superior=7."
+                 " Se admiten valores de -20 a 20 con inferior <= superior."
+                 " Revise los tres valores.\n";
+    return 1;
+}
+)cpp";
+
+void append_builder_declaration(JsonObject& document,const wchar_t* key,
+        std::string_view declaration_text) {
+    auto entries=document.HasKey(key)?document.GetNamedArray(key):JsonArray{};
+    const auto desired=JsonObject::Parse(winrt::to_hstring(declaration_text));
+    bool found=false;
+    for(const auto& entry:entries)
+        if(entry.GetObject().GetNamedString(L"activity")==winrt::to_hstring(builder_activity)) {
+            require(!found&&same_json(entry,desired),
+                "The authentic builder already has a different root contract");
+            found=true;
+        }
+    if(!found)entries.Append(desired);
+    document.Insert(key,entries);
+}
+
+bool same_builder_draft(const state::Draft& left,const state::Draft& right) {
+    return left.source==right.source&&left.input==right.input&&
+        left.indentation_json==right.indentation_json&&
+        left.selection_start==right.selection_start&&left.selection_end==right.selection_end&&
+        left.has_saved==right.has_saved;
+}
+
+void builder_completion(const state::StateData& data,const Lesson& lesson,bool expected) {
+    const auto& block=owner(lesson,builder_activity);
+    require(compiler_requires_completion(block)&&
+            compiler_completion_snapshot(lesson,[&](const Block& candidate) {
+                return compiler_puzzle_completed(data,lesson,candidate);
+            }).at(block.stable_id)==expected,
+        "The constructor did not retain its mandatory first-case gate");
+}
+
+void verify_adjustment_constructor(const std::filesystem::path& fixture_path,
+        const state::StateData& previous_data,const Lesson& previous_lesson) {
+    const LaunchOptions options{ProfileId::Codex,
+        L"ab-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+            std::to_wstring(GetTickCount64()),false};
+    const auto environment=resolve_windows_environment(options);
+    initialize_profile_directories(environment.paths);
+    const auto projects=environment.paths.projects/L"AB & (QA)";
+    const auto original_text=read(fixture_path);
+    const auto original=parse_lesson_json(original_text,"es");
+    const auto& before=owner(original,builder_activity);
+    const auto& reference=owner(original);
+    require(before.project_files.size()==5&&before.cmake&&
+            before.cmake->target=="consultar_ajustes"&&before.standard_input&&
+            file(before.project_files,"CMakeLists.txt").empty(),
+        "The authentic open constructor or its initial client target changed");
+    auto document=JsonObject::Parse(winrt::to_hstring(original_text));
+    append_builder_declaration(document,L"compilerCmakeGraphChecks",builder_graph);
+    append_builder_declaration(document,L"compilerOpenBatteryChecks",builder_declaration);
+    const auto reviewed=winrt::to_string(document.Stringify());
+    const auto lesson=parse_lesson_json(reviewed,"es");
+    const auto progress=parse_lesson_progress_metadata(reviewed,"es");
+    const auto& block=owner(lesson,builder_activity);
+    const auto& restored=owner(progress,builder_activity);
+    for(const int changed:{0,1,2,3,4,5}) {
+        auto invalid=JsonObject::Parse(winrt::to_hstring(reviewed));
+        const auto entry=[&](const wchar_t* collection) {
+            for(const auto& value:invalid.GetNamedArray(collection))
+                if(value.GetObject().GetNamedString(L"activity")==winrt::to_hstring(builder_activity))
+                    return value.GetObject();
+            throw std::runtime_error("Missing constructor declaration in negative fixture");
+        };
+        if(changed==0)invalid.Remove(L"compilerCmakeGraphChecks");
+        if(changed==1)entry(L"compilerCmakeGraphChecks").Insert(
+            L"minimumCmakeVersionAtLeast",JsonValue::CreateBooleanValue(false));
+        if(changed==2)entry(L"compilerCmakeGraphChecks").GetNamedArray(L"targets").GetObjectAt(0).Insert(
+            L"requireExplicitMsvcWarnings",JsonValue::CreateBooleanValue(false));
+        if(changed==3)entry(L"compilerOpenBatteryChecks").Insert(
+            L"target",JsonValue::CreateStringValue(L"consultar_ajustes"));
+        if(changed==4)entry(L"compilerOpenBatteryChecks").Insert(
+            L"headerPath",JsonValue::CreateStringValue(L"otro/control/ajuste.h"));
+        if(changed==5)entry(L"compilerOpenBatteryChecks").Insert(
+            L"unverifiedShortcut",JsonValue::CreateBooleanValue(true));
+        const auto invalid_text=winrt::to_string(invalid.Stringify());
+        for(const bool progress_only:{false,true}) {
+            bool rejected=false;
+            try {
+                if(progress_only)(void)parse_lesson_progress_metadata(invalid_text,"es");
+                else (void)parse_lesson_json(invalid_text,"es");
+            }catch(const std::exception&) {rejected=true;}
+            require(rejected,"A malformed constructor or weaker graph reached a native loader");
+        }
+    }
+    require(block.adjustment_project_probe&&restored.adjustment_project_probe&&
+            block.adjustment_project_probe==restored.adjustment_project_probe&&
+            block.cmake_graph_check&&block.cmake_graph_check==restored.cmake_graph_check&&
+            block.output_check&&restored.output_check&&
+            block.output_check->adjustment_project_check&&restored.output_check->adjustment_project_check&&
+            block.output_check->cases.size()==1&&restored.output_check->cases.size()==1&&
+            block.output_check->cases.front().standard_input.empty()&&
+            restored.output_check->cases.front().standard_input.empty()&&
+            block.output_check->cases.front().executable==
+                std::optional<std::string>{"comprobar_ajustes"}&&
+            restored.output_check->cases.front().executable==
+                block.output_check->cases.front().executable&&
+            block.adjustment_project_probe->client_input==*before.standard_input,
+        "The builder did not load one empty-input checker objective and the original client batch");
+    for(const auto* model:{&lesson,&progress}) {
+        const auto& current=owner(*model,builder_activity);
+        require(model->pages.size()==original.pages.size()&&
+                model->state_layout.raw_json==original.state_layout.raw_json&&
+                model->state_layout.signatures==original.state_layout.signatures&&
+                model->state_layout.lineage==original.state_layout.lineage&&
+                current.project_files==before.project_files&&current.initial_code==before.initial_code&&
+                current.standard_input==before.standard_input&&current.cmake==before.cmake&&
+                current.stable_id==before.stable_id&&current.address.page==before.address.page&&
+                current.address.block==before.address.block&&
+                exercise_key(*model,current)==exercise_key(original,before)&&
+                draft_key("programming",*model,current)==draft_key("programming",original,before),
+            "The root constructor objective changed an original source, draft, input or mapped identity");
+    }
+    require(reference_objective_frame(lesson,block)==reference_objective_frame(progress,restored),
+        "The constructor lost full/progress objective parity");
+
+    auto data=previous_data;
+    const auto draft_identity=draft_key("programming",lesson,block);
+    state::prepare_lesson_state(data,original);
+    state::Draft draft;
+    draft.source=before.initial_code;draft.input=*before.standard_input;
+    draft.selection_start=5;draft.selection_end=12;draft.has_saved=true;
+    state::put_draft(data,draft_identity,draft);
+    JsonArray draft_files;
+    for(const auto& [path,source]:before.project_files) {
+        JsonObject item;
+        item.Insert(L"path",JsonValue::CreateStringValue(winrt::to_hstring(path)));
+        item.Insert(L"code",JsonValue::CreateStringValue(winrt::to_hstring(source)));
+        draft_files.Append(item);
+    }
+    JsonObject project_draft;
+    project_draft.Insert(L"selected",JsonValue::CreateStringValue(L"app/consulta.cpp"));
+    project_draft.Insert(L"files",draft_files);
+    project_draft.Insert(L"sources",JsonArray{});
+    project_draft.Insert(L"indentationV2",JsonObject{});
+    project_draft.Insert(L"cursors",JsonObject{});
+    const auto saved_project=winrt::to_string(project_draft.Stringify());
+    data.preferences["cpp_lesson_drafts"][draft_identity+"/project"]=saved_project;
+    state::prepare_lesson_state(data,lesson);
+    require(same_builder_draft(state::get_draft(data,draft_identity,before.initial_code),draft)&&
+            state::string_value(data,"cpp_lesson_drafts",draft_identity+"/project")==saved_project&&
+            compiler_puzzle_completed(data,previous_lesson,owner(previous_lesson)),
+        "Adding the builder objective changed historical drafts or the earlier earned extension");
+    const auto seed=data;
+    builder_completion(data,lesson,false);
+    builder_completion(data,progress,false);
+    std::cout << "PASS authentic constructor full/progress declarations, 12 invalid-loader checks, "
+                 "original map and saved project/input retained\n";
+
+    auto files=before.project_files;
+    file(files,"CMakeLists.txt")=
+        portable_warning_fixture(file(reference.project_files,"CMakeLists.txt"));
+    file(files,"src/ajuste.cpp")=builder_library;
+    file(files,"app/consulta.cpp")=file(reference.project_files,"app/consulta.cpp");
+    file(files,test_path)=builder_checker;
+    std::uint64_t sequence=20000;
+    const auto request=[&](const CppProjectFiles& sources) {
+        CppRunRequest result;
+        result.request_id=++sequence;result.revision=30000+sequence;
+        result.source_utf8=before.initial_code;
+        result.projects_directory=projects;result.project_key=draft_identity;
+        result.project_files=sources;result.cmake=before.cmake;
+        result.cmake->target="comprobar_ajustes";
+        result.capture_cmake_graph=true;result.cmake_graph_check=block.cmake_graph_check;
+        result.adjustment_project_probe=block.adjustment_project_probe;
+        result.compile_timeout=90s;result.execution_timeout=5s;
+        return result;
+    };
+    auto initial=request(before.project_files);
+    const auto initial_result=run_cpp(initial);
+    const auto initial_capture=capture_cpp_execution(initial,initial_result);
+    require(!initial_capture.adjustment_project_probe_correct&&
+            !record_compiler_puzzle_case(data,lesson,block,initial,initial_capture,"pending initial")&&
+            data==seed,
+        "The empty CMake or pending initial programs earned constructor credit");
+
+    auto positive=request(files);
+    require(compiler_runtime_request_allowed(block,positive),
+        "The open constructor rejected a genuine completed project");
+    const auto positive_result=run_cpp(positive);
+    public_success(positive,positive_result);
+    const auto positive_capture=capture_cpp_execution(positive,positive_result);
+    require(positive_result.adjustment_project_evidence&&
+            positive_result.adjustment_project_request_fingerprint==
+                cpp_adjustment_project_request_fingerprint(positive)&&
+            positive_capture.adjustment_project_probe_correct&&positive_capture.cmake_graph_correct&&
+            evaluate_cmake_graph(positive,positive_result,*block.cmake_graph_check).correct,
+        "The real component/client/checker request lacked one of its independent proofs: "+
+            positive_capture.adjustment_project_probe_feedback+run_diagnostic(positive,positive_result));
+    const auto& evidence=*positive_result.adjustment_project_evidence;
+    const auto& runs=evidence.runs;
+    require(!runs.empty(),"The builder received empty execution evidence");
+    using Part=decltype(runs.front().phase.part);
+    const auto count=[&](Part part,OpenBatteryMutation mutation) {
+        return std::ranges::count_if(runs,[&](const auto& run) {
+            return run.phase.part==part&&run.phase.mutation==mutation;
+        });
+    };
+    const auto clients=adjustment_project_client_inputs(*block.adjustment_project_probe);
+    require(count(Part::component,OpenBatteryMutation::baseline)==1&&
+            count(Part::client,OpenBatteryMutation::baseline)==
+                static_cast<std::ptrdiff_t>(clients.size())&&
+            count(Part::client,OpenBatteryMutation::invert_acceptance)>0&&
+            count(Part::client,OpenBatteryMutation::corrupt_destination)>0&&
+            count(Part::battery,OpenBatteryMutation::baseline)==2&&
+            count(Part::battery,OpenBatteryMutation::invert_acceptance)==15&&
+            count(Part::battery,OpenBatteryMutation::corrupt_destination)==15&&
+            std::ranges::all_of(runs,[&](const auto& run) {
+                return run.compiled&&run.executed&&
+                    run.program_frame==evidence.original_program_fingerprint;
+            }),
+        "The constructor omitted actual component, client or independent checker phases");
+    const auto battery=std::ranges::find_if(runs,[](const auto& run) {
+        return run.phase.part==Part::battery&&
+            run.phase.mutation==OpenBatteryMutation::baseline;
+    });
+    require(battery!=runs.end()&&battery->observations.size()==15&&
+            battery->stdout_bytes==positive_result.execution.stdout_bytes&&
+            battery->stderr_bytes==positive_result.execution.stderr_bytes,
+        "The private checker did not reproduce the actual public program");
+    const auto without_assertions=std::ranges::find_if(runs,[](const auto& run) {
+        return run.phase.part==Part::battery&&
+            run.phase.mutation==OpenBatteryMutation::baseline&&run.phase.assertions_disabled;
+    });
+    require(without_assertions!=runs.end()&&
+            without_assertions->observations==battery->observations,
+        "Disabling assertions omitted or changed mandatory checker calls");
+    const auto mixed_client=std::ranges::find_if(runs,[&](const auto& run) {
+        return run.phase.part==Part::client&&
+            run.phase.mutation==OpenBatteryMutation::baseline&&
+            run.standard_input==*before.standard_input;
+    });
+    require(mixed_client!=runs.end()&&mixed_client->exit_code==1&&
+            mixed_client->observations.size()==6&&
+            std::ranges::count_if(mixed_client->observations,
+                [](const auto& observed){return observed.accepted;})==4&&
+            mixed_client->stdout_bytes.find("Suma=-1")!=std::string::npos,
+        "The legitimate mixed client batch lost its four results or normal failure code");
+    preserved_public_project(positive,positive_result);
+    require(record_compiler_puzzle_case(data,lesson,block,positive,positive_capture,"Proyecto comprobado")&&
+            compiler_puzzle_case_count(data,lesson,block)==1&&
+            compiler_puzzle_case_count(data,progress,restored)==1,
+        "The real combined proof did not earn exactly the first checker case");
+    builder_completion(data,lesson,true);
+    builder_completion(data,progress,true);
+    const auto earned=data;
+    std::cout << "PASS authentic adjustment constructor: shared CMake component/client, "
+              << clients.size() << " client inputs, 15 freely organized checker calls, "
+              << runs.size() << " real private phases and one sealed first case\n";
+
+    const auto reject_reuse=[&](const CppRunRequest& changed) {
+        auto untouched=earned;
+        require(!capture_cpp_execution(changed,positive_result).adjustment_project_probe_correct&&
+                !record_compiler_puzzle_case(untouched,lesson,block,changed,positive_capture,"stale")&&
+                untouched==earned,
+            "The constructor promoted a capture from another request or source revision");
+    };
+    for(const auto& path:{"CMakeLists.txt","publico/control/ajuste.h","src/ajuste.cpp",
+                         "app/consulta.cpp","pruebas/casos.cpp"}) {
+        auto changed=positive;file(changed.project_files,path)+="\n// later revision\n";
+        reject_reuse(changed);
+    }
+    auto changed=positive;++changed.request_id;reject_reuse(changed);
+    changed=positive;++changed.revision;reject_reuse(changed);
+    changed=positive;changed.cmake->target="consultar_ajustes";reject_reuse(changed);
+    changed=positive;changed.cmake->build_type="Release";reject_reuse(changed);
+    changed=positive;changed.backend=CppRunRequest::Backend::wasi;reject_reuse(changed);
+    changed=positive;changed.action=CppRunRequest::Action::configure;reject_reuse(changed);
+    changed=positive;changed.open_battery_probe=owner(previous_lesson).open_battery_probe;
+    require(changed.open_battery_probe.has_value(),"The mixed-proof negative lost its legacy probe");
+    reject_reuse(changed);
+    changed=positive;changed.stdin_utf8=*before.standard_input;reject_reuse(changed);
+    changed=positive;changed.project_key+="/another-owner";reject_reuse(changed);
+    changed=positive;changed.adjustment_project_probe->client_input="\n";reject_reuse(changed);
+    changed=positive;
+    changed.cmake_graph_check->targets.front().require_explicit_msvc_warnings=false;
+    require(cpp_adjustment_project_request_fingerprint(changed)!=
+            cpp_adjustment_project_request_fingerprint(positive),
+        "The warning requirement was omitted from the captured graph contract");
+    reject_reuse(changed);
+    changed=positive;changed.cmake_graph_check->minimum_cmake_version_at_least=false;
+    require(cpp_adjustment_project_request_fingerprint(changed)!=
+            cpp_adjustment_project_request_fingerprint(positive),
+        "The minimum-version comparison policy was omitted from the captured graph contract");
+    reject_reuse(changed);
+    for(const int part:{0,1,2,3,4,5}) {
+        auto altered=positive_result;
+        if(part==0)altered.adjustment_project_evidence.reset();
+        if(part==1)altered.adjustment_project_evidence->runs.pop_back();
+        if(part==2)altered.adjustment_project_evidence->runs.front().observations.clear();
+        if(part==3)altered.execution.stdout_bytes+="forged report";
+        if(part==4)altered.project_fingerprint="other project";
+        if(part==5)altered.adjustment_project_request_fingerprint="other capture";
+        const auto captured=capture_cpp_execution(positive,altered);
+        auto untouched=seed;
+        require(!captured.adjustment_project_probe_correct&&
+                !record_compiler_puzzle_case(untouched,lesson,block,positive,captured,"forged")&&
+                untouched==seed,
+            "Incomplete or forged execution evidence earned the constructor");
+    }
+    auto graph_only=positive_result;
+    graph_only.adjustment_project_evidence.reset();
+    const auto graph_capture=capture_cpp_execution(positive,graph_only);
+    require(evaluate_cmake_graph(positive,graph_only,*block.cmake_graph_check).correct&&
+            !record_compiler_puzzle_case(data,lesson,block,positive,graph_capture,"only graph")&&
+            data==earned,
+        "An authentic CMake graph alone replaced the runtime construction proof");
+    auto unbound=positive_capture;
+    unbound.adjustment_project_request_fingerprint.clear();
+    require(!record_compiler_puzzle_case(data,lesson,block,positive,unbound,"summary only")&&
+            data==earned,
+        "A correct summary without its execution binding earned progress");
+    std::cout << "PASS constructor source/revision/target binding, forged phases and graph-only rejection\n";
+
+    auto copied_files=files;
+    file(copied_files,"app/consulta.cpp")=copied_builder_client;
+    auto copied=request(copied_files);
+    const auto copied_result=run_cpp(copied);
+    public_success(copied,copied_result);
+    const auto copied_capture=capture_cpp_execution(copied,copied_result);
+    require(!copied_capture.adjustment_project_probe_correct&&
+            !record_compiler_puzzle_case(data,lesson,block,copied,copied_capture,"copied client")&&
+            data==earned,
+        "A client that copied the prepared report passed its independent input/observation checks");
+    preserved_public_project(copied,copied_result);
+
+    auto fixed_files=files;
+    replace_once(file(fixed_files,test_path),"return fallos ? 1 : 0;","return 0;");
+    auto fixed=request(fixed_files);
+    const auto fixed_result=run_cpp(fixed);
+    public_success(fixed,fixed_result);
+    const auto fixed_capture=capture_cpp_execution(fixed,fixed_result);
+    require(!fixed_capture.adjustment_project_probe_correct&&
+            !record_compiler_puzzle_case(data,lesson,block,fixed,fixed_capture,"fixed checker")&&
+            data==earned,
+        "An insensitive fixed-return checker earned construction credit");
+    preserved_public_project(fixed,fixed_result);
+    std::cout << "PASS real copied-client and fixed-return-checker rejection with earlier achievement preserved\n";
+
+    // The core-generated probes test the equivalent loop/formatting pattern.
+    // Compile and run it here with the same authentic graph without repeating
+    // its entire private matrix; this ordinary run deliberately grants no credit.
+    auto equivalent_files=files;
+    file(equivalent_files,"src/ajuste.cpp")=file(reference.project_files,"src/ajuste.cpp");
+    replace_once(file(equivalent_files,"CMakeLists.txt"),"VERSION 3.20","VERSION 3.21");
+    auto& equivalent_cmake=file(equivalent_files,"CMakeLists.txt");
+    for(auto at=equivalent_cmake.find("/W4");at!=equivalent_cmake.npos;
+            at=equivalent_cmake.find("/W4",at+3))
+        equivalent_cmake.replace(at,3,"/W3");
+    replace_once(file(equivalent_files,test_path),"for (const auto& caso : casos) {",
+        "for (unsigned i=sizeof(casos)/sizeof(casos[0]); i>0; --i) {\n"
+        "        const auto& caso=casos[i-1];");
+    replace_once(file(equivalent_files,test_path),
+        "        std::cout << \"Caso=\" << ++numero",
+        "        ++numero;\n        if (!coincide) std::cout << \"Caso=\" << numero");
+    replace_once(file(equivalent_files,test_path),
+        "    std::cout << \"Fallos=\" << fallos << \"\\n\";\n","");
+    auto equivalent=request(equivalent_files);
+    equivalent.adjustment_project_probe.reset();
+    const auto equivalent_result=run_cpp(equivalent);
+    public_success(equivalent,equivalent_result);
+    require(equivalent_result.execution.stdout_bytes.empty()&&
+            equivalent_result.execution.stderr_bytes.empty(),
+        "The equivalent checker did not preserve its legitimate silent success");
+    require(evaluate_cmake_graph(equivalent,equivalent_result,*block.cmake_graph_check).correct&&
+            !record_compiler_puzzle_case(data,lesson,block,equivalent,
+                capture_cpp_execution(equivalent,equivalent_result),"ordinary equivalent")&&data==earned,
+        "A minimum above 3.20 failed the graph or an ordinary build forged private runtime credit");
+    preserved_public_project(equivalent,equivalent_result);
+
+    auto disabled_files=equivalent_files;
+    file(disabled_files,"CMakeLists.txt")+="\ntarget_compile_options(ajustes PRIVATE /W4 /w)\n";
+    auto disabled=request(disabled_files);
+    disabled.adjustment_project_probe.reset();
+    const auto disabled_result=run_cpp(disabled);
+    public_success(disabled,disabled_result);
+    require(!evaluate_cmake_graph(disabled,disabled_result,*block.cmake_graph_check).correct&&
+            !record_compiler_puzzle_case(data,lesson,block,disabled,
+                capture_cpp_execution(disabled,disabled_result),"disabled warnings")&&data==earned,
+        "An authored /W4 overridden by /w satisfied the effective warning requirement");
+    preserved_public_project(disabled,disabled_result);
+    std::cout << "PASS actual /W4 overridden by /w is rejected without rerunning private probes\n";
+
+    state::StateStore storage(environment.paths.root);
+    (void)storage.load();storage.save(data);
+    state::StateStore reopened_storage(environment.paths.root);
+    const auto reopened=reopened_storage.load();
+    require(reopened==earned&&
+            same_builder_draft(state::get_draft(reopened,draft_identity,before.initial_code),draft)&&
+            state::string_value(reopened,"cpp_lesson_drafts",draft_identity+"/project")==saved_project&&
+            compiler_puzzle_completed(reopened,previous_lesson,owner(previous_lesson)),
+        "Physical reopening changed the builder draft, receipt or unrelated earned extension");
+    builder_completion(reopened,progress,true);
+    validate_compiler_puzzle_state(reopened,progress,restored);
+    state::validate_lesson_state(reopened,progress);
+    const auto key="compiler-puzzle/v1/"+lesson.locale+"/"+lesson.id+"/"+
+        exercise_key(lesson,block)+"/"+state::sha256(reference_objective_frame(lesson,block))+"/";
+    auto tampered=reopened;
+    tampered.preferences["native_windows"][key+"cases"]=std::vector<std::string>{"unverified"};
+    builder_completion(tampered,progress,false);
+    auto reset=reopened;
+    reset_compiler_puzzle(reset,lesson,block);
+    builder_completion(reset,progress,false);
+    require(same_builder_draft(state::get_draft(reset,draft_identity,before.initial_code),draft)&&
+            state::string_value(reset,"cpp_lesson_drafts",draft_identity+"/project")==saved_project&&
+            compiler_puzzle_completed(reset,previous_lesson,owner(previous_lesson)),
+        "Resetting the constructor removed a historical draft or another achievement");
+    require(read(fixture_path)==original_text,
+        "The constructor QA rewrote the authentic lesson or its source map");
+    std::cout << "PASS equivalent silent checker, CMake 3.21 and /W3, exact physical receipt/draft reopening, "
+                 "tamper rejection and isolated constructor reset; published source unchanged\n";
+}
+
 } // namespace
 
 int main(int argc,char** argv) {
@@ -609,6 +1113,7 @@ int main(int argc,char** argv) {
         require(after==original_text&&state::sha256(after)==original_sha,
             "The runtime test rewrote the authentic curricular source or SHA");
         std::cout << "PASS physical reopening, tamper rejection, isolated reset and unchanged published source SHA\n";
+        verify_adjustment_constructor(fixture_path,data,lesson);
         return 0;
     }catch(const std::exception& error) {
         std::cerr << "FAIL open battery action runtime: " << error.what() << '\n';
@@ -618,3 +1123,4 @@ int main(int argc,char** argv) {
         return 1;
     }
 }
+

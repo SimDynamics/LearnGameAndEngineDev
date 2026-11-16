@@ -574,6 +574,154 @@ inicial, los propietarios y sus mapas conservan su identidad. La prueba nativa
 de este recorrido se registra como `native.open_battery_runtime`; la prueba
 de menor alcance del ejecutor sigue en `native.open_battery_runner`.
 
+## Construir el componente, cliente y batería de un proyecto CMake
+
+La variante `cmake-adjustment-project-v1` de `compilerOpenBatteryChecks`
+acredita una construcción completa de `bool(int, int, int, int&)`. Es un
+contrato distinto de la ampliación anterior: permite escribir la biblioteca,
+el cliente, el comprobador y `CMakeLists.txt`. No exige conservar once pruebas
+ni utilizar un nombre concreto para la función auxiliar que compara resultados.
+
+Se añade en la raíz de una lección española con `stateLayout` v2 y un editor
+C++/CMake todavía sin evaluación. El bloque publicado permanece intacto,
+incluidos sus cuerpos pendientes, su descripción CMake vacía, la entrada
+inicial, la selección del cliente, los mapas y las relaciones de actividades.
+La cabecera proporcionada conserva sus tokens y su declaración
+`bool nombre(int, int, int, int&)`; se admite formato equivalente sin convertir
+la interfaz en una definición inline. Las rutas siguen siendo las del proyecto
+original. Otros archivos originales ajenos a estas cuatro piezas se conservan.
+
+La declaración del constructor de U3L10 tiene once campos:
+
+```json
+{
+  "compilerOpenBatteryChecks": [
+    {
+      "activity": "block_0002_0003",
+      "kind": "cmake-adjustment-project-v1",
+      "libraryPath": "src/ajuste.cpp",
+      "headerPath": "publico/control/ajuste.h",
+      "header": "control/ajuste.h",
+      "function": "intentar_ajuste",
+      "libraryTarget": "ajustes",
+      "clientPath": "app/consulta.cpp",
+      "clientTarget": "consultar_ajustes",
+      "testPath": "pruebas/casos.cpp",
+      "target": "comprobar_ajustes"
+    }
+  ]
+}
+```
+
+El lote del cliente se obtiene de `initialStandardInput`; no hay un segundo
+campo editable `clientInput` en la declaración. La lista es acumulativa:
+añadir el constructor conserva literalmente las declaraciones anteriores,
+incluida la ampliación de `block_0006_0011`. Cada propietario sólo puede tener
+un objetivo de esta lista.
+
+### Estructura compartida y avisos
+
+Este contrato requiere también una declaración `compilerCmakeGraphChecks`
+para el mismo propietario. La biblioteca y ambos ejecutables se comprueban
+en el grafo generado de la revisión pública presentada:
+
+```json
+{
+  "compilerCmakeGraphChecks": [
+    {
+      "activity": "block_0002_0003",
+      "minimumCmakeVersion": "3.20",
+      "minimumCmakeVersionAtLeast": true,
+      "targets": [
+        {
+          "name": "ajustes",
+          "type": "STATIC_LIBRARY",
+          "sources": ["src/ajuste.cpp"],
+          "exactSources": true,
+          "publicIncludeRoots": ["publico"],
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true,
+          "requireExplicitMsvcWarnings": true
+        },
+        {
+          "name": "consultar_ajustes",
+          "type": "EXECUTABLE",
+          "sources": ["app/consulta.cpp"],
+          "exactSources": true,
+          "linksTo": ["ajustes"],
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true,
+          "requireExplicitMsvcWarnings": true
+        },
+        {
+          "name": "comprobar_ajustes",
+          "type": "EXECUTABLE",
+          "sources": ["pruebas/casos.cpp"],
+          "exactSources": true,
+          "linksTo": ["ajustes"],
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true,
+          "requireExplicitMsvcWarnings": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+El mínimo declarado debe ser 3.20 o posterior; C++20 o posterior y extensiones
+desactivadas se exigen en los tres objetivos. La raíz pública se deriva de
+`headerPath` y `header`. Compilar la implementación directamente en cada
+ejecutable, omitir el enlace o sustituir la biblioteca compartida por una copia
+no acredita la construcción.
+
+`requireExplicitMsvcWarnings` exige que el proyecto declare y mantenga activo
+un nivel MSVC de avisos: `/W1`, `/W2`, `/W3`, `/W4` o `/Wall`. No fija un nivel
+literal; las pruebas de esta construcción utilizan `/W4`. `/W0` y `/w`
+desactivan los avisos y no satisfacen la exigencia. Véase la
+[documentación de niveles de avisos de MSVC](https://learn.microsoft.com/en-us/cpp/build/reference/compiler-option-warning-level?view=msvc-170).
+El grafo comprueba las opciones declaradas y las de la construcción real;
+las opciones del perfil por sí solas no sustituyen la decisión del proyecto.
+
+### Comprobación única de la misma revisión
+
+El motor genera un único caso obligatorio para `comprobar_ajustes`, con
+entrada vacía. La entrada histórica de seis ternas y la selección inicial de
+`consultar_ajustes` permanecen disponibles; no se reescriben para obtener ese
+caso. Ejecutar el cliente, configurar o construir por separado no concede
+el logro del constructor.
+
+La ejecución del comprobador captura el proyecto completo y verifica
+automáticamente tres aspectos de esa misma revisión:
+
+- El componente calcula el ajuste de menor magnitud cuando los tres datos están
+  en `[-20,20]` y los extremos están ordenados. Un rechazo devuelve `false` y
+  conserva el destino. El componente no imprime ni termina el proceso.
+- El cliente utiliza esa biblioteca, procesa hasta ocho ternas completas de
+  enteros representables y continúa tras un rechazo. Informa los resultados
+  aceptados en stdout y los rechazos contextualizados en stderr, cuenta y suma
+  sólo resultados nuevos, y termina normalmente con 1 si hubo rechazos o con
+  0 en otro caso. Se verifican el lote original y variaciones independientes;
+  los mensajes pueden variar conservando los hechos y la orientación exigidos.
+- El comprobador utiliza la misma biblioteca, ejecuta su propia batería con
+  esperados independientes y observa tanto la aceptación como el destino.
+  La batería cubre las categorías del contrato y continúa después de una
+  comparación fallida. Las mutaciones independientes deben cambiar sus
+  observaciones y su veredicto; imprimir un resumen fijo, omitir comparaciones,
+  obtener el esperado de la propia función o depender únicamente de `assert`
+  no basta.
+
+Las ejecuciones internas son parte de la primera comprobación, sin nuevos
+casos manuales obligatorios. Las trazas privadas no se presentan ni se narran.
+La evidencia se liga a todos los archivos, la receta, el objetivo ejecutado,
+el contrato y su grafo. No se unen una biblioteca de una revisión y recibos
+del cliente o de la batería de otra.
+
+La nueva rúbrica tiene su propia identidad de objetivo. Los recibos anteriores,
+los borradores y sus direcciones históricas permanecen guardados; no se
+convierten en logros del contrato nuevo. La carga de progreso reconstruye
+el mismo objetivo que la carga completa y verifica sus recibos al reabrir.
+
 ## Contrato
 
 - `cases` es un array no vacío. Cada caso declara `standardInput` de tipo texto (puede ser vacío) y `outputs`, una lista no vacía de salidas completas y distintas. Una salida vacía también es válida.
@@ -1572,8 +1720,12 @@ artefacto real. `minimumCmakeVersion` es una propiedad opcional del
 propietario, por ejemplo `"minimumCmakeVersion": "3.20"`. Comprueba la versión
 mínima declarada por `cmake_minimum_required(VERSION)` en el directorio raíz,
 según el dato `minimumCMakeVersion.string` de **CMake File API codemodel v2**.
-Se comparan componentes numéricos: `3.20` y `3.20.0` son equivalentes, pero
-`3.19` y `3.21` no. No se deduce esta versión de la instalación de CMake,
+Por defecto se comparan componentes numéricos exactos: `3.20` y `3.20.0`
+son equivalentes, pero `3.19` y `3.21` no. La propiedad opcional
+`"minimumCmakeVersionAtLeast": true`, que requiere `minimumCmakeVersion`,
+acepta una versión mínima declarada igual o posterior: con `3.20`, admite
+`3.21` y rechaza `3.19`. Omitirla o declararla `false` conserva la comparación
+y los recibos históricos. No se deduce esta versión de la instalación de CMake,
 ni se sustituye por una búsqueda textual del código fuente. Para exigir los requisitos explícitos de los objetivos, un elemento de
 `targets` puede declarar `"explicitCxx20": true` y
 `"explicitCxxExtensionsOff": true`. Estas propiedades optativas obligan a
@@ -1581,6 +1733,13 @@ comprobar que **CMake ejecutó** una declaración de C++20 o posterior y una des
 de extensiones sobre el objetivo, además de construirlo y ejecutar su primer
 caso correctamente. El perfil Windows puede aportar C++23 y extensiones
 desactivadas, pero eso **no** satisface las propiedades del alumno.
+
+Cada objetivo admite también `"requireExplicitMsvcWarnings": true`. Exige una
+opción de avisos MSVC declarada por ese objetivo y un nivel no nulo efectivo
+en su construcción. Acepta `/W1` a `/W4` o `/Wall`; una opción posterior `/W0`
+o `/w` no puede anularlos. Omitir la propiedad o declararla `false` conserva
+los contratos y recibos anteriores. `authoredCompileOptions` mantiene su
+comprobación literal independiente para las rúbricas que la soliciten.
 
 En la configuración autenticada, el motor guarda una traza JSON privada de
 CMake limitada a los archivos CMake originales del proyecto. Sólo acepta

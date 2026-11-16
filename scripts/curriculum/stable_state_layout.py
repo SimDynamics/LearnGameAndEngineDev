@@ -3618,6 +3618,150 @@ def _validate_integer_battery_record(document: dict, record: dict, block: dict) 
                 "Integer battery client observations require signed C++ integers")
 
 
+def _adjustment_project_header_valid(source: str, function: str) -> bool:
+    """The supplied interface is a declaration, never an inline implementation."""
+    if type(source) is not str or "\x00" in source or "\\\n" in source or "\\\r\n" in source:
+        return False
+    try:
+        if not 0 < len(source.encode("utf-8")) <= 4 * 1024 * 1024:
+            return False
+        tokens = tuple(token for token in code_format._cpp_tokens(source)
+                       if not token.startswith(("comment:", "directive:")))
+    except (UnicodeError, code_format.SourceFormatError):
+        return False
+    if tokens[:3] != ("id:bool", "id:" + function, "op:("):
+        return False
+    position = 3
+    for index in range(4):
+        if tokens[position:position + 1] != ("id:int",):
+            return False
+        position += 1
+        if index == 3:
+            if tokens[position:position + 1] != ("op:&",):
+                return False
+            position += 1
+        if position < len(tokens) and tokens[position].startswith("id:"):
+            position += 1
+        delimiter = "op:)" if index == 3 else "op:,"
+        if tokens[position:position + 1] != (delimiter,):
+            return False
+        position += 1
+    return tokens[position:] == ("op:;",)
+
+
+def _validate_adjustment_project_record(document: dict, record: dict, block: dict) -> None:
+    fields = {"activity", "kind", "libraryPath", "headerPath", "header", "function",
+              "libraryTarget", "clientPath", "clientTarget", "testPath", "target"}
+    require(set(record) == fields and record["kind"] == "cmake-adjustment-project-v1",
+            "Unknown or missing adjustment construction declaration field")
+    require(type(block) is dict and block.get("type") == "cpp_compiler" and
+            block.get("language", "cpp") == "cpp" and
+            type(block.get("cmake")) is dict and
+            type(block.get("projectFiles")) is list and bool(block["projectFiles"]) and
+            not any(field in block for field in ("outputCheck", "compileCheck", "sourceFiles")),
+            "Adjustment construction must own an unevaluated C++ CMake editor")
+    for field in ("compilerWorkflowChecks", "compilerRuntimeChecks",
+                  "compilerNamedRuleChecks", "compilerReductionChecks"):
+        declarations = document.get(field)
+        require(type(declarations) is not list or
+                not any(type(item) is dict and item.get("activity") == record["activity"]
+                        for item in declarations),
+                "Adjustment construction owner conflicts with another compiler objective")
+
+    def safe_path(path: object) -> bool:
+        return (type(path) is str and 0 < len(path) <= 256 and
+                re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9_./-]*", path) and
+                all(part not in ("", ".", "..") for part in path.split("/")))
+
+    paths = (record["libraryPath"], record["headerPath"], record["clientPath"], record["testPath"])
+    require(all(safe_path(path) for path in (*paths, record["header"])) and
+            len({path.lower() for path in paths}) == 4 and
+            all(record[field].endswith((".cpp", ".cc", ".cxx"))
+                for field in ("libraryPath", "clientPath", "testPath")) and
+            record["headerPath"].endswith((".h", ".hpp", ".hxx")) and
+            record["headerPath"].endswith("/" + record["header"]) and
+            len(record["headerPath"]) > len(record["header"]) + 1,
+            "Adjustment construction needs distinct safe C++ sources and a public header")
+    include_root = record["headerPath"][:-len(record["header"]) - 1]
+    require(all(type(record[field]) is str and
+                re.fullmatch(r"[A-Za-z_][A-Za-z_0-9]{0,127}", record[field]) and
+                record[field] != "main" and not record[field].startswith("lgaed_adjustment_")
+                for field in ("function", "libraryTarget", "clientTarget", "target")) and
+            len({record[field] for field in ("libraryTarget", "clientTarget", "target")}) == 3 and
+            block["cmake"].get("target") == record["clientTarget"],
+            "Adjustment construction needs safe distinct targets and the original client selection")
+    files = block["projectFiles"]
+    require(1 <= len(files) <= 128 and
+            all(type(entry) is dict and type(entry.get("path")) is str and
+                type(entry.get("initialCode")) is str for entry in files),
+            "Adjustment construction requires its original complete project files")
+    by_name = {entry["path"]: entry["initialCode"] for entry in files}
+    require(len({name.lower() for name in by_name}) == len(files) and
+            all(path in by_name for path in (*paths, "CMakeLists.txt")),
+            "Adjustment construction source or build description is missing or repeated")
+    try:
+        require(sum(len(code.encode("utf-8")) for code in by_name.values()) <= 8 * 1024 * 1024,
+                "Adjustment construction project exceeds its original size limit")
+    except UnicodeError as exc:
+        raise LayoutError("Adjustment construction project must be valid UTF-8") from exc
+    require(_adjustment_project_header_valid(by_name[record["headerPath"]], record["function"]),
+            "Adjustment construction needs its original bool(int,int,int,int&) declaration")
+    client_input = block.get("initialStandardInput", "")
+    require(type(client_input) is str and len(client_input) <= 4096 and
+            re.fullmatch(r"[ \t\r\n\v\f+\-0-9]*", client_input) is not None,
+            "Adjustment construction client input must contain bounded integer triples")
+    inputs, position = [], 0
+    while position < len(client_input):
+        if client_input[position] in " \t\r\n\v\f":
+            position += 1
+            continue
+        number = re.match(r"[+-]?[0-9]+", client_input[position:])
+        require(number is not None,
+                "Adjustment construction client input contains a malformed signed integer")
+        inputs.append(int(number.group()))
+        position += len(number.group())
+    require(len(inputs) <= 24 and len(inputs) % 3 == 0 and
+            all(-(2 ** 31) <= value < 2 ** 31 for value in inputs),
+            "Adjustment construction client input must contain at most eight signed integer triples")
+
+    graphs = document.get("compilerCmakeGraphChecks")
+    require(type(graphs) is list and
+            sum(type(item) is dict and item.get("activity") == record["activity"]
+                for item in graphs) == 1,
+            "Adjustment construction requires exactly one shared CMake graph")
+    graph = next(item for item in graphs if type(item) is dict and item.get("activity") == record["activity"])
+    minimum = graph.get("minimumCmakeVersion")
+    require(type(minimum) is str and len(minimum) <= 40 and
+            re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,3}", minimum) is not None and
+            all(int(part) <= 0xFFFFFFFF for part in minimum.split(".")) and
+            tuple(int(part) for part in minimum.split(".")) + (0,) * (4 - len(minimum.split("."))) >= (3, 20, 0, 0) and
+            graph.get("minimumCmakeVersionAtLeast") is True,
+            "Adjustment construction requires a CMake minimum of at least 3.20")
+    targets = graph.get("targets")
+    require(type(targets) is list and all(type(item) is dict for item in targets),
+            "Adjustment construction needs its library and both executable targets")
+    for role, path, kind in (("libraryTarget", "libraryPath", "STATIC_LIBRARY"),
+                             ("clientTarget", "clientPath", "EXECUTABLE"),
+                             ("target", "testPath", "EXECUTABLE")):
+        matches = [item for item in targets if item.get("name") == record[role]]
+        require(len(matches) == 1, "Adjustment construction has a missing or repeated CMake role")
+        target = matches[0]
+        require(target.get("type") == kind and target.get("sources") == [record[path]] and
+                target.get("exactSources") is True and target.get("explicitCxx20") is True and
+                target.get("explicitCxxExtensionsOff") is True,
+                "Adjustment construction requires exact C++20 sources with extensions disabled")
+        require(target.get("requireExplicitMsvcWarnings") is True,
+                "Adjustment construction requires authored effective MSVC warnings")
+        if role == "libraryTarget":
+            roots = target.get("publicIncludeRoots")
+            require(type(roots) is list and include_root in roots,
+                    "Adjustment construction must publish its supplied header root")
+        else:
+            links = target.get("linksTo")
+            require(type(links) is list and record["libraryTarget"] in links,
+                    "Adjustment construction consumers must link the same library")
+
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
@@ -3640,15 +3784,17 @@ def _validate_compiler_open_battery_checks(document: dict) -> None:
     for record in checks:
         require(type(record) is dict, "Open battery declaration must be an object")
         if "kind" in record:
-            require(record.get("kind") in ("boolean-pair-v1", "cmake-int-unary-v1") and
+            require(record.get("kind") in ("boolean-pair-v1", "cmake-int-unary-v1", "cmake-adjustment-project-v1") and
                     "activity" in record, "Unknown or missing open battery kind or owner")
             identity = _identity(record["activity"])
             require(identity not in identities, "Duplicate open battery owner")
             identities.add(identity)
             if record["kind"] == "boolean-pair-v1":
                 _validate_boolean_battery_record(document, record, owners.get(identity))
-            else:
+            elif record["kind"] == "cmake-int-unary-v1":
                 _validate_integer_battery_record(document, record, owners.get(identity))
+            else:
+                _validate_adjustment_project_record(document, record, owners.get(identity))
             continue
         require(set(record) == {
             "activity", "library", "test", "function", "comparison", "target",
@@ -3742,7 +3888,7 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
     for entry in records:
         require(type(entry) is dict and
                 {"activity", "targets"} <= set(entry) <=
-                {"activity", "project", "minimumCmakeVersion", "targets",
+                {"activity", "project", "minimumCmakeVersion", "minimumCmakeVersionAtLeast", "targets",
                  "optionSelection", "sourceIntegrity", "configureMessageOrder",
                  "targetList"},
                 "CMake graph owner needs bounded optional requirements")
@@ -3750,14 +3896,20 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
         require(identity not in seen, "Repeated CMake graph activity")
         seen.add(identity)
         block = owners.get(identity)
+        battery_records = document.get("compilerOpenBatteryChecks")
+        generated = [item for item in battery_records
+                     if type(item) is dict and item.get("activity") == identity and
+                     item.get("kind") == "cmake-adjustment-project-v1"] if type(battery_records) is list else []
+        if len(generated) == 1:
+            _validate_adjustment_project_record(document, generated[0], block)
         require(type(block) is dict and block.get("type") == "cpp_compiler" and
                 type(block.get("cmake")) is dict and
                 type(block.get("projectFiles")) is list and bool(block["projectFiles"]) and
-                type(block.get("outputCheck")) is dict and
-                type(block["outputCheck"].get("cases")) is list and
-                bool(block["outputCheck"]["cases"]) and
+                ((type(block.get("outputCheck")) is dict and
+                  type(block["outputCheck"].get("cases")) is list and
+                  bool(block["outputCheck"]["cases"])) or len(generated) == 1) and
                 "compileCheck" not in block,
-                "CMake graph needs an original output-check CMake editor")
+                "CMake graph needs an original or authenticated generated output-check CMake editor")
         project = entry.get("project", "")
         require(type(project) is str and len(project) <= 128,
                 "CMake graph project name must be short text")
@@ -3767,6 +3919,10 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                     re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,3}", minimum) and
                     all(int(part) <= 0xFFFFFFFF for part in minimum.split(".")),
                     "CMake minimum must be a numeric major.minor version")
+        if "minimumCmakeVersionAtLeast" in entry:
+            require(type(entry["minimumCmakeVersionAtLeast"]) is bool and
+                    "minimumCmakeVersion" in entry,
+                    "CMake minimum comparison requires a Boolean and numeric minimum")
         if "configureMessageOrder" in entry:
             messages = entry["configureMessageOrder"]
             source_cmake = {f.get("path") for f in block["projectFiles"]
@@ -3823,7 +3979,7 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
             require(type(target) is dict and
                     {"name", "type"} <= set(target) <=
                     {"name", "type", "sources", "linksTo", "exactSources",
-                     "explicitCxx20", "explicitCxxExtensionsOff",
+                     "explicitCxx20", "explicitCxxExtensionsOff", "requireExplicitMsvcWarnings",
                      "publicIncludeRoots", "privateIncludeRoots",
                      "sourceDirectory", "authoredCompileOptions"},
                     "CMake target requires a name, type and bounded optional rules")
@@ -3850,7 +4006,7 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
             exact = target.get("exactSources", False)
             require(type(exact) is bool and (not exact or bool(sources)),
                     "CMake exactSources requires a nonempty source list")
-            for key in ("explicitCxx20", "explicitCxxExtensionsOff"):
+            for key in ("explicitCxx20", "explicitCxxExtensionsOff", "requireExplicitMsvcWarnings"):
                 if key in target:
                     require(type(target[key]) is bool,
                             "CMake explicit requirements must be Boolean")
