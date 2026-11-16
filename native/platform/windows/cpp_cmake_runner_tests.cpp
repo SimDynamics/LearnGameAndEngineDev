@@ -654,6 +654,117 @@ int main() {
         "Migrating C++20 cache identity changed a saved draft, prior cache/source, existing run or original project");
     std::cout<<"PASS C++23 default CMake: exact language macros, real if-consteval/expected/to-underlying execution, separate restored-C++20 cache identity, unchanged prior cache/draft/runs and durable current reuse\n";
 }
+void cmake_link_profile_regression(lgaed::windows::CppRunRequest request,
+        const lgaed::windows::CppRunResult& first) {
+    using namespace lgaed;using namespace windows;
+    using namespace winrt::Windows::Data::Json;
+    const auto original=request.project_files;
+    const auto available=inspect_cpp_project(request);
+    const auto workspace=available.workspace;
+    const auto saved_path=workspace/L"state.json";
+    const auto cache_path=workspace/L"CMakeCache.txt";
+    const auto previous_run=snapshot_files(first.run_directory);
+    const auto retained=workspace/L"retained-personal-file.txt";
+    write(retained,"conservar sin reemplazar\r\n");
+    const auto retained_files=std::pair{read(retained),std::filesystem::last_write_time(retained)};
+    const auto cache_value=[](const std::string& cache,std::string_view kind,
+            std::string_view configuration) {
+        const auto key="CMAKE_"+std::string(kind)+"_LINKER_FLAGS_"+
+            std::string(configuration)+":STRING=";
+        const auto at=cache.find(key);
+        check(at!=cache.npos,"CMake did not expose its effective linker flags: "+key);
+        const auto start=at+key.size(),end=cache.find('\n',start);
+        return std::string_view(cache).substr(start,end==cache.npos?cache.size()-start:end-start);
+    };
+    const auto verify_flags=[&](const std::string& cache) {
+        for(const std::string_view kind:{"EXE","SHARED","MODULE"})
+            for(const std::string_view configuration:{"DEBUG","RELWITHDEBINFO"}) {
+                const auto flags=cache_value(cache,kind,configuration);
+                const auto incremental=flags.rfind("/INCREMENTAL");
+                check(flags.find("/debug")!=flags.npos&&incremental!=flags.npos&&
+                    flags.substr(incremental).starts_with("/INCREMENTAL:NO"),
+                    "CMake lost debug information or retained incremental linking");
+            }
+    };
+    auto saved=JsonObject::Parse(winrt::to_hstring(read(saved_path)));
+    check(saved.GetNamedString(L"linkProfile",L"")==L"msvc-full-link-v1",
+        "The successful CMake configuration omitted its linker profile marker");
+    auto legacy_cache=read(cache_path);verify_flags(legacy_cache);
+    // Restore only the old generated cache settings in this owned QA workspace.
+    // Its source, artifact, draft identity and earlier execution remain intact.
+    for(const std::string_view kind:{"EXE","SHARED","MODULE"})
+        for(const std::string_view configuration:{"DEBUG","RELWITHDEBINFO"}) {
+            const auto flags=cache_value(legacy_cache,kind,configuration);
+            const auto offset=static_cast<std::size_t>(flags.data()-legacy_cache.data())+
+                flags.rfind("/INCREMENTAL:NO");
+            legacy_cache.replace(offset,std::string_view("/INCREMENTAL:NO").size(),"/INCREMENTAL");
+        }
+    write(cache_path,legacy_cache);saved.Remove(L"linkProfile");
+    write(saved_path,winrt::to_string(saved.Stringify()));
+    const auto pending=inspect_cpp_project(request);
+    check(pending.workspace==workspace&&!pending.configured&&!pending.built&&
+        pending.project_fingerprint==available.project_fingerprint&&
+        pending.configuration_fingerprint==available.configuration_fingerprint,
+        "A legacy incremental cache was reused or changed its historical source identity");
+    request.request_id+=20000;
+    for(const auto action:{CppRunRequest::Action::build,CppRunRequest::Action::execute}) {
+        request.action=action;++request.request_id;
+        const auto refused=run_cpp(request);
+        check(!refused.error_utf8.empty()&&!refused.execution.succeeded()&&
+            !inspect_cpp_project(request).configured,
+            "Build/Execute accepted a cache before its linker profile was refreshed");
+    }
+    request.action=CppRunRequest::Action::compile_run;++request.request_id;
+    const auto migrated=run_cpp(request);ran(migrated,"link profile/cache migration");
+    verify_flags(read(cache_path));
+    check(migrated.configuration.succeeded()&&
+        migrated.execution.stdout_bytes==first.execution.stdout_bytes&&
+        inspect_cpp_project(request).workspace==workspace&&
+        std::pair{read(retained),std::filesystem::last_write_time(retained)}==retained_files&&
+        snapshot_files(first.run_directory)==previous_run&&request.project_files==original,
+        "Refreshing the linker profile changed a source, retained file or earlier run");
+    const auto main_object=workspace/L"CMakeFiles/first.dir/src/main.cpp.obj";
+    const auto library_object=workspace/L"CMakeFiles/parts.dir/src/value.cpp.obj";
+    const auto unchanged_main=std::pair{read(main_object),std::filesystem::last_write_time(main_object)};
+    auto previous_member=read(library_object);
+    const auto coff_second=[](std::string_view object) {
+        check(object.size()>=20&&static_cast<unsigned char>(object[0])==0x64&&
+            static_cast<unsigned char>(object[1])==0x86,"Expected an actual x64 COFF object");
+        DWORD second=0;
+        for(unsigned i=0;i<4;++i)second|=static_cast<DWORD>(
+            static_cast<unsigned char>(object[4+i]))<<(8*i);
+        return second;
+    };
+    unsigned same_second=0;
+    // Repeated repairs share the same configured graph, object paths and library.
+    // No delay, clean build or change of LINK options separates these attempts.
+    for(unsigned attempt=0;attempt<4;++attempt) {
+        const bool changed=(attempt%2)==0;
+        replace_repair_text(repair_file(request,"src/value.cpp"),
+            changed?"return CHOSEN;":"return CHOSEN + 1;",
+            changed?"return CHOSEN + 1;":"return CHOSEN;");
+        ++request.request_id;++request.revision;
+        const auto result=run_cpp(request);ran(result,"link profile/rapid static-library repair");
+        const auto member=read(library_object);
+        if(coff_second(member)==coff_second(previous_member))++same_second;
+        check(result.configuration.status==CppPhaseStatus::not_started&&
+            result.execution.stdout_bytes==(changed?"43":"42")&&member!=previous_member&&
+            std::pair{read(main_object),std::filesystem::last_write_time(main_object)}==unchanged_main,
+            "A rapid library repair reused its old function or rebuilt an unchanged consumer");
+        previous_member=member;
+    }
+    const auto artifact_time=std::filesystem::last_write_time(migrated.artifact);
+    const auto object_time=std::filesystem::last_write_time(library_object);
+    ++request.request_id;const auto reused=run_cpp(request);ran(reused,"link profile/unchanged reuse");
+    check(request.project_files==original&&reused.configuration.status==CppPhaseStatus::not_started&&
+        reused.execution.stdout_bytes=="42"&&
+        std::filesystem::last_write_time(reused.artifact)==artifact_time&&
+        std::filesystem::last_write_time(library_object)==object_time,
+        "An unchanged project lost incremental compilation or relinked unnecessarily");
+    std::cout<<"PASS CMake linker profile: legacy cache refreshed in place, prior source/run retained, "
+        "four rapid library repairs, unchanged consumer and no-op reuse; equal COFF seconds="
+        <<same_second<<"/4\n";
+}
 }
 int main(int argc,char** argv){using namespace lgaed;using namespace windows;try{
     const bool cpp23_only=argc==2&&std::string_view(argv[1])=="--cpp23";
@@ -759,7 +870,7 @@ target_include_directories(parts PRIVATE include)
     linked.request_id=1201;
     linked.action=CppRunRequest::Action::compile_run;
     linked.project_files[0].second=R"cmake(cmake_minimum_required(VERSION 3.20)
-project(GraphLinked LANGUAGES CXX)
+project(GraphLinked LANGUAGES C CXX)
 add_library(parts STATIC src/value.cpp)
 target_include_directories(parts PRIVATE include)
 target_compile_definitions(parts PRIVATE CHOSEN=42)
@@ -846,6 +957,7 @@ add_dependencies(first parts)
     config_only.action=CppRunRequest::Action::configure;
     check(!evaluate_cmake_graph(config_only,linked_result,expected_graph).correct,
         "An earlier CMake configure was treated as a compiled and executed objective");
+    cmake_link_profile_regression(linked,linked_result);
     // A real published U2 editor can receive the new root-only graph
     // declaration without changing any historical source, address or draft.
     constexpr auto relative=

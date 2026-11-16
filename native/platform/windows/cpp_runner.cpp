@@ -1402,9 +1402,13 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
     graph.authored_target_lists=std::move(observed_lists);
 }
 bool executable64(const std::filesystem::path& path){state::require_safe_path(path);DWORD kind=0;return std::filesystem::is_regular_file(path)&&GetBinaryTypeW(path.c_str(),&kind)&&kind==SCS_64BIT_BINARY;}
+// This generated-workspace capability is separate from curricular identities
+// and receipt fingerprints. Older caches need configuring with the current
+// linker rules before their artifacts can be built or executed again.
+constexpr std::string_view cmake_link_profile="msvc-full-link-v1";
 CppProjectAvailability inspect_unlocked(const CppRunRequest& request){CppProjectAvailability result;result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);result.workspace=cmake_workspace(request);
     if(!verify_workspace_identity(request,false))return result;const auto path=result.workspace/L"state.json";if(!std::filesystem::is_regular_file(path))return result;
-    try{const auto saved=read_json(path);result.configured=json_text(saved,L"configuration")==result.configuration_fingerprint&&std::filesystem::is_regular_file(result.workspace/L"build.ninja");
+    try{const auto saved=read_json(path);result.configured=json_text(saved,L"configuration")==result.configuration_fingerprint&&json_text(saved,L"linkProfile")==cmake_link_profile&&std::filesystem::is_regular_file(result.workspace/L"build.ninja");
         if(!result.configured)return result;const auto target=cmake_target(result.workspace,*request.cmake);result.target_type=target.type;
         if(json_text(saved,L"built")!=result.project_fingerprint||result.target_type!="EXECUTABLE")return result;
         const auto artifact=contained(result.workspace,project_path(json_text(saved,L"artifact")));
@@ -1496,7 +1500,26 @@ void run_cmake_unlocked(const CppRunRequest& request,CppRunResult& result,
         write_exact(language_rules,"set(CMAKE_CXX23_STANDARD_COMPILE_OPTION \""+utf8(build::cpp_standard_option)+"\")\n"
             "set(CMAKE_CXX23_EXTENSION_COMPILE_OPTION \""+utf8(build::cpp_standard_option)+"\")\n"
             "string(APPEND CMAKE_CXX_FLAGS_INIT \" /Zc:__cplusplus\")\n");
-        std::vector<std::wstring> arguments{L"--fresh",L"-S",source.wstring(),L"-B",build_directory.wstring(),L"-G",L"Ninja",L"-DCMAKE_MAKE_PROGRAM="+ninja.wstring(),L"-DCMAKE_CXX_COMPILER="+compiler.wstring(),L"-DCMAKE_C_COMPILER="+compiler.wstring(),L"-DCMAKE_RC_COMPILER="+std::wstring(build::educational_resource_compiler),L"-DCMAKE_BUILD_TYPE="+std::wstring(winrt::to_hstring(request.cmake->build_type)),L"-DCMAKE_CXX_STANDARD="+std::to_wstring(build::cpp_standard),L"-DCMAKE_CXX_STANDARD_REQUIRED=ON",L"-DCMAKE_CXX_EXTENSIONS=OFF",L"-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",L"-DCMAKE_USER_MAKE_RULES_OVERRIDE_CXX="+language_rules.wstring()};
+        // Use the direct native runner's full-link policy for changed images;
+        // each LINK pass consumes the current object/library inputs. Ninja
+        // keeps its incremental compilation. The global hook also precedes
+        // linker cache initialization when C is enabled before CXX. Per-config
+        // changes preserve /debug and every unrelated platform option.
+        const auto linker_rules=workspace/L"cpp-linker.cmake";
+        state::require_safe_path(linker_rules);
+        write_exact(linker_rules,R"cmake(foreach(_lgaed_link_kind IN ITEMS EXE SHARED MODULE)
+  foreach(_lgaed_link_config IN ITEMS DEBUG RELWITHDEBINFO)
+    set(_lgaed_link_flags "CMAKE_${_lgaed_link_kind}_LINKER_FLAGS_${_lgaed_link_config}_INIT")
+    string(REGEX REPLACE "(^|[ \t])/INCREMENTAL(:YES|:NO)?([ \t]|$)" "\\1\\3"
+      ${_lgaed_link_flags} "${${_lgaed_link_flags}}")
+    string(APPEND ${_lgaed_link_flags} " /INCREMENTAL:NO")
+  endforeach()
+endforeach()
+unset(_lgaed_link_flags)
+unset(_lgaed_link_config)
+unset(_lgaed_link_kind)
+)cmake");
+        std::vector<std::wstring> arguments{L"--fresh",L"-S",source.wstring(),L"-B",build_directory.wstring(),L"-G",L"Ninja",L"-DCMAKE_MAKE_PROGRAM="+ninja.wstring(),L"-DCMAKE_CXX_COMPILER="+compiler.wstring(),L"-DCMAKE_C_COMPILER="+compiler.wstring(),L"-DCMAKE_RC_COMPILER="+std::wstring(build::educational_resource_compiler),L"-DCMAKE_BUILD_TYPE="+std::wstring(winrt::to_hstring(request.cmake->build_type)),L"-DCMAKE_CXX_STANDARD="+std::to_wstring(build::cpp_standard),L"-DCMAKE_CXX_STANDARD_REQUIRED=ON",L"-DCMAKE_CXX_EXTENSIONS=OFF",L"-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",L"-DCMAKE_USER_MAKE_RULES_OVERRIDE="+linker_rules.wstring(),L"-DCMAKE_USER_MAKE_RULES_OVERRIDE_CXX="+language_rules.wstring()};
         for(const auto& [key,value]:request.cmake->options)arguments.push_back(std::wstring(L"-D")+winrt::to_hstring(key).c_str()+L"="+winrt::to_hstring(value).c_str());
         if(authored_trace) {
             state::require_safe_path(trace_file);
@@ -1517,7 +1540,7 @@ void run_cmake_unlocked(const CppRunRequest& request,CppRunResult& result,
         }
         result.configuration=run_phase(cmake,arguments,result.run_directory,compiler_input,L"configuration",request.compile_timeout,request.output_limit_bytes,true,stop,true,fixed_environment);
         if(!result.configuration.succeeded())return;if(!std::filesystem::is_regular_file(build_directory/L"build.ninja"))throw std::runtime_error("CMake did not generate real Ninja rules");
-        const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;saved.Insert(L"configuration",JsonValue::CreateStringValue(winrt::to_hstring(result.configuration_fingerprint)));save_json(state_file,saved);availability=inspect_unlocked(request);
+        const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;saved.Insert(L"configuration",JsonValue::CreateStringValue(winrt::to_hstring(result.configuration_fingerprint)));saved.Insert(L"linkProfile",JsonValue::CreateStringValue(winrt::to_hstring(cmake_link_profile)));save_json(state_file,saved);availability=inspect_unlocked(request);
     }
     if(availability.configured&&request.capture_cmake_graph) {
         result.cmake_graph=snapshot_cmake_graph(workspace,request,

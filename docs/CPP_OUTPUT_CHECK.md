@@ -2271,6 +2271,21 @@ todos los archivos no CMake sean los originales del propietario efectivo,
 incluida la expresión todavía defectuosa. Los archivos CMake se contrastan
 mediante el grafo y las opciones reales del proyecto.
 
+El perfil CMake de Windows conserva la compilación incremental de Ninja y
+utiliza `/INCREMENTAL:NO` al enlazar los programas. Mantiene la información
+de depuración y evita reutilizar el estado interno de un enlace anterior
+después de reparar una biblioteca. Esta opción realiza un enlace completo;
+no implica limpiar ni recompilar todos los objetos. Véase la
+[documentación de `/INCREMENTAL` de Microsoft](https://learn.microsoft.com/en-us/cpp/build/reference/incremental-link-incrementally?view=msvc-170).
+
+La configuración generada guarda `linkProfile: "msvc-full-link-v1"`. Una
+caché anterior necesita configurar de nuevo antes de construir o ejecutar;
+«Compilar y ejecutar» realiza esa actualización en el mismo workspace.
+El marcador pertenece a la caché, no al contenido curricular ni al progreso.
+No cambia las huellas de proyecto, los recibos de logros, los prerrequisitos
+ya observados, los borradores ni las ejecuciones anteriores. Tras actualizar,
+un proyecto sin modificaciones sigue reutilizando sus objetos y ejecutable.
+
 El recibo de observación se conserva al editar la expresión y al reabrir la
 lección. Antes de iniciar la ejecución reparada, la solicitud captura su
 prerrequisito; una observación posterior no convierte retroactivamente una
