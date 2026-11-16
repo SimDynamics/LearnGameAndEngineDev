@@ -1,9 +1,11 @@
 #include "core/report_observation_check.hpp"
 
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace {
 using lgaed::curriculum::ReportExpectation;
@@ -131,6 +133,81 @@ void boundaries_and_malformed_rows() {
     require(!expected_observation_report(ReportMode::complete,
         std::string("R 0 0")+'\0'),
         "Embedded NUL was accepted as an observation");
+}
+
+void single_sign_integers_match_original_reader() {
+    // Preserve the original leer_entero contract independently of from_chars.
+    const auto original_reader=[](std::string_view token)->std::optional<int> {
+        std::istringstream field{std::string(token)};
+        int candidate{0};
+        if(!(field>>candidate))return {};
+        field>>std::ws;
+        if(!field.eof()||field.bad())return {};
+        return candidate;
+    };
+    const std::array<std::pair<std::string_view,int>,8> accepted{{
+        {"+2",2},{"-2",-2},{"0",0},{"+0",0},{"-0",0},
+        {"-2147483648",-2147483647-1},{"2147483647",2147483647},
+        {"+2147483647",2147483647}
+    }};
+    for(const auto& [token,value]:accepted) {
+        require(original_reader(token)==value,
+            "The original stream reader refused a valid signed int");
+        require(lgaed::curriculum::report_detail::integer(token)==value,
+            "The observation oracle rejected or changed a valid signed int");
+    }
+    for(const auto token:{"+-2","-+2","++2","--2","+-0","-+0",
+            "++0","--0","+-2147483648","+-2147483647","+","-",
+            "2x","+2147483648","-2147483649"}) {
+        require(!original_reader(token),
+            "The original stream reader accepted an invalid integer token");
+        require(!lgaed::curriculum::report_detail::integer(token),
+            "The observation oracle accepted a duplicate sign or partial integer");
+    }
+
+    constexpr std::string_view input=
+        "A +2 2\nB -2 -2\nC 0 0\nD +0 0\nE -0 0\n"
+        "F -2147483648 -2147483648\nG +2147483647 2147483647\n"
+        "H +-2 -2\nI 0 +-0\nJ ++2 2\nK --2 -2\nL -+2 -2";
+    constexpr std::string_view summary=
+        "Resumen: validos=7;coinciden=7;difieren=0;formato=5\n";
+    constexpr std::string_view errors=
+        "Linea=8:FORMATO\nLinea=9:FORMATO\nLinea=10:FORMATO\n"
+        "Linea=11:FORMATO\nLinea=12:FORMATO\n";
+    const auto complete=std::string(
+        "Linea=1 Caso=A Esperado=2 Obtenido=2 COINCIDE\n"
+        "Linea=2 Caso=B Esperado=-2 Obtenido=-2 COINCIDE\n"
+        "Linea=3 Caso=C Esperado=0 Obtenido=0 COINCIDE\n"
+        "Linea=4 Caso=D Esperado=0 Obtenido=0 COINCIDE\n"
+        "Linea=5 Caso=E Esperado=0 Obtenido=0 COINCIDE\n"
+        "Linea=6 Caso=F Esperado=-2147483648 Obtenido=-2147483648 COINCIDE\n"
+        "Linea=7 Caso=G Esperado=2147483647 Obtenido=2147483647 COINCIDE\n")+
+        std::string(summary);
+    matches(ReportMode::complete,input,complete,errors,1);
+    matches(ReportMode::differences,input,summary,errors,1);
+}
+
+void private_sign_probe_preserves_later_rows() {
+    // The same private input is executed by the real U3L8 student programs.
+    // Reject mixed signs in either numeric field and retain subsequent rows.
+    const auto input=lgaed::curriculum::observation_probe_inputs[1];
+    constexpr std::string_view summary=
+        "Resumen: validos=6;coinciden=5;difieren=1;formato=5\n";
+    constexpr std::string_view errors=
+        "Linea=3:FORMATO\nLinea=4:FORMATO\nLinea=5:FORMATO\n"
+        "Linea=6:FORMATO\nLinea=8:FORMATO\n";
+    const auto complete=std::string(
+        "Linea=1 Caso=P Esperado=-2 Obtenido=-2 COINCIDE\n"
+        "Linea=2 Caso=P Esperado=1 Obtenido=1 COINCIDE\n"
+        "Linea=7 Caso=F Esperado=7 Obtenido=7 COINCIDE\n"
+        "Linea=9 Caso=H Esperado=2 Obtenido=2 COINCIDE\n"
+        "Linea=10 Caso=N Esperado=3 Obtenido=4 DIFIERE\n"
+        "Linea=11 Caso=Z Esperado=0 Obtenido=0 COINCIDE\n")+
+        std::string(summary);
+    const auto differences=std::string(
+        "Linea=10 Caso=N Esperado=3 Obtenido=4 DIFIERE\n")+std::string(summary);
+    matches(ReportMode::complete,input,complete,errors,1);
+    matches(ReportMode::differences,input,differences,errors,1);
 }
 
 void twelve_line_preservation_and_same_label_after_error() {
@@ -280,6 +357,8 @@ int main() {
     try {
         exact_original_reports();
         boundaries_and_malformed_rows();
+        single_sign_integers_match_original_reader();
+        private_sign_probe_preserves_later_rows();
         twelve_line_preservation_and_same_label_after_error();
         receipt_requires_same_output_error_and_exit();
         source_edits_stay_inside_original_main();

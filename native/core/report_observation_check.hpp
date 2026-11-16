@@ -34,7 +34,12 @@ inline std::vector<std::string_view> fields(std::string_view line) {
     return result;
 }
 inline std::optional<int> integer(std::string_view token) {
-    if(token.starts_with('+'))token.remove_prefix(1);
+    // from_chars accepts '-', but not '+'. Admit a single leading plus
+    // without allowing a second sign rejected by the original stream reader.
+    if(token.starts_with('+')) {
+        token.remove_prefix(1);
+        if(token.empty()||token.front()<'0'||token.front()>'9')return {};
+    }
     if(token.empty())return {};
     int value=0;
     const auto result=std::from_chars(token.data(),token.data()+token.size(),value,10);
@@ -125,7 +130,8 @@ inline bool report_main_only_edit(std::string_view original,std::string_view can
 // final row without LF. Expected reports are computed independently above.
 inline constexpr std::array<std::string_view,2> observation_probe_inputs{{
     "Z 0 0\nZ 1 2\n\nH 3 3\nQ 2x 2\nH 3 2\nG 3 1\n",
-    "P -2 -2\nP 1 1\nX 2 2 2\nG 1-1 0\nF 7 7\n  \nH +2 2\nN 3 4\nZ 0 0"
+    "P -2 -2\nP 1 1\nX 2 2 2\nG 1-1 0\nS +-2 -2\nT 0 +-0\n"
+    "F 7 7\n  \nH +2 2\nN 3 4\nZ 0 0"
 }};
 
 } // namespace lgaed::curriculum

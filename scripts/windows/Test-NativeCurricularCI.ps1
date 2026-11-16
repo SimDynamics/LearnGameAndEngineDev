@@ -399,12 +399,12 @@ if ($Suite -eq 'ReaderBuild') {
         (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
         throw 'ReaderBuild must register independent native glyph hit geometry, console fullscreen/zoom, menu/scroll, Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery, stateful reduction, integer CMake battery and original open-battery execution regressions.'
     }
-    # Obtain console and CMake structure evidence before the longer compiler
+    # Obtain console, CMake structure and U3 semantic evidence before the longer compiler
     # cases. A failure in one must retain the other independent diagnostics.
     # Exclude these from the second call so each registered test runs once.
-    $qaFocalPattern = '^native\.(lesson_menu|rich_text_hit_geometry|cpp_cmake_graph|cpp_project_u3_cmake_structure)$'
+    $qaFocalPattern = '^native\.(lesson_menu|rich_text_hit_geometry|cpp_cmake_graph|cpp_project_u3_cmake_structure|u3_runtime_semantics)$'
     & $qaCTest --test-dir $qaBuild -R $qaFocalPattern --verbose --output-on-failure --no-tests=error --timeout 300
-    if ($LASTEXITCODE -ne 0) { throw 'A native console or CMake structure regression failed.' }
+    if ($LASTEXITCODE -ne 0) { throw 'A native console, CMake structure or U3 semantic regression failed.' }
     & $qaCTest --test-dir $qaBuild -E $qaFocalPattern --output-on-failure --no-tests=error --timeout 300 --stop-on-failure
     if ($LASTEXITCODE -ne 0) { throw 'A focused native reader, catalog, compiler or Win32 regression failed.' }
     Write-Host 'PASS original reader/U6 executables compiled and linked; catalog, general-choice reading preservation, boolean battery execution/provenance, console fullscreen/zoom and Escape, actual Win32 History dialogs and focused published lesson execution/reopen/reset tested. No reader/audio playback executed.'

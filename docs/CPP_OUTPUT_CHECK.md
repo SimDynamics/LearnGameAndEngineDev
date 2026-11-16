@@ -999,11 +999,18 @@ deduce filas, diagnóstico `Linea=N:FORMATO`, contadores y código de salida
 normal. El informe completo muestra cada fila válida; la vista de diferencias
 cuenta todas las válidas, pero sólo muestra las discrepantes.
 
+La conversión de cada entero exige un único signo inicial opcional y un valor
+completo representable como `int`, igual que las funciones de lectura conservadas
+en esos editores. `+2` y `-2` son válidos; `+-2`, `+-0` y los demás signos
+duplicados o combinados producen `FORMATO`. Esas líneas se cuentan como errores
+de formato y no como observaciones válidas, coincidencias o diferencias.
+
 También se ejecuta **el mismo programa** con dos entradas de control
 independientes de los casos anteriores, dentro del rango curricular de doce
 líneas físicas. Incluyen etiquetas repetidas antes y después de un error,
 línea vacía, sólo blancos, enteros incompletos, campos unidos y una cuarta
-columna. El veredicto exige igualdad de las dos salidas y códigos de salida de
+columna, además de signos mezclados en ambos campos numéricos. El veredicto exige
+igualdad de las dos salidas y códigos de salida de
 estas ejecuciones, con los recibos asociados a la fuente y revisión capturadas.
 En la consola nativa, se admite únicamente la traducción textual propia del
 CRT de `LF` a `CRLF`; no se recortan caracteres ni se ignora el diagnóstico.
