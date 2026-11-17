@@ -539,6 +539,9 @@ struct SimulationView::Impl {
         const auto frequency_description=frequency_text();
         SetWindowTextW(frequencies,wide(frequency_description).c_str());
         accessible(frequencies,frequency_description);
+        // The filter changes the accessible name without moving the model
+        // step. Notify native readers as with the array and variable cards.
+        NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,frequencies,OBJID_CLIENT,CHILDID_SELF);
         std::string status;
         if(stepping())status=(spec.view==SimulationViewMode::candidates?"Grupo ":"Paso ")+std::to_string(position+1)+" de "+std::to_string(count());
         else if(spec.view==SimulationViewMode::groups)status=trace.groups.empty()?"No hay grupos":"Grupo "+std::to_string(position+1)+" de "+std::to_string(trace.groups.size());
@@ -1015,7 +1018,13 @@ struct SimulationView::Impl {
         result.push_back({prefix+"array",array_text(),canvas,true});
         add(step_id,prefix+"step");add(explanation_id,prefix+"explanation");
         add(transition_id,prefix+"transition");add(variables_id,prefix+"variables");
-        if(completed_groups())result.push_back({prefix+"frequencies",frequency_text(),frequencies,true});
+        if(completed_groups()){
+            // The same model step has two different narrations. Their archive
+            // keys must differ so toggling the filter cannot replay cached
+            // audio or a previous read/unfinished position for the other mode.
+            const auto mode=frequency_candidates_only?"candidates":"all";
+            result.push_back({prefix+"frequencies/"+mode,frequency_text(),frequencies,true});
+        }
         add(output_label_id,prefix+"output-label");add(output_id,prefix+"output");
         add(result_comparison_id,"state/"+std::to_string(scenario)+"/"+input_key+"/result-comparison");
         add(input_label_id,"input-label");add(error_id,prefix+"error");

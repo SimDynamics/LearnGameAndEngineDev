@@ -513,9 +513,21 @@ void candidate_frequency_filter(HWND host) {
             if(region.key.find("/frequencies")!=std::string::npos)return region.source_text;
         return {};
     };
+    const auto reading_key=[&](const SimulationView& current)->std::string{
+        for(const auto& region:current.reading_regions())
+            if(region.key.find("/frequencies/")!=std::string::npos)return region.key;
+        return {};
+    };
+    const auto original_key=reading_key(view);
+    check(original_key.find("/frequencies/all")!=std::string::npos,
+        "Full-histogram narration has no explicit mode identity");
     const auto output=text(view,output_id),step=view.step_index();
     click(view,frequency_filter_id);
     const auto only=name(bars);
+    const auto candidate_key=reading_key(view);
+    check(candidate_key.find("/frequencies/candidates")!=std::string::npos&&
+        candidate_key!=original_key,
+        "Filtering the same model step reused the full-histogram narration identity");
     check(view.step_index()==step&&text(view,output_id)==output&&
         native_text(filter)=="Mostrar todos los grupos"&&
         only.find("Frecuencias de 1 grupo candidato entre 2 grupos terminados")!=std::string::npos&&
@@ -525,12 +537,16 @@ void candidate_frequency_filter(HWND host) {
         "Filtering candidates showed a losing/future group or changed the trace state");
     click(view,frequency_filter_id);
     check(name(bars)==original&&native_text(filter)=="Mostrar solo candidatos"&&
-        view.step_index()==step&&text(view,output_id)==output,
-        "Showing all groups did not restore the same immutable computed bars");
+        view.step_index()==step&&text(view,output_id)==output&&
+        reading_key(view)==original_key,
+        "Showing all groups did not restore the same computed bars and reading identity");
 
     check(view.go_to_step(9),"Cannot complete the third group");
     click(view,frequency_filter_id);
     const auto third=name(bars);
+    check(reading_key(view).find("/frequencies/candidates")!=std::string::npos&&
+        reading_key(view)!=candidate_key,
+        "Candidate mode at a new step reused the previous step's narration identity");
     check(third.find("Frecuencias de 1 grupo candidato entre 3 grupos terminados")!=std::string::npos&&
         third.find("Grupo 1:")==std::string::npos&&
         third.find("Grupo 2: 3, frecuencia 4")!=std::string::npos&&
@@ -568,7 +584,11 @@ void candidate_frequency_filter(HWND host) {
     const auto summary_bars=GetDlgItem(final.window(),frequencies_id);
     const auto summary_filter=GetDlgItem(final.window(),frequency_filter_id);
     check(control_shown(summary_filter),"Summary with losing groups has no candidate filter");
+    const auto summary_full_key=reading_key(final);
     click(final,frequency_filter_id);
+    check(reading_key(final)!=summary_full_key&&
+        reading_key(final).find("/frequencies/candidates")!=std::string::npos,
+        "Static summary reused the full-histogram reading identity after filtering");
     check(final.step_index()==0&&name(summary_bars).find("Frecuencias de 1 grupo candidato")!=std::string::npos&&
         name(summary_bars).find("Grupo 1:")==std::string::npos&&
         name(summary_bars).find("Grupo 3:")==std::string::npos,

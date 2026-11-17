@@ -314,6 +314,14 @@ escenario, aplicar nuevos datos o restablecerlos devuelve el filtro a
 **todos los grupos**. En textos conserva la distinción entre `""`,
 `" "` y otros datos que no deben mezclarse.
 
+La lectura del gráfico distingue explícitamente **todos** y **sólo candidatos**
+aunque se mantenga el mismo paso del algoritmo. Al alternar el filtro,
+Windows actualiza el nombre accesible y el lector utiliza una identidad
+distinta para cada representación, evitando reutilizar la narración o la
+posición de lectura del modo anterior. Regresar al modo previo recupera
+su identidad estable; desplazarse dentro del gráfico no crea otra
+respuesta ni otro paso de narración.
+
 La disposición se adapta al ancho y al zoom de texto y acepta hasta los
 64 grupos permitidos por el modelo. Para evitar que una lección tenga un
 gráfico de miles de píxeles de altura, el área visible de las barras se
