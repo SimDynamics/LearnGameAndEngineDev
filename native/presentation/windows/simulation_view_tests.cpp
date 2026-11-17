@@ -108,12 +108,13 @@ std::string native_text(HWND window) {
 std::string text(SimulationView& view,int id){const auto window=GetDlgItem(view.window(),id);check(window,"A simulation control is missing");
     wchar_t type[48]{};GetClassNameW(window,type,48);return std::wstring_view(type)==MSFTEDIT_CLASS?edit_text(window):native_text(window);}
 int window_height(HWND window){RECT area{};GetClientRect(window,&area);return static_cast<int>(area.bottom-area.top);}
-void key(HWND dialog,WPARAM value,bool control=false) {
+void key(HWND dialog,WPARAM value,bool control=false,bool shift=false) {
     std::array<BYTE,256> previous{};check(GetKeyboardState(previous.data()),"Cannot preserve the test-thread keyboard state");
     struct RestoreKeys {std::array<BYTE,256>& keys;~RestoreKeys(){SetKeyboardState(keys.data());}} restore{previous};
     auto keys=previous;
     for(const auto modifier:{VK_CONTROL,VK_LCONTROL,VK_RCONTROL,VK_SHIFT,VK_LSHIFT,VK_RSHIFT,VK_MENU,VK_LMENU,VK_RMENU})keys[modifier]=0;
     if(control)keys[VK_CONTROL]=keys[VK_LCONTROL]=0x80;
+    if(shift)keys[VK_SHIFT]=keys[VK_LSHIFT]=0x80;
     check(SetKeyboardState(keys.data()),"Cannot set the isolated test-thread keyboard modifiers");
     const auto target=GetFocus();check(target,"Keyboard input has no actual focused window");
     check(PostMessageW(target,WM_KEYDOWN,value,1)&&PostMessageW(target,WM_KEYUP,value,(LPARAM{1}<<30)|(LPARAM{1}<<31)|1),
@@ -2198,6 +2199,34 @@ void empty_text_values(HWND host,const std::filesystem::path& captures) {
     }
     check(grouped==authored,"Exploration mutated the authored text values or scenarios");
 }
+void editable_input_keyboard_focus(HWND host) {
+    // Use the real dialog message pump: a multiline RichEdit must not trap
+    // Tab, insert whitespace, or replace a student's pending data.
+    for(const bool texts:{false,true}) {
+        auto spec=fixture(SimulationViewMode::walkthrough);
+        spec.text_values=texts;
+        if(texts)spec.values={std::string(""),std::string("patio"),std::string("patio")};
+        spec.scenarios.clear();
+        SimulationView view(host,spec,"es");
+        resize(view,820);
+        const auto editor=GetDlgItem(view.window(),input_id);
+        const auto apply=GetDlgItem(view.window(),apply_id);
+        check(editor&&apply&&control_shown(editor)&&control_shown(apply)&&
+            IsWindowEnabled(editor)&&IsWindowEnabled(apply),
+            "The editable simulation lacks a tab-navigable input or apply button");
+        const auto before=edit_text(editor);
+        const auto step=view.step_index();
+        check(SetFocus(editor)!=nullptr||GetFocus()==editor,
+            "Cannot focus the native simulation input");
+        key(host,VK_TAB);
+        check(GetFocus()==apply&&edit_text(editor)==before&&view.step_index()==step,
+            "Tab inserted text or failed to reach Apply from the multiline editor");
+        key(host,VK_TAB,false,true);
+        check(GetFocus()==editor&&edit_text(editor)==before&&view.step_index()==step,
+            "Shift+Tab did not return to the editor without changing its data");
+        SetFocus(nullptr);
+    }
+}
 void scale_limits_and_local_control_wheel(HWND host) {
     auto spec=fixture(SimulationViewMode::summary);SimulationView first(host,spec,"es"),second(host,spec,"es");
     resize(first,800);resize(second,800);
@@ -2358,6 +2387,7 @@ int main(int argc,char** argv)try {
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});
+    run("editable_input_keyboard_focus",[&]{editable_input_keyboard_focus(host.value);});
     run("scale_limits_and_local_control_wheel",[&]{scale_limits_and_local_control_wheel(host.value);});
     run("parent_width_changes",[&]{parent_width_changes(host.value);});
     run("long_labels_and_literal_values",[&]{long_labels_and_literal_values(host.value,captures);});
