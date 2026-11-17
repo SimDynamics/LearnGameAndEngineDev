@@ -16,7 +16,12 @@ editor, y no puede presentarse como una depuración de un programa arbitrario.
 El archivo [array_runs_simulation.json](examples/array_runs_simulation.json)
 contiene un bloque completo listo para adaptar. Declara datos enteros, permite
 editarlos y ofrece escenarios de empate, valores iguales, un elemento y array
-vacío. Se incorpora como un bloque nuevo mediante las adiciones del contrato
+vacío. Para etiquetas de texto, el archivo
+[array_runs_empty_text_simulation.json](examples/array_runs_empty_text_simulation.json)
+incluye seis escenarios que distinguen `[]`, `[""]` y `["", " "]`,
+además de empates y valores repetidos. Ambos ejemplos son contratos de
+autoría; Work adapta el contenido y decide dónde integrarlo en la lección.
+Se incorpora como un bloque nuevo mediante las adiciones del contrato
 de [estado estable](curriculum/STABLE_LESSON_STATE.md), conservando las
 identidades y direcciones de los bloques existentes.
 
