@@ -2691,7 +2691,10 @@ void accumulated_output_scroll_follows_new_groups(HWND host) {
         "A new output line remained hidden despite a bottom-pinned viewport");
 
     // If the learner scrolls back to an older result, a new group must
-    // not yank their focus to the bottom again.
+    // not yank their focus to the bottom again. Preserve a genuine native
+    // selection as the next group reconstructs the output document.
+    CHARRANGE selected{0,3};
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
     SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
     const auto top=scroll_state(output);
     check(top.first==0&&top.position.y==0,
@@ -2704,6 +2707,62 @@ void accumulated_output_scroll_follows_new_groups(HWND host) {
     const auto retained=scroll_state(output);
     check(retained.first==0&&retained.position.y==top.position.y,
         "Appending output stole the learner's manually selected earlier lines");
+    check(retained.selection.cpMin==selected.cpMin&&
+        retained.selection.cpMax==selected.cpMax,
+        "Streaming another group erased a selection of earlier output text");
+    check(view.go_to_step(44),"Cannot return to the preceding completed group");
+    const auto shortened=scroll_state(output);
+    check(shortened.selection.cpMin==selected.cpMin&&
+        shortened.selection.cpMax==selected.cpMax,
+        "Returning to a shorter output erased a selection of retained text");
+}
+void output_scenario_reading_isolated(HWND host) {
+    auto spec=fixture(SimulationViewMode::summary);
+    spec.values.clear();
+    for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
+    std::vector<SimulationValue> reversed=spec.values;
+    std::ranges::reverse(reversed);
+    spec.scenarios={{"reversed","Mismos datos en orden inverso",reversed}};
+    SimulationView view(host,spec,"es");
+    resize(view,800);
+    const auto output=GetDlgItem(view.window(),output_id);
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    check(output&&selector,"A new-output-session fixture is missing its native controls");
+    const auto original_output=text(view,output_id);
+    const auto initial=scroll_state(output);
+    check(initial.has_range&&initial.vertical.nPage>0&&
+        initial.vertical.nMax-initial.vertical.nMin+1>
+            static_cast<int>(initial.vertical.nPage),
+        "The scenario output fixture has no internal scroll range");
+    SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    const auto bottom=scroll_state(output);
+    check(bottom.position.y>0,"Cannot prepare a manually scrolled output session");
+    const LONG length=GetWindowTextLengthW(output);
+    CHARRANGE last{std::max<LONG>(0,length-5),length};
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&last));
+    const auto selected=scroll_state(output);
+    check(selected.selection.cpMin==last.cpMin&&
+        selected.selection.cpMax==last.cpMax,
+        "Cannot prepare a native selection of the prior scenario");
+
+    // Both inputs sort to the SAME computed output. A different scenario
+    // still deserves a new reading session, not the previous scenario's
+    // scroll or caret associated with different original source positions.
+    check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "The alternate scenario is unavailable");
+    SendMessageW(view.window(),WM_COMMAND,
+        MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));
+    pump(host);
+    const auto updated=scroll_state(output);
+    check(text(view,output_id)==original_output,
+        "Changing only source order changed the correctly sorted raw stdout");
+    check(updated.first==0&&updated.position.y==0&&
+        updated.selection.cpMin==0&&updated.selection.cpMax==0,
+        "A new scenario reused the old output scroll or caret despite equal stdout");
+    check(text(view,error_id).empty()&&
+        view.step_index()==0,
+        "Switching to the independent output session changed the model state");
 }
 void scrollable_text_keyboard(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::summary);spec.values.clear();
@@ -2817,6 +2876,7 @@ int main(int argc,char** argv)try {
     run("long_labels_and_literal_values",[&]{long_labels_and_literal_values(host.value,captures);});
     run("wheel_edges_resume_reader",[&]{wheel_edges_resume_reader(host.value);});
     run("accumulated_output_scroll_follows_new_groups",[&]{accumulated_output_scroll_follows_new_groups(host.value);});
+    run("output_scenario_reading_isolated",[&]{output_scenario_reading_isolated(host.value);});
     run("scrollable_text_keyboard",[&]{scrollable_text_keyboard(host.value,captures);});
     check(!IsWindowVisible(host.value)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=host.value,"Simulation QA activated the desktop");
     if(failures){std::cerr<<"FAIL native simulation view: "<<failures<<" independent scenario(s) failed\n";return 1;}
