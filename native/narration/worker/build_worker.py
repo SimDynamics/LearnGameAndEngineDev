@@ -632,6 +632,12 @@ def windows_reading_source(name: str, code: str) -> str:
     implementation moves, rather than silently leaving one preparation path stale.
     """
     if name == "SpanishFluidG2P":
+        # Name residual literal tildes after technical and math preparation.
+        # Source text, sentence boundaries and recording identities stay intact;
+        # already valid isolated tildes retain the same spoken word.
+        code = exact(code,
+                     r'''            .replace(Regex("(?<!\\S)~(?=\\s|$)"), "tilde")''',
+                     '''            .replace("~", " tilde ")''')
         # Unmarked prose retains its source spelling and recording key. Once
         # explicit code has been verbalized, a residual underscore separates
         # ordinary lexical words; it must not restore implicit code reading.

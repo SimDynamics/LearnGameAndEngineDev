@@ -3,6 +3,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/code_editor.hpp"
 #include "presentation/windows/code_gutter.hpp"
+#include "presentation/windows/compiler_diagnostic_display.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/editing_bar.hpp"
 #include "presentation/windows/icons.hpp"
@@ -4087,13 +4088,18 @@ struct LessonView {
         auto& vm = controls.at(index); EnableWindow(vm.compile, TRUE);refresh_project_actions(index);
         if (result->revision != vm.revision) return;
         if(vm.selective_recovery)vm.selective_recovery->run(running_program,*result);
+        const std::array diagnostic_roots{result->diagnostic_source_directory,
+            result->diagnostic_control_source_directory,result->diagnostic_build_directory,result->run_directory};
+        const auto tool_diagnostics=[&](std::string_view bytes){
+            return utf8(compact_compiler_diagnostic_paths(wide(diagnostic_text(bytes)),diagnostic_roots));
+        };
         if(block(index).compile_check){
             vm.console_channels={};
-            auto diagnostics=diagnostic_text(result->compilation.stdout_bytes+result->compilation.stderr_bytes);
+            auto diagnostics=tool_diagnostics(result->compilation.stdout_bytes+result->compilation.stderr_bytes);
             const bool control_valid=result->diagnostic&&result->diagnostic->control.succeeded();
             if(result->diagnostic&&!control_valid){
                 diagnostics=ui("Comprobación del programa inicial:\n","Initial program check:\n","Vérification du programme initial :\n")
-                    +diagnostic_text(result->diagnostic->control.stdout_bytes+result->diagnostic->control.stderr_bytes)
+                    +tool_diagnostics(result->diagnostic->control.stdout_bytes+result->diagnostic->control.stderr_bytes)
                     +(diagnostics.empty()?"":"\n"+diagnostics);
             }
             if(!result->error_utf8.empty())diagnostics+=(diagnostics.empty()?"":"\n")+result->error_utf8;
@@ -4154,12 +4160,12 @@ struct LessonView {
                 block(index).reduction_probe||block(index).integer_battery_probe||
                  block(index).adjustment_project_probe)
                 ?fresh.execution_completed:*result->execution.exit_code<=255);
-        if(configuration_failed){output=diagnostic_text(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;}
+        if(configuration_failed){output=tool_diagnostics(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;}
         else if(cmake&&!executed){const auto& phase=running_action==windows::CppRunRequest::Action::configure?result->configuration:result->compilation;
-            output=diagnostic_text(phase.stdout_bytes+phase.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;
+            output=tool_diagnostics(phase.stdout_bytes+phase.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;
         }
         else if (result->compilation.status!=windows::CppPhaseStatus::not_started&&!result->compilation.succeeded()) {
-            output = console_label(2) + '\n' + diagnostic_text(result->compilation.stdout_bytes + result->compilation.stderr_bytes);
+            output = console_label(2) + '\n' + tool_diagnostics(result->compilation.stdout_bytes + result->compilation.stderr_bytes);
             if (!result->error_utf8.empty()) output += "\n" + result->error_utf8;
             if (result->compilation.status == windows::CppPhaseStatus::timed_out) output += '\n' + ui("La compilación superó el tiempo permitido.",
                 "Compilation exceeded the time limit.","La compilation a dépassé le temps autorisé.");
@@ -4218,7 +4224,7 @@ struct LessonView {
         }
         vm.console_channels[0] = diagnostic_text(result->execution.stdout_bytes);
         vm.console_channels[1] = diagnostic_text(result->execution.stderr_bytes);
-        vm.console_channels[2] = diagnostic_text(result->configuration.stdout_bytes+result->configuration.stderr_bytes+result->compilation.stdout_bytes + result->compilation.stderr_bytes);
+        vm.console_channels[2] = tool_diagnostics(result->configuration.stdout_bytes+result->configuration.stderr_bytes+result->compilation.stdout_bytes + result->compilation.stderr_bytes);
         if(laboratory()){
             laboratory_exit_code=static_cast<int>((result->execution.exit_code?result->execution.exit_code:result->compilation.exit_code).value_or(static_cast<std::uint32_t>(-1)));
             laboratory_status=!result->compilation.succeeded()?LaboratoryStatus::compilation_failed:result->execution.status==windows::CppPhaseStatus::completed?LaboratoryStatus::finished:LaboratoryStatus::failed;

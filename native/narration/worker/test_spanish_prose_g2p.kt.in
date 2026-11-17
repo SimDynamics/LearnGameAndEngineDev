@@ -68,6 +68,61 @@ fun main(args: Array<String>) {
         "The residual prose separator inserted a technical sound")
     checked("El dato nombre_total acompaña a `std::cout << 12;`.", "mixed prose and explicit code")
 
+    // A literal tilde must remain audible next to punctuation, words or digits.
+    // These independently spelled readings also preserve the already valid
+    // isolated case. Exact phone provenance may conservatively be unavailable;
+    // that optional fallback must not prevent real production G2P or audio.
+    val tildeCases = listOf(
+        "~" to "tilde",
+        "El signo ~ permanece." to "El signo tilde permanece.",
+        "El signo ~." to "El signo tilde.",
+        "El signo ~, continúa." to "El signo tilde, continúa.",
+        "El signo (~) permanece." to "El signo (tilde) permanece.",
+        "El signo «~» permanece." to "El signo «tilde» permanece.",
+        "El signo \"~\" permanece." to "El signo \"tilde\" permanece.",
+        "La marca texto~final continúa." to "La marca texto tilde final continúa.",
+        "El tramo 5~7 conserva sus cifras." to "El tramo cinco tilde siete conserva sus cifras.",
+        "Los signos ~~ permanecen." to "Los signos tilde tilde permanecen."
+    )
+    for ((source, spoken) in tildeCases) for (mode in listOf("auto", "cpp")) {
+        val label = "tilde/$mode/$source"
+        val prepared = SpanishTechnicalSpeech.prepareForKokoro(source, mode).text
+        verify(prepared == SpanishTechnicalSpeech.prepareForReading(source, mode) { _, _, _ -> }.text,
+            "$label changed foreground/background preparation")
+        verify(ManualEnglishSpeech.strip(prepared) == source,
+            "$label changed its source preparation or recording identity")
+        val parts = NarrationSegments.sentences(listOf(prepared))
+        verify(parts.size == 1, "$label introduced a new sentence boundary")
+        sentences++
+        val phones = MixedSpanishG2P.phonemizePrepared(parts.single(), emptyMap())
+        verify(phones.isNotBlank() && '~' !in phones, "$label left an unsupported literal in real phonemes")
+        verify(phones == SpanishFluidG2P.phonemize(spoken),
+            "$label lost its spoken symbol, words, punctuation or numbers")
+        MixedSpanishG2P.traceWordsPrepared(parts.single())?.let { trace ->
+            verify(trace.phonemes == phones, "$label changed audio while observing optional word ranges")
+        }
+    }
+    val tildeSentences = NarrationSegments.sentences(listOf(
+        SpanishTechnicalSpeech.prepareForKokoro("El signo ~. La lectura continúa.").text))
+    verify(tildeSentences.map { ManualEnglishSpeech.strip(it) } ==
+        listOf("El signo ~.", "La lectura continúa."),
+        "A literal tilde changed the original adjacent sentence boundaries")
+    for (part in tildeSentences) {
+        sentences++
+        verify(MixedSpanishG2P.phonemizePrepared(part, emptyMap()).isNotBlank(),
+            "A literal tilde suppressed one of the adjacent sentences")
+    }
+    for (source in listOf("El código `~7` conserva el operador.", "El carácter '~' conserva su nombre.")) {
+        val parts = checked(source, "explicit tilde/$source")
+        verify(parts.any { "tilde" in ManualEnglishSpeech.strip(it) } && parts.none { '~' in it },
+            "The residual fallback replaced the existing explicit code/character reading")
+    }
+    val approximate = "La relación 5 ≈ 7 conserva el dato."
+    checked(approximate, "mathematical approximate relation")
+    val normalizedApproximate = SpanishFluidG2P.normalizeText(approximate)
+    verify("aproximadamente" in normalizedApproximate && "tilde" !in normalizedApproximate,
+        "The literal tilde fallback changed the mathematical approximation sign")
+
     // Residual slashes retain the production contextual reading. The observer
     // must reconcile each uniquely attributable insertion, including foreign
     // atoms, without replacing a slash with punctuation or inventing a word.

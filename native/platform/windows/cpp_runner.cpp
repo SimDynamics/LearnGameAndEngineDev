@@ -1497,6 +1497,7 @@ void run_wasi_single(const CppRunRequest& request,CppRunResult& result,
 }
 void run_multifile(const CppRunRequest& request,CppRunResult& result,const std::filesystem::path& input,const std::filesystem::path& compiler_input,std::stop_token stop){
     validate_request_project(request);result.project_fingerprint=fingerprint(request);const auto source=result.run_directory/L"project",objects=result.run_directory/L"objects",executable=result.run_directory/L"program.exe";
+    result.diagnostic_source_directory=source;
     materialize(request.project_files,source);std::filesystem::create_directory(objects);const std::filesystem::path compiler=std::filesystem::path(build::educational_vc_root)/L"bin/Hostx64/x64/cl.exe";std::vector<std::wstring> link{L"/nologo",L"/Fe:"+executable.wstring()};
     const auto start=std::chrono::steady_clock::now();const auto remaining=[&]{return request.compile_timeout-std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-start);};
     std::size_t sequence=0;for(const auto& file:request.source_files){if(remaining().count()<=0){result.compilation.status=CppPhaseStatus::timed_out;return;}const auto object=objects/(std::to_wstring(sequence)+L".obj");const std::vector<std::wstring> args{L"/nologo",L"/c",L"/EHsc",build::cpp_standard_option,L"/Zc:__cplusplus",L"/permissive-",L"/utf-8",L"/W4",L"/diagnostics:column",L"/I"+source.wstring(),L"/Fo:"+object.wstring(),(source/project_path(file)).wstring()};
@@ -1513,6 +1514,7 @@ void run_cmake_unlocked(const CppRunRequest& request,CppRunResult& result,
         bool defer_execution=false) {
     const auto workspace=cmake_workspace(request);
     result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);const auto& build_directory=workspace;const auto source=workspace/L"p",state_file=workspace/L"state.json";
+    result.diagnostic_source_directory=source;result.diagnostic_build_directory=build_directory;
     auto availability=inspect_unlocked(request);const auto action=request.action;
     const bool authored_trace=requires_authored_cmake_trace(request);
     const auto trace_file=authored_cmake_trace_path(workspace);
@@ -1715,6 +1717,7 @@ void run_diagnostic(const CppRunRequest& request,CppRunResult& result,const std:
     auto& evidence=*result.diagnostic;const auto& objective=*request.diagnostic;
     evidence.source_sha256=state::sha256(request.source_utf8);evidence.control_sha256=state::sha256(objective.control_source_utf8);
     const auto control=result.run_directory/L"control",candidate=result.run_directory/L"candidate";
+    result.diagnostic_source_directory=candidate;result.diagnostic_control_source_directory=control;
     std::filesystem::create_directory(control);std::filesystem::create_directory(candidate);
     write_exact(control/L"main.cpp",objective.control_source_utf8);write_exact(candidate/L"main.cpp",request.source_utf8);
     const auto started=std::chrono::steady_clock::now();
@@ -1766,6 +1769,8 @@ CppPhaseResult diagnostic_aggregate(const std::vector<CppDiagnosticEvidence::Uni
 void run_project_diagnostic(const CppRunRequest& request,CppRunResult& result,const std::filesystem::path& compiler,
         const std::filesystem::path& compiler_input,std::stop_token stop) {
     const auto& plan=*request.diagnostic->project;auto& evidence=*result.diagnostic;
+    result.diagnostic_source_directory=result.run_directory/L"candidate/project";
+    result.diagnostic_control_source_directory=result.run_directory/L"control/project";
     evidence.source_sha256=diagnostic_project_hash(request.project_files,request.source_files);
     evidence.control_sha256=diagnostic_project_hash(plan.control_files,plan.control_sources);
     const auto started=std::chrono::steady_clock::now();
@@ -3934,6 +3939,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
                 throw std::invalid_argument("A single-file diagnostic cannot use project files");
         }
         result.run_directory = create_run_directory(request);
+        result.diagnostic_source_directory = result.run_directory;
         const auto source = result.run_directory / L"main.cpp";
         const auto input = result.run_directory / L"stdin.bin";
         const auto compiler_input = result.run_directory / L"compiler-stdin.bin";

@@ -262,6 +262,11 @@ struct CppRunResult {
     // Captured inside the verified CMake workspace while holding its lock,
     // before an eventual later revision can replace the generated executable.
     std::string cmake_artifact_fingerprint;
+    // Presentation-only roots captured with this run. Never use shortened
+    // diagnostics for compiler evidence, fingerprints, saved state or I/O.
+    std::filesystem::path diagnostic_source_directory;
+    std::filesystem::path diagnostic_control_source_directory;
+    std::filesystem::path diagnostic_build_directory;
 };
 struct CppCmakeInitialObservationCapture {
     std::string request_fingerprint, component_fingerprint, artifact_fingerprint;
