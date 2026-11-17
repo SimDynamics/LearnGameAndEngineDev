@@ -52,6 +52,51 @@ española no debe reescribir implícitamente las fuentes inglesas o francesas.
 No regenerar huellas históricas para hacerlas coincidir artificialmente con
 un texto nuevo.
 
+## Formato posterior a una ampliación cerrada en Windows
+
+Una revisión cerrada de `compilerRevisions` y una revisión de formato conservan
+dos versiones anteriores distintas. La primera archiva el editor original y
+su referencia; la segunda archiva el bloque ampliado completo que recibió el
+espaciado. Ambas instantáneas permanecen bajo sus propietarios y conservan sus
+huellas publicadas.
+
+Por ejemplo, en U11L8 la referencia `block_0007_0001` incorpora una llamada
+aprobada junto con la ampliación de su editor. Si después Work añade una línea
+vacía antes del retorno final, la comparación léxica corresponde a esa referencia
+ampliada. El programa anterior a la llamada conserva su propio contrato y no se
+convierte en el origen del espaciado posterior.
+
+La validación admite comprobar los tres pasos, también cuando la base publicada
+es anterior a ambos cambios:
+
+- Versión original → ampliación cerrada autenticada.
+- Ampliación → mismo código con otro espaciado físico.
+- Versión original → resultado acumulado de ampliación y formato.
+
+Para el último caso, el validador reconstruye el bloque ampliado exclusivamente
+desde el archivo original y la ampliación exacta ya reconocida. Comprueba la
+lección, el propietario, la referencia asociada y las huellas de ambos extremos.
+Sólo las ampliaciones nuevas respecto a la base intervienen en esa comparación;
+una revisión ya presente no vuelve a aplicarse. Las revisiones posteriores de
+espaciado conservan la primera instantánea de formato y añaden sus aristas
+editoriales habituales.
+
+Esto incluye el segundo editor U11L15, cuya ampliación cambia a la vez
+`initialCode`, el resultado esperado y la referencia. La comprobación de
+conservación utiliza un contrato completo de la versión correspondiente: no
+combina el inicial ampliado con los casos antiguos. Las revisiones cerradas
+mantienen sus propias condiciones de acreditación; el formato no convierte
+una ejecución del objetivo anterior en prueba del ampliado.
+
+Work conserva el flujo `prepare_v2` y la validación contra el commit publicado.
+No necesita propiedades nuevas, restaurar programas obsoletos, reemplazar
+instantáneas ni modificar huellas históricas. Un cambio de tokens fuera de la
+ampliación reconocida, un archivo alterado o una referencia de otro propietario
+siguen rechazándose. La prueba de autoría
+`scripts/curriculum/test_code_format_compat.py` incluye las transiciones de
+U11L8 y U11L15; debe ejecutarse en el PC Windows autorizado junto con las
+comprobaciones pertinentes de integración.
+
 ## Protección semántica
 
 La comparación exige conservar los elementos léxicos de la fuente, incluidos

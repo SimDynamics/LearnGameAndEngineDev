@@ -829,6 +829,220 @@ class SourceFormatTest(unittest.TestCase):
 
 
 
+    def _closed_compiler_format_fixture(self, name, compiler, reference, *,
+                                        format_compiler=True):
+        """Use the real publication before the closed compiler expansions."""
+        repository = Path(__file__).resolve().parents[2]
+        relative = ("app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                    f"texto_interpretacion_y_flujos/lesson_{name}.json")
+        published = layout._git_document(
+            repository, "52d057d1aad844b133d0d26ff195cbfcbe18b2e1", relative)
+        if published.get("stateLayout", {}).get("version") != 2:
+            published = layout.prepare_v2(published, "es", {"es": published}, published)
+        self.assertFalse(published["stateLayout"].get("compilerRevisions"))
+        self.assertFalse(published["stateLayout"].get("sourceFormatRevisions"))
+        published_copy = deepcopy(published)
+        expanded = layout.revise_compiler_cases(published, compiler)
+        owners = (compiler, reference) if format_compiler else (reference,)
+        updated = deepcopy(expanded)
+        for identity in owners:
+            block = layout._blocks(updated)[identity]
+            field = "initialCode" if identity == compiler else "code"
+            self.assertEqual(block[field].count("    return 0;\n}\n"), 1)
+            block[field] = block[field].replace(
+                "    return 0;\n}\n", "\n    return 0;\n}\n", 1)
+        formatted = layout.prepare_v2(updated, "es", {"es": expanded}, expanded)
+        self.assertEqual(published, published_copy)
+        return relative, published, expanded, formatted, owners
+
+    def _assert_closed_format_publication(self, relative, previous, current, owners):
+        """Exercise the supplied blocks and the actual aligned publication guards."""
+        import validar_json_programacion as contract
+
+        slots = layout.validate(previous)
+        aligned = layout.align_for_previous_validation(previous, current)
+        historical = layout.original_projection(previous)
+        for p, record in enumerate(previous["stateLayout"]["current"]):
+            for b, identity in enumerate(record["blocks"]):
+                if identity not in owners:
+                    continue
+                origin_p, origin_b = slots[p, b]
+                old = previous["pages"][p]["blocks"][b]
+                actual = layout._blocks(current)[identity]
+                self.assertTrue(contract.preserves_source_format_revision(
+                    relative, origin_p, origin_b, old, actual,
+                    previous_document=previous, current_document=current), identity)
+                self.assertTrue(contract.preserves_previous_exercise(
+                    relative, origin_p, origin_b, old, actual,
+                    previous_document=previous, current_document=current), identity)
+                delivered = aligned["pages"][p]["blocks"][b]
+                self.assertEqual(delivered, actual)
+                if old["type"] == "cpp_compiler":
+                    allowed = (contract.preserves_previous_compiler(
+                        relative, origin_p, origin_b, old, delivered, historical)
+                        or contract.preserves_source_format_revision(
+                            relative, origin_p, origin_b, old, delivered,
+                            previous_document=previous, current_document=current))
+                else:
+                    allowed = contract.preserves_previous_exercise(
+                        relative, origin_p, origin_b, old, delivered,
+                        previous_document=previous, current_document=current)
+                self.assertTrue(allowed, identity)
+
+    def test_closed_compiler_expansion_and_formatting_compose_from_real_publication(self):
+        cases = (
+            ("tokens_con_categoria_y_valor", "block_0004_0004", "block_0007_0001", False),
+            ("tokens_con_categoria_y_valor", "block_0004_0004", "block_0007_0001", True),
+            ("construir_un_interprete_con_historial_y_pruebas",
+             "block_0006_0003", "block_0010_0001", True),
+        )
+        for name, compiler, reference, format_compiler in cases:
+            with self.subTest(lesson=name, format_compiler=format_compiler):
+                relative, published, expanded, formatted, owners = (
+                    self._closed_compiler_format_fixture(
+                        name, compiler, reference, format_compiler=format_compiler))
+                # A->B and B->C already worked; A->C must follow the same
+                # authenticated expansion rather than compare A's tokens/cases to C.
+                layout.validate_transition(published, expanded)
+                layout.validate_transition(expanded, formatted)
+                layout.validate_transition(published, formatted)
+                before = layout._blocks(published)
+                middle = layout._blocks(expanded)
+                after = layout._blocks(formatted)
+                archive = expanded["stateLayout"]["compilerRevisions"][0]
+                self.assertEqual(archive["block"], before[compiler])
+                self.assertEqual(archive["references"],
+                                 [{"id": reference, "block": before[reference]}])
+                self.assertNotEqual(before[compiler]["outputCheck"],
+                                    middle[compiler]["outputCheck"])
+                if name == "tokens_con_categoria_y_valor":
+                    self.assertEqual(before[compiler]["initialCode"],
+                                     middle[compiler]["initialCode"])
+                else:
+                    # U11L15 changes initialCode and output together. Restoring
+                    # B's source into A's old cases would create a false contract.
+                    self.assertNotEqual(before[compiler]["initialCode"],
+                                        middle[compiler]["initialCode"])
+                for identity in owners:
+                    self.assertEqual(layout.source_format_transition_predecessor(
+                        published, formatted, identity), middle[identity])
+                    self.assertEqual(layout.source_format_transition_predecessor(
+                        expanded, formatted, identity), middle[identity])
+                    self.assertTrue(fmt.require_source_format(middle[identity], after[identity]))
+                    snapshot = next(item for item in
+                                    formatted["stateLayout"]["sourceFormatRevisions"]
+                                    if item["id"] == identity)
+                    self.assertEqual(snapshot["block"], middle[identity])
+                self._assert_closed_format_publication(
+                    relative, published, formatted, owners)
+                self._assert_closed_format_publication(
+                    relative, expanded, formatted, owners)
+
+                # A second format release must retain B's first format archive
+                # and every original A compiler/reference snapshot.
+                updated = deepcopy(formatted)
+                for identity in owners:
+                    block = layout._blocks(updated)[identity]
+                    field = "initialCode" if identity == compiler else "code"
+                    block[field] = block[field].replace(
+                        "    return 0;\n}\n", "\n    return 0;\n}\n", 1)
+                later = layout.prepare_v2(updated, "es", {"es": formatted}, formatted)
+                self.assertEqual(later["stateLayout"]["sourceFormatRevisions"],
+                                 formatted["stateLayout"]["sourceFormatRevisions"])
+                for document in (formatted, later):
+                    self.assertEqual(document["stateLayout"]["compilerRevisions"],
+                                     expanded["stateLayout"]["compilerRevisions"])
+                    for field in ("origin", "current", "family", "additions"):
+                        self.assertEqual(document["stateLayout"][field],
+                                         published["stateLayout"][field])
+                    self.assertEqual(layout.validate(document), layout.validate(published))
+                for identity in owners:
+                    self.assertEqual(layout.source_format_transition_predecessor(
+                        formatted, later, identity), after[identity])
+                for previous in (published, expanded, formatted):
+                    self._assert_closed_format_publication(relative, previous, later, owners)
+
+    def test_composed_closed_format_history_rejects_foreign_sources_and_contracts(self):
+        import validar_json_programacion as contract
+
+        relative, published, expanded, formatted, owners = self._closed_compiler_format_fixture(
+            "construir_un_interprete_con_historial_y_pruebas",
+            "block_0006_0003", "block_0010_0001")
+        compiler, reference = owners
+        before = layout._blocks(published)
+        middle = layout._blocks(expanded)
+
+        def rehash_current(document, identity):
+            proof = next(item for item in reversed(document["stateLayout"]["editorial"])
+                         if item["id"] == identity)
+            proof["afterSha256"] = layout.fingerprint(layout._blocks(document)[identity])
+
+        invalid = []
+        for identity in owners:
+            forged = deepcopy(formatted)
+            block = layout._blocks(forged)[identity]
+            field = "initialCode" if identity == compiler else "code"
+            block[field] = block[field].replace(
+                "    return 0;\n}\n", "    return 1;\n}\n", 1)
+            rehash_current(forged, identity)
+            invalid.append(("changed token " + identity, forged))
+
+            forged = deepcopy(formatted)
+            snapshot = next(item for item in forged["stateLayout"]["sourceFormatRevisions"]
+                            if item["id"] == identity)
+            snapshot["block"] = deepcopy(before[identity])
+            invalid.append(("A substituted for format snapshot B " + identity, forged))
+
+        for field, value in (("outputs", ["salida ajena\n"]), ("exitCode", 7)):
+            forged = deepcopy(formatted)
+            layout._blocks(forged)[compiler]["outputCheck"]["cases"][0][field] = value
+            rehash_current(forged, compiler)
+            invalid.append(("changed case " + field, forged))
+
+        forged = deepcopy(formatted)
+        forged["stateLayout"]["compilerRevisions"][0].pop("references")
+        invalid.append(("missing paired reference", forged))
+        forged = deepcopy(formatted)
+        entry = forged["stateLayout"]["compilerRevisions"][0]
+        entry["block"] = deepcopy(middle[compiler])
+        invalid.append(("rewritten original compiler archive", forged))
+        forged = deepcopy(formatted)
+        proofs = forged["stateLayout"]["editorial"]
+        edge = next(item for item in proofs if item["id"] == reference)
+        proofs.remove(edge)
+        invalid.append(("missing A-to-B proof", forged))
+        forged = deepcopy(formatted)
+        forged["stateLayout"]["sourceFormatRevisions"][0]["id"] = reference
+        invalid.append(("borrowed format owner", forged))
+        forged = deepcopy(formatted)
+        forged["id"] += "_ajena"
+        invalid.append(("foreign lesson", forged))
+
+        p, b = 6, 3
+        self.assertEqual(published["stateLayout"]["current"][p]["blocks"][b], compiler)
+        for reason, forged in invalid:
+            with self.subTest(reason=reason):
+                with self.assertRaises(layout.LayoutError):
+                    layout.validate_transition(published, forged)
+                with self.assertRaises(layout.LayoutError):
+                    layout.source_format_transition_predecessor(published, forged, compiler)
+                self.assertFalse(contract.preserves_source_format_revision(
+                    relative, p, b, before[compiler], layout._blocks(forged)[compiler],
+                    previous_document=published, current_document=forged))
+        with self.assertRaises(layout.LayoutError):
+            layout.source_format_transition_predecessor(
+                published, formatted, "block_9999_9999")
+        # The public helper cannot make a correct B snippet an old A owner, nor
+        # transfer the same valid history to another lesson path.
+        self.assertFalse(contract.preserves_source_format_revision(
+            relative, p, b, middle[compiler], layout._blocks(formatted)[compiler],
+            previous_document=published, current_document=formatted))
+        self.assertFalse(contract.preserves_source_format_revision(
+            relative.replace("lesson_", "lesson_ajena_", 1), p, b,
+            before[compiler], layout._blocks(formatted)[compiler],
+            previous_document=published, current_document=formatted))
+
+
     def test_real_u11_compiler_references_allow_later_physical_spacing(self):
         """Nine real expanded references, without replacing their paired compiler."""
         import json

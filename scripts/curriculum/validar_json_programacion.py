@@ -1477,12 +1477,13 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
 def preserves_source_format_revision(relative, pn, bn, old, current, *,
                                      previous_document=None, current_document=None,
                                      course_id="cpp_fundamentals"):
-    """Allow only an authenticated, lexically equivalent source edit.
+    """Allow authenticated source formatting, including a closed expansion.
 
     This older per-block guard remains strict unless the complete published
     lesson has already passed the existing v2 state/layout transition checker.
-    The original Git publication, not a matching ad-hoc source snippet, owns
-    the archive and historical exercise address.
+    A newly authenticated closed expansion supplies its exact later source for
+    the lexical comparison; the original Git publication still owns the archive
+    and historical exercise address, never a matching ad-hoc source snippet.
     """
     if (not is_structural_course_id(course_id) or
             type(pn) is not int or type(bn) is not int or pn < 0 or bn < 0 or
@@ -1526,12 +1527,15 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
         if not isinstance(archives, list) or not any(
                 isinstance(entry, dict) and entry.get("id") == identity for entry in archives):
             return False
-        # This also validates the original immutable origin, the complete
-        # append-only editorial proof and the exact archive/source ownership.
-        _state_layout.validate_transition(previous_document, current_document)
+        # Validate the complete transition before choosing its source epoch.
+        # A newly authenticated closed compiler expansion can precede the
+        # formatting release; its exact expanded block owns that formatting,
+        # while the caller's old block remains the bound published predecessor.
+        predecessor = _state_layout.source_format_transition_predecessor(
+            previous_document, current_document, identity)
         if _state_layout._blocks(current_document).get(identity) != current:
             return False
-        return _state_layout.require_source_format_with_editorial(old, current)
+        return _state_layout.require_source_format_with_editorial(predecessor, current)
     except (ValueError, KeyError, TypeError, IndexError, AttributeError):
         return False
 

@@ -5530,6 +5530,82 @@ def reorder_compiler_cases(document: dict, identity: str, order: list[int], *,
     return result
 
 
+def _closed_compiler_case_after(original: dict, spec: dict) -> dict:
+    """Reconstruct the exact reviewed endpoint from its complete old compiler."""
+    require(type(original) is dict and fingerprint(original) == spec["before"],
+            "A reviewed compiler must start from its exact complete published block")
+    actual = deepcopy(original)
+    if "append" in spec:
+        actual["outputCheck"]["cases"].extend(deepcopy(spec["append"]))
+    else:
+        actual["outputCheck"]["cases"][0]["outputs"][0] += spec["suffix"]
+    if "initial_insert" in spec:
+        require(actual["initialCode"].endswith(_COMPILER_REFERENCE_TAIL),
+                "Invalid published compiler initial ending")
+        actual["initialCode"] = (actual["initialCode"][:-len(_COMPILER_REFERENCE_TAIL)]
+                                 + spec["initial_insert"] + _COMPILER_REFERENCE_TAIL)
+    require(fingerprint(actual) == spec["after"],
+            "The expanded compiler does not match its reviewed first revision")
+    return actual
+
+
+def _closed_compiler_reference_after(original: dict, spec: dict) -> dict:
+    """Reconstruct only the paired reference's pinned insertion and endpoint."""
+    require(type(original) is dict and fingerprint(original) == spec["before"],
+            "A compiler expansion needs its exact complete published reference")
+    reference = deepcopy(original)
+    require(reference["code"].endswith(_COMPILER_REFERENCE_TAIL),
+            "Invalid published reference ending")
+    reference["code"] = (reference["code"][:-len(_COMPILER_REFERENCE_TAIL)]
+                          + spec["insert"] + _COMPILER_REFERENCE_TAIL)
+    require(fingerprint(reference) == spec["after"],
+            "The compiler reference does not match its reviewed expansion")
+    return reference
+
+
+def _new_closed_compiler_sources(baseline: dict, current: dict) -> dict[str, dict]:
+    """Reconstruct newly crossed closed endpoints from their exact old owners."""
+    old_meta, meta = baseline["stateLayout"], current["stateLayout"]
+    old_compilers = old_meta.get("compilerRevisions", []) if old_meta["version"] == 2 else []
+    compilers = meta.get("compilerRevisions", [])
+    require(compilers[:len(old_compilers)] == old_compilers,
+            "Published compiler revisions are append-only and cannot be removed or replaced")
+    before = _all_blocks(baseline)
+    sources = {}
+    for item in compilers[len(old_compilers):]:
+        require(item["id"] in before and fingerprint(item["block"]) == fingerprint(before[item["id"]]),
+                "A new compiler revision must preserve its complete previous published block")
+        spec = COMPILER_CASE_REVISIONS[(current["id"], item["id"])]
+        sources[item["id"]] = _closed_compiler_case_after(item["block"], spec)
+        for reference in item.get("references", []):
+            require(reference["id"] in before and fingerprint(reference["block"]) == fingerprint(before[reference["id"]]),
+                    "A new compiler reference must preserve its complete previous published block")
+            reference_spec = COMPILER_REFERENCE_REVISIONS[(current["id"], item["id"])]
+            sources[reference["id"]] = _closed_compiler_reference_after(
+                reference["block"], reference_spec)
+    return sources
+
+
+def source_format_transition_predecessor(previous: dict, current: dict,
+                                         identity: str) -> dict:
+    """Return the authenticated source before formatting in this transition.
+
+    A direct A-to-C import may cross a closed compiler expansion A-to-B before
+    its whitespace revision B-to-C. Only that newly introduced closed revision
+    supplies B, reconstructed from A and the pinned rule. Already published
+    revisions keep the exact prior block, including its existing formatting.
+    Full transition validation still owns snapshots, contracts and proof edges.
+    """
+    validate_transition(previous, current)
+    baseline = prepare(previous)
+    _identity(identity)
+    before = _all_blocks(baseline)
+    require(identity in before and identity in _all_blocks(current),
+            "A source-format predecessor must retain its exact published owner")
+    return deepcopy(_new_closed_compiler_sources(baseline, current).get(
+        identity, before[identity]))
+
+
 def _revise_closed_compiler_cases(document: dict, identity: str) -> dict:
     """Prepare exactly one reviewed compiler expansion without editing assets."""
     validate(document)
@@ -5546,14 +5622,8 @@ def _revise_closed_compiler_cases(document: dict, identity: str) -> dict:
             "A reviewed compiler must start from its exact complete published block")
     result = deepcopy(document)
     actual = _blocks(result)[identity]
-    if "append" in spec:
-        actual["outputCheck"]["cases"].extend(deepcopy(spec["append"]))
-    else:
-        actual["outputCheck"]["cases"][0]["outputs"][0] += spec["suffix"]
-    if "initial_insert" in spec:
-        require(actual["initialCode"].endswith(_COMPILER_REFERENCE_TAIL), "Invalid published compiler initial ending")
-        actual["initialCode"] = actual["initialCode"][:-len(_COMPILER_REFERENCE_TAIL)] + spec["initial_insert"] + _COMPILER_REFERENCE_TAIL
-    require(fingerprint(actual) == spec["after"], "The expanded compiler does not match its reviewed first revision")
+    actual.clear()
+    actual.update(_closed_compiler_case_after(original, spec))
     archive = {"id": identity, "block": deepcopy(original)}
     result["stateLayout"]["editorial"].append({"id": identity, "beforeSha256": spec["before"],
                                             "afterSha256": spec["after"]})
@@ -5564,9 +5634,8 @@ def _revise_closed_compiler_cases(document: dict, identity: str) -> dict:
         require(original_reference is not None and fingerprint(original_reference) == reference_spec["before"],
                 "A compiler expansion needs its exact complete published reference")
         reference = _blocks(result)[reference_id]
-        require(reference["code"].endswith(_COMPILER_REFERENCE_TAIL), "Invalid published reference ending")
-        reference["code"] = reference["code"][:-len(_COMPILER_REFERENCE_TAIL)] + reference_spec["insert"] + _COMPILER_REFERENCE_TAIL
-        require(fingerprint(reference) == reference_spec["after"], "The compiler reference does not match its reviewed expansion")
+        reference.clear()
+        reference.update(_closed_compiler_reference_after(original_reference, reference_spec))
         archive["references"] = [{"id": reference_id, "block": deepcopy(original_reference)}]
         result["stateLayout"]["editorial"].append({"id": reference_id, "beforeSha256": reference_spec["before"],
                                                 "afterSha256": reference_spec["after"]})
@@ -5786,16 +5855,7 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     item["replacement"].encode("utf-8")).hexdigest()
         require(expected_semantics == current.get(text_semantics.ROOT_FIELD),
                 "Editorial choice revised an unrelated text marker or semantic span")
-    old_compilers = old_meta.get("compilerRevisions", []) if old_v2 else []
-    compilers = meta.get("compilerRevisions", [])
-    require(compilers[:len(old_compilers)] == old_compilers,
-            "Published compiler revisions are append-only and cannot be removed or replaced")
-    for item in compilers[len(old_compilers):]:
-        require(item["id"] in before and fingerprint(item["block"]) == fingerprint(before[item["id"]]),
-                "A new compiler revision must preserve its complete previous published block")
-        for reference in item.get("references", []):
-            require(reference["id"] in before and fingerprint(reference["block"]) == fingerprint(before[reference["id"]]),
-                    "A new compiler reference must preserve its complete previous published block")
+    new_closed_sources = _new_closed_compiler_sources(baseline, current)
     new_case_orders = _validate_compiler_case_order_transition(baseline, current)
     _preserve_compiler_channel_requirements(
         {identity: _compiler_case_order_projection(baseline, identity, block) for identity, block in before.items()},
@@ -5813,11 +5873,12 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         # release. Its actual pre-format snapshot is a later editorial node,
         # not necessarily the first published block, but its code is unchanged.
         predecessor = entry["block"]
-        if predecessor != before[identity]:
+        published_source = new_closed_sources.get(identity, before[identity])
+        if predecessor != published_source:
             try:
                 if _compiler_case_has_client(current, identity):
                     expected_source = _compiler_case_order_projection(
-                        current, identity, before[identity], editorial_prefix=len(old_editorial))
+                        current, identity, published_source, editorial_prefix=len(old_editorial))
                     events = _compiler_case_events(current, identity)
                     epoch = _compiler_case_epoch(current, identity, predecessor, events)
                     for _, item in events[:epoch]:
@@ -5829,11 +5890,14 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                             "An intermediate client cannot format its source before archiving")
                 else:
                     require(not code_format.require_source_lexical(
-                                before[identity], predecessor),
+                                published_source, predecessor),
                             "An intermediate review cannot format its source before archiving")
+                initial = (_compiler_case_order_projection(
+                    current, identity, published_source, editorial_prefix=len(old_editorial))
+                    if identity in new_closed_sources else
+                    _compiler_case_order_projection(baseline, identity, published_source))
                 require_source_format_with_editorial(
-                    _compiler_case_order_projection(baseline, identity, before[identity]),
-                    _compiler_case_order_projection(current, identity, predecessor))
+                    initial, _compiler_case_order_projection(current, identity, predecessor))
             except code_format.SourceFormatError as exc:
                 raise LayoutError(f"Unsafe intermediate source for {identity}: {exc}") from exc
             require(fingerprint(predecessor) in {
@@ -5853,13 +5917,17 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         archived.add(identity)
     for identity in archived:
         if identity not in before or identity not in after: continue
+        published_source = new_closed_sources.get(identity, before[identity])
         try:
             if _compiler_case_has_client(current, identity):
+                initial = (_compiler_case_order_projection(
+                    current, identity, published_source, editorial_prefix=len(old_editorial))
+                    if identity in new_closed_sources else
+                    _compiler_case_order_projection(baseline, identity, published_source))
                 code_format.require_source_lexical(
-                    _compiler_case_order_projection(baseline, identity, before[identity]),
-                    _compiler_case_order_projection(current, identity, after[identity]))
+                    initial, _compiler_case_order_projection(current, identity, after[identity]))
             else:
-                code_format.require_source_lexical(before[identity], after[identity])
+                code_format.require_source_lexical(published_source, after[identity])
         except code_format.SourceFormatError as exc:
             raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
     old_positions = {identity: (record["id"], index, record["blocks"])
@@ -5929,6 +5997,13 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         previous_source = _compiler_case_order_projection(baseline, identity, block)
         format_original = next((entry["block"] for entry in current_formats if entry["id"] == identity), None)
         if format_original is not None:
+            if identity in new_closed_sources:
+                # Expansions can revise initialCode and cases together. Use the
+                # complete B endpoint; B source combined with A cases is no
+                # authenticated compiler contract.
+                previous_source = _compiler_case_order_projection(
+                    current, identity, new_closed_sources[identity],
+                    editorial_prefix=len(old_editorial))
             format_original = _compiler_case_format_origin(current, identity, format_original)
             previous_source = code_format.source_projection(previous_source, format_original)
             protected = code_format.source_projection(protected, format_original)
@@ -5960,7 +6035,8 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
             # original full block, source tokens and editorial edges are pinned.
             # An unarchived replacement still fails closed as a foreign owner.
             require(identity in new_case_orders or (identity in archived
-                    and require_source_format_with_editorial(block, actual)),
+                    and require_source_format_with_editorial(
+                        new_closed_sources.get(identity, block), actual)),
                     "Published content was assigned to another identity without a verified move")
 
 
