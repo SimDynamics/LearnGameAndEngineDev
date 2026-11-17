@@ -1668,8 +1668,32 @@ struct SimulationView::Impl {
         const auto id=LOWORD(command),event=HIWORD(command);
         if(id==scenario_id&&event==CBN_SELCHANGE){const auto selected=SendMessageW(item(scenario_id),CB_GETCURSEL,0,0);
             if(selected>=0&&static_cast<std::size_t>(selected)<=spec.scenarios.size()){
-                const auto previous=scenario;scenario=static_cast<std::size_t>(selected);
-                try{replace_data(original_data(),true);}catch(...){scenario=previous;SendMessageW(item(scenario_id),CB_SETCURSEL,scenario,0);throw;}}
+                const auto previous=scenario;
+                const auto old_output=capture_output_reading_anchor();
+                const auto old_order=capture_output_reading_anchor(original_order_id);
+                const auto old_chart=capture_histogram_anchor();
+                scenario=static_cast<std::size_t>(selected);
+                try{replace_data(original_data(),true);}
+                catch(...){
+                    // A model/UI rollback inside replace_trace ran while the
+                    // selector temporarily named the new scenario. Restore the
+                    // previous scenario and its native reading context too.
+                    const auto failure=std::current_exception();
+                    scenario=previous;
+                    SendMessageW(item(scenario_id),CB_SETCURSEL,scenario,0);
+                    output_scenario=previous;original_order_scenario=previous;
+                    try {
+                        update();
+                        restore_output_reading_anchor(old_output);
+                        restore_output_reading_anchor(old_order,original_order_id);
+                        restore_histogram_anchor(old_chart);
+                        publish();
+                    }catch(...){
+                        OutputDebugStringW(L"No se pudo recuperar la presentación del escenario anterior.\n");
+                    }
+                    std::rethrow_exception(failure);
+                }
+            }
             return 0;}
         if(id==step_selector_id&&event==CBN_SELCHANGE&&stepping()){
             const auto selected=SendMessageW(item(step_selector_id),CB_GETCURSEL,0,0);
