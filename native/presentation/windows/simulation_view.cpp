@@ -260,9 +260,14 @@ struct SimulationView::Impl {
         const auto slot=std::min(indices.size()-1,row*columns);
         const auto end=std::max(scroll.nMin,scroll.nMax-
             std::max(0,static_cast<int>(scroll.nPage)-1));
+        // With no overflow, top and bottom are the same position. Reflow
+        // must not mistake that for an intentional bottom scroll: when the
+        // first overflow appears, retain the beginning of the chart.
+        const bool overflow=scroll.nMax-scroll.nMin+1>
+            static_cast<int>(scroll.nPage);
         return HistogramReadingAnchor{indices[slot],
             scroll.nPos-(sp(8)+static_cast<int>(row)*pitch),
-            pitch,scroll.nPos>=end};
+            pitch,overflow&&scroll.nPos>=end};
     }
     void restore_histogram_anchor(
             const std::optional<HistogramReadingAnchor>& saved){
