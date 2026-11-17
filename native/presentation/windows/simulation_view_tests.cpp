@@ -333,6 +333,9 @@ void calculated_step_changes(HWND host) {
         first.find("frecuencia: 0 → 1")!=std::string::npos&&
         first.find("Salida:") == std::string::npos,
         "The first count does not show its exact changed variables");
+    check(first.find("Dato contado: índice 0 = -8")!=std::string::npos&&
+        first.find("Comparación:")==std::string::npos,
+        "The first count lost the value and index actually observed");
     const auto first_key=delta_key(view);
     check(!first_key.empty(),"The current-step changes are missing from narration");
     check(view.go_to_step(2),"Cannot inspect a completed group decision");
@@ -342,6 +345,9 @@ void calculated_step_changes(HWND host) {
         maximum.find("Salida: +1 línea")!=std::string::npos&&
         maximum.find("10:1")==std::string::npos&&delta_key(view)!=first_key,
         "A decision delta omitted the new maximum or exposed future output");
+    check(maximum.find("Comparación: frecuencia 1 > máxima anterior 0. Nuevo máximo: reemplaza candidatos.")!=std::string::npos&&
+        maximum.find("Dato contado:")==std::string::npos,
+        "The first decision used a future maximum or incorrectly counted a new element");
     check(view.go_to_step(4),"Cannot select a later count directly");
     const auto progress=text(view,transition_id);
     check(progress.find("fin: 2 → 3")!=std::string::npos&&
@@ -349,6 +355,9 @@ void calculated_step_changes(HWND host) {
         progress.find("máxima:")==std::string::npos&&
         progress.find("Salida:")==std::string::npos,
         "A direct jump compared the last visited frame instead of adjacent model states");
+    check(progress.find("Dato contado: índice 2 = 3")!=std::string::npos&&
+        progress.find("Comparación:")==std::string::npos,
+        "Jumping to a count used another frame's observed element");
     check(view.go_to_step(7),"Cannot inspect a later maximum");
     const auto new_max=text(view,transition_id);
     check(new_max.find("máxima: 1 → 4")!=std::string::npos&&
@@ -356,6 +365,14 @@ void calculated_step_changes(HWND host) {
         new_max.find("Salida: +1 línea")!=std::string::npos&&
         trace.frames[7].output=="-8:1\n3:4\n",
         "A later decision changed candidates or accumulated output incorrectly");
+    check(new_max.find("Comparación: frecuencia 4 > máxima anterior 1. Nuevo máximo: reemplaza candidatos.")!=std::string::npos,
+        "The larger group did not explain its verified strict comparison");
+    check(view.go_to_step(9),"Cannot inspect the losing group");
+    const auto below=text(view,transition_id);
+    check(below.find("Comparación: frecuencia 1 < máxima anterior 4. No supera el máximo: conserva los candidatos.")!=std::string::npos&&
+        below.find("máxima:")==std::string::npos&&
+        below.find("mayores:")==std::string::npos,
+        "The losing group wrongly changed the maximum or concealed the comparison");
     check(view.go_to_step(view.step_count()-1),"The terminal frame is missing");
     check(text(view,transition_id).find("frecuencia: 1 → 0")!=std::string::npos&&
         text(view,transition_id).find("Salida:")==std::string::npos,
@@ -376,6 +393,15 @@ void calculated_step_changes(HWND host) {
         view.go_to_step(2)&&text(view,transition_id)==maximum,
         "Restoration did not reconstruct the original verified transition");
 
+    const auto tie_scenario=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(tie_scenario,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(tie_scenario));pump();
+    check(view.go_to_step(6),"The tie scenario lacks its equality decision");
+    const auto tie=text(view,transition_id);
+    check(tie.find("Comparación: frecuencia 2 = máxima anterior 2. Empate: agrega el valor a los candidatos.")!=std::string::npos&&
+        tie.find("mayores: 4 → 4, 9")!=std::string::npos,
+        "Equal frequencies were not explained as a tie with both candidates");
     const auto scenario=GetDlgItem(view.window(),scenario_id);
     SendMessageW(scenario,CB_SETCURSEL,2,0);
     SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
@@ -392,6 +418,9 @@ void calculated_step_changes(HWND host) {
             "A completed-group view did not compare its first group with the empty state");
         check(other.go_to_step(1),"Cannot inspect the next completed group");
         const auto next=text(other,transition_id);
+        check(current.find("Comparación: frecuencia 1 > máxima anterior 0. Nuevo máximo: reemplaza candidatos.")!=std::string::npos&&
+            next.find("Comparación: frecuencia 4 > máxima anterior 1. Nuevo máximo: reemplaza candidatos.")!=std::string::npos,
+            "Group decisions did not use each preceding completed group");
         check(next.find("grupo: 1 → 2")!=std::string::npos&&
             next.find("máxima: 1 → 4")!=std::string::npos&&
             next.find("Salida: +1 línea")!=std::string::npos,
@@ -408,9 +437,15 @@ void calculated_step_changes(HWND host) {
     texts.text_values=true;texts.scenarios.clear();
     texts.values={std::string(""),std::string(" "),std::string(" ")};
     SimulationView quoted(host,texts,"es");resize(quoted,820);
+    check(quoted.go_to_step(1)&&
+        text(quoted,transition_id).find("Dato contado: índice 0 = \"\" (cadena vacía)")!=std::string::npos,
+        "An empty text value was confused with no observed element");
     check(quoted.go_to_step(2)&&
         text(quoted,transition_id).find("mayores: ninguno → \"\" (cadena vacía)")!=std::string::npos,
         "An empty text candidate was confused with no candidate");
+    check(quoted.go_to_step(3)&&
+        text(quoted,transition_id).find("Dato contado: índice 1 = \" \" (1 espacio)")!=std::string::npos,
+        "The observation discarded the significant space in a text value");
     check(quoted.go_to_step(5)&&
         text(quoted,transition_id).find("mayores: \"\" (cadena vacía) → \" \" (1 espacio)")!=std::string::npos,
         "Significant spaces were discarded from a candidate change");

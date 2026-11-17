@@ -250,6 +250,17 @@ indica cuántas líneas se añadieron, sin repetir ni adelantar la salida
 futura. Los valores de texto en los candidatos conservan comillas y las
 aclaraciones de vacío o espacios.
 
+En las fases `start` y `advance`, el panel identifica el **dato contado**
+mediante su índice `end - 1` y el valor calculado de la copia ordenada.
+No presenta `end` como un acceso válido, ni afirma que la decisión final
+de un grupo haya leído otro elemento. Al terminar cada grupo, el panel
+también muestra la comparación efectiva entre su frecuencia y el
+**máximo anterior a la decisión**: `>` reemplaza candidatos, `=` agrega
+el valor empatado y `<` los conserva. Por ejemplo, `4 > 1` explica
+por qué se actualizó el máximo a 4. Esta comparación procede de los
+estados calculados, no de los mensajes explicativos redactados por Work.
+El caso de array vacío y las vistas estáticas no inventan observaciones.
+
 Al saltar directamente del paso 1 al 9, el panel compara **el paso 8 con
 el 9**, no el último paso que el estudiante visitó. En `groups` y
 `candidates`, contrasta los grupos terminados consecutivos; el primer

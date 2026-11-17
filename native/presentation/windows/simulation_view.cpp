@@ -350,6 +350,27 @@ struct SimulationView::Impl {
         if(!before)return {};
         const auto& after=frame();
         std::vector<std::string> changes;
+        // The model counts the element at end-1. A completed group compares
+        // its frequency with the maximum *before* that group's decision.
+        // Derive both statements from actual frames, never authored prose.
+        if(after.phase==SimulationPhase::start||after.phase==SimulationPhase::advance){
+            const auto observed=after.end-1;
+            changes.push_back("Dato contado: índice "+std::to_string(observed)+" = "+
+                simulation_value_display_text(trace.ordered.at(observed)));
+        }else if(after.phase==SimulationPhase::new_maximum||
+                 after.phase==SimulationPhase::tie||
+                 after.phase==SimulationPhase::below_maximum){
+            const char* relation=after.phase==SimulationPhase::new_maximum?">":
+                after.phase==SimulationPhase::tie?"=":"<";
+            const char* consequence=after.phase==SimulationPhase::new_maximum?
+                "Nuevo máximo: reemplaza candidatos.":
+                after.phase==SimulationPhase::tie?
+                "Empate: agrega el valor a los candidatos.":
+                "No supera el máximo: conserva los candidatos.";
+            changes.push_back("Comparación: "+spec.labels.frequency+" "+
+                std::to_string(after.frequency)+" "+relation+" "+spec.labels.maximum+
+                " anterior "+std::to_string(before->maximum)+". "+consequence);
+        }
         const auto number=[&](std::string_view label,std::size_t previous,std::size_t current){
             if(previous!=current)
                 changes.push_back(std::string(label)+": "+std::to_string(previous)+" → "+std::to_string(current));
