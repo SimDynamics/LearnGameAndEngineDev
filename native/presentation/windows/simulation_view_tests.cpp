@@ -953,7 +953,10 @@ void histogram_first_overflow_does_not_jump_to_last_group(HWND host) {
     for(std::int64_t value=0;value<9;++value)spec.values.emplace_back(value);
     const auto authored=spec;
     SimulationView view(host,spec,"es");
-    resize(view,1180);
+    // Keep both geometries independent of the test monitor's actual DPI.
+    const auto dpi=static_cast<int>(GetDpiForWindow(view.window()));
+    const int wide=MulDiv(1180,dpi,96),narrow=MulDiv(340,dpi,96);
+    resize(view,wide);
     const auto chart=GetDlgItem(view.window(),frequencies_id);
     check(chart,"The compact histogram is missing");
     const auto scroll=[&]{
@@ -970,7 +973,7 @@ void histogram_first_overflow_does_not_jump_to_last_group(HWND host) {
 
     // Origin and end are both zero while everything fits. Widening the range
     // must not reinterpret that position as an intentional SB_BOTTOM.
-    resize(view,340);
+    resize(view,narrow);
     const auto overflow=scroll();
     check(overflow.nMax-overflow.nMin+1>static_cast<int>(overflow.nPage)&&
         overflow.nPos==0&&view.frequency_card_bounds_in_canvas(0)&&
@@ -984,13 +987,13 @@ void histogram_first_overflow_does_not_jump_to_last_group(HWND host) {
     const auto at_end=scroll();
     check(at_end.nPos>0&&view.frequency_card_bounds_in_canvas(8),
         "Cannot reach the real end of the narrow histogram");
-    resize(view,1180);
+    resize(view,wide);
     const auto fitted_again=scroll();
     check(fitted_again.nPos==0&&
         fitted_again.nMax-fitted_again.nMin+1<=
             static_cast<int>(fitted_again.nPage),
         "The wide histogram retained a phantom scrollbar");
-    resize(view,340);
+    resize(view,narrow);
     const auto narrowed_again=scroll();
     check(narrowed_again.nPos==0&&view.frequency_card_bounds_in_canvas(0)&&
         !view.frequency_card_bounds_in_canvas(8)&&spec==authored,
@@ -998,7 +1001,7 @@ void histogram_first_overflow_does_not_jump_to_last_group(HWND host) {
 
     // A genuine scrollable bottom does carry through a new reader zoom.
     SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
-    view.set_text_scale(150);resize(view,340);
+    view.set_text_scale(150);resize(view,narrow);
     const auto zoomed=scroll();
     const auto final_row=std::max(zoomed.nMin,zoomed.nMax-
         std::max(0,static_cast<int>(zoomed.nPage)-1));
