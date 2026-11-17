@@ -93,7 +93,7 @@ struct SimulationView::Impl {
     std::map<int,HWND> controls;
     std::vector<HWND> group_buttons;
     std::vector<RECT> cell_rects;
-    std::optional<std::size_t> pressed_group;
+    std::optional<std::size_t> pressed_target;
     POINT pressed_at{};
     struct Marker {RECT bounds;std::string text;POINT tip;};
     std::vector<Marker> markers;
@@ -396,7 +396,7 @@ struct SimulationView::Impl {
         return std::max(sp(22),static_cast<int>(box.bottom-box.top))+sp(8);
     }
     int array_layout(int available) {
-        pressed_group.reset();cell_rects.clear();markers.clear();limit_text.clear();limit_bounds={};
+        pressed_target.reset();cell_rects.clear();markers.clear();limit_text.clear();limit_bounds={};
         const bool pointer=spec.view==SimulationViewMode::groups||stepping();
         const auto& state=frame();
         const auto marker_text=[&](std::size_t index){std::string result;
@@ -531,16 +531,26 @@ struct SimulationView::Impl {
         requested=std::max(1,requested);
         return layout_valid&&requested==width?height:arrange(requested,true);
     }
-    // Resolve a click against the boxes actually laid out for the current
-    // width and text scale, not an estimated grid or a color.
-    std::optional<std::size_t> group_at(POINT point)const {
-        if(spec.view!=SimulationViewMode::groups&&spec.view!=SimulationViewMode::candidates)return std::nullopt;
+    // Use rendered cell rectangles, regardless of text scale or row wrapping.
+    // The walkthrough frame represents a counted element, never a future
+    // maximum/tie decision. Group views retain their existing selection.
+    std::optional<std::size_t> target_at(POINT point)const {
+        if(spec.view==SimulationViewMode::array||spec.view==SimulationViewMode::summary)return std::nullopt;
         for(std::size_t cell=0;cell<cell_rects.size();++cell){
             if(!PtInRect(&cell_rects[cell],point))continue;
-            const auto found=std::ranges::find_if(trace.groups,[cell](const SimulationGroup& group){
-                return cell>=group.begin&&cell<group.end;});
-            if(found!=trace.groups.end())return static_cast<std::size_t>(found-trace.groups.begin());
-            break;
+            if(spec.view==SimulationViewMode::walkthrough){
+                const auto observed=std::ranges::find_if(trace.frames,[cell](const SimulationFrame& frame){
+                    return (frame.phase==SimulationPhase::start||frame.phase==SimulationPhase::advance)&&
+                        frame.end==cell+1&&frame.begin<=cell;
+                });
+                if(observed!=trace.frames.end())
+                    return static_cast<std::size_t>(observed-trace.frames.begin());
+                return std::nullopt;
+            }
+            const auto group=std::ranges::find_if(trace.groups,[cell](const SimulationGroup& run){
+                return cell>=run.begin&&cell<run.end;});
+            if(group!=trace.groups.end())return static_cast<std::size_t>(group-trace.groups.begin());
+            return std::nullopt;
         }
         return std::nullopt;
     }
@@ -674,39 +684,38 @@ struct SimulationView::Impl {
         auto* self=reinterpret_cast<Impl*>(GetWindowLongPtrW(item,GWLP_USERDATA));
         if(message==WM_NCCREATE){self=static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);self->canvas=item;SetWindowLongPtrW(item,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
         if(!self)return DefWindowProcW(item,message,wp,lp);
-        // The lesson reader captures down/up to distinguish clicks from page
-        // panning. Remember a cell before delegation and accept it only after
-        // an unmoved release on that same cell. Never intercept dragging.
+        // The lesson reader captures down/up for panning. Accept a computed
+        // target only after a stationary release on its original cell.
         if(message==WM_LBUTTONDOWN){
-            self->pressed_group.reset();
+            self->pressed_target.reset();
             if(!(wp&(MK_SHIFT|MK_CONTROL|MK_RBUTTON|MK_MBUTTON))){
                 self->pressed_at={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
-                self->pressed_group=self->group_at(self->pressed_at);
+                self->pressed_target=self->target_at(self->pressed_at);
             }
-        }else if(message==WM_MOUSEMOVE&&self->pressed_group){
+        }else if(message==WM_MOUSEMOVE&&self->pressed_target){
             if(!(wp&MK_LBUTTON)||std::abs(GET_X_LPARAM(lp)-self->pressed_at.x)>self->px(8)||
-                std::abs(GET_Y_LPARAM(lp)-self->pressed_at.y)>self->px(8))self->pressed_group.reset();
+                std::abs(GET_Y_LPARAM(lp)-self->pressed_at.y)>self->px(8))self->pressed_target.reset();
         }else if(message==WM_LBUTTONDBLCLK||message==WM_CANCELMODE||message==WM_CAPTURECHANGED)
-            self->pressed_group.reset();
-        std::optional<std::size_t> clicked_group;
+            self->pressed_target.reset();
+        std::optional<std::size_t> clicked_target;
         if(message==WM_LBUTTONUP){
             const POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
-            if(self->pressed_group&&!(wp&(MK_SHIFT|MK_CONTROL))&&
-                self->group_at(point)==self->pressed_group&&
+            if(self->pressed_target&&!(wp&(MK_SHIFT|MK_CONTROL))&&
+                self->target_at(point)==self->pressed_target&&
                 std::abs(point.x-self->pressed_at.x)<=self->px(8)&&
-                std::abs(point.y-self->pressed_at.y)<=self->px(8))clicked_group=self->pressed_group;
-            self->pressed_group.reset();
+                std::abs(point.y-self->pressed_at.y)<=self->px(8))clicked_target=self->pressed_target;
+            self->pressed_target.reset();
         }
         std::optional<LRESULT> handled;
         if(self->callbacks.passive_gesture&&passive_message(message))
             handled=self->callbacks.passive_gesture(item,message,wp,lp);
-        if(clicked_group&&*clicked_group<self->count()){
-            self->go(*clicked_group);return 0;
+        if(clicked_target&&*clicked_target<self->count()){
+            self->go(*clicked_target);return 0;
         }
         if(handled&&message!=WM_NCDESTROY)return *handled;
         if(message==WM_SETCURSOR&&LOWORD(lp)==HTCLIENT){
             POINT point{};
-            if(GetCursorPos(&point)&&ScreenToClient(item,&point)&&self->group_at(point)){
+            if(GetCursorPos(&point)&&ScreenToClient(item,&point)&&self->target_at(point)){
                 SetCursor(LoadCursorW(nullptr,IDC_HAND));return TRUE;
             }
         }
@@ -770,6 +779,10 @@ void SimulationView::set_text_scale(int percentage){percentage=std::clamp(percen
 std::size_t SimulationView::step_index()const{return impl_->position;}
 std::size_t SimulationView::step_count()const{return impl_->count();}
 bool SimulationView::go_to_step(std::size_t index){return impl_->go(index);}
+std::optional<RECT> SimulationView::cell_bounds_in_canvas(std::size_t index) const {
+    if(index>=impl_->cell_rects.size())return std::nullopt;
+    return impl_->cell_rects[index];
+}
 void SimulationView::reset(){impl_->go(0);}
 std::vector<SimulationReadingRegion> SimulationView::reading_regions()const{return impl_->regions();}
 } // namespace lgaed::presentation

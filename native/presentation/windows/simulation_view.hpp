@@ -39,6 +39,8 @@ public:
     [[nodiscard]] std::size_t step_index() const;
     [[nodiscard]] std::size_t step_count() const;
     [[nodiscard]] bool go_to_step(std::size_t index);
+    // Current canvas-client geometry; read-only for native hit tests.
+    [[nodiscard]] std::optional<RECT> cell_bounds_in_canvas(std::size_t index) const;
     void reset();
     [[nodiscard]] std::vector<SimulationReadingRegion> reading_regions() const;
 private:

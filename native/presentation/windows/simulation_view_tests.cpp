@@ -61,19 +61,18 @@ void click(SimulationView& view,int id) {
     const auto button=GetDlgItem(view.window(),id);check(button&&IsWindowEnabled(button),"A required simulation button is absent or disabled");
     SendMessageW(button,BM_CLICK,0,0);pump();
 }
-// The fixture has six ordered cells in one row at the tested wide width.
-// Exercise the real Win32 canvas without injecting desktop-wide input.
-void click_group_cell(SimulationView& view,int cell,bool drag=false,bool modified=false) {
+// Click the center of the exact rendered cell, also when rows wrap.
+// Win32 messages stay in the isolated test host; no desktop input.
+void click_array_cell(SimulationView& view,std::size_t cell,bool drag=false,bool modified=false) {
     const auto canvas=GetDlgItem(view.window(),array_id);check(canvas,"Array canvas is missing");
-    RECT area{};GetClientRect(canvas,&area);
-    check(area.right>=700&&area.bottom>80,"Expected one visible row of six cells");
-    const int x=(cell*2+1)*area.right/12;
-    const int y=MulDiv(70,static_cast<int>(GetDpiForWindow(canvas)),96);
-    check(y<area.bottom,"Selected cell is outside the rendered canvas");
+    const auto rect=view.cell_bounds_in_canvas(cell);
+    check(rect.has_value(),"The selected cell does not exist");
+    const POINT point{(rect->left+rect->right)/2,(rect->top+rect->bottom)/2};
+    check(PtInRect(&*rect,point),"The rendered cell has no clickable interior");
     const auto keys=static_cast<WPARAM>(MK_LBUTTON|(modified?MK_CONTROL:0));
-    SendMessageW(canvas,WM_LBUTTONDOWN,keys,MAKELPARAM(x,y));
-    if(drag)SendMessageW(canvas,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(x+45,y));
-    SendMessageW(canvas,WM_LBUTTONUP,modified?MK_CONTROL:0,MAKELPARAM(x,y));pump();
+    SendMessageW(canvas,WM_LBUTTONDOWN,keys,MAKELPARAM(point.x,point.y));
+    if(drag)SendMessageW(canvas,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(point.x+45,point.y));
+    SendMessageW(canvas,WM_LBUTTONUP,modified?MK_CONTROL:0,MAKELPARAM(point.x,point.y));pump();
 }
 std::string native_text(HWND window) {
     std::wstring value(static_cast<std::size_t>(GetWindowTextLengthW(window))+1,L'\0');
@@ -362,6 +361,75 @@ void navigation(HWND host,const std::filesystem::path& captures) {
     view.set_text_scale(100);resize(view,1050);if(!captures.empty())capture(view.window(),captures/"walkthrough-end-boundary.bmp");
     check(changes>=6&&layouts==changes,"UI changes did not refresh layout and current narration together");
 }
+void walkthrough_cell_selection(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    const auto expected=build_simulation_trace(spec);
+    int changes=0,layouts=0;
+    SimulationCallbacks gestures{};
+    gestures.changed=[&]{++changes;};
+    gestures.layout_changed=[&]{++layouts;};
+    gestures.passive_gesture=[](HWND,UINT message,WPARAM,LPARAM)->std::optional<LRESULT>{
+        if(message==WM_LBUTTONDOWN||message==WM_LBUTTONUP)return LRESULT{0};
+        return std::nullopt;
+    };
+    SimulationView view(host,spec,"es",gestures);
+    resize(view,1050);
+    check(view.step_index()==0&&view.cell_bounds_in_canvas(5).has_value()&&
+        !view.cell_bounds_in_canvas(6).has_value(),
+        "Walkthrough did not expose exact rectangles for its current data");
+    const auto initial_key=view.reading_regions()[2].key;
+    click_array_cell(view,3);
+    check(view.step_index()==5&&expected.frames[5].phase==SimulationPhase::advance&&
+        text(view,explanation_id)==expected.frames[5].explanation&&
+        text(view,variables_id).find("inicio: 1\nfin (exclusivo): 4\nfrecuencia: 3")!=std::string::npos&&
+        text(view,output_id)=="-8:1\n",
+        "Index 3 must show its third observation, not a completed future decision");
+    check(SendMessageW(GetDlgItem(view.window(),step_selector_id),CB_GETCURSEL,0,0)==5,
+        "Click selection and keyboard step selector disagree");
+    click_array_cell(view,5);
+    check(view.step_index()==8&&expected.frames[8].phase==SimulationPhase::start&&
+        text(view,output_id)=="-8:1\n3:4\n",
+        "Last cell did not show its own start frame and prior output");
+    click_array_cell(view,0,true);click_array_cell(view,0,false,true);
+    check(view.step_index()==8,"Drag or Ctrl+click navigated the walkthrough");
+    click_array_cell(view,0);
+    check(view.step_index()==1&&expected.frames[1].phase==SimulationPhase::start&&
+        text(view,output_id).empty(),"First cell retained future output");
+    check(view.go_to_step(0)&&view.reading_regions()[2].key==initial_key,
+        "Returning to initial frame did not restore its reading identity");
+    view.set_text_scale(150);resize(view,360);bounds(view,"wrapped walkthrough selection");
+    click_array_cell(view,4);
+    check(view.step_index()==6&&text(view,explanation_id)==expected.frames[6].explanation&&
+        text(view,variables_id).find("frecuencia: 4")!=std::string::npos&&
+        text(view,output_id)=="-8:1\n",
+        "Zoomed multirow cell selected another element or revealed future output");
+    check(changes>=4&&changes==layouts&&spec==authored,
+        "Cell exploration failed to update narration or mutated the authored model");
+    const auto scenario=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(scenario,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(scenario));pump();
+    check(view.step_index()==0&&view.cell_bounds_in_canvas(3).has_value()&&
+        !view.cell_bounds_in_canvas(4).has_value(),
+        "A shorter scenario retained stale cell geometry");
+    click_array_cell(view,3);
+    check(view.step_index()==5&&text(view,output_id)=="4:2\n"&&
+        text(view,variables_id).find("frecuencia: 2")!=std::string::npos,
+        "New scenario clicks used stale frames from the previous input");
+    SendMessageW(scenario,CB_SETCURSEL,2,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(scenario));pump();
+    check(view.step_count()==1&&!view.cell_bounds_in_canvas(0).has_value(),
+        "The empty array kept a clickable stale cell");
+    const auto before=view.reading_regions();
+    const auto canvas=GetDlgItem(view.window(),array_id);
+    SendMessageW(canvas,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(10,10));
+    SendMessageW(canvas,WM_LBUTTONUP,0,MAKELPARAM(10,10));pump();
+    const auto after=view.reading_regions();
+    check(view.step_index()==0&&after.size()==before.size()&&
+        std::equal(before.begin(),before.end(),after.begin(),[](const auto& a,const auto& b){
+            return a.key==b.key&&a.source_text==b.source_text;}),
+        "An empty-array click fabricated a step or changed reading state");
+}
 void editable_data(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);SimulationView view(host,spec,"es");resize(view,820);
     check(view.go_to_step(view.step_count()-1),"Cannot prepare an edited data test");
@@ -421,15 +489,15 @@ void modes(HWND host,const std::filesystem::path& captures) {
             check(text(view,variables_id).find("inicio: 1\nfin (exclusivo): 5")!=std::string::npos&&text(view,variables_id).find("frecuencia: 4")!=std::string::npos,
                 "Group selection showed another group's interval or frequency");
             check(name(GetDlgItem(view.window(),array_id)).find("[1, 5)")!=std::string::npos,"The selected interval has no non-color description");
-            click_group_cell(view,5);
+            click_array_cell(view,5);
             check(view.step_index()==2&&SendMessageW(GetDlgItem(view.window(),group_first_id+2),BM_GETCHECK,0,0)==BST_CHECKED&&
                 text(view,variables_id).find("frecuencia: 1")!=std::string::npos,
                 "Clicking a rendered cell did not select its group after the parent consumed mouse events");
-            click_group_cell(view,0,true);
+            click_array_cell(view,0,true);
             check(view.step_index()==2,"Dragging from a cell was incorrectly treated as a click");
-            click_group_cell(view,0,false,true);
+            click_array_cell(view,0,false,true);
             check(view.step_index()==2,"Ctrl+click on an array cell changed the selected group");
-            click_group_cell(view,0);
+            click_array_cell(view,0);
             check(view.step_index()==0&&SendMessageW(GetDlgItem(view.window(),group_first_id),BM_GETCHECK,0,0)==BST_CHECKED&&
                 text(view,variables_id).find("frecuencia: 1")!=std::string::npos,
                 "Clicking the first cell did not restore its group or radio selection");
@@ -455,11 +523,13 @@ void modes(HWND host,const std::filesystem::path& captures) {
                 reinterpret_cast<LPARAM>(navigation_selector));pump();
             check(view.step_index()==2&&text(view,output_id)=="-8:1\n3:4\n10:1\n",
                 "Jumping to a candidate group did not refresh the complete trace");
-            click_group_cell(view,2);
+            click_array_cell(view,2);
             check(view.step_index()==1&&text(view,output_id)=="-8:1\n3:4\n"&&
                 SendMessageW(navigation_selector,CB_GETCURSEL,0,0)==1,
                 "Clicking a member of the middle group did not select its completed candidate frame");
         }else{
+            click_array_cell(view,0);
+            check(view.step_index()==0,"Static array or summary reacted to a cell click");
             check(view.step_count()==1&&!(GetWindowLongPtrW(GetDlgItem(view.window(),next_id),GWL_STYLE)&WS_VISIBLE),"A static mode has visible step controls");
             if(mode==SimulationViewMode::summary)check(text(view,variables_id)=="máxima: 4\nmayores: 3","Summary values were not calculated");
             else {check(name(GetDlgItem(view.window(),array_id)).find("Grupo 2: índices 1 a 4")!=std::string::npos,
@@ -797,6 +867,7 @@ int main(int argc,char** argv)try {
         pump(host.value);
     };
     run("navigation",[&]{navigation(host.value,captures);});
+    run("walkthrough_cell_selection",[&]{walkthrough_cell_selection(host.value);});
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});

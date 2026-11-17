@@ -89,11 +89,16 @@ Las etiquetas permiten presentar nombres adecuados a la explicación del curso;
 no cambian el significado de las variables del modelo.
 
 En **groups** y **candidates**, pulsar una casilla del array selecciona su grupo
-calculado. El clic no requiere acertar un color ni una respuesta; selecciona el
-intervalo al que pertenece la posición. Los arrastres, los clics modificados y
-los espacios entre casillas no cambian la selección. Los botones de grupos y
-el selector de fases mantienen la alternativa accesible por teclado. En las
-vistas de resumen y array, las casillas no cambian el estado.
+calculado. En **walkthrough**, pulsar una casilla muestra el paso en el que
+**se acaba de contar ese elemento**: `start` si es el primero del grupo y
+`advance` si es uno de los siguientes. La decisión `newMaximum`, `tie` o
+`belowMaximum` no se anticipa, porque se produce después de terminar el grupo.
+
+El clic no requiere acertar un color ni una respuesta. Los arrastres, los clics
+modificados y los espacios entre casillas no cambian la selección. El cálculo
+utiliza los rectángulos reales, incluso con zoom y varias filas. Los botones de
+grupos y el selector de fases mantienen la alternativa accesible por teclado.
+En las vistas de resumen y array, las casillas no cambian el estado.
 
 ## Datos, escenarios y edición
 
