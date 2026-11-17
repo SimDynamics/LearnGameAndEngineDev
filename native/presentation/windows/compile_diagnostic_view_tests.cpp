@@ -4,6 +4,7 @@
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "presentation/windows/lesson_view.hpp"
+#include "presentation/windows/compiler_diagnostic_display.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "native_build_config.hpp"
 
@@ -11,6 +12,7 @@
 #include <ole2.h>
 #include <richedit.h>
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <iostream>
 #include <stdexcept>
@@ -103,6 +105,67 @@ std::string candidate(const curriculum::Block& block,std::string_view statement)
     const auto position=source.rfind("    return 0;");check(position!=std::string::npos,"Reviewed diagnostic has no final main return");
     source.insert(position,"    "+std::string(statement)+"\n");return source;
 }
+void compact_diagnostic_path_cases(){
+    const std::array roots{
+        std::filesystem::path(L"C:\\QA\\Código & (espacio)\\run-1\\candidate\\project"),
+        std::filesystem::path(L"C:\\QA\\Código & (espacio)\\run-1\\control\\project"),
+        std::filesystem::path(L"C:\\QA\\Código & (espacio)\\run-1\\candidate"),
+        std::filesystem::path(L"C:\\QA\\Código & (espacio)\\run-1\\control"),
+        std::filesystem::path(L"C:\\QA\\Código & (espacio)\\run-1"),
+        std::filesystem::path(L"C:\\QA\\cmake\\p"),
+        std::filesystem::path(L"C:\\QA\\cmake"),
+        std::filesystem::path(L"\\\\servidor\\curso\\proyecto"),
+        std::filesystem::path{}};
+    const auto expect=[&](std::wstring_view original,std::wstring_view expected,std::string_view label){
+        const auto actual=compact_compiler_diagnostic_paths(original,roots);
+        check(actual==expected,label);
+    };
+    expect(L"C:\\QA\\Código & (espacio)\\run-1\\candidate\\main.cpp(7,12): error C2065: nombre desconocido.\r\n",
+        L"main.cpp(7,12): error C2065: nombre desconocido.\r\n","MSVC single-file source/coordinates/message changed");
+    expect(L"  C:/QA/CÓDIGO & (ESPACIO)/RUN-1/candidate/project/src/main.cpp(18,5) : error C2143: falta ';'\n",
+        L"  src/main.cpp(18,5) : error C2143: falta ';'\n","Unicode/case/slash mapping or project-relative path failed");
+    expect(L"C:\\QA\\Código & (espacio)\\run-1\\control\\project\\tests\\main.cpp(9): note: aquí\n",
+        L"tests\\main.cpp(9): note: aquí\n","The control project or a same-basename file lost its relative folder");
+    expect(L"C:\\QA\\Código & (espacio)\\run-1\\control\\main.cpp(1,1): error C1189: control\n",
+        L"main.cpp(1,1): error C1189: control\n","The single-file control root was not shortened");
+    expect(L"C:/QA/Código & (espacio)/run-1/main.cpp:4:9: error: expected ';'\r\n",
+        L"main.cpp:4:9: error: expected ';'\r\n","Clang coordinates or CRLF changed");
+    expect(L"In file included from C:/QA/Código & (espacio)/run-1/candidate/project/include/uno.hpp:3:\n"
+        L"                 from C:/QA/Código & (espacio)/run-1/candidate/project/include/dos.hpp:8,\n",
+        L"In file included from include/uno.hpp:3:\n"
+        L"                 from include/dos.hpp:8,\n","The include stack lost its message or relative headers");
+    expect(L"CMake Error at C:/QA/cmake/p/CMakeLists.txt:14 (add_executable):\r\n  No SOURCES given to target.\r\n",
+        L"CMake Error at CMakeLists.txt:14 (add_executable):\r\n  No SOURCES given to target.\r\n",
+        "The CMake location or following explanation changed");
+    expect(L"CMake Warning (dev) at C:/QA/cmake/p/cmake/opciones.cmake:4 (message):\n"
+        L"Call Stack (most recent call first):\n  C:/QA/cmake/p/CMakeLists.txt:9 (include)\n",
+        L"CMake Warning (dev) at cmake/opciones.cmake:4 (message):\n"
+        L"Call Stack (most recent call first):\n  CMakeLists.txt:9 (include)\n","CMake warning/call-stack locations failed");
+    expect(L"C:\\QA\\Código & (espacio)\\run-1\\program.exe : fatal error LNK1120: 1 unresolved externals\r\n",
+        L"program.exe : fatal error LNK1120: 1 unresolved externals\r\n","MSVC linker artifact location was not shortened");
+    expect(L"C:\\QA\\cmake\\CMakeFiles\\app.dir\\src\\main.cpp.obj : error LNK2019: símbolo ausente\n",
+        L"CMakeFiles\\app.dir\\src\\main.cpp.obj : error LNK2019: símbolo ausente\n","CMake build-relative linker artifact lost its folders");
+    expect(L"\\\\servidor\\curso\\proyecto\\src\\entrada.cpp(2,3): error C2065: dato\n",
+        L"src\\entrada.cpp(2,3): error C2065: dato\n","UNC source roots failed");
+    const std::wstring unchanged=
+        L"C:/QA/cmake_extra/p/main.cpp:1:2: error: different folder\r\n"
+        L"D:/externo/include/main.hpp(5,7): note: archivo externo\r\n"
+        L"src/main.cpp:6:2: error: ya era relativo\r\n"
+        L"  4 | const char* p = \"C:/QA/cmake/p/main.cpp:1:2: error: literal\";\r\n"
+        L"    |                 ^~~~~~~~~~~~~~~~~~~~~\r\n"
+        L"  const char* p = \"C:/QA/cmake/p/main.cpp(1,2): texto\";\r\n"
+        L"-- Build files have been written to: C:/QA/cmake\r\n"
+        L"C:/QA/cmake/p/main.cpp: no son coordenadas\r\n";
+    expect(unchanged,unchanged,"Unknown roots, source excerpts, carets, literal messages or directory boundaries changed");
+    expect(L"C:/QA/cmake/p/carpeta(2,3)/main.cpp(4,5): error C2065: dato",
+        L"carpeta(2,3)/main.cpp(4,5): error C2065: dato","Parentheses in a directory were mistaken for source coordinates");
+    expect(L"",L"","An empty compiler diagnostic changed");
+    const std::wstring raw=L"C:/QA/cmake/p/src/main.cpp:2:3: error: original\n";
+    const auto raw_copy=raw;
+    (void)compact_compiler_diagnostic_paths(raw,roots);
+    check(raw==raw_copy,"The display transformation changed the retained raw diagnostic");
+    std::cout<<"PASS compiler diagnostic display: owned relative paths, MSVC/Clang/CMake/linker, control/candidate, Unicode/UNC, exact messages/carets and retained raw text\n";
+}
 void five_real_diagnostic_views(){
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido";
     std::size_t completed=0;
@@ -157,7 +220,13 @@ void five_real_diagnostic_views(){
         check(fixture.text(position->block,34).starts_with("Compilación aceptada."),"The valid initial diagnostic program did not compile");
         explanation_region(fixture.view,position->block,explanation,false);retained();
         fixture.replace(position->block,"#error QA_UNRELATED_DIAGNOSTIC\n"+target.initial_code);fixture.run(position->block);
-        check(fixture.text(position->block,14).find("QA_UNRELATED_DIAGNOSTIC")!=std::string::npos,"An unrelated build error lost its real diagnostic");
+        const auto diagnostic=fixture.text(position->block,14);
+        check(diagnostic.find("QA_UNRELATED_DIAGNOSTIC")!=std::string::npos,"An unrelated build error lost its real diagnostic");
+        check(diagnostic.starts_with("main.cpp(")||diagnostic.find("\nmain.cpp(")!=std::string::npos,
+            "The real diagnostic console did not display its source-relative location");
+        check(diagnostic.find(utf8(fixture.environment.paths.projects.wstring()))==std::string::npos&&
+            diagnostic.find(utf8(fixture.environment.paths.projects.generic_wstring()))==std::string::npos,
+            "The real diagnostic console exposed the private absolute run path");
         check(!windows::compiler_puzzle_completed(fixture.saved(),lesson,target)&&fixture.text(position->block,4).empty()&&!lesson_page_state(fixture.view).can_next,"An unrelated syntax/build error accredited or unlocked the diagnostic objective");
         reader_goal(fixture.view,position->block,false);explanation_region(fixture.view,position->block,explanation,false);retained();
         const auto solved_source=candidate(target,plan.statement);fixture.replace(position->block,solved_source);fixture.select(position->block,5,8);fixture.run(position->block);
@@ -184,8 +253,12 @@ void five_real_diagnostic_views(){
     std::cout<<"PASS "<<completed<<" hidden real U9 diagnostic editors: immutable pre-contract adoption exactly reconstructs each current authored block/explanation; fresh initial/error/expected rejection, no runtime, sticky credit/draft/selection, gates, scoped Reset, original preferences/hearts/assets; other stdout receipts explicitly synthetic\n";
 }
 }
-int main(){const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
+int main(int argc,char** argv){
+    const bool paths_only=argc==2&&std::string_view(argv[1])=="--diagnostic-paths";
+    if(argc>1&&!paths_only)return 2;
+    const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);int result=0;
-    try{five_real_diagnostic_views();}catch(const std::exception& error){std::cerr<<error.what()<<'\n';result=1;}
+    try{compact_diagnostic_path_cases();if(!paths_only)five_real_diagnostic_views();}
+    catch(const std::exception& error){std::cerr<<error.what()<<'\n';result=1;}
     OleUninitialize();return result;
 }

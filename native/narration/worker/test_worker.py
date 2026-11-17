@@ -355,6 +355,35 @@ class WindowsNarrationWorkerTest(unittest.TestCase):
         spoken = " ".join(p["spokenText"] for p in self.worker.ask("plan", text=path, language="es")["segments"])
         self.assertNotIn("barra inversa barra inversa", spoken)
 
+    def test_11_residual_tilde_generates_pcm_and_reuses_cache_with_optional_alignment(self):
+        # A private QA directory requires fresh synthesis for these previously
+        # unsupported readings and leaves every existing recording untouched.
+        folder = CACHE / f"residual-tilde-{time.time_ns()}"
+        for source in ("El signo ~.", "La marca (~) permanece.",
+                       "El dato texto~final conserva 5~7."):
+            with self.subTest(source=source):
+                part, result = self.prepare(source, "es", "ef_dora", folder)
+                self.assertIn("~", part["preparedText"])
+                self.assertFalse(result["cacheHit"], result)
+                self.assertEqual("synthesized", result["audioOrigin"])
+                # Alignment is observational. Valid PCM remains usable when
+                # the exact lexical trace conservatively returns no timings.
+                self.assertEqual(bool(result["timings"]), result["alignmentAvailable"])
+                previous = 0
+                for timing in result["timings"]:
+                    self.assertTrue(0 <= timing["start"] < timing["end"] <= len(source))
+                    self.assertTrue(previous <= timing["startMs"] < timing["endMs"] <= result["durationMs"])
+                    previous = timing["startMs"]
+                audio = Path(result["wav"])
+                saved = (audio.stat().st_mtime_ns, hashlib.sha256(audio.read_bytes()).hexdigest())
+                repeated = self.worker.ask("prepare", text=part["text"], preparedText=part["preparedText"],
+                    language="es", voice="ef_dora", threads=2, outputDirectory=str(folder))
+                self.assertTrue(repeated["cacheHit"])
+                self.assertEqual(result["key"], repeated["key"])
+                self.assertEqual(result["timings"], repeated["timings"])
+                self.assertEqual(saved, (audio.stat().st_mtime_ns, hashlib.sha256(audio.read_bytes()).hexdigest()))
+        print(f"PASS residual tilde: real Spanish PCM, optional alignment and cache reuse; samples {folder}; human listening remains separate")
+
 
 class HistoricalDoraPackTest(unittest.TestCase):
     """Explicit historical export never needs models, catalog entries or student state."""
