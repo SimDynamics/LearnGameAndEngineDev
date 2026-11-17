@@ -39,8 +39,12 @@ public:
     [[nodiscard]] std::size_t step_index() const;
     [[nodiscard]] std::size_t step_count() const;
     [[nodiscard]] bool go_to_step(std::size_t index);
-    // Current canvas-client geometry; read-only for native hit tests.
+    // Current array-cell geometry; read-only for native hit tests.
     [[nodiscard]] std::optional<RECT> cell_bounds_in_canvas(std::size_t index) const;
+    // Currently visible histogram card for the ORIGINAL group index (not
+    // its filtered slot); clipped to the scrolled chart viewport.
+    [[nodiscard]] std::optional<RECT> frequency_card_bounds_in_canvas(
+        std::size_t group_index) const;
     void reset();
     [[nodiscard]] std::vector<SimulationReadingRegion> reading_regions() const;
 private:

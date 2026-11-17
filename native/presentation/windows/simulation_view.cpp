@@ -119,8 +119,8 @@ struct SimulationView::Impl {
     std::map<int,HWND> controls;
     std::vector<HWND> group_buttons;
     std::vector<RECT> cell_rects;
-    std::optional<std::size_t> pressed_target;
-    POINT pressed_at{};
+    std::optional<std::size_t> pressed_target,pressed_frequency_group;
+    POINT pressed_at{},frequency_pressed_at{};
     struct Marker {RECT bounds;std::string text;POINT tip;};
     std::vector<Marker> markers;
     RECT limit_bounds{};
@@ -646,6 +646,7 @@ struct SimulationView::Impl {
         }
         trace=std::move(candidate);source_positions=std::move(next_source_positions);
         frequency_scroll=0;frequency_total_height=0;frequency_candidates_only=false;
+        pressed_frequency_group.reset();
         input_key=std::move(identity);position=0;error.clear();
         if(replacement){input_format=next_format;set_edit_text(item(input_id),*replacement);}
         rebuild_groups();rebuild_steps();update();publish();
@@ -739,6 +740,45 @@ struct SimulationView::Impl {
         GetScrollInfo(frequencies,SB_VERT,&actual);
         frequency_scroll=actual.nPos;
         InvalidateRect(frequencies,nullptr,FALSE);
+    }
+    // Use one geometry calculation for painting, hit testing and native
+    // regression tests. Slots map to original group indices through
+    // frequency_indices(), also after selecting the candidate-only filter.
+    RECT frequency_card_rect(std::size_t slot,std::size_t visible,int client_width)const {
+        const int gap=sp(8);
+        const int columns=frequency_columns(std::max(1,client_width),visible);
+        const int card_width=std::max(1,(client_width-gap*(columns-1))/columns);
+        const int row=static_cast<int>(slot/static_cast<std::size_t>(columns));
+        const int column=static_cast<int>(slot%static_cast<std::size_t>(columns));
+        const int left=column*(card_width+gap);
+        const int top=sp(8)+row*sp(138)-frequency_scroll;
+        return {left,top,left+card_width,top+sp(130)};
+    }
+    std::optional<RECT> frequency_bounds_in_canvas(std::size_t group_index)const {
+        if(!frequencies||!(GetWindowLongPtrW(frequencies,GWL_STYLE)&WS_VISIBLE))
+            return std::nullopt;
+        const auto indices=frequency_indices();
+        const auto it=std::ranges::find(indices,group_index);
+        if(it==indices.end())return std::nullopt;
+        RECT viewport{};GetClientRect(frequencies,&viewport);
+        const auto card=frequency_card_rect(
+            static_cast<std::size_t>(it-indices.begin()),indices.size(),viewport.right);
+        RECT clipped{};
+        if(!IntersectRect(&clipped,&card,&viewport))return std::nullopt;
+        return clipped;
+    }
+    std::optional<std::size_t> frequency_target_at(POINT point)const {
+        // Summary has no navigable state; the histogram is read-only there.
+        if(spec.view!=SimulationViewMode::walkthrough&&
+                spec.view!=SimulationViewMode::candidates)return std::nullopt;
+        RECT viewport{};GetClientRect(frequencies,&viewport);
+        if(!PtInRect(&viewport,point))return std::nullopt;
+        const auto indices=frequency_indices();
+        for(std::size_t slot=0;slot<indices.size();++slot){
+            const auto card=frequency_card_rect(slot,indices.size(),viewport.right);
+            if(PtInRect(&card,point))return indices[slot];
+        }
+        return std::nullopt;
     }
     int statistics_layout(int available) {
         const int gap=sp(10);int top=0;
@@ -999,18 +1039,13 @@ struct SimulationView::Impl {
         const auto indices=frequency_indices();
         const auto visible=indices.size();
         if(!visible)return;
-        const int gap=sp(8),columns=frequency_columns(std::max(1,area.right),visible);
-        const int card_width=std::max(1,(area.right-gap*(columns-1))/columns);
         std::size_t greatest=1;
         for(const auto i:indices)
             greatest=std::max(greatest,trace.groups[i].end-trace.groups[i].begin);
         for(std::size_t i=0;i<visible;++i){
-            const int row=static_cast<int>(i/static_cast<std::size_t>(columns));
-            const int col=static_cast<int>(i%static_cast<std::size_t>(columns));
-            const int left=col*(card_width+gap);
-            const int top=sp(8)+row*sp(138)-frequency_scroll;
-            if(top+sp(130)<=0||top>=area.bottom)continue;
-            const RECT card{left,top,left+card_width,top+sp(130)};
+            const RECT card=frequency_card_rect(i,visible,area.right);
+            if(card.bottom<=0||card.top>=area.bottom)continue;
+            const int left=card.left,top=card.top,card_width=card.right-card.left;
             const auto group_index=indices[i];
             const auto& group=trace.groups[group_index];
             const auto count=group.end-group.begin;
@@ -1116,7 +1151,7 @@ struct SimulationView::Impl {
         else if(id==reset_id)go(0);
         else if(id==frequency_filter_id&&completed_groups()){
             frequency_candidates_only=!frequency_candidates_only;
-            frequency_scroll=0;update();publish();
+            frequency_scroll=0;pressed_frequency_group.reset();update();publish();
         }
         else if(id==previous_decision_id){if(const auto target=previous_decision())go(*target);}
         else if(id==next_decision_id){if(const auto target=next_decision())go(*target);}
@@ -1211,9 +1246,48 @@ struct SimulationView::Impl {
             if(key&&key->message==WM_KEYDOWN&&key->wParam==VK_TAB)return 0;
             return DLGC_WANTARROWS;
         }
-        if(self->callbacks.passive_gesture&&passive_message(message)){
-            const auto handled=self->callbacks.passive_gesture(item,message,wp,lp);
-            if(handled&&message!=WM_NCDESTROY)return *handled;
+        // Respect the reader's pan gesture: a group is selected only after
+        // a stationary, unmodified release on the very same visible card.
+        if(message==WM_LBUTTONDOWN){
+            self->pressed_frequency_group.reset();
+            if(!(wp&(MK_SHIFT|MK_CONTROL|MK_RBUTTON|MK_MBUTTON))){
+                self->frequency_pressed_at={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
+                self->pressed_frequency_group=self->frequency_target_at(self->frequency_pressed_at);
+            }
+        }else if(message==WM_MOUSEMOVE&&self->pressed_frequency_group){
+            if(!(wp&MK_LBUTTON)||
+                    std::abs(GET_X_LPARAM(lp)-self->frequency_pressed_at.x)>self->px(8)||
+                    std::abs(GET_Y_LPARAM(lp)-self->frequency_pressed_at.y)>self->px(8))
+                self->pressed_frequency_group.reset();
+        }else if(message==WM_LBUTTONDBLCLK||message==WM_CANCELMODE||
+                 message==WM_CAPTURECHANGED)
+            self->pressed_frequency_group.reset();
+        std::optional<std::size_t> clicked_group;
+        if(message==WM_LBUTTONUP){
+            const POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
+            if(self->pressed_frequency_group&&!(wp&(MK_SHIFT|MK_CONTROL))&&
+                    self->frequency_target_at(point)==self->pressed_frequency_group&&
+                    std::abs(point.x-self->frequency_pressed_at.x)<=self->px(8)&&
+                    std::abs(point.y-self->frequency_pressed_at.y)<=self->px(8))
+                clicked_group=self->pressed_frequency_group;
+            self->pressed_frequency_group.reset();
+        }
+        std::optional<LRESULT> handled;
+        if(self->callbacks.passive_gesture&&passive_message(message))
+            handled=self->callbacks.passive_gesture(item,message,wp,lp);
+        if(clicked_group){
+            const auto destination=self->spec.view==SimulationViewMode::walkthrough?
+                self->trace.candidate_frames.at(*clicked_group):*clicked_group;
+            self->go(destination);
+            return 0;
+        }
+        if(handled&&message!=WM_NCDESTROY)return *handled;
+        if(message==WM_SETCURSOR&&LOWORD(lp)==HTCLIENT){
+            POINT point{};
+            if(GetCursorPos(&point)&&ScreenToClient(item,&point)&&
+                    self->frequency_target_at(point)){
+                SetCursor(LoadCursorW(nullptr,IDC_HAND));return TRUE;
+            }
         }
         RECT viewport{};GetClientRect(item,&viewport);
         if(message==WM_VSCROLL){
@@ -1318,6 +1392,10 @@ bool SimulationView::go_to_step(std::size_t index){return impl_->go(index);}
 std::optional<RECT> SimulationView::cell_bounds_in_canvas(std::size_t index) const {
     if(index>=impl_->cell_rects.size())return std::nullopt;
     return impl_->cell_rects[index];
+}
+std::optional<RECT> SimulationView::frequency_card_bounds_in_canvas(
+        std::size_t group_index) const {
+    return impl_->frequency_bounds_in_canvas(group_index);
 }
 void SimulationView::reset(){impl_->go(0);}
 std::vector<SimulationReadingRegion> SimulationView::reading_regions()const{return impl_->regions();}

@@ -322,6 +322,23 @@ grupos que ya se han examinado; **summary** muestra el resultado de todos
 los grupos. La vista de selección **groups** conserva sus propios botones
 y la vista **array** sólo presenta las casillas, sin barras duplicadas.
 
+En **walkthrough** y **candidates**, pulsar una tarjeta visible del
+histograma permite volver a la decisión ya calculada de ese grupo. La
+selección corresponde siempre al **índice real del grupo**, aunque esté
+desplazado en el gráfico o se active **Mostrar solo candidatos**.
+Al elegir una tarjeta, se recuperan los valores, la explicación, la
+salida y el paso exacto de esa decisión; no se vuelven a ejecutar
+instrucciones ni se acredita el ejercicio.
+
+Nunca se puede pulsar para llegar a un grupo todavía no terminado.
+El clic requiere pulsar y soltar sobre la misma tarjeta, sin arrastrar
+ni usar teclas modificadoras; tampoco se navega por doble clic.
+Los espacios entre tarjetas y las áreas ocultas tras el desplazamiento
+no son destinos. El puntero indica cuándo una tarjeta es seleccionable.
+El selector de pasos, los botones de decisión y las casillas del array
+siguen ofreciendo las rutas alternativas por teclado y ratón.
+En **summary**, las barras son informativas y no cambian el estado.
+
 Las barras utilizan como escala vertical la mayor frecuencia entre los
 **grupos ya visibles**. Por eso, una barra anterior puede cambiar de altura
 relativa cuando un grupo posterior alcanza un máximo mayor: no cambió la

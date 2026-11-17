@@ -83,6 +83,24 @@ void click_array_cell(SimulationView& view,std::size_t cell,bool drag=false,bool
     if(drag)SendMessageW(canvas,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(point.x+45,point.y));
     SendMessageW(canvas,WM_LBUTTONUP,modified?MK_CONTROL:0,MAKELPARAM(point.x,point.y));pump();
 }
+// Hit testing uses the chart's actual client coordinates, clipped to the
+// visible viewport even when the group has been scrolled or filtered.
+void click_frequency_card(SimulationView& view,std::size_t group,
+        bool drag=false,bool modified=false,bool double_click=false) {
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    check(chart,"The native histogram is missing");
+    const auto rect=view.frequency_card_bounds_in_canvas(group);
+    check(rect.has_value(),"The requested histogram card is not visible");
+    const POINT point{(rect->left+rect->right)/2,(rect->top+rect->bottom)/2};
+    check(PtInRect(&*rect,point),"Histogram card has no clickable interior");
+    const auto keys=static_cast<WPARAM>(MK_LBUTTON|(modified?MK_CONTROL:0));
+    SendMessageW(chart,WM_LBUTTONDOWN,keys,MAKELPARAM(point.x,point.y));
+    if(double_click)SendMessageW(chart,WM_LBUTTONDBLCLK,keys,MAKELPARAM(point.x,point.y));
+    if(drag)SendMessageW(chart,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(point.x+45,point.y));
+    SendMessageW(chart,WM_LBUTTONUP,modified?MK_CONTROL:0,
+        MAKELPARAM(point.x,point.y));
+    pump();
+}
 std::string native_text(HWND window) {
     std::wstring value(static_cast<std::size_t>(GetWindowTextLengthW(window))+1,L'\0');
     value.resize(static_cast<std::size_t>(GetWindowTextW(window,value.data(),static_cast<int>(value.size()))));return utf8(value);
@@ -319,6 +337,142 @@ void group_colors_are_visible(HWND canvas) {
     const auto first=GetPixel(dc,inset,y),second=GetPixel(dc,bounds.right/6+inset,y),third=GetPixel(dc,bounds.right/3+inset,y);
     SelectObject(dc,old);DeleteObject(bitmap);DeleteDC(dc);ReleaseDC(canvas,screen);
     check(first!=CLR_INVALID&&first!=second&&second==third,"Array mode did not visibly distinguish equal-value groups by color");
+}
+void histogram_card_navigation(HWND host) {
+    const auto input=fixture(SimulationViewMode::walkthrough);
+    const auto authored=input;
+    const auto expected=build_simulation_trace(input);
+    int changes=0,layouts=0;
+    SimulationCallbacks gestures{};
+    gestures.changed=[&]{++changes;};
+    gestures.layout_changed=[&]{++layouts;};
+    // A consuming reader parent must not suppress a valid short click.
+    gestures.passive_gesture=[](HWND,UINT message,WPARAM,LPARAM)->std::optional<LRESULT>{
+        if(message==WM_LBUTTONDOWN||message==WM_LBUTTONUP)return LRESULT{0};
+        return std::nullopt;
+    };
+    SimulationView view(host,input,"es",gestures);resize(view,850);
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    check(!view.frequency_card_bounds_in_canvas(0)&&
+        !view.frequency_card_bounds_in_canvas(1),
+        "An initial walkthrough exposed a future card for clicking");
+    check(view.go_to_step(7)&&view.frequency_card_bounds_in_canvas(0)&&
+        view.frequency_card_bounds_in_canvas(1)&&
+        !view.frequency_card_bounds_in_canvas(2),
+        "A partially observed later group became clickable prematurely");
+    const auto before=changes;
+    click_frequency_card(view,0,true);
+    click_frequency_card(view,0,false,true);
+    click_frequency_card(view,0,false,false,true);
+    check(view.step_index()==7&&changes==before,
+        "Dragging, Ctrl+click or double-click incorrectly navigated the chart");
+    SendMessageW(chart,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(1,1));
+    SendMessageW(chart,WM_LBUTTONUP,0,MAKELPARAM(1,1));pump();
+    check(view.step_index()==7,"Clicking outside any card changed the computed step");
+    click_frequency_card(view,0);
+    check(view.step_index()==expected.candidate_frames[0]&&
+        text(view,output_id)=="-8:1\n"&&
+        text(view,step_id)=="Paso 3 de 11"&&
+        !view.frequency_card_bounds_in_canvas(1),
+        "The first bar did not jump to its completed decision without future output");
+    check(view.go_to_step(9),"Cannot prepare all completed histogram groups");
+    click_frequency_card(view,1);
+    check(view.step_index()==expected.candidate_frames[1]&&
+        text(view,output_id)=="-8:1\n3:4\n"&&
+        SendMessageW(GetDlgItem(view.window(),step_selector_id),CB_GETCURSEL,0,0)==
+            static_cast<LRESULT>(expected.candidate_frames[1]),
+        "Clicking the second bar selected a different group or stale step selector");
+    check(view.go_to_step(9),"Cannot prepare filtered histogram");
+    click(view,frequency_filter_id);
+    check(!view.frequency_card_bounds_in_canvas(0)&&
+        view.frequency_card_bounds_in_canvas(1)&&
+        !view.frequency_card_bounds_in_canvas(2),
+        "Filtered bar geometry reused the old visual slot as a group identity");
+    click_frequency_card(view,1);
+    check(view.step_index()==expected.candidate_frames[1]&&
+        text(view,output_id)=="-8:1\n3:4\n"&&
+        name(chart).find("Grupo 1:")==std::string::npos&&
+        name(chart).find("Grupo 3:")==std::string::npos,
+        "Filtered click selected visual slot zero rather than original group two");
+    check(view.go_to_step(0)&&!view.frequency_card_bounds_in_canvas(1),
+        "Returning to the beginning preserved a clickable future histogram");
+    check(changes>=5&&layouts==changes&&input==authored,
+        "Histogram exploration mutated authored data or failed to update narration");
+
+    const auto scenario=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(scenario,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(view.go_to_step(6)&&
+        view.frequency_card_bounds_in_canvas(0)&&
+        view.frequency_card_bounds_in_canvas(1),
+        "A tie scenario failed to rebuild its clickable groups");
+    click_frequency_card(view,0);
+    check(view.step_index()==3&&text(view,output_id)=="4:2\n"&&
+        !view.frequency_card_bounds_in_canvas(1),
+        "Tie scenario kept future candidate output after choosing its first group");
+    SendMessageW(scenario,CB_SETCURSEL,2,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(view.step_count()==1&&!view.frequency_card_bounds_in_canvas(0),
+        "An empty scenario retained clickable histogram geometry");
+
+    auto candidates=fixture(SimulationViewMode::candidates);
+    SimulationView candidate_view(host,candidates,"es");resize(candidate_view,850);
+    check(candidate_view.go_to_step(2),"Cannot prepare completed candidate groups");
+    click_frequency_card(candidate_view,1);
+    check(candidate_view.step_index()==1&&
+        text(candidate_view,output_id)=="-8:1\n3:4\n",
+        "Candidates mode did not navigate to the clicked completed group");
+    check(candidate_view.go_to_step(2),"Cannot prepare a filtered candidate chart");
+    click(candidate_view,frequency_filter_id);
+    check(candidate_view.frequency_card_bounds_in_canvas(1)&&
+        !candidate_view.frequency_card_bounds_in_canvas(0),
+        "Candidate filter changed the original group-to-card mapping");
+    click_frequency_card(candidate_view,1);
+    check(candidate_view.step_index()==1&&
+        text(candidate_view,variables_id).find("Valor examinado: 3")!=std::string::npos,
+        "Candidate filter click selected a different group");
+
+    auto summary=fixture(SimulationViewMode::summary);
+    SimulationView static_view(host,summary,"es");resize(static_view,850);
+    const auto initial_regions=static_view.reading_regions();
+    check(static_view.frequency_card_bounds_in_canvas(0).has_value(),
+        "Summary chart failed to draw the factual first group");
+    click_frequency_card(static_view,0);
+    const auto after_regions=static_view.reading_regions();
+    check(static_view.step_index()==0&&
+        after_regions.size()==initial_regions.size()&&
+        std::equal(initial_regions.begin(),initial_regions.end(),after_regions.begin(),
+            [](const SimulationReadingRegion& left,const SimulationReadingRegion& right){
+                return left.key==right.key&&left.source_text==right.source_text;
+            }),
+        "A static summary reacted to a histogram click");
+
+    // A scrollbar changes the client width and scroll offset. Use a late
+    // group to ensure that both painting and clicking share that geometry.
+    auto large=fixture(SimulationViewMode::walkthrough);
+    large.scenarios.clear();large.editable=false;large.values.clear();
+    for(std::int64_t v=0;v<64;++v)large.values.emplace_back(v);
+    const auto large_trace=build_simulation_trace(large);
+    SimulationView scrolled(host,large,"es");scrolled.set_text_scale(150);
+    resize(scrolled,340);
+    check(scrolled.go_to_step(scrolled.step_count()-1),"Cannot complete long histogram");
+    const auto long_chart=GetDlgItem(scrolled.window(),frequencies_id);
+    check(!scrolled.frequency_card_bounds_in_canvas(63)&&
+        scrolled.frequency_card_bounds_in_canvas(0),
+        "Long-chart viewport showed a distant group without scrolling");
+    SendMessageW(long_chart,WM_VSCROLL,SB_BOTTOM,0);pump();
+    check(scrolled.frequency_card_bounds_in_canvas(63)&&
+        !scrolled.frequency_card_bounds_in_canvas(0),
+        "Scrolling to the bottom did not update hit-test coordinates");
+    click_frequency_card(scrolled,63);
+    check(scrolled.step_index()==large_trace.candidate_frames[63]&&
+        text(scrolled,output_id).find("63:1\n")!=std::string::npos,
+        "Clicking a scrolled card did not land at the last decision");
+    check(scrolled.go_to_step(0)&&
+        !scrolled.frequency_card_bounds_in_canvas(63),
+        "Returning to the start retained an off-screen future card");
 }
 void progressive_frequency_bars(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);
@@ -1899,6 +2053,7 @@ int main(int argc,char** argv)try {
         catch(...){++failures;std::cerr<<"FAIL simulation scenario "<<label<<": unknown native failure\n";}
         pump(host.value);
     };
+    run("histogram_card_navigation",[&]{histogram_card_navigation(host.value);});
     run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
     run("candidate_frequency_filter",[&]{candidate_frequency_filter(host.value);});
     run("calculated_step_changes",[&]{calculated_step_changes(host.value);});
