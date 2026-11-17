@@ -172,7 +172,14 @@ std::map<int,std::string> rich_edit_fonts(SimulationView& view,int expected_scal
     for(auto child=GetWindow(view.window(),GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT)){
         wchar_t type[48]{};GetClassNameW(child,type,48);
         if(!(GetWindowLongPtrW(child,GWL_STYLE)&WS_VISIBLE)||std::wstring_view(type)!=MSFTEDIT_CLASS)continue;
-        check(rich_edit_scale(child)==expected_scale,"A visible RichEdit has an unexpected text scale");
+        int numerator=0,denominator=0;
+        check(SendMessageW(child,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),
+            reinterpret_cast<LPARAM>(&denominator))!=FALSE,
+            "Cannot retrieve the native zoom accepted by RichEdit");
+        check(numerator>0&&numerator<=64&&denominator>0&&denominator<=64,
+            "RichEdit returned an invalid zoom numerator/denominator");
+        check(rich_edit_scale(child)==expected_scale,
+            "A visible RichEdit did not apply the requested text scale");
         const auto sample=rich_edit_sample(child);
         result.emplace(GetDlgCtrlID(child),utf8(sample.base.szFaceName)+":"+std::to_string(sample.base.yHeight)+";"+
             utf8(sample.first.szFaceName)+":"+std::to_string(sample.first.yHeight));
@@ -2233,6 +2240,12 @@ void scale_limits_and_local_control_wheel(HWND host) {
     const auto first_contents=rich_edit_contents(first),second_contents=rich_edit_contents(second);
     first.set_text_scale(900);resize(first,800);bounds(first,"maximum simulation zoom");
     (void)rich_edit_fonts(first,150);(void)rich_edit_fonts(second,100);
+    first.set_text_scale(100);resize(first,800);
+    // Exact native zoom factors must not depend on an accidental 150/100
+    // fraction: the RichEdit API bounds both numerator and denominator to 64.
+    (void)rich_edit_fonts(first,100);
+    first.set_text_scale(125);resize(first,800);
+    (void)rich_edit_fonts(first,125);
     first.set_text_scale(100);resize(first,800);
     const auto input=GetDlgItem(first.window(),input_id);
     const auto original_step=first.step_index();const auto original_array=name(GetDlgItem(first.window(),array_id));
