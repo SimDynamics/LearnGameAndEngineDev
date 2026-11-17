@@ -2893,6 +2893,32 @@ void output_zoom_preserves_reading_anchor(HWND host) {
     resize(view,800);
     remains_anchored("Restoring the parent width moved stdout to another result");
 
+    // Simulate a late rejection, after RichEdit has accepted earlier
+    // controls. The same rollback that preserves the editor's Undo/Redo
+    // must preserve the currently selected and visible stdout line.
+    const auto rejected=GetDlgItem(view.window(),progress_label_id);
+    check(rejected,"Missing late RichEdit for rejected-zoom reading test");
+    const auto reject_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR)->LRESULT {
+        if(message==EM_SETZOOM&&wp==5&&lp==4)return FALSE;
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR reject_id=0x53494d52;
+    check(SetWindowSubclass(rejected,reject_zoom,reject_id,0)!=FALSE,
+        "Cannot intercept a late RichEdit zoom to inspect output rollback");
+    bool failed=false;
+    try{view.set_text_scale(125);}
+    catch(const std::runtime_error&){failed=true;}
+    RemoveWindowSubclass(rejected,reject_zoom,reject_id);
+    check(failed&&rich_edit_scale(output)==100,
+        "A deliberately rejected zoom was committed to stdout");
+    remains_anchored("Rejected reader zoom lost stdout's selected and visible earlier line");
+    // A rejected zoom must not make subsequent ordinary zoom unusable.
+    view.set_text_scale(110);resize(view,800);
+    remains_anchored("Reader zoom after recovery lost stdout's reading anchor");
+    view.set_text_scale(100);resize(view,800);
+    remains_anchored("Returning after a rejected zoom lost stdout's reading anchor");
+
     // The student already at the end should remain at the end, rather than
     // being pinned to a stale top-line character after a new scale.
     SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
