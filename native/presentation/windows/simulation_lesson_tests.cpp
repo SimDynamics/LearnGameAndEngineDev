@@ -147,7 +147,7 @@ void invalid_contracts(std::string_view source) {
 }
 
 int main(int argc,char** argv)try {
-    check(argc==3,"Expected the reusable simulation example and its synthetic stateLayout fixture");
+    check(argc==4,"Expected numeric and text simulation examples plus the stateLayout fixture");
     const auto bytes=state::read_bytes(std::filesystem::path(wide(argv[1])));
     const std::string example(bytes.begin(),bytes.end());
     // The documentation example is loaded verbatim. Only the surrounding QA
@@ -166,6 +166,60 @@ int main(int argc,char** argv)try {
     check(trace.frames.size()>2&&!trace.groups.empty(),"The authored example has no real computed traversal");
     invalid_contracts(source);
     empty_text_contracts(source);
+
+    // Consume the exact documented text example, not a hand-transcribed
+    // approximation. Neither the lesson parser nor QA may normalize empty
+    // strings into absent items or spaces into the empty string.
+    const auto text_bytes=state::read_bytes(std::filesystem::path(wide(argv[3])));
+    const std::string text_example(text_bytes.begin(),text_bytes.end());
+    const auto original_position=source.find(example);
+    check(original_position!=std::string::npos,
+        "Cannot locate the numeric example inside its synthetic lesson");
+    const auto text_source=source.substr(0,original_position)+text_example+
+        source.substr(original_position+example.size());
+    const auto text_lesson=windows::parse_lesson_json(text_source,"es");
+    const auto text_metadata=windows::parse_lesson_progress_metadata(text_source,"es");
+    const auto& text_block=text_lesson.pages.at(0).blocks.at(1);
+    check(text_block.type==curriculum::BlockType::simulation&&text_block.simulation&&
+        text_metadata.pages.at(0).blocks.at(1).simulation==text_block.simulation&&
+        text_block.simulation->text_values,
+        "Actual text example differs between full and progress loading");
+    const auto& text_spec=*text_block.simulation;
+    struct TextExampleCase {
+        const char* scenario;
+        std::size_t groups,maximum;
+        std::vector<std::string> leaders;
+        std::string output;
+    };
+    const std::vector<TextExampleCase> text_example_cases{
+        {"initial",2,2,{"patio"},"[]=1\n[patio]=2\n"},
+        {"coleccion_vacia",0,0,{},""},
+        {"cadena_vacia",1,1,{""},"[]=1\n"},
+        {"patio_repetido",2,2,{"patio"},"[]=1\n[patio]=2\n"},
+        {"vacia_y_espacio",2,1,{""," "},"[]=1\n[ ]=1\n"},
+        {"empate_y_espacios",3,1,{""," ","casa"},"[]=1\n[ ]=1\n[casa]=1\n"},
+        {"desorden_y_repeticiones",3,2,{"sol"},"[]=1\n[ ]=1\n[sol]=2\n"}
+    };
+    check(text_spec.scenarios.size()+1==text_example_cases.size(),
+        "The documented text example lost a scenario");
+    for(std::size_t i=0;i<text_example_cases.size();++i){
+        const auto& expected=text_example_cases[i];
+        const auto& applied=i==0?text_spec.values:text_spec.scenarios[i-1].values;
+        check(i==0||text_spec.scenarios[i-1].id==expected.scenario,
+            "A documented text example scenario changed its identity/order");
+        const auto computed=curriculum::build_simulation_trace(text_spec,applied);
+        const auto& final=computed.frames.back();
+        std::vector<std::string> leaders;
+        for(const auto& value:final.leaders){
+            check(std::holds_alternative<std::string>(value),
+                "A text example candidate became a numeric value");
+            leaders.push_back(std::get<std::string>(value));
+        }
+        check(computed.groups.size()==expected.groups&&
+            final.maximum==expected.maximum&&
+            final.output==expected.output&&leaders==expected.leaders,
+            "The real text example's groups, empty/space candidates or stdout changed");
+    }
 
     // Stable publications keep integer JSON tokens exactly, as required by
     // the pre-existing fingerprint scanner. The isolated block adapter can
