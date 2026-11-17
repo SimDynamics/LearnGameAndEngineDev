@@ -1966,6 +1966,29 @@ void original_order_reading_session(HWND host) {
         text(view,original_order_id)==expected,
         "Stepping reconstructed the source RichEdit or lost the learner's selection");
 
+    // Font, DPI and width changes must independently preserve the long
+    // original-order panel, not only the calculated stdout RichEdit.
+    const auto still_at_end=[&](const char* reason){
+        const auto now=scroll_state(original);
+        check(now.has_range&&now.vertical.nPage>0&&
+            now.vertical.nPos>=now.vertical.nMax-
+                std::max(0,static_cast<int>(now.vertical.nPage)-1)&&
+            now.selection.cpMin==selected.cpMin&&
+            now.selection.cpMax==selected.cpMax&&
+            text(view,original_order_id)==expected&&rewrites==0,reason);
+    };
+    view.set_text_scale(150);resize(view,800);
+    still_at_end("Zoom lost the selected bottom of the original-order preview");
+    resize(view,420);
+    still_at_end("Narrow reflow moved the original-order preview away from its end");
+    resize(view,800);
+    still_at_end("Widening the reader lost the original-order preview");
+    SendMessageW(view.window(),WM_DPICHANGED_AFTERPARENT,0,0);pump();
+    resize(view,800);
+    still_at_end("A DPI rebase lost the original-order selection or reading position");
+    view.set_text_scale(100);resize(view,800);
+    still_at_end("Restoring the original zoom changed its reading context");
+
     // Re-selecting an equivalent scenario is still a different reading
     // session. Identical displayed source text must not inherit old scroll.
     check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
