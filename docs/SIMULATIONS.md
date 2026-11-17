@@ -101,11 +101,24 @@ habilita en una lección con `stateLayout`. Los booleanos, las fracciones, los
 valores no finitos y los números fuera del intervalo no se admiten en ninguno
 de los dos casos.
 
-`valueType: "text"` utiliza entre cero y 64 cadenas UTF-8 de uno a 128 bytes
-cada una. Conserva sus espacios; una cadena que contiene espacios sigue siendo
-un dato distinto de la cadena vacía, que no se admite. Un valor no puede
-contener NUL, retorno de carro ni salto de línea. No se mezclan textos y
+`valueType: "text"` utiliza entre cero y 64 cadenas UTF-8 de cero a 128 bytes
+cada una. La cadena vacía `""` es un dato válido. Los espacios se conservan
+exactamente: `""`, `" "` y `"  "` son tres valores diferentes. Un valor no
+puede contener NUL, retorno de carro ni salto de línea. No se mezclan textos y
 números dentro de una simulación o de sus escenarios.
+
+Estas diferencias también se conservan al contar y comparar:
+
+| Datos | Grupos de la copia ordenada | Máximo y candidatos finales |
+|---|---|---|
+| `[]` | Ninguno. | Máximo 0; ningún candidato. |
+| `[""]` | La cadena vacía ocupa `[0, 1)`, con frecuencia 1. | Máximo 1; candidato `""`. |
+| `["", "patio", "patio"]` | `""` ocupa `[0, 1)`; `"patio"`, `[1, 3)`. | Máximo 2; candidato `"patio"`. |
+| `["", " "]` | Dos grupos distintos, cada uno con frecuencia 1. | Máximo 1; candidatos `""` y `" "`. |
+
+Las mismas reglas se aplican a `values`, a todos los escenarios y a los datos
+editados. Los textos de presentación, como títulos, etiquetas y explicaciones,
+siguen siendo obligatorios y no pueden estar vacíos.
 
 Para explorar palabras, adapta el ejemplo completo: cambia `valueType` a
 `"text"`, usa `values: ["luna", "sol", "luna", "nube", "sol"]` y sustituye
@@ -115,25 +128,63 @@ escenarios. En este caso, `luna` y `sol` empatan con frecuencia dos.
 Con `sort: true`, el motor ordena una **copia** y conserva los datos de entrada.
 La ordenación numérica es ascendente. La ordenación de texto compara bytes
 UTF-8; no aplica ordenación lingüística, conversión de mayúsculas ni eliminación
-de acentos. Por ejemplo, `"Z"` precede a `"a"` y `"z"` precede a `"á"`.
+de acentos. La cadena vacía precede a cualquier cadena no vacía. Por ejemplo,
+`""` precede a `" "`, `"Z"` precede a `"a"` y `"z"` precede a `"á"`.
 
 Con `sort: false`, el array inicial, cada escenario y cualquier entrada editada
 deben estar ya en ese orden ascendente. Los valores repetidos son válidos.
 Este requisito garantiza que cada valor forme un único grupo contiguo y que
 su frecuencia corresponda al total de apariciones en el array.
 
-`editable: true` habilita el cambio de los datos. Se introduce un valor por
-línea. Los enteros admiten signo y espacios exteriores; no admiten expresiones
-como `2 + 3`, sufijos de C++ ni decimales en ese campo de entrada. En los datos
-de texto se conservan los espacios de cada línea. Una entrada vacía representa
-un array vacío. El salto final es opcional; una línea vacía intermedia no
-representa un valor de texto válido.
+`editable: true` habilita el cambio de los datos. Los enteros se introducen
+uno por línea: admiten signo y espacios exteriores; no admiten expresiones
+como `2 + 3`, sufijos de C++ ni decimales en ese campo de entrada.
+
+Para los datos de texto, el selector ofrece dos formatos explícitos:
+
+| Formato | Entrada y significado |
+|---|---|
+| **Un texto por línea** | Conserva literalmente cada línea y sus espacios. Una entrada vacía representa `[]`. El salto final es opcional; una línea vacía intermedia sigue siendo inválida. Las comillas son parte del dato. |
+| **Lista entre comillas** | Admite una lista JSON de cadenas: `[]` es una colección vacía; `[""]`, una cadena vacía; `[" "]`, una cadena con un espacio. `["", "patio", "patio"]` contiene tres datos. |
+
+El formato se elige mediante el selector; el contenido del campo no se
+interpreta automáticamente como otro formato. Por ejemplo, escribir `""`
+en **Un texto por línea** sigue introduciendo dos caracteres de comilla.
+En **Lista entre comillas** se conservan los espacios dentro de cada cadena;
+los espacios y saltos entre los elementos sólo separan la notación. Se admiten
+los escapes de cadenas JSON, como `\"` para una comilla, `\\` para una barra
+inversa y `\t` para un tabulador. Tras decodificar, siguen vigentes los límites
+de 64 valores y 128 bytes UTF-8 por valor y la prohibición de NUL, CR y LF.
+Números, booleanos, objetos y listas anidadas no son valores de texto válidos.
+
+Cambiar el selector convierte el borrador válido al otro formato sin aplicarlo
+al recorrido. Si la conversión perdería un dato —por ejemplo, una cadena vacía
+al pasar a líneas— o el borrador no es válido, se conserva el texto y el formato
+anterior y se muestra el motivo. **Aplicar datos** inicia el recorrido con la
+entrada revisada. Al abrir una simulación, seleccionar un escenario o
+restablecer sus datos, la presencia de una cadena vacía elige **Lista entre
+comillas** para que el dato pueda editarse sin ambigüedad.
 
 Hay como máximo ocho escenarios. Cada uno declara exclusivamente `id`, `label`
 y `values`. Su identificador es único, tiene de uno a 64 caracteres ASCII,
 comienza por una letra o guion bajo y continúa con letras, dígitos, guiones
 bajos o guiones. Sus valores cumplen las mismas reglas que el array inicial.
 Seleccionar un escenario proporciona otra entrada al mismo modelo.
+
+### Presentación de los textos
+
+Las celdas, los grupos y los candidatos muestran los textos entre comillas,
+con escapes JSON cuando son necesarios. La cadena vacía aparece como
+`"" (cadena vacía)`; un texto formado sólo por espacios ASCII aparece, por
+ejemplo, como `" " (1 espacio)` o `"   " (3 espacios)`. Las comillas, los escapes
+y esas aclaraciones permiten reconocer el dato, pero no se añaden a su valor.
+El modelo sigue agrupando, ordenando y contando las cadenas originales.
+
+Las explicaciones usan esa misma presentación en `{value}` y `{leaders}`.
+La salida calculada conserva los valores crudos: `outputTemplate` no añade
+comillas, escapes ni las aclaraciones de vacío o espacios. Por ejemplo, con
+la plantilla `[{value}]={frequency}`, el grupo de `""` con frecuencia uno
+produce `[]=1`, mientras que el grupo de `" "` produce `[ ]=1`.
 
 ## Índices, pasos y salida
 
@@ -173,11 +224,11 @@ Las ocho explicaciones y `outputTemplate` permiten estas sustituciones:
 
 | Sustitución | Valor calculado |
 |---|---|
-| `{value}` | Valor del grupo actual; vacío en `initial`, `done` y `empty`. |
+| `{value}` | Valor del grupo actual: presentación legible en explicaciones y dato crudo en `outputTemplate`; sin contenido en `initial`, `done` y `empty`. |
 | `{start}`, `{end}` | Inicio y límite exclusivo del grupo observado. |
 | `{frequency}` | Cantidad observada en el grupo actual. |
 | `{maximum}` | Máxima frecuencia de los grupos ya terminados. |
-| `{leaders}` | Valores que alcanzan ese máximo, separados por coma y espacio. |
+| `{leaders}` | Valores que alcanzan ese máximo, separados por coma y espacio; presentación legible en explicaciones y datos crudos en `outputTemplate`. |
 | `{size}` | Cantidad de elementos del array. |
 | `{group}` | Número del grupo actual desde uno; cero antes del primero. |
 | `{groups}` | Cantidad total de grupos de la copia ordenada. |
@@ -244,7 +295,8 @@ python -m unittest discover -s scripts/curriculum -p test_simulation.py
 ```
 
 Estas pruebas verifican el esquema, los límites, los escenarios, las plantillas,
-el presupuesto de expansión y la conservación de las identidades. Las pruebas
+el presupuesto de expansión (presentación legible y salida cruda), las cadenas
+vacías y con espacios, y la conservación de las identidades. Las pruebas
 nativas del modelo y del lector Windows comprueban por separado el cálculo y
 la integración. La validación JSON por sí sola no demuestra una interacción
 visual ni una ejecución de C++.

@@ -22,7 +22,7 @@ using namespace lgaed::curriculum;
 using namespace lgaed::presentation;
 constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_id=110,previous_id=111,next_id=112,reset_id=113,input_id=115,apply_id=116,restore_id=117,error_id=118,
-    group_first_id=200;
+    input_format_id=120,group_first_id=200;
 std::filesystem::path failure_captures;
 void capture(HWND window,const std::filesystem::path& path);
 void fitted_text(SimulationView& view);
@@ -411,7 +411,7 @@ void text_and_independent_views(HWND host,const std::filesystem::path& captures)
     auto spec=fixture(SimulationViewMode::summary);spec.text_values=true;spec.scenarios.clear();
     spec.values={std::string("patio"),std::string("sol"),std::string("faro"),std::string("patio"),std::string("sol")};
     SimulationView first(host,spec,"es"),second(host,spec,"es");resize(first,800);resize(second,800);
-    check(text(first,output_id)=="faro:1\npatio:2\nsol:2\n"&&text(first,variables_id)=="máxima: 2\nmayores: patio, sol",
+    check(text(first,output_id)=="faro:1\npatio:2\nsol:2\n"&&text(first,variables_id)=="máxima: 2\nmayores: \"patio\", \"sol\"",
         "Text array maxima and ties differ from their input");
     set_edit_text(GetDlgItem(first.window(),input_id)," sitio \n sitio \nsol");click(first,apply_id);
     check(text(first,output_id)==" sitio :2\nsol:1\n"&&text(second,output_id)=="faro:1\npatio:2\nsol:2\n",
@@ -461,6 +461,130 @@ void text_and_independent_views(HWND host,const std::filesystem::path& captures)
     check(text(second,output_id)=="faro:1\npatio:2\nsol:2\n"&&rich_edit_scale(GetDlgItem(second.window(),input_id))==100,
         "Repeated zoom altered another simulation's data or scale");
     if(!captures.empty())capture(first.window(),captures/"text-restored-zoom-150.bmp");
+}
+void empty_text_values(HWND host,const std::filesystem::path& captures) {
+    const std::string empty_label="\"\" (cadena vacía)",space_label="\" \" (1 espacio)";
+    const auto select=[](SimulationView& view,int id,int index) {
+        const auto control=GetDlgItem(view.window(),id);
+        check(control&&SendMessageW(control,CB_SETCURSEL,index,0)!=CB_ERR,"Cannot select the real simulation dropdown");
+        SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(control));pump();
+    };
+    auto grouped=fixture(SimulationViewMode::groups);grouped.text_values=true;
+    grouped.values={std::string(""),std::string("patio"),std::string("patio")};
+    grouped.scenarios={{"empty","Colección vacía",{}},{"empty-label","Una etiqueta vacía",{std::string("")}},
+        {"space","Vacía y espacio",{std::string(""),std::string(" ")}}};
+    const auto authored=grouped;
+    {
+        SimulationView view(host,grouped,"es");resize(view,820);
+        check(name(GetDlgItem(view.window(),array_id)).find("índice 0: "+empty_label)!=std::string::npos&&
+            name(GetDlgItem(view.window(),group_first_id)).find(empty_label)!=std::string::npos,
+            "An empty label has no unambiguous array or group-selector representation");
+        check(text(view,variables_id)=="inicio: 0\nfin (exclusivo): 1\nfrecuencia: 1",
+            "The empty label was omitted from its group interval");
+        click(view,group_first_id+1);
+        check(text(view,variables_id)=="inicio: 1\nfin (exclusivo): 3\nfrecuencia: 2"&&text(view,output_id)==":1\npatio:2\n",
+            "Selecting patio changed raw values or reused the empty label's frequency");
+        click(view,group_first_id);
+        check(view.step_index()==0&&text(view,output_id)==":1\n","Returning to the empty group did not restore its raw output");
+        select(view,scenario_id,1);
+        check(view.step_count()==1&&!GetDlgItem(view.window(),group_first_id)&&
+            name(GetDlgItem(view.window(),array_id)).find("No hay valores")!=std::string::npos&&text(view,output_id).empty(),
+            "An empty collection retained an empty-label group");
+        select(view,scenario_id,2);
+        check(GetDlgItem(view.window(),group_first_id)&&!GetDlgItem(view.window(),group_first_id+1)&&
+            text(view,variables_id)=="inicio: 0\nfin (exclusivo): 1\nfrecuencia: 1"&&text(view,output_id)==":1\n",
+            "A scenario with one empty label became an empty collection");
+        select(view,scenario_id,3);
+        check(name(GetDlgItem(view.window(),group_first_id)).find(empty_label)!=std::string::npos&&
+            name(GetDlgItem(view.window(),group_first_id+1)).find(space_label)!=std::string::npos,
+            "Empty and space-only labels have indistinguishable native selectors");
+        click(view,group_first_id+1);
+        check(text(view,variables_id)=="inicio: 1\nfin (exclusivo): 2\nfrecuencia: 1"&&text(view,output_id)==":1\n :1\n",
+            "A space-only label was trimmed or merged with the empty label");
+        view.set_text_scale(150);resize(view,340);bounds(view,"empty-label selectors at narrow width");
+        if(!captures.empty())capture(view.window(),captures/"empty-label-groups-narrow-150.bmp");
+    }
+    {
+        auto candidates=grouped;candidates.view=SimulationViewMode::candidates;
+        candidates.values={std::string(""),std::string(" ")};candidates.scenarios.clear();
+        SimulationView view(host,candidates,"es");resize(view,820);
+        check(view.step_count()==2&&text(view,variables_id)=="Etiqueta examinada: "+empty_label+
+            "\nfrecuencia: 1\nmáxima: 1\nmayores: "+empty_label,
+            "The empty string was presented as no candidate");
+        const auto first=text(view,variables_id),output=text(view,output_id);const auto reading=view.reading_regions();
+        click(view,next_id);
+        check(text(view,variables_id)=="Etiqueta examinada: "+space_label+
+            "\nfrecuencia: 1\nmáxima: 1\nmayores: "+empty_label+", "+space_label&&
+            text(view,output_id)==":1\n :1\n","The tie lost or conflated the empty and space-only candidates");
+        const auto regions=view.reading_regions();
+        check(std::ranges::any_of(regions,[&](const auto& region){return region.source_text.find(
+            "mayores: "+empty_label+", "+space_label)!=std::string::npos;}),
+            "Current narration omitted one of the visibly distinct candidates");
+        click(view,previous_id);const auto reversed=view.reading_regions();
+        check(text(view,variables_id)==first&&text(view,output_id)==output&&reading.size()==reversed.size(),
+            "Previous did not restore the empty-label candidate state");
+        for(std::size_t i=0;i<reading.size();++i)
+            check(reading[i].key==reversed[i].key&&reading[i].source_text==reversed[i].source_text,
+                "Previous changed an empty-label reading identity or its text");
+    }
+    {
+        auto spec=grouped;spec.view=SimulationViewMode::walkthrough;spec.values={std::string("")};spec.scenarios.clear();
+        SimulationView view(host,spec,"es");resize(view,820);
+        const auto editor=GetDlgItem(view.window(),input_id),format=GetDlgItem(view.window(),input_format_id);
+        check(format&&SendMessageW(format,CB_GETCURSEL,0,0)==1&&text(view,input_id)=="[\"\"]",
+            "An authored empty label did not open in the explicit list editor");
+        const auto finish=[&] {
+            while(view.step_index()+1<view.step_count()){
+                const auto previous=view.step_index();click(view,next_id);
+                check(view.step_index()==previous+1,"Next did not advance the empty-label traversal");}
+        };
+        finish();
+        check(text(view,output_id)==":1\n"&&text(view,variables_id).find("máxima: 1\nmayores: "+empty_label)!=std::string::npos,
+            "The complete traversal lost its empty-label maximum or changed the raw output");
+        const auto original_step=view.step_index(),original_count=view.step_count();
+        const auto original_array=name(GetDlgItem(view.window(),array_id)),original_output=text(view,output_id);
+        select(view,input_format_id,0);
+        check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&text(view,input_id)=="[\"\"]"&&!text(view,error_id).empty()&&
+            view.step_index()==original_step&&view.step_count()==original_count&&text(view,output_id)==original_output&&
+            name(GetDlgItem(view.window(),array_id))==original_array,
+            "Switching an empty label to line format silently discarded a value or applied data");
+        set_edit_text(editor,"[\"\",]");click(view,apply_id);
+        check(text(view,input_id)=="[\"\",]"&&!text(view,error_id).empty()&&view.step_index()==original_step&&
+            text(view,output_id)==original_output,"Malformed list input partially replaced the last valid traversal");
+        select(view,input_format_id,0);
+        check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&text(view,input_id)=="[\"\",]"&&
+            view.step_index()==original_step&&text(view,output_id)==original_output,
+            "Changing format discarded an invalid draft or applied it to the simulation");
+        set_edit_text(editor,"[]");click(view,apply_id);
+        check(view.step_index()==0&&view.step_count()==1&&text(view,error_id).empty()&&text(view,output_id).empty()&&
+            text(view,variables_id).find("máxima: 0\nmayores: ninguno")!=std::string::npos,
+            "Applying an empty collection fabricated an empty-string candidate");
+        set_edit_text(editor,"[\"\", \" \"]");click(view,apply_id);finish();
+        check(text(view,output_id)==":1\n :1\n"&&text(view,variables_id).find(
+            "máxima: 1\nmayores: "+empty_label+", "+space_label)!=std::string::npos,
+            "The list editor failed to preserve two distinct invisible text values");
+        // Format conversion changes the pending draft only. It must not apply
+        // that draft, restart the traversal or reinterpret legacy line syntax.
+        set_edit_text(editor,"[\"patio\", \"patio\"]");
+        const auto before_conversion=view.step_index();const auto before_output=text(view,output_id);
+        select(view,input_format_id,0);
+        check(SendMessageW(format,CB_GETCURSEL,0,0)==0&&text(view,input_id)=="patio\npatio"&&text(view,error_id).empty()&&
+            view.step_index()==before_conversion&&text(view,output_id)==before_output,
+            "Changing to line format applied the pending draft or reset the step");
+        set_edit_text(editor,"[\"patio\"]");click(view,apply_id);finish();
+        check(text(view,output_id)=="[\"patio\"]:1\n","Legacy line input was reinterpreted as a JSON list");
+        const auto literal_step=view.step_index();const auto literal_output=text(view,output_id);
+        select(view,input_format_id,1);
+        check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&text(view,input_id)=="[\"[\\\"patio\\\"]\"]"&&
+            view.step_index()==literal_step&&text(view,output_id)==literal_output,
+            "Converting a legacy bracketed label changed its value or the active traversal");
+        click(view,apply_id);finish();check(text(view,output_id)==literal_output,"Applying the converted list changed a literal bracketed label");
+        click(view,restore_id);
+        check(view.step_index()==0&&SendMessageW(format,CB_GETCURSEL,0,0)==1&&text(view,input_id)=="[\"\"]",
+            "Restore did not recover the authored empty label with a lossless editor format");
+        finish();check(text(view,output_id)==":1\n","Restore retained edited data instead of the original empty label");
+    }
+    check(grouped==authored,"Exploration mutated the authored text values or scenarios");
 }
 void scale_limits_and_local_control_wheel(HWND host) {
     auto spec=fixture(SimulationViewMode::summary);SimulationView first(host,spec,"es"),second(host,spec,"es");
@@ -608,6 +732,7 @@ int main(int argc,char** argv)try {
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
+    run("empty_text_values",[&]{empty_text_values(host.value,captures);});
     run("scale_limits_and_local_control_wheel",[&]{scale_limits_and_local_control_wheel(host.value);});
     run("parent_width_changes",[&]{parent_width_changes(host.value);});
     run("long_labels_and_literal_values",[&]{long_labels_and_literal_values(host.value,captures);});

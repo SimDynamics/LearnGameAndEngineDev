@@ -173,6 +173,133 @@ void replay_inputs_and_accessibility() {
     rejected([&] { (void)simulation_frame_text(spec, trace, invalid_frame); }, "Accessible summary accepted an invalid range");
 }
 
+void empty_text_values_and_labels() {
+    auto spec = example();
+    spec.text_values = true;
+    spec.scenarios = {{"none", "Sin elementos", {}}, {"empty", "Una cadena vacía", words({""})},
+        {"mixed", "Una vacía y dos iguales", words({"", "patio", "patio"})},
+        {"spaces", "Vacía y espacio", words({"", " "})}};
+    validate_simulation_spec(spec);
+    auto trace = build_simulation_trace(spec);
+    check(trace.groups.empty() && trace.frames.size() == 1 && trace.frames.front().maximum == 0 &&
+        trace.frames.front().leaders.empty(), "An empty text collection fabricated a group or candidate");
+    spec.values = words({""});
+    trace = build_simulation_trace(spec);
+    check(trace.groups == std::vector<SimulationGroup>{{0, 1, std::string{}}} &&
+        trace.frames.size() == 4 && trace.frames.back().maximum == 1 &&
+        trace.frames.back().leaders == words({""}) && trace.frames.back().output == ":1\n",
+        "A single empty text was confused with an empty collection");
+    check(trace.frames[1].explanation.find("\"\" (cadena vacía)") != std::string::npos &&
+        trace.frames.back().explanation.find("mayores=\"\" (cadena vacía)") != std::string::npos,
+        "The explanation omitted the empty value or its candidate");
+    spec.values = words({"patio", "", "patio"});
+    trace = build_simulation_trace(spec);
+    check(trace.original == words({"patio", "", "patio"}) && trace.ordered == words({"", "patio", "patio"}) &&
+        trace.groups == std::vector<SimulationGroup>{{0, 1, std::string{}}, {1, 3, std::string("patio")}} &&
+        trace.candidate_frames == std::vector<std::size_t>{2, 5},
+        "Empty text grouping changed source values or half-open boundaries");
+    check(trace.frames[2].maximum == 1 && trace.frames[2].leaders == words({""}) &&
+        trace.frames[2].output == ":1\n" && trace.frames[5].maximum == 2 &&
+        trace.frames[5].leaders == words({"patio"}) && trace.frames[5].output == ":1\npatio:2\n",
+        "Candidate snapshots failed to replace the empty winner after the second group");
+    spec.values = words({" ", ""});
+    trace = build_simulation_trace(spec);
+    check(trace.groups == std::vector<SimulationGroup>{{0, 1, std::string{}}, {1, 2, std::string(" ")}} &&
+        trace.frames.back().maximum == 1 && trace.frames.back().leaders == words({"", " "}) &&
+        trace.frames[4].phase == SimulationPhase::tie && trace.frames.back().output == ":1\n :1\n",
+        "Empty text and one space were merged or a presentation label entered the raw output");
+    const auto readable = simulation_frame_text(spec, trace, trace.frames.back());
+    check(readable.find("0: \"\" (cadena vacía)\n1: \" \" (1 espacio)\n") != std::string::npos &&
+        readable.find("Mayores: \"\" (cadena vacía), \" \" (1 espacio)\n") != std::string::npos &&
+        readable.ends_with("Salida:\n:1\n :1\n"), "Accessible state cannot distinguish empty text from spaces");
+    check(simulation_value_text(std::string{}) == "" &&
+        simulation_value_text(std::string(" ")) == " " &&
+        simulation_value_display_text(std::string("  ")) == "\"  \" (2 espacios)" &&
+        simulation_value_display_text(std::string("patio")) == "\"patio\"" &&
+        simulation_value_display_text(std::string("\"\"")) == "\"\\\"\\\"\"" &&
+        simulation_value_display_text(std::string("\t")) == "\"\\t\"",
+        "Display labels replaced data or confused literal quotes and whitespace");
+    spec.output_template = "{leaders}";
+    check(build_simulation_trace(spec).frames.back().output == "\n,  \n",
+        "An empty first candidate swallowed the separator in raw output");
+    spec.sort = false;
+    spec.values = words({"", "", " "});
+    trace = build_simulation_trace(spec);
+    check(trace.frames.back().maximum == 2 && trace.frames.back().leaders == words({""}),
+        "Sorted repeated empty text did not retain its frequency");
+    spec.scenarios.clear();
+    spec.values = words({" ", ""});
+    rejected([&] { validate_simulation_spec(spec); }, "Unsorted empty text passed sort=false");
+}
+
+void explicit_text_list_input() {
+    auto spec = example();
+    spec.text_values = true;
+    const auto json = SimulationInputFormat::json;
+    const auto lines = SimulationInputFormat::lines;
+    check(simulation_parse_input(spec, "").empty() &&
+        simulation_parse_input(spec, "[]", json).empty() &&
+        simulation_parse_input(spec, " [ \r\n\t ] ", json).empty(),
+        "An empty collection was not preserved in each explicit input format");
+    check(simulation_parse_input(spec, R"([""])", json) == words({""}) &&
+        simulation_parse_input(spec, R"(["", "patio", "patio"])", json) == words({"", "patio", "patio"}) &&
+        simulation_parse_input(spec, R"(["", " "])", json) == words({"", " "}),
+        "Explicit lists confused empty values, spaces or repeated words");
+    check(simulation_parse_input(spec, "\"\"\n[\"patio\"]\n ") == words({"\"\"", "[\"patio\"]", " "}),
+        "An earlier literal line was automatically reinterpreted as JSON");
+    const auto escaped = words({"", " ", "  ", "\t", "\b\f", "\"", "\\", "/", "á", "😀", "{value}"});
+    const auto formatted = simulation_input_text(escaped, json);
+    check(formatted.starts_with("[\"\", \" \", \"  \", \"\\t\", \"\\b\\f\", \"\\\"\", \"\\\\\"") &&
+        simulation_parse_input(spec, formatted, json) == escaped,
+        "The explicit text-list serializer lost an empty item, escape or UTF-8 value");
+    check(simulation_input_text({}, json) == "[]" && simulation_input_text(words({""}), json) == "[\"\"]" &&
+        simulation_input_text(words({"", "patio", "patio"}), json) == "[\"\", \"patio\", \"patio\"]",
+        "List serialization does not expose the authored distinction");
+    check(simulation_parse_input(spec, R"(["\u0061", "\u00e1", "\uD83D\uDE00", "\/", "\u0020"])", json) ==
+        words({"a", "á", "😀", "/", " "}), "JSON Unicode escapes did not decode to the exact text values");
+    check(simulation_parse_input(spec, "[\r\n  \"\",\r\n  \"patio\"\r\n]\r\n", json) == words({"", "patio"}),
+        "JSON layout whitespace entered the values");
+    rejected([&] { (void)simulation_input_text(words({""}), lines); },
+        "Lines silently serialized one empty text as no values");
+    for (const auto* invalid : {"", " ", "null", "{}", "[1]", "[true]", "[null]", "[[]]",
+             "[\"a\",]", "[,\"a\"]", "[\"a\" \"b\"]", "[\"\"]x", "[\"a\"", "[\"a",
+             "[\"\\q\"]", "[\"\\u00xy\"]", "[\"\\ud800\"]", "[\"\\udc00\"]",
+             "[\"\\ud800\\u0041\"]", "[\"\\u0000\"]", "[\"\\r\"]", "[\"\\n\"]",
+             "[\"a\nb\"]", "[\"a\tb\"]"})
+        rejected([&] { (void)simulation_parse_input(spec, invalid, json); }, "Malformed or forbidden text list accepted");
+    rejected([&] { (void)simulation_parse_input(spec, "\n", lines); },
+        "A legacy blank line acquired an ambiguous text value");
+    rejected([&] { (void)simulation_parse_input(spec, "[\"\xc0\x80\"]", json); }, "Invalid UTF-8 list accepted");
+    rejected([&] { (void)simulation_parse_input(spec, "[\"" + std::string(129, 'x') + "\"]", json); },
+        "A list exceeded the decoded text-byte limit");
+    std::string multibyte;
+    for (int i = 0; i < 64; ++i) multibyte += "á";
+    check(simulation_parse_input(spec, "[\"" + multibyte + "\"]", json) ==
+        std::vector<SimulationValue>{multibyte}, "A 128-byte UTF-8 text was rejected");
+    rejected([&] { (void)simulation_parse_input(spec, "[\"" + multibyte + "á\"]", json); },
+        "The UTF-8 limit was counted as characters");
+    std::string maximum = "[", excessive = "[";
+    for (int i = 0; i < 65; ++i) {
+        if (i) excessive += ", ";
+        excessive += "\"\"";
+        if (i < 64) { if (i) maximum += ", "; maximum += "\"\""; }
+    }
+    maximum += "]"; excessive += "]";
+    check(simulation_parse_input(spec, maximum, json).size() == 64, "The maximum number of empty values was rejected");
+    rejected([&] { (void)simulation_parse_input(spec, excessive, json); }, "A sixty-fifth empty item was accepted");
+    rejected([&] { (void)simulation_parse_input(spec, std::string(65537, ' '), json); },
+        "The encoded list had no total input bound");
+    spec.sort = false;
+    check(simulation_parse_input(spec, R"(["", " "])", json) == words({"", " "}), "Sorted empty values were rejected");
+    rejected([&] { (void)simulation_parse_input(spec, R"([" ", ""])", json); },
+        "JSON editing bypassed the ascending-order contract");
+    rejected([&] { (void)simulation_parse_input(spec, "[]", static_cast<SimulationInputFormat>(50)); },
+        "Unknown input format was accepted");
+    spec = example();
+    rejected([&] { (void)simulation_parse_input(spec, "[]", json); }, "JSON mode changed the integer editor contract");
+    rejected([&] { (void)simulation_input_text(integers({1}), json); }, "Integer values were serialized into a text list");
+}
+
 void contract_rejections() {
     const auto good = example();
     const auto invalid = [&](auto edit, const char* reason) {
@@ -199,7 +326,7 @@ void contract_rejections() {
     invalid([](auto& s) { s.values = {std::int64_t{0}, std::string("0")}; }, "Mixed types accepted");
     invalid([](auto& s) { s.values = {std::numeric_limits<std::int64_t>::max()}; }, "Oversized integer accepted");
     invalid([](auto& s) { s.sort = false; s.values = integers({2, 1}); }, "Unsorted input accepted with sort disabled");
-    for (const auto& broken : {std::string{}, std::string(129, 'x'), std::string("x\ny"), std::string("x\ry"),
+    for (const auto& broken : {std::string(129, 'x'), std::string("x\ny"), std::string("x\ry"),
              std::string("x\0y", 3), std::string("\xc0\x80", 2), std::string("\xed\xa0\x80", 3),
              std::string("\xf4\x90\x80\x80", 4), std::string("\xe2\x82", 2)})
         invalid([&](auto& s) { s.text_values = true; s.values = {broken}; }, "Invalid UTF-8 text value accepted");
@@ -258,6 +385,8 @@ int main() {
         ties_and_text();
         boundary_states();
         replay_inputs_and_accessibility();
+        empty_text_values_and_labels();
+        explicit_text_list_input();
         contract_rejections();
         expansion_bounds_and_modes();
         std::cout << "PASS native simulation: calculated groups, ranges, frequencies, maxima/ties, text order, "

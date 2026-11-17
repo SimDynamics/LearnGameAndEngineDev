@@ -88,9 +88,9 @@ void validate_values(const std::vector<SimulationValue>& values, bool text_value
     for (const auto& value : values) {
         if (text_values) {
             const auto* text = std::get_if<std::string>(&value);
-            require(text && !text->empty() && text->size() <= 128 && valid_utf8(*text) &&
+            require(text && text->size() <= 128 && valid_utf8(*text) &&
                 text->find_first_of("\r\n") == std::string::npos,
-                "Cada valor debe ser texto UTF-8 de 1 a 128 bytes, sin NUL ni saltos de línea.");
+                "Cada valor debe ser texto UTF-8 de 0 a 128 bytes, sin NUL ni saltos de línea.");
         } else {
             const auto* integer = std::get_if<std::int64_t>(&value);
             require(integer && *integer >= std::numeric_limits<std::int32_t>::min() &&
@@ -141,11 +141,35 @@ void validate_contract(const SimulationSpec& spec) {
     }
 }
 
-std::string joined_values(const std::vector<SimulationValue>& values) {
+std::string quoted_text(std::string_view text) {
+    constexpr char hex[] = "0123456789abcdef";
+    std::string result = "\"";
+    for (const unsigned char value : text) {
+        switch (value) {
+        case '"': result += "\\\""; break;
+        case '\\': result += "\\\\"; break;
+        case '\b': result += "\\b"; break;
+        case '\f': result += "\\f"; break;
+        case '\n': result += "\\n"; break;
+        case '\r': result += "\\r"; break;
+        case '\t': result += "\\t"; break;
+        default:
+            if (value < 0x20) {
+                result += "\\u00";
+                result += hex[value >> 4];
+                result += hex[value & 0x0f];
+            } else result += static_cast<char>(value);
+        }
+    }
+    result += '"';
+    return result;
+}
+
+std::string joined_values(const std::vector<SimulationValue>& values, bool display) {
     std::string result;
-    for (const auto& value : values) {
-        if (!result.empty()) result += ", ";
-        result += simulation_value_text(value);
+    for (std::size_t index = 0; index < values.size(); ++index) {
+        if (index) result += ", ";
+        result += display ? simulation_value_display_text(values[index]) : simulation_value_text(values[index]);
     }
     return result;
 }
@@ -164,14 +188,15 @@ std::string_view explanation_template(const SimulationSpec& spec, SimulationPhas
     throw std::invalid_argument("Fase de simulación desconocida.");
 }
 
-std::string expanded(std::string_view source, const SimulationTrace& trace, const SimulationFrame& frame) {
+std::string expanded(std::string_view source, const SimulationTrace& trace, const SimulationFrame& frame, bool display) {
     const bool has_value = frame.phase == SimulationPhase::start || frame.phase == SimulationPhase::advance ||
         frame.phase == SimulationPhase::new_maximum || frame.phase == SimulationPhase::tie ||
         frame.phase == SimulationPhase::below_maximum;
     const std::array<std::string, 9> replacements{
-        has_value ? simulation_value_text(trace.groups.at(frame.group - 1).value) : std::string{},
+        has_value ? (display ? simulation_value_display_text(trace.groups.at(frame.group - 1).value)
+                            : simulation_value_text(trace.groups.at(frame.group - 1).value)) : std::string{},
         std::to_string(frame.begin), std::to_string(frame.end), std::to_string(frame.frequency),
-        std::to_string(frame.maximum), joined_values(frame.leaders), std::to_string(trace.ordered.size()),
+        std::to_string(frame.maximum), joined_values(frame.leaders, display), std::to_string(trace.ordered.size()),
         std::to_string(frame.group), std::to_string(trace.groups.size())
     };
     std::string result;
@@ -208,7 +233,7 @@ SimulationTrace make_trace(const SimulationSpec& spec, const std::vector<Simulat
     }
     std::size_t expanded_bytes = 0;
     const auto append = [&](SimulationFrame frame) {
-        frame.explanation = expanded(explanation_template(spec, frame.phase), trace, frame);
+        frame.explanation = expanded(explanation_template(spec, frame.phase), trace, frame, true);
         require(frame.explanation.size() <= expanded_trace_limit - expanded_bytes,
             "La traza expandida supera 8 MiB.");
         expanded_bytes += frame.explanation.size();
@@ -248,7 +273,7 @@ SimulationTrace make_trace(const SimulationSpec& spec, const std::vector<Simulat
         } else {
             current.phase = SimulationPhase::below_maximum;
         }
-        const auto line = expanded(spec.output_template, trace, current);
+        const auto line = expanded(spec.output_template, trace, current, false);
         require(line.size() < expanded_trace_limit && current.output.size() <= expanded_trace_limit - line.size() - 1,
             "La salida expandida de la simulación supera 8 MiB.");
         current.output += line;
@@ -271,6 +296,109 @@ SimulationTrace validated_trace(const SimulationSpec& spec) {
     for (const auto& scenario : spec.scenarios) (void)make_trace(spec, scenario.values);
     return trace;
 }
+
+// The editor's explicit JSON mode accepts only a bounded array of strings.
+// This parser is independent of WinRT and does not reinterpret legacy lines.
+class TextArrayInput {
+public:
+    explicit TextArrayInput(std::string_view input) : input_(input) {}
+    std::vector<SimulationValue> parse() {
+        spaces();
+        require(take('['), "La lista debe comenzar con [ y contener sólo textos entre comillas.");
+        std::vector<SimulationValue> result;
+        spaces();
+        if (!take(']')) {
+            for (;;) {
+                require(result.size() < item_limit, "Una simulación admite como máximo 64 valores.");
+                result.emplace_back(string());
+                spaces();
+                if (take(']')) break;
+                require(take(','), "Separa los textos con comas y termina la lista con ].");
+                spaces();
+            }
+        }
+        spaces();
+        require(at_ == input_.size(), "Hay caracteres después del final de la lista.");
+        return result;
+    }
+private:
+    std::string_view input_;
+    std::size_t at_ = 0;
+    bool take(char expected) {
+        if (at_ == input_.size() || input_[at_] != expected) return false;
+        ++at_; return true;
+    }
+    void spaces() {
+        while (at_ < input_.size() && (input_[at_] == ' ' || input_[at_] == '\t' ||
+                input_[at_] == '\r' || input_[at_] == '\n')) ++at_;
+    }
+    std::uint32_t hex_quad() {
+        require(input_.size() - at_ >= 4, "Un escape Unicode necesita cuatro cifras hexadecimales.");
+        std::uint32_t result = 0;
+        for (int count = 0; count < 4; ++count) {
+            const auto digit = static_cast<unsigned char>(input_[at_++]);
+            const int number = digit >= '0' && digit <= '9' ? digit - '0' :
+                digit >= 'a' && digit <= 'f' ? digit - 'a' + 10 :
+                digit >= 'A' && digit <= 'F' ? digit - 'A' + 10 : -1;
+            require(number >= 0, "Un escape Unicode contiene una cifra no válida.");
+            result = (result << 4) | static_cast<std::uint32_t>(number);
+        }
+        return result;
+    }
+    static void append_point(std::string& result, std::uint32_t point) {
+        if (point <= 0x7f) result += static_cast<char>(point);
+        else if (point <= 0x7ff) {
+            result += static_cast<char>(0xc0 | (point >> 6));
+            result += static_cast<char>(0x80 | (point & 0x3f));
+        } else if (point <= 0xffff) {
+            result += static_cast<char>(0xe0 | (point >> 12));
+            result += static_cast<char>(0x80 | ((point >> 6) & 0x3f));
+            result += static_cast<char>(0x80 | (point & 0x3f));
+        } else {
+            result += static_cast<char>(0xf0 | (point >> 18));
+            result += static_cast<char>(0x80 | ((point >> 12) & 0x3f));
+            result += static_cast<char>(0x80 | ((point >> 6) & 0x3f));
+            result += static_cast<char>(0x80 | (point & 0x3f));
+        }
+    }
+    std::string string() {
+        require(take('"'), "Cada elemento de la lista debe ser un texto entre comillas.");
+        std::string result;
+        while (at_ < input_.size()) {
+            const auto value = static_cast<unsigned char>(input_[at_++]);
+            if (value == '"') return result;
+            require(value >= 0x20, "Los controles dentro de una cadena deben escribirse como escapes JSON.");
+            if (value != '\\') result += static_cast<char>(value);
+            else {
+                require(at_ < input_.size(), "La cadena termina con un escape incompleto.");
+                switch (input_[at_++]) {
+                case '"': result += '"'; break;
+                case '\\': result += '\\'; break;
+                case '/': result += '/'; break;
+                case 'b': result += '\b'; break;
+                case 'f': result += '\f'; break;
+                case 'n': result += '\n'; break;
+                case 'r': result += '\r'; break;
+                case 't': result += '\t'; break;
+                case 'u': {
+                    auto point = hex_quad();
+                    if (point >= 0xd800 && point <= 0xdbff) {
+                        require(take('\\') && take('u'), "Un sustituto Unicode alto necesita su pareja baja.");
+                        const auto low = hex_quad();
+                        require(low >= 0xdc00 && low <= 0xdfff, "La pareja Unicode no es válida.");
+                        point = 0x10000 + ((point - 0xd800) << 10) + (low - 0xdc00);
+                    } else require(point < 0xdc00 || point > 0xdfff, "Un sustituto Unicode bajo no puede aparecer solo.");
+                    append_point(result, point);
+                    break;
+                }
+                default: throw std::invalid_argument("La cadena contiene un escape JSON desconocido.");
+                }
+            }
+            require(result.size() <= 128, "Cada texto decodificado admite como máximo 128 bytes UTF-8.");
+        }
+        throw std::invalid_argument("Faltan las comillas de cierre de un texto.");
+    }
+};
 
 std::int64_t decimal(std::string_view value) {
     while (!value.empty() && (value.front() == ' ' || value.front() == '\t')) value.remove_prefix(1);
@@ -309,6 +437,16 @@ std::string simulation_value_text(const SimulationValue& value) {
     return std::get<std::string>(value);
 }
 
+std::string simulation_value_display_text(const SimulationValue& value) {
+    if (const auto* integer = std::get_if<std::int64_t>(&value)) return std::to_string(*integer);
+    const auto& text = std::get<std::string>(value);
+    auto result = quoted_text(text);
+    if (text.empty()) result += " (cadena vacía)";
+    else if (std::all_of(text.begin(), text.end(), [](char character) { return character == ' '; }))
+        result += " (" + std::to_string(text.size()) + (text.size() == 1 ? " espacio)" : " espacios)");
+    return result;
+}
+
 std::string simulation_frame_text(const SimulationSpec& spec,
         const SimulationTrace& trace, const SimulationFrame& frame) {
     require(frame.begin <= frame.end && frame.end <= trace.ordered.size() &&
@@ -316,27 +454,35 @@ std::string simulation_frame_text(const SimulationSpec& spec,
         "El estado de simulación contiene un rango inválido.");
     std::string result = spec.title + '\n' + frame.explanation + '\n' + spec.labels.array + ":\n";
     for (std::size_t index = 0; index < trace.ordered.size(); ++index)
-        result += std::to_string(index) + ": " + simulation_value_text(trace.ordered[index]) + '\n';
+        result += std::to_string(index) + ": " + simulation_value_display_text(trace.ordered[index]) + '\n';
     result += spec.labels.start + ": " + std::to_string(frame.begin) + '\n';
     result += spec.labels.end + ": " + std::to_string(frame.end) + '\n';
     result += spec.labels.frequency + ": " + std::to_string(frame.frequency) + '\n';
     result += spec.labels.maximum + ": " + std::to_string(frame.maximum) + '\n';
-    result += spec.labels.leaders + ": " + joined_values(frame.leaders) + '\n';
+    result += spec.labels.leaders + ": " + joined_values(frame.leaders, true) + '\n';
     result += spec.labels.output + ":\n" + frame.output;
     return result;
 }
 
-std::vector<SimulationValue> simulation_parse_input(const SimulationSpec& spec, std::string_view input) {
+std::vector<SimulationValue> simulation_parse_input(const SimulationSpec& spec, std::string_view input,
+        SimulationInputFormat format) {
     validate_simulation_spec(spec);
-    require(input.size() <= 64 * 130, "La entrada de simulación supera su límite de tamaño.");
+    require(format == SimulationInputFormat::lines || format == SimulationInputFormat::json,
+        "Formato de entrada de simulación desconocido.");
+    require(input.size() <= (format == SimulationInputFormat::json ? 64 * 1024 : 64 * 130),
+        "La entrada de simulación supera su límite de tamaño.");
     std::vector<SimulationValue> values;
-    for (std::size_t at = 0; at < input.size();) {
+    if (format == SimulationInputFormat::json) {
+        require(spec.text_values, "La lista entre comillas sólo está disponible para datos de texto.");
+        values = TextArrayInput(input).parse();
+    } else for (std::size_t at = 0; at < input.size();) {
         const auto newline = input.find('\n', at);
         const auto end = newline == input.npos ? input.size() : newline;
         auto value = input.substr(at, end - at);
         if (newline != input.npos && !value.empty() && value.back() == '\r') value.remove_suffix(1);
         require(value.find('\r') == value.npos && !value.empty(),
-            "Escribe un valor por línea, sin líneas vacías ni retornos aislados.");
+            spec.text_values ? "Escribe un texto no vacío por línea; para una cadena vacía, elige Lista entre comillas."
+                             : "Escribe un valor por línea, sin líneas vacías ni retornos aislados.");
         if (spec.text_values) values.emplace_back(std::string(value));
         else values.emplace_back(decimal(value));
         require(values.size() <= item_limit, "Una simulación admite como máximo 64 valores.");
@@ -348,11 +494,24 @@ std::vector<SimulationValue> simulation_parse_input(const SimulationSpec& spec, 
     return values;
 }
 
-std::string simulation_input_text(const std::vector<SimulationValue>& values) {
+std::string simulation_input_text(const std::vector<SimulationValue>& values, SimulationInputFormat format) {
     const bool text_values = !values.empty() && std::holds_alternative<std::string>(values.front());
     validate_values(values, text_values, false);
+    require(format == SimulationInputFormat::lines || format == SimulationInputFormat::json,
+        "Formato de entrada de simulación desconocido.");
+    if (format == SimulationInputFormat::json) {
+        require(values.empty() || text_values, "La lista entre comillas sólo está disponible para datos de texto.");
+        std::string result = "[";
+        for (std::size_t index = 0; index < values.size(); ++index) {
+            if (index) result += ", ";
+            result += quoted_text(std::get<std::string>(values[index]));
+        }
+        return result + "]";
+    }
     std::string result;
     for (std::size_t index = 0; index < values.size(); ++index) {
+        require(!std::holds_alternative<std::string>(values[index]) || !std::get<std::string>(values[index]).empty(),
+            "Una cadena vacía necesita el formato Lista entre comillas.");
         if (index) result += '\n';
         result += simulation_value_text(values[index]);
     }

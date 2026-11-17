@@ -6,6 +6,7 @@ template as code, opens learner state or changes a curricular document.
 """
 from __future__ import annotations
 
+import json
 import math
 import re
 
@@ -34,9 +35,10 @@ def _require(condition, message):
         raise ValueError(message)
 
 
-def _text(value, field, maximum, *, nonblank=True, single_line=False):
-    _require(type(value) is str and bool(value) and "\0" not in value,
-             f"{field} requiere texto no vacío sin NUL")
+def _text(value, field, maximum, *, nonblank=True, single_line=False, allow_empty=False):
+    empty_requirement = "" if allow_empty else " no vacío"
+    _require(type(value) is str and (allow_empty or bool(value)) and "\0" not in value,
+             f"{field} requiere texto{empty_requirement} sin NUL")
     try:
         encoded = value.encode("utf-8", errors="strict")
     except UnicodeError as error:
@@ -77,7 +79,7 @@ def _values(values, spec, field):
                  f"{field} sólo admite enteros numéricos de 32 bits, sin booleanos")
         keys = values
     else:
-        keys = [_text(value, f"{field}[{index}]", 128, nonblank=False, single_line=True)
+        keys = [_text(value, f"{field}[{index}]", 128, nonblank=False, single_line=True, allow_empty=True)
                 for index, value in enumerate(values)]
     _require(spec["sort"] or all(left <= right for left, right in zip(keys, keys[1:])),
              f"{field} debe estar ordenado de menor a mayor cuando sort es false")
@@ -88,7 +90,8 @@ def _trace_text_bytes(spec, values):
 
     Each frame counts its explanation and complete accumulated output. Values
     substituted into a template are data: braces within them are never parsed
-    again. This bounded calculation validates each authored scenario separately.
+    again. Explanations show quoted text labels; output preserves the raw data.
+    This bounded calculation validates each authored scenario separately.
     """
     ordered = sorted(values, key=(lambda value: value.encode("utf-8"))
                      if spec["valueType"] == "text" else None) if spec["sort"] else list(values)
@@ -100,13 +103,23 @@ def _trace_text_bytes(spec, values):
             groups[-1][1] = index + 1
     total, maximum, leaders, output = 0, 0, [], ""
 
-    def value_text(value):
-        return str(int(value)) if spec["valueType"] == "integer" else value
+    def value_text(value, *, display=False):
+        if spec["valueType"] == "integer":
+            return str(int(value))
+        if not display:
+            return value
+        rendered = json.dumps(value, ensure_ascii=False)
+        if not value:
+            return rendered + " (cadena vacía)"
+        if all(character == " " for character in value):
+            return rendered + (" (1 espacio)" if len(value) == 1 else f" ({len(value)} espacios)")
+        return rendered
 
-    def context(begin, end, group, frequency, value=""):
-        return {"value": value, "start": str(begin), "end": str(end),
+    def context(begin, end, group, frequency, value=None, *, display=False):
+        return {"value": "" if value is None else value_text(value, display=display),
+                "start": str(begin), "end": str(end),
                 "frequency": str(frequency), "maximum": str(maximum),
-                "leaders": ", ".join(value_text(item) for item in leaders),
+                "leaders": ", ".join(value_text(item, display=display) for item in leaders),
                 "size": str(len(ordered)), "group": str(group), "groups": str(len(groups))}
 
     def render(template, values):
@@ -120,14 +133,13 @@ def _trace_text_bytes(spec, values):
                  "La traza de simulación supera 8 MiB de explicaciones y salida acumulada")
 
     if not ordered:
-        frame("empty", context(0, 0, 0, 0))
+        frame("empty", context(0, 0, 0, 0, display=True))
         return total
-    frame("initial", context(0, 0, 0, 0))
+    frame("initial", context(0, 0, 0, 0, display=True))
     for group, (begin, end, value) in enumerate(groups, 1):
-        text = value_text(value)
-        frame("start", context(begin, begin + 1, group, 1, text))
+        frame("start", context(begin, begin + 1, group, 1, value, display=True))
         for at in range(begin + 2, end + 1):
-            frame("advance", context(begin, at, group, at - begin, text))
+            frame("advance", context(begin, at, group, at - begin, value, display=True))
         frequency = end - begin
         if frequency > maximum:
             maximum, leaders, phase = frequency, [value], "newMaximum"
@@ -136,10 +148,10 @@ def _trace_text_bytes(spec, values):
             phase = "tie"
         else:
             phase = "belowMaximum"
-        current = context(begin, end, group, frequency, text)
+        current = context(begin, end, group, frequency, value)
         output += render(spec["outputTemplate"], current) + "\n"
-        frame(phase, current)
-    frame("done", context(len(ordered), len(ordered), len(groups), 0))
+        frame(phase, context(begin, end, group, frequency, value, display=True))
+    frame("done", context(len(ordered), len(ordered), len(groups), 0, display=True))
     return total
 
 

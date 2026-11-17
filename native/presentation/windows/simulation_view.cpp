@@ -23,7 +23,7 @@ constexpr int title_id=100,description_id=101,scenario_label_id=102,scenario_id=
     array_label_id=104,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_label_id=109,output_id=110,previous_id=111,next_id=112,reset_id=113,
     input_label_id=114,input_id=115,apply_id=116,restore_id=117,error_id=118,
-    groups_label_id=119,group_first_id=200;
+    groups_label_id=119,input_format_id=120,group_first_id=200;
 bool passive_message(UINT message) {
     return message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||
         message==WM_MOUSEMOVE||message==WM_CAPTURECHANGED||message==WM_CANCELMODE||message==WM_NCDESTROY;
@@ -100,6 +100,7 @@ struct SimulationView::Impl {
     std::map<int,std::string> visible_text;
     std::map<int,int> requested_heights;
     std::size_t position=0,scenario=0;
+    SimulationInputFormat input_format=SimulationInputFormat::lines;
     int width=1,height=1,scale=100,canvas_height=1;
     bool initializing=true,arranging=false,layout_valid=false;
     std::shared_ptr<bool> alive=std::make_shared<bool>(true);
@@ -214,12 +215,20 @@ struct SimulationView::Impl {
         SetWindowPos(item(output_id),statistics_window,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
         button(previous_id,"Anterior");button(next_id,"Siguiente");button(reset_id,"Reiniciar");
         reader_theme::primary_button(item(next_id));
+        const auto format=create(L"COMBOBOX",input_format_id,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL);
+        SendMessageW(format,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
+        SendMessageW(format,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(L"Un texto por línea"));
+        SendMessageW(format,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(L"Lista entre comillas"));
+        SendMessageW(format,CB_SETCURSEL,0,0);accessible(format,"Formato de los datos editables");
         const auto editor=create(MSFTEDIT_CLASS,input_id,WS_TABSTOP|ES_MULTILINE|ES_AUTOVSCROLL|WS_VSCROLL);
         reader_theme::apply(editor,reader_theme::Surface::field);use_plain_text_input(editor);
         SendMessageW(editor,WM_SETFONT,reinterpret_cast<WPARAM>(base_font),FALSE);
-        SendMessageW(editor,EM_EXLIMITTEXT,0,65536);accessible(editor,"Datos de la simulación. Un valor por línea.");
+        SendMessageW(editor,EM_EXLIMITTEXT,0,65536);
         button(apply_id,"Aplicar datos");button(restore_id,"Restablecer datos");
-        set_edit_text(editor,simulation_input_text(trace.original));
+        if(spec.text_values&&std::ranges::any_of(trace.original,[](const auto& value){
+            const auto* text=std::get_if<std::string>(&value);return text&&text->empty();}))
+            input_format=SimulationInputFormat::json;
+        set_edit_text(editor,simulation_input_text(trace.original,input_format));
         rebuild_groups();update();initializing=false;
     }
     void accessible(HWND target,const std::string& name) {
@@ -230,7 +239,7 @@ struct SimulationView::Impl {
         for(const auto child:group_buttons){controls.erase(GetDlgCtrlID(child));if(IsWindow(child))DestroyWindow(child);}group_buttons.clear();
         if(spec.view!=SimulationViewMode::groups)return;
         for(std::size_t i=0;i<trace.groups.size();++i){const auto& group=trace.groups[i];
-            const auto caption="Grupo "+std::to_string(i+1)+" · "+simulation_value_text(group.value);
+            const auto caption="Grupo "+std::to_string(i+1)+" · "+simulation_value_display_text(group.value);
             const auto child=button(group_first_id+static_cast<int>(i),caption,
                 BS_AUTORADIOBUTTON|BS_MULTILINE|(i==0?WS_GROUP:0));
             accessible(child,caption+". Índices "+std::to_string(group.begin)+" a "+std::to_string(group.end-1)+
@@ -242,7 +251,7 @@ struct SimulationView::Impl {
     std::string array_text()const {
         std::string text=spec.labels.array+". ";
         if(trace.ordered.empty())text+="No hay valores.";
-        for(std::size_t i=0;i<trace.ordered.size();++i){if(i)text+="; ";text+="índice "+std::to_string(i)+": "+simulation_value_text(trace.ordered[i]);}
+        for(std::size_t i=0;i<trace.ordered.size();++i){if(i)text+="; ";text+="índice "+std::to_string(i)+": "+simulation_value_display_text(trace.ordered[i]);}
         const auto& state=frame();
         if(spec.view==SimulationViewMode::array){for(std::size_t i=0;i<trace.groups.size();++i){const auto& group=trace.groups[i];
             text+=". Grupo "+std::to_string(i+1)+": índices "+std::to_string(group.begin)+" a "+std::to_string(group.end-1)+".";}}
@@ -253,7 +262,7 @@ struct SimulationView::Impl {
     }
     std::string leader_text(const SimulationFrame& state)const {
         if(state.leaders.empty())return "ninguno";
-        std::string result;for(const auto& value:state.leaders){if(!result.empty())result+=", ";result+=simulation_value_text(value);}return result;
+        std::string result;for(const auto& value:state.leaders){if(!result.empty())result+=", ";result+=simulation_value_display_text(value);}return result;
     }
     void update() {
         layout_valid=false;requested_heights.clear();
@@ -269,7 +278,7 @@ struct SimulationView::Impl {
         set_label(step_id,status);set_label(explanation_id,state.explanation);
         statistics.clear();
         if(spec.view==SimulationViewMode::candidates){
-            const auto examined=state.group>0&&state.group<=trace.groups.size()?simulation_value_text(trace.groups[state.group-1].value):"ninguno";
+            const auto examined=state.group>0&&state.group<=trace.groups.size()?simulation_value_display_text(trace.groups[state.group-1].value):"ninguno";
             statistics.push_back({spec.text_values?"Etiqueta examinada":"Valor examinado",examined});
             statistics.push_back({spec.labels.frequency,std::to_string(state.frequency)});
         }else if(spec.view!=SimulationViewMode::summary){statistics.push_back({spec.labels.start,std::to_string(state.begin)});
@@ -283,7 +292,12 @@ struct SimulationView::Impl {
         set_label(output_label_id,spec.labels.output+(state.output.empty()?" (vacía)":""));
         visible_text[output_id]=state.output;set_edit_text(item(output_id),state.output);color_plain_text(output_id);
         SendMessageW(item(output_id),EM_SETZOOM,scale,100);color_plain_text(input_id);
-        set_label(input_label_id,spec.text_values?"Datos editables: un texto por línea.":"Datos editables: un entero por línea.");
+        const auto input_help=!spec.text_values?std::string("Datos editables: un entero por línea."):
+            input_format==SimulationInputFormat::json?
+                std::string(R"(Datos editables: una lista de textos entre comillas. Ejemplo: ["", "patio", " "]. [] no contiene elementos; "" es una cadena vacía y " " contiene un espacio.)"):
+                std::string("Datos editables: un texto por línea; los espacios se conservan. Un campo vacío no contiene elementos. Para introducir una cadena vacía, elige Lista entre comillas.");
+        set_label(input_label_id,input_help);accessible(item(input_id),input_help);
+        SendMessageW(item(input_format_id),CB_SETCURSEL,input_format==SimulationInputFormat::json?1:0,0);
         set_label(error_id,error);
         EnableWindow(item(previous_id),stepping()&&position>0);
         EnableWindow(item(next_id),stepping()&&position+1<count());
@@ -307,13 +321,34 @@ struct SimulationView::Impl {
         // Validation and every frame finish before replacing the visible model.
         auto candidate=build_simulation_trace(spec,std::move(values));
         auto identity=data_identity(candidate.original);
+        auto next_format=input_format;
+        std::optional<std::string> replacement;
+        if(replace_editor){
+            if(spec.text_values&&std::ranges::any_of(candidate.original,[](const auto& value){
+                const auto* text=std::get_if<std::string>(&value);return text&&text->empty();}))
+                next_format=SimulationInputFormat::json;
+            replacement=simulation_input_text(candidate.original,next_format);
+        }
         trace=std::move(candidate);input_key=std::move(identity);position=0;error.clear();
-        if(replace_editor)set_edit_text(item(input_id),simulation_input_text(trace.original));
+        if(replacement){input_format=next_format;set_edit_text(item(input_id),*replacement);}
         rebuild_groups();update();publish();
     }
     void apply_input() {
-        try {auto values=simulation_parse_input(spec,edit_text(item(input_id)));replace_data(std::move(values),false);}
+        try {auto values=simulation_parse_input(spec,edit_text(item(input_id)),input_format);replace_data(std::move(values),false);}
         catch(const std::exception& failure){error=std::string("No se aplicaron los datos. ")+failure.what();update();publish();}
+    }
+    void change_input_format(SimulationInputFormat requested) {
+        if(requested==input_format)return;
+        // Converting a pending edit never applies it or moves the walkthrough.
+        // A format that cannot represent every value leaves the edit intact.
+        try {
+            const auto values=simulation_parse_input(spec,edit_text(item(input_id)),input_format);
+            const auto converted=simulation_input_text(values,requested);
+            set_edit_text(item(input_id),converted);input_format=requested;error.clear();
+        }catch(const std::exception& failure){
+            error=std::string("No se cambió el formato; se conservaron los datos escritos. ")+failure.what();
+        }
+        update();publish();
     }
     int measure(std::string_view text,int available,HFONT selected=nullptr)const {
         if(text.empty())return 0;const auto dc=GetDC(host);const auto previous=SelectObject(dc,selected?selected:font);
@@ -336,7 +371,7 @@ struct SimulationView::Impl {
             const auto limit_height=measure(limit_text,available,index_font);limit_bounds={0,sp(64),available,sp(64)+limit_height};
             return sp(64)+limit_height;}
         const auto gap=sp(8);int desired=sp(80);
-        for(const auto& value:trace.ordered){const auto text=wide(simulation_value_text(value));const auto dc=GetDC(host);const auto old=SelectObject(dc,font);
+        for(const auto& value:trace.ordered){const auto text=wide(simulation_value_display_text(value));const auto dc=GetDC(host);const auto old=SelectObject(dc,font);
             SIZE measured{};GetTextExtentPoint32W(dc,text.c_str(),static_cast<int>(text.size()),&measured);SelectObject(dc,old);ReleaseDC(host,dc);
             desired=std::max(desired,std::min(sp(170),static_cast<int>(measured.cx)+sp(24)));}
         const auto columns=std::min<int>(static_cast<int>(trace.ordered.size()),std::max(1,(available+gap)/(desired+gap)));
@@ -345,7 +380,7 @@ struct SimulationView::Impl {
         for(std::size_t first=0;first<trace.ordered.size();first+=static_cast<std::size_t>(columns)){
             const auto last=std::min(trace.ordered.size(),first+static_cast<std::size_t>(columns));int row=sp(spec.view==SimulationViewMode::array?88:68),marker_height=0;
             for(auto i=first;i<last;++i){const auto dc=GetDC(host);const auto old=SelectObject(dc,font);
-                const auto content=wrapped_text(dc,simulation_value_text(trace.ordered[i]),std::max(1,cell_width-sp(16)));
+                const auto content=wrapped_text(dc,simulation_value_display_text(trace.ordered[i]),std::max(1,cell_width-sp(16)));
                 RECT bounds{0,0,std::max(1,cell_width-sp(16)),0};DrawTextW(dc,content.c_str(),static_cast<int>(content.size()),&bounds,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);
                 SelectObject(dc,old);ReleaseDC(host,dc);row=std::max(row,static_cast<int>(bounds.bottom)+sp(spec.view==SimulationViewMode::array?62:42));
                 if(const auto caption=marker_text(i);!caption.empty())marker_height=std::max(marker_height,measure(caption,cell_width,index_font)+sp(8));}
@@ -415,10 +450,10 @@ struct SimulationView::Impl {
             const int button_width=std::max(1,(available-gap*(columns-1))/columns);
             for(std::size_t first=0;first<group_buttons.size();first+=static_cast<std::size_t>(columns)){
                 const auto last=std::min(group_buttons.size(),first+static_cast<std::size_t>(columns));int row=sp(44);
-                for(auto i=first;i<last;++i){const auto caption="Grupo "+std::to_string(i+1)+" · "+simulation_value_text(trace.groups[i].value);
+                for(auto i=first;i<last;++i){const auto caption="Grupo "+std::to_string(i+1)+" · "+simulation_value_display_text(trace.groups[i].value);
                     row=std::max(row,measure(caption,std::max(1,button_width-sp(28)))+px(8));}
                 for(auto i=first;i<last;++i){const auto id=group_first_id+static_cast<int>(i);
-                    if(move){const auto caption="Grupo "+std::to_string(i+1)+" · "+simulation_value_text(trace.groups[i].value);
+                    if(move){const auto caption="Grupo "+std::to_string(i+1)+" · "+simulation_value_display_text(trace.groups[i].value);
                         const auto dc=GetDC(host);const auto old=SelectObject(dc,font);
                         const auto wrapped=wrapped_text(dc,caption,std::max(1,button_width-sp(28)));
                         SelectObject(dc,old);ReleaseDC(host,dc);SetWindowTextW(item(id),literal_button_caption(wrapped).c_str());}
@@ -445,6 +480,8 @@ struct SimulationView::Impl {
         };
         buttons({previous_id,next_id,reset_id},stepping());
         text_row(input_label_id,spec.editable);
+        const bool text_format=spec.editable&&spec.text_values;
+        place(input_format_id,margin,top,available,sp(150),text_format);if(text_format)top+=sp(38)+px(8);
         place(input_id,margin,top,available,sp(116),spec.editable);if(spec.editable)top+=sp(116)+px(8);
         buttons({apply_id,restore_id},spec.editable);text_row(error_id,!error.empty());
         height=top+px(8);layout_valid=move;return height;
@@ -478,7 +515,7 @@ struct SimulationView::Impl {
             auto old=SelectObject(dc,index_font);SetTextColor(dc,foreground);
             const auto index=wide("índice "+std::to_string(i));DrawTextW(dc,index.c_str(),-1,&index_area,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);
             auto value_area=bounds;value_area.left+=sp(8);value_area.right-=sp(8);value_area.top=index_area.bottom+sp(3);value_area.bottom-=sp(spec.view==SimulationViewMode::array?28:8);
-            SelectObject(dc,font);const auto value=wrapped_text(dc,simulation_value_text(trace.ordered[i]),value_area.right-value_area.left);
+            SelectObject(dc,font);const auto value=wrapped_text(dc,simulation_value_display_text(trace.ordered[i]),value_area.right-value_area.left);
             DrawTextW(dc,value.c_str(),static_cast<int>(value.size()),&value_area,DT_CENTER|DT_WORDBREAK|DT_NOPREFIX|DT_EDITCONTROL);
             if(spec.view==SimulationViewMode::array){auto caption=bounds;caption.top=caption.bottom-sp(24);caption.bottom-=sp(4);SelectObject(dc,index_font);
                 const auto name=wide("grupo "+std::to_string(group+1));DrawTextW(dc,name.c_str(),-1,&caption,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);}
@@ -531,6 +568,11 @@ struct SimulationView::Impl {
                 const auto previous=scenario;scenario=static_cast<std::size_t>(selected);
                 try{replace_data(original_data(),true);}catch(...){scenario=previous;SendMessageW(item(scenario_id),CB_SETCURSEL,scenario,0);throw;}}
             return 0;}
+        if(id==input_format_id&&event==CBN_SELCHANGE&&spec.editable&&spec.text_values){
+            const auto selected=SendMessageW(item(input_format_id),CB_GETCURSEL,0,0);
+            if(selected==0||selected==1)change_input_format(selected==1?SimulationInputFormat::json:SimulationInputFormat::lines);
+            return 0;
+        }
         if(event!=BN_CLICKED)return 0;
         if(id==previous_id){if(position)go(position-1);}
         else if(id==next_id)go(position+1);

@@ -13,6 +13,7 @@ namespace lgaed::curriculum {
 using SimulationValue = std::variant<std::int64_t, std::string>;
 
 enum class SimulationViewMode { array, groups, walkthrough, candidates, summary };
+enum class SimulationInputFormat { lines, json };
 enum class SimulationPhase { initial, start, advance, new_maximum, tie, below_maximum, done, empty };
 
 struct SimulationLabels {
@@ -69,13 +70,20 @@ struct SimulationTrace {
 void validate_simulation_spec(const SimulationSpec& spec);
 [[nodiscard]] SimulationTrace build_simulation_trace(const SimulationSpec& spec,
     std::optional<std::vector<SimulationValue>> inputs = std::nullopt);
+// Raw data for exact output and identity; display labels never replace values.
 [[nodiscard]] std::string simulation_value_text(const SimulationValue& value);
+// Text is quoted/escaped; empty and ASCII-space-only values have visible labels.
+[[nodiscard]] std::string simulation_value_display_text(const SimulationValue& value);
 [[nodiscard]] std::string simulation_frame_text(const SimulationSpec& spec,
     const SimulationTrace& trace, const SimulationFrame& frame);
-// One value per LF/CRLF line. A final newline is optional. Text preserves spaces;
-// integers admit a sign and exterior spaces/TAB, but no expressions or suffixes.
+// Lines retain their historical literal meaning and optional final LF/CRLF.
+// Text JSON is an explicit format (never inferred): [] and [""] are different.
+// Integers keep signed decimal lines; JSON is limited to arrays of text values.
 [[nodiscard]] std::vector<SimulationValue> simulation_parse_input(
-    const SimulationSpec& spec, std::string_view input);
-[[nodiscard]] std::string simulation_input_text(const std::vector<SimulationValue>& values);
+    const SimulationSpec& spec, std::string_view input,
+    SimulationInputFormat format = SimulationInputFormat::lines);
+// Lines cannot represent an empty text item and reject it instead of losing it.
+[[nodiscard]] std::string simulation_input_text(const std::vector<SimulationValue>& values,
+    SimulationInputFormat format = SimulationInputFormat::lines);
 
 } // namespace lgaed::curriculum

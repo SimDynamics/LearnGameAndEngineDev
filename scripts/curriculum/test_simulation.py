@@ -139,19 +139,55 @@ class SimulationContractTest(unittest.TestCase):
     def test_text_values_preserve_spaces_and_use_utf8_binary_order(self):
         value = block()
         value["simulation"].update(valueType="text", sort=False,
-                                   values=[" ", "A", "Z", "a", "á", "á", "🟦"], scenarios=[])
+                                   values=["", "", " ", "A", "Z", "a", "á", "á", "🟦"], scenarios=[])
         simulation.validate_contract(value)
         value["simulation"]["values"] = ["á", "z"]
         with self.assertRaisesRegex(ValueError, "ordenado"):
             simulation.validate_contract(value)
         value["simulation"]["sort"] = True
         simulation.validate_contract(value)
-        for item in ("", "a\nb", "a\rb", "\0", "\ud800", "ñ" * 65, 1, False):
+        for item in ("a\nb", "a\rb", "\0", "\ud800", "ñ" * 65, 1, False):
             value["simulation"]["values"] = [item]
             with self.subTest(item=repr(item)), self.assertRaises(ValueError):
                 simulation.validate_contract(value)
         value["simulation"]["values"] = ["ñ" * 64]
         simulation.validate_contract(value)
+
+    def test_empty_text_labels_remain_distinct_in_values_and_scenarios(self):
+        samples = [[], [""], ["", "patio", "patio"], ["", " "]]
+        for values in samples:
+            value = block()
+            value["simulation"].update(
+                valueType="text", values=deepcopy(values), sort=False,
+                scenarios=[{"id": f"case_{index}", "label": f"Entrada {index}",
+                            "values": deepcopy(items)}
+                           for index, items in enumerate(samples)])
+            original = deepcopy(value)
+            with self.subTest(values=values):
+                self.assertIs(simulation.validate_contract(value), value["simulation"])
+                self.assertEqual(value, original)
+        for field in ("values", "scenario"):
+            value = block()
+            value["simulation"].update(valueType="text", values=[""], sort=False,
+                                       scenarios=[{"id": "empty", "label": "Etiqueta vacía", "values": [""]}])
+            target = value["simulation"] if field == "values" else value["simulation"]["scenarios"][0]
+            target["values"] = [" ", ""]
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "ordenado"):
+                simulation.validate_contract(value)
+
+    def test_empty_labels_keep_text_limits_in_initial_and_scenario_inputs(self):
+        for field in ("values", "scenario"):
+            value = block()
+            value["simulation"].update(valueType="text", values=[""], scenarios=[
+                {"id": "empty", "label": "Etiquetas", "values": [""]}])
+            target = value["simulation"] if field == "values" else value["simulation"]["scenarios"][0]
+            target["values"] = [""] * 64
+            simulation.validate_contract(value)
+            for invalid in ([""] * 65, ["", "a\nb"], ["", "a\rb"], ["", "\0"],
+                            ["", "\ud800"], ["", "ñ" * 65], ["", 1], ["", False]):
+                target["values"] = invalid
+                with self.subTest(field=field, invalid=repr(invalid)), self.assertRaises(ValueError):
+                    simulation.validate_contract(value)
 
     def test_text_byte_limits_unicode_blankness_and_nul(self):
         paths = [((), "id", 128), ((), "title", 120), ((), "description", 4000),
@@ -228,6 +264,38 @@ class SimulationContractTest(unittest.TestCase):
         self.assertEqual(simulation._trace_text_bytes(spec, ["ñ"]), 10)
         spec["values"] = ["{maximum}"]
         self.assertEqual(simulation._trace_text_bytes(spec, spec["values"]), 24)
+        # Empty text remains a real one-element group. Its template expansion
+        # is empty data, so the accumulated output still contains its newline.
+        self.assertEqual(simulation._trace_text_bytes(spec, [""]), 6)
+        self.assertEqual(simulation._trace_text_bytes(spec, ["", " "]), 14)
+
+    def test_trace_budget_counts_display_labels_but_keeps_output_data_raw(self):
+        spec = block()["simulation"]
+        spec.update(valueType="text", values=[], scenarios=[], outputTemplate="{value}|{leaders}",
+                    explanations={name: "{value}|{leaders}" for name in simulation.EXPLANATION_FIELDS})
+        labels = [("", '"" (cadena vacía)'), (" ", '" " (1 espacio)'),
+                  ("  ", '"  " (2 espacios)'), ("\t", '"\\t"'), ("\x1f", '"\\u001f"'),
+                  ('a"b\\c', '"a\\"b\\\\c"'), ("ñ", '"ñ"'), ("{maximum}", '"{maximum}"')]
+        for raw, display in labels:
+            output = raw + "|" + raw + "\n"
+            expected = [("|", ""), (display + "|", ""),
+                        (display + "|" + display, output), ("|" + display, output)]
+            with self.subTest(raw=repr(raw)):
+                self.assertEqual(simulation._trace_text_bytes(spec, [raw]),
+                                 sum(len((explanation + printed).encode("utf-8"))
+                                     for explanation, printed in expected))
+        empty, space = '"" (cadena vacía)', '" " (1 espacio)'
+        # The first candidate is still the empty datum. Joining the two raw
+        # candidates must retain its separator rather than dropping it.
+        output = "|\n |,  \n"
+        expected = [("|", ""), (empty + "|", ""), (empty + "|" + empty, "|\n"),
+                    (space + "|" + empty, "|\n"),
+                    (space + "|" + empty + ", " + space, output),
+                    ("|" + empty + ", " + space, output)]
+        self.assertEqual(simulation._trace_text_bytes(spec, ["", " "]),
+                         sum(len((explanation + printed).encode("utf-8"))
+                             for explanation, printed in expected))
+        self.assertEqual(simulation._trace_text_bytes(spec, []), 1)
 
     def test_trace_expansion_limit_covers_default_and_each_scenario(self):
         value = block()
@@ -404,6 +472,29 @@ class SimulationIntegrationTest(unittest.TestCase):
         self.assertEqual(retired["stateLayout"]["retired"][0]["block"], raw["pages"][1]["blocks"][1])
         self.assertEqual(retired["stateLayout"]["retirementHistory"][0]["pages"], source["pages"])
         self.assertEqual(state.validate(retired)[0, 0], (0, 0))
+
+    def test_empty_labels_keep_distinct_fingerprints_and_preserved_history(self):
+        samples = [[], [""], [" "], ["", " "]]
+        fingerprints = []
+        for values in samples:
+            raw = lesson()
+            original = raw["pages"][1]["blocks"][1]
+            original["simulation"].update(valueType="text", values=deepcopy(values), scenarios=[])
+            source = state.prepare_v2(raw, "es", {"es": raw})
+            before = deepcopy(source)
+            with self.subTest(values=values):
+                state.validate(source)
+                self.assertEqual(source, before)
+                fingerprints.append(state.state_fingerprint(original))
+                retired = state.retire(source, ["block_0001_0001"])
+                state.validate_transition(source, retired)
+                self.assertEqual(retired["stateLayout"]["retired"][0]["block"], original)
+                self.assertEqual(retired["stateLayout"]["retirementHistory"][0]["pages"], source["pages"])
+                changed = deepcopy(source)
+                changed["pages"][1]["blocks"][1]["simulation"]["values"].append("")
+                with self.assertRaises(state.LayoutError):
+                    state.validate_transition(source, changed)
+        self.assertEqual(len(set(fingerprints)), len(samples))
 
     def test_validation_checks_active_retired_and_retirement_history_sources(self):
         for place in ("active", "retired", "history"):

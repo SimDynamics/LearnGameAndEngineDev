@@ -16,6 +16,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace {
 using namespace lgaed;
@@ -52,6 +53,38 @@ void rejected_text(std::string_view text) {
     check(full&&metadata,"Simulation contract differs between full and metadata loaders");
 }
 void rejected(const JsonObject& root) {rejected_text(winrt::to_string(root.Stringify()));}
+void empty_text_contracts(std::string_view source) {
+    struct Case {
+        const wchar_t* json;
+        std::vector<curriculum::SimulationValue> values;
+    };
+    const std::vector<Case> cases{
+        {L"[]",{}},
+        {L"[\"\"]",{std::string("")}},
+        {L"[\"\",\"patio\",\"patio\"]",{std::string(""),std::string("patio"),std::string("patio")}},
+        {L"[\"\",\" \"]",{std::string(""),std::string(" ")}}
+    };
+    for(const auto& sample:cases) {
+        auto root=JsonObject::Parse(winrt::to_hstring(source));
+        auto simulation=simulation_block(root).GetNamedObject(L"simulation");
+        simulation.Insert(L"valueType",JsonValue::CreateStringValue(L"text"));
+        simulation.Insert(L"values",JsonArray::Parse(sample.json));
+        JsonObject scenario;
+        scenario.Insert(L"id",JsonValue::CreateStringValue(L"empty-labels"));
+        scenario.Insert(L"label",JsonValue::CreateStringValue(L"Etiquetas vacías y espacios"));
+        scenario.Insert(L"values",JsonArray::Parse(sample.json));
+        JsonArray scenarios;scenarios.Append(scenario);simulation.Insert(L"scenarios",scenarios);
+        const auto authored=winrt::to_string(root.Stringify());
+        const auto full=windows::parse_lesson_json(authored,"es");
+        const auto progress=windows::parse_lesson_progress_metadata(authored,"es");
+        const auto& spec=full.pages.at(0).blocks.at(1).simulation;
+        check(spec&&progress.pages.at(0).blocks.at(1).simulation==spec,
+            "Empty-label data has different full/progress loading contracts");
+        check(spec->text_values&&spec->values==sample.values&&spec->scenarios.size()==1&&
+            spec->scenarios.front().values==sample.values,
+            "Loading changed empty labels, meaningful spaces or the number of values");
+    }
+}
 void invalid_contracts(std::string_view source) {
     for(const auto id:{L"",L" \t\r\n",L"\u0085",L"\u2003"}) {
         auto root=JsonObject::Parse(winrt::to_hstring(source));
@@ -131,6 +164,7 @@ int main(int argc,char** argv)try {
     const auto trace=curriculum::build_simulation_trace(*block.simulation);
     check(trace.frames.size()>2&&!trace.groups.empty(),"The authored example has no real computed traversal");
     invalid_contracts(source);
+    empty_text_contracts(source);
 
     // Stable publications keep integer JSON tokens exactly, as required by
     // the pre-existing fingerprint scanner. The isolated block adapter can
