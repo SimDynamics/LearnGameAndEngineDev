@@ -2471,6 +2471,49 @@ void reader_scale_wheel_session_boundaries(HWND host) {
         "Reader-scale transitions changed the active model, draft or another simulation");
     SetFocus(nullptr);
 }
+void dpi_rebase_preserves_local_editor_zoom(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    SimulationView view(host,spec,"es"),other(host,spec,"es");
+    resize(view,820);resize(other,820);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto explanation=GetDlgItem(view.window(),explanation_id);
+    check(editor&&explanation,"DPI rebase fixture lacks the editor or reader text");
+    const auto original=rich_edit_contents(view),other_original=rich_edit_contents(other);
+    const auto step=view.step_index();
+    SetFocus(editor);
+    check(GetFocus()==editor,"DPI rebase fixture cannot focus its data editor");
+    control_wheel(host,editor,2*WHEEL_DELTA);
+    check(rich_edit_scale(editor)==120&&rich_edit_scale(explanation)==100,
+        "Preparing a local editor scale changed the surrounding reader");
+    control_wheel(host,editor,WHEEL_DELTA/2);
+    check(rich_edit_scale(editor)==120,
+        "A partial local wheel delta changed zoom before the DPI rebase");
+
+    // Send only to the isolated child, as Windows does after its parent DPI
+    // transition. No physical monitor or desktop window is modified by QA.
+    SendMessageW(view.window(),WM_DPICHANGED_AFTERPARENT,0,0);
+    pump(host);
+    check(rich_edit_scale(editor)==120&&rich_edit_scale(explanation)==100,
+        "A DPI font rebase erased independent editor zoom or changed reader scale");
+    control_wheel(host,editor,WHEEL_DELTA/2);
+    check(rich_edit_scale(editor)==120,
+        "DPI rebase reused half a wheel notch from the former DPI session");
+    control_wheel(host,editor,WHEEL_DELTA/2);
+    check(rich_edit_scale(editor)==130,
+        "DPI rebase disabled the new high-resolution wheel session");
+    check(view.step_index()==step&&rich_edit_contents(view)==original&&
+        rich_edit_contents(other)==other_original&&
+        rich_edit_scale(GetDlgItem(other.window(),input_id))==100,
+        "DPI rebase changed the simulation model, draft, narration or another view");
+
+    // An explicit reader scale change is different: it deliberately sets
+    // both controls to the requested scale and starts a fresh wheel session.
+    view.set_text_scale(150);resize(view,820);
+    check(rich_edit_scale(editor)==150&&rich_edit_scale(explanation)==150&&
+        rich_edit_contents(view)==original&&view.step_index()==step,
+        "An explicit reader-scale change incorrectly retained local DPI zoom");
+    SetFocus(nullptr);
+}
 void parent_width_changes(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);int layouts=0,changes=0;
     SimulationView view(host,spec,"es",{[&]{++changes;},[&]{++layouts;}});resize(view,800);
@@ -2689,6 +2732,7 @@ int main(int argc,char** argv)try {
     run("scale_limits_and_local_control_wheel",[&]{scale_limits_and_local_control_wheel(host.value);});
     run("input_wheel_session_boundaries",[&]{input_wheel_session_boundaries(host.value);});
     run("reader_scale_wheel_session_boundaries",[&]{reader_scale_wheel_session_boundaries(host.value);});
+    run("dpi_rebase_preserves_local_editor_zoom",[&]{dpi_rebase_preserves_local_editor_zoom(host.value);});
     run("parent_width_changes",[&]{parent_width_changes(host.value);});
     run("long_labels_and_literal_values",[&]{long_labels_and_literal_values(host.value,captures);});
     run("wheel_edges_resume_reader",[&]{wheel_edges_resume_reader(host.value);});
