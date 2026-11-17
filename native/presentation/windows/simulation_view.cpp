@@ -170,19 +170,23 @@ struct SimulationView::Impl {
         SendMessageW(item(id),EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&format));
         SendMessageW(item(id),EM_SETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&format));
     }
-    void fonts() {
+    void fonts(bool rebase=true) {
         layout_valid=false;requested_heights.clear();
         const auto make=[&](int logical,bool scaled,const wchar_t* face,int weight=FW_NORMAL){
             const auto result=CreateFontW(-(scaled?sp(logical):px(logical)),0,0,0,weight,FALSE,FALSE,FALSE,
                 DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,face);
             if(!result)throw std::runtime_error("No se pudo preparar la tipografía de la simulación.");return result;};
-        const auto next=make(18,true,L"Roboto"),base=make(18,false,L"Roboto"),
+        const auto next=make(18,true,L"Roboto"),base=rebase?make(18,false,L"Roboto"):base_font,
             heading=make(23,true,L"Roboto",FW_BOLD),index=make(13,true,L"Roboto"),value=make(30,true,L"Roboto",FW_BOLD);
-        const std::array old{font,base_font,heading_font,index_font,value_font};
+        const std::array old{font,rebase?base_font:nullptr,heading_font,index_font,value_font};
         font=next;base_font=base;heading_font=heading;index_font=index;value_font=value;
         for(const auto& [id,child]:controls){wchar_t type[48]{};GetClassNameW(child,type,48);
-            SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(std::wstring_view(type)==MSFTEDIT_CLASS?base_font:font),FALSE);
-            if(std::wstring_view(type)==MSFTEDIT_CLASS)SendMessageW(child,EM_SETZOOM,scale,100);}
+            if(std::wstring_view(type)==MSFTEDIT_CLASS){
+                // RichEdit retains character formatting. A zoom-only change
+                // must not replace that base with WM_SETFONT at the old zoom.
+                if(rebase){SendMessageW(child,EM_SETZOOM,1,1);SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(base_font),FALSE);}
+                SendMessageW(child,EM_SETZOOM,scale,100);
+            }else SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);}
         for(const auto value:old)if(value)DeleteObject(value);
     }
     void initialize(HWND parent) {
@@ -627,7 +631,7 @@ SimulationView::~SimulationView()=default;
 HWND SimulationView::window()const{return impl_->host;}
 int SimulationView::height_for_width(int width){return impl_->measured_height(width);}
 void SimulationView::set_text_scale(int percentage){percentage=std::clamp(percentage,25,400);if(percentage==impl_->scale)return;
-    impl_->scale=percentage;impl_->fonts();impl_->update();}
+    impl_->scale=percentage;impl_->fonts(false);impl_->update();}
 std::size_t SimulationView::step_index()const{return impl_->position;}
 std::size_t SimulationView::step_count()const{return impl_->count();}
 bool SimulationView::go_to_step(std::size_t index){return impl_->go(index);}

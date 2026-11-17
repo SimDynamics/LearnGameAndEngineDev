@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -127,6 +128,29 @@ void fitted_text(SimulationView& view) {
         if(!bounded&&probe.required>window_height(child))throw std::runtime_error("RichEdit "+std::to_string(GetDlgCtrlID(child))+
             " needs "+std::to_string(probe.required)+" pixels but has "+std::to_string(window_height(child))+"; text would be clipped");
     }
+}
+std::map<int,std::string> layout_snapshot(SimulationView& view) {
+    std::map<int,std::string> result;
+    for(auto child=GetWindow(view.window(),GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT)){
+        if(!(GetWindowLongPtrW(child,GWL_STYLE)&WS_VISIBLE))continue;
+        RECT box{};GetWindowRect(child,&box);MapWindowPoints(nullptr,view.window(),reinterpret_cast<POINT*>(&box),2);
+        auto detail="rect=["+std::to_string(box.left)+","+std::to_string(box.top)+","+std::to_string(box.right)+","+std::to_string(box.bottom)+"]";
+        wchar_t type[48]{};GetClassNameW(child,type,48);
+        if(std::wstring_view(type)==MSFTEDIT_CLASS){
+            CHARFORMAT2W base{},first{};base.cbSize=sizeof(base);first.cbSize=sizeof(first);
+            SendMessageW(child,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&base));
+            CHARRANGE before{},sample{0,1};SendMessageW(child,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&before));
+            SendMessageW(child,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&sample));
+            SendMessageW(child,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&first));
+            SendMessageW(child,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&before));
+            int numerator=0,denominator=0;SendMessageW(child,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            detail+=" lines="+std::to_string(SendMessageW(child,EM_GETLINECOUNT,0,0))+" baseTwips="+std::to_string(base.yHeight)+
+                " firstTwips="+std::to_string(first.yHeight)+" face="+utf8(first.szFaceName)+
+                " zoom="+std::to_string(numerator)+"/"+std::to_string(denominator);
+        }
+        result.emplace(GetDlgCtrlID(child),std::move(detail));
+    }
+    return result;
 }
 void capture(HWND window,const std::filesystem::path& path) {
     RECT area{};GetClientRect(window,&area);const int width=area.right,height=area.bottom;
@@ -279,11 +303,19 @@ void text_and_independent_views(HWND host,const std::filesystem::path& captures)
         "The native explanation lost the literal Unicode surrogate pair");
     first.set_text_scale(150);resize(first,340);bounds(first,"narrow long edited text");
     if(!captures.empty())capture(first.window(),captures/"text-narrow-long-value.bmp");
-    const auto narrow=first.height_for_width(340);resize(first,800);
+    const auto narrow=first.height_for_width(340);const auto original_layout=layout_snapshot(first);resize(first,800);
     check(first.height_for_width(800)<narrow,"Widening long text retained the previous narrow height");
     resize(first,340);check(first.height_for_width(340)==narrow,"Returning to the same narrow layout changed its height");
     first.set_text_scale(100);resize(first,340);check(first.height_for_width(340)<narrow,"Reducing text scale retained the enlarged layout");
-    first.set_text_scale(150);resize(first,340);check(first.height_for_width(340)==narrow,"Restoring text scale changed the measured long-text height");
+    first.set_text_scale(150);resize(first,340);
+    const auto restored=first.height_for_width(340);
+    if(restored!=narrow){const auto current=layout_snapshot(first);
+        for(const auto& [id,after]:current){const auto previous=original_layout.find(id);
+            if(previous==original_layout.end()||previous->second!=after)std::cerr<<"ZOOM control "<<id<<" before: "<<
+                (previous==original_layout.end()?"absent":previous->second)<<"; after: "<<after<<'\n';}
+        if(!captures.empty())capture(first.window(),captures/"text-restored-zoom-failure.bmp");
+        throw std::runtime_error("Restoring text scale changed the measured long-text height from "+std::to_string(narrow)+" to "+std::to_string(restored));}
+    if(!captures.empty())capture(first.window(),captures/"text-restored-zoom-150.bmp");
 }
 void parent_width_changes(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);int layouts=0,changes=0;
