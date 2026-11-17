@@ -1490,12 +1490,13 @@ int main(int count, char**) {
             pack(std::to_string(owner.open_battery_probe->original_case_numbers.size()));
         for(const int number:owner.open_battery_probe->original_case_numbers)
             number_identity+=pack(std::to_string(number));
-        const auto legacy_frame=[&](std::string frame,std::string_view version) {
+        const auto legacy_frame=[&](std::string frame,std::string_view version,
+                bool keep_numbers=false) {
             const auto numbers=frame.find(number_identity);
             require(numbers!=std::string::npos&&
                     frame.find(number_identity,numbers+number_identity.size())==std::string::npos,
                     "Missing or repeated numbered objective identity");
-            frame.erase(numbers,number_identity.size());
+            if(!keep_numbers)frame.erase(numbers,number_identity.size());
             const auto current=frame.find(open_battery_objective_version);
             require(current!=std::string::npos&&
                     version.size()==open_battery_objective_version.size(),
@@ -1519,7 +1520,7 @@ int main(int count, char**) {
             old[key+"completed"]=state::sha256("compiler-complete-v1/"+
                 pack(key)+pack(program)+pack(proof));
             old[key+"feedback"]=std::move(feedback);
-            require(key!=new_key,"A historical receipt shares the numbered goal identity");
+            require(key!=new_key,"A historical receipt shares the stronger goal identity");
             return key;
         };
         const auto v1_key=keep_historical(legacy_frame(current_frame,
@@ -1528,22 +1529,26 @@ int main(int count, char**) {
         const auto v2_key=keep_historical(legacy_frame(current_frame,
             "open-cmake-battery-independent-mutations-v2"),first.standard_input,
             "Historical v2 unnumbered result");
-        // Preserve the former prepared-input v2 receipt as well. None of
-        // these authentic old identities contained per-comparison numbers.
+        const auto v3_key=keep_historical(legacy_frame(current_frame,
+            "open-cmake-battery-independent-mutations-v3",true),first.standard_input,
+            "Historical v3 numbered zero/nonzero result");
+        // Preserve the former prepared-input v2 receipt as well. V1 and V2
+        // lacked per-comparison numbers; V3 retains them in its own identity.
         auto prior_input_owner=owner;
         prior_input_owner.output_check->cases.front().standard_input=*before.standard_input;
         const auto prior_input_key=keep_historical(legacy_frame(
             reference_objective_frame(loaded,prior_input_owner),
             "open-cmake-battery-independent-mutations-v2"),*before.standard_input,
             "Historical v2 prepared client input");
-        require(v1_key!=v2_key&&prior_input_key!=v1_key&&prior_input_key!=v2_key,
+        require(v1_key!=v2_key&&v3_key!=v1_key&&v3_key!=v2_key&&
+                prior_input_key!=v1_key&&prior_input_key!=v2_key&&prior_input_key!=v3_key,
                 "The old objective fixtures did not retain distinct receipt identities");
         const auto historical=recorded;
         require(!windows::compiler_puzzle_completed(recorded,loaded,owner)&&
                 !windows::compiler_puzzle_completed(recorded,loaded,prior_input_owner)&&
                 !windows::compiler_puzzle_completed(
                     state::decode(state::encode(recorded)),saved,progress),
-                "An old unnumbered receipt acquired case-identity credit");
+                "A prior receipt acquired the v4 nonzero-destination credit");
         auto missing_proof=observed;
         missing_proof.open_battery_probe_correct=false;
         const auto untouched=recorded;
@@ -1558,7 +1563,7 @@ int main(int count, char**) {
         for(const auto& [key,value]:historical.preferences.at("native_windows")) {
             const auto retained=state::find(recorded,"native_windows",key);
             require(retained&&*retained==value,
-                    "A numbered achievement changed a historical receipt");
+                    "A v4 achievement changed a historical receipt");
         }
         const auto reopened_state=state::decode(state::encode(recorded));
         require(windows::compiler_puzzle_completed(
@@ -1568,7 +1573,7 @@ int main(int count, char**) {
         for(const auto& [key,value]:historical.preferences.at("native_windows")) {
             const auto retained=state::find(reopened_state,"native_windows",key);
             require(retained&&*retained==value,
-                    "Reopening changed a prior v1 or v2 receipt");
+                    "Reopening changed a prior v1, v2 or v3 receipt");
         }
         windows::validate_compiler_puzzle_state(reopened_state,saved,progress);
         auto tampered=reopened_state;
@@ -1655,8 +1660,8 @@ int main() {
         const auto positive=run_cpp(value);
         successful(positive);
         require(positive.open_battery_evidence&&
-                positive.open_battery_evidence->runs.size()==7,
-                "Seven actual CMake executions were not retained as private evidence");
+                positive.open_battery_evidence->runs.size()==10,
+                "Ten actual CMake executions were not retained as private evidence");
         const auto current=capture_cpp_execution(value,positive);
         require(current.open_battery_probe_correct,
                 "Correct original + added case did not pass independent mutations");

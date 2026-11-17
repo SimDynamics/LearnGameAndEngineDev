@@ -296,8 +296,8 @@ void checked_battery(const CppRunRequest& request,const CppRunResult& result,
     const auto& evidence=*result.open_battery_evidence;
     const auto& spec=*block.open_battery_probe;
     const auto plan=open_battery_mutation_plan(spec.original_cases,added);
-    require(plan&&plan->size()==25&&evidence.runs.size()==plan->size(),
-        "The real eleven-case extension did not execute all 25 independent phases");
+    require(plan&&plan->size()==37&&evidence.runs.size()==plan->size(),
+        "The real eleven-case extension did not execute all 37 independent phases");
     auto calls=spec.original_cases;
     calls.push_back(added);
     auto case_numbers=spec.original_case_numbers;
@@ -1257,7 +1257,7 @@ int main(int argc,char** argv) {
                 !compiler_puzzle_completed(earned,published_progress,published_restored),
             "The recipe receipt credited the earlier published CMake objective");
         verify_recipe_return(lesson,earned,environment.paths.root/L"recipe-return");
-        std::cout << "PASS actual configure build execute, 25 private phases and first-case completion\n";
+        std::cout << "PASS actual configure build execute, 37 private phases and first-case completion\n";
 
         auto old_input=first;
         old_input.request_id=++sequence;
@@ -1294,6 +1294,48 @@ int main(int argc,char** argv) {
             "A different valid ternary case did not earn its own source-bound receipt");
         completion(second_data,progress,true);
         std::cout << "PASS independent rejected-input extension with computed case 37 in an equivalent loop\n";
+
+        constexpr OpenBatteryCall nonzero_added{1,3,7,59};
+        const auto exact_source=extended_driver(block,
+            "    if (!comprobar(12, 1, 3, 7, 59, true, 2)) { ++fallos; }\n");
+        auto exact=request(exact_source,CppRunRequest::Action::compile_run);
+        require(compiler_runtime_request_allowed(block,exact),
+            "The exact nonzero adjustment comparison was rejected before its runtime probe");
+        const auto exact_result=run_cpp(exact);
+        const auto exact_capture=capture_cpp_execution(exact,exact_result);
+        checked_battery(exact,exact_result,exact_capture,block,nonzero_added,true);
+        auto exact_data=seed;
+        require(record_compiler_puzzle_case(exact_data,lesson,block,exact,exact_capture,
+                    "exact nonzero destination")&&exact_data!=seed,
+            "An exact comparison did not earn its own nonzero-destination receipt");
+        completion(exact_data,progress,true);
+        for(const int expected:{2,99}) {
+            auto source=exact_source;
+            replace_once(source,"obtenido == ajuste_esperado",
+                "bool(obtenido) == bool(ajuste_esperado)");
+            if(expected!=2)
+                replace_once(source,"comprobar(12, 1, 3, 7, 59, true, 2)",
+                    "comprobar(12, 1, 3, 7, 59, true, 99)");
+            auto candidate=request(source,CppRunRequest::Action::compile_run);
+            require(compiler_runtime_request_allowed(block,candidate),
+                "The truthiness regression must reach the independent runtime probe");
+            const auto result=run_cpp(candidate);
+            const auto capture=capture_cpp_execution(candidate,result);
+            checked_battery(candidate,result,capture,block,nonzero_added,false);
+            const auto& runs=result.open_battery_evidence->runs;
+            require(std::ranges::all_of(runs,[](const auto& run) {
+                        return run.mutation==OpenBatteryMutation::corrupt_nonzero_destination||
+                            run.exit_code==(run.mutation==OpenBatteryMutation::baseline?0:1);
+                    })&&std::ranges::any_of(runs,[&](const auto& run) {
+                        return run.mutation==OpenBatteryMutation::corrupt_nonzero_destination&&
+                            run.target==nonzero_added&&run.exit_code==0;
+                    }),
+                "The regression did not isolate the former zero/nonzero coverage gap");
+            require(!record_compiler_puzzle_case(data,lesson,block,candidate,capture,
+                        "truthiness instead of exact destination")&&data==earned,
+                "A truthiness comparison earned credit or erased the earlier exact receipt");
+        }
+        std::cout << "PASS exact nonzero adjustment earns credit while bool comparisons with expected 2 or 99 fail\n";
 
         const auto reject_number_change=[&](std::string source,std::string_view description) {
             auto candidate=request(source,CppRunRequest::Action::compile_run);

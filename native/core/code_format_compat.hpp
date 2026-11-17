@@ -308,6 +308,13 @@ inline bool equivalent(std::string_view before,std::string_view after,Language l
     const auto a=language==Language::cmake?cmake_tokens(before):cpp_tokens(before);
     const auto b=language==Language::cmake?cmake_tokens(after):cpp_tokens(after);
     if(!a||!b)return false;
+    // A live backslash may belong to a universal-character-name identifier.
+    // The shared lexer cannot prove those boundaries, so changed source with
+    // such tokens cannot receive a formatting archive. Encapsulated literals,
+    // comments and complete directives do not contain a live operator token.
+    if(language==Language::cpp&&
+       (std::ranges::find(*a,"op:\\")!=a->end()||
+        std::ranges::find(*b,"op:\\")!=b->end()))return false;
     // A physical spacing review must not change observable line/column values.
     // Only executable/source argument tokens count, not quoted explanations or
     // CMake bracket literals that never expand their contents.

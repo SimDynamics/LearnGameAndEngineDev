@@ -32,7 +32,7 @@ bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {
 }
 )cpp";
 std::vector<OpenBatteryRun> correct(OpenBatteryCall added,int added_number=12) {
-    std::vector<OpenBatteryRun> runs(2*originals.size()+3);
+    std::vector<OpenBatteryRun> runs(3*originals.size()+4);
     runs[0].program_frame="project-fingerprint";
     runs[0].compiled=runs[0].executed=true;
     runs[0].exit_code=0;
@@ -46,9 +46,12 @@ std::vector<OpenBatteryRun> correct(OpenBatteryCall added,int added_number=12) {
         runs[i].exit_code=1;
         runs[i].stdout_bytes="Fallos=1\n";
         // Deliberately independent of the production plan implementation.
-        runs[i].mutation=i%2==0?OpenBatteryMutation::corrupt_destination:
-            OpenBatteryMutation::invert_acceptance;
-        const auto target=(i-1)/2;
+        constexpr std::array mutations{
+            OpenBatteryMutation::invert_acceptance,
+            OpenBatteryMutation::corrupt_destination,
+            OpenBatteryMutation::corrupt_nonzero_destination};
+        runs[i].mutation=mutations[(i-1)%mutations.size()];
+        const auto target=(i-1)/mutations.size();
         runs[i].target=target<originals.size()?originals[target]:added;
     }
     return runs;
@@ -68,6 +71,15 @@ void generated() {
         OpenBatteryCall{3,3,7,59});
     verify(destination&&destination->find("ajuste == 0 ? 1 : 0")!=std::string::npos,
            "Missing private destination mutant");
+    const auto nonzero=open_battery_mutated_library(
+        library,"intentar_ajuste",OpenBatteryMutation::corrupt_nonzero_destination,
+        OpenBatteryCall{1,3,7,59});
+    verify(nonzero&&nonzero->find("ajuste == 1 ? 2 : 1")!=std::string::npos,
+           "Missing the distinct nonzero destination mutant");
+    verify(!open_battery_mutated_library(
+        library,"intentar_ajuste",static_cast<OpenBatteryMutation>(999),
+        OpenBatteryCall{1,3,7,59}),
+           "An unknown mutation was treated as an existing destination defect");
     verify(!open_battery_mutated_library(
         library,"intentar_ajuste",OpenBatteryMutation::baseline,
         OpenBatteryCall{3,3,7,59}),"Baseline accepted a mutant target");
@@ -240,7 +252,7 @@ void numbered_judgments() {
         "An unnumbered added comparison passed the baseline");
     runs=correct(added);runs.front().case_numbers.clear();
     verify(!baseline_accepted(runs)&&!accepted(runs),
-        "Legacy evidence without numbers gained v3 credit");
+        "Legacy evidence without numbers gained stronger credit");
     runs=correct(added);runs.front().case_numbers[1]=runs.front().case_numbers[0];
     verify(!baseline_accepted(runs)&&!accepted(runs),
         "A repeated historical number was accepted");
@@ -341,32 +353,50 @@ void agreement() {
 void destination_coverage() {
     const OpenBatteryCall added{3,3,7,59};
     const auto plan=open_battery_mutation_plan(originals,added);
-    verify(plan&&plan->size()==25,"Eleven old cases require 25 native phases");
+    verify(plan&&plan->size()==37,"Eleven old cases require 37 native phases");
     const auto reference=correct(added);
     for(std::size_t i=0;i<plan->size();++i)
         verify((*plan)[i].mutation==reference[i].mutation&&
                (*plan)[i].target==reference[i].target,
                "Native plan skipped or reordered an observation");
-    for(std::size_t i=0;i<originals.size();++i) {
+    for(std::size_t i=0;i<=originals.size();++i) {
+        for(const auto offset:{2u,3u}) {
+            auto runs=reference;
+            runs[3*i+offset].exit_code=0;
+            verify(!open_battery_verify(originals,original_numbers,runs,"project-fingerprint").accepted,
+                   "An old or new call ignored one of the destination defects");
+            runs=reference;
+            runs[3*i+offset]=runs[3*i+1];
+            verify(!open_battery_verify(originals,original_numbers,runs,"project-fingerprint").accepted,
+                   "Repeated acceptance evidence replaced a destination mutation");
+        }
         auto runs=reference;
-        runs[2*i+2].exit_code=0;
+        runs[3*i+3]=runs[3*i+2];
         verify(!open_battery_verify(originals,original_numbers,runs,"project-fingerprint").accepted,
-               "An accepted or rejected historical call ignored its destination");
+               "The zero/nonzero mutation replaced the distinct nonzero defect");
         runs=reference;
-        runs[2*i+2]=runs[2*i+1];
+        runs[3*i+3].mutation=static_cast<OpenBatteryMutation>(999);
         verify(!open_battery_verify(originals,original_numbers,runs,"project-fingerprint").accepted,
-               "Repeated acceptance evidence replaced a destination mutation");
+               "An unknown variant replaced a required mutation");
     }
-    std::vector<OpenBatteryRun> legacy{reference.front()};
-    for(std::size_t i=0;i<originals.size();++i)legacy.push_back(reference[2*i+1]);
-    legacy.push_back(reference[reference.size()-2]);
-    legacy.push_back(reference.back());
-    verify(legacy.size()==14&&
-           !open_battery_verify(originals,original_numbers,legacy,"project-fingerprint").accepted,
-           "A former fourteen-run witness silently acquired v3 credit");
+    std::vector<OpenBatteryRun> legacy_v1{reference.front()};
+    for(std::size_t i=0;i<originals.size();++i)legacy_v1.push_back(reference[3*i+1]);
+    legacy_v1.push_back(reference[3*originals.size()+1]);
+    legacy_v1.push_back(reference[3*originals.size()+2]);
+    verify(legacy_v1.size()==14&&
+           !open_battery_verify(originals,original_numbers,legacy_v1,"project-fingerprint").accepted,
+           "A former fourteen-run witness silently acquired v4 credit");
+    std::vector<OpenBatteryRun> legacy_v3{reference.front()};
+    for(std::size_t i=0;i<=originals.size();++i) {
+        legacy_v3.push_back(reference[3*i+1]);
+        legacy_v3.push_back(reference[3*i+2]);
+    }
+    verify(legacy_v3.size()==25&&
+           !open_battery_verify(originals,original_numbers,legacy_v3,"project-fingerprint").accepted,
+           "A former twenty-five-run witness silently acquired v4 credit");
     verify(!open_battery_mutation_plan({},added),"An empty plan was accepted");
     verify(open_battery_objective_version==
-           "open-cmake-battery-independent-mutations-v3",
+           "open-cmake-battery-independent-mutations-v4",
            "The stronger contract reused the previous receipt version");
 }
 void judgments() {
@@ -406,7 +436,7 @@ void judgments() {
     verify(!open_battery_verify(originals,original_numbers,runs,"project-fingerprint").accepted,
            "A historical comparison silently returned 1 without reporting its failure");
     runs=correct({3,3,7,59});
-    runs[2*originals.size()].stdout_bytes=runs.front().stdout_bytes;
+    runs[3*originals.size()].stdout_bytes=runs.front().stdout_bytes;
     verify(!open_battery_verify(originals,original_numbers,runs,"project-fingerprint").accepted,
            "The final historical comparison silently passed an incorrect report");
     runs=correct({3,3,7,59});
@@ -419,7 +449,7 @@ void judgments() {
     verify(!open_battery_verify(originals,original_numbers,runs,"project-fingerprint").accepted,
            "A silent destination failure passed without its contrast");
     runs=correct({3,3,7,59});
-    runs[2*originals.size()+1].stdout_bytes=runs.front().stdout_bytes;
+    runs[3*originals.size()+1].stdout_bytes=runs.front().stdout_bytes;
     verify(!open_battery_verify(originals,original_numbers,runs,"project-fingerprint").accepted,
            "A fixed new-case label passed without reporting the acceptance error");
     runs=correct({3,3,7,59});
@@ -622,6 +652,15 @@ void construction_generation() {
         "A repeated input could not be targeted independently by call index");
     verify(!adjustment_project_instrumented_library(library,spec,
         {AdjustmentProjectPart::component,OpenBatteryMutation::baseline,{},0}),"The independent driver used a substituted component");
+    for(const auto unsupported:{OpenBatteryMutation::corrupt_nonzero_destination,
+            static_cast<OpenBatteryMutation>(999)}) {
+        verify(!adjustment_project_instrumented_library(library,spec,
+            {AdjustmentProjectPart::battery,unsupported,5,0,true}),
+            "An unsupported construction mutation was reinterpreted by call index");
+        verify(!adjustment_project_instrumented_library(library,spec,
+            {AdjustmentProjectPart::battery,unsupported,{},0,true,OpenBatteryCall{1,3,7,59}}),
+            "An unsupported construction mutation was reinterpreted by input");
+    }
     const std::string traces="Antes LGAED_ADJUSTMENT_CALL:0,2,3,7,77,1,1\r\nDespués\nLGAED_ADJUSTMENT_CALL:1,0,7,3,-8,0,-8\n";
     const auto observations=adjustment_project_parse_observations(traces);
     verify(observations&&observations->size()==2&&(*observations)[1]==AdjustmentProjectObservation{{0,7,3,-8},false,-8},

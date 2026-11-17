@@ -578,18 +578,25 @@ un rótulo impreso no reemplaza esa observación. Se rechazan los números repet
 intercambiados entre llamadas históricas o cambiados entre variantes, así como
 las llamadas fuera de una comparación completa.
 
-Las mutaciones independientes alteran por separado la aceptación y el destino
-de cada llamada, incluida la añadida: el comprobador debe detectar cada
-defecto, comunicarlo y continuar con las demás llamadas. Conserva en todas las
-variantes las asociaciones entre números y tuplas. El inicial sin ampliar
-sigue sin acreditar el objetivo aunque termine con `Fallos=0`, y cambiar sólo
-una etiqueta tampoco crea una prueba nueva.
+Cada llamada, incluida la añadida, se comprueba mediante tres mutaciones
+independientes: invertir la aceptación, cambiar el destino entre cero y uno,
+y sustituir el destino por otro entero distinto de cero. Esta última usa
+`ajuste == 1 ? 2 : 1`: siempre cambia el valor y permite detectar una
+comparación que reduce ambos ajustes a `bool` y confunde magnitudes distintas.
+El comprobador debe detectar cada defecto, comunicarlo y continuar con las
+demás llamadas. Conserva en todas las variantes las asociaciones entre números
+y tuplas. Con doce comparaciones, la matriz contiene 37 ejecuciones: una
+original y tres por comparación. Estas variantes comprueban los defectos
+declarados; no demuestran equivalencia semántica para todas las entradas
+posibles. El inicial sin ampliar sigue sin acreditar el objetivo aunque
+termine con `Fallos=0`, y cambiar sólo una etiqueta tampoco crea una prueba nueva.
 
 Esta acreditación usa
-`open-cmake-battery-independent-mutations-v3`. Los recibos v1 y v2 conservan
-su identidad y alcance anteriores; no acreditan automáticamente la asociación
-de números exigida por v3. Los borradores y los archivos del estudiante no se
-renumeran ni se reescriben al incorporar el objetivo.
+`open-cmake-battery-independent-mutations-v4`. Los recibos v1, v2 y v3 conservan
+su identidad y alcance anteriores; no acreditan automáticamente la nueva
+mutación del destino. V3 mantiene su alcance de asociación entre números y
+llamadas, sin atribuirle esa comprobación adicional. Los borradores y los archivos
+del estudiante no se renumeran ni se reescriben al incorporar el objetivo.
 
 ### Entrada y acciones de ejecución
 
@@ -1570,7 +1577,14 @@ valor correspondiente, un identificador de propósito y referencias reales al
 resultado, incluso cuando se devuelve mediante variables intermedias.
 Admite las grafías equivalentes `const int`, `int const`,
 `constexpr int` e `int constexpr`; no exige un orden exclusivo de esos
-especificadores de tipo. Los resultados parciales pueden conservarse en
+especificadores de tipo. La constante admite `= expresión`,
+`(expresión)`, `{expresión}` y `= {expresión}`; las dos formas con
+llaves admiten una coma final. Se exige una sola expresión entera explícita,
+reconocida por el evaluador acotado descrito a continuación. Una lista vacía
+es C++ válido e inicializa el entero a cero, pero no proporciona una expresión
+reemplazable para esta comprobación. Las variaciones privadas sustituyen
+únicamente la expresión y conservan el signo igual, las llaves, la coma final
+y los comentarios o saltos de línea exteriores. Los resultados parciales pueden conservarse en
 variables intermedias `const int`, `int const`, `const auto`, `auto const`,
 `constexpr int`, `int constexpr`, `constexpr auto` o `auto constexpr`,
 siempre que dichas variables sean declaraciones C++ válidas y sus

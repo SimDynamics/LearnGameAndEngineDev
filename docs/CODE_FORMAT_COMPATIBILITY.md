@@ -107,6 +107,21 @@ con barra invertida y salto físico. No se permite usar este mecanismo para
 cambiar fórmulas, reparaciones, dependencias, resultados de programa ni
 expectativas exactas de stdout/stderr.
 
+En Windows y en el validador Python, las fuentes que contienen una barra
+invertida activa fuera de comentarios, literales y directivas encapsulados
+se conservan byte a byte bajo este contrato. El analizador de formato no
+resuelve los límites de los nombres universales de carácter: por ejemplo,
+`a\u03B1` y `a \u03B1` pueden representar identificadores distintos.
+Por eso un cambio de espacios en una fuente con esos nombres no se acredita
+como formato equivalente. Una fuente idéntica continúa admitida. Las
+menciones dentro de comentarios y literales ordinarios o crudos no activan
+esta restricción; sus propios bytes siguen protegidos por la comparación
+habitual. La guarda sólo afecta a la equivalencia de formato, sin impedir
+que los otros comprobadores analicen ediciones de cuerpos de funciones.
+Esta protección no habilita un mecanismo general de renombrado histórico.
+La distinción entre nombres y espacios sigue las
+[fases de traducción de C++](https://eel.is/c++draft/lex.phases).
+
 El comparador es **conservador**: si no demuestra que los límites léxicos se
 conservan, rechaza la revisión. No sustituye compilar, ejecutar y comprobar
 los programas. Los ejemplos que requieran una nueva distribución semántica

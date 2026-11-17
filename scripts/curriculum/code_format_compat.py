@@ -371,6 +371,12 @@ def require_source_lexical(original: dict, current: dict) -> bool:
             raise SourceFormatError(f"Physical line splices cannot be reformatted: {slot}")
         lexer = _cmake_tokens if language == "cmake" else _cpp_tokens
         old_tokens, new_tokens = lexer(source), lexer(newer)
+        # A live backslash may belong to a universal-character-name identifier.
+        # The shared lexer cannot prove that boundary; quoted/comment/directive
+        # tokens remain opaque, and identical source was already skipped above.
+        if language == "cpp" and ("op:\\" in old_tokens or "op:\\" in new_tokens):
+            raise SourceFormatError(
+                f"C++ escape token boundaries cannot be reformatted: {slot}")
         if old_tokens != new_tokens:
             raise SourceFormatError(f"Tokens, literals, comments or directives changed: {slot}")
         if language == "cmake" and (

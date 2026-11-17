@@ -96,8 +96,8 @@ struct LocalRule {
     std::string name;
     std::size_t end;
     int value;
-    // Token bounds, excluding =/{/( and the terminating ;/}/). Retaining
-    // the whole expression admits equivalent literal bases and arithmetic.
+    // Token bounds exclude initialization delimiters and any trailing list
+    // comma. The whole expression admits equivalent bases and arithmetic.
     std::size_t initializer_first = 0, initializer_last = 0;
 };
 
@@ -350,20 +350,26 @@ inline std::optional<LocalRule> constant(
     if(!(const_before||const_after)||!t[position+2].starts_with("id:"))
         return {};
     const auto name=t[position+2].substr(3);
-    const auto assignment=position+3;
-    if(op(t[assignment],"=")) {
-        auto end=assignment+1;
+    auto initializer=position+3;
+    // Copy-list and direct-list initialization name the same scalar rule.
+    if(op(t[initializer],"=")&&op(t[initializer+1],"{"))++initializer;
+    if(op(t[initializer],"=")) {
+        auto end=initializer+1;
         while(end<limit&&!op(t[end],";"))++end;
         if(end>=limit)return {};
-        const auto value=arithmetic_constant(t,assignment+1,end);
-        if(value)return LocalRule{name,end,*value,assignment+1,end};
+        const auto value=arithmetic_constant(t,initializer+1,end);
+        if(value)return LocalRule{name,end,*value,initializer+1,end};
     }
-    if(op(t[assignment],"{")||op(t[assignment],"(")) {
-        const bool brace=op(t[assignment],"{");
-        const auto end=closing(t,assignment,brace?"{":"(",brace?"}":")");
+    if(op(t[initializer],"{")||op(t[initializer],"(")) {
+        const bool brace=op(t[initializer],"{");
+        const auto end=closing(t,initializer,brace?"{":"(",brace?"}":")");
         if(!end||*end+1>=limit||!op(t[*end+1],";"))return {};
-        const auto value=arithmetic_constant(t,assignment+1,*end);
-        if(value)return LocalRule{name,*end+1,*value,assignment+1,*end};
+        auto last=*end;
+        // A scalar list may end with one comma. Keep that delimiter outside
+        // the replaceable expression; empty or multiple elements still fail.
+        if(brace&&last>initializer+1&&op(t[last-1],","))--last;
+        const auto value=arithmetic_constant(t,initializer+1,last);
+        if(value)return LocalRule{name,*end+1,*value,initializer+1,last};
     }
     return {};
 }
@@ -927,9 +933,11 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
             return {false,"Directiva #include no valida en reglas nombradas."};
     }
     Tokens t;
+    // Retain literals as opaque operands. Removing one from {4, "text"}
+    // would manufacture a valid single-element list with a trailing comma.
     for(const auto& token:*scanned)
-        if(!token.starts_with("comment:")&&!token.starts_with("directive:")&&
-           !token.starts_with("literal:"))t.push_back(token);
+        if(!token.starts_with("comment:")&&!token.starts_with("directive:"))
+            t.push_back(token);
     for(const auto& rule:requirements) {
         if(rule.function.empty()||rule.purpose_words.empty()||!rule.min_uses)
             return {false,"La declaracion de la regla esta incompleta."};

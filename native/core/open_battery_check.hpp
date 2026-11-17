@@ -22,12 +22,15 @@ struct OpenBatteryCall {
     int value=0,lower=0,upper=0,initial=0;
     bool operator==(const OpenBatteryCall&) const = default;
 };
-enum class OpenBatteryMutation { baseline, invert_acceptance, corrupt_destination };
-// V1 checked only acceptance; V2 also checked destinations but did not bind
-// each actual comparison to its own case number. Preserve those historical
-// receipts without promoting them to the stronger numbered-case goal.
+enum class OpenBatteryMutation {
+    baseline, invert_acceptance, corrupt_destination, corrupt_nonzero_destination
+};
+// V1 checked only acceptance; V2 also checked destinations; V3 bound each
+// comparison to its case number. V4 also changes a nonzero destination to a
+// different nonzero value, so truthiness alone cannot verify an exact adjustment.
+// Preserve historical receipts without promoting them to this stronger goal.
 inline constexpr std::string_view open_battery_objective_version =
-    "open-cmake-battery-independent-mutations-v3";
+    "open-cmake-battery-independent-mutations-v4";
 struct OpenBatteryPhase {
     OpenBatteryMutation mutation=OpenBatteryMutation::baseline;
     std::optional<OpenBatteryCall> target;
@@ -78,17 +81,18 @@ inline bool open_battery_originals_valid(std::span<const OpenBatteryCall> cases)
     return true;
 }
 // Shared by the native worker and verifier: one clean execution, then an
-// acceptance-only and a destination-only defect for every old/new call.
+// acceptance defect and two distinct destination defects for every old/new call.
 // Call distinctness is checked by the verifier before awarding credit.
 inline std::optional<std::vector<OpenBatteryPhase>> open_battery_mutation_plan(
         std::span<const OpenBatteryCall> original,OpenBatteryCall added) {
     if(!open_battery_originals_valid(original))return {};
     std::vector<OpenBatteryPhase> plan;
-    plan.reserve(2*original.size()+3);
+    plan.reserve(3*original.size()+4);
     plan.push_back({OpenBatteryMutation::baseline,std::nullopt});
     const auto append=[&](OpenBatteryCall target) {
         plan.push_back({OpenBatteryMutation::invert_acceptance,target});
         plan.push_back({OpenBatteryMutation::corrupt_destination,target});
+        plan.push_back({OpenBatteryMutation::corrupt_nonzero_destination,target});
     };
     for(const auto& target:original)append(target);
     append(added);
@@ -138,6 +142,10 @@ inline std::optional<std::string> open_battery_mutated_library(
         std::optional<OpenBatteryCall> target=std::nullopt) {
     if(original.empty()||original.size()>4*1024*1024||
        !open_battery_identifier(function)||
+       (mutation!=OpenBatteryMutation::baseline&&
+        mutation!=OpenBatteryMutation::invert_acceptance&&
+        mutation!=OpenBatteryMutation::corrupt_destination&&
+        mutation!=OpenBatteryMutation::corrupt_nonzero_destination)||
        ((mutation==OpenBatteryMutation::baseline)!=!target.has_value()))return {};
     const std::string declaration="bool "+std::string(function)+
         "(int valor, int inferior, int superior, int& ajuste) {";
@@ -178,8 +186,10 @@ inline std::optional<std::string> open_battery_mutated_library(
             std::to_string(target->initial)+";\n";
         if(mutation==OpenBatteryMutation::invert_acceptance)
             result+="    if (seleccionado) return !aceptado;\n";
-        else
+        else if(mutation==OpenBatteryMutation::corrupt_destination)
             result+="    if (seleccionado) ajuste = ajuste == 0 ? 1 : 0;\n";
+        else if(mutation==OpenBatteryMutation::corrupt_nonzero_destination)
+            result+="    if (seleccionado) ajuste = ajuste == 1 ? 2 : 1;\n";
     }
     result+="    return aceptado;\n}\n";
     return result;
@@ -466,7 +476,7 @@ inline std::optional<OpenBatteryTrace> open_battery_parse_trace(std::string_view
     return result;
 }
 
-// The worker supplies the baseline and both result dimensions for every
+// The worker supplies the baseline and all three independent defects for every
 // historical call and the new call, in open_battery_mutation_plan order.
 // This core does not infer completion from stdout or a forged "Fallos=0".
 // The worker may reject a malformed numbered baseline before compiling the

@@ -300,6 +300,48 @@ message([=[${CMAKE_CURRENT_LIST_LINE}]=])
     check(!code_format::equivalent("a", "a\n",Language::immutable),
         "Unknown data source was modified");
 }
+void cpp_ucn_format_boundaries() {
+    // Removing one space changes a local declaration into assignment to the
+    // global a-alpha: the first program returns 7, the second returns 2.
+    constexpr std::string_view before=R"cpp(using a = int;
+int a\u03B1 = 7;
+int main() {
+    a \u03B1 = 2;
+    return a\u03B1;
+}
+)cpp";
+    constexpr std::string_view after=R"cpp(using a = int;
+int a\u03B1 = 7;
+int main() {
+    a\u03B1 = 2;
+    return a\u03B1;
+}
+)cpp";
+    check(!code_format::equivalent(before,after,Language::cpp)&&
+          !code_format::equivalent(after,before,Language::cpp),
+        "A changed UCN identifier boundary was accepted as source formatting");
+    check(code_format::equivalent(before,before,Language::cpp)&&
+          code_format::equivalent(after,after,Language::cpp),
+        "An identical UCN source lost its existing contract");
+    check(!code_format::equivalent(before,"\n"+std::string(before),Language::cpp),
+        "Changed live UCN source exceeded the formatter's lexical guarantee");
+
+    constexpr std::string_view opaque[]{
+        R"cpp(// \u03B1 is explanatory text.
+int main(){return 0;})cpp",
+        R"cpp(/* \u03B1 is explanatory text. */ int main(){return 0;})cpp",
+        R"cpp(const char* text = "\\u03B1"; int main(){return 0;})cpp",
+        R"cpp(const char* raw = R"note(\u03B1)note"; int main(){return 0;})cpp",
+        R"cpp(#define a\u03B1 7
+int main(){return 0;})cpp"
+    };
+    for(const auto source:opaque)
+        check(code_format::equivalent(source,"\n"+std::string(source),Language::cpp),
+            "Encapsulated UCN text blocked otherwise safe formatting");
+    check(code_format::confined_function_body_edit(
+        R"cpp(int a\u03B1 = 2; { int \u03B2 = a\u03B1; } return a\u03B1;)cpp"),
+        "A formatting-only restriction leaked into the shared function-body editor");
+}
 void guarded_open_compiler_edits() {
     const auto replace_exact=[](std::string before,std::string_view target,
                                 std::string_view replacement) {
@@ -778,7 +820,8 @@ void historical_frames(){
 }
 int main(){
     try{
-        lexical_safety();historical_frames();guarded_open_compiler_edits();bounded_u3_rejection_inputs();
+        lexical_safety();cpp_ucn_format_boundaries();historical_frames();
+        guarded_open_compiler_edits();bounded_u3_rejection_inputs();
         u3_rejection_diagnostics_contracts();u3_observation_reports_contracts();
         u3_compiler_core_evaluation();
         std::cout<<"PASS safe C++/CMake formatting; protected comments/literals/macros and historic compiler/order state frames\n";

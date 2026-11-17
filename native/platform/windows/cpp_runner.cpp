@@ -3367,7 +3367,7 @@ void complete_open_battery_probe(const CppRunRequest& request,CppRunResult& resu
         private_request.cmake_graph_check.reset();
         private_request.capture_cmake_graph=false;
         private_request.stdin_utf8.clear();
-        private_request.project_key+="/open-battery-private-v3/"+std::to_string(index);
+        private_request.project_key+="/open-battery-private-v4/"+std::to_string(index);
         private_request.request_id=~(request.request_id+index);
         for(auto& item:private_request.project_files) {
             if(item.first==spec.library_path)item.second=*source;

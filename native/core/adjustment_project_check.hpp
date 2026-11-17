@@ -477,6 +477,9 @@ inline std::optional<std::string> adjustment_project_instrumented_library(std::s
         const AdjustmentProjectSpec& spec,const AdjustmentProjectPhase& phase) {
     if(!adjustment_project_spec_valid(spec)||original.empty()||original.size()>4*1024*1024||
        original.find("lgaed_adjustment_")!=original.npos||phase.part==AdjustmentProjectPart::component||
+       (phase.mutation!=OpenBatteryMutation::baseline&&
+        phase.mutation!=OpenBatteryMutation::invert_acceptance&&
+        phase.mutation!=OpenBatteryMutation::corrupt_destination)||
        ((phase.mutation==OpenBatteryMutation::baseline)!=(!phase.call_index&&!phase.matching_input))||
        (phase.call_index&&phase.matching_input)||
        (phase.matching_input&&phase.part!=AdjustmentProjectPart::battery)||

@@ -45,6 +45,29 @@ void capacity() {
             return (piezas + capacidad - 1) / capacidad;
         })cpp",rules,true,
         "Leading constexpr remains a valid local rule");
+    for(const auto declaration:{
+            "const int capacidad = {4};",
+            "constexpr int capacidad = {((2 + 2)),};",
+            "int const capacidad = {0x4};",
+            "int constexpr capacidad{(2 * 3) - 2,};"})
+        verify("int cajas_para(int piezas) { "+std::string(declaration)+
+                "\nreturn (piezas + capacidad - 1) / capacidad; }",
+            rules,true,"Equivalent scalar list initialization retains source evidence");
+    for(const auto declaration:{
+            "const int capacidad = {};",
+            "const int capacidad{};",
+            "const int capacidad = {4, 4};",
+            "const int capacidad{4, 4,};",
+            "const int capacidad = {4,,};",
+            "const int capacidad = {4.0};",
+            "const int capacidad = {5,};",
+            "const int capacidad(4,);",
+            "const auto capacidad = {4};",
+            "const int capacidad{4, \"texto\"};",
+            "const int capacidad = {4, 'x',};"})
+        verify("int cajas_para(int piezas) { "+std::string(declaration)+
+                "\nreturn (piezas + capacidad - 1) / capacidad; }",
+            rules,false,"Only one explicit integer expression can establish the four-place rule");
     verify(R"cpp(
         int cajas_para(int piezas) {
             int constexpr capacidad{4};
@@ -1676,6 +1699,12 @@ void constant_variation_source_identity() {
     struct Spelling {std::string_view before,after;};
     constexpr Spelling spellings[]{
         {"const int capacidad{4};","const int capacidad{(3)};"},
+        {"const int capacidad = {4};","const int capacidad = {(3)};"},
+        {"constexpr int capacidad = {((2 + 2)),};","constexpr int capacidad = {(3),};"},
+        {"int const capacidad = {0x4};","int const capacidad = {(3)};"},
+        {"int constexpr capacidad{(2 * 3) - 2,};","int constexpr capacidad{(3),};"},
+        {"const int capacidad = { /* antes */ (2 /* cálculo */ + 2) /* después */, /* borde */ };",
+         "const int capacidad = { /* antes */ (3) /* después */, /* borde */ };"},
         {"int const capacidad = (2 /* cálculo */ + 2);","int const capacidad = (3);"},
         {"constexpr int capacidad(0b100);","constexpr int capacidad((3));"},
         {"int constexpr capacidad{4'0 / 10};","int constexpr capacidad{(3)};"},
@@ -1698,6 +1727,12 @@ void constant_variation_source_identity() {
     require(named_rule_constant_variation_source(windows_source,probe,0)==
             crlf(constant_variation_candidate("const int capacidad = (3);")),
         "Byte offsets retain CRLF and UTF-8 outside a multiline initializer");
+    const auto windows_list_source=crlf(constant_variation_candidate(
+        "const int capacidad = {\n        /* comienzo */ (2 +\n        2), /* final */\n    };"));
+    require(named_rule_constant_variation_source(windows_list_source,probe,0)==
+            crlf(constant_variation_candidate(
+                "const int capacidad = {\n        /* comienzo */ (3), /* final */\n    };")),
+        "A copy-list variation preserves its braces, trailing comma and surrounding CRLF bytes");
     for(const auto body:{
             "return piezas / capacidad + (piezas % capacidad != 0);",
             "const auto ajuste = capacidad - 1; return (piezas + ajuste) / capacidad;",
@@ -1752,6 +1787,21 @@ void constant_variation_source_identity() {
     require(single_probe&&first&&named_rule_single_file_probe_source(*single_probe,*first).has_value(),
         "The single-file phase reuses the independently generated driver");
 
+    for(const auto declaration:{
+            "const int capacidad = {};",
+            "const int capacidad{};",
+            "const int capacidad = {4, 4};",
+            "const int capacidad{4, 4,};",
+            "const int capacidad = {4,,};",
+            "const int capacidad = {4.0};",
+            "const int capacidad = {5,};",
+            "const int capacidad(4,);",
+            "const auto capacidad = {4};",
+            "const int capacidad{4, \"texto\"};",
+            "const int capacidad = {4, 'x',};"})
+        require(!named_rule_constant_variation_source(
+                constant_variation_candidate(declaration),probe,0),
+            "A private variation must not turn an unsupported scalar declaration into a rule");
     for(const auto& bad:{
             constant_variation_candidate("const int capacidad{6};"),
             constant_variation_candidate("const int capacidad{4}; const int cupo{4};"),

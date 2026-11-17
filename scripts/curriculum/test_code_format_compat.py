@@ -54,6 +54,18 @@ def edited(source):
     blocks[4]["projectFiles"][1]["initialCode"] = "int main() {\n    return 0;\n}\n"
     return out
 
+def ucn_boundary_sources():
+    # The single removed space changes a local declaration (return 7) into
+    # assignment to the global a-alpha (return 2).
+    before = r"""using a = int;
+int a\u03B1 = 7;
+int main() {
+    a \u03B1 = 2;
+    return a\u03B1;
+}
+"""
+    return before, before.replace(r"a \u03B1 = 2;", r"a\u03B1 = 2;")
+
 class SourceFormatTest(unittest.TestCase):
     def test_formatting_preserves_every_code_location(self):
         before = fixture()
@@ -105,6 +117,50 @@ class SourceFormatTest(unittest.TestCase):
         with self.assertRaises(fmt.SourceFormatError):
             fmt.require_source_format({"type": "code", "language": "cmake", "code": cmake_before},
                                       {"type": "code", "language": "cmake", "code": cmake_after})
+
+    def test_cpp_live_ucn_boundaries_cannot_receive_format_equivalence(self):
+        before, after = ucn_boundary_sources()
+        for validate in (fmt.require_source_lexical, fmt.require_source_format):
+            for source, target in ((before, after), (after, before),
+                                   (before, "\n" + before)):
+                with self.subTest(validator=validate.__name__, target=target):
+                    with self.assertRaisesRegex(
+                            fmt.SourceFormatError, r"C\+\+ escape token boundaries"):
+                        validate({"type": "code", "code": source},
+                                 {"type": "code", "code": target})
+            for source in (before, after):
+                with self.subTest(validator=validate.__name__, identical=source):
+                    original = {"type": "code", "code": source}
+                    self.assertFalse(validate(original, deepcopy(original)))
+
+    def test_cpp_opaque_ucn_text_keeps_safe_formatting_available(self):
+        sources = [
+            r"// \u03B1 is explanatory text." + "\nint main(){return 0;}",
+            r"/* \u03B1 is explanatory text. */ int main(){return 0;}",
+            r'const char* text = "\\u03B1"; int main(){return 0;}',
+            r'const char* raw = R"note(\u03B1)note"; int main(){return 0;}',
+            r"#define a\u03B1 7" + "\nint main(){return 0;}",
+        ]
+        for validate in (fmt.require_source_lexical, fmt.require_source_format):
+            for source in sources:
+                with self.subTest(validator=validate.__name__, opaque=source):
+                    self.assertTrue(validate(
+                        {"type": "code", "code": source},
+                        {"type": "code", "code": "\n" + source}))
+
+    def test_ucn_boundary_change_cannot_create_a_state_format_archive(self):
+        before, after = ucn_boundary_sources()
+        source = fixture()
+        source["pages"][0]["blocks"][0]["code"] = before
+        family = {"es": deepcopy(source)}
+        previous = layout.prepare_v2(source, "es", family)
+        unchanged = deepcopy(previous)
+        updated = deepcopy(previous)
+        updated["pages"][0]["blocks"][0]["code"] = after
+        with self.assertRaisesRegex(layout.LayoutError, r"C\+\+ escape token boundaries"):
+            layout.prepare_v2(updated, "es", family, previous)
+        self.assertEqual(previous, unchanged)
+        self.assertNotIn("sourceFormatRevisions", previous["stateLayout"])
 
     def test_cpp_preprocessor_digraph_and_comment_preamble_safety(self):
         # %: is the standard alternative token for # in preprocessing directives.
