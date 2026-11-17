@@ -16,12 +16,13 @@ public:
     Delimiters(std::string_view source,std::size_t position)
         :source_(source),position_(position) {}
 
-    std::optional<std::vector<bool>> message() {
+    std::optional<std::vector<bool>> message() { return command("message"); }
+
+    std::optional<std::vector<bool>> command(std::string_view name) {
         const auto line_start=position_;
         if(position_==0&&source_.substr(0,3)=="\xef\xbb\xbf")position_=3;
         if(!trivia()||source_.substr(line_start,position_-line_start).find('\n')!=
                 std::string_view::npos)return {};
-        constexpr std::string_view name="message";
         for(const auto expected:name) {
             if(position_==source_.size())return {};
             auto actual=source_[position_++];

@@ -2582,8 +2582,8 @@ configuración, contenga exactamente los ejecutables declarados y se use
 sin comillas como lista de argumentos en una aplicación ejecutada de
 `CXX_EXTENSIONS OFF`. No se exige un nombre particular para la variable.
 La evidencia combina el evento de la traza JSON (con argumentos expandidos)
-con el primer argumento original de ese mismo comando y la variable creada
-mediante `set`. La ubicación y la revisión de la fuente quedan vinculadas
+con el primer argumento original de ese mismo comando y la variable normal
+creada mediante `set` o `list(APPEND)`. La ubicación y la revisión de la fuente quedan vinculadas
 a la configuración compilada. No basta declarar la variable, imprimir su
 contenido, asignar `OFF` con nombres literales ni heredar el valor del
 perfil Windows.
@@ -2597,6 +2597,51 @@ conserven las mismas salidas. También se admite `set_property(TARGET ...)`
 cuando la lista se utiliza y la propiedad se observa en los objetivos
 correspondientes. Las otras condiciones de estructura, compilación y salida
 continúan vigentes; basta un primer caso correcto con todas ellas satisfechas.
+
+#### Procedencia de la lista durante la configuración
+
+La evidencia de `APPEND` pertenece a la variable normal que se utiliza en
+esa aplicación concreta. Una coincidencia entre los nombres finales de los
+objetivos y una lista observada antes no demuestra que siga siendo la misma
+variable. `unset(clientes)` y `set(clientes)` sin valor terminan la
+definición normal; una nueva asignación con `set` inicia su propia
+procedencia. Si la lectura posterior obtiene una entrada de caché con los
+mismos nombres, no hereda la ampliación de la variable eliminada.
+
+Las llamadas a [`function`](https://cmake.org/cmake/help/v4.4/command/function.html)
+tienen variables locales. Una ampliación local no acredita una aplicación
+posterior que usa la variable de la raíz. Si no se modifica explícitamente el
+ámbito padre, al regresar se conserva la procedencia de la variable exterior.
+Un archivo ejecutado con
+[`include`](https://cmake.org/cmake/help/v4.4/command/include.html) comparte las
+variables del llamador, por lo que una lista ampliada en la raíz puede
+aplicarse desde ese archivo. El directorio físico del archivo
+no identifica por sí solo el ámbito de una variable.
+
+Las escrituras de caché se distinguen de las asignaciones normales.
+Con `CMP0126 NEW`, una escritura de caché conserva la variable normal
+existente. Con `OLD`, se tiene en cuenta si la escritura realmente procede y
+si elimina esa definición: crear una entrada, completar una entrada sin tipo
+o escribir con `FORCE`/`INTERNAL` puede terminar la procedencia normal.
+Una entrada ya tipada que no se reemplaza conserva la variable normal.
+Estas reglas siguen las referencias oficiales de
+[`set`](https://cmake.org/cmake/help/v4.4/command/set.html),
+[`unset`](https://cmake.org/cmake/help/v4.4/command/unset.html) y
+[`CMP0126`](https://cmake.org/cmake/help/v4.4/policy/CMP0126.html) de la
+versión de CMake declarada por el perfil Windows.
+
+La aplicación debe obtener todos los consumidores de la expansión de esa
+variable. Añadir un nombre literal después de `${clientes}` no completa
+una lista que sólo contiene uno de ellos. La traza conserva la llamada
+ejecutada y los argumentos expandidos; el comprobador vincula esa expansión
+con la referencia original y su procedencia. Si la evidencia es incompleta o
+no permite establecer esa relación, no concede la acreditación de lista.
+
+Las regresiones de `native.cpp_cmake_graph` utilizan el editor original
+U3L4 `block_0006_0004`, mantienen sus fuentes y exigen que también las
+variantes rechazadas produzcan la salida correcta. Comprueban por separado
+la procedencia de la lista, la acreditación exclusiva del primer caso y la
+conservación del recibo válido al reabrir el estado de prueba.
 
 Esta versión no acredita todavía todo el programa de Programación 2:
 requisitos públicos/privados de encabezados, opciones, lista de objetivos,

@@ -1123,6 +1123,441 @@ std::optional<std::string> raw_cmake_list_reference(
        raw[cursor]!='\r'&&raw[cursor]!='\t'&&raw[cursor]!=')'))return {};
     return std::string(raw.substr(first,end-first));
 }
+
+// Recover argument delimiters without evaluating source expressions. CMake's
+// expanded trace retains one value per syntactic argument, including semicolons
+// which expand only when the corresponding source argument is unquoted.
+std::optional<std::vector<std::string>> cmake_effective_trace_arguments(
+        std::string_view source,std::size_t line,std::string_view command,
+        const std::vector<std::string>& expanded) {
+    if(std::ranges::none_of(expanded,[](const auto& value) {
+            return value.empty()||value.find(';')!=std::string::npos;
+        }))return expanded;
+    if(!line||line>1000000)return {};
+    std::size_t offset=0;
+    for(std::size_t current=1;current<line;++current) {
+        const auto newline=source.find('\n',offset);
+        if(newline==source.npos)return {};
+        offset=newline+1;
+    }
+    const auto delimiters=curriculum::cmake_message_trace_detail::Delimiters(
+        source,offset).command(command);
+    if(!delimiters||delimiters->size()!=expanded.size())return {};
+    std::vector<std::string> result;
+    for(std::size_t i=0;i<expanded.size();++i) {
+        if((*delimiters)[i])
+            curriculum::cmake_message_trace_detail::append_unquoted(
+                expanded[i],result);
+        else result.push_back(expanded[i]);
+    }
+    return result;
+}
+
+// This is a provenance tracker, not a second CMake evaluator. It follows
+// normal bindings and their scopes; the trace supplies the effective values.
+// Unobserved writers lose proof instead of inheriting it from equal strings.
+// CMake 4.4.5: cmMakefile::PrintCommandTrace, cmFunctionBlocker::IsFunctionBlocked,
+// cmStateSnapshot::RaiseScope/SetPolicy, and cmSetCommand.
+// https://github.com/Kitware/CMake/tree/v4.4.5/Source
+class CmakeListProvenance {
+    struct NormalScope {
+        std::map<std::string,bool> bindings; // present normal; bool = APPEND
+        std::shared_ptr<NormalScope> parent;
+    };
+    struct PolicyScope {
+        std::optional<bool> cache_new; // unknown is never assumed NEW
+        bool weak=false;
+        std::shared_ptr<PolicyScope> parent;
+    };
+    enum class Kind { root,call,block,opaque_loop };
+    struct Context {
+        std::size_t depth=1;
+        Kind kind=Kind::root;
+        std::shared_ptr<NormalScope> normal;
+        std::shared_ptr<PolicyScope> policy,policy_floor;
+        std::filesystem::path source_directory,expected_file;
+        std::vector<std::string> textual_parameters,propagate,write_on_return;
+        bool opaque=false;
+    };
+    struct Definition {
+        bool macro=false;
+        std::vector<std::string> parameters;
+        std::optional<bool> cache_new;
+        std::filesystem::path file;
+        bool trusted=true;
+    };
+    // typed_unknown is known to exist with a type, but may be INTERNAL.
+    enum class Cache { absent,untyped,typed,internal,typed_unknown,unknown };
+    std::vector<Context> contexts_;
+    std::map<std::string,Definition> definitions_;
+    std::map<std::string,Cache> cache_;
+    std::vector<std::filesystem::path> authored_files_;
+
+    static std::string lower(std::string value) {
+        for(auto& c:value)if(c>='A'&&c<='Z')c+=('a'-'A');
+        return value;
+    }
+    static bool same_path(const std::filesystem::path& a,
+            const std::filesystem::path& b) {
+        const CaseInsensitive compare;
+        const auto left=a.lexically_normal().generic_wstring();
+        const auto right=b.lexically_normal().generic_wstring();
+        return !compare(left,right)&&!compare(right,left);
+    }
+    bool authored(const std::filesystem::path& path) const {
+        return std::ranges::any_of(authored_files_,
+            [&](const auto& file){return same_path(file,path);});
+    }
+    static std::shared_ptr<NormalScope> nested_normal(
+            const std::shared_ptr<NormalScope>& parent) {
+        auto child=std::make_shared<NormalScope>();
+        child->bindings=parent->bindings;child->parent=parent;
+        return child;
+    }
+    static std::shared_ptr<PolicyScope> nested_policy(
+            const std::shared_ptr<PolicyScope>& parent,bool weak=false,
+            std::optional<bool> captured={}) {
+        auto child=std::make_shared<PolicyScope>();
+        child->cache_new=weak?captured:parent->cache_new;
+        child->weak=weak;child->parent=parent;
+        return child;
+    }
+    void set_policy(std::optional<bool> value) {
+        for(auto scope=contexts_.back().policy;scope;scope=scope->parent) {
+            scope->cache_new=value;
+            if(!scope->weak)break;
+        }
+    }
+    static std::optional<bool> version_policy(std::string_view version) {
+        if(const auto range=version.find("...");range!=version.npos)
+            version.remove_prefix(range+3);
+        unsigned major=0,minor=0;
+        const auto first=std::from_chars(version.data(),
+            version.data()+version.size(),major);
+        if(first.ec!=std::errc{}||first.ptr==version.data()+version.size()||
+           *first.ptr!='.')return {};
+        const auto second=std::from_chars(first.ptr+1,
+            version.data()+version.size(),minor);
+        if(second.ec!=std::errc{})return {};
+        return major>3||(major==3&&minor>=21);
+    }
+    static bool typed(Cache value) {
+        return value==Cache::typed||value==Cache::internal||
+            value==Cache::typed_unknown;
+    }
+    void set_cache(const std::string& name,Cache requested,bool force) {
+        const auto found=cache_.find(name);
+        const auto before=found==cache_.end()?Cache::unknown:found->second;
+        const bool no_write=typed(before)&&!force&&requested==Cache::typed;
+        if(!no_write&&contexts_.back().policy->cache_new!=true)
+            contexts_.back().normal->bindings.erase(name);
+        if(no_write)return;
+        // A non-forced write can preserve an older typed cache entry. It is
+        // still typed afterwards, but its precise type need not be ours.
+        if(force||requested==Cache::internal||before==Cache::absent||
+           before==Cache::untyped)
+            cache_[name]=requested==Cache::unknown?
+                Cache::typed_unknown:requested;
+        else cache_[name]=Cache::typed_unknown;
+    }
+    void close_context() {
+        auto current=std::move(contexts_.back());
+        contexts_.pop_back();
+        if(current.kind==Kind::block&&current.normal->parent) {
+            for(const auto& name:current.propagate) {
+                const auto found=current.normal->bindings.find(name);
+                if(found==current.normal->bindings.end())
+                    current.normal->parent->bindings.erase(name);
+                else current.normal->parent->bindings[name]=found->second;
+            }
+        }
+        if(current.kind==Kind::opaque_loop)
+            current.normal->bindings.clear();
+        for(const auto& name:current.write_on_return)
+            contexts_.back().normal->bindings[name]=false;
+    }
+    void change_normal(const std::string& name,bool present,bool parent) {
+        auto scope=contexts_.back().normal;
+        if(parent)scope=scope->parent;
+        if(!scope)return;
+        if(present)scope->bindings[name]=false;
+        else scope->bindings.erase(name);
+    }
+    void handle_set(const std::vector<std::string>& args) {
+        if(args.empty())return;
+        const auto& name=args[0];
+        if(name.starts_with("ENV{"))return;
+        if(name.starts_with("CACHE{")&&name.ends_with('}')&&name.size()>7) {
+            const auto value=std::ranges::find(args,"VALUE");
+            if(value==args.end()) {opaque();return;}
+            const auto key=name.substr(6,name.size()-7);
+            auto type=Cache::unknown;
+            const auto existing=cache_.find(key);
+            if(existing!=cache_.end()) {
+                if(existing->second==Cache::internal)type=Cache::internal;
+                else if(existing->second!=Cache::typed_unknown&&
+                        existing->second!=Cache::unknown)type=Cache::typed;
+            }
+            bool force=false;
+            for(auto at=args.begin()+1;at!=value;++at) {
+                if(*at=="FORCE")force=true;
+                else if(*at=="TYPE"&&at+1!=value)
+                    type=*(++at)=="INTERNAL"?Cache::internal:Cache::typed;
+                else if(*at=="HELP") {
+                    while(at+1!=value&&*(at+1)!="TYPE"&&
+                          *(at+1)!="FORCE")++at;
+                }
+            }
+            set_cache(key,type,force);
+        }else if(args.size()>1&&args.back()=="PARENT_SCOPE") {
+            change_normal(name,args.size()>2,true);
+        }else {
+            const bool force=args.size()>4&&args.back()=="FORCE";
+            const auto suffix=3+(force?1u:0u);
+            if(args.size()>suffix&&args[args.size()-suffix]=="CACHE") {
+                const auto type=args[args.size()-suffix+1]=="INTERNAL"?
+                    Cache::internal:Cache::typed;
+                set_cache(name,type,force);
+            }else change_normal(name,args.size()>1,false);
+        }
+    }
+public:
+    CmakeListProvenance(const std::filesystem::path& source,
+            const CppRunRequest& request) {
+        Context root;
+        root.normal=std::make_shared<NormalScope>();
+        root.policy=std::make_shared<PolicyScope>();
+        root.policy_floor=root.policy;
+        root.source_directory=source;
+        root.expected_file=source/L"CMakeLists.txt";
+        contexts_.push_back(std::move(root));
+        for(const auto& file:request.project_files)
+            if(authored_cmake_path(file.first))
+                authored_files_.push_back(source/project_path(file.first));
+        if(request.cmake)
+            for(const auto& option:request.cmake->options)
+                cache_[option.first]=Cache::untyped; // runner passes -Dname=value
+    }
+    void opaque() {
+        // An opaque call can write a parent or the cache. Clearing normal
+        // proof is also required when requireAppend is false.
+        for(auto& context:contexts_) {
+            for(auto scope=context.normal;scope;scope=scope->parent)
+                scope->bindings.clear();
+            for(auto policy=context.policy;policy;policy=policy->parent)
+                policy->cache_new.reset();
+        }
+        cache_.clear();
+        // A shadowed builtin must never become a builtin again merely because
+        // its current body can no longer be attributed to authored source.
+        for(auto& definition:definitions_)definition.second.trusted=false;
+    }
+    bool observe(std::size_t depth,std::string command,
+            const std::vector<std::string>& args,
+            const std::filesystem::path& origin) {
+        command=lower(std::move(command));
+        while(contexts_.size()>1&&depth<contexts_.back().depth)
+            close_context();
+        if(depth!=contexts_.back().depth) {
+            opaque();
+            Context unknown=contexts_.back();
+            unknown.depth=depth;unknown.kind=Kind::call;unknown.opaque=true;
+            unknown.normal=nested_normal(unknown.normal);
+            unknown.policy=nested_policy(unknown.policy);
+            unknown.policy_floor=unknown.policy;
+            unknown.expected_file=origin;
+            unknown.propagate.clear();unknown.write_on_return.clear();
+            contexts_.push_back(std::move(unknown));
+        }
+        if(!same_path(contexts_.back().expected_file,origin)) {
+            opaque();contexts_.back().opaque=true;
+        }
+        auto& current=contexts_.back();
+        if(const auto found=definitions_.find(command);
+                found!=definitions_.end()) {
+            const auto definition=found->second;
+            if(!definition.trusted) {opaque();return true;}
+            Context call=current;
+            call.depth=depth+1;call.kind=Kind::call;
+            call.expected_file=definition.file;
+            call.propagate.clear();call.write_on_return.clear();
+            call.textual_parameters.clear();
+            call.policy=nested_policy(current.policy,true,definition.cache_new);
+            call.policy_floor=call.policy;
+            if(definition.macro)
+                call.textual_parameters=definition.parameters;
+            else {
+                call.normal=nested_normal(current.normal);
+                for(const auto& name:definition.parameters)
+                    call.normal->bindings[name]=false;
+            }
+            for(const auto* name:{"ARGC","ARGV","ARGN",
+                    "CMAKE_CURRENT_FUNCTION","CMAKE_CURRENT_FUNCTION_LIST_DIR",
+                    "CMAKE_CURRENT_FUNCTION_LIST_FILE",
+                    "CMAKE_CURRENT_FUNCTION_LIST_LINE"}) {
+                if(definition.macro)call.textual_parameters.push_back(name);
+                else call.normal->bindings[name]=false;
+            }
+            for(std::size_t i=0;i<args.size();++i) {
+                const auto name="ARGV"+std::to_string(i);
+                if(definition.macro)call.textual_parameters.push_back(name);
+                else call.normal->bindings[name]=false;
+            }
+            contexts_.push_back(std::move(call));
+            return true; // this event is a scripted call, never a builtin fact
+        }
+        if(command=="function"||command=="macro") {
+            if(args.empty()) {opaque();return false;}
+            definitions_[lower(args[0])]={command=="macro",
+                std::vector<std::string>(args.begin()+1,args.end()),
+                current.policy->cache_new,origin};
+        }else if(command=="endfunction"||command=="endmacro") {
+            // These end events finish the definition, not a later invocation.
+        }else if(command=="include"||command=="add_subdirectory") {
+            if(args.empty()) {opaque();return false;}
+            Context call=current;
+            call.depth=depth+1;call.kind=Kind::call;
+            call.propagate.clear();call.write_on_return.clear();
+            call.textual_parameters.clear();
+            auto target=project_path(args[0]);
+            if(target.is_relative())target=current.source_directory/target;
+            if(command=="add_subdirectory") {
+                call.source_directory=target;
+                call.normal=nested_normal(current.normal);
+                target/=L"CMakeLists.txt";
+            }else {
+                for(std::size_t i=1;i+1<args.size();++i)
+                    if(args[i]=="RESULT_VARIABLE")
+                        call.write_on_return.push_back(args[i+1]);
+            }
+            call.expected_file=target.lexically_normal();
+            if(command=="add_subdirectory"||
+               std::ranges::find(args,"NO_POLICY_SCOPE")==args.end())
+                call.policy=nested_policy(current.policy);
+            call.policy_floor=call.policy;
+            if(!authored(call.expected_file)) {
+                opaque();call.opaque=true;
+                call.normal->bindings.clear();call.policy->cache_new.reset();
+            }
+            contexts_.push_back(std::move(call));
+        }else if(command=="block") {
+            Context block=current;
+            block.kind=Kind::block;
+            block.propagate.clear();block.write_on_return.clear();
+            bool variables=true,policies=true,scope_seen=false;
+            bool propagate_seen=false,valid=true;
+            enum class Reading { none,scope,propagate };
+            auto reading=Reading::none;
+            for(const auto& argument:args) {
+                if(argument=="SCOPE_FOR") {
+                    if(scope_seen)valid=false;
+                    scope_seen=true;variables=false;policies=false;
+                    reading=Reading::scope;
+                }else if(argument=="PROPAGATE") {
+                    if(propagate_seen)valid=false;
+                    propagate_seen=true;reading=Reading::propagate;
+                }else if(reading==Reading::scope) {
+                    if(argument=="VARIABLES")variables=true;
+                    else if(argument=="POLICIES")policies=true;
+                    else if(argument!="DIAGNOSTICS")valid=false;
+                }else if(reading==Reading::propagate)
+                    block.propagate.push_back(argument);
+                else valid=false;
+            }
+            if(!valid) {
+                opaque();block.opaque=true;
+                variables=true;policies=true;block.propagate.clear();
+            }
+            if(variables)block.normal=nested_normal(current.normal);
+            else block.propagate.clear();
+            if(policies)block.policy=nested_policy(current.policy);
+            block.policy_floor=block.policy;
+            contexts_.push_back(std::move(block));
+        }else if(command=="endblock") {
+            if(contexts_.size()<2||current.kind!=Kind::block)opaque();
+            else close_context();
+        }else if(command=="foreach") {
+            // The trace omits each implicit loop-variable assignment. Do not
+            // carry proof across this unsupported writer/control lifetime.
+            opaque();
+            Context loop=current;
+            loop.kind=Kind::opaque_loop;loop.opaque=true;
+            loop.propagate.clear();loop.write_on_return.clear();
+            contexts_.push_back(std::move(loop));
+        }else if(command=="endforeach") {
+            if(contexts_.size()<2||current.kind!=Kind::opaque_loop)opaque();
+            else close_context();
+        }else if(command=="set")handle_set(args);
+        else if(command=="unset"&&!args.empty()) {
+            const auto& name=args[0];
+            if(name.starts_with("ENV{"))return false;
+            if(name.starts_with("CACHE{")&&name.ends_with('}')&&name.size()>7)
+                cache_[name.substr(6,name.size()-7)]=Cache::absent;
+            else if(args.size()==2&&args[1]=="CACHE")cache_[name]=Cache::absent;
+            else change_normal(name,false,
+                args.size()==2&&args[1]=="PARENT_SCOPE");
+        }else if(command=="list"&&args.size()>=2&&args[0]=="APPEND") {
+            if(args.size()==2)return false; // CMake does not create a normal binding
+            auto& proof=current.normal->bindings[args[1]];
+            std::vector<std::string> added;
+            for(auto at=args.begin()+2;at!=args.end();++at)
+                curriculum::cmake_message_trace_detail::append_unquoted(*at,added);
+            if(!added.empty())proof=true;
+        }else if(command=="cmake_minimum_required") {
+            const auto version=std::ranges::find(args,"VERSION");
+            set_policy(version!=args.end()&&version+1!=args.end()?
+                version_policy(*(version+1)):std::optional<bool>{});
+        }else if(command=="cmake_policy") {
+            if(args.size()==1&&args[0]=="PUSH")
+                current.policy=nested_policy(current.policy);
+            else if(args.size()==1&&args[0]=="POP") {
+                if(current.policy==current.policy_floor)opaque();
+                else current.policy=current.policy->parent;
+            }else if(args.size()==3&&args[0]=="SET"&&args[1]=="CMP0126")
+                set_policy(args[2]=="NEW"?std::optional<bool>{true}:
+                    args[2]=="OLD"?std::optional<bool>{false}:std::nullopt);
+            else if(args.size()==2&&args[0]=="VERSION")
+                set_policy(version_policy(args[1]));
+            else if(args.size()==3&&args[0]=="GET")
+                current.normal->bindings[args[2]]=false;
+            else if(args.size()==3&&args[0]=="SET") {
+                // Other policies are not inferred from their number.
+            }else opaque();
+        }else if(command=="return"&&!args.empty()) {
+            // PROPAGATE also depends on CMP0140 and crosses enclosing blocks.
+            // Without evaluating that control flow, never copy APPEND to parents.
+            for(const auto& name:args)
+                for(auto scope=current.normal;scope;scope=scope->parent)
+                    scope->bindings.erase(name);
+        }else if(command=="set_property"&&!args.empty()&&args[0]!="TARGET") {
+            opaque(); // CACHE and other property scopes may alter tracked metadata
+        }else if(command=="option"&&!args.empty()) {
+            current.normal->bindings.erase(args[0]);
+            cache_[args[0]]=Cache::unknown; // CMP0077 is outside this proof
+        }else {
+            static constexpr std::string_view non_writers[]={
+                "message","if","elseif","else","endif","while","endwhile",
+                "break","continue","return","add_library","add_executable",
+                "target_sources","target_link_libraries","target_link_options",
+                "target_include_directories","target_compile_options",
+                "target_compile_features","target_compile_definitions",
+                "set_target_properties","set_property","add_dependencies",
+                "enable_testing","add_test"};
+            if(std::ranges::find(non_writers,command)==std::end(non_writers))
+                opaque();
+        }
+        return false;
+    }
+    std::optional<bool> normal(std::string_view name) const {
+        const auto& current=contexts_.back();
+        if(current.opaque||std::ranges::find(current.textual_parameters,name)!=
+                current.textual_parameters.end())return {};
+        const auto found=current.normal->bindings.find(std::string(name));
+        if(found==current.normal->bindings.end())return {};
+        return found->second;
+    }
+};
+
 // The JSON CMake trace lists commands actually invoked at configure time,
 // with expanded arguments. Ignore all non-student source locations, including
 // CMake modules and compiler/toolchain defaults. This evidence supplements
@@ -1154,11 +1589,7 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
     auto observed_options=graph.authored_option_defaults;
     auto observed_messages=graph.authored_status_messages;
     auto observed_lists=graph.authored_target_lists;
-    struct TracedList {
-        std::vector<std::string> values;
-        bool appended=false;
-    };
-    std::map<std::string,TracedList> variables;
+    CmakeListProvenance list_provenance(source,request);
     const auto target_for=[&](std::string_view name)->CppCmakeTargetEvidence* {
         const auto it=std::ranges::find_if(observed,
             [&](const auto& item){return item.name==name;});
@@ -1226,12 +1657,11 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                 }
             }
             if(authored_path.empty())continue;
-            const auto command=json_text(event,L"cmd");
+            auto command=json_text(event,L"cmd");
+            for(auto& c:command)if(c>='A'&&c<='Z')c+=('a'-'A');
             std::vector<std::string> args,property_args;
             for(const auto& value:event.GetNamedArray(L"args")) {
                 const auto expanded=winrt::to_string(value.GetString());
-                // Keep original argument boundaries for property values and
-                // message text, including semicolons inside quoted strings.
                 property_args.push_back(expanded);
                 std::size_t begin=0;
                 for(;;) {
@@ -1242,31 +1672,18 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                     begin=end+1;
                 }
             }
-            if(args.empty())continue;
-            const auto slash=authored_path.rfind('/');
-            const auto scope=authored_path.substr(0,
-                slash==std::string::npos?0:slash+1);
-            const auto list_key=[&](std::string_view name) {
-                return scope+std::string(name);
-            };
-            if(equals(command,"set")&&args.size()>=2) {
-                const auto reserved=std::ranges::find_if(args,
-                    [&](const auto& value) {
-                        return equals(value,"CACHE")||
-                            equals(value,"PARENT_SCOPE");
-                    });
-                if(reserved==args.end())
-                    variables[list_key(args[0])]={
-                        std::vector<std::string>(args.begin()+1,args.end()),false};
-            }else if(equals(command,"list")&&args.size()>=3&&
-                     equals(args[0],"APPEND")) {
-                const auto at=variables.find(list_key(args[1]));
-                if(at!=variables.end()) {
-                    at->second.values.insert(at->second.values.end(),
-                        args.begin()+2,args.end());
-                    at->second.appended=true;
-                }
-            }
+            if(!event.HasKey(L"line")||!event.HasKey(L"global_frame"))return;
+            const auto number=event.GetNamedNumber(L"line");
+            const auto depth=event.GetNamedNumber(L"global_frame");
+            if(!std::isfinite(number)||number<1||number>1000000||
+               std::trunc(number)!=number||!std::isfinite(depth)||depth<1||
+               depth>2048||std::trunc(depth)!=depth)return;
+            const auto effective=cmake_effective_trace_arguments(authored_text,
+                static_cast<std::size_t>(number),command,property_args);
+            if(effective) {
+                if(list_provenance.observe(static_cast<std::size_t>(depth),
+                        command,*effective,origin))continue;
+            }else list_provenance.opaque();
             const auto record_list=[&](std::size_t count,bool off_value,
                     std::size_t first_argument=0) {
                 if(!off_value||!event.HasKey(L"line"))return;
@@ -1281,16 +1698,19 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                 const auto name=raw_cmake_list_reference(
                     original->second,static_cast<std::size_t>(number),command);
                 if(!name)return;
-                const auto current=variables.find(list_key(*name));
-                if(current==variables.end()||current->second.values.empty()||
-                   current->second.values.size()!=count)return;
-                if(first_argument>args.size()||
+                const auto proof=list_provenance.normal(*name);
+                if(!proof||first_argument>=property_args.size())return;
+                std::vector<std::string> supplied_targets;
+                curriculum::cmake_message_trace_detail::append_unquoted(
+                    property_args[first_argument],supplied_targets);
+                // The one authored variable must supply the whole target list;
+                // an extra literal target cannot complete an APPEND proof.
+                if(supplied_targets.empty()||supplied_targets.size()!=count||
+                   first_argument>args.size()||
                    args.size()-first_argument<count||
-                   !std::equal(current->second.values.begin(),
-                       current->second.values.end(),
+                   !std::equal(supplied_targets.begin(),supplied_targets.end(),
                        args.begin()+first_argument))return;
-                observed_lists.push_back(
-                    {current->second.values,current->second.appended});
+                observed_lists.push_back({std::move(supplied_targets),*proof});
             };
             if(equals(command,"message")) {
                 if(!event.HasKey(L"line"))continue;

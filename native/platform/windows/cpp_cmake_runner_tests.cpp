@@ -2901,8 +2901,191 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             !record_compiler_puzzle_case(saved,list_mapped,current,
                 forged,false_evidence,"Lista sin uso real"),
             "U3L4 credited inherited OFF or an unused/incomplete list");
+        if(appended) {
+            // APPEND belongs to the normal variable actually expanded at the
+            // application, not an extinct binding or an unrelated local copy.
+            // These variants keep every C++ source and the first output case.
+            struct ListBindingCase {
+                std::string_view name,commands;
+                bool accepted,include_file=false,shadowed_properties=false;
+            };
+            constexpr std::array<ListBindingCase,13> binding_cases{{
+                {"unset-cache",
+                    "set(clientes consultar_cajas)\n"
+                    "list(APPEND clientes comprobar_cajas)\n"
+                    "unset(clientes)\n"
+                    "set(clientes consultar_cajas comprobar_cajas CACHE STRING \"Consumidores\")\n"
+                    "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                    false},
+                {"empty-set-cache",
+                    "set(clientes consultar_cajas)\n"
+                    "list(APPEND clientes comprobar_cajas)\n"
+                    "set(clientes)\n"
+                    "set(clientes consultar_cajas comprobar_cajas CACHE STRING \"Consumidores\")\n"
+                    "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                    false},
+                {"function-local-append",
+                    "set(clientes consultar_cajas comprobar_cajas)\n"
+                    "function(ensayar_lista)\n"
+                    "  set(clientes consultar_cajas)\n"
+                    "  list(APPEND clientes comprobar_cajas)\n"
+                    "endfunction()\n"
+                    "ensayar_lista()\n"
+                    "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                    false},
+                {"partial-list-plus-literal",
+                    "set(clientes \"\")\n"
+                    "list(APPEND clientes consultar_cajas)\n"
+                    "set_target_properties(${clientes} comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)",
+                    false},
+                {"shadowed-properties-after-opaque",
+                    "function(set_target_properties)\n"
+                    "endfunction()\n"
+                    "string(APPEND marca_revision \"x\")\n"
+                    "set(clientes consultar_cajas)\n"
+                    "list(APPEND clientes comprobar_cajas)\n"
+                    "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                    false,false,true},
+                {"included-application",
+                    "set(clientes consultar_cajas)\n"
+                    "list(APPEND clientes comprobar_cajas)\n"
+                    "include(cmake/aplicar_clientes.cmake)",
+                    true,true},
+                {"function-restores-parent",
+                    "set(clientes consultar_cajas)\n"
+                    "list(APPEND clientes comprobar_cajas)\n"
+                    "function(ensayar_lista)\n"
+                    "  set(clientes comprobar_cajas)\n"
+                    "  unset(clientes)\n"
+                    "endfunction()\n"
+                    "ensayar_lista()\n"
+                    "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                    true},
+                {"cache-new-keeps-normal",
+                    "SET(clientes consultar_cajas)\n"
+                    "LIST(APPEND clientes comprobar_cajas)\n"
+                    "CMAKE_POLICY(SET CMP0126 NEW)\n"
+                    "SET(clientes \"consultar_cajas;comprobar_cajas\" CACHE STRING \"Consumidores\" FORCE)\n"
+                    "SET_TARGET_PROPERTIES(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                    true},
+                {"cache-old-force-replaces-normal",
+                    "set(clientes consultar_cajas)\n"
+                    "list(APPEND clientes comprobar_cajas)\n"
+                    "cmake_policy(SET CMP0126 OLD)\n"
+                    "set(clientes consultar_cajas comprobar_cajas CACHE STRING \"Consumidores\" FORCE)\n"
+                    "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                    false},
+                {"function-policy-propagates",
+                    "cmake_policy(SET CMP0126 NEW)\n"
+                    "function(cambiar_politica)\n"
+                    "  cmake_policy(SET CMP0126 OLD)\n"
+                    "endfunction()\n"
+                    "set(clientes consultar_cajas)\n"
+                    "list(APPEND clientes comprobar_cajas)\n"
+                    "cambiar_politica()\n"
+                    "set(clientes consultar_cajas comprobar_cajas CACHE STRING \"Consumidores\" FORCE)\n"
+                    "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                    false},
+                {"function-policy-push-pop",
+                    "cmake_policy(SET CMP0126 NEW)\n"
+                    "function(cambiar_politica)\n"
+                    "  cmake_policy(SET CMP0126 OLD)\n"
+                    "endfunction()\n"
+                    "set(clientes consultar_cajas)\n"
+                    "list(APPEND clientes comprobar_cajas)\n"
+                    "cmake_policy(PUSH)\n"
+                    "cambiar_politica()\n"
+                    "cmake_policy(POP)\n"
+                    "set(clientes consultar_cajas comprobar_cajas CACHE STRING \"Consumidores\" FORCE)\n"
+                    "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                    true},
+                {"block-variables-propagate-empty",
+                    "cmake_policy(SET CMP0126 NEW)\n"
+                    "set(clientes consultar_cajas)\n"
+                    "list(APPEND clientes comprobar_cajas)\n"
+                    "block(PROPAGATE SCOPE_FOR VARIABLES)\n"
+                    "  cmake_policy(SET CMP0126 OLD)\n"
+                    "endblock()\n"
+                    "set(clientes consultar_cajas comprobar_cajas CACHE STRING \"Consumidores\" FORCE)\n"
+                    "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                    false},
+                {"cache-old-typed-keeps-normal",
+                    "cmake_policy(SET CMP0126 OLD)\n"
+                    "set(clientes consultar_cajas comprobar_cajas CACHE STRING \"Consumidores\")\n"
+                    "set(clientes consultar_cajas)\n"
+                    "list(APPEND clientes comprobar_cajas)\n"
+                    "set(clientes comprobar_cajas CACHE STRING \"No reemplazar\")\n"
+                    "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                    true}
+            }};
+            for(const auto& binding:binding_cases) {
+                auto scoped=request;
+                scoped.request_id=next_list_id;
+                scoped.revision=next_list_id++;
+                scoped.project_key+="/"+std::string(binding.name);
+                const auto context="U3L4 list binding "+std::string(binding.name);
+                replace_exact(repair_file(scoped,"CMakeLists.txt"),
+                    "set(clientes consultar_cajas)\n"
+                    "list(APPEND clientes comprobar_cajas)\n"
+                    "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                    binding.commands);
+                if(binding.include_file)
+                    scoped.project_files.emplace_back("cmake/aplicar_clientes.cmake",
+                        "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\n");
+                check(compiler_runtime_request_allowed(current,scoped),
+                    context+": a CMake-only variation changed the editor contract");
+                const auto scoped_result=run_cpp(scoped);
+                ran(scoped_result,context);
+                const auto captured=capture_cpp_execution(scoped,scoped_result);
+                check(matches_native_console_output(scoped_result.execution.stdout_bytes,
+                        expected_case.outputs.front())&&
+                    evaluate_cpp_output_check(*current.output_check,captured,
+                        scoped.revision).verdict==curriculum::OutputVerdict::correct,
+                    context+": the original first output case must still pass");
+                check(scoped_result.cmake_graph.has_value(),
+                    context+": missing generated CMake graph");
+                if(binding.shadowed_properties) {
+                    const auto& targets=scoped_result.cmake_graph->targets;
+                    check(std::ranges::all_of(
+                        current.cmake_graph_check->target_list->targets,
+                        [&](const auto& name) {
+                            const auto target=std::ranges::find_if(targets,
+                                [&](const auto& item){return item.name==name;});
+                            return target!=targets.end()&&!target->explicit_extensions_off;
+                        }),context+": a scripted command was credited as a builtin property write");
+                }
+                const bool used_append=std::ranges::any_of(
+                    scoped_result.cmake_graph->authored_target_lists,
+                    [&](const auto& proof) {
+                        return proof.used_append&&std::ranges::is_permutation(
+                            proof.targets,current.cmake_graph_check->target_list->targets);
+                    });
+                check(used_append==binding.accepted&&
+                    captured.cmake_graph_correct==binding.accepted,
+                    context+": APPEND evidence belongs to a different variable binding");
+
+                state::StateData scoped_saved;
+                state::prepare_lesson_state(scoped_saved,list_mapped);
+                const auto untouched=state::encode(scoped_saved);
+                check(record_compiler_puzzle_case(scoped_saved,list_mapped,current,
+                        scoped,captured,context)==binding.accepted&&
+                    compiler_puzzle_completed(scoped_saved,list_mapped,current)==binding.accepted&&
+                    compiler_puzzle_case_count(scoped_saved,list_mapped,current)==
+                        (binding.accepted?1U:0U),
+                    context+": first-case credit disagrees with the actual list binding");
+                if(!binding.accepted) {
+                    check(state::encode(scoped_saved)==untouched,
+                        context+": rejected APPEND evidence changed learner state");
+                }else {
+                    const auto reopened_scoped=state::decode(state::encode(scoped_saved));
+                    check(compiler_puzzle_completed(reopened_scoped,list_mapped,current)&&
+                        compiler_puzzle_case_count(reopened_scoped,list_mapped,current)==1,
+                        context+": reopening lost the valid first-case receipt");
+                }
+            }
+        }
     }
-    std::cout<<"PASS U3L4 four original CMake target-list editors: actual MSVC, APPEND order, historical receipts, spoofed applications rejected\n";
+    std::cout<<"PASS U3L4 four original CMake target-list editors: actual MSVC, APPEND order and binding, function/include scopes, cache policies, historical receipts, spoofed applications rejected\n";
     // U3L7: exercise the original warning/repair lesson with actual MSVC.
     // Its published GCC flags remain untouched. A compiler-specific CMake
     // fixture must emit a diagnostic from cantidad.cpp before the correction.
