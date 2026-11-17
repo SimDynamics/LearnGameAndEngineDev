@@ -441,8 +441,13 @@ void original_order_comparison(HWND host) {
         initial.find("índice 0: 10")!=std::string::npos&&
         initial.find("índice 1: 3")!=std::string::npos&&
         initial.find("índice 2: -8")!=std::string::npos&&
-        name(GetDlgItem(view.window(),array_id)).find("índice 0: -8")!=std::string::npos,
-        "Source and ordered copy were not compared at their distinct positions");
+        name(GetDlgItem(view.window(),array_id)).find("índice 0: -8 (origen índice 2)")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 1: 3 (origen índice 1)")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 2: 3 (origen índice 3)")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 3: 3 (origen índice 4)")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 4: 3 (origen índice 5)")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 5: 10 (origen índice 0)")!=std::string::npos,
+        "Stable sorting failed to preserve source positions for equal values");
     const auto reading_key=[&](const SimulationView& current) {
         for(const auto& region:current.reading_regions())
             if(region.key.find("/original-order")!=std::string::npos)return region.key;
@@ -458,31 +463,41 @@ void original_order_comparison(HWND host) {
     click(view,apply_id);resize(view,360);
     check(!IsWindowVisible(preview)&&text(view,original_order_id).empty()&&
         reading_key(view).empty()&&
-        name(GetDlgItem(view.window(),array_id)).find("índice 0: 1")!=std::string::npos,
-        "Already sorted input retained a redundant source comparison");
+        name(GetDlgItem(view.window(),array_id)).find("índice 0: 1")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("origen índice")==std::string::npos,
+        "Already sorted input retained a redundant source comparison or mapping");
     set_edit_text(GetDlgItem(view.window(),input_id),"3\n1\n3");
     click(view,apply_id);resize(view,820);
     const auto edited=text(view,original_order_id);
     check(IsWindowVisible(preview)&&edited.find("índice 0: 3")!=std::string::npos&&
         edited.find("índice 1: 1")!=std::string::npos&&
-        name(GetDlgItem(view.window(),array_id)).find("índice 0: 1")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 0: 1 (origen índice 1)")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 1: 3 (origen índice 0)")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 2: 3 (origen índice 2)")!=std::string::npos&&
         reading_key(view)!=initial_key,
-        "Applying unsorted values did not rebuild the comparison from those values");
+        "Edited source positions or comparison did not update with applied input");
     click(view,restore_id);resize(view,820);
-    check(text(view,original_order_id)==initial&&reading_key(view)==initial_key&&spec==authored,
-        "Restore did not recover the original comparison or lesson data");
+    check(text(view,original_order_id)==initial&&reading_key(view)==initial_key&&spec==authored&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 0: -8 (origen índice 2)")!=std::string::npos,
+        "Restore did not recover the original comparison or stable source positions");
     const auto scenario=GetDlgItem(view.window(),scenario_id);
     SendMessageW(scenario,CB_SETCURSEL,1,0);
     SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
         reinterpret_cast<LPARAM>(scenario));pump();
     check(text(view,original_order_id).find("índice 0: 9")!=std::string::npos&&
-        text(view,original_order_id).find("índice 1: 4")!=std::string::npos,
-        "A different scenario reused the previous source comparison");
+        text(view,original_order_id).find("índice 1: 4")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 0: 4 (origen índice 1)")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 1: 4 (origen índice 3)")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 2: 9 (origen índice 0)")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 3: 9 (origen índice 2)")!=std::string::npos,
+        "The scenario selector retained a previous stable-sort mapping");
     SendMessageW(scenario,CB_SETCURSEL,2,0);
     SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
         reinterpret_cast<LPARAM>(scenario));pump();
     check(!IsWindowVisible(preview)&&reading_key(view).empty()&&
-        view.step_count()==1,"Empty data retained an obsolete source comparison");
+        view.step_count()==1&&
+        name(GetDlgItem(view.window(),array_id)).find("origen índice")==std::string::npos,
+        "Empty data retained an obsolete source comparison or cell mapping");
 
     auto strings=fixture(SimulationViewMode::summary);
     strings.text_values=true;strings.editable=false;strings.scenarios.clear();
@@ -491,15 +506,17 @@ void original_order_comparison(HWND host) {
     check(IsWindowVisible(GetDlgItem(text_view.window(),original_order_id))&&
         text(text_view,original_order_id).find("índice 0: \" \" (1 espacio)")!=std::string::npos&&
         text(text_view,original_order_id).find("índice 1: \"\" (cadena vacía)")!=std::string::npos&&
-        name(GetDlgItem(text_view.window(),array_id)).find("índice 0: \"\" (cadena vacía)")!=std::string::npos,
-        "Original/ordered comparison collapsed empty or whitespace-only values");
+        name(GetDlgItem(text_view.window(),array_id)).find("índice 0: \"\" (cadena vacía) (origen índice 1)")!=std::string::npos&&
+        name(GetDlgItem(text_view.window(),array_id)).find("índice 1: \" \" (1 espacio) (origen índice 0)")!=std::string::npos,
+        "Text sorting lost original positions for empty or whitespace-only values");
 
     auto no_sort=fixture(SimulationViewMode::array);no_sort.sort=false;
     no_sort.values=numbers({-8,3,3,10});no_sort.scenarios.clear();
     SimulationView unchanged(host,no_sort,"es");resize(unchanged,650);
     check(!IsWindowVisible(GetDlgItem(unchanged.window(),original_order_id))&&
-        text(unchanged,original_order_id).empty(),
-        "Unsorted mode fabricated an ordering comparison");
+        text(unchanged,original_order_id).empty()&&
+        name(GetDlgItem(unchanged.window(),array_id)).find("origen índice")==std::string::npos,
+        "Unsorted mode fabricated an ordering comparison or source mapping");
 
     auto many=fixture(SimulationViewMode::summary);many.scenarios.clear();
     many.values.clear();for(std::int64_t value=63;value>=0;--value)many.values.emplace_back(value);
@@ -507,8 +524,10 @@ void original_order_comparison(HWND host) {
     const auto long_preview=GetDlgItem(long_view.window(),original_order_id);
     check(IsWindowVisible(long_preview)&&
         (GetWindowLongPtrW(long_preview,GWL_STYLE)&WS_TABSTOP)!=0&&
-        text(long_view,original_order_id).find("índice 63: 0")!=std::string::npos,
-        "Long source comparison lacks scrolling, keyboard access or its last value");
+        text(long_view,original_order_id).find("índice 63: 0")!=std::string::npos&&
+        name(GetDlgItem(long_view.window(),array_id)).find("índice 0: 0 (origen índice 63)")!=std::string::npos&&
+        name(GetDlgItem(long_view.window(),array_id)).find("índice 63: 63 (origen índice 0)")!=std::string::npos,
+        "Long source comparison or its per-cell source mapping is incomplete");
 }
 void editable_data(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);SimulationView view(host,spec,"es");resize(view,820);

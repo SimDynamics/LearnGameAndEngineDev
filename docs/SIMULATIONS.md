@@ -147,6 +147,16 @@ o restablecerlos; se oculta cuando no hay diferencia, incluso en arrays
 vacíos. En listas largas, el panel tiene un límite de altura, desplazamiento
 nativo y acceso por teclado. Los valores de texto conservan comillas y
 aclaraciones para distinguir cadenas vacías y espacios.
+
+En cada casilla de la **copia ordenada** aparece también su **índice de origen**
+cuando la ordenación ha cambiado las posiciones. Por ejemplo, la entrada
+`[7, 3, 7, 2]` produce la copia `[2, 3, 7, 7]`: los índices de origen de
+sus casillas son, respectivamente, `3, 1, 0, 2`. Los dos valores `7` se
+mantienen en el orden de sus apariciones originales, porque el ordenamiento
+es estable. Este rótulo sirve para rastrear cada dato, no para cambiar los
+índices `start` y `end` utilizados en la copia ordenada. Si los datos ya
+están ordenados o `sort` es `false`, no se añade un rótulo redundante.
+
 La ordenación numérica es ascendente. La ordenación de texto compara bytes
 UTF-8; no aplica ordenación lingüística, conversión de mayúsculas ni eliminación
 de acentos. La cadena vacía precede a cualquier cadena no vacía. Por ejemplo,

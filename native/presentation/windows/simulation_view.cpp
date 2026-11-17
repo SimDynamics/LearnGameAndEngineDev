@@ -43,6 +43,24 @@ std::string data_identity(const std::vector<SimulationValue>& values) {
         append(std::to_string(text.size()));append(":");append(text);append(";");}
     return std::to_string(hash);
 }
+// stable_sort keeps equal items in source order. Reconstruct the source
+// position of each sorted cell without touching the validated trace or
+// inventing a new authored value. A nonempty result means sorting moved data.
+std::vector<std::size_t> stable_source_positions(const SimulationTrace& trace) {
+    if(trace.original==trace.ordered)return {};
+    std::vector<bool> used(trace.original.size(),false);
+    std::vector<std::size_t> positions;
+    positions.reserve(trace.ordered.size());
+    for(const auto& value:trace.ordered){
+        bool found=false;
+        for(std::size_t index=0;index<trace.original.size();++index){
+            if(used[index]||trace.original[index]!=value)continue;
+            used[index]=true;positions.push_back(index);found=true;break;
+        }
+        if(!found)throw std::logic_error("La copia ordenada perdió la procedencia de un elemento.");
+    }
+    return positions;
+}
 void register_class(const wchar_t* name,WNDPROC procedure) {
     WNDCLASSEXW existing{sizeof(existing)};const auto module=GetModuleHandleW(nullptr);
     if(GetClassInfoExW(module,name,&existing))return;
@@ -83,6 +101,7 @@ std::string window_text(HWND window) {
 struct SimulationView::Impl {
     SimulationSpec spec;
     SimulationTrace trace;
+    std::vector<std::size_t> source_positions;
     std::string locale;
     SimulationCallbacks callbacks;
     std::map<std::string,TextSemantics> semantics;
@@ -112,7 +131,8 @@ struct SimulationView::Impl {
 
     Impl(const SimulationSpec& source,std::string language,SimulationCallbacks events,
             const std::map<std::string,TextSemantics>& authored)
-        :spec(source),trace(build_simulation_trace(spec)),locale(std::move(language)),
+        :spec(source),trace(build_simulation_trace(spec)),
+         source_positions(stable_source_positions(trace)),locale(std::move(language)),
          callbacks(std::move(events)),semantics(authored),input_key(data_identity(trace.original)) {}
     ~Impl() {
         *alive=false;
@@ -298,7 +318,11 @@ struct SimulationView::Impl {
     std::string array_text()const {
         std::string text=spec.labels.array+". ";
         if(trace.ordered.empty())text+="No hay valores.";
-        for(std::size_t i=0;i<trace.ordered.size();++i){if(i)text+="; ";text+="índice "+std::to_string(i)+": "+simulation_value_display_text(trace.ordered[i]);}
+        for(std::size_t i=0;i<trace.ordered.size();++i){
+            if(i)text+="; ";
+            text+="índice "+std::to_string(i)+": "+simulation_value_display_text(trace.ordered[i]);
+            if(!source_positions.empty())text+=" (origen índice "+std::to_string(source_positions[i])+")";
+        }
         const auto& state=frame();
         if(spec.view==SimulationViewMode::array){for(std::size_t i=0;i<trace.groups.size();++i){const auto& group=trace.groups[i];
             text+=". Grupo "+std::to_string(i+1)+": índices "+std::to_string(group.begin)+" a "+std::to_string(group.end-1)+".";}}
@@ -372,6 +396,7 @@ struct SimulationView::Impl {
     void replace_data(std::vector<SimulationValue> values,bool replace_editor) {
         // Validation and every frame finish before replacing the visible model.
         auto candidate=build_simulation_trace(spec,std::move(values));
+        auto next_source_positions=stable_source_positions(candidate);
         auto identity=data_identity(candidate.original);
         auto next_format=input_format;
         std::optional<std::string> replacement;
@@ -381,7 +406,8 @@ struct SimulationView::Impl {
                 next_format=SimulationInputFormat::json;
             replacement=simulation_input_text(candidate.original,next_format);
         }
-        trace=std::move(candidate);input_key=std::move(identity);position=0;error.clear();
+        trace=std::move(candidate);source_positions=std::move(next_source_positions);
+        input_key=std::move(identity);position=0;error.clear();
         if(replacement){input_format=next_format;set_edit_text(item(input_id),*replacement);}
         rebuild_groups();rebuild_steps();update();publish();
     }
@@ -430,11 +456,15 @@ struct SimulationView::Impl {
         const auto cell_width=std::max(1,(available-gap*(columns-1))/columns);
         int top=sp(4);
         for(std::size_t first=0;first<trace.ordered.size();first+=static_cast<std::size_t>(columns)){
-            const auto last=std::min(trace.ordered.size(),first+static_cast<std::size_t>(columns));int row=sp(spec.view==SimulationViewMode::array?88:68),marker_height=0;
+            const auto last=std::min(trace.ordered.size(),first+static_cast<std::size_t>(columns));
+            const auto origin_height=source_positions.empty()?0:sp(22);
+            int row=sp(spec.view==SimulationViewMode::array?88:68)+origin_height,marker_height=0;
             for(auto i=first;i<last;++i){const auto dc=GetDC(host);const auto old=SelectObject(dc,font);
                 const auto content=wrapped_text(dc,simulation_value_display_text(trace.ordered[i]),std::max(1,cell_width-sp(16)));
                 RECT bounds{0,0,std::max(1,cell_width-sp(16)),0};DrawTextW(dc,content.c_str(),static_cast<int>(content.size()),&bounds,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);
-                SelectObject(dc,old);ReleaseDC(host,dc);row=std::max(row,static_cast<int>(bounds.bottom)+sp(spec.view==SimulationViewMode::array?62:42));
+                SelectObject(dc,old);ReleaseDC(host,dc);
+                row=std::max(row,static_cast<int>(bounds.bottom)+
+                    sp(spec.view==SimulationViewMode::array?62:42)+origin_height);
                 if(const auto caption=marker_text(i);!caption.empty())marker_height=std::max(marker_height,measure(caption,cell_width,index_font)+sp(8));}
             for(auto i=first;i<last;++i){const auto x=static_cast<int>(i-first)*(cell_width+gap);
                 const auto caption=marker_text(i);if(!caption.empty())markers.push_back({{x,top,x+cell_width,top+marker_height-sp(8)},caption,{x+cell_width/2,top+marker_height}});
@@ -593,9 +623,18 @@ struct SimulationView::Impl {
             auto index_area=bounds;index_area.left+=sp(6);index_area.right-=sp(6);index_area.top+=sp(5);index_area.bottom=index_area.top+sp(21);
             auto old=SelectObject(dc,index_font);SetTextColor(dc,foreground);
             const auto index=wide("índice "+std::to_string(i));DrawTextW(dc,index.c_str(),-1,&index_area,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);
-            auto value_area=bounds;value_area.left+=sp(8);value_area.right-=sp(8);value_area.top=index_area.bottom+sp(3);value_area.bottom-=sp(spec.view==SimulationViewMode::array?28:8);
+            auto value_area=bounds;value_area.left+=sp(8);value_area.right-=sp(8);value_area.top=index_area.bottom+sp(3);
+            value_area.bottom-=sp(spec.view==SimulationViewMode::array?28:8)+(source_positions.empty()?0:sp(22));
             SelectObject(dc,font);const auto value=wrapped_text(dc,simulation_value_display_text(trace.ordered[i]),value_area.right-value_area.left);
             DrawTextW(dc,value.c_str(),static_cast<int>(value.size()),&value_area,DT_CENTER|DT_WORDBREAK|DT_NOPREFIX|DT_EDITCONTROL);
+            if(!source_positions.empty()){
+                auto origin=bounds;origin.left+=sp(4);origin.right-=sp(4);
+                origin.bottom-=sp(spec.view==SimulationViewMode::array?27:4);
+                origin.top=origin.bottom-sp(20);
+                SelectObject(dc,index_font);
+                const auto label=wide("origen "+std::to_string(source_positions[i]));
+                DrawTextW(dc,label.c_str(),-1,&origin,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);
+            }
             if(spec.view==SimulationViewMode::array){auto caption=bounds;caption.top=caption.bottom-sp(24);caption.bottom-=sp(4);SelectObject(dc,index_font);
                 const auto name=wide("grupo "+std::to_string(group+1));DrawTextW(dc,name.c_str(),-1,&caption,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);}
             SelectObject(dc,old);
