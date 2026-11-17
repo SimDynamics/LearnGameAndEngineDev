@@ -575,6 +575,13 @@ que CTest encuentre exactamente cuatro pruebas:
 ejecuta de forma secuencial. Las ventanas de la prueba nativa permanecen
 ocultas. Los registros se conservan en `out/build/<preset>/logs/` y las
 capturas de regresión en el directorio temporal de CTest para simulaciones.
+El ejecutor exige tanto el directorio físico de QA como la rama
+`Codex` del checkout **antes de configurar o compilar**: tener una
+carpeta llamada `LearnGameAndEngineDev-Codex` con `main` activo no
+autoriza ejecutar el conjunto de pruebas. También preserva y restaura
+las variables de entorno temporales que modifica el descubrimiento de
+herramientas, incluso cuando la construcción o CTest falla.
+
 No modifica perfiles reales ni ejecuta GitHub Actions. No se debe atribuir
 una aprobación Windows a la mera publicación del script.
 
