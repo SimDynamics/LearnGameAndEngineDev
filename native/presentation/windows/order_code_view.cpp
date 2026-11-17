@@ -317,9 +317,17 @@ void OrderCodeView::set_completed(bool value){
 void OrderCodeView::set_enabled(bool value){impl_->enabled=value;if(!value)impl_->release();}
 void OrderCodeView::set_text_scale(int value){
     const int requested=std::clamp(value,25,400);
-    for(const auto row:impl_->rows)
-        if(!set_rich_text_zoom(row,requested))
-            throw std::runtime_error("RichEdit rechazó la escala de una tarjeta de orden.");
+    if(requested==impl_->percentage)return;
+    const auto previous=impl_->percentage;
+    for(const auto row:impl_->rows){
+        if(set_rich_text_zoom(row,requested))continue;
+        // A later card can reject EM_SETZOOM after earlier cards accepted
+        // it. Restore every live row before the visual layout can diverge
+        // from the currently published scale and original student order.
+        for(const auto original:impl_->rows)
+            if(IsWindow(original))(void)set_rich_text_zoom(original,previous);
+        throw std::runtime_error("RichEdit rechazó la escala de una tarjeta de orden.");
+    }
     impl_->percentage=requested;
     impl_->layout(impl_->width);
 }
