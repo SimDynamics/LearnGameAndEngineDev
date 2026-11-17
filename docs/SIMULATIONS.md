@@ -219,9 +219,14 @@ cuyo numerador y denominador son como máximo 64. El simulador reduce las
 escalas exactas antes de comunicarlas al control (por ejemplo, 150 % es
 `3/2`, no `150/100`) y aproxima a la fracción permitida más cercana los
 porcentajes sin representación exacta. Comprobar el valor aceptado evita que
-la escala visual y la altura calculada diverjan silenciosamente. Las
-comprobaciones de foco y rueda son parte de `native.simulation_view` y
-requieren ejecución nativa Windows.
+la escala visual y la altura calculada diverjan silenciosamente. La escala
+del simulador se aplica a todos los paneles de forma transaccional: si uno
+rechaza el cambio, se restauran las fracciones anteriores de cada RichEdit,
+incluido el zoom local del editor de datos, y se descartan las mediciones
+intermedias de altura. La prueba nativa fuerza ese rechazo en un panel
+tardío y comprueba que otro simulador y los datos del estudiante no cambien.
+Las comprobaciones de foco y rueda son parte de `native.simulation_view`
+y requieren ejecución nativa Windows.
 
 Hay como máximo ocho escenarios. Cada uno declara exclusivamente `id`, `label`
 y `values`. Su identificador es único, tiene de uno a 64 caracteres ASCII,
