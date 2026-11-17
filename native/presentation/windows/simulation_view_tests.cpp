@@ -2036,6 +2036,73 @@ void original_order_reading_session(HWND host) {
         "Rejected input rebuilt the original source or lost its reading position");
 }
 
+
+void static_simulation_text_is_not_restreamed(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto original=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    constexpr int static_title_id=100,static_description_id=101;
+    const auto title=GetDlgItem(view.window(),static_title_id);
+    const auto description=GetDlgItem(view.window(),static_description_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(title&&description&&editor,"Static simulation prose controls are missing");
+    const auto title_text=text(view,static_title_id);
+    const auto description_text=text(view,static_description_id);
+    struct Counts {int title=0,description=0;} streams;
+    const auto probe=[](HWND control,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR data)->LRESULT{
+        if(message==EM_STREAMIN)++*reinterpret_cast<int*>(data);
+        return DefSubclassProc(control,message,wp,lp);
+    };
+    constexpr UINT_PTR title_probe=0x53495431,description_probe=0x53495432;
+    check(SetWindowSubclass(title,probe,title_probe,
+        reinterpret_cast<DWORD_PTR>(&streams.title))!=FALSE,
+        "Cannot observe the native simulation title");
+    struct Guard {HWND title,description;SUBCLASSPROC callback;
+        ~Guard(){if(IsWindow(title))RemoveWindowSubclass(title,callback,title_probe);
+            if(IsWindow(description))RemoveWindowSubclass(description,callback,description_probe);}
+    } guard{title,description,probe};
+    check(SetWindowSubclass(description,probe,description_probe,
+        reinterpret_cast<DWORD_PTR>(&streams.description))!=FALSE,
+        "Cannot observe the native simulation description");
+    CHARRANGE selection{1,4},after{};
+    SendMessageW(description,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    const auto unchanged=[&](const char* reason){
+        SendMessageW(description,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+        check(streams.title==0&&streams.description==0&&
+            after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&
+            text(view,static_title_id)==title_text&&
+            text(view,static_description_id)==description_text&&spec==original,reason);
+    };
+    check(view.go_to_step(1)&&view.go_to_step(2)&&view.go_to_step(3)&&
+        view.go_to_step(0),"Cannot navigate the native walkthrough");
+    unchanged("Navigating the model re-streamed static prose or lost selection");
+    set_edit_text(editor,"no_es_un_entero");
+    click(view,apply_id);
+    check(!text(view,error_id).empty(),"Could not trigger an invalid edit");
+    unchanged("A rejected draft re-streamed static authored prose");
+    set_edit_text(editor,"1\n2\n3");click(view,apply_id);
+    check(text(view,error_id).empty()&&view.step_index()==0,
+        "Cannot apply a valid source after an invalid draft");
+    unchanged("A changed model input re-streamed unchanged static prose");
+
+    // The cache is invalidated for real typographic changes. It does not
+    // merely suppress every future update or freeze the initial zoom.
+    view.set_text_scale(125);resize(view,820);
+    check(streams.title==1&&streams.description==1&&
+        rich_edit_scale(title)==125&&rich_edit_scale(description)==125,
+        "A confirmed new scale did not refresh static RichEdit formatting");
+    check(view.go_to_step(1)&&view.go_to_step(2),
+        "Cannot resume the model at the new text scale");
+    check(streams.title==1&&streams.description==1,
+        "Static prose was re-streamed on each step after a zoom");
+    SendMessageW(view.window(),WM_DPICHANGED_AFTERPARENT,0,0);pump(host);
+    resize(view,820);
+    check(streams.title==2&&streams.description==2&&
+        rich_edit_scale(title)==125&&rich_edit_scale(description)==125,
+        "A native DPI rebase did not refresh the static text once");
+}
+
 void editable_data(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);SimulationView view(host,spec,"es");resize(view,820);
     check(view.go_to_step(view.step_count()-1),"Cannot prepare an edited data test");
@@ -3207,6 +3274,7 @@ int main(int argc,char** argv)try {
     run("walkthrough_cell_selection",[&]{walkthrough_cell_selection(host.value);});
     run("original_order_comparison",[&]{original_order_comparison(host.value);});
     run("original_order_reading_session",[&]{original_order_reading_session(host.value);});
+    run("static_simulation_text_is_not_restreamed",[&]{static_simulation_text_is_not_restreamed(host.value);});
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
