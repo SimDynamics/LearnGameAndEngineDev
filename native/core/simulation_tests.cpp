@@ -346,6 +346,48 @@ void contract_rejections() {
     rejected([&] { (void)simulation_parse_input(sorted, "2\n1"); }, "Edited unsorted input was accepted");
 }
 
+void parsed_trace_reuse() {
+    auto spec=example();
+    spec.values=integers({7,1,7});
+    spec.scenarios={{"tie","Dos iguales",integers({4,4,2,2})},
+                    {"empty","Sin elementos",{}}};
+    const auto original=spec;
+    for(const auto* input:{"", "5\n3\n5", "-2147483648\n0\n2147483647"}) {
+        auto trace=simulation_parse_input_trace(spec,input);
+        check(trace.original==simulation_parse_input(spec,input)&&
+            trace==build_simulation_trace(spec,trace.original),
+            "Parsed integer trace is not equivalent to a separately validated replay");
+    }
+    rejected([&]{(void)simulation_parse_input_trace(spec,"2\n\n4");},
+        "Trace input accepted an empty integer line");
+    rejected([&]{(void)simulation_parse_input_trace(spec,"2147483648");},
+        "Trace input accepted an overflowing integer");
+    check(spec==original,"Parsed integer input modified authored data or scenarios");
+
+    spec=example();spec.text_values=true;
+    spec.values=words({"patio",""});
+    spec.scenarios={{"zero","Cadena vacía",words({""})},
+                    {"spaces","Espacio significativo",words({" "})}};
+    const auto authored_text=spec;
+    const auto format=SimulationInputFormat::json;
+    for(const auto* input:{"[]", "[\"\"]", "[\"\", \" \"]",
+                           "[\"\", \"patio\", \"patio\"]", "[\"\\u00e1\", \"a\"]"}) {
+        auto trace=simulation_parse_input_trace(spec,input,format);
+        check(trace.original==simulation_parse_input(spec,input,format)&&
+            trace==build_simulation_trace(spec,trace.original),
+            "Parsed text trace changed Unicode, empty labels or output");
+    }
+    const auto empty=simulation_parse_input_trace(spec,"[\"\", \" \"]",format);
+    check(empty.frames.back().leaders==words({""," "})&&
+        empty.frames.back().maximum==1&&empty.frames.back().output==":1\n :1\n",
+        "Reused trace failed to distinguish the empty label from a space");
+    rejected([&]{(void)simulation_parse_input_trace(spec,"[\"\",]",format);},
+        "Parsed trace accepted a malformed text list");
+    rejected([&]{(void)simulation_parse_input_trace(spec,"[\"a\", \"a\"]",SimulationInputFormat::lines);},
+        "Parsed trace reinterpreted ordinary lines as a JSON array");
+    check(spec==authored_text,"Parsed text input modified authored data or scenarios");
+}
+
 void expansion_bounds_and_modes() {
     auto spec = example();
     spec.values = integers({2, 1, 2});
@@ -389,6 +431,7 @@ int main() {
         explicit_text_list_input();
         contract_rejections();
         expansion_bounds_and_modes();
+        parsed_trace_reuse();
         std::cout << "PASS native simulation: calculated groups, ranges, frequencies, maxima/ties, text order, "
             "edited inputs, exact replay, accessible state, strict contracts and bounded expansion\n";
         return 0;
