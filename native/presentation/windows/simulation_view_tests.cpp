@@ -2576,7 +2576,13 @@ void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host) {
     const auto old_step=view.step_index();
     const auto old_count=view.step_count();
     const auto old_output=text(view,output_id);
+    // A rejected scenario must recover a user's unsubmitted plain-text draft,
+    // even when the characters look like the beginning of an RTF document.
+    set_edit_text(GetDlgItem(view.window(),input_id),
+        R"({\rtf1\ansi\b texto})" "\nárbol");
     const auto old_editor=text(view,input_id);
+    check(old_editor==std::string(R"({\rtf1\ansi\b texto})")+"\nárbol",
+        "Cannot prepare a literal RichEdit-like draft before the rollback");
     const auto old_array=name(GetDlgItem(view.window(),array_id));
     const auto old_reading=view.reading_regions()[2].key;
     const auto selector=GetDlgItem(view.window(),scenario_id);
@@ -2588,7 +2594,10 @@ void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host) {
     // output zoom rejects the whole scenario transaction. Then its second,
     // rollback-only editor stream fails too: this must not replace the original
     // diagnostic or prevent recovery of the previously applied trace.
-    struct Rejections {int editor_streams=0,editor_failure=0,zoom_failure=0,editor_fallbacks=0;} errors;
+    struct Rejections {
+        int editor_streams=0,editor_failure=0,zoom_failure=0;
+        int literal_replacements=0,editor_fallbacks=0;
+    } errors;
     const auto reject_editor=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
             UINT_PTR,DWORD_PTR raw)->LRESULT{
         auto& state=*reinterpret_cast<Rejections*>(raw);
@@ -2598,6 +2607,7 @@ void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host) {
             ++state.editor_failure;
             return 0;
         }
+        if(message==EM_REPLACESEL)++state.literal_replacements;
         if(message==WM_SETTEXT)++state.editor_fallbacks;
         return DefSubclassProc(child,message,wp,lp);
     };
@@ -2629,7 +2639,7 @@ void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host) {
         reinterpret_cast<LPARAM>(selector));pump();
     const auto diagnostic=text(view,error_id);
     check(errors.editor_streams>=2&&errors.editor_failure==1&&errors.zoom_failure==1&&
-        errors.editor_fallbacks==1&&text(view,input_id)==old_editor&&
+        errors.literal_replacements==1&&text(view,input_id)==old_editor&&
         diagnostic.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
         SendMessageW(selector,CB_GETCURSEL,0,0)==0&&
         view.step_index()==old_step&&view.step_count()==old_count&&

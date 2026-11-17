@@ -1153,15 +1153,26 @@ struct SimulationView::Impl {
                 try{set_edit_text(item(input_id),previous_editor);}
                 catch(...){
                     // EM_STREAMIN can itself fail while rolling back a
-                    // scenario. Use a separate native whole-document route
-                    // instead of leaving the new editor text beside the old
+                    // scenario. Use an independent plain-text replacement
+                    // instead of leaving new editor text beside the old
                     // model. Retain the first failure for the user.
                     try{
                         const auto editor=item(input_id);
                         auto previous_native=wide(previous_editor);
                         std::replace(previous_native.begin(),previous_native.end(),L'\n',L'\r');
-                        if(!editor||!SetWindowTextW(editor,previous_native.c_str())||
-                                edit_text(editor)!=previous_editor)
+                        if(!editor)throw std::runtime_error("El editor de simulación no está disponible.");
+                        // EM_REPLACESEL inserts literal text, even if its first
+                        // characters resemble an RTF header. Replace all text
+                        // without using the failed streaming operation.
+                        CHARRANGE all{0,-1};
+                        SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&all));
+                        SendMessageW(editor,EM_REPLACESEL,FALSE,
+                            reinterpret_cast<LPARAM>(previous_native.c_str()));
+                        // Retain a second native whole-document route if the
+                        // selection replacement itself was refused.
+                        if(edit_text(editor)!=previous_editor&&
+                                (!SetWindowTextW(editor,previous_native.c_str())||
+                                    edit_text(editor)!=previous_editor))
                             OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\n");
                     }catch(...){
                         OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\n");
