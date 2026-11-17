@@ -187,6 +187,136 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
                 "explanation": {"text": None, "spans": []}
             })
 
+    def test_optional_explanation_uses_original_identity_after_page_reorganization(self):
+        # A completed unit may have moved the activity to a different page.
+        # Historical (pn, bn) still identifies its original owner, whereas
+        # the physical location can change. Do not pin this to a Work lesson.
+        raw = {
+            "id": "cpp_fundamentals__qa__ordinary_feedback",
+            "title": "Reorganización sintética, no lección curricular",
+            "pages": [
+                {"blocks": [
+                    {"type": "paragraph", "text": "Presenta cada pieza antes del intento."},
+                    {"type": "drag_fill_code", "id": "piezas_qa",
+                     "question": "Completa la instrucción observada.",
+                     "language": "cpp", "template": "int []() { return 0[] }",
+                     "choices": ["main", ";", "Main", "."], "correctOrder": [0, 1]}
+                ]},
+                {"blocks": [
+                    {"type": "multiple_choice", "id": "eleccion_qa",
+                     "question": "¿Cuál es la salida?",
+                     "options": ["Uno", "Dos"], "correctIndex": 0,
+                     "explanation": "La primera opción coincide con el caso."}
+                ]}
+            ]
+        }
+        # Authenticate the unrelated question marker as part of the
+        # initial published family, rather than adding it unproved later.
+        bootstrap = layout.prepare(raw)
+        bootstrap["textSemantics"] = {"version": 1, "fields": [
+            layout.text_semantics.make_field(
+                bootstrap, "block_0001_0000", "/question", [])
+        ]}
+        layout.validate(bootstrap)
+        original = layout.prepare_v2(bootstrap, "es", {"es": bootstrap})
+        moved = layout.reorder(original, [
+            {"id": "page_0000", "blocks": ["block_0000_0000"]},
+            {"id": "page_0001", "blocks": ["block_0001_0000", "block_0000_0001"]}
+        ])
+        identity = "block_0000_0001"
+        self.assertEqual({"id": "page_0000", "blocks": ["block_0000_0000"]},
+                         moved["stateLayout"]["current"][0])
+        self.assertEqual(identity, moved["stateLayout"]["current"][1]["blocks"][1])
+        before = deepcopy(layout._blocks(moved)[identity])
+        self.assertNotIn("explanation", before)
+        self.assertEqual((0, 1), layout.validate(moved)[1, 1])
+        self.assertEqual(before, moved["pages"][1]["blocks"][1])
+        marker_before = deepcopy(original["textSemantics"]["fields"][0])
+
+        authored = layout.revise_ordinary_editorial(moved, identity, {
+            "explanation": {
+                "text": "Identifica la función, el operador y el signo final de la instrucción.",
+                "spans": []
+            }
+        })
+        after = layout._blocks(authored)[identity]
+        self.assertEqual(dict(before, explanation=after["explanation"]), after)
+        self.assertEqual(marker_before, authored["textSemantics"]["fields"][0])
+        self.assertEqual(2, len(authored["textSemantics"]["fields"]))
+        self.assertEqual((identity, "/explanation"), (
+            authored["textSemantics"]["fields"][1]["block"],
+            authored["textSemantics"]["fields"][1]["path"]))
+        self.assertEqual(moved["stateLayout"]["family"], authored["stateLayout"]["family"])
+        self.assertEqual(moved["stateLayout"]["origin"], authored["stateLayout"]["origin"])
+        self.assertEqual(moved["stateLayout"]["current"], authored["stateLayout"]["current"])
+        self.assertEqual(layout.state_fingerprint(before), layout.state_fingerprint(after))
+        self.assertTrue(contract.preserves_previous_exercise(
+            SYNTHETIC_PATH, 0, 1, before, after,
+            previous_document=moved, current_document=authored))
+        self.assertFalse(contract.preserves_previous_exercise(
+            SYNTHETIC_PATH, 1, 1, before, after,
+            previous_document=moved, current_document=authored))
+        self.assertFalse(contract.preserves_previous_exercise(
+            SYNTHETIC_PATH, 0, 1, before, after))
+        layout.validate_transition(moved, authored)
+
+        # Subsequent wording updates must use the ordinary revision flow,
+        # preserve the newly published descriptor and append another edge.
+        revised = layout.revise_ordinary_editorial(authored, identity, {
+            "explanation": {
+                "text": "Justifica por separado cada pieza, operador y separador.",
+                "spans": []
+            }
+        })
+        current = layout._blocks(revised)[identity]
+        self.assertTrue(contract.preserves_previous_exercise(
+            SYNTHETIC_PATH, 0, 1, before, current,
+            previous_document=moved, current_document=revised))
+        self.assertEqual(authored["stateLayout"]["editorial"],
+                         revised["stateLayout"]["editorial"][:-1])
+        self.assertEqual(moved["stateLayout"]["current"],
+                         revised["stateLayout"]["current"])
+        self.assertEqual(marker_before, revised["textSemantics"]["fields"][0])
+        self.assertEqual(layout.state_fingerprint(before),
+                         layout.state_fingerprint(current))
+        layout.validate_transition(authored, revised)
+
+    def test_combined_question_revision_and_new_explanation_is_atomic(self):
+        before = synthetic_missing_explanation("drag_fill_code")
+        identity = "block_0000_0000"
+        original = deepcopy(layout._blocks(before)[identity])
+        fields = {
+            "question": {"text": "Indica y ordena cada pieza de la instrucción.", "spans": []},
+            "explanation": {"text": "La instrucción correcta conserva el orden y el signo final.",
+                            "spans": []}
+        }
+        after = layout.revise_ordinary_editorial(before, identity, fields)
+        current = layout._blocks(after)[identity]
+        self.assertEqual(("question", "explanation"),
+                         layout.ordinary_editorial_fields(original, current))
+        self.assertEqual({**original, "question": fields["question"]["text"],
+                          "explanation": fields["explanation"]["text"]}, current)
+        self.assertEqual(layout.state_fingerprint(original),
+                         layout.state_fingerprint(current))
+        self.assertEqual(["/question", "/explanation"],
+                         [field["path"] for field in after["textSemantics"]["fields"]])
+        self.assertEqual(1, len(after["stateLayout"]["editorial"]))
+        self.assertTrue(contract.preserves_previous_exercise(
+            SYNTHETIC_PATH, 0, 0, original, current,
+            previous_document=before, current_document=after))
+
+        # Refuse partial and forged proof for a combined revision.
+        invalid = deepcopy(after)
+        invalid["stateLayout"]["editorial"][0]["afterSha256"] = "0" * 64
+        self.assertFalse(contract.preserves_previous_exercise(
+            SYNTHETIC_PATH, 0, 0, original, layout._blocks(invalid)[identity],
+            previous_document=before, current_document=invalid))
+        missing = deepcopy(after)
+        missing["textSemantics"]["fields"] = missing["textSemantics"]["fields"][:1]
+        self.assertFalse(contract.preserves_previous_exercise(
+            SYNTHETIC_PATH, 0, 0, original, layout._blocks(missing)[identity],
+            previous_document=before, current_document=missing))
+
     def test_all_five_work_proposals_keep_every_other_raw_field_and_provenance(self):
         for name, case in fixtures.CASES.items():
             with self.subTest(name=name):

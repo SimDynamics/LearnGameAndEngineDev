@@ -311,7 +311,19 @@ falta marcas técnicas, Work incluye los rangos UTF-16 compatibles en
 ese mismo objeto. La identidad estable se busca en el `stateLayout`
 publicado y puede diferir de la posición física tras reorganizar las
 páginas; la adición no modifica respuestas ni atribuye una lectura
-anterior al texto nuevo. Si el bloque completo recupera una versión anterior de su propia
+anterior al texto nuevo.
+
+Cuando una actividad está en una página distinta de la original, el
+validador resuelve su propietario mediante el `origin` y el `current`
+autenticados. En las comprobaciones históricas, `(pn, bn)` indica la
+posición de **origen**, no las coordenadas físicas actuales: señalar por
+error la posición nueva no autoriza la edición. Los marcadores de otras
+actividades, incluidos los de preguntas ya publicadas, permanecen
+idénticos. Se puede revisar la pregunta de la misma actividad
+y añadir su explicación opcional en **una única revisión atómica**, con
+los descriptores separados de ambos campos y una sola arista editorial.
+
+Si el bloque completo recupera una versión anterior de su propia
 cadena, los campos incluyen `returnTo` con el ordinal auténtico de esa revisión.
 No se recorta el historial ni se simula una redacción inédita para eludir el
 retorno explícito.
@@ -321,11 +333,27 @@ como argumentos nombrados para este caso. Ambos proceden del mismo flujo de
 validación contra Git; una pareja de bloques aislados conserva las reglas
 anteriores y no obtiene por sí sola este permiso. La función interna
 `preserves_ordinary_explanation_revision` conserva su nombre histórico, pero
-comprueba tanto preguntas como explicaciones. No se añaden propiedades al bloque
-ni se cambian las firmas, direcciones de respuesta o reglas del runtime.
+comprueba tanto preguntas como explicaciones. Sólo puede añadirse la
+propiedad opcional `/explanation` antes ausente; ninguna propiedad de
+respuesta, firma, dirección de almacenamiento o regla del runtime cambia.
 Las guardas especiales siguen activas, incluida la pareja protegida de opción
 y explicación de tokens, los retornos editoriales explícitos y los archivos
 de procedencia de las revisiones exclusivamente bibliográficas.
+
+La comprobación focalizada se encuentra registrada en CTest como
+`native.ordinary_explanation_authoring`. Después de configurar el preset
+local Windows x64 Debug, se puede ejecutar desde el checkout autorizado:
+
+~~~powershell
+ctest --preset windows-x64-debug -R '^native[.]ordinary_explanation_authoring$' --output-on-failure
+~~~
+
+Cubre los seis tipos de actividad, la incorporación opcional de una
+explicación, el desplazamiento de página con origen intacto, dos
+revisiones consecutivas, la combinación atómica con una pregunta
+revisada y los rechazos de pruebas o marcadores alterados. Registrar
+sus resultados reales antes de acreditar la capacidad; la existencia
+del test no demuestra que haya pasado en Windows.
 
 La comprobación acredita conservación contractual y procedencia editorial,
 no la corrección pedagógica de una redacción ni una escucha anterior. Los
