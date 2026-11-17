@@ -1,4 +1,4 @@
-"""Pruebas independientes para auditoría NO aprobatoria de 2 cursos."""
+"""Pruebas independientes para auditoría NO aprobatoria de cursos dinámicos."""
 from __future__ import annotations
 
 from copy import deepcopy
@@ -23,34 +23,37 @@ class StructureOnlyAuditTest(unittest.TestCase):
         self.units = {}
         self.courses = {}
         for course in audit.COURSES:
-            content = self.root / "app/src/main/assets/content/es/programming" / course
-            lesson = content / "unidad" / "lesson_ficticia.json"
-            unit = content / "unidad" / "unit_unidad.json"
-            index = content / f"course_{course}.json"
-            lesson.parent.mkdir(parents=True, exist_ok=True)
-            lesson_id = f"{course}__unidad__ficticia"
-            unit_id = f"{course}__unidad"
-            self.lessons[course] = lesson
-            self.units[course] = unit
-            self.courses[course] = index
-            self.write(lesson, {
-                "id": lesson_id,
-                "title": "Lección",
-                "pages": [{"blocks": [
-                    {"type": "heading", "text": "Contrato"},
-                    {"type": "multiple_choice", "id": "pregunta",
-                     "question": "¿Qué respuesta?", "options": ["A", "B"],
-                     "correctIndex": 0, "explanation": "La primera"},
-                ]}],
-            })
-            self.write(unit, {
-                "courseId": course, "unitId": unit_id, "title": "Unidad",
-                "lessons": [{"number": 1, "id": lesson_id, "title": "Lección"}],
-            })
-            self.write(index, {
-                "id": course, "title": "Curso",
-                "units": [{"number": 1, "id": unit_id, "title": "Unidad"}],
-            })
+            self.add_course(course)
+
+    def add_course(self, course):
+        content = self.root / "app/src/main/assets/content/es/programming" / course
+        lesson = content / "unidad" / "lesson_ficticia.json"
+        unit = content / "unidad" / "unit_unidad.json"
+        index = content / f"course_{course}.json"
+        lesson.parent.mkdir(parents=True, exist_ok=True)
+        lesson_id = f"{course}__unidad__ficticia"
+        unit_id = f"{course}__unidad"
+        self.lessons[course] = lesson
+        self.units[course] = unit
+        self.courses[course] = index
+        self.write(lesson, {
+            "id": lesson_id,
+            "title": "Lección",
+            "pages": [{"blocks": [
+                {"type": "heading", "text": "Contrato"},
+                {"type": "multiple_choice", "id": "pregunta",
+                 "question": "¿Qué respuesta?", "options": ["A", "B"],
+                 "correctIndex": 0, "explanation": "La primera"},
+            ]}],
+        })
+        self.write(unit, {
+            "courseId": course, "unitId": unit_id, "title": "Unidad",
+            "lessons": [{"number": 1, "id": lesson_id, "title": "Lección"}],
+        })
+        self.write(index, {
+            "id": course, "title": "Curso",
+            "units": [{"number": 1, "id": unit_id, "title": "Unidad"}],
+        })
 
     @staticmethod
     def write(path, value):
@@ -76,6 +79,45 @@ class StructureOnlyAuditTest(unittest.TestCase):
         self.assertFalse(result["changesMadeToCurriculum"])
         self.assertIs(contract.ERRORS, saved_errors)
         self.assertEqual(saved_errors, previous)
+
+    def test_discovers_future_course_and_uses_its_own_answer_contract(self):
+        future = "cpp_language_memory_oop"
+        self.add_course(future)
+        result = audit.inspect(self.root)
+        self.assertEqual(result["errors"], 0, result["issues"])
+        self.assertEqual([row["course"] for row in result["courses"]],
+                         sorted((*audit.COURSES, future)))
+        self.assertEqual((result["lessons"], result["blocks"], result["files"]), (3, 6, 9))
+        with redirect_stdout(StringIO()):
+            self.assertEqual(audit.main(["--root", str(self.root), "--course", future]), 0)
+            self.assertEqual(audit.main(["--root", str(self.root), "--course", "all"]), 0)
+
+        lesson = self.read(self.lessons[future])
+        lesson["pages"][0]["blocks"][1]["correctIndex"] = 4
+        self.write(self.lessons[future], lesson)
+        result = audit.inspect(self.root)
+        self.assertTrue(any(issue["course"] == future
+                            and "índice de respuesta fuera de rango" in issue["message"]
+                            for issue in result["issues"]), result["issues"])
+        with redirect_stdout(StringIO()):
+            self.assertEqual(audit.main(["--root", str(self.root), "--course", future]), 1)
+            self.assertEqual(audit.main(["--root", str(self.root), "--course", "all"]), 1)
+            self.assertEqual(audit.main(["--root", str(self.root), "--course", "cpp_fundamentals"]), 0)
+
+    def test_discovery_reports_missing_indices_and_rejects_unsafe_course_names(self):
+        future = "future_programming_2040"
+        (self.root / "app/src/main/assets/content/es/programming" / future).mkdir()
+        result = audit.inspect(self.root)
+        self.assertTrue(any(issue["course"] == future for issue in result["issues"]),
+                        result["issues"])
+        for identifier in ("../future_programming_2040", "all/other", "C:other"):
+            with self.subTest(course=identifier), redirect_stderr(StringIO()):
+                with self.assertRaises(SystemExit) as failure:
+                    audit.main(["--root", str(self.root), "--course", identifier])
+                self.assertEqual(failure.exception.code, 2)
+        (self.root / "app/src/main/assets/content/es/programming" / "bad-name").mkdir()
+        with self.assertRaisesRegex(ValueError, "identificadores inválidos"):
+            audit.inspect(self.root)
 
     def test_detects_real_answer_contract_error_in_programming_2(self):
         path = self.lessons["programming_practice_tools"]

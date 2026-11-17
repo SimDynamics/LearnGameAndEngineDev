@@ -17,16 +17,31 @@ import validar_json_programacion as contract
 from validate_programming_practice_tools import validate
 
 
+# Kept for legacy test fixtures; not a whitelist of authorable courses.
 COURSES = ("cpp_fundamentals", "programming_practice_tools")
 
 
-def inspect(root: Path, courses: tuple[str, ...] = COURSES) -> dict:
+def discover_courses(root: Path) -> tuple[str, ...]:
+    """Find Spanish programming courses without depending on a fixed catalog."""
+    programming = root / "app/src/main/assets/content/es/programming"
+    if not programming.is_dir():
+        raise ValueError("No existe el directorio de cursos de Programación")
+    courses = tuple(sorted(path.name for path in programming.iterdir() if path.is_dir()))
+    if not courses:
+        raise ValueError("No hay directorios de cursos de Programación para validar")
+    if any(not contract.is_structural_course_id(course) for course in courses):
+        raise ValueError("Hay directorios de curso con identificadores inválidos")
+    return courses
+
+
+def inspect(root: Path, courses: tuple[str, ...] | None = None) -> dict:
     """Compare real structural assets with the shared contracts, without writes."""
+    root = root.resolve()
+    courses = discover_courses(root) if courses is None else courses
     if not courses or len(set(courses)) != len(courses) or any(
-            course not in COURSES for course in courses):
+            not contract.is_structural_course_id(course) for course in courses):
         raise ValueError("La selección de cursos estructurales es inválida")
 
-    root = root.resolve()
     previous_root, previous_content, previous_errors = (
         contract.ROOT, contract.CONTENT, contract.ERRORS)
     rows, issues = [], []
@@ -42,6 +57,9 @@ def inspect(root: Path, courses: tuple[str, ...] = COURSES) -> dict:
             row = {"course": course, "lessons": 0, "units": 0, "blocks": 0,
                    "files": [], "errors": 0}
             try:
+                directory = contract.CONTENT.parent / course
+                if directory.is_symlink() or directory.resolve().parent != contract.CONTENT.parent.resolve():
+                    raise ValueError("Directorio del curso fuera de Programación o enlazado")
                 result = validate(helpers, root, None, course_id=course,
                                   structure_only=True)
                 if (result["scope"] != "STRUCTURE_ONLY_NOT_APPROVED"
@@ -81,11 +99,18 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path,
                         default=Path(__file__).resolve().parents[2])
-    parser.add_argument("--course", choices=("all", *COURSES), default="all")
+    parser.add_argument("--course", default="all", metavar="ID|all",
+                        help="ID de un curso o all para descubrir todos los cursos en español")
     parser.add_argument("--output-json", type=Path)
     args = parser.parse_args(argv)
     root = args.root.resolve()
-    result = inspect(root, COURSES if args.course == "all" else (args.course,))
+    if args.course != "all" and not contract.is_structural_course_id(args.course):
+        parser.error("Identificador de curso inválido: use el nombre de su directorio, sin rutas")
+    try:
+        selected = discover_courses(root) if args.course == "all" else (args.course,)
+        result = inspect(root, selected)
+    except (ValueError, OSError) as error:
+        parser.exit(1, f"Selección de cursos no válida: {error}\n")
     for row in result["courses"]:
         print(f"ESTRUCTURA {row['course']}: {row['lessons']} lecciones, "
               f"{row['units']} unidades, {row['blocks']} bloques, "
