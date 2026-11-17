@@ -408,6 +408,10 @@ activa una barra de desplazamiento interna. El estudiante puede usar la
 rueda del ratón sobre el gráfico, desplazar su barra o alcanzarlo con
 Tab y recorrerlo con las flechas, Re Pág, Av Pág, Inicio y Fin. La rueda
 con Ctrl conserva su comportamiento de zoom o desplazamiento del lector.
+Tanto el histograma como los paneles de texto extenso usan la rueda sin Ctrl
+para desplazarse internamente mientras puedan avanzar en esa dirección.
+Al alcanzar el principio o el final, entregan el gesto a la página para
+continuar leyendo la lección sin quedar atrapado en el simulador.
 
 Al cambiar de escenario o aplicar datos nuevos, el gráfico vuelve al
 inicio; cambiar únicamente de paso conserva el desplazamiento mientras
