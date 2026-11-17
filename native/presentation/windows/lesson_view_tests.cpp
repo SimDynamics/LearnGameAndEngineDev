@@ -2580,23 +2580,92 @@ void simulated_code_and_choice_cards() {
     const auto source=fixture.text(2,10);fixture.replace(2,10,source+"// borrador que debe conservarse\n");const auto draft=fixture.text(2,10);
     const auto compiler_output=fixture.control(2,14),choice_text=fixture.control(1,21);
     const auto output_scale=rich_edit_scale(compiler_output),choice_scale=rich_edit_scale(choice_text);
-    require(flush_lesson_view(fixture.view),"Cannot persist the edited source before its zoom baseline");
-    const auto draft_preferences=read_lesson_state(fixture.view).preferences;
-    const CHARRANGE editor_selection{2,7};SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&editor_selection));SetFocus(editor);
-    const auto editor_unchanged=[&] {
-        CHARRANGE selected{};SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
-        require(fixture.control(2,10)==editor&&fixture.text(2,10)==draft&&GetFocus()==editor&&
-            selected.cpMin==editor_selection.cpMin&&selected.cpMax==editor_selection.cpMax&&
-            rich_edit_scale(code)==100&&rich_edit_scale(compiler_output)==output_scale&&rich_edit_scale(choice_text)==choice_scale&&
-            read_lesson_state(fixture.view).preferences==draft_preferences&&reading_script(fixture.view)==script_before_fullscreen,
-            "Editor Ctrl+wheel changed the draft, selection, focus, another block, saved preferences or narration");
+    const CHARRANGE editor_selection{2,7};SetFocus(editor);SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&editor_selection));
+    pump(fixture.host);
+    // Draft persistence includes the native selection. Complete and save the
+    // explicit setup before comparing gestures that can move focus briefly.
+    require(flush_lesson_view(fixture.view),"Cannot persist the edited source and prepared selection before the zoom baseline");
+    const auto draft_state=read_lesson_state(fixture.view);
+    const auto& draft_preferences=draft_state.preferences;
+    const auto preference_changes=[&](const state::StateData& observed) {
+        const auto describe=[](const auto* value)->std::string {
+            if(!value)return "<missing>";
+            if(const auto item=std::get_if<bool>(value))return *item?"true":"false";
+            if(const auto item=std::get_if<std::int64_t>(value))return std::to_string(*item);
+            if(const auto item=std::get_if<double>(value))return std::to_string(*item);
+            if(const auto item=std::get_if<std::string>(value))return "string("+std::to_string(item->size())+"):"+*item;
+            return "variant-index="+std::to_string(value->index());
+        };
+        std::set<std::pair<std::string,std::string>> keys;
+        for(const auto* data:{&draft_state,&observed})for(const auto& [family,values]:data->preferences)
+            for(const auto& entry:values)keys.emplace(family,entry.first);
+        std::string differences;
+        for(const auto& [family,key]:keys) {
+            const auto* expected=state::find(draft_state,family,key);
+            const auto* actual=state::find(observed,family,key);
+            if(expected&&actual&&*expected==*actual)continue;
+            differences+="\n  preference "+family+"/"+key+": expected="+describe(expected)+", actual="+describe(actual);
+        }
+        return differences;
     };
-    control_wheel_to_scale(fixture.host,editor,150);editor_unchanged();
+    const auto narration_changes=[&](const auto& observed) {
+        std::string differences;
+        for(std::size_t index=0;index<std::max(script_before_fullscreen.size(),observed.size());++index) {
+            const auto* expected=index<script_before_fullscreen.size()?&script_before_fullscreen[index]:nullptr;
+            const auto* actual=index<observed.size()?&observed[index]:nullptr;
+            if(expected&&actual&&*expected==*actual)continue;
+            differences+="\n  narration["+std::to_string(index)+"] expected key="+(expected?expected->first:"<missing>")+
+                ", text="+(expected?expected->second:"<missing>")+"; actual key="+(actual?actual->first:"<missing>")+
+                ", text="+(actual?actual->second:"<missing>");
+        }
+        return differences;
+    };
+    const auto editor_unchanged=[&](std::string_view action) {
+        CHARRANGE selected{};SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
+        const auto actual_editor=descendant(fixture.view,id(2,10)),focus=GetFocus();
+        const auto actual_text=edit_text(editor);const auto actual_state=read_lesson_state(fixture.view);
+        const auto actual_script=reading_script(fixture.view);
+        const auto scale_snapshot=[](HWND target) {
+            int numerator=0,denominator=0;SendMessageW(target,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            return std::array<int,3>{denominator?MulDiv(numerator,100,denominator):100,numerator,denominator};
+        };
+        const auto code_zoom=scale_snapshot(code),output_zoom=scale_snapshot(compiler_output),choice_zoom=scale_snapshot(choice_text),editor_zoom=scale_snapshot(editor);
+        const auto zoom_text=[](const auto& value){return std::to_string(value[0])+"% ("+std::to_string(value[1])+"/"+std::to_string(value[2])+")";};
+        const auto matches=[](const auto& value,int expected){return value[0]==expected&&
+            (value[2]<=0||static_cast<long long>(value[1])*100<=static_cast<long long>(value[2])*150);};
+        const auto handle=[](HWND value){return std::to_string(reinterpret_cast<std::uintptr_t>(value))+"/id="+std::to_string(value?GetDlgCtrlID(value):-1);};
+        SCROLLINFO page_scroll{sizeof(page_scroll),SIF_POS};GetScrollInfo(pane,SB_VERT,&page_scroll);
+        const auto context="action="+std::string(action)+", fullscreen="+std::to_string(fixture.fullscreen())+
+            ", HWND expected="+handle(editor)+", actual="+handle(actual_editor)+
+            ", focus expected="+handle(editor)+", actual="+handle(focus)+
+            ", visible="+std::to_string(IsWindowVisible(editor)!=FALSE)+", enabled="+std::to_string(IsWindowEnabled(editor)!=FALSE)+
+            ", selection expected="+std::to_string(editor_selection.cpMin)+","+std::to_string(editor_selection.cpMax)+
+            ", actual="+std::to_string(selected.cpMin)+","+std::to_string(selected.cpMax)+
+            ", editor zoom="+zoom_text(editor_zoom)+", code zoom expected=100%, actual="+zoom_text(code_zoom)+
+            ", output zoom expected="+std::to_string(output_scale)+"%, actual="+zoom_text(output_zoom)+
+            ", choice zoom expected="+std::to_string(choice_scale)+"%, actual="+zoom_text(choice_zoom)+
+            ", draft_equal="+std::to_string(actual_text==draft)+", draft_bytes expected="+std::to_string(draft.size())+", actual="+std::to_string(actual_text.size())+
+            ", page="+std::to_string(fixture.page())+", page_scroll="+std::to_string(page_scroll.nPos)+
+            ", preferences_equal="+std::to_string(actual_state.preferences==draft_preferences)+
+            ", narration_equal="+std::to_string(actual_script==script_before_fullscreen)+
+            preference_changes(actual_state)+narration_changes(actual_script);
+        require(actual_editor==editor,"Editor HWND changed: "+context);
+        require(actual_text==draft,"Editor draft changed: "+context+"\nexpected text="+draft+"\nactual text="+actual_text);
+        require(focus==editor,"Editor focus changed: "+context);
+        require(selected.cpMin==editor_selection.cpMin&&selected.cpMax==editor_selection.cpMax,"Editor selection changed: "+context);
+        require(matches(code_zoom,100),"Editor gesture changed the independent readonly-code scale: "+context);
+        require(matches(output_zoom,output_scale),"Editor gesture changed the independent output scale: "+context);
+        require(matches(choice_zoom,choice_scale),"Editor gesture changed the independent choice scale: "+context);
+        require(actual_state.preferences==draft_preferences,"Editor saved preferences changed: "+context);
+        require(actual_script==script_before_fullscreen,"Editor narration changed: "+context);
+    };
+    editor_unchanged("baseline: selection/focus settled and saved before wheel");
+    control_wheel_to_scale(fixture.host,editor,150);editor_unchanged("normal grow to 150");
     require(!fixture.fullscreen(),"Normal editor Ctrl+wheel entered fullscreen");
-    fixture.click(2,20);require(fixture.fullscreen()&&rich_edit_scale(editor)==150,"The expand control lost the editor's local zoom");editor_unchanged();
-    control_wheel(fixture.host,editor,WHEEL_DELTA);require(rich_edit_scale(editor)==150,"Fullscreen editor Ctrl+wheel exceeded 150 percent");editor_unchanged();
-    control_wheel(fixture.host,editor,-WHEEL_DELTA);require(rich_edit_scale(editor)<150,"Fullscreen editor Ctrl+wheel did not reduce its zoom");editor_unchanged();
-    fixture.escape();require(!fixture.fullscreen(),"The zoomed editor required more than one Escape to leave fullscreen");editor_unchanged();
+    fixture.click(2,20);require(fixture.fullscreen()&&rich_edit_scale(editor)==150,"The expand control lost the editor's local zoom");editor_unchanged("expand editor at 150");
+    control_wheel(fixture.host,editor,WHEEL_DELTA);require(rich_edit_scale(editor)==150,"Fullscreen editor Ctrl+wheel exceeded 150 percent");editor_unchanged("fullscreen positive wheel at cap");
+    control_wheel(fixture.host,editor,-WHEEL_DELTA);require(rich_edit_scale(editor)<150,"Fullscreen editor Ctrl+wheel did not reduce its zoom");editor_unchanged("fullscreen negative wheel from cap");
+    fixture.escape();require(!fixture.fullscreen(),"The zoomed editor required more than one Escape to leave fullscreen");editor_unchanged("Escape after reducing local zoom");
     SendMessageW(choice_text,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(45,12));SendMessageW(choice_text,WM_LBUTTONUP,0,MAKELPARAM(45,12));pump(fixture.host);
     CHARRANGE choice_selection{};SendMessageW(choice_text,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&choice_selection));
     require(SendMessageW(first,BM_GETCHECK,0,0)==BST_CHECKED&&choice_selection.cpMin==choice_selection.cpMax&&GetFocus()==first,
