@@ -824,6 +824,65 @@ void progressive_frequency_bars(HWND host,const std::filesystem::path& captures)
         check(scaled.step_index()==0,"Scrolling histogram cards modified the summary state");
     }
 }
+
+void histogram_follows_new_groups_only_at_end(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.values.clear();spec.scenarios.clear();
+    for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,340);
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    check(chart,"Missing histogram for progressive auto-follow");
+    const auto scroll=[&]{
+        SCROLLINFO state{sizeof(state),SIF_RANGE|SIF_PAGE|SIF_POS};
+        check(GetScrollInfo(chart,SB_VERT,&state)!=FALSE&&state.nPage>0,
+            "The histogram exposes no native scroll page");
+        return state;
+    };
+    const auto bottom=[&](const SCROLLINFO& state){
+        return std::max(state.nMin,state.nMax-
+            std::max(0,static_cast<int>(state.nPage)-1));
+    };
+    // Each unique value has a start and a completed decision, so decision
+    // group n occurs at computed frame 2*n. No future bars are shown.
+    for(std::size_t group=1;group<=10;++group){
+        check(view.go_to_step(2*group),"Cannot advance to the next completed group");
+        const auto current=scroll();
+        check(current.nPos==bottom(current)&&
+            name(chart).find("Frecuencias de "+std::to_string(group)+
+                (group==1?" grupo terminado":" grupos terminados"))!=std::string::npos,
+            "The newly completed histogram bar did not stay in view");
+    }
+    const auto full=scroll();
+    check(bottom(full)>0&&full.nPos==bottom(full)&&
+        (GetWindowLongPtrW(chart,GWL_STYLE)&WS_VSCROLL)!=0,
+        "The ten-group histogram has no bounded native viewport");
+
+    // Do not snatch control from a student intentionally studying earlier
+    // groups while the model advances to a newer completed decision.
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    check(scroll().nPos==0,"Cannot position the chart at its first row");
+    check(view.go_to_step(22),"Cannot finish group eleven");
+    check(scroll().nPos==0&&
+        name(chart).find("Grupo 11: 10, frecuencia 1")!=std::string::npos,
+        "A new group displaced a student studying the first bars");
+
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    const auto reopened=scroll();
+    check(reopened.nPos==bottom(reopened)&&reopened.nPos>0,
+        "Cannot resume auto-follow from the final histogram row");
+    check(view.go_to_step(24),"Cannot finish group twelve");
+    const auto followed=scroll();
+    check(followed.nPos==bottom(followed)&&followed.nPos>reopened.nPos,
+        "A new bar remained hidden after the student returned to the end");
+    check(view.go_to_step(2),"Cannot return to a previously calculated group");
+    const auto previous=scroll();
+    check(previous.nPos==0&&
+        name(chart).find("Grupo 2:")==std::string::npos&&
+        spec==authored,
+        "Returning to an earlier model step retained future histogram bars");
+}
+
 void candidate_frequency_filter(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -3275,6 +3334,7 @@ int main(int argc,char** argv)try {
     run("current_frequency_decision",[&]{current_frequency_decision(host.value,captures);});
     run("histogram_card_navigation",[&]{histogram_card_navigation(host.value);});
     run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
+    run("histogram_follows_new_groups_only_at_end",[&]{histogram_follows_new_groups_only_at_end(host.value);});
     run("candidate_frequency_filter",[&]{candidate_frequency_filter(host.value);});
     run("neighboring_values_explain_group_boundaries",[&]{neighboring_values_explain_group_boundaries(host.value);});
     run("calculated_step_changes",[&]{calculated_step_changes(host.value);});
