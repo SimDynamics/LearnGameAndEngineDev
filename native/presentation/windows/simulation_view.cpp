@@ -172,6 +172,52 @@ struct SimulationView::Impl {
     int px(int value)const{return MulDiv(value,static_cast<int>(GetDpiForWindow(host)),96);}
     int sp(int value)const{return std::max(1,MulDiv(px(value),scale,100));}
     HWND item(int id)const{const auto found=controls.find(id);return found==controls.end()?nullptr:found->second;}
+    // Preserve the position in the text, rather than a pixel scroll offset.
+    // RichEdit's pixels and wrapped visual lines can change with reader zoom
+    // or monitor DPI, while this character belongs to the same stdout.
+    struct OutputReadingAnchor {
+        LONG first_character = -1;
+        CHARRANGE selection{};
+        bool at_end = false;
+    };
+    std::optional<OutputReadingAnchor> capture_output_reading_anchor()const {
+        const auto output=item(output_id);
+        if(!output||!IsWindow(output))return std::nullopt;
+        OutputReadingAnchor anchor;
+        const auto first=SendMessageW(output,EM_GETFIRSTVISIBLELINE,0,0);
+        if(first>=0)anchor.first_character=static_cast<LONG>(
+            SendMessageW(output,EM_LINEINDEX,static_cast<WPARAM>(first),0));
+        SendMessageW(output,EM_EXGETSEL,0,
+            reinterpret_cast<LPARAM>(&anchor.selection));
+        SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE|SIF_POS};
+        if(GetScrollInfo(output,SB_VERT,&scroll)&&scroll.nPage>0&&
+                scroll.nMax-scroll.nMin+1>static_cast<int>(scroll.nPage))
+            anchor.at_end=scroll.nPos>=std::max(scroll.nMin,
+                scroll.nMax-std::max(0,static_cast<int>(scroll.nPage)-1));
+        return anchor;
+    }
+    void restore_output_reading_anchor(const std::optional<OutputReadingAnchor>& saved)const {
+        if(!saved)return;
+        const auto output=item(output_id);
+        if(!output||!IsWindow(output))return;
+        const LONG length=static_cast<LONG>(GetWindowTextLengthW(output));
+        const CHARRANGE selection{
+            std::clamp(saved->selection.cpMin,LONG{0},length),
+            std::clamp(saved->selection.cpMax,LONG{0},length)};
+        SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        if(saved->at_end){
+            SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+        }else if(saved->first_character>=0){
+            // EM_EXLINEFROMCHAR supports the full RichEdit character range,
+            // unlike the older EM_LINEFROMCHAR 64K compatibility limit.
+            const auto target=SendMessageW(output,EM_EXLINEFROMCHAR,0,
+                static_cast<LPARAM>(std::min(saved->first_character,length)));
+            const auto current=SendMessageW(output,EM_GETFIRSTVISIBLELINE,0,0);
+            if(target>=0&&current>=0&&target!=current)
+                SendMessageW(output,EM_LINESCROLL,0,
+                    static_cast<LPARAM>(target-current));
+        }
+    }
     const TextSemantics* semantic(std::string_view path)const {
         const auto found=semantics.find(std::string(path));return found==semantics.end()?nullptr:&found->second;
     }
@@ -1607,7 +1653,8 @@ struct SimulationView::Impl {
                     const auto callback=self->callbacks.layout_changed;
                     if(callback&&required!=area.bottom-area.top)callback();}
                 return 0;}
-            if(message==WM_DPICHANGED_AFTERPARENT&&!self->initializing){self->fonts();self->update();self->publish();return 0;}
+            if(message==WM_DPICHANGED_AFTERPARENT&&!self->initializing){const auto reading=self->capture_output_reading_anchor();
+                self->fonts();self->update();self->restore_output_reading_anchor(reading);self->publish();return 0;}
             if(message==WM_PAINT){PAINTSTRUCT paint{};const auto dc=BeginPaint(item,&paint);self->paint(dc);EndPaint(item,&paint);return 0;}
             if(message==WM_PRINTCLIENT){self->paint(reinterpret_cast<HDC>(wp));return 0;}
             if(message==WM_ERASEBKGND)return 1;
@@ -1626,7 +1673,8 @@ SimulationView::~SimulationView()=default;
 HWND SimulationView::window()const{return impl_->host;}
 int SimulationView::height_for_width(int width){return impl_->measured_height(width);}
 void SimulationView::set_text_scale(int percentage){percentage=std::clamp(percentage,25,150);if(percentage==impl_->scale)return;
-    impl_->fonts(false,percentage);impl_->update();}
+    const auto reading=impl_->capture_output_reading_anchor();
+    impl_->fonts(false,percentage);impl_->update();impl_->restore_output_reading_anchor(reading);}
 std::size_t SimulationView::step_index()const{return impl_->position;}
 std::size_t SimulationView::step_count()const{return impl_->count();}
 bool SimulationView::go_to_step(std::size_t index){return impl_->go(index);}
