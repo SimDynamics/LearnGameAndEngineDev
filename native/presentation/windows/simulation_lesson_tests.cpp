@@ -248,11 +248,14 @@ int main(int argc,char** argv)try {
     check(preserved!=after.end()&&preserved->source_text==paragraph->source_text&&
         preserved->anchor==paragraph->anchor&&preserved->text_semantics==paragraph->text_semantics,
         "A simulation step changed the preceding paragraph's pause identity");
-    check(changed>notifications&&lesson_page_state(view.value).index==0&&IsWindowEnabled(previous),
-        "The step changed the lesson page or failed to notify its visible reading regions");
+    check(changed==notifications+1&&lesson_page_state(view.value).index==0&&IsWindowEnabled(previous),
+        "A simulation step failed to publish exactly one new narration inventory");
     check(state::encode(previous_state)==state::encode(read_lesson_state(view.value)),
         "Exploring a simulation changed progress, responses or drafts");
+    const auto forward_notifications=changed;
     SendMessageW(previous,BM_CLICK,0,0);pump();
+    check(changed==forward_notifications+1,
+        "Returning to a simulation step emitted duplicate or missing narration updates");
     const auto reversed=lesson_reading_regions(view.value);
     check(reversed.size()==before.size(),"Previous did not restore the visible narration inventory");
     for(std::size_t i=0;i<before.size();++i)
