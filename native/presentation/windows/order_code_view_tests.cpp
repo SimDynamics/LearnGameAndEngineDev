@@ -858,6 +858,38 @@ int main(int argc,char** argv){using namespace lgaed::presentation;
         }
         view.set_text_scale(150);check(view.order()==before&&changes>=4,"Presentation changed authored fragment order");
         check(view.reading_regions()[0].second==source[before[0]],"Source text changed during wrapping/zoom");
+        // Force a later card to reject zoom after the earlier cards have
+        // already accepted the new value. The view must roll every card
+        // back without changing the student's arrangement or visible text.
+        {
+            const auto failing=GetDlgItem(view.window(),102);
+            const auto reject_zoom=[](HWND item,UINT message,WPARAM wp,LPARAM lp,
+                    UINT_PTR,DWORD_PTR)->LRESULT{
+                if(message==EM_SETZOOM)return FALSE;
+                return DefSubclassProc(item,message,wp,lp);
+            };
+            check(SetWindowSubclass(failing,reject_zoom,67,0)!=FALSE,
+                "Cannot install the isolated native zoom failure probe");
+            bool rejected=false;
+            try {view.set_text_scale(125);}
+            catch(const std::runtime_error&){rejected=true;}
+            RemoveWindowSubclass(failing,reject_zoom,67);
+            check(rejected,"The rejected card scale was reported as successful");
+            for(int id=100;id<=103;++id){
+                const auto row=GetDlgItem(view.window(),id);
+                int numerator=0,denominator=0;
+                check(SendMessageW(row,EM_GETZOOM,
+                    reinterpret_cast<WPARAM>(&numerator),
+                    reinterpret_cast<LPARAM>(&denominator))!=FALSE&&
+                    numerator>0&&numerator<=64&&denominator>0&&denominator<=64&&
+                    MulDiv(numerator,100,denominator)==150,
+                    "A failed card zoom left the arrangement with mixed scales");
+                check(edit_text(row)==source[id-100],
+                    "Rolling back a rejected zoom changed authored code text");
+            }
+            check(view.order()==before&&view.reading_regions()[0].second==source[before[0]],
+                "Rolling back a rejected card zoom changed the student order");
+        }
         check(character(source_row,shaded_start).crTextColor==RGB(122,195,141)&&character(source_row,0).yHeight==rich_text_height(),
             "Restoring a shaded word or scaling/reflowing replaced its original syntax or base font");
         MoveWindow(view.window(),px(10),px(10),px(700),view.height_for_width(px(700)),TRUE);pump();
