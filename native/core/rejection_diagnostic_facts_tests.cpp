@@ -2,6 +2,7 @@
 
 #include <array>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -353,6 +354,53 @@ void source_edits_stay_inside_assigned_diagnostic() {
         "The code after the assigned diagnostic was changed");
 }
 
+void numeric_domain_boundaries() {
+    constexpr RejectionFacts box_facts[]{{1,-1},{3,21}};
+    constexpr RejectionFacts balance_facts[]{{2,10,0},{3,0,-1}};
+    // A hyphenated upper bound may have the magnitude of INT_MIN. It is
+    // still a wrong domain, both alone and after another, correct interval.
+    for(const auto interval:{"0-2147483648","0-2147483647","0-2147483646"}) {
+        require(!evaluate_rejection_diagnostics(
+            boxes(interval,"Revise"),RejectionOperation::boxes,box_facts).correct,
+            "An extreme upper bound was accepted as the boxes domain");
+        require(!evaluate_rejection_diagnostics(
+            balances(interval,"Revise"),RejectionOperation::balance,balance_facts).correct,
+            "An extreme upper bound was accepted as the balance domain");
+        require(!evaluate_rejection_diagnostics(
+            boxes("0-20; rango permitido "+std::string(interval),"Revise"),
+            RejectionOperation::boxes,box_facts).correct,
+            "The correct boxes interval hid a contradictory extreme bound");
+        require(!evaluate_rejection_diagnostics(
+            balances("0-9; rango permitido "+std::string(interval),"Revise"),
+            RejectionOperation::balance,balance_facts).correct,
+            "The correct balance interval hid a contradictory extreme bound");
+    }
+
+    // Extreme received integers remain legitimate diagnostic facts. Only the
+    // stated allowed domain is wrong above; do not reject these data outright.
+    constexpr auto low=std::numeric_limits<int>::min();
+    constexpr auto high=std::numeric_limits<int>::max();
+    constexpr RejectionFacts extreme_boxes[]{{1,low},{3,high}};
+    std::string box_messages;
+    for(const auto& fact:extreme_boxes)
+        box_messages+="Cajas, petición "+std::to_string(fact.request)+
+            ", piezas="+std::to_string(fact.first)+
+            ": rango permitido 0-20. Revise los datos.\n";
+    require(evaluate_rejection_diagnostics(
+        box_messages,RejectionOperation::boxes,extreme_boxes).correct,
+        "A correctly reported extreme piece count was rejected");
+    constexpr RejectionFacts extreme_balances[]{{2,low,high},{3,high,low}};
+    std::string balance_messages;
+    for(const auto& fact:extreme_balances)
+        balance_messages+="Saldo, petición "+std::to_string(fact.request)+
+            ", cobros="+std::to_string(fact.first)+
+            ", devoluciones="+std::to_string(fact.second)+
+            ": rango permitido 0-9. Revise los datos.\n";
+    require(evaluate_rejection_diagnostics(
+        balance_messages,RejectionOperation::balance,extreme_balances).correct,
+        "Correctly reported extreme charges and refunds were rejected");
+}
+
 void rejected_semantics() {
     constexpr RejectionFacts box_facts[]{{1,-1},{3,21}};
     constexpr RejectionFacts balance_facts[]{{2,10,0},{3,0,-1}};
@@ -517,6 +565,7 @@ int main() {
         validity_claims_keep_their_field_and_clause();
         unsupported_claims_keep_their_predicate_and_polarity();
         source_edits_stay_inside_assigned_diagnostic();
+        numeric_domain_boundaries();
         rejected_semantics();
         std::cout<<"PASS U3L6 semantic diagnostics: closed intervals, spaced dashes, "
             "three valid review actions, field identities, scoped validity and action claims, negative cases\n";

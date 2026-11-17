@@ -4,6 +4,7 @@
 
 #include <charconv>
 #include <cctype>
+#include <cstdint>
 #include <initializer_list>
 #include <optional>
 #include <span>
@@ -263,7 +264,7 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
         // itself even though a valid pair appeared earlier.
         std::size_t end=i;
         bool interval=false;
-        int stated_upper=0;
+        std::int64_t stated_upper=0;
         if(i+2<words.size()&&one_of(words[i+1].text,{"a","al","y","hasta"})
                 &&words[i+2].number) {
             end=i+2;interval=true;stated_upper=*words[i+2].number;
@@ -275,7 +276,9 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
                 // No spaces in "0-9": the shared lexer treats "-9" as
                 // one signed number. It is the upper bound of a hyphenated
                 // range, not a negative upper limit.
-                interval=true;stated_upper=-*next.number;
+                // Widen before negating: INT_MIN is a valid token, but its
+                // positive magnitude does not fit in the original int type.
+                interval=true;stated_upper=-static_cast<std::int64_t>(*next.number);
             }else if(next.number&&next.start>=words[i].end) {
                 const auto connector=std::string_view(source).substr(words[i].end,
                     next.start-words[i].end);

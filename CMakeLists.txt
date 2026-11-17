@@ -161,6 +161,18 @@ function(lgaed_add_cpp_expression_repair_tests)
     set_tests_properties(native.cpp_expression_repair PROPERTIES TIMEOUT 30)
 endfunction()
 
+# Keep diagnostic semantics available in both local Windows test profiles.
+function(lgaed_add_rejection_diagnostic_facts_tests)
+    if(TARGET lgaed_rejection_diagnostic_facts_tests)
+        return()
+    endif()
+    add_executable(lgaed_rejection_diagnostic_facts_tests
+        native/core/rejection_diagnostic_facts_tests.cpp)
+    target_link_libraries(lgaed_rejection_diagnostic_facts_tests PRIVATE lgaed_host_options)
+    add_test(NAME native.rejection_diagnostic_facts COMMAND lgaed_rejection_diagnostic_facts_tests)
+    set_tests_properties(native.rejection_diagnostic_facts PROPERTIES TIMEOUT 30)
+endfunction()
+
 if(LGAED_WASI_RUNNER_QA_ONLY)
     include(CTest)
     if(NOT BUILD_TESTING)
@@ -643,6 +655,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
     set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
     lgaed_add_named_rule_source_tests()
     lgaed_add_cpp_expression_repair_tests()
+    lgaed_add_rejection_diagnostic_facts_tests()
     # Read-only CMake File API graph: a duplicated library source and a
     # real target_link_libraries() can print identical stdout but differ in
     # generated target types, source ownership and linker dependencies.
@@ -925,6 +938,7 @@ if(BUILD_TESTING)
     lgaed_add_simulation_tests()
     lgaed_add_order_editorial_authoring_tests()
     lgaed_add_cpp_expression_repair_tests()
+    lgaed_add_rejection_diagnostic_facts_tests()
     include(cmake/StateImportTests.cmake)
     lgaed_add_curricular_reader_test_targets()
     lgaed_add_semantic_retirement_view_test()
