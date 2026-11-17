@@ -22,7 +22,7 @@ using namespace lgaed::curriculum;
 using namespace lgaed::presentation;
 constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_id=110,previous_id=111,next_id=112,reset_id=113,input_id=115,apply_id=116,restore_id=117,error_id=118,
-    input_format_id=120,group_first_id=200;
+    input_format_id=120,step_selector_id=121,group_first_id=200;
 std::filesystem::path failure_captures;
 void capture(HWND window,const std::filesystem::path& path);
 void fitted_text(SimulationView& view);
@@ -310,6 +310,21 @@ void navigation(HWND host,const std::filesystem::path& captures) {
     auto regions=view.reading_regions();check(regions.size()>=4&&regions.front().key=="title"&&regions[1].key=="description", "Stable authored reading regions disappeared");
     check(std::ranges::none_of(regions,[](const auto& r){return r.source_text.find("-8:1\n")!=r.source_text.npos;}),"A future output was exposed to narration");
     const auto first_dynamic=regions[2].key;
+    const auto step_selector=GetDlgItem(view.window(),step_selector_id);
+    check(step_selector&&SendMessageW(step_selector,CB_GETCOUNT,0,0)==static_cast<LRESULT>(trace.frames.size())&&
+        SendMessageW(step_selector,CB_GETCURSEL,0,0)==0,
+        "The native step selector does not expose every computed frame");
+    const auto middle=trace.candidate_frames[1];
+    SendMessageW(step_selector,CB_SETCURSEL,static_cast<WPARAM>(middle),0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(step_selector_id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(step_selector));pump();
+    check(view.step_index()==middle&&text(view,explanation_id)==trace.frames[middle].explanation&&
+        text(view,output_id)==trace.frames[middle].output,
+        "Direct step selection lost the phase explanation or accumulated output");
+    SendMessageW(step_selector,CB_SETCURSEL,0,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(step_selector_id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(step_selector));pump();
+    check(view.step_index()==0&&text(view,explanation_id)==initial&&
+        view.reading_regions()[2].key==first_dynamic,
+        "Returning to the first step retained stale narration or changed the reading identity");
     click(view,next_id);check(view.step_index()==1&&text(view,explanation_id)==trace.frames[1].explanation,"A native Next button did not select the next calculated frame");
     SendMessageW(GetDlgItem(view.window(),next_id),WM_KEYDOWN,VK_RETURN,1);
     SendMessageW(GetDlgItem(view.window(),next_id),WM_KEYDOWN,VK_RETURN,LPARAM{1}<<30);
@@ -347,6 +362,8 @@ void editable_data(HWND host,const std::filesystem::path& captures) {
     click(view,next_id);check(text(view,error_id)==rejected&&text(view,output_id)==previous_output,
         "Returning to a frame silently accepted the rejected input");
     set_edit_text(GetDlgItem(view.window(),input_id),"7\r\n-2\r\n7\r\n");click(view,apply_id);
+    check(SendMessageW(GetDlgItem(view.window(),step_selector_id),CB_GETCOUNT,0,0)==static_cast<LRESULT>(view.step_count()),
+        "Applying input left old entries in the step selector");
     check(view.step_index()==0&&text(view,error_id).empty()&&view.go_to_step(view.step_count()-1)&&text(view,output_id)=="-2:1\n7:2\n",
         "Applying valid input retained authored results instead of recalculating");
     const auto changed_identity=view.reading_regions()[2].key;
@@ -360,6 +377,8 @@ void editable_data(HWND host,const std::filesystem::path& captures) {
     resize(view,820);if(!captures.empty())capture(view.window(),captures/"edited-scenario-tie.bmp");
     SendMessageW(selector,CB_SETCURSEL,2,0);SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(selector));pump();
     check(view.step_count()==1&&view.step_index()==0&&text(view,output_id).empty()&&
+        SendMessageW(GetDlgItem(view.window(),step_selector_id),CB_GETCOUNT,0,0)==1&&
+        SendMessageW(GetDlgItem(view.window(),step_selector_id),CB_GETCURSEL,0,0)==0&&
         !IsWindowEnabled(GetDlgItem(view.window(),next_id)),"The empty scenario fabricated another step or output");
     check(name(GetDlgItem(view.window(),array_id)).find("No hay valores")!=std::string::npos,"Empty accessible array is ambiguous");
 }
@@ -368,6 +387,10 @@ void modes(HWND host,const std::filesystem::path& captures) {
             std::pair{SimulationViewMode::array,"array-wide.bmp"},std::pair{SimulationViewMode::groups,"groups-wide.bmp"},
             std::pair{SimulationViewMode::candidates,"candidates-wide.bmp"},std::pair{SimulationViewMode::summary,"summary-wide.bmp"}}){
         auto spec=fixture(mode);spec.editable=false;SimulationView view(host,spec,"es");resize(view,960);
+        const auto navigation_selector=GetDlgItem(view.window(),step_selector_id);
+        check(navigation_selector&&bool(GetWindowLongPtrW(navigation_selector,GWL_STYLE)&WS_VISIBLE)==
+            (mode==SimulationViewMode::candidates),
+            "Static and group views should not show the step selector");
         if(mode==SimulationViewMode::groups){
             const auto group=GetDlgItem(view.window(),group_first_id);check(group&&SendMessageW(group,BM_GETCHECK,0,0)==BST_CHECKED,"The group selector lacks its initial checked state");
             SendMessageW(group,WM_KEYDOWN,VK_RIGHT,1);pump();
@@ -391,6 +414,13 @@ void modes(HWND host,const std::filesystem::path& captures) {
                 "Advancing retained the previous examined candidate");
             check(text(view,step_id)=="Grupo 2 de 3","The completed-group counter did not advance with its examined value");
             check(text(view,variables_id).find("máxima: 4")!=std::string::npos&&text(view,output_id)=="-8:1\n3:4\n","Candidate state was not derived from its completion frame");
+            check(SendMessageW(navigation_selector,CB_GETCOUNT,0,0)==static_cast<LRESULT>(view.step_count()),
+                "Candidate selector does not contain each computed group");
+            SendMessageW(navigation_selector,CB_SETCURSEL,2,0);
+            SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(step_selector_id,CBN_SELCHANGE),
+                reinterpret_cast<LPARAM>(navigation_selector));pump();
+            check(view.step_index()==2&&text(view,output_id)=="-8:1\n3:4\n10:1\n",
+                "Jumping to a candidate group did not refresh the complete trace");
         }else{
             check(view.step_count()==1&&!(GetWindowLongPtrW(GetDlgItem(view.window(),next_id),GWL_STYLE)&WS_VISIBLE),"A static mode has visible step controls");
             if(mode==SimulationViewMode::summary)check(text(view,variables_id)=="máxima: 4\nmayores: 3","Summary values were not calculated");

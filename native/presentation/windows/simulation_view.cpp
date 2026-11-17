@@ -23,7 +23,7 @@ constexpr int title_id=100,description_id=101,scenario_label_id=102,scenario_id=
     array_label_id=104,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_label_id=109,output_id=110,previous_id=111,next_id=112,reset_id=113,
     input_label_id=114,input_id=115,apply_id=116,restore_id=117,error_id=118,
-    groups_label_id=119,input_format_id=120,group_first_id=200;
+    groups_label_id=119,input_format_id=120,step_selector_id=121,group_first_id=200;
 bool passive_message(UINT message) {
     return message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||
         message==WM_MOUSEMOVE||message==WM_CAPTURECHANGED||message==WM_CANCELMODE||message==WM_NCDESTROY;
@@ -205,6 +205,9 @@ struct SimulationView::Impl {
         SendMessageW(selector,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(L"Datos originales"));
         for(const auto& example:spec.scenarios){const auto text=wide(example.label);SendMessageW(selector,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(text.c_str()));}
         SendMessageW(selector,CB_SETCURSEL,0,0);accessible(selector,"Escenario de la simulación");
+        const auto step_selector=create(L"COMBOBOX",step_selector_id,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL);
+        SendMessageW(step_selector,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
+        accessible(step_selector,"Ir a un paso calculado de la simulación");
         canvas=CreateWindowExW(0,array_class,L"",WS_CHILD|WS_VISIBLE,0,0,1,1,host,
             reinterpret_cast<HMENU>(static_cast<INT_PTR>(array_id)),GetModuleHandleW(nullptr),this);
         if(!canvas)throw std::runtime_error("No se pudo mostrar el array.");controls.emplace(array_id,canvas);
@@ -229,7 +232,7 @@ struct SimulationView::Impl {
             const auto* text=std::get_if<std::string>(&value);return text&&text->empty();}))
             input_format=SimulationInputFormat::json;
         set_edit_text(editor,simulation_input_text(trace.original,input_format));
-        rebuild_groups();update();initializing=false;
+        rebuild_groups();rebuild_steps();update();initializing=false;
     }
     void accessible(HWND target,const std::string& name) {
         if(accessibility)(void)accessibility->SetHwndPropStr(target,static_cast<DWORD>(OBJID_CLIENT),CHILDID_SELF,
@@ -247,6 +250,36 @@ struct SimulationView::Impl {
             SetWindowPos(child,group_buttons.empty()?item(scenario_id):group_buttons.back(),0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
             group_buttons.push_back(child);
         }
+    }
+    void rebuild_steps() {
+        const auto selector=item(step_selector_id);
+        SendMessageW(selector,CB_RESETCONTENT,0,0);
+        if(!stepping())return;
+        const auto add=[&](std::string caption){const auto wide_caption=wide(caption);
+            SendMessageW(selector,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(wide_caption.c_str()));};
+        if(spec.view==SimulationViewMode::candidates){
+            if(trace.candidate_frames.empty())add("Sin grupos");
+            else for(std::size_t index=0;index<trace.candidate_frames.size();++index){
+                const auto& phase=trace.frames.at(trace.candidate_frames[index]);
+                const auto& value=trace.groups.at(phase.group-1).value;
+                add("Grupo "+std::to_string(index+1)+" · "+simulation_value_display_text(value));
+            }
+        }else for(std::size_t index=0;index<trace.frames.size();++index){
+            const auto& phase=trace.frames[index];std::string label;
+            switch(phase.phase){
+            case SimulationPhase::initial: label="Inicio";break;
+            case SimulationPhase::start: label="Comienza grupo";break;
+            case SimulationPhase::advance: label="Continúa grupo";break;
+            case SimulationPhase::new_maximum: label="Nuevo máximo";break;
+            case SimulationPhase::tie: label="Empate";break;
+            case SimulationPhase::below_maximum: label="Menor que máximo";break;
+            case SimulationPhase::done: label="Fin del recorrido";break;
+            case SimulationPhase::empty: label="Array vacío";break;
+            }
+            if(phase.group>0)label+=" · grupo "+std::to_string(phase.group);
+            add("Paso "+std::to_string(index+1)+" · "+label);
+        }
+        SendMessageW(selector,CB_SETCURSEL,static_cast<WPARAM>(position),0);
     }
     std::string array_text()const {
         std::string text=spec.labels.array+". ";
@@ -276,6 +309,7 @@ struct SimulationView::Impl {
         else if(spec.view==SimulationViewMode::groups)status=trace.groups.empty()?"No hay grupos":"Grupo "+std::to_string(position+1)+" de "+std::to_string(trace.groups.size());
         else if(spec.view==SimulationViewMode::summary)status="Resumen de los grupos";
         set_label(step_id,status);set_label(explanation_id,state.explanation);
+        if(stepping())SendMessageW(item(step_selector_id),CB_SETCURSEL,static_cast<WPARAM>(position),0);
         statistics.clear();
         if(spec.view==SimulationViewMode::candidates){
             const auto examined=state.group>0&&state.group<=trace.groups.size()?simulation_value_display_text(trace.groups[state.group-1].value):"ninguno";
@@ -331,7 +365,7 @@ struct SimulationView::Impl {
         }
         trace=std::move(candidate);input_key=std::move(identity);position=0;error.clear();
         if(replacement){input_format=next_format;set_edit_text(item(input_id),*replacement);}
-        rebuild_groups();update();publish();
+        rebuild_groups();rebuild_steps();update();publish();
     }
     void apply_input() {
         try {auto values=simulation_parse_input(spec,edit_text(item(input_id)),input_format);replace_data(std::move(values),false);}
@@ -464,7 +498,10 @@ struct SimulationView::Impl {
         }
         text_row(array_label_id);
         canvas_height=array_layout(available);place(array_id,margin,top,available,canvas_height,true);top+=canvas_height+px(12);
-        text_row(step_id);text_row(explanation_id);
+        text_row(step_id);
+        place(step_selector_id,margin,top,available,sp(240),stepping());
+        if(stepping())top+=sp(38)+px(8);
+        text_row(explanation_id);
         const bool stats=spec.view!=SimulationViewMode::array;
         const auto stats_height=statistics_layout(available);place(variables_id,margin,top,available,stats_height,stats);if(stats)top+=stats_height+px(8);
         const bool output=spec.view==SimulationViewMode::walkthrough||spec.view==SimulationViewMode::candidates||spec.view==SimulationViewMode::summary;
@@ -568,6 +605,11 @@ struct SimulationView::Impl {
                 const auto previous=scenario;scenario=static_cast<std::size_t>(selected);
                 try{replace_data(original_data(),true);}catch(...){scenario=previous;SendMessageW(item(scenario_id),CB_SETCURSEL,scenario,0);throw;}}
             return 0;}
+        if(id==step_selector_id&&event==CBN_SELCHANGE&&stepping()){
+            const auto selected=SendMessageW(item(step_selector_id),CB_GETCURSEL,0,0);
+            if(selected>=0&&static_cast<std::size_t>(selected)<count())go(static_cast<std::size_t>(selected));
+            return 0;
+        }
         if(id==input_format_id&&event==CBN_SELCHANGE&&spec.editable&&spec.text_values){
             const auto selected=SendMessageW(item(input_format_id),CB_GETCURSEL,0,0);
             if(selected==0||selected==1)change_input_format(selected==1?SimulationInputFormat::json:SimulationInputFormat::lines);

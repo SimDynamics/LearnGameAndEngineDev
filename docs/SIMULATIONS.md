@@ -208,8 +208,14 @@ solamente los grupos que ya terminaron. `done` conserva el resultado final.
 Un array vacío produce únicamente `empty`, sin accesos a elementos ni líneas
 de salida.
 
-Anterior y Siguiente recorren los estados calculados. Retroceder recupera
-también las variables y la salida de ese paso; no deja visibles resultados
+Anterior y Siguiente recorren los estados calculados. El selector **Ir a un paso**
+permite saltar directamente a una fase del recorrido, por ejemplo al primer grupo,
+a un empate o al resultado final. En la vista **candidates**, el selector muestra
+los grupos completados. Funciona también con el teclado y contiene sólo estados
+calculados para los datos actuales. Al editar, aplicar o restablecer datos, sus
+entradas se recalculan; no conserva posiciones ni resultados de otro escenario.
+Retroceder o elegir un paso anterior recupera las variables y la salida de ese
+paso; no deja visibles resultados
 posteriores como si ya se hubieran producido. Editar los datos o cambiar de
 escenario inicia un nuevo recorrido derivado de esa entrada. Reiniciar vuelve
 al comienzo del recorrido actual.
