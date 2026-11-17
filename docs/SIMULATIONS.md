@@ -213,6 +213,9 @@ navegar. **Ctrl+rueda** ajusta sólo el zoom de ese campo en pasos de
 10 %, dentro de 50 % a 150 %. Las ruedas de alta resolución acumulan sus
 fracciones hasta una muesca completa. La rueda sin Ctrl conserva el
 desplazamiento ordinario, reinicia esa acumulación y no cambia el zoom.
+Un cambio confirmado de escala general del lector o de DPI también
+descarta una fracción pendiente del editor: la siguiente muesca empieza
+una sesión nueva y no provoca un incremento inesperado.
 Estos gestos no aplican datos ni alteran las variables, el recorrido o las
 escalas de los demás paneles. RichEdit acepta el zoom mediante una fracción
 cuyo numerador y denominador son como máximo 64. El simulador reduce las
