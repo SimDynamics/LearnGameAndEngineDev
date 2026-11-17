@@ -207,6 +207,16 @@ entrada revisada. Al abrir una simulación, seleccionar un escenario o
 restablecer sus datos, la presencia de una cadena vacía elige **Lista entre
 comillas** para que el dato pueda editarse sin ambigüedad.
 
+En el editor nativo de datos, **Tab** pasa al siguiente control y
+**Mayús+Tab** vuelve al anterior; no se añade un tabulador al borrador por
+navegar. **Ctrl+rueda** ajusta sólo el zoom de ese campo en pasos de
+10 %, dentro de 50 % a 150 %. Las ruedas de alta resolución acumulan sus
+fracciones hasta una muesca completa. La rueda sin Ctrl conserva el
+desplazamiento ordinario, reinicia esa acumulación y no cambia el zoom.
+Estos gestos no aplican datos ni alteran las variables, el recorrido o las
+escalas de los demás paneles. Las comprobaciones de foco y rueda son parte
+de `native.simulation_view` y requieren ejecución nativa Windows.
+
 Hay como máximo ocho escenarios. Cada uno declara exclusivamente `id`, `label`
 y `values`. Su identificador es único, tiene de uno a 64 caracteres ASCII,
 comienza por una letra o guion bajo y continúa con letras, dígitos, guiones
