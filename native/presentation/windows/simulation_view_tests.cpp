@@ -2330,6 +2330,29 @@ void original_order_reading_session(HWND host) {
         after_rejection.selection.cpMax==selected.cpMax&&
         text(view,original_order_id)==expected&&spec==authored,
         "Rejected input rebuilt the original source or lost its reading position");
+
+    // Reapply exactly the same values and source order. Its data fingerprint
+    // and scenario are unchanged, but Apply starts a new reading session.
+    // Unlike a failed attempt, it must not inherit an old RichEdit viewport.
+    set_edit_text(editor,simulation_input_text(spec.values));
+    click(view,apply_id);
+    const auto reapplied=scroll_state(original);
+    check(rewrites==2&&text(view,error_id).empty()&&
+        text(view,original_order_id)==expected&&
+        reapplied.first==0&&reapplied.position.y==0&&
+        reapplied.selection.cpMin==0&&reapplied.selection.cpMax==0&&
+        view.step_index()==0&&spec==authored,
+        "Reapplying identical data inherited a previous original-order reading session");
+
+    // The same requirement holds for Restore, not just the Apply button.
+    SendMessageW(original,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    SendMessageW(original,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    click(view,restore_id);
+    const auto restored=scroll_state(original);
+    check(rewrites==3&&restored.first==0&&restored.position.y==0&&
+        restored.selection.cpMin==0&&restored.selection.cpMax==0&&
+        text(view,original_order_id)==expected&&spec==authored,
+        "Restoring identical authored data inherited the previous source selection");
 }
 
 
