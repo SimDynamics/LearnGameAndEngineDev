@@ -10,8 +10,17 @@ Sin pendientes.
 
 ## CAPACIDADES POR IMPLEMENTAR E INTEGRAR
 
+### SIMULACION_ARRAY_RUNS_ETIQUETAS_VACIAS
+
+- **ESTADO:** PENDIENTE. La simulación `arrayRunsV1` integrada admite textos no vacíos; el ejercicio curricular también admite una etiqueta vacía.
+- **UBICACIÓN:** Programación 1, U5L13, `app/src/main/assets/content/es/programming/cpp_fundamentals/colecciones_y_recorridos/lesson_contar_frecuencias_y_conservar_empates.json`, construcción de etiquetas y sus casos de cadena vacía. El contrato actual de `docs/SIMULATIONS.md` restringe cada texto a uno o más bytes.
+- **OBJETIVO:** representar fielmente los mismos datos que utiliza el programa, distinguiendo una colección vacía de una colección que contiene la cadena vacía. No retirar este caso del currículo para acomodarlo al modelo.
+- **CAPACIDAD Y EXPERIENCIA DESEADAS:** admitir valores de texto vacíos en los datos y escenarios, ofrecer una forma inequívoca de introducirlos y mostrarlos, y distinguirlos de un texto compuesto por espacios. Codex elige la representación y la edición; la etiqueta visible no debe cambiar el dato comparado ni su frecuencia. Conservar las entradas válidas anteriores.
+- **ESTADOS CORRECTOS Y VERIFICACIÓN:** `[]` no tiene grupos, máximo cero y ningún candidato; `[""]` tiene un grupo de frecuencia uno y la cadena vacía como candidato. `["", "patio", "patio"]` produce los grupos `[0,1)` y `[1,3)`, frecuencias uno y dos, y máximo dos alcanzado por patio. Distinguir también `["", " "]`: dos datos diferentes, ambos con frecuencia uno. Comprobar selección, recorrido, retroceso, escenarios y edición mediante las capacidades generales, sin una excepción por lección. Work integrará la simulación al llegar a esa explicación; ahora continúa la revisión desde U1.
+
 ### CURRICULO_NUEVA_EDICION_Y_REINICIO_LIMITADO_AL_CURSO
 
+- **AMPLIACIÓN EDITORIAL PENDIENTE:** U1L4, `programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json`, `block_0004_0001`, actividad `piezas_estructura`, carece de `/explanation`. Work necesita poder añadir retroalimentación a una actividad que antes no tenía ese campo; el generador valida la revisión, pero el validador curricular la rechaza como campo previo modificado sin autorización. Resolverlo mediante la capacidad general de autoría/nueva edición, sin aprobar una frase por su hash ni cambiar el evaluador. Conservar la evaluación vigente hasta la nueva edición; el razonamiento pedagógico ya está desarrollado en el bloque contiguo. Propuesta exacta en `C:\LGAED-QA\work-p1-u1l4-20261116\desarrollar_u1l4.py`, `MISSING_EXPLANATION_PROPOSAL`.
 - **ESTADO:** PENDIENTE. El usuario autoriza rehacer Programación 1 desde el inicio y reiniciar su progreso para que el contenido anterior no limite la enseñanza ni las prácticas.
 - **UBICACIONES INICIALES:** curso `cpp_fundamentals`, U1 `programas_y_ejecucion`; U1L2 `lesson_primer_programa_y_salida.json`. Los puzzles ordinarios publicados no pueden retirarse con la capacidad actual, y la conservación del origen impide sustituir libremente su organización y sus contratos. El mismo límite afecta a la revisión posterior de programas, nombres y objetivos del curso.
 - **OBJETIVO PEDAGÓGICO:** permitir que Work redacte la nueva edición completa por fundamentos, fragmentos explicados y prácticas variadas antes de integrar programas; sustituir o retirar actividades inadecuadas y modificar páginas y criterios cuando lo requiera el aprendizaje.
