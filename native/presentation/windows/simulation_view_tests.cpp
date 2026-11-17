@@ -3094,18 +3094,18 @@ void input_format_conversion_reports_unrecoverable_draft(HWND host) {
         return DefSubclassProc(child,message,wp,lp);
     };
     {
-        constexpr UINT_PTR editor_id=0x53495545,output_id=0x5349554f;
-        check(SetWindowSubclass(editor,reject_editor,editor_id,
+        constexpr UINT_PTR editor_hook_id=0x53495545,output_hook_id=0x5349554f;
+        check(SetWindowSubclass(editor,reject_editor,editor_hook_id,
             reinterpret_cast<DWORD_PTR>(&failures))!=FALSE,
             "Cannot reject all editor recovery routes");
         struct Unhook {
             HWND window;SUBCLASSPROC callback;UINT_PTR id;
             ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
-        } editor_guard{editor,reject_editor,editor_id};
-        check(SetWindowSubclass(output,reject_output,output_id,
+        } editor_guard{editor,reject_editor,editor_hook_id};
+        check(SetWindowSubclass(output,reject_output,output_hook_id,
             reinterpret_cast<DWORD_PTR>(&failures))!=FALSE,
             "Cannot inject the late presentation failure");
-        Unhook output_guard{output,reject_output,output_id};
+        Unhook output_guard{output,reject_output,output_hook_id};
         select(0);
         const auto notice=text(view,error_id);
         check(failures.streams==2&&failures.zoom>0&&failures.replace>=1&&failures.text>=1&&
