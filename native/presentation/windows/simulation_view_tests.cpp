@@ -2101,6 +2101,18 @@ void static_simulation_text_is_not_restreamed(HWND host) {
     check(streams.title==2&&streams.description==2&&
         rich_edit_scale(title)==125&&rich_edit_scale(description)==125,
         "A native DPI rebase did not refresh the static text once");
+    if(!reader_theme::palette(view.window()).high_contrast){
+        const auto base_accent=reader_theme::palette(view.window()).accent;
+        const COLORREF changed_accent=base_accent==RGB(1,2,3)?RGB(3,2,1):RGB(1,2,3);
+        reader_theme::set_accent(view.window(),changed_accent);
+        check(view.go_to_step(3)&&streams.title==3&&streams.description==3,
+            "A confirmed appearance change failed to refresh static prose");
+        check(view.go_to_step(4)&&streams.title==3&&streams.description==3,
+            "A normal step re-streamed prose after the appearance change");
+        reader_theme::set_accent(view.window(),std::nullopt);
+        check(view.go_to_step(0)&&streams.title==4&&streams.description==4,
+            "Restoring the inherited appearance did not refresh static prose");
+    }
 }
 
 void editable_data(HWND host,const std::filesystem::path& captures) {
