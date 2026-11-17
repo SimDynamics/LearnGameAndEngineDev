@@ -3046,6 +3046,94 @@ void input_format_conversion_rejects_native_failures(HWND host) {
         "Input-format conversion did not recover after a late native failure");
 }
 
+void input_format_conversion_reports_unrecoverable_draft(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.text_values=true;
+    spec.values={std::string("patio"),std::string("patio")};
+    spec.scenarios.clear();
+    const auto original=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the applied trace for a failed editor recovery");
+    const auto old_step=view.step_index();
+    const auto old_count=view.step_count();
+    const auto old_output=text(view,output_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto format=GetDlgItem(view.window(),input_format_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(editor&&format&&output,"Missing editable text conversion controls");
+    const auto select=[&](int index){
+        check(SendMessageW(format,CB_SETCURSEL,index,0)!=CB_ERR,
+            "Cannot select the text input format in a native failure test");
+        SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(input_format_id,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(format));pump();
+    };
+
+    set_edit_text(editor,"sol\nluna");
+    select(1);
+    const auto json=text(view,input_id);
+    check(json=="[\"sol\", \"luna\"]"&&SendMessageW(format,CB_GETCURSEL,0,0)==1,
+        "Cannot prepare the valid quoted-list draft before the native failure");
+    struct Failures {int streams=0,zoom=0,replace=0,text=0;} failures;
+    const auto reject_editor=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& state=*reinterpret_cast<Failures*>(raw);
+        if(message==EM_STREAMIN&&++state.streams==2){
+            auto* stream=reinterpret_cast<EDITSTREAM*>(lp);
+            if(stream)stream->dwError=ERROR_WRITE_FAULT;
+            return 0;
+        }
+        if(message==EM_REPLACESEL){++state.replace;return 0;}
+        if(message==WM_SETTEXT){++state.text;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    const auto reject_output=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& state=*reinterpret_cast<Failures*>(raw);
+        if(message==EM_SETZOOM&&state.zoom++==0)return FALSE;
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    {
+        constexpr UINT_PTR editor_id=0x53495545,output_id=0x5349554f;
+        check(SetWindowSubclass(editor,reject_editor,editor_id,
+            reinterpret_cast<DWORD_PTR>(&failures))!=FALSE,
+            "Cannot reject all editor recovery routes");
+        struct Unhook {
+            HWND window;SUBCLASSPROC callback;UINT_PTR id;
+            ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+        } editor_guard{editor,reject_editor,editor_id};
+        check(SetWindowSubclass(output,reject_output,output_id,
+            reinterpret_cast<DWORD_PTR>(&failures))!=FALSE,
+            "Cannot inject the late presentation failure");
+        Unhook output_guard{output,reject_output,output_id};
+        select(0);
+        const auto notice=text(view,error_id);
+        check(failures.streams==2&&failures.zoom>0&&failures.replace>=1&&failures.text>=1&&
+            SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+            text(view,input_id)=="sol\nluna"&&
+            notice.find("no se pudo restaurar el borrador anterior")!=std::string::npos&&
+            notice.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+            notice.find("se conservaron los datos escritos")==std::string::npos&&
+            view.step_index()==old_step&&view.step_count()==old_count&&
+            text(view,output_id)==old_output&&spec==original,
+            "An unrecoverable native draft was falsely reported as preserved");
+        check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==GetDlgItem(view.window(),error_id)&&
+                region.source_text==notice;
+        }),"The unrecoverable-draft warning was not exposed to narration");
+    }
+
+    // Recovery is still available: the learner can reenter the previous
+    // quoted list without altering the already applied model and retry.
+    set_edit_text(editor,json);
+    select(0);
+    check(SendMessageW(format,CB_GETCURSEL,0,0)==0&&
+        text(view,input_id)=="sol\nluna"&&text(view,error_id).empty()&&
+        view.step_index()==old_step&&view.step_count()==old_count&&
+        text(view,output_id)==old_output&&spec==original,
+        "Manual draft recovery did not allow the next format conversion");
+}
+
 void empty_text_values(HWND host,const std::filesystem::path& captures) {
     const std::string empty_label="\"\" (cadena vacía)",space_label="\" \" (1 espacio)";
     const auto select=[](SimulationView& view,int id,int index) {
@@ -4256,6 +4344,7 @@ int main(int argc,char** argv)try {
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
     run("input_format_conversion_rejects_native_failures",[&]{input_format_conversion_rejects_native_failures(host.value);});
+    run("input_format_conversion_reports_unrecoverable_draft",[&]{input_format_conversion_reports_unrecoverable_draft(host.value);});
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});
     run("interactive_simulation_feedback_narration_ids",[&]{interactive_simulation_feedback_narration_ids(host.value);});
     run("editable_input_keyboard_focus",[&]{editable_input_keyboard_focus(host.value);});

@@ -1238,14 +1238,24 @@ struct SimulationView::Impl {
         }catch(const std::exception& failure){
             const auto reason=std::string(failure.what());
             input_format=previous_format;input_wheel_delta=previous_wheel;
+            bool restored=previous_text.has_value();
             if(previous_text){
                 bool unchanged=false;
                 try{unchanged=edit_text(editor)==*previous_text;}catch(...){}
                 // Avoid a needless stream when a rejected conversion never
                 // changed the document, its Undo history or text selection.
-                if(!unchanged)(void)restore_input_document(*previous_text);
+                if(!unchanged)restored=restore_input_document(*previous_text);
             }
-            error="No se cambió el formato; se conservaron los datos escritos. "+reason;
+            // A native control can reject all recovery routes. Do not tell
+            // the learner that the draft was preserved without evidence.
+            if(!previous_text)
+                error="No se cambió el formato; no fue posible leer el borrador. "+
+                    reason;
+            else if(!restored)
+                error="No se cambió el formato; no se pudo restaurar el borrador anterior. "+
+                    std::string("Revisa el texto visible antes de aplicar datos. ")+reason;
+            else
+                error="No se cambió el formato; se conservaron los datos escritos. "+reason;
             update();
             restore_output_reading_anchor(reading,input_id);
             publish();

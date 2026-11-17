@@ -223,8 +223,12 @@ anterior y se muestra el motivo. El cambio de formato también es transaccional:
 se comprueba que RichEdit haya escrito el contenido convertido y que la vista
 acepte su presentación antes de confirmarlo. Un rechazo silencioso de escritura
 o un fallo tardío de presentación restablecen formato, borrador, selección,
-posición de lectura y ayuda anteriores sin modificar la traza aplicada. **Aplicar datos** inicia el recorrido con la
-entrada revisada. Al abrir una simulación, seleccionar un escenario o
+posición de lectura y ayuda anteriores sin modificar la traza aplicada.
+Si incluso la restauración nativa falla, el motor no afirma que el borrador
+haya quedado intacto: muestra un aviso accesible para que se revise el texto
+visible y se vuelva a introducir lo necesario antes de aplicarlo.
+
+**Aplicar datos** inicia el recorrido con la entrada revisada. Al abrir una simulación, seleccionar un escenario o
 restablecer sus datos, la presencia de una cadena vacía elige **Lista entre
 comillas** para que el dato pueda editarse sin ambigüedad.
 
