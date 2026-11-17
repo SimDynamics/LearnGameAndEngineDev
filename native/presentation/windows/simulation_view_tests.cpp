@@ -2933,6 +2933,57 @@ void output_zoom_preserves_reading_anchor(HWND host) {
         "Reader zoom left the last output line hidden or altered the trace");
 }
 
+
+void wrapped_output_reflow_keeps_text_visible(HWND host) {
+    auto spec=fixture(SimulationViewMode::summary);
+    spec.scenarios.clear();
+    spec.values.clear();
+    for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
+    // A 190-character output line must wrap differently at 800 and 360 px.
+    // Short one-line examples cannot exercise reflow of the same text.
+    spec.output_template="Grupo {group} valor {value}: "+std::string(160,'x');
+    SimulationView view(host,spec,"es");
+    resize(view,800);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(output,"Missing RichEdit output for wrapped-line reflow");
+    const auto authored=spec;
+    const auto stdout_before=text(view,output_id);
+    const auto line_count=[&] {
+        return SendMessageW(output,EM_GETLINECOUNT,0,0);
+    };
+    const auto first_character=[&] {
+        const auto first=SendMessageW(output,EM_GETFIRSTVISIBLELINE,0,0);
+        return SendMessageW(output,EM_LINEINDEX,static_cast<WPARAM>(first),0);
+    };
+    const auto wide_lines=line_count();
+    check(wide_lines>64,"The long output did not wrap at the wide size");
+    CHARRANGE selected{0,4};
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    SendMessageW(output,EM_LINESCROLL,0,35);
+    const auto anchor=first_character();
+    check(anchor>0,"Could not scroll into the middle of wrapped output");
+    const auto keep_context=[&](const char* reason) {
+        const auto current=scroll_state(output);
+        const auto first_line=SendMessageW(output,EM_GETFIRSTVISIBLELINE,0,0);
+        const auto anchor_line=SendMessageW(output,EM_EXLINEFROMCHAR,0,
+            static_cast<LPARAM>(anchor));
+        check(anchor_line>=first_line&&anchor_line<=first_line+1&&
+            current.selection.cpMin==selected.cpMin&&
+            current.selection.cpMax==selected.cpMax&&
+            text(view,output_id)==stdout_before&&spec==authored,reason);
+    };
+    resize(view,360);
+    check(line_count()>wide_lines,"The narrow output did not produce additional wrapped lines");
+    keep_context("Narrow reflow moved the previously visible output beyond the viewport");
+    view.set_text_scale(150);resize(view,360);
+    keep_context("Zooming wrapped output displaced the prior reading context");
+    resize(view,800);
+    keep_context("Widening zoomed output lost the prior text context");
+    view.set_text_scale(100);resize(view,800);
+    keep_context("Restoring the scale drifted away from the prior output context");
+}
+
 void scrollable_text_keyboard(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::summary);spec.values.clear();
     for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
@@ -3048,6 +3099,7 @@ int main(int argc,char** argv)try {
     run("output_scenario_reading_isolated",[&]{output_scenario_reading_isolated(host.value);});
     run("output_applied_data_reading_isolated",[&]{output_applied_data_reading_isolated(host.value);});
     run("output_zoom_preserves_reading_anchor",[&]{output_zoom_preserves_reading_anchor(host.value);});
+    run("wrapped_output_reflow_keeps_text_visible",[&]{wrapped_output_reflow_keeps_text_visible(host.value);});
     run("scrollable_text_keyboard",[&]{scrollable_text_keyboard(host.value,captures);});
     check(!IsWindowVisible(host.value)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=host.value,"Simulation QA activated the desktop");
     if(failures){std::cerr<<"FAIL native simulation view: "<<failures<<" independent scenario(s) failed\n";return 1;}
