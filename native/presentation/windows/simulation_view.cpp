@@ -955,11 +955,17 @@ struct SimulationView::Impl {
             // be revealed. Once scrolling is possible, follow only if the
             // learner was at the bottom; an earlier group being studied must
             // not be displaced by future decisions.
-            SCROLLINFO previous{sizeof(previous),SIF_RANGE|SIF_PAGE|SIF_POS};
-            if(GetScrollInfo(frequencies,SB_VERT,&previous)&&previous.nPage>0){
-                const auto last=std::max(previous.nMin,previous.nMax-
-                    std::max(0,static_cast<int>(previous.nPage)-1));
-                followed_last_bar=previous.nPos>=last;
+            RECT viewport{};
+            GetClientRect(frequencies,&viewport);
+            if(viewport.bottom>0&&frequency_total_height<=viewport.bottom)
+                followed_last_bar=true;
+            else {
+                SCROLLINFO previous{sizeof(previous),SIF_RANGE|SIF_PAGE|SIF_POS};
+                if(GetScrollInfo(frequencies,SB_VERT,&previous)&&previous.nPage>0){
+                    const auto last=std::max(previous.nMin,previous.nMax-
+                        std::max(0,static_cast<int>(previous.nPage)-1));
+                    followed_last_bar=previous.nPos>=last;
+                }
             }
         }
         position=next;update();
