@@ -476,8 +476,18 @@ Al alcanzar el principio o el final, entregan el gesto a la página para
 continuar leyendo la lección sin quedar atrapado en el simulador.
 
 Al cambiar de escenario o aplicar datos nuevos, el gráfico vuelve al
-inicio; cambiar únicamente de paso conserva el desplazamiento mientras
-el grupo sigue visible. La descripción accesible contiene todos los grupos
+inicio. Al avanzar, si el estudiante estaba viendo el final del histograma,
+la barra del nuevo grupo terminado entra en la vista, incluso cuando la
+nueva fila provoca el primer desbordamiento. Si había desplazado el gráfico
+hacia arriba para consultar barras anteriores, **no** se lo desplaza
+automáticamente; podrá volver al final con la rueda o el teclado. Retroceder
+a una decisión anterior oculta los grupos que todavía no estaban terminados
+y ajusta el desplazamiento al tamaño realmente disponible. La prueba Win32
+`histogram_follows_new_groups_only_at_end` cubre 64 grupos, el seguimiento
+del final, la lectura manual anterior y el retroceso; su ejecución debe
+verificarse en Windows.
+
+La descripción accesible contiene todos los grupos
 que ya están terminados, incluidos los que quedan fuera del área gráfica
 visible; nunca incluye resultados futuros. Un gráfico corto no añade
 un tabulador innecesario. Los paneles RichEdit de lectura, incluidos
