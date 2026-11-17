@@ -2266,6 +2266,45 @@ void scale_limits_and_local_control_wheel(HWND host) {
     }
     first.set_text_scale(100);resize(first,800);
     const auto input=GetDlgItem(first.window(),input_id);
+    // Fail the last RichEdit after earlier controls and the editable input
+    // accepted their next zoom. Restore the input's independent 120% zoom,
+    // not merely the global reader scale of 100%.
+    control_wheel(host,input,WHEEL_DELTA);
+    control_wheel(host,input,WHEEL_DELTA);
+    check(rich_edit_scale(input)==120,
+        "Cannot prepare the editor's independent scale before rollback");
+    const auto rejected_panel=GetDlgItem(first.window(),progress_label_id);
+    check(rejected_panel,"Missing late RichEdit for a transactional scale test");
+    const auto fail_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR)->LRESULT{
+        if(message==EM_SETZOOM&&wp==5&&lp==4)return FALSE;
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    check(SetWindowSubclass(rejected_panel,fail_zoom,75,0)!=FALSE,
+        "Cannot intercept a late native simulation zoom failure");
+    bool rejected_reader_scale=false;
+    try {first.set_text_scale(125);}
+    catch(const std::runtime_error&){rejected_reader_scale=true;}
+    RemoveWindowSubclass(rejected_panel,fail_zoom,75);
+    check(rejected_reader_scale&&rich_edit_scale(input)==120,
+        "Rejected reader zoom was committed or erased the editor-local scale");
+    for(auto child=GetWindow(first.window(),GW_CHILD);child;
+            child=GetWindow(child,GW_HWNDNEXT)){
+        wchar_t kind[48]{};GetClassNameW(child,kind,48);
+        if(std::wstring_view(kind)!=MSFTEDIT_CLASS||child==input)continue;
+        check(rich_edit_scale(child)==100,
+            "A rejected reader zoom left one RichEdit at a mixed scale");
+    }
+    check(rich_edit_contents(first)==first_contents&&
+        rich_edit_contents(second)==second_contents,
+        "Rolling back native zoom modified simulation text or another view");
+    control_wheel(host,input,-WHEEL_DELTA);
+    control_wheel(host,input,-WHEEL_DELTA);
+    check(rich_edit_scale(input)==100,
+        "The editor could not resume ordinary Ctrl+wheel after a rejected zoom");
+    first.set_text_scale(125);resize(first,800);
+    (void)rich_edit_fonts(first,125);
+    first.set_text_scale(100);resize(first,800);
     const auto original_step=first.step_index();const auto original_array=name(GetDlgItem(first.window(),array_id));
     for(int step=0;step<40&&rich_edit_scale(input)<150;++step){
         const auto before=rich_edit_scale(input);control_wheel(host,input,WHEEL_DELTA);const auto after=rich_edit_scale(input);
