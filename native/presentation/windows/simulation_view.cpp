@@ -31,6 +31,17 @@ constexpr int title_id=100,description_id=101,scenario_label_id=102,scenario_id=
     previous_decision_id=124,next_decision_id=125,result_comparison_id=126,
     frequencies_id=127,frequencies_label_id=128,frequency_filter_id=129,
     progress_label_id=130,progress_id=131,group_first_id=200;
+// A child with a real scrollbar consumes a wheel gesture only while it can
+// move in that direction. At either edge the lesson must continue scrolling.
+bool can_scroll_with_wheel(HWND child,int delta) {
+    if(delta==0)return false;
+    SCROLLINFO range{sizeof(range),SIF_RANGE|SIF_PAGE|SIF_POS};
+    if(!GetScrollInfo(child,SB_VERT,&range)||range.nPage==0||
+        range.nMax-range.nMin+1<=static_cast<int>(range.nPage))return false;
+    const int last=std::max(range.nMin,range.nMax-
+        std::max(0,static_cast<int>(range.nPage)-1));
+    return delta>0?range.nPos>range.nMin:range.nPos<last;
+}
 bool passive_message(UINT message) {
     return message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||
         message==WM_MOUSEMOVE||message==WM_CAPTURECHANGED||message==WM_CANCELMODE||message==WM_NCDESTROY;
@@ -1255,14 +1266,11 @@ struct SimulationView::Impl {
         if(self->callbacks.passive_gesture&&passive_message(message)){
             const auto handled=self->callbacks.passive_gesture(item,message,wp,lp);if(handled&&message!=WM_NCDESTROY)return *handled;}
         if(message==WM_MOUSEWHEEL){
-            // Read-only RichEdit must not interpret Ctrl+wheel as an
-            // independent, unbounded text zoom. Its layout and narration
-            // belong to the lesson reader's scale and reflow contract.
-            if(GET_KEYSTATE_WPARAM(wp)&MK_CONTROL)
-                return SendMessageW(GetParent(item),message,wp,lp);
-            SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE};
-            if(!GetScrollInfo(item,SB_VERT,&scroll)||!scroll.nPage||
-                scroll.nMax-scroll.nMin+1<=static_cast<int>(scroll.nPage))
+            // The parent's reader owns Ctrl+wheel. Ordinary wheel moves
+            // scrollable read-only text only until its actual upper/lower
+            // scroll limit; forwarding at an edge prevents a stuck page.
+            if((GET_KEYSTATE_WPARAM(wp)&MK_CONTROL)||
+                !can_scroll_with_wheel(item,GET_WHEEL_DELTA_WPARAM(wp)))
                 return SendMessageW(GetParent(item),message,wp,lp);
         }
         if(message==WM_NCDESTROY)RemoveWindowSubclass(item,passive_proc,1);
@@ -1415,10 +1423,10 @@ struct SimulationView::Impl {
             self->scroll_frequencies(target);return 0;
         }
         if(message==WM_MOUSEWHEEL){
-            if((GET_KEYSTATE_WPARAM(wp)&MK_CONTROL)||
-                self->frequency_total_height<=viewport.bottom)
-                return SendMessageW(GetParent(item),message,wp,lp);
             const auto delta=GET_WHEEL_DELTA_WPARAM(wp);
+            if((GET_KEYSTATE_WPARAM(wp)&MK_CONTROL)||
+                !can_scroll_with_wheel(item,delta))
+                return SendMessageW(GetParent(item),message,wp,lp);
             self->scroll_frequencies(self->frequency_scroll-
                 delta*self->sp(75)/WHEEL_DELTA);
             return 0;
