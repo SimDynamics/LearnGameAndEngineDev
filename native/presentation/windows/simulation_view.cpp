@@ -1550,7 +1550,17 @@ struct SimulationView::Impl {
         }
         add(output_label_id,prefix+"output-label");add(output_id,prefix+"output");
         add(result_comparison_id,"state/"+std::to_string(scenario)+"/"+input_key+"/result-comparison");
-        add(input_label_id,"input-label");add(error_id,prefix+"error");
+        // Switching between line input and the explicit quoted-list editor
+        // changes the help the learner must hear. Keep the historical line
+        // identity; the JSON mode gets its own unambiguous reading/bookmark.
+        add(input_label_id,input_format==SimulationInputFormat::json?
+            "input-format/json":"input-label");
+        // Two rejected drafts at the same model step can have distinct errors.
+        // Derive a stable opaque identity from the displayed diagnostic, never
+        // the learner's raw draft, so the reader cannot replay stale feedback.
+        if(!error.empty())
+            add(error_id,prefix+"error/"+data_identity(std::vector<SimulationValue>{
+                std::string(error)}));
         return result;
     }
     LRESULT command(WPARAM command,LPARAM) {
