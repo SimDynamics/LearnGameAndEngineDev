@@ -133,6 +133,7 @@ struct SimulationView::Impl {
     SimulationInputFormat input_format=SimulationInputFormat::lines;
     int width=1,height=1,scale=100,canvas_height=1;
     int frequency_scroll=0,frequency_total_height=0;
+    int input_wheel_delta=0;
     bool frequency_candidates_only=false;
     bool initializing=true,arranging=false,layout_valid=false;
     std::shared_ptr<bool> alive=std::make_shared<bool>(true);
@@ -364,10 +365,10 @@ struct SimulationView::Impl {
         SendMessageW(format,CB_SETCURSEL,0,0);accessible(format,"Formato de los datos editables");
         const auto editor=create(MSFTEDIT_CLASS,input_id,WS_TABSTOP|ES_MULTILINE|ES_AUTOVSCROLL|WS_VSCROLL);
         reader_theme::apply(editor,reader_theme::Surface::field);use_plain_text_input(editor);
-        // RichEdit may request Tab even in a dialog. Leave ordinary editing
-        // native, but allow Tab/Shift+Tab to reach the next real control.
-        if(!SetWindowSubclass(editor,input_tab_proc,3,0))
-            throw std::runtime_error("No se pudo preparar la navegación del editor de datos.");
+        // RichEdit's native Tab and Ctrl+wheel behavior can vary. Keep
+        // text editing native, while consistently enforcing focus and zoom.
+        if(!SetWindowSubclass(editor,input_navigation_proc,3,reinterpret_cast<DWORD_PTR>(this)))
+            throw std::runtime_error("No se pudieron preparar los controles del editor de datos.");
         SendMessageW(editor,WM_SETFONT,reinterpret_cast<WPARAM>(base_font),FALSE);
         SendMessageW(editor,EM_EXLIMITTEXT,0,65536);
         button(apply_id,"Aplicar datos");button(restore_id,"Restablecer datos");
@@ -1202,7 +1203,8 @@ struct SimulationView::Impl {
         else if(id>=group_first_id&&static_cast<std::size_t>(id-group_first_id)<group_buttons.size())go(id-group_first_id);
         return 0;
     }
-    static LRESULT CALLBACK input_tab_proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR) {
+    static LRESULT CALLBACK input_navigation_proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
+        auto* self=reinterpret_cast<Impl*>(raw);
         if(message==WM_GETDLGCODE){
             const auto flags=DefSubclassProc(edit,message,wp,lp);
             const auto* key=reinterpret_cast<const MSG*>(lp);
@@ -1210,7 +1212,25 @@ struct SimulationView::Impl {
                 return flags&~(DLGC_WANTTAB|DLGC_WANTALLKEYS);
             return flags;
         }
-        if(message==WM_NCDESTROY)RemoveWindowSubclass(edit,input_tab_proc,3);
+        if(message==WM_MOUSEWHEEL){
+            if(GET_KEYSTATE_WPARAM(wp)&MK_CONTROL){
+                // Track high-resolution wheel deltas per editor. Neither
+                // unmodified scrolling nor another simulation is affected.
+                self->input_wheel_delta+=GET_WHEEL_DELTA_WPARAM(wp);
+                const int notches=self->input_wheel_delta/WHEEL_DELTA;
+                self->input_wheel_delta-=notches*WHEEL_DELTA;
+                if(!notches)return 0;
+                int numerator=0,denominator=0;
+                SendMessageW(edit,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),
+                    reinterpret_cast<LPARAM>(&denominator));
+                const int current=denominator?MulDiv(numerator,100,denominator):100;
+                const int next=std::clamp(current+10*notches,50,150);
+                if(next!=current)SendMessageW(edit,EM_SETZOOM,next,100);
+                return 0;
+            }
+            self->input_wheel_delta=0;
+        }
+        if(message==WM_NCDESTROY)RemoveWindowSubclass(edit,input_navigation_proc,3);
         return DefSubclassProc(edit,message,wp,lp);
     }
     static LRESULT CALLBACK passive_proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
