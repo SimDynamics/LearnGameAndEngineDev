@@ -2674,6 +2674,93 @@ void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host,boo
 }
 
 
+void scenario_change_reports_unrecoverable_draft(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the applied trace for a failed scenario draft recovery");
+    const auto old_step=view.step_index(),old_count=view.step_count();
+    const auto old_output=text(view,output_id);
+    const auto old_array=name(GetDlgItem(view.window(),array_id));
+    const auto old_reading=view.reading_regions()[2].key;
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(editor&&selector&&output,"Missing scenario editor and output controls");
+    const std::string draft="Borrador no aplicado: árbol";
+    set_edit_text(editor,draft);
+    check(text(view,input_id)==draft,"Cannot prepare the pending user draft");
+
+    struct Failures {int streams=0,zoom=0,replacements=0,window_texts=0;} failure;
+    const auto reject_editor=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& state=*reinterpret_cast<Failures*>(raw);
+        if(message==EM_STREAMIN&&++state.streams==2){
+            auto* data=reinterpret_cast<EDITSTREAM*>(lp);
+            if(data)data->dwError=ERROR_WRITE_FAULT;
+            return 0;
+        }
+        if(message==EM_REPLACESEL){++state.replacements;return 0;}
+        if(message==WM_SETTEXT){++state.window_texts;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    const auto reject_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& state=*reinterpret_cast<Failures*>(raw);
+        if(message==EM_SETZOOM&&state.zoom++==0)return FALSE;
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    {
+        constexpr UINT_PTR editor_hook_id=0x53495553,output_hook_id=0x5349554c;
+        check(SetWindowSubclass(editor,reject_editor,editor_hook_id,
+            reinterpret_cast<DWORD_PTR>(&failure))!=FALSE,
+            "Cannot intercept editor recovery writes");
+        struct Unhook {
+            HWND child;SUBCLASSPROC callback;UINT_PTR id;
+            ~Unhook(){if(IsWindow(child))RemoveWindowSubclass(child,callback,id);}
+        } editor_guard{editor,reject_editor,editor_hook_id};
+        check(SetWindowSubclass(output,reject_zoom,output_hook_id,
+            reinterpret_cast<DWORD_PTR>(&failure))!=FALSE,
+            "Cannot intercept late output presentation");
+        Unhook output_guard{output,reject_zoom,output_hook_id};
+
+        check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+            "Cannot prepare the alternate scenario");
+        SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(selector));pump();
+        const auto warning=text(view,error_id);
+        check(failure.streams==2&&failure.zoom>=1&&
+            failure.replacements>=1&&failure.window_texts>=1&&
+            warning.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+            warning.find("No se pudo restaurar el borrador anterior.")!=std::string::npos&&
+            warning.find("Revisa el texto visible antes de aplicar datos.")!=std::string::npos&&
+            SendMessageW(selector,CB_GETCURSEL,0,0)==0&&
+            view.step_index()==old_step&&view.step_count()==old_count&&
+            text(view,output_id)==old_output&&
+            name(GetDlgItem(view.window(),array_id))==old_array&&
+            view.reading_regions()[2].key==old_reading&&
+            text(view,input_id)==simulation_input_text(spec.scenarios.front().values)&&
+            spec==authored,
+            "Scenario native recovery failed without a clear warning or changed applied data");
+        check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==GetDlgItem(view.window(),error_id)&&
+                region.source_text==warning;
+        }),"The incomplete scenario recovery was absent from accessible narration");
+    }
+    // Restore manually and verify that the original scenario can be selected
+    // without a lingering native fault or a silently committed stale trace.
+    set_edit_text(editor,draft);
+    check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "Cannot retry scenario selection after incomplete recovery");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(SendMessageW(selector,CB_GETCURSEL,0,0)==1&&
+        view.step_index()==0&&view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="4:2\n9:2\n"&&spec==authored,
+        "A correct retry did not recover after incomplete scenario rollback");
+}
+
 void scenario_change_rejects_silent_editor_stream(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -4340,6 +4427,7 @@ int main(int argc,char** argv)try {
     run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
     run("scenario_change_keeps_origin_error_when_editor_rollback_fails",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value);});
     run("scenario_change_keeps_origin_error_when_rollback_is_silent",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value,true);});
+    run("scenario_change_reports_unrecoverable_draft",[&]{scenario_change_reports_unrecoverable_draft(host.value);});
     run("scenario_change_rejects_silent_editor_stream",[&]{scenario_change_rejects_silent_editor_stream(host.value);});
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});

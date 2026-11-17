@@ -257,7 +257,9 @@ texto previsto: un flujo que termina sin error, pero no escribe esos datos,
 también se rechaza. Ante un rollback, se restauran además la selección y la
 posición de lectura del borrador en el editor. La vista debe recuperar el
 modelo aplicado anterior y el error original debe seguir visible y disponible
-para narración.
+para narración. Si todas las vías de restauración del borrador fallan al cambiar
+de escenario, el aviso conserva la causa original y agrega una advertencia
+para revisar el texto visible. No declara conservado un borrador sin verificarlo.
 Se restaura la traza por movimiento, sin duplicar una segunda copia de
 hasta 8 MiB. Las regresiones `applying_valid_data_is_atomic_after_native_failure`
 y `scenario_change_is_atomic_after_native_failure` provocan una única

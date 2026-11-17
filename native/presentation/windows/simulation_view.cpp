@@ -1187,7 +1187,7 @@ struct SimulationView::Impl {
             input_format=previous_format;
             // A second native failure cannot mask the first or interrupt
             // recovery of the old trace, controls and reading positions.
-            if(replacement)(void)restore_input_document(previous_editor);
+            const bool draft_restored=!replacement||restore_input_document(previous_editor);
             try {
                 rebuild_groups();rebuild_steps();update();
                 restore_output_reading_anchor(output_anchor);
@@ -1198,6 +1198,17 @@ struct SimulationView::Impl {
                 // Preserve the originating error if the native control remains
                 // unavailable. The data model was restored before redrawing.
                 OutputDebugStringW(L"No se pudo restaurar la vista del simulador tras rechazar una actualización.\n");
+            }
+            if(!draft_restored){
+                // Keep the original diagnostic and disclose incomplete recovery.
+                // The student must not trust a draft that the native control
+                // refused to restore through every available text path.
+                try{std::rethrow_exception(failure);}
+                catch(const std::exception& original){
+                    throw std::runtime_error(std::string(original.what())+
+                        " No se pudo restaurar el borrador anterior. "+
+                        "Revisa el texto visible antes de aplicar datos.");
+                }
             }
             std::rethrow_exception(failure);
         }
