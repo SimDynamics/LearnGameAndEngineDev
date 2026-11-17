@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <iterator>
 #include <limits>
+#include <numeric>
 #include <stdexcept>
 #include <utility>
 
@@ -41,6 +42,34 @@ bool can_scroll_with_wheel(HWND child,int delta) {
     const int last=std::max(range.nMin,range.nMax-
         std::max(0,static_cast<int>(range.nPage)-1));
     return delta>0?range.nPos>range.nMin:range.nPos<last;
+}
+// MSFTEDIT rejects EM_SETZOOM if either part of its fraction exceeds 64.
+// Reduce the requested percentage exactly whenever possible, and find the
+// closest bounded rational for arbitrary reader scales such as 101%.
+std::pair<int,int> zoom_ratio(int percentage) {
+    percentage=std::clamp(percentage,25,150);
+    const int divisor=std::gcd(percentage,100);
+    const int numerator=percentage/divisor,denominator=100/divisor;
+    if(numerator<=64&&denominator<=64)return {numerator,denominator};
+    int best_numerator=1,best_denominator=1;
+    int best_error=std::abs(100-percentage);
+    for(int candidate_denominator=1;candidate_denominator<=64;++candidate_denominator){
+        const int candidate_numerator=std::clamp(
+            (percentage*candidate_denominator+50)/100,1,64);
+        const int candidate_error=std::abs(
+            candidate_numerator*100-percentage*candidate_denominator);
+        if(static_cast<std::int64_t>(candidate_error)*best_denominator<
+           static_cast<std::int64_t>(best_error)*candidate_denominator){
+            best_numerator=candidate_numerator;
+            best_denominator=candidate_denominator;
+            best_error=candidate_error;
+        }
+    }
+    return {best_numerator,best_denominator};
+}
+bool set_native_zoom(HWND edit,int percentage) {
+    const auto [numerator,denominator]=zoom_ratio(percentage);
+    return SendMessageW(edit,EM_SETZOOM,numerator,denominator)!=FALSE;
 }
 bool passive_message(UINT message) {
     return message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||
@@ -299,7 +328,8 @@ struct SimulationView::Impl {
         PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING|PFM_SPACEAFTER;
         paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;paragraph.dySpaceAfter=0;
         SendMessageW(item(id),EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
-        SendMessageW(item(id),EM_SETZOOM,scale,100);
+        if(!set_native_zoom(item(id),scale))
+            throw std::runtime_error("RichEdit rechazó la escala del texto de simulación.");
     }
     void color_plain_text(int id) {
         CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_COLOR;
@@ -322,7 +352,8 @@ struct SimulationView::Impl {
                 // RichEdit retains character formatting. A zoom-only change
                 // must not replace that base with WM_SETFONT at the old zoom.
                 if(rebase){SendMessageW(child,EM_SETZOOM,1,1);SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(base_font),FALSE);}
-                SendMessageW(child,EM_SETZOOM,scale,100);
+                if(!set_native_zoom(child,scale))
+                    throw std::runtime_error("RichEdit rechazó la escala de la simulación.");
             }else SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);}
         for(const auto value:old)if(value)DeleteObject(value);
     }
@@ -653,7 +684,9 @@ struct SimulationView::Impl {
         set_label(result_comparison_id,result_comparison_text());
         set_label(output_label_id,spec.labels.output+(state.output.empty()?" (vacía)":""));
         visible_text[output_id]=state.output;set_edit_text(item(output_id),state.output);color_plain_text(output_id);
-        SendMessageW(item(output_id),EM_SETZOOM,scale,100);color_plain_text(input_id);
+        if(!set_native_zoom(item(output_id),scale))
+            throw std::runtime_error("RichEdit rechazó la escala de la salida.");
+        color_plain_text(input_id);
         const auto input_help=!spec.text_values?std::string("Datos editables: un entero por línea."):
             input_format==SimulationInputFormat::json?
                 std::string(R"(Datos editables: una lista de textos entre comillas. Ejemplo: ["", "patio", " "]. [] no contiene elementos; "" es una cadena vacía y " " contiene un espacio.)"):
@@ -1248,7 +1281,8 @@ struct SimulationView::Impl {
                     reinterpret_cast<LPARAM>(&denominator));
                 const int current=denominator?MulDiv(numerator,100,denominator):100;
                 const int next=std::clamp(current+10*notches,50,150);
-                if(next!=current)SendMessageW(edit,EM_SETZOOM,next,100);
+                if(next!=current&&!set_native_zoom(edit,next))
+                    OutputDebugStringW(L"El editor de datos no aceptó la escala RichEdit solicitada.\n");
                 return 0;
             }
             self->input_wheel_delta=0;
