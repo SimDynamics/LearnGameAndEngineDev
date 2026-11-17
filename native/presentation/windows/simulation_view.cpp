@@ -720,8 +720,34 @@ struct SimulationView::Impl {
         NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,item(variables_id),OBJID_CLIENT,CHILDID_SELF);
         set_label(result_comparison_id,result_comparison_text());
         set_label(output_label_id,spec.labels.output+(state.output.empty()?" (vacía)":""));
-        visible_text[output_id]=state.output;set_edit_text(item(output_id),state.output);color_plain_text(output_id);
-        if(!set_rich_text_zoom(item(output_id),scale))
+        // Counting another element often leaves accumulated stdout unchanged.
+        // Replacing that same text resets RichEdit's scroll/caret and sends
+        // needless change events, so retain the native document in place.
+        const auto output_window=item(output_id);
+        const auto previous_output=visible_text.find(output_id);
+        const bool output_changed=previous_output==visible_text.end()||
+            previous_output->second!=state.output;
+        POINT output_scroll{};
+        bool restore_output_scroll=false,follow_output_end=false;
+        if(output_changed&&previous_output!=visible_text.end()){
+            restore_output_scroll=true;
+            SendMessageW(output_window,EM_GETSCROLLPOS,0,
+                reinterpret_cast<LPARAM>(&output_scroll));
+            SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE|SIF_POS};
+            const bool at_end=GetScrollInfo(output_window,SB_VERT,&scroll)&&
+                scroll.nPage>0&&
+                scroll.nPos>=std::max(scroll.nMin,
+                    scroll.nMax-std::max(0,static_cast<int>(scroll.nPage)-1));
+            // Follow a new line only when the learner was already at the
+            // bottom. If they scrolled up to reread an earlier group, keep
+            // that viewport even as more output is calculated.
+            follow_output_end=at_end&&state.output.size()>previous_output->second.size()&&
+                state.output.compare(0,previous_output->second.size(),previous_output->second)==0;
+        }
+        visible_text[output_id]=state.output;
+        if(output_changed)set_edit_text(output_window,state.output);
+        color_plain_text(output_id);
+        if(!set_rich_text_zoom(output_window,scale))
             throw std::runtime_error("RichEdit rechazó la escala de la salida.");
         color_plain_text(input_id);
         const auto input_help=!spec.text_values?std::string("Datos editables: un entero por línea."):
@@ -740,6 +766,13 @@ struct SimulationView::Impl {
         const auto description=array_text();SetWindowTextW(canvas,wide(description).c_str());accessible(canvas,description);
         NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,canvas,OBJID_CLIENT,CHILDID_SELF);
         if(!initializing)arrange(width,true);
+        if(restore_output_scroll){
+            if(follow_output_end)
+                SendMessageW(output_window,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+            else
+                SendMessageW(output_window,EM_SETSCROLLPOS,0,
+                    reinterpret_cast<LPARAM>(&output_scroll));
+        }
         InvalidateRect(canvas,nullptr,FALSE);InvalidateRect(item(variables_id),nullptr,FALSE);
         InvalidateRect(frequencies,nullptr,FALSE);
     }
