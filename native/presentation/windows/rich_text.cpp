@@ -891,7 +891,10 @@ bool set_rich_text_zoom(HWND edit,int percentage) {
     // EM_SETZOOM rejects numerator or denominator outside [1,64].
     // Simplify exact percentages first, then approximate other percentages
     // with the closest representable rational, without changing the document.
-    percentage=std::clamp(percentage,25,150);
+    // Reader and simulator controls enforce their own 150% UI cap. Keep
+    // the shared native helper capable of 200% for geometry and raster QA,
+    // which verifies the same renderer beyond the application UI range.
+    percentage=std::clamp(percentage,25,200);
     const int divisor=std::gcd(percentage,100);
     int numerator=percentage/divisor,denominator=100/divisor;
     if(numerator>64||denominator>64){
