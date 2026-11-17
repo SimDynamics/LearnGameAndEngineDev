@@ -1590,7 +1590,8 @@ struct LessonView {
                 (void)set_original_math_text(result,text,block_prose?math_mode(static_cast<std::size_t>((id-1000)/100)):"auto",hooks.math_editor_request,emphasis,role,lesson.locale,semantics);
             else (void)set_native_math_inline_text(result,text,emphasis,role,lesson.locale,semantics);
         }
-        SendMessageW(result,EM_SETZOOM,content_text_scale(),100);
+        if(!set_rich_text_zoom(result,content_text_scale()))
+            throw std::runtime_error("RichEdit rechazó la escala inicial del lector.");
         if (editable) {SendMessageW(result, EM_SETTARGETDEVICE, 0, 1);wrap_modes[result]=false;}
         SetWindowSubclass(result, wheel_proc, 1, 0);
         attach_gestures(result);
@@ -2087,7 +2088,11 @@ struct LessonView {
         CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_SIZE|CFM_BOLD|CFM_COLOR;
         format.yHeight=15*14;format.crTextColor=reader_theme::palette(window).high_contrast?reader_theme::palette(window).text:RGB(174,180,190);
         SendMessageW(caption,EM_SETSEL,0,-1);SendMessageW(caption,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));SendMessageW(caption,EM_SETSEL,0,0);
-        SendMessageW(caption,EM_SETZOOM,content_text_scale(),100);updating=before;
+        if(!set_rich_text_zoom(caption,content_text_scale())){
+            updating=before;
+            throw std::runtime_error("RichEdit rechazó la escala del título de consola.");
+        }
+        updating=before;
     }
     void update_fonts() {
         auto font = CreateFontW(-MulDiv(18, static_cast<int>(GetDpiForWindow(window)), 96), 0, 0, 0,
@@ -2104,7 +2109,8 @@ struct LessonView {
         for (const auto& row : rows) for (auto item : row.cells) {
             wchar_t name[32]{}; GetClassNameW(item, name, 32);
             if (std::wstring_view(name) != MSFTEDIT_CLASS) SendMessageW(item, WM_SETFONT, reinterpret_cast<WPARAM>(compact_font&&GetDlgCtrlID(item)>=1000&&(GetDlgCtrlID(item)-1000)%100==36?compact_font:content_font), TRUE);
-            else SendMessageW(item,EM_SETZOOM,content_text_scale(),100);
+            else if(!set_rich_text_zoom(item,content_text_scale()))
+                throw std::runtime_error("RichEdit rechazó la escala actualizada del lector.");
         }
         for(auto& vm:controls){if(vm.simulation)vm.simulation->set_text_scale(content_text_scale());if(vm.math)vm.math->set_text_scale(content_text_scale());if(vm.fill)vm.fill->set_text_scale(content_text_scale());if(vm.order_view)vm.order_view->set_text_scale(content_text_scale());if(vm.project)vm.project->set_text_scale(content_text_scale());}
         if (button_font) DeleteObject(button_font);
