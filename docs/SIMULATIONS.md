@@ -341,6 +341,13 @@ Si había vuelto manualmente a una línea anterior para compararla, el
 simulador conserva esa posición aunque lleguen nuevas líneas y mantiene
 su selección de texto dentro de la misma traza. Cambiar el zoom o
 actualizar colores tampoco debe devolverlo involuntariamente al principio.
+Al cambiar la escala de lectura, el DPI de la ventana o el ancho disponible,
+el simulador toma como referencia el **carácter de la primera línea visible**
+y recupera esa misma región después del reflujo, sin depender de los píxeles
+anteriores. Conserva también la selección. Si ya se estaba leyendo el final,
+la salida continúa mostrando el final tras el cambio. La regresión Win32
+`output_zoom_preserves_reading_anchor` cubre zoom, rebase de DPI, cambio de
+anchura y desplazamiento al final; su ejecución debe realizarse en Windows.
 En cambio, seleccionar otro escenario o aplicar datos diferentes inicia
 una sesión de lectura independiente: la selección y el desplazamiento
 de la salida vuelven al inicio, **aunque los dos conjuntos de datos
