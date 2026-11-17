@@ -68,7 +68,13 @@ std::string native_text(HWND window) {
 std::string text(SimulationView& view,int id){const auto window=GetDlgItem(view.window(),id);check(window,"A simulation control is missing");
     wchar_t type[48]{};GetClassNameW(window,type,48);return std::wstring_view(type)==MSFTEDIT_CLASS?edit_text(window):native_text(window);}
 int window_height(HWND window){RECT area{};GetClientRect(window,&area);return static_cast<int>(area.bottom-area.top);}
-void key(HWND dialog,WPARAM value) {
+void key(HWND dialog,WPARAM value,bool control=false) {
+    std::array<BYTE,256> previous{};check(GetKeyboardState(previous.data()),"Cannot preserve the test-thread keyboard state");
+    struct RestoreKeys {std::array<BYTE,256>& keys;~RestoreKeys(){SetKeyboardState(keys.data());}} restore{previous};
+    auto keys=previous;
+    for(const auto modifier:{VK_CONTROL,VK_LCONTROL,VK_RCONTROL,VK_SHIFT,VK_LSHIFT,VK_RSHIFT,VK_MENU,VK_LMENU,VK_RMENU})keys[modifier]=0;
+    if(control)keys[VK_CONTROL]=keys[VK_LCONTROL]=0x80;
+    check(SetKeyboardState(keys.data()),"Cannot set the isolated test-thread keyboard modifiers");
     const auto target=GetFocus();check(target,"Keyboard input has no actual focused window");
     check(PostMessageW(target,WM_KEYDOWN,value,1)&&PostMessageW(target,WM_KEYUP,value,(LPARAM{1}<<30)|(LPARAM{1}<<31)|1),
         "Cannot queue native keyboard input");pump(dialog);
@@ -233,6 +239,39 @@ void report_layout_difference(const char* stage,const std::map<int,std::string>&
         if(previous==before.end()||previous->second!=value)std::cerr<<"ZOOM "<<stage<<" control "<<id<<" before: "<<
             (previous==before.end()?"absent":previous->second)<<"; after: "<<value<<'\n';}
 }
+struct ScrollState {
+    CHARRANGE selection{};POINT position{};SCROLLINFO vertical{sizeof(SCROLLINFO),SIF_ALL};
+    LRESULT first=0,lines=0,characters=0,dialog_flags=0;LONG_PTR style=0;bool has_range=false;
+};
+ScrollState scroll_state(HWND edit) {
+    ScrollState result;SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&result.selection));
+    SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&result.position));
+    result.first=SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0);result.lines=SendMessageW(edit,EM_GETLINECOUNT,0,0);
+    GETTEXTLENGTHEX length{GTL_NUMCHARS|GTL_PRECISE,1200};
+    result.characters=SendMessageW(edit,EM_GETTEXTLENGTHEX,reinterpret_cast<WPARAM>(&length),0);
+    result.has_range=GetScrollInfo(edit,SB_VERT,&result.vertical)!=FALSE;result.style=GetWindowLongPtrW(edit,GWL_STYLE);
+    MSG next{};next.hwnd=edit;next.message=WM_KEYDOWN;next.wParam=VK_NEXT;next.lParam=1;
+    result.dialog_flags=SendMessageW(edit,WM_GETDLGCODE,VK_NEXT,reinterpret_cast<LPARAM>(&next));return result;
+}
+std::string scroll_description(const ScrollState& state) {
+    return "selection=["+std::to_string(state.selection.cpMin)+","+std::to_string(state.selection.cpMax)+"] first="+
+        std::to_string(state.first)+" scroll=["+std::to_string(state.position.x)+","+std::to_string(state.position.y)+"] lines="+
+        std::to_string(state.lines)+" chars="+std::to_string(state.characters)+" range=[available:"+std::to_string(state.has_range)+
+        ",min:"+std::to_string(state.vertical.nMin)+",max:"+std::to_string(state.vertical.nMax)+",page:"+std::to_string(state.vertical.nPage)+
+        ",pos:"+std::to_string(state.vertical.nPos)+"] style="+std::to_string(state.style)+" nextFlags="+std::to_string(state.dialog_flags);
+}
+struct KeyboardDelivery {int home=0,page_down=0,page_up=0;};
+LRESULT CALLBACK keyboard_delivery_probe(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
+    auto* delivery=reinterpret_cast<KeyboardDelivery*>(raw);
+    if(message==WM_KEYDOWN){if(wp==VK_HOME)++delivery->home;else if(wp==VK_NEXT)++delivery->page_down;else if(wp==VK_PRIOR)++delivery->page_up;}
+    return DefSubclassProc(window,message,wp,lp);
+}
+struct KeyboardProbe {
+    HWND window=nullptr;KeyboardDelivery delivered;static constexpr UINT_PTR id=0x53494d4b;
+    explicit KeyboardProbe(HWND target):window(target){
+        check(SetWindowSubclass(window,keyboard_delivery_probe,id,reinterpret_cast<DWORD_PTR>(&delivered)),"Cannot inspect native keyboard delivery");}
+    ~KeyboardProbe(){if(IsWindow(window))RemoveWindowSubclass(window,keyboard_delivery_probe,id);}
+};
 void capture(HWND window,const std::filesystem::path& path) {
     RECT area{};GetClientRect(window,&area);const int width=area.right,height=area.bottom;
     check(width>0&&height>0&&height<20000,"Invalid native capture dimensions");
@@ -487,7 +526,7 @@ void long_labels_and_literal_values(HWND host,const std::filesystem::path& captu
     SelectObject(dc,old);ReleaseDC(second,dc);
     if(!captures.empty())capture(view.window(),captures/"groups-long-labels-narrow-150.bmp");
 }
-void scrollable_text_keyboard(HWND host) {
+void scrollable_text_keyboard(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::summary);spec.values.clear();
     for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
     spec.explanations.done.clear();for(int line=0;line<70;++line)spec.explanations.done+="Explicación de este paso.\n";
@@ -495,23 +534,57 @@ void scrollable_text_keyboard(HWND host) {
     const auto explanation=GetDlgItem(view.window(),explanation_id),output=GetDlgItem(view.window(),output_id);
     check((GetWindowLongPtrW(explanation,GWL_STYLE)&WS_TABSTOP)&&(GetWindowLongPtrW(output,GWL_STYLE)&WS_TABSTOP),
         "Scrollable read-only content cannot be reached with Tab");
+    KeyboardProbe explanation_probe(explanation),output_probe(output);
+    const auto original_contents=rich_edit_contents(view);
+    if(!captures.empty())capture(view.window(),captures/"keyboard-scroll-initial.bmp");
     const auto selector=GetDlgItem(view.window(),scenario_id);SetFocus(selector);
     check(GetFocus()==selector,"Cannot focus the isolated native scenario control");
-    bool visited_explanation=false,visited_output=false;
+    bool visited_explanation=false,visited_output=false;std::vector<std::string> failures;
     for(int attempt=0;attempt<20&&(!visited_explanation||!visited_output);++attempt){
+        const auto explanation_before=scroll_state(explanation),output_before=scroll_state(output);
         key(host,VK_TAB);const auto focused=GetFocus();
         if(focused!=explanation&&focused!=output)continue;
-        const auto before=SendMessageW(focused,EM_GETFIRSTVISIBLELINE,0,0);key(host,VK_NEXT);
-        const auto after=SendMessageW(focused,EM_GETFIRSTVISIBLELINE,0,0);
-        check(after>before,"PageDown did not reveal hidden read-only simulation content");
+        if((focused==explanation&&visited_explanation)||(focused==output&&visited_output))continue;
+        const auto id=GetDlgCtrlID(focused);auto& delivered=focused==explanation?explanation_probe.delivered:output_probe.delivered;
+        auto history="before Tab: "+scroll_description(focused==explanation?explanation_before:output_before);
+        const auto observe=[&](const char* phase){const auto state=scroll_state(focused);history+="; "+std::string(phase)+": "+scroll_description(state);return state;};
+        (void)observe("after Tab");
+        try{
+            // Tab may select the document or retain its previous caret. Set a
+            // known starting point through the same real keyboard route before
+            // requiring PageDown to reveal text below that point.
+            key(host,VK_HOME,true);const auto origin=observe("after Ctrl+Home");
+            check(GetFocus()==focused&&origin.first==0&&origin.position.y==0,"Ctrl+Home did not reach the start of the focused read-only content");
+            check(origin.has_range&&origin.vertical.nMax-origin.vertical.nMin+1>static_cast<int>(origin.vertical.nPage),
+                "The bounded read-only content has no native overflow range");
+            key(host,VK_NEXT);const auto down=observe("after PageDown");
+            check(GetFocus()==focused&&down.first>origin.first&&down.position.y>origin.position.y,
+                "PageDown did not reveal hidden read-only simulation content from its verified origin");
+            if(!captures.empty())capture(view.window(),captures/("keyboard-control-"+std::to_string(id)+"-pagedown.bmp"));
+            key(host,VK_PRIOR);const auto up=observe("after PageUp");
+            check(GetFocus()==focused&&up.first<down.first&&up.position.y<down.position.y,
+                "PageUp did not return toward the start of the read-only simulation content");
+            check(delivered.home==1&&delivered.page_down==1&&delivered.page_up==1,"The queued navigation keys did not reach the actual focused RichEdit");
+            check(rich_edit_contents(view)==original_contents,"Keyboard scrolling changed the literal simulation content");
+        }catch(const std::exception& error){
+            (void)observe("at failure");
+            failures.push_back("control "+std::to_string(id)+": "+error.what()+"; "+history+
+                "; delivered=[home:"+std::to_string(delivered.home)+",down:"+std::to_string(delivered.page_down)+",up:"+
+                std::to_string(delivered.page_up)+"] focus="+std::to_string(GetDlgCtrlID(GetFocus())));
+            if(!captures.empty())try{capture(view.window(),captures/("keyboard-control-"+std::to_string(id)+"-failure.bmp"));}
+                catch(const std::exception& capture_error){std::cerr<<"Cannot capture keyboard failure: "<<capture_error.what()<<'\n';}
+        }
+        std::cout<<"KEYBOARD control "<<id<<' '<<history<<"; delivered=[home:"<<delivered.home<<",down:"<<delivered.page_down<<",up:"<<delivered.page_up<<"]\n";
         if(focused==explanation)visited_explanation=true;else visited_output=true;
     }
-    check(visited_explanation&&visited_output,"Real IsDialogMessage Tab traversal skipped a scrollable explanation or output");
+    if(!visited_explanation||!visited_output)failures.push_back("Real IsDialogMessage Tab traversal skipped a scrollable control: explanation="+
+        std::to_string(visited_explanation)+", output="+std::to_string(visited_output));
     const auto original_output=text(view,output_id);check(original_output.find("63:1\n")!=std::string::npos,"The scrolled output lost its last line");
     SendMessageW(selector,CB_SETCURSEL,2,0);SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(selector));pump(host);
     check(!(GetWindowLongPtrW(output,GWL_STYLE)&WS_TABSTOP)&&!(GetWindowLongPtrW(explanation,GWL_STYLE)&WS_TABSTOP),
         "Short replacement content retained unnecessary scrolling tab stops");
     SetFocus(nullptr);
+    if(!failures.empty()){std::string report;for(const auto& failure:failures){if(!report.empty())report+='\n';report+=failure;}throw std::runtime_error(report);}
 }
 }
 
@@ -538,7 +611,7 @@ int main(int argc,char** argv)try {
     run("scale_limits_and_local_control_wheel",[&]{scale_limits_and_local_control_wheel(host.value);});
     run("parent_width_changes",[&]{parent_width_changes(host.value);});
     run("long_labels_and_literal_values",[&]{long_labels_and_literal_values(host.value,captures);});
-    run("scrollable_text_keyboard",[&]{scrollable_text_keyboard(host.value);});
+    run("scrollable_text_keyboard",[&]{scrollable_text_keyboard(host.value,captures);});
     check(!IsWindowVisible(host.value)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=host.value,"Simulation QA activated the desktop");
     if(failures){std::cerr<<"FAIL native simulation view: "<<failures<<" independent scenario(s) failed\n";return 1;}
     std::cout<<"PASS native simulation view: actual buttons, keyboard, exact replay, editable/scenario data, groups, candidates, summary, current narration and responsive controls\n";
