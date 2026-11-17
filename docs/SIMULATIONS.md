@@ -347,7 +347,10 @@ y recupera esa misma región después del reflujo, sin depender de los píxeles
 anteriores. Conserva también la selección. Si ya se estaba leyendo el final,
 la salida continúa mostrando el final tras el cambio. La regresión Win32
 `output_zoom_preserves_reading_anchor` cubre zoom, rebase de DPI, cambio de
-anchura y desplazamiento al final; su ejecución debe realizarse en Windows.
+anchura, desplazamiento al final y rechazo tardío de una escala por RichEdit.
+En ese rechazo debe recuperarse también la lectura anterior y permitir un nuevo
+zoom válido, sin conservar una escala parcial. Su ejecución debe realizarse en
+Windows.
 En cambio, seleccionar otro escenario o aplicar datos diferentes inicia
 una sesión de lectura independiente: la selección y el desplazamiento
 de la salida vuelven al inicio, **aunque los dos conjuntos de datos
