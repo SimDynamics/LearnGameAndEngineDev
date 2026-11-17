@@ -65,15 +65,17 @@ try {
         -ArgumentList ('/d /v:off /s /c "' + $commandLine + '"') `
         -WorkingDirectory $sourceRoot -WindowStyle Hidden -PassThru `
         -RedirectStandardOutput $standardOutputFile -RedirectStandardError $standardErrorFile
-    # Cache the native process handle before waiting; Windows PowerShell can
-    # otherwise lose ExitCode when Start-Process is used without -Wait.
+    # cmd waits synchronously for CMake/CTest. Do not use Start-Process -Wait:
+    # it also waits for persistent MSVC helper servers beyond the completed build.
     $nativeProcessHandle = $buildProcess.Handle
     $buildProcess.WaitForExit()
     $buildExitCode = $buildProcess.ExitCode
     # File redirection preserves both streams without PowerShell reclassifying
     # native stderr as a terminating error before its exit code is available.
-    $standardOutput = [System.IO.File]::ReadAllText($standardOutputFile, [System.Text.Encoding]::UTF8)
-    $standardError = [System.IO.File]::ReadAllText($standardErrorFile, [System.Text.Encoding]::UTF8)
+    # Get-Content uses FileShare.ReadWrite; inherited helper handles may remain
+    # open after the synchronous build ends. -Raw preserves every line and space.
+    $standardOutput = [string] (Get-Content -LiteralPath $standardOutputFile -Raw -Encoding UTF8)
+    $standardError = [string] (Get-Content -LiteralPath $standardErrorFile -Raw -Encoding UTF8)
     [System.Console]::Write($standardOutput)
     [System.Console]::Error.Write($standardError)
     $logText = $standardOutput

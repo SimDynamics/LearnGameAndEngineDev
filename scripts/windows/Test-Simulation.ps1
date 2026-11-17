@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [ValidateSet('windows-x64-debug', 'windows-x64-relwithdebinfo', 'windows-x64-release')]
-    [string] $Preset = 'windows-x64-debug'
+    [string] $Preset = 'windows-x64-debug',
+    [switch] $Fresh
 )
 
 Set-StrictMode -Version Latest
@@ -45,7 +46,7 @@ try {
     }
 
     # Build only the three native simulation executables, never the full app.
-    & (Join-Path $PSScriptRoot 'Build-Native.ps1') -Preset $Preset -Profile Codex -SkipTests -Target lgaed_simulation_qa_targets
+    & (Join-Path $PSScriptRoot 'Build-Native.ps1') -Preset $Preset -Profile Codex -SkipTests -Fresh:$Fresh -Target lgaed_simulation_qa_targets
 
     $expected = @(
         'native.simulation_model',
@@ -101,8 +102,9 @@ try {
         if ($null -ne $process) { $process.Dispose() }
     }
 
-    $stdout = [System.IO.File]::ReadAllText($stdoutPath, [System.Text.Encoding]::UTF8)
-    $stderr = [System.IO.File]::ReadAllText($stderrPath, [System.Text.Encoding]::UTF8)
+    # Share the completed logs with any inherited helper handles; preserve text verbatim.
+    $stdout = [string] (Get-Content -LiteralPath $stdoutPath -Raw -Encoding UTF8)
+    $stderr = [string] (Get-Content -LiteralPath $stderrPath -Raw -Encoding UTF8)
     if ($stdout) { [Console]::Write($stdout) }
     if ($stderr) { [Console]::Error.Write($stderr) }
     if ($exitCode -ne 0) {

@@ -810,7 +810,8 @@ void candidate_frequency_filter(HWND host) {
     const auto original_key=reading_key(view);
     check(original_key.find("/frequencies/all")!=std::string::npos,
         "Full-histogram narration has no explicit mode identity");
-    const auto output=text(view,output_id),step=view.step_index();
+    const auto output=text(view,output_id);
+    const auto step=view.step_index();
     click(view,frequency_filter_id);
     const auto only=name(bars);
     const auto candidate_key=reading_key(view);
@@ -906,11 +907,11 @@ void candidate_frequency_filter(HWND host) {
         before.nMax+1>static_cast<int>(before.nPage),
         "The unfiltered 62-group chart does not have an internal scroll range");
     click(scaled,frequency_filter_id);
-    RECT small{};GetClientRect(many_bars,&small);
+    RECT filtered_viewport{};GetClientRect(many_bars,&filtered_viewport);
     check(name(many_bars).find("Frecuencias de 1 grupo candidato entre 62 grupos terminados")!=std::string::npos&&
         name(many_bars).find("Grupo 2:")==std::string::npos&&
         !(GetWindowLongPtrW(many_bars,GWL_STYLE)&WS_TABSTOP)&&
-        small.bottom>0&&small.bottom<=MulDiv(MulDiv(440,
+        filtered_viewport.bottom>0&&filtered_viewport.bottom<=MulDiv(MulDiv(440,
             static_cast<int>(GetDpiForWindow(many_bars)),96),150,100),
         "Filtering the long chart failed to shrink its viewport and drop the scroll focus");
     click(scaled,frequency_filter_id);

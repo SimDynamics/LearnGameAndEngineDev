@@ -349,6 +349,10 @@ ni ejecutar la batería completa:
 & '.\scripts\windows\Test-Curriculum-Edition.ps1' -Preset windows-x64-debug
 ~~~
 
+Si CMake conserva la ruta de un checkout trasladado, añadir `-Fresh` para
+renovar la configuración generada del preset. No modifica fuentes ni datos
+del estudiante y no hace falta repetirlo en las ejecuciones siguientes.
+
 La comprobación exige encontrar y ejecutar exactamente estas tres pruebas
 CTest, de manera secuencial:
 

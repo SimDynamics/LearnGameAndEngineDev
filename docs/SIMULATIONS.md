@@ -567,6 +567,11 @@ PowerShell con:
 & '.\scripts\windows\Test-Simulation.ps1' -Preset windows-x64-debug
 ```
 
+Si el checkout se trasladó de carpeta y CMake informa que su caché pertenece
+a la ruta anterior, añadir `-Fresh` al mismo comando. Renueva únicamente
+la configuración generada del preset antes de compilar; no modifica fuentes,
+perfiles ni el checkout de Work. No es necesario en las ejecuciones siguientes.
+
 El comando usa las herramientas locales autorizadas y el objetivo CMake
 `lgaed_simulation_qa_targets`, sin construir la aplicación completa. Exige
 que CTest encuentre exactamente cuatro pruebas:

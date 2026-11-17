@@ -925,7 +925,7 @@ struct SimulationView::Impl {
                 RECT client{};GetClientRect(frequencies,&client);
                 // Scrollbar presence can reduce the client width by a column.
                 // Recompute the full height after Windows applies the style.
-                frequency_total_height=frequency_height(std::max(1,client.right),displayed);
+                frequency_total_height=frequency_height(std::max(1,static_cast<int>(client.right)),displayed);
                 SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE|SIF_POS};
                 scroll.nMin=0;scroll.nMax=std::max(0,frequency_total_height-1);
                 scroll.nPage=static_cast<UINT>(std::max(1L,client.bottom));
