@@ -2694,25 +2694,26 @@ void scenario_change_rejects_silent_editor_stream(HWND host) {
         original_reading.selection.cpMax==selected.cpMax,
         "Cannot prepare a selected, scrolled draft before a scenario failure");
 
-    int editor_streams=0;
-    const auto skip_first=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+    struct SilentStreams {int streamed=0,literal_fallbacks=0;} failures;
+    const auto skip_first_two=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
             UINT_PTR,DWORD_PTR raw)->LRESULT{
-        auto& seen=*reinterpret_cast<int*>(raw);
-        if(message==EM_STREAMIN&&++seen==1){
-            // Simulate a control that reports no dwError but does not write.
-            // A naive caller would regard the stale document as accepted.
+        auto& state=*reinterpret_cast<SilentStreams*>(raw);
+        if(message==EM_STREAMIN&&++state.streamed<=2){
+            // Both candidate and rollback streams silently refuse to write
+            // without setting dwError. The rollback needs a distinct route.
             return 0;
         }
+        if(message==EM_REPLACESEL)++state.literal_fallbacks;
         return DefSubclassProc(child,message,wp,lp);
     };
     constexpr UINT_PTR hook_id=0x5349534e;
-    check(SetWindowSubclass(editor,skip_first,hook_id,
-        reinterpret_cast<DWORD_PTR>(&editor_streams))!=FALSE,
-        "Cannot inject a silent native text-stream rejection");
+    check(SetWindowSubclass(editor,skip_first_two,hook_id,
+        reinterpret_cast<DWORD_PTR>(&failures))!=FALSE,
+        "Cannot inject silent native text-stream rejections");
     struct Unhook {
         HWND window;SUBCLASSPROC callback;UINT_PTR id;
         ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
-    } guard{editor,skip_first,hook_id};
+    } guard{editor,skip_first_two,hook_id};
 
     check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
         "Cannot select the alternative scenario");
@@ -2720,7 +2721,7 @@ void scenario_change_rejects_silent_editor_stream(HWND host) {
         reinterpret_cast<LPARAM>(selector));pump();
     const auto after=scroll_state(editor);
     const auto diagnostic=text(view,error_id);
-    check(editor_streams==2&&
+    check(failures.streamed==2&&failures.literal_fallbacks==1&&
         diagnostic.find("RichEdit no conservó los datos del escenario.")!=std::string::npos&&
         SendMessageW(selector,CB_GETCURSEL,0,0)==0&&
         view.step_index()==old_step&&view.step_count()==old_count&&

@@ -1160,7 +1160,14 @@ struct SimulationView::Impl {
             // that second native failure mask the originating one or prevent
             // reconstruction of the previously applied model and reading UI.
             if(replacement){
-                try{set_edit_text(item(input_id),previous_editor);}
+                try{
+                    set_edit_text(item(input_id),previous_editor);
+                    // A rollback stream that silently writes nothing is as
+                    // incomplete as one that reports dwError. Try the separate
+                    // literal replacement route in either case.
+                    if(edit_text(item(input_id))!=previous_editor)
+                        throw std::runtime_error("RichEdit no restauró los datos anteriores.");
+                }
                 catch(...){
                     // EM_STREAMIN can itself fail while rolling back a
                     // scenario. Use an independent plain-text replacement
