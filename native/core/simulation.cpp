@@ -1,0 +1,361 @@
+#include "core/simulation.hpp"
+
+#include <algorithm>
+#include <array>
+#include <limits>
+#include <set>
+#include <stdexcept>
+#include <utility>
+
+namespace lgaed::curriculum {
+namespace {
+constexpr std::size_t item_limit = 64;
+constexpr std::size_t expanded_trace_limit = 8 * 1024 * 1024;
+
+void require(bool condition, std::string_view message) {
+    if (!condition) throw std::invalid_argument(std::string(message));
+}
+
+bool whitespace(std::uint32_t c) {
+    // The Unicode whitespace set used by the authoring validator's str.isspace.
+    return (c >= 0x09 && c <= 0x0d) || (c >= 0x1c && c <= 0x20) || c == 0x85 ||
+        c == 0xa0 || c == 0x1680 || (c >= 0x2000 && c <= 0x200a) || c == 0x2028 ||
+        c == 0x2029 || c == 0x202f || c == 0x205f || c == 0x3000;
+}
+
+bool valid_utf8(std::string_view text, bool* nonblank = nullptr) {
+    bool visible = false;
+    for (std::size_t at = 0; at < text.size();) {
+        const auto first = static_cast<unsigned char>(text[at++]);
+        std::uint32_t point = first;
+        std::size_t following = 0;
+        std::uint32_t minimum = 0;
+        if (first >= 0xc2 && first <= 0xdf) { following = 1; point &= 0x1f; minimum = 0x80; }
+        else if (first >= 0xe0 && first <= 0xef) { following = 2; point &= 0x0f; minimum = 0x800; }
+        else if (first >= 0xf0 && first <= 0xf4) { following = 3; point &= 0x07; minimum = 0x10000; }
+        else if (first >= 0x80) return false;
+        if (following > text.size() - at) return false;
+        for (std::size_t n = 0; n < following; ++n) {
+            const auto byte = static_cast<unsigned char>(text[at++]);
+            if ((byte & 0xc0) != 0x80) return false;
+            point = (point << 6) | (byte & 0x3f);
+        }
+        if (point < minimum || point > 0x10ffff || (point >= 0xd800 && point <= 0xdfff) || point == 0)
+            return false;
+        visible = visible || !whitespace(point);
+    }
+    if (nonblank) *nonblank = visible;
+    return true;
+}
+
+void public_text(std::string_view text, std::size_t limit, std::string_view field) {
+    bool nonblank = false;
+    require(text.size() <= limit && valid_utf8(text, &nonblank) && nonblank,
+        std::string("Texto de simulación inválido o demasiado largo: ") + std::string(field));
+}
+
+constexpr std::array<std::string_view, 9> placeholders{
+    "value", "start", "end", "frequency", "maximum", "leaders", "size", "group", "groups"
+};
+
+void validate_template(std::string_view text, std::size_t limit, std::string_view field) {
+    public_text(text, limit, field);
+    for (std::size_t at = 0; at < text.size();) {
+        require(text[at] != '}', "Una plantilla de simulación tiene una llave de cierre sin apertura.");
+        if (text[at] != '{') { ++at; continue; }
+        const auto end = text.find('}', at + 1);
+        require(end != text.npos, "Una plantilla de simulación tiene una llave sin cerrar.");
+        const auto name = text.substr(at + 1, end - at - 1);
+        require(std::find(placeholders.begin(), placeholders.end(), name) != placeholders.end(),
+            "Una plantilla de simulación utiliza un marcador desconocido o anidado.");
+        at = end + 1;
+    }
+}
+
+bool text_less(std::string_view left, std::string_view right) {
+    return std::lexicographical_compare(left.begin(), left.end(), right.begin(), right.end(),
+        [](char a, char b) { return static_cast<unsigned char>(a) < static_cast<unsigned char>(b); });
+}
+
+bool value_less(const SimulationValue& left, const SimulationValue& right) {
+    if (const auto* integer = std::get_if<std::int64_t>(&left))
+        return *integer < std::get<std::int64_t>(right);
+    return text_less(std::get<std::string>(left), std::get<std::string>(right));
+}
+
+void validate_values(const std::vector<SimulationValue>& values, bool text_values, bool ordered) {
+    require(values.size() <= item_limit, "Una simulación admite como máximo 64 valores.");
+    for (const auto& value : values) {
+        if (text_values) {
+            const auto* text = std::get_if<std::string>(&value);
+            require(text && !text->empty() && text->size() <= 128 && valid_utf8(*text) &&
+                text->find_first_of("\r\n") == std::string::npos,
+                "Cada valor debe ser texto UTF-8 de 1 a 128 bytes, sin NUL ni saltos de línea.");
+        } else {
+            const auto* integer = std::get_if<std::int64_t>(&value);
+            require(integer && *integer >= std::numeric_limits<std::int32_t>::min() &&
+                *integer <= std::numeric_limits<std::int32_t>::max(),
+                "Cada valor debe ser un entero de 32 bits con signo.");
+        }
+    }
+    require(!ordered || std::is_sorted(values.begin(), values.end(), value_less),
+        "Con sort=false, los valores deben estar ordenados de forma ascendente.");
+}
+
+bool scenario_id(std::string_view id) {
+    if (id.empty() || id.size() > 64) return false;
+    const auto letter = [](unsigned char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_';
+    };
+    if (!letter(static_cast<unsigned char>(id.front()))) return false;
+    return std::all_of(id.begin() + 1, id.end(), [&](unsigned char c) {
+        return letter(c) || (c >= '0' && c <= '9') || c == '-';
+    });
+}
+
+void validate_contract(const SimulationSpec& spec) {
+    require(spec.version == 1 && spec.model == "arrayRunsV1", "Versión o modelo de simulación desconocido.");
+    switch (spec.view) {
+    case SimulationViewMode::array: case SimulationViewMode::groups: case SimulationViewMode::walkthrough:
+    case SimulationViewMode::candidates: case SimulationViewMode::summary: break;
+    default: throw std::invalid_argument("Vista de simulación desconocida.");
+    }
+    public_text(spec.title, 120, "title");
+    public_text(spec.description, 4000, "description");
+    for (const auto* label : {&spec.labels.array, &spec.labels.start, &spec.labels.end,
+             &spec.labels.frequency, &spec.labels.maximum, &spec.labels.leaders, &spec.labels.output})
+        public_text(*label, 80, "labels");
+    for (const auto* explanation : {&spec.explanations.initial, &spec.explanations.start,
+             &spec.explanations.advance, &spec.explanations.new_maximum, &spec.explanations.tie,
+             &spec.explanations.below_maximum, &spec.explanations.done, &spec.explanations.empty})
+        validate_template(*explanation, 2000, "explanations");
+    validate_template(spec.output_template, 256, "outputTemplate");
+    validate_values(spec.values, spec.text_values, !spec.sort);
+    require(spec.scenarios.size() <= 8, "Una simulación admite como máximo 8 escenarios.");
+    std::set<std::string> identities;
+    for (const auto& scenario : spec.scenarios) {
+        require(scenario_id(scenario.id) && identities.insert(scenario.id).second,
+            "Un escenario tiene un identificador inválido o repetido.");
+        public_text(scenario.label, 80, "scenarios/label");
+        validate_values(scenario.values, spec.text_values, !spec.sort);
+    }
+}
+
+std::string joined_values(const std::vector<SimulationValue>& values) {
+    std::string result;
+    for (const auto& value : values) {
+        if (!result.empty()) result += ", ";
+        result += simulation_value_text(value);
+    }
+    return result;
+}
+
+std::string_view explanation_template(const SimulationSpec& spec, SimulationPhase phase) {
+    switch (phase) {
+    case SimulationPhase::initial: return spec.explanations.initial;
+    case SimulationPhase::start: return spec.explanations.start;
+    case SimulationPhase::advance: return spec.explanations.advance;
+    case SimulationPhase::new_maximum: return spec.explanations.new_maximum;
+    case SimulationPhase::tie: return spec.explanations.tie;
+    case SimulationPhase::below_maximum: return spec.explanations.below_maximum;
+    case SimulationPhase::done: return spec.explanations.done;
+    case SimulationPhase::empty: return spec.explanations.empty;
+    }
+    throw std::invalid_argument("Fase de simulación desconocida.");
+}
+
+std::string expanded(std::string_view source, const SimulationTrace& trace, const SimulationFrame& frame) {
+    const bool has_value = frame.phase == SimulationPhase::start || frame.phase == SimulationPhase::advance ||
+        frame.phase == SimulationPhase::new_maximum || frame.phase == SimulationPhase::tie ||
+        frame.phase == SimulationPhase::below_maximum;
+    const std::array<std::string, 9> replacements{
+        has_value ? simulation_value_text(trace.groups.at(frame.group - 1).value) : std::string{},
+        std::to_string(frame.begin), std::to_string(frame.end), std::to_string(frame.frequency),
+        std::to_string(frame.maximum), joined_values(frame.leaders), std::to_string(trace.ordered.size()),
+        std::to_string(frame.group), std::to_string(trace.groups.size())
+    };
+    std::string result;
+    for (std::size_t at = 0; at < source.size();) {
+        if (source[at] != '{') {
+            require(result.size() < expanded_trace_limit, "La traza expandida supera 8 MiB.");
+            result += source[at++];
+            continue;
+        }
+        const auto end = source.find('}', at + 1);
+        require(end != source.npos, "Marcador de simulación incompleto.");
+        const auto name = source.substr(at + 1, end - at - 1);
+        const auto found = std::find(placeholders.begin(), placeholders.end(), name);
+        require(found != placeholders.end(), "Marcador de simulación desconocido.");
+        const auto index = static_cast<std::size_t>(found - placeholders.begin());
+        require(replacements[index].size() <= expanded_trace_limit - result.size(),
+            "La traza expandida supera 8 MiB.");
+        result += replacements[index];
+        at = end + 1;
+    }
+    return result;
+}
+
+SimulationTrace make_trace(const SimulationSpec& spec, const std::vector<SimulationValue>& values) {
+    SimulationTrace trace;
+    trace.original = values;
+    trace.ordered = values;
+    if (spec.sort) std::stable_sort(trace.ordered.begin(), trace.ordered.end(), value_less);
+    for (std::size_t begin = 0; begin < trace.ordered.size();) {
+        auto end = begin + 1;
+        while (end < trace.ordered.size() && trace.ordered[end] == trace.ordered[begin]) ++end;
+        trace.groups.push_back({begin, end, trace.ordered[begin]});
+        begin = end;
+    }
+    std::size_t expanded_bytes = 0;
+    const auto append = [&](SimulationFrame frame) {
+        frame.explanation = expanded(explanation_template(spec, frame.phase), trace, frame);
+        require(frame.explanation.size() <= expanded_trace_limit - expanded_bytes,
+            "La traza expandida supera 8 MiB.");
+        expanded_bytes += frame.explanation.size();
+        require(frame.output.size() <= expanded_trace_limit - expanded_bytes,
+            "La traza expandida supera 8 MiB.");
+        expanded_bytes += frame.output.size();
+        trace.frames.push_back(std::move(frame));
+    };
+    SimulationFrame current;
+    if (values.empty()) {
+        current.phase = SimulationPhase::empty;
+        append(current);
+        return trace;
+    }
+    append(current);
+    for (std::size_t index = 0; index < trace.groups.size(); ++index) {
+        const auto& group = trace.groups[index];
+        current.phase = SimulationPhase::start;
+        current.begin = group.begin;
+        current.end = group.begin + 1;
+        current.group = index + 1;
+        current.frequency = 1;
+        append(current);
+        while (current.end < group.end) {
+            ++current.end;
+            ++current.frequency;
+            current.phase = SimulationPhase::advance;
+            append(current);
+        }
+        if (current.frequency > current.maximum) {
+            current.phase = SimulationPhase::new_maximum;
+            current.maximum = current.frequency;
+            current.leaders = {group.value};
+        } else if (current.frequency == current.maximum) {
+            current.phase = SimulationPhase::tie;
+            current.leaders.push_back(group.value);
+        } else {
+            current.phase = SimulationPhase::below_maximum;
+        }
+        const auto line = expanded(spec.output_template, trace, current);
+        require(line.size() < expanded_trace_limit && current.output.size() <= expanded_trace_limit - line.size() - 1,
+            "La salida expandida de la simulación supera 8 MiB.");
+        current.output += line;
+        current.output += '\n';
+        trace.candidate_frames.push_back(trace.frames.size());
+        append(current);
+    }
+    current.phase = SimulationPhase::done;
+    current.begin = current.end = trace.ordered.size();
+    current.frequency = 0;
+    append(current);
+    return trace;
+}
+
+SimulationTrace validated_trace(const SimulationSpec& spec) {
+    validate_contract(spec);
+    auto trace = make_trace(spec, spec.values);
+    // Validate authored scenarios at load time too: the UI never first
+    // discovers an overlarge expansion after the learner selects an option.
+    for (const auto& scenario : spec.scenarios) (void)make_trace(spec, scenario.values);
+    return trace;
+}
+
+std::int64_t decimal(std::string_view value) {
+    while (!value.empty() && (value.front() == ' ' || value.front() == '\t')) value.remove_prefix(1);
+    while (!value.empty() && (value.back() == ' ' || value.back() == '\t')) value.remove_suffix(1);
+    require(!value.empty(), "Cada línea debe contener un entero decimal completo.");
+    const bool negative = value.front() == '-';
+    if (negative || value.front() == '+') value.remove_prefix(1);
+    require(!value.empty(), "Un signo aislado no es un entero decimal.");
+    const std::uint64_t limit = negative ? 2147483648ULL : 2147483647ULL;
+    std::uint64_t result = 0;
+    for (const unsigned char digit : value) {
+        require(digit >= '0' && digit <= '9', "Cada línea debe contener un entero decimal completo.");
+        const auto number = static_cast<std::uint64_t>(digit - '0');
+        require(result <= (limit - number) / 10, "El entero está fuera del intervalo de 32 bits con signo.");
+        result = result * 10 + number;
+    }
+    const auto signed_result = static_cast<std::int64_t>(result);
+    return negative ? -signed_result : signed_result;
+}
+} // namespace
+
+void validate_simulation_spec(const SimulationSpec& spec) {
+    (void)validated_trace(spec);
+}
+
+SimulationTrace build_simulation_trace(const SimulationSpec& spec,
+        std::optional<std::vector<SimulationValue>> inputs) {
+    auto original = validated_trace(spec);
+    if (!inputs) return original;
+    validate_values(*inputs, spec.text_values, !spec.sort);
+    return make_trace(spec, *inputs);
+}
+
+std::string simulation_value_text(const SimulationValue& value) {
+    if (const auto* integer = std::get_if<std::int64_t>(&value)) return std::to_string(*integer);
+    return std::get<std::string>(value);
+}
+
+std::string simulation_frame_text(const SimulationSpec& spec,
+        const SimulationTrace& trace, const SimulationFrame& frame) {
+    require(frame.begin <= frame.end && frame.end <= trace.ordered.size() &&
+        frame.frequency == frame.end - frame.begin && frame.group <= trace.groups.size(),
+        "El estado de simulación contiene un rango inválido.");
+    std::string result = spec.title + '\n' + frame.explanation + '\n' + spec.labels.array + ":\n";
+    for (std::size_t index = 0; index < trace.ordered.size(); ++index)
+        result += std::to_string(index) + ": " + simulation_value_text(trace.ordered[index]) + '\n';
+    result += spec.labels.start + ": " + std::to_string(frame.begin) + '\n';
+    result += spec.labels.end + ": " + std::to_string(frame.end) + '\n';
+    result += spec.labels.frequency + ": " + std::to_string(frame.frequency) + '\n';
+    result += spec.labels.maximum + ": " + std::to_string(frame.maximum) + '\n';
+    result += spec.labels.leaders + ": " + joined_values(frame.leaders) + '\n';
+    result += spec.labels.output + ":\n" + frame.output;
+    return result;
+}
+
+std::vector<SimulationValue> simulation_parse_input(const SimulationSpec& spec, std::string_view input) {
+    validate_simulation_spec(spec);
+    require(input.size() <= 64 * 130, "La entrada de simulación supera su límite de tamaño.");
+    std::vector<SimulationValue> values;
+    for (std::size_t at = 0; at < input.size();) {
+        const auto newline = input.find('\n', at);
+        const auto end = newline == input.npos ? input.size() : newline;
+        auto value = input.substr(at, end - at);
+        if (newline != input.npos && !value.empty() && value.back() == '\r') value.remove_suffix(1);
+        require(value.find('\r') == value.npos && !value.empty(),
+            "Escribe un valor por línea, sin líneas vacías ni retornos aislados.");
+        if (spec.text_values) values.emplace_back(std::string(value));
+        else values.emplace_back(decimal(value));
+        require(values.size() <= item_limit, "Una simulación admite como máximo 64 valores.");
+        if (newline == input.npos) break;
+        at = newline + 1;
+    }
+    validate_values(values, spec.text_values, !spec.sort);
+    (void)make_trace(spec, values);
+    return values;
+}
+
+std::string simulation_input_text(const std::vector<SimulationValue>& values) {
+    const bool text_values = !values.empty() && std::holds_alternative<std::string>(values.front());
+    validate_values(values, text_values, false);
+    std::string result;
+    for (std::size_t index = 0; index < values.size(); ++index) {
+        if (index) result += '\n';
+        result += simulation_value_text(values[index]);
+    }
+    return result;
+}
+} // namespace lgaed::curriculum

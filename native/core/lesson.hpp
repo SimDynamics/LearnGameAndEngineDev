@@ -12,6 +12,7 @@
 #include "core/cmake_graph_check.hpp"
 #include "core/cpp_project.hpp"
 #include "core/image_resource.hpp"
+#include "core/simulation.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -26,7 +27,7 @@
 namespace lgaed::curriculum {
 
 enum class BlockType { heading, paragraph, note, code, multiple_choice, output_prediction,
-                       fill_code, order_code, cpp_compiler, inline_fill_code, drag_fill_code, math_puzzle, image };
+                       fill_code, order_code, cpp_compiler, inline_fill_code, drag_fill_code, math_puzzle, image, simulation };
 // Derived from validated lesson-level metadata, never stored in a historical
 // editor block or its persisted response/fingerprint.
 enum class CompilerWorkflowCheck {
@@ -298,6 +299,8 @@ struct Block {
     // Runtime-only provenance. Empty preserves all legacy objective bytes.
     // Each explicit client revision creates its own execution-receipt scope.
     std::string compiler_client_epoch;
+    // Exploration has its own stable block identity and never stores an answer.
+    std::optional<SimulationSpec> simulation;
 };
 struct Page {
     std::string stable_id;
@@ -520,4 +523,3 @@ struct OutputEvaluation {
     const OutputCheck&, const FreshExecution&, std::uint64_t current_revision);
 
 } // namespace lgaed::curriculum
-

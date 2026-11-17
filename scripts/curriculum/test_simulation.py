@@ -1,0 +1,428 @@
+"""Simulation authoring and historical preservation, with isolated synthetic lessons."""
+from __future__ import annotations
+
+from copy import deepcopy
+import json
+from pathlib import Path
+import unittest
+
+import simulation
+import stable_state_layout as state
+import text_semantics
+import validar_json_programacion as curriculum
+import validate_programming_practice_tools as courses
+import verificar_secuencia_pedagogica as sequence
+
+
+EXAMPLE = Path(__file__).resolve().parents[2] / "docs/examples/array_runs_simulation.json"
+
+
+def block():
+    return {
+        "type": "simulation", "title": "Contar los grupos",
+        "description": "Avanza y observa los índices y las frecuencias calculadas.",
+        "simulation": {
+            "version": 1, "model": "arrayRunsV1", "view": "walkthrough",
+            "valueType": "integer", "values": [4, 1, 4, 1, 8],
+            "sort": True, "editable": True,
+            "labels": {"array": "Datos", "start": "inicio", "end": "fin",
+                       "frequency": "frecuencia", "maximum": "máximo",
+                       "leaders": "candidatos", "output": "Salida"},
+            "explanations": {
+                "initial": "Hay {size} datos y {groups} grupos.",
+                "start": "Comienza {value} en {start}; el límite exclusivo es {end}.",
+                "advance": "El grupo {group} tiene ahora {frequency} elementos.",
+                "newMaximum": "El nuevo máximo es {maximum}: {leaders}.",
+                "tie": "Empata {value}; se conservan {leaders}.",
+                "belowMaximum": "{frequency} es menor que {maximum}.",
+                "done": "El recorrido termina antes de leer el índice {end}.",
+                "empty": "No hay elementos ni accesos al array.",
+            },
+            "outputTemplate": "{value}: {frequency}",
+            "scenarios": [{"id": "vacio", "label": "Vacío", "values": []}],
+        },
+    }
+
+
+def lesson(include_simulation=True):
+    blocks = [{"type": "paragraph", "text": "Compara después del intento."}]
+    if include_simulation:
+        blocks.append(block())
+    return {
+        "id": "programming_practice_tools__qa__simulation", "title": "Simulación QA",
+        "pages": [
+            {"title": "Intento", "blocks": [
+                {"type": "cpp_compiler", "language": "cpp", "initialCode": "int main() {}",
+                 "outputCheck": {"inputComparison": "exact", "cases": [
+                     {"standardInput": "", "outputs": [""]}]}}
+            ]},
+            {"title": "Comparación", "blocks": blocks},
+            {"title": "Recuperación", "blocks": [
+                {"type": "multiple_choice", "id": "pregunta", "question": "Elige dos.",
+                 "options": ["uno", "dos"], "correctIndex": 1, "explanation": "Dos."}
+            ]},
+        ],
+    }
+
+
+class SimulationContractTest(unittest.TestCase):
+    def test_documented_example_and_each_view_are_supported(self):
+        example = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+        simulation.validate_contract(example)
+        for view in simulation.VIEWS:
+            value = block()
+            value["simulation"]["view"] = view
+            with self.subTest(view=view):
+                simulation.validate_contract(value)
+
+    def test_validation_leaves_every_value_and_field_unchanged(self):
+        value = block()
+        value["id"] = "Identidad opcional del contenido"
+        before = deepcopy(value)
+        simulation.validate_contract(value)
+        self.assertEqual(value, before)
+        self.assertIs(simulation.validate_contract(value), value["simulation"])
+
+    def test_exact_keys_and_required_fields_are_enforced_at_every_level(self):
+        for path in ((), ("simulation",), ("simulation", "labels"),
+                     ("simulation", "explanations"), ("simulation", "scenarios", 0)):
+            for mutation in ("extra", "missing"):
+                value = block()
+                target = value
+                for part in path:
+                    target = target[part]
+                if mutation == "extra":
+                    target["invented"] = "No se admite"
+                else:
+                    del target[next(iter(target))]
+                with self.subTest(path=path, mutation=mutation), self.assertRaises(ValueError):
+                    simulation.validate_contract(value)
+
+    def test_model_version_boolean_and_view_types_are_exact(self):
+        invalid = [("model", "arrayRunsV2"), ("model", {}), ("view", "video"),
+                   ("view", []), ("valueType", "float"), ("valueType", []),
+                   ("version", True), ("version", "1"), ("version", 1.5),
+                   ("sort", 1), ("sort", "true"), ("editable", 0)]
+        for key, content in invalid:
+            value = block()
+            value["simulation"][key] = content
+            with self.subTest(key=key, content=content), self.assertRaises(ValueError):
+                simulation.validate_contract(value)
+
+    def test_numeric_json_integral_spellings_match_winrt_without_admitting_bool(self):
+        value = block()
+        value["simulation"].update(version=1.0, values=[-(2 ** 31), -0.0, 1.0, 2 ** 31 - 1])
+        simulation.validate_contract(value)
+        for item in (True, False, "1", None, {}, [], 1.5, float("nan"),
+                     float("inf"), -float("inf"), -(2 ** 31) - 1, 2 ** 31):
+            value["simulation"]["values"] = [item]
+            with self.subTest(item=item), self.assertRaises(ValueError):
+                simulation.validate_contract(value)
+
+    def test_array_limits_and_sorted_input_apply_to_initial_and_scenarios(self):
+        value = block()
+        value["simulation"].update(values=[], scenarios=[])
+        simulation.validate_contract(value)
+        value["simulation"].update(values=list(range(64)), sort=False)
+        simulation.validate_contract(value)
+        for values in (None, {}, "1", list(range(65)), [2, 1]):
+            value["simulation"]["values"] = values
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                simulation.validate_contract(value)
+        value["simulation"]["values"] = [1, 1, 2]
+        value["simulation"]["scenarios"] = [{"id": "reverse", "label": "Inverso", "values": [2, 1]}]
+        with self.assertRaisesRegex(ValueError, "ordenado"):
+            simulation.validate_contract(value)
+        value["simulation"]["sort"] = True
+        simulation.validate_contract(value)
+
+    def test_text_values_preserve_spaces_and_use_utf8_binary_order(self):
+        value = block()
+        value["simulation"].update(valueType="text", sort=False,
+                                   values=[" ", "A", "Z", "a", "á", "á", "🟦"], scenarios=[])
+        simulation.validate_contract(value)
+        value["simulation"]["values"] = ["á", "z"]
+        with self.assertRaisesRegex(ValueError, "ordenado"):
+            simulation.validate_contract(value)
+        value["simulation"]["sort"] = True
+        simulation.validate_contract(value)
+        for item in ("", "a\nb", "a\rb", "\0", "\ud800", "ñ" * 65, 1, False):
+            value["simulation"]["values"] = [item]
+            with self.subTest(item=repr(item)), self.assertRaises(ValueError):
+                simulation.validate_contract(value)
+        value["simulation"]["values"] = ["ñ" * 64]
+        simulation.validate_contract(value)
+
+    def test_text_byte_limits_unicode_blankness_and_nul(self):
+        paths = [((), "id", 128), ((), "title", 120), ((), "description", 4000),
+                 (("simulation", "labels"), "array", 80),
+                 (("simulation", "explanations"), "start", 2000),
+                 (("simulation",), "outputTemplate", 256),
+                 (("simulation", "scenarios", 0), "label", 80)]
+        for path, field, limit in paths:
+            value = block()
+            target = value
+            for item in path:
+                target = target[item]
+            target[field] = "ñ" * (limit // 2)
+            simulation.validate_contract(value)
+            for text in ("ñ" * (limit // 2) + "a", "", " \t\n", "\u2003\u00a0", "\0a", "\ud800"):
+                target[field] = text
+                with self.subTest(path=path, field=field, text=repr(text[:20])), self.assertRaises(ValueError):
+                    simulation.validate_contract(value)
+
+    def test_templates_allow_only_declared_names_and_do_not_evaluate_values(self):
+        value = block()
+        all_names = " ".join("{" + field + "}" for field in sorted(simulation.TEMPLATE_FIELDS))
+        value["simulation"]["outputTemplate"] = all_names
+        value["simulation"]["explanations"]["done"] = all_names
+        simulation.validate_contract(value)
+        for template in ("{unknown}", "{value", "value}", "{}", "{{value}}",
+                         "{ value }", "{frequency+1}", "{leaders[0]}", "{value!r}", "{value:4}"):
+            for path in ("outputTemplate", "explanation"):
+                altered = deepcopy(value)
+                if path == "outputTemplate":
+                    altered["simulation"][path] = template
+                else:
+                    altered["simulation"]["explanations"]["advance"] = template
+                with self.subTest(template=template, path=path), self.assertRaises(ValueError):
+                    simulation.validate_contract(altered)
+        value["simulation"].update(valueType="text", values=["{maximum}"], scenarios=[])
+        simulation.validate_contract(value)
+
+    def test_scenarios_are_bounded_unique_and_have_matching_values(self):
+        value = block()
+        value["simulation"]["scenarios"] = [
+            {"id": f"scenario_{i}", "label": f"Escenario {i}", "values": [i]}
+            for i in range(8)]
+        simulation.validate_contract(value)
+        for scenarios in (None, {}, [value["simulation"]["scenarios"][0]] * 2,
+                          value["simulation"]["scenarios"] + [{"id": "ninth", "label": "Noveno", "values": []}]):
+            altered = deepcopy(value)
+            altered["simulation"]["scenarios"] = scenarios
+            with self.subTest(scenarios=scenarios), self.assertRaises(ValueError):
+                simulation.validate_contract(altered)
+        for identity in ("", "1bad", "con espacio", "á", "a" * 65, None, []):
+            altered = deepcopy(value)
+            altered["simulation"]["scenarios"][0]["id"] = identity
+            with self.subTest(identity=identity), self.assertRaises(ValueError):
+                simulation.validate_contract(altered)
+        value["simulation"]["scenarios"][0]["id"] = "a" * 64
+        simulation.validate_contract(value)
+        value["simulation"]["scenarios"][0]["values"] = ["a"]
+        with self.assertRaises(ValueError):
+            simulation.validate_contract(value)
+
+    def test_trace_budget_counts_every_accumulated_frame_as_native_does(self):
+        value = block()
+        spec = value["simulation"]
+        spec.update(values=[1], scenarios=[], outputTemplate="{value}",
+                    explanations={name: "x" for name in simulation.EXPLANATION_FIELDS})
+        # initial/start each have x; completion/done have x and "1\n".
+        self.assertEqual(simulation._trace_text_bytes(spec, [1]), 8)
+        # Two one-element groups: the first output remains during the second
+        # group's start and the final complete output remains on done.
+        self.assertEqual(simulation._trace_text_bytes(spec, [1, 2]), 18)
+        self.assertEqual(simulation._trace_text_bytes(spec, []), 1)
+        spec.update(valueType="text", values=["ñ"])
+        self.assertEqual(simulation._trace_text_bytes(spec, ["ñ"]), 10)
+        spec["values"] = ["{maximum}"]
+        self.assertEqual(simulation._trace_text_bytes(spec, spec["values"]), 24)
+
+    def test_trace_expansion_limit_covers_default_and_each_scenario(self):
+        value = block()
+        spec = value["simulation"]
+        large_values = [f"{index:02d}" + "x" * 126 for index in range(64)]
+        spec.update(valueType="text", values=large_values, scenarios=[],
+                    outputTemplate="{leaders}" * 28)
+        with self.assertRaisesRegex(ValueError, "8 MiB"):
+            simulation.validate_contract(value)
+        spec["values"] = []
+        spec["scenarios"] = [{"id": "large", "label": "Grande", "values": large_values}]
+        with self.assertRaisesRegex(ValueError, "8 MiB"):
+            simulation.validate_contract(value)
+        spec["outputTemplate"] = "{value}: {frequency}"
+        simulation.validate_contract(value)
+
+
+class SimulationIntegrationTest(unittest.TestCase):
+    def setUp(self):
+        curriculum.ERRORS.clear()
+
+    def tearDown(self):
+        curriculum.ERRORS.clear()
+
+    def test_sequence_review_skips_simulation_and_still_finds_a_real_later_puzzle(self):
+        introduction = {"type": "paragraph",
+                        "text": "Antes de ejecutar el programa, resuelve el puzzle al final."}
+        compiler = lesson()["pages"][0]["blocks"][0]
+        puzzle = lesson()["pages"][2]["blocks"][0]
+        code = "RESPUESTA_POSTERIOR_ANTES_EDITOR"
+        document = {"pages": [{"blocks": [introduction, compiler, block()]}]}
+        before = deepcopy(document)
+        self.assertEqual([finding for finding in sequence.review_lesson(document)
+                          if finding.code == code], [])
+        self.assertEqual(document, before)
+
+        # A simulation before the editor must not hide the actual puzzle
+        # after it or replace that puzzle's reported page/block address.
+        document["pages"][0]["blocks"] = [introduction, block(), compiler, puzzle]
+        before = deepcopy(document)
+        findings = [finding for finding in sequence.review_lesson(document)
+                    if finding.code == code]
+        self.assertEqual(len(findings), 1)
+        self.assertEqual((findings[0].severity, findings[0].related_page,
+                          findings[0].related_block), ("ERROR", 1, 4))
+        self.assertEqual(document, before)
+
+    def test_general_validator_accepts_simulation_without_any_answer_contract(self):
+        value = block()
+        curriculum.validate_simulation_contract(value, "simulation QA")
+        courses._block(curriculum, value, "simulation QA", root=Path("."),
+                       document=lesson(), position=(1, 1), structure_only=True)
+        self.assertEqual(curriculum.ERRORS, [])
+        self.assertIn("simulation", curriculum.FIELDS)
+        self.assertNotIn("simulation", curriculum.EXERCISES)
+        value["simulation"]["values"] = [True]
+        courses._block(curriculum, value, "simulation QA", root=Path("."),
+                       document=lesson(), position=(1, 1), structure_only=True)
+        self.assertTrue(any("simulación curricular no válida" in text for text in curriculum.ERRORS))
+
+    def test_state_layout_rejects_decimal_tokens_in_active_and_archived_simulations(self):
+        raw = lesson()
+        raw["pages"][1]["blocks"][1]["simulation"]["scenarios"].append(
+            {"id": "uno", "label": "Un valor", "values": [1]})
+        source = state.prepare_v2(raw, "es", {"es": raw})
+        state.validate(source)
+        retired = state.retire(source, ["block_0001_0001"])
+        state.validate(retired)
+        locations = {
+            "active": (source, ("pages", 1, "blocks", 1)),
+            "retired": (retired, ("stateLayout", "retired", 0, "block")),
+            "history": (retired, ("stateLayout", "retirementHistory", 0,
+                                  "pages", 1, "blocks", 1)),
+        }
+        for place, (base, path) in locations.items():
+            for field in ("version", "values", "scenario"):
+                for token in ("1.0", "1e0"):
+                    document = deepcopy(base)
+                    current = document
+                    for part in path:
+                        current = current[part]
+                    spec = current["simulation"]
+                    integral = json.loads(token)
+                    if field == "version":
+                        spec["version"] = integral
+                    elif field == "values":
+                        spec["values"][1] = integral
+                    else:
+                        spec["scenarios"][1]["values"][0] = integral
+                    with self.subTest(place=place, field=field, token=token):
+                        simulation.validate_contract(current)
+                        self.assertEqual(state.fingerprint(current),
+                                         state.fingerprint(raw["pages"][1]["blocks"][1]))
+                        with self.assertRaisesRegex(ValueError, "sin punto ni exponente"):
+                            simulation.validate_document(document)
+                        with self.assertRaisesRegex(state.LayoutError, "sin punto ni exponente"):
+                            state.validate(document)
+
+        # The document guard follows the presence of stateLayout, not a new
+        # restriction in the standalone schema or in historical fingerprinting.
+        isolated = lesson()
+        isolated["pages"][1]["blocks"][1]["simulation"].update(version=1.0, values=[1.0])
+        simulation.validate_document(isolated)
+
+    def test_only_static_title_and_description_are_public_semantic_sources(self):
+        value = block()
+        self.assertEqual(text_semantics.public_text_fields(value), {
+            "/title": value["title"], "/description": value["description"]})
+        raw = lesson()
+        document = state.prepare_v2(raw, "es", {"es": raw})
+        identity = "block_0001_0001"
+        document["textSemantics"] = {"version": 1, "fields": [
+            text_semantics.make_field(document, identity, "/title", [])]}
+        state.validate(document)
+        for path in ("/simulation/explanations/done", "/simulation/outputTemplate",
+                     "/simulation/labels/array", "/simulation/values/0"):
+            with self.subTest(path=path), self.assertRaises(ValueError):
+                text_semantics.make_field(document, identity, path, [])
+
+    def test_reordering_preserves_every_original_storage_address(self):
+        source = state.prepare(lesson())
+        before = deepcopy(source)
+        moved = state.reorder(source, list(reversed(source["stateLayout"]["current"])))
+        self.assertEqual(source, before)
+        state.validate_transition(source, moved)
+        self.assertEqual(state.validate(moved)[1, 1], (1, 1))
+        self.assertEqual(state.validate(moved)[0, 0], (2, 0))
+        self.assertEqual(state.validate(moved)[2, 0], (0, 0))
+
+    def test_simulation_addition_has_new_storage_without_replacing_a_puzzle(self):
+        raw = lesson(False)
+        before = state.prepare_v2(raw, "es", {"es": raw})
+        plan = deepcopy(before["stateLayout"]["current"])
+        plan[1]["blocks"].append("new_simulation")
+        added = state.reorder(before, plan, [{
+            "id": "new_simulation", "storage": {"page": 3, "block": 0},
+            "progressPage": "page_0001", "block": block()}])
+        state.validate_transition(before, added)
+        self.assertEqual(state.validate(added)[1, 1], (3, 0))
+        self.assertEqual(state.validate(added)[0, 0], (0, 0))
+        self.assertEqual(state.validate(added)[2, 0], (2, 0))
+        self.assertEqual(added["stateLayout"]["origin"], before["stateLayout"]["origin"])
+
+    def test_complete_contract_cannot_change_as_an_editorial_revision(self):
+        raw = lesson()
+        before = state.prepare_v2(raw, "es", {"es": raw})
+        for change in (lambda b: b.update(title="Otro título"),
+                       lambda b: b.update(description="Otra explicación"),
+                       lambda b: b["simulation"].update(values=[1]),
+                       lambda b: b["simulation"].update(view="summary"),
+                       lambda b: b["simulation"]["labels"].update(start="otro índice"),
+                       lambda b: b["simulation"].update(outputTemplate="Otra salida {value}")):
+            proposal = deepcopy(before)
+            current = proposal["pages"][1]["blocks"][1]
+            change(current)
+            self.assertNotEqual(state.state_fingerprint(current),
+                                state.state_fingerprint(before["pages"][1]["blocks"][1]))
+            with self.assertRaises(state.LayoutError):
+                state.prepare_v2(proposal, "es", {"es": raw}, before)
+
+    def test_reference_after_is_allowed_but_simulation_is_not_a_graded_activity(self):
+        source = state.prepare(lesson())
+        source["referenceAfter"] = [{"activity": "block_0000_0000", "blocks": ["block_0001_0001"]}]
+        state.validate(source)
+        source["activityAfter"] = [{"activity": "block_0001_0001", "requires": ["block_0000_0000"]}]
+        with self.assertRaisesRegex(state.LayoutError, "dependent activity"):
+            state.validate(source)
+
+    def test_retirement_keeps_complete_simulation_and_reading_snapshot(self):
+        raw = lesson()
+        source = state.prepare_v2(raw, "es", {"es": raw})
+        retired = state.retire(source, ["block_0001_0001"])
+        state.validate_transition(source, retired)
+        self.assertEqual(retired["stateLayout"]["retired"][0]["block"], raw["pages"][1]["blocks"][1])
+        self.assertEqual(retired["stateLayout"]["retirementHistory"][0]["pages"], source["pages"])
+        self.assertEqual(state.validate(retired)[0, 0], (0, 0))
+
+    def test_validation_checks_active_retired_and_retirement_history_sources(self):
+        for place in ("active", "retired", "history"):
+            bad = block()
+            bad["simulation"]["outputTemplate"] = "{not_a_field}"
+            document = {"pages": [], "stateLayout": {}}
+            if place == "active":
+                document["pages"] = [{"blocks": [bad]}]
+            elif place == "retired":
+                document["stateLayout"]["retired"] = [{"block": bad}]
+            else:
+                document["stateLayout"]["retirementHistory"] = [{"pages": [{"blocks": [bad]}]}]
+            with self.subTest(place=place), self.assertRaises(ValueError):
+                simulation.validate_document(document)
+        invalid_lesson = lesson()
+        invalid_lesson["pages"][1]["blocks"][1] = bad
+        with self.assertRaisesRegex(state.LayoutError, "Invalid curricular simulation"):
+            state.validate(invalid_lesson)
+
+
+if __name__ == "__main__":
+    unittest.main()

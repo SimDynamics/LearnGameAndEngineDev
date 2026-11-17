@@ -114,7 +114,7 @@ add_executable(lgaed_cpp_tool_host native/platform/windows/cpp_tool_host.cpp)
 target_link_libraries(lgaed_cpp_tool_host PRIVATE lgaed_host_options user32)
 set_target_properties(lgaed_cpp_tool_host PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
-add_library(lgaed_core STATIC native/core/profile.cpp native/core/compile_check.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/lesson_page_reach.cpp native/core/text_semantics.cpp native/core/cpp_project.cpp native/core/image_resource.cpp
+add_library(lgaed_core STATIC native/core/profile.cpp native/core/compile_check.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/lesson_page_reach.cpp native/core/text_semantics.cpp native/core/cpp_project.cpp native/core/image_resource.cpp native/core/simulation.cpp
     native/core/catalog.cpp native/core/audio_schedule.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp native/core/smo.cpp native/core/smo_native.cpp)
 target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
 
@@ -213,6 +213,10 @@ if(LGAED_NARRATION_WORKER_QA_ONLY)
     lgaed_add_narration_runtime(NarrationHost)
     include(cmake/NarrationWorkerTests.cmake)
     lgaed_add_narration_worker_tests()
+    add_test(NAME native.simulation_narration COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/native/narration/worker/test_curriculum_visible_semantics.py"
+        CurriculumVisibleSemanticsTest.test_simulation_prepares_only_static_authored_fields_not_future_states)
+    set_tests_properties(native.simulation_narration PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     set_tests_properties(native.narration_spanish_pcm PROPERTIES
         ENVIRONMENT "LGAED_REQUIRE_NEW_SPANISH_SYNTHESIS=1")
     include(cmake/NarrationPlayerTests.cmake)
@@ -222,6 +226,25 @@ if(LGAED_NARRATION_WORKER_QA_ONLY)
 endif()
 
 include(cmake/CurricularWindows.cmake)
+
+# One production model and native control, shared by ReaderBuild and the app.
+function(lgaed_add_simulation_tests)
+    add_executable(lgaed_simulation_tests native/core/simulation_tests.cpp)
+    target_link_libraries(lgaed_simulation_tests PRIVATE lgaed_core)
+    add_test(NAME native.simulation_model COMMAND lgaed_simulation_tests)
+    add_executable(lgaed_simulation_view_tests native/presentation/windows/simulation_view_tests.cpp)
+    target_link_libraries(lgaed_simulation_view_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.simulation_view COMMAND lgaed_simulation_view_tests "${CMAKE_CURRENT_BINARY_DIR}/simulation-captures")
+    add_executable(lgaed_simulation_lesson_tests native/presentation/windows/simulation_lesson_tests.cpp)
+    target_link_libraries(lgaed_simulation_lesson_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.simulation_lesson COMMAND lgaed_simulation_lesson_tests
+        "${CMAKE_SOURCE_DIR}/docs/examples/array_runs_simulation.json"
+        "${CMAKE_SOURCE_DIR}/native/presentation/windows/fixtures/simulation_state_layout.json")
+    add_test(NAME native.simulation_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_simulation.py)
+    set_tests_properties(native.simulation_model native.simulation_authoring PROPERTIES TIMEOUT 30)
+    set_tests_properties(native.simulation_view native.simulation_lesson PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+endfunction()
 
 # Shared by the complete application test configuration and the focused real
 # math-worker QA. Fixtures are pinned Git publications plus an in-memory
@@ -468,6 +491,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
     endif()
     lgaed_add_curricular_reader_test_targets()
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    lgaed_add_simulation_tests()
     include(cmake/StateImportTests.cmake)
     lgaed_add_catalog_history_fixtures()
     # Run the real-control menu/scroll cases before costly compiler probes.
@@ -783,6 +807,7 @@ option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
     "Build and register the optional cached/uncached SMO render benchmarks by default" OFF)
 if(BUILD_TESTING)
     lgaed_add_named_rule_source_tests()
+    lgaed_add_simulation_tests()
     lgaed_add_cpp_expression_repair_tests()
     include(cmake/StateImportTests.cmake)
     lgaed_add_curricular_reader_test_targets()

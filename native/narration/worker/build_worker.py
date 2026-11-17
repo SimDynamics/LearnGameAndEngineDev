@@ -943,6 +943,10 @@ def windows_reading_source(name: str, code: str) -> str:
                      '                append(output,block.string("alt"))\n'
                      '                append(output,block.string("caption"))\n'
                      '            }\n'
+                     '            "simulation" -> if (WindowsNarrationSpeechRules.keepWholeReadingRegions()) {\n'
+                     '                append(output,block.string("title"))\n'
+                     '                append(output,block.string("description"))\n'
+                     '            }\n'
                      '            "heading", "paragraph" -> append(output, block.string("text"), block.mode())')
         # Only current Windows anticipation selects the exact sources shown by
         # native controls. Historical export keeps its preceding extractor.
@@ -1464,4 +1468,3 @@ def build() -> None:
 if __name__ == "__main__":
     with build_lock():
         build()
-

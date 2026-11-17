@@ -981,6 +981,98 @@ void require_math_prompt_contract(std::string_view current,std::string_view prev
     require(live.ordered_frame(live_root,live_ignored)==original.ordered_frame(old_root,old_ignored),
         "A mathematical prompt revision changed evaluation data, property order or numeric tokens");
 }
+SimulationSpec read_simulation(const JsonObject& block) {
+    allowed_keys(block,{"type","id","title","description","simulation"});
+    // Validate the original UTF-16 units before WinRT can replace an unpaired
+    // surrogate during UTF-8 conversion. The core must see the authored data.
+    const auto strict_utf8=[](const winrt::hstring& authored) {
+        for(decltype(authored.size()) at=0;at<authored.size();++at) {
+            const auto unit=authored[at];
+            if(unit>=0xd800&&unit<=0xdbff) {
+                require(at+1<authored.size()&&authored[at+1]>=0xdc00&&authored[at+1]<=0xdfff,
+                    "A simulation string contains an invalid Unicode scalar");
+                ++at;
+            }else require(unit<0xdc00||unit>0xdfff,
+                "A simulation string contains an invalid Unicode scalar");
+        }
+        return utf8(authored);
+    };
+    const auto strict_text=[&](const JsonObject& object,std::string_view name) {
+        const auto property=object.GetNamedValue(key(name));
+        require(property.ValueType()==JsonValueType::String,"Expected a simulation string");
+        return strict_utf8(property.GetString());
+    };
+    SimulationSpec spec;
+    spec.title=strict_text(block,"title");spec.description=strict_text(block,"description");
+    if(block.HasKey(L"id")) {
+        const auto id=strict_text(block,"id");const auto visible=key(id);
+        require(id.size()<=128&&id.find('\0')==id.npos&&
+                std::ranges::any_of(visible,[](wchar_t c){return c!=0x85&&!narration_space(c);}),
+            "A simulation block id must be nonblank bounded text");
+    }
+    const auto value=block.GetNamedObject(L"simulation");
+    allowed_keys(value,{"version","model","view","valueType","values","sort",
+        "editable","labels","explanations","outputTemplate","scenarios"});
+    require(integer(value.GetNamedValue(L"version"),1)==1,
+        "Unsupported simulation version");
+    spec.model=strict_text(value,"model");
+    const std::map<std::string,SimulationViewMode> modes{
+        {"array",SimulationViewMode::array},{"groups",SimulationViewMode::groups},
+        {"walkthrough",SimulationViewMode::walkthrough},
+        {"candidates",SimulationViewMode::candidates},{"summary",SimulationViewMode::summary}};
+    const auto mode=strict_text(value,"view");
+    require(modes.contains(mode),"Unknown simulation presentation");
+    spec.view=modes.at(mode);
+    const auto kind=strict_text(value,"valueType");
+    require(kind=="integer"||kind=="text","Unknown simulation value type");
+    spec.text_values=kind=="text";
+    spec.sort=value.GetNamedBoolean(L"sort");
+    spec.editable=value.GetNamedBoolean(L"editable");
+    const auto read_values=[&](const JsonArray& entries) {
+        require(entries.Size()<=64,"A simulation accepts at most 64 values");
+        std::vector<SimulationValue> result;
+        for(const auto& entry:entries) {
+            if(spec.text_values) {
+                require(entry.ValueType()==JsonValueType::String,
+                    "A text simulation requires string values");
+                result.emplace_back(strict_utf8(entry.GetString()));
+            }else{
+                require(entry.ValueType()==JsonValueType::Number,
+                    "An integer simulation requires numeric values");
+                const auto number=entry.GetNumber();
+                require(std::isfinite(number)&&std::trunc(number)==number&&
+                        number>=-2147483648.0&&number<=2147483647.0,
+                    "A simulation integer must fit in signed 32 bits");
+                result.emplace_back(static_cast<std::int64_t>(number));
+            }
+        }
+        return result;
+    };
+    spec.values=read_values(array(value,"values"));
+    const auto labels=value.GetNamedObject(L"labels");
+    allowed_keys(labels,{"array","start","end","frequency","maximum","leaders","output"},true);
+    spec.labels={strict_text(labels,"array"),strict_text(labels,"start"),strict_text(labels,"end"),
+        strict_text(labels,"frequency"),strict_text(labels,"maximum"),strict_text(labels,"leaders"),strict_text(labels,"output")};
+    const auto explanations=value.GetNamedObject(L"explanations");
+    allowed_keys(explanations,{"initial","start","advance","newMaximum","tie","belowMaximum","done","empty"},true);
+    spec.explanations={strict_text(explanations,"initial"),strict_text(explanations,"start"),
+        strict_text(explanations,"advance"),strict_text(explanations,"newMaximum"),
+        strict_text(explanations,"tie"),strict_text(explanations,"belowMaximum"),
+        strict_text(explanations,"done"),strict_text(explanations,"empty")};
+    spec.output_template=strict_text(value,"outputTemplate");
+    if(value.HasKey(L"scenarios")) {
+        const auto scenarios=array(value,"scenarios");
+        require(scenarios.Size()<=8,"A simulation accepts at most eight scenarios");
+        for(const auto& entry:scenarios) {
+            const auto scenario=entry.GetObject();
+            allowed_keys(scenario,{"id","label","values"},true);
+            spec.scenarios.push_back({strict_text(scenario,"id"),strict_text(scenario,"label"),
+                read_values(array(scenario,"values"))});
+        }
+    }
+    validate_simulation_spec(spec);
+    return spec;
+}
 Block read_block(const JsonObject& value,std::string_view original,
     const JsonObject* authenticated_source_before=nullptr);
 std::string bibliography_string(const winrt::hstring& value){
@@ -2335,7 +2427,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             require((retired.next.empty() || (valid_id(retired.next) && result.signatures.contains(retired.next))) &&
                     retired.next != retired.id,"Invalid retired activity successor");
             const auto block = item.GetNamedObject(L"block"); const auto type = text(block,"type");
-            require(type == "heading" || type == "paragraph" || type == "note" || type == "code" || type == "cpp_compiler" || type == "image",
+            require(type == "heading" || type == "paragraph" || type == "note" || type == "code" || type == "cpp_compiler" || type == "image" || type == "simulation",
                     "Only compiler activities and their presentation blocks can be retired");
             auto projected=block;
             if(const auto format=source_format_originals.find(retired.id);
@@ -2845,12 +2937,13 @@ Block read_block(const JsonObject& value,std::string_view original,
     const std::map<std::string, BlockType> types{{"heading", BlockType::heading}, {"paragraph", BlockType::paragraph}, {"note", BlockType::note}, {"code", BlockType::code},
         {"multiple_choice", BlockType::multiple_choice}, {"output_prediction", BlockType::output_prediction}, {"fill_code", BlockType::fill_code},
         {"order_code", BlockType::order_code}, {"cpp_compiler", BlockType::cpp_compiler},
-        {"inline_fill_code",BlockType::inline_fill_code}, {"drag_fill_code",BlockType::drag_fill_code}, {"image",BlockType::image}};
+        {"inline_fill_code",BlockType::inline_fill_code}, {"drag_fill_code",BlockType::drag_fill_code}, {"image",BlockType::image}, {"simulation",BlockType::simulation}};
     const std::set<std::string> mathematics{"math_puzzle","math_multiple_choice_single","math_multiple_choice_multi","math_numeric_input",
         "math_multi_input","math_expression_input","math_structured_answer","math_equation_fill_blanks","math_ordering_drag","math_number_line",
         "math_slider_interaction","math_matching_drag","math_coordinate_graph_builder","math_geometry_builder","math_rigid_angle_copy","math_segment_transport"};
     require(types.contains(type) || mathematics.contains(type), "Unsupported block type: " + type);
     result.type = mathematics.contains(type) ? BlockType::math_puzzle : types.at(type);
+    if(result.type==BlockType::simulation)result.simulation=read_simulation(value);
     if(result.type==BlockType::image){
         allowed_keys(value,{"type","id","imageId","src","alt","caption"});
         result.image=ImageResource{text(value,"imageId"),text(value,"src"),text(value,"alt"),optional_text(value,"caption")};
@@ -3060,6 +3153,7 @@ struct SemanticPublicFields {
         const auto type=kind(source);
         if(type=="heading"||type=="paragraph"||type=="note")string_field(source,"text","");
         else if(type=="image")for(const auto name:{"alt","caption"})string_field(source,name,"");
+        else if(type=="simulation")for(const auto name:{"title","description"})string_field(source,name,"");
         else if(type=="multiple_choice"||type=="fill_code"||type=="output_prediction"||type=="order_code"||type=="drag_fill_code"||type=="inline_fill_code"){
             for(const auto name:{"question","explanation"})string_field(source,name,"");
             if(type=="multiple_choice")strings(values(source,"options"),"/options");
@@ -5320,4 +5414,3 @@ curriculum::Lesson load_lesson_progress_metadata(const std::filesystem::path& pa
     catch(const std::exception& failure){throw std::runtime_error(path.string()+": "+failure.what());}
 }
 } // namespace lgaed::windows
-

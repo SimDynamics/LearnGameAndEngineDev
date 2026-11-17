@@ -24,6 +24,9 @@ _semantics_spec.loader.exec_module(text_semantics)
 _images_spec = import_util.spec_from_file_location("lgaed_image_resources", Path(__file__).with_name("image_resources.py"))
 image_resources = import_util.module_from_spec(_images_spec)
 _images_spec.loader.exec_module(image_resources)
+_simulation_spec = import_util.spec_from_file_location("lgaed_simulation", Path(__file__).with_name("simulation.py"))
+simulation = import_util.module_from_spec(_simulation_spec)
+_simulation_spec.loader.exec_module(simulation)
 _bibliography_spec = import_util.spec_from_file_location("lgaed_bibliography_revision", Path(__file__).with_name("bibliography_revision.py"))
 bibliography_revision = import_util.module_from_spec(_bibliography_spec)
 _bibliography_spec.loader.exec_module(bibliography_revision)
@@ -39,7 +42,7 @@ class LayoutError(ValueError):
 LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
 V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions", "mathTextRevisions", "compilerCaseOrderRevisions", "compilerCaseRevisions"})
-RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
+RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
 FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
@@ -2714,7 +2717,7 @@ def _validate_presentation_relationships(document: dict) -> None:
                 if field == "referenceAfter":
                     require(identity not in references, "Duplicate reference presentation block")
                     references.add(identity)
-                    require(block.get("type") in {"heading", "paragraph", "note", "code", "image"},
+                    require(block.get("type") in {"heading", "paragraph", "note", "code", "image", "simulation"},
                             "An exercise or editor cannot be hidden as a reference")
                     require(positions[identity] > positions[activity],
                             "A reference must follow its activity in visual order")
@@ -5128,6 +5131,10 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     except (ValueError, KeyError, TypeError) as error:
         raise LayoutError(f"Invalid curricular image: {error}") from error
     try:
+        simulation.validate_document(document)
+    except (ValueError, KeyError, TypeError) as error:
+        raise LayoutError(f"Invalid curricular simulation: {error}") from error
+    try:
         text_semantics.validate(document)
     except (ValueError, KeyError, TypeError) as error:
         raise LayoutError(f"Invalid explicit text semantics: {error}") from error
@@ -6577,5 +6584,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

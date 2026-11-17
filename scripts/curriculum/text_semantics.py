@@ -93,6 +93,11 @@ def public_text_fields(block):
     elif kind == "image":
         for field in ("alt", "caption"):
             text(block, field, "")
+    elif kind == "simulation":
+        # Only immutable text already visible before interacting. Generated
+        # frames and future explanations are never preplanned as page reading.
+        for field in ("title", "description"):
+            text(block, field, "")
     elif kind in {"multiple_choice", "fill_code", "output_prediction", "order_code", "drag_fill_code", "inline_fill_code"}:
         for field in ("question", "explanation"):
             text(block, field, "")

@@ -238,7 +238,7 @@ void validate_reference_relationships(const Lesson& lesson) {
             const auto position = stable_block_position(lesson,identity);
             if (!position) throw std::invalid_argument("Reference presentation block does not exist");
             const auto type = lesson.pages[position->page].blocks[position->block].type;
-            if (type != BlockType::heading && type != BlockType::paragraph && type != BlockType::note && type != BlockType::code && type != BlockType::image)
+            if (type != BlockType::heading && type != BlockType::paragraph && type != BlockType::note && type != BlockType::code && type != BlockType::image && type != BlockType::simulation)
                 throw std::invalid_argument("An exercise or editor cannot be hidden as a reference");
             if (position->page < target->page || (position->page == target->page && position->block <= target->block))
                 throw std::invalid_argument("A reference must follow its activity in visual order");
@@ -1019,4 +1019,3 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
 }
 
 } // namespace lgaed::curriculum
-

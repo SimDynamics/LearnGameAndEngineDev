@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTENT = ROOT / "app/src/main/assets/content/es"
-PASSIVE = {"heading", "paragraph", "note", "code"}
+PASSIVE = {"heading", "paragraph", "note", "code", "simulation"}
 BACK_TO_EDITOR = re.compile(
     r"\b(?:vuelve|regresa|retorna)\s+(?:al|a\s+este|a\s+ese)\s+editor"
     r"(?:\s+de\s+código)?\s+(?:de\s+)?(?:la\s+)?página\s+anterior\b",

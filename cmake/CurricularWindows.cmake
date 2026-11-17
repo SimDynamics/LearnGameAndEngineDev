@@ -10,6 +10,7 @@ add_library(lgaed_curricular_windows STATIC
     native/presentation/windows/cpp_fill_view.cpp
     native/presentation/windows/order_code_view.cpp
     native/presentation/windows/curricular_image_view.cpp
+    native/presentation/windows/simulation_view.cpp
     native/presentation/windows/math_puzzle_view.cpp
     native/presentation/windows/math_expression_editor.cpp
     native/presentation/windows/native_math_text.cpp
