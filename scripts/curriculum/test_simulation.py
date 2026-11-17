@@ -15,6 +15,7 @@ import verificar_secuencia_pedagogica as sequence
 
 
 EXAMPLE = Path(__file__).resolve().parents[2] / "docs/examples/array_runs_simulation.json"
+EMPTY_TEXT_EXAMPLE = Path(__file__).resolve().parents[2] / "docs/examples/array_runs_empty_text_simulation.json"
 
 
 def block():
@@ -74,6 +75,44 @@ class SimulationContractTest(unittest.TestCase):
             value["simulation"]["view"] = view
             with self.subTest(view=view):
                 simulation.validate_contract(value)
+
+    def test_documented_text_scenarios_have_independent_empty_string_oracles(self):
+        """Protect the actual example Work will adapt, not a copied fixture."""
+        authored = json.loads(EMPTY_TEXT_EXAMPLE.read_text(encoding="utf-8"))
+        original = deepcopy(authored)
+        spec = simulation.validate_contract(authored)
+        self.assertEqual((spec["model"], spec["valueType"], spec["view"]),
+                         ("arrayRunsV1", "text", "walkthrough"))
+        expected = {
+            "initial": (["", "patio", "patio"], [("", 1), ("patio", 2)], ["patio"]),
+            "coleccion_vacia": ([], [], []),
+            "cadena_vacia": ([""], [("", 1)], [""]),
+            "patio_repetido": (["", "patio", "patio"], [("", 1), ("patio", 2)], ["patio"]),
+            "vacia_y_espacio": (["", " "], [("", 1), (" ", 1)], ["", " "]),
+            "empate_y_espacios": (["", " ", "casa"],
+                                   [("", 1), (" ", 1), ("casa", 1)], ["", " ", "casa"]),
+            "desorden_y_repeticiones": (["sol", " ", "sol", ""],
+                                         [("", 1), (" ", 1), ("sol", 2)], ["sol"]),
+        }
+        authored_cases = {"initial": spec["values"]}
+        authored_cases.update({item["id"]: item["values"] for item in spec["scenarios"]})
+        self.assertEqual(set(authored_cases), set(expected))
+        for case_id, values in authored_cases.items():
+            with self.subTest(case=case_id):
+                source, groups_expected, leaders_expected = expected[case_id]
+                self.assertEqual(values, source)
+                ordered = sorted(values, key=lambda text: text.encode("utf-8"))
+                groups = []
+                for value in ordered:
+                    if groups and groups[-1][0] == value:
+                        groups[-1] = (value, groups[-1][1] + 1)
+                    else:
+                        groups.append((value, 1))
+                maximum = max((count for _, count in groups), default=0)
+                leaders = [value for value, count in groups if count == maximum]
+                self.assertEqual((groups, leaders), (groups_expected, leaders_expected))
+                self.assertGreater(simulation._trace_text_bytes(spec, values), 0)
+        self.assertEqual(authored, original)
 
     def test_validation_leaves_every_value_and_field_unchanged(self):
         value = block()
