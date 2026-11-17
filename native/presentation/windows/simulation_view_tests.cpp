@@ -2625,6 +2625,64 @@ void wheel_edges_resume_reader(HWND host) {
     }
 }
 
+void accumulated_output_scroll_follows_new_groups(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.scenarios.clear();
+    spec.values.clear();
+    for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
+    SimulationView view(host,spec,"es");
+    resize(view,800);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(output,"The accumulated output RichEdit is missing");
+
+    // Each distinct value contributes a start frame and a decision. At
+    // decision 20 there are already 21 lines, overflowing the bounded
+    // output panel. The next start frame does not change the output.
+    check(view.go_to_step(42),"Cannot reach the long calculated output");
+    const auto long_state=scroll_state(output);
+    check(long_state.has_range&&long_state.vertical.nPage>0&&
+        long_state.vertical.nMax-long_state.vertical.nMin+1>
+            static_cast<int>(long_state.vertical.nPage),
+        "The accumulated output fixture has no native vertical overflow");
+    check(text(view,output_id).ends_with("20:1\n"),
+        "The output fixture did not finish its twentieth group");
+
+    SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    const auto bottom=scroll_state(output);
+    check(bottom.position.y>0&&
+        bottom.vertical.nPos>=bottom.vertical.nMax-
+            std::max(0,static_cast<int>(bottom.vertical.nPage)-1),
+        "Could not reach the last visible line of the output");
+    const auto unchanged=text(view,output_id);
+    check(view.go_to_step(43)&&text(view,output_id)==unchanged,
+        "Counting the next element changed output before deciding its group");
+    const auto still_bottom=scroll_state(output);
+    check(still_bottom.position.y==bottom.position.y,
+        "An unchanged output was rewritten or lost its existing scroll");
+
+    // When the learner is already reading the end, the next completed
+    // group should be brought into view without changing the raw stdout.
+    check(view.go_to_step(44)&&text(view,output_id).ends_with("21:1\n"),
+        "The next completed group did not append its expected result");
+    const auto extended=scroll_state(output);
+    check(extended.position.y>=bottom.position.y&&
+        extended.vertical.nPos>=extended.vertical.nMax-
+            std::max(0,static_cast<int>(extended.vertical.nPage)-1),
+        "A new output line remained hidden despite a bottom-pinned viewport");
+
+    // If the learner scrolls back to an older result, a new group must
+    // not yank their focus to the bottom again.
+    SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    const auto top=scroll_state(output);
+    check(top.first==0&&top.position.y==0,
+        "Could not return to the beginning of the output");
+    check(view.go_to_step(45)&&view.go_to_step(46)&&
+        text(view,output_id).ends_with("22:1\n"),
+        "The next completed output group was lost");
+    const auto retained=scroll_state(output);
+    check(retained.first==0&&retained.position.y==top.position.y,
+        "Appending output stole the learner's manually selected earlier lines");
+}
 void scrollable_text_keyboard(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::summary);spec.values.clear();
     for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
@@ -2736,6 +2794,7 @@ int main(int argc,char** argv)try {
     run("parent_width_changes",[&]{parent_width_changes(host.value);});
     run("long_labels_and_literal_values",[&]{long_labels_and_literal_values(host.value,captures);});
     run("wheel_edges_resume_reader",[&]{wheel_edges_resume_reader(host.value);});
+    run("accumulated_output_scroll_follows_new_groups",[&]{accumulated_output_scroll_follows_new_groups(host.value);});
     run("scrollable_text_keyboard",[&]{scrollable_text_keyboard(host.value,captures);});
     check(!IsWindowVisible(host.value)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=host.value,"Simulation QA activated the desktop");
     if(failures){std::cerr<<"FAIL native simulation view: "<<failures<<" independent scenario(s) failed\n";return 1;}
