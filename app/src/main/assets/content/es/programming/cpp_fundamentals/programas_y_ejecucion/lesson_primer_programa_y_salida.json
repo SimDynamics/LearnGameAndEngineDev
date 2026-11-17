@@ -2,113 +2,70 @@
   "id": "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida",
   "title": "Construir y leer un primer programa",
   "orderVisualSeparators": [
-    {"activity": "block_0003_0002", "count": 1}
+    {
+      "activity": "block_0003_0002",
+      "count": 1
+    }
   ],
   "pages": [
     {
       "blocks": [
         {
           "type": "heading",
-          "text": "Un programa pequeño y completo"
+          "text": "El texto y la instrucción que lo muestra"
         },
         {
           "type": "paragraph",
-          "text": "Vamos a construir un programa que muestre un mensaje. El texto escrito en C++ es su código fuente: describe las acciones que queremos ejecutar (Stroustrup, 2024).\n\nEn el ejemplo, localiza primero el mensaje Inicio confirmado. Después recorreremos las partes que permiten mostrarlo. No necesitas conocer todavía todos los detalles de una biblioteca o de una función para empezar a relacionar cada pieza con una acción concreta.",
-          "emphasis": [
-            {
-              "text": "código fuente"
-            }
-          ]
+          "text": "Vamos a escribir un programa que muestre un mensaje fijo. No pedirá datos a quien lo ejecute: el texto estará escrito en el propio código. Primero aprenderemos a escribir ese texto y la instrucción que lo muestra. Después colocaremos la instrucción dentro de un programa completo."
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Inicio confirmado\";\n    return 0;\n}\n"
+          "code": "\"Puerto listo\""
         },
         {
           "type": "paragraph",
-          "text": "El compilador es una herramienta que analiza el código fuente según las reglas de C++ y, si lo acepta, lo traduce a instrucciones para la computadora. Esa traducción forma parte de la construcción del programa (Stroustrup, 2024).\n\nUna biblioteca reúne recursos que otros programas pueden utilizar. La biblioteca estándar de C++ incluye los de entrada y salida. La cabecera <iostream> contiene las declaraciones de esos recursos: la información que permite al compilador reconocer nombres como std::cout y cómo utilizarlos. #include <iostream> incorpora esa información al preparar nuestro código; esta es la forma que utilizaremos en el editor de código (Stroustrup, 2024).\n\nstd::cout es el flujo de salida: recibe los datos que vamos a mostrar. El prefijo std:: permite identificar cout entre los nombres de la biblioteca estándar. En la instrucción del ejemplo, el texto situado entre comillas es el mensaje que enviamos a ese flujo (Stroustrup, 2024).\n\nmain contiene las instrucciones de este programa, encerradas entre las llaves { y }. Primero se envía el mensaje; después return 0; termina main y comunica al sistema que el programa finalizó correctamente. Ese cero no se envía a la salida: informar al sistema y mostrar un mensaje son acciones diferentes (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "Una biblioteca reúne recursos"
-            },
-            {
-              "text": "std::cout es el flujo de salida"
-            },
-            {
-              "text": "main contiene las instrucciones de este programa"
-            },
-            {
-              "text": "Ese cero no se envía a la salida"
-            }
-          ]
-        },
-        {
-          "type": "multiple_choice",
-          "id": "accion_visible",
-          "question": "¿Qué parte del ejemplo produce el mensaje visible?",
-          "options": [
-            "#include <iostream>",
-            "std::cout << \"Inicio confirmado\";",
-            "return 0;"
-          ],
-          "correctIndex": 1,
-          "explanation": "La instrucción con std::cout muestra el mensaje. #include <iostream> permite usar ese recurso y return 0 comunica al sistema cómo terminó el programa."
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Comillas, contenido y terminador"
+          "text": "En este fragmento, Puerto listo es el texto que queremos utilizar. Las dos comillas dobles marcan dónde empieza y dónde termina ese texto en el código. A una forma de escribir un valor directamente en el código, como \"Puerto listo\", la llamamos literal; aquí es un literal de texto (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
-          "text": "Las comillas dobles delimitan un literal de texto: permiten escribir un texto concreto dentro del código. En \"Puerto listo\", el mensaje es Puerto listo. Las comillas señalan sus límites y no se muestran como parte de ese mensaje (Stroustrup, 2024).\n\nEl punto y coma termina la instrucción de salida. Pertenece a las reglas de escritura del lenguaje, llamadas sintaxis; no se agrega al mensaje. Al leer el código, distingue los caracteres que delimitan o terminan una instrucción de los datos que esa instrucción envía (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "Las comillas dobles delimitan un literal de texto"
-            },
-            {
-              "text": "El punto y coma termina la instrucción de salida"
-            }
-          ]
-        },
-        {
-          "type": "paragraph",
-          "text": "En std::cout << \"Puerto listo\";, los dos signos << forman un operador: una marca que indica una operación. Aquí la operación consiste en insertar el texto de la derecha en el flujo de salida de la izquierda. Por eso lo llamamos operador de inserción (Stroustrup, 2024).\n\nConserva juntos los dos signos. Un solo < es otro operador de C++ y no expresa esta inserción. Más adelante estudiaremos su uso; ahora necesitamos distinguirlo para escribir y revisar nuestras instrucciones de salida (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "operador de inserción"
-            },
-            {
-              "text": "Conserva juntos los dos signos"
-            }
-          ]
-        },
-        {
-          "type": "output_prediction",
-          "id": "literal_independiente",
-          "question": "Predice la salida. Escribe el mensaje sin las comillas del código y conserva el espacio entre las palabras. El programa no añade un salto de línea al mensaje.",
-          "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Archivo preparado\";\n    return 0;\n}\n",
-          "answers": [
-            "Archivo preparado"
-          ],
-          "explanation": "Se muestra Archivo preparado, con un espacio entre las palabras. Las comillas, el punto y coma y los saltos de línea que separan las instrucciones del código fuente no forman parte de esta salida.",
-          "outputComparison": "exact"
+          "text": "El espacio entre Puerto y listo también pertenece al contenido. Las comillas que lo rodean cumplen otra función: delimitan el literal. Por eso no se añaden a la consola cuando mostramos ese contenido."
         },
         {
           "type": "fill_code",
-          "id": "literal_construido",
-          "question": "Escribe un único literal de texto, con comillas dobles, para mostrar Muelle cerrado.",
+          "id": "p1u1l2_construir_literal_fragmento",
+          "question": "Completa sólo el literal de texto. Debe contener Entrada libre, con un espacio entre las palabras. Escribe también las comillas dobles que lo delimitan.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    std::cout << ___;\n    return 0;\n}\n",
+          "code": "___",
           "answers": [
-            "\"Muelle cerrado\""
+            "\"Entrada libre\""
           ],
-          "explanation": "Las comillas delimitan el literal; std::cout recibe su contenido."
+          "explanation": "El literal es \"Entrada libre\": las comillas delimitan el texto y el espacio interior separa sus palabras. Entrada libre sin comillas sería otra escritura del código, no el literal solicitado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Ruta disponible\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta instrucción muestra el contenido del literal. La parte std::cout representa la salida de texto del programa; en estos ejercicios la veremos en la consola de la app. Una marca que indica qué operación realizar se llama operador. Aquí el operador << envía a la salida el texto situado a su derecha. El punto y coma final termina la instrucción (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora sólo estamos estudiando una instrucción. Todavía faltan las líneas que la colocan dentro de un programa y permiten utilizar la salida de texto. Las construiremos después de practicar estas piezas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p1u1l2_predecir_fragmento",
+          "language": "cpp",
+          "question": "Esta instrucción se ejecuta dentro de un programa preparado para usar std::cout. Escribe sólo el texto que muestra, sin comillas ni salto de línea al final.",
+          "code": "std::cout << \"Ruta disponible\";",
+          "answers": [
+            "Ruta disponible"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El contenido del literal llega a la consola: Ruta disponible. Las comillas y el punto y coma estructuran el código; no se escriben como parte del mensaje. Esta instrucción tampoco pide añadir un salto de línea."
         }
       ]
     },
@@ -116,34 +73,97 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "El cuerpo de main y la biblioteca"
+          "text": "Construir y corregir los signos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Equipo preparado\";"
         },
         {
           "type": "paragraph",
-          "text": "main es el punto de entrada de estos programas: allí comienza la ejecución de las instrucciones que escribimos. Las llaves { y } delimitan su cuerpo, es decir, el grupo de instrucciones que contiene (Stroustrup, 2024).\n\nEn int main(), int indica que main devuelve un resultado de tipo entero, como el 0 de return 0;. Los paréntesis forman parte de la definición; en esta forma están vacíos. En la siguiente unidad estudiaremos los tipos y después construiremos otras funciones. Por ahora, conserva completa esta estructura y distingue el resultado devuelto del texto mostrado (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "main es el punto de entrada"
-            },
-            {
-              "text": "un resultado de tipo entero"
-            }
-          ]
+          "text": "Lee esta instrucción por partes:\n\nstd::cout: dónde se escribirá el texto.\n<<: la operación que envía el contenido a esa salida.\n\"Equipo preparado\": el literal que proporciona el texto.\n;: el signo que termina esta instrucción."
         },
         {
           "type": "paragraph",
-          "text": "Cada instrucción de salida de nuestros ejemplos termina con ;. Eso no significa que cada línea del archivo necesite uno. El punto y coma señala el final de esa instrucción; un cambio de línea del archivo, por sí solo, no lo sustituye (Stroustrup, 2024).\n\n#include <iostream> es una directiva: prepara el código incorporando la información de la cabecera. Esta directiva no lleva ; al final. Las llaves { y } delimitan el cuerpo de main; no se necesita ; después de la llave que cierra esa función. En el ejemplo completo puedes reconocer dónde se termina una instrucción de salida, dónde se incluye una cabecera y dónde se cierra main (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "El punto y coma señala el final de esa instrucción"
-            },
-            {
-              "text": "Esta directiva no lleva ; al final"
-            },
-            {
-              "text": "Las llaves { y } delimitan el cuerpo de main"
-            }
-          ]
+          "text": "Para esta operación se escriben dos signos menores juntos, sin espacio entre ellos. Un solo signo no realiza este envío de texto a la salida. Los espacios que separan las distintas piezas hacen el código legible; no sustituyen ningún signo necesario."
+        },
+        {
+          "type": "fill_code",
+          "id": "p1u1l2_construir_operador_fragmento",
+          "question": "Completa únicamente el operador que envía el literal a la salida de texto.",
+          "language": "cpp",
+          "code": "std::cout ___ \"Equipo preparado\";",
+          "answers": [
+            "<<"
+          ],
+          "explanation": "Se necesitan los dos signos juntos: <<. El literal ya está escrito, de modo que el hueco no pide repetir las comillas ni el mensaje."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"Turno cerrado\";"
+        },
+        {
+          "type": "paragraph",
+          "text": "El punto y coma está después de la comilla que cierra el literal. Así termina la instrucción, sin añadirse al texto Turno cerrado. Más adelante veremos otras líneas que no terminan con ese signo; por ahora lo necesitamos al final de esta instrucción de salida (Stroustrup, 2024)."
+        },
+        {
+          "type": "fill_code",
+          "id": "p1u1l2_construir_terminador_fragmento",
+          "question": "Completa el signo que falta después del literal para terminar la instrucción.",
+          "language": "cpp",
+          "code": "std::cout << \"Turno cerrado\"___",
+          "answers": [
+            ";"
+          ],
+          "explanation": "Falta el punto y coma después de las comillas. Si se escribiera dentro del literal, pasaría a ser parte del mensaje y la instrucción seguiría sin su terminador."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p1u1l2_reparar_signos_fragmento",
+          "question": "Se escribió std::cout < \"Pedido listo\":. ¿Qué corrección conserva el mensaje y convierte el fragmento en la instrucción de salida que hemos estudiado?",
+          "options": [
+            "std::cout << \"Pedido listo:\";",
+            "std::cout < \"Pedido listo\";",
+            "std::cout << \"Pedido listo\";"
+          ],
+          "correctIndex": 2,
+          "explanation": "Se cambia el signo < por el operador << y el signo final por punto y coma. El literal \"Pedido listo\" conserva su contenido. La primera opción añadiría dos puntos al mensaje y la segunda mantendría el operador incorrecto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Colocar la instrucción dentro de un programa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar el programa hay que preparar el código C++. El compilador es una herramienta que traduce ese código y comprueba reglas del lenguaje. Si detecta un error, informa de él mediante un mensaje llamado diagnóstico (Stroustrup, 2024). La app reúne las herramientas necesarias; más adelante utilizaremos su botón Compilar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>"
+        },
+        {
+          "type": "paragraph",
+          "text": "C++ dispone de una biblioteca estándar: un conjunto de componentes preparados para tareas habituales. La línea #include <iostream> incorpora la información que el compilador necesita para reconocer std::cout. iostream es el nombre de la cabecera que proporciona esa información. Esta línea prepara el uso de la salida de texto; no muestra un mensaje (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conservaremos el nombre completo std::cout. La parte std:: indica que utilizamos un nombre de la biblioteca estándar. No hace falta inventar ese nombre ni sustituirlo por el mensaje que queremos mostrar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función agrupa instrucciones con un nombre. En nuestros programas, la ejecución de las instrucciones que escribimos comienza en la función main; por eso la llamamos punto de entrada. Aquí entrada indica dónde comienza esa ejecución, no unos datos que haya que escribir. Conservamos los dos paréntesis después de main y dejamos vacío su interior. Las llaves delimitan el cuerpo de la función: la zona donde colocamos sus instrucciones. Este cuerpo todavía está vacío (Stroustrup, 2024)."
         },
         {
           "type": "multiple_choice",
@@ -158,26 +178,54 @@
           "explanation": "C++ distingue mayúsculas y minúsculas. El punto de entrada de este programa es main."
         },
         {
-          "type": "fill_code",
-          "id": "operador_salida",
-          "question": "Escribe únicamente el operador de dos caracteres que inserta el texto en std::cout.",
+          "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    std::cout ___ \"Puerta abierta\";\n    return 0;\n}\n",
-          "answers": [
-            "<<"
-          ],
-          "explanation": "El operador de inserción en este flujo es <<, con dos signos."
+          "code": "int main() {\n    return 0;\n}"
         },
         {
-          "type": "fill_code",
-          "id": "terminador_salida",
-          "question": "Escribe únicamente el carácter que termina esta instrucción de salida.",
+          "type": "paragraph",
+          "text": "int indica aquí que main devuelve un número entero para comunicar cómo terminó el programa. return 0; termina la función y comunica una terminación correcta. Ese cero no se envía a la consola: devolver un resultado de terminación y mostrar texto son acciones diferentes (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En nuestros primeros programas escribiremos return 0; para hacer visible esa terminación. C++ también permite llegar al final de main sin escribirla; en ese caso se obtiene el mismo resultado de terminación correcto. No significa que haya aparecido un cero en la salida de texto (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Turno iniciado\"___\n    return 0;\n}\n",
-          "answers": [
-            ";"
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Inicio confirmado\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya podemos reunir las piezas. La cabecera prepara el uso de la salida de texto. Dentro de main, la primera instrucción escribe Inicio confirmado. Después return 0; termina la función. La última llave cierra el cuerpo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Observa dónde aparece el punto y coma: al final de la instrucción de salida y de return 0;. No se añade al final de #include <iostream>, después de la llave que abre main ni después de la llave que cierra este cuerpo. Tampoco los saltos de línea del código se convierten por sí solos en saltos de línea del mensaje."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "accion_visible",
+          "question": "¿Qué parte del ejemplo produce el mensaje visible?",
+          "options": [
+            "#include <iostream>",
+            "std::cout << \"Inicio confirmado\";",
+            "return 0;"
           ],
-          "explanation": "El punto y coma termina esta instrucción; no es parte del mensaje."
+          "correctIndex": 1,
+          "explanation": "std::cout recibe el contenido del literal y lo escribe en la consola. La cabecera proporciona al compilador la información necesaria para reconocer esa salida. return 0; termina main y comunica un resultado de terminación; no imprime el cero."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "return_no_imprime",
+          "question": "Un programa ejecuta std::cout << \"Listo\"; y después return 0;. ¿Qué salida de texto produce?",
+          "options": [
+            "0",
+            "Listo0",
+            "Listo"
+          ],
+          "correctIndex": 2,
+          "explanation": "La instrucción de salida escribe Listo. Después return 0; termina main con un resultado correcto, pero no envía ese cero a la consola. Por eso no se añade ningún dígito al mensaje."
         }
       ]
     },
@@ -185,16 +233,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Construir la estructura completa"
+          "text": "Reunir y recuperar las piezas"
         },
         {
           "type": "paragraph",
-          "text": "Ahora combinaremos las piezas conocidas. En estos programas, #include <iostream> aparece antes de usar std::cout para hacer disponibles las declaraciones necesarias. La instrucción que muestra el mensaje queda dentro del cuerpo de main (Stroustrup, 2024).\n\nEn la actividad siguiente, construye primero la estructura y sitúa después las acciones en el orden solicitado. La llave final cierra el cuerpo; no es un carácter que debamos mostrar en la consola.",
-          "emphasis": [
-            {
-              "text": "dentro del cuerpo de main"
-            }
-          ]
+          "text": "Para construir el programa siguiente, coloca primero la cabecera. Después abre el cuerpo de main, coloca dentro la instrucción que muestra el texto y la que termina la función, y cierra el cuerpo con su llave. Cada tarjeta contiene una línea del código. El separador vacío sólo permite dejar una línea en blanco para facilitar la lectura."
         },
         {
           "type": "order_code",
@@ -214,20 +257,61 @@
             2,
             3
           ],
-          "explanation": "`#include <iostream>` incorpora las declaraciones necesarias para usar `std::cout`. Dentro de las llaves de `main`, la instrucción `std::cout << \"Acceso autorizado\";` escribe el mensaje. `return 0;` termina la función y la última llave cierra su cuerpo.",
+          "explanation": "La cabecera va antes de main. La llave de apertura comienza su cuerpo; dentro se escribe primero el mensaje y después return 0; termina la función. La última tarjeta cierra ese cuerpo. Así la salida es Acceso autorizado y no incluye el cero.",
           "reviewFeedback": "Distingue las líneas que preparan la biblioteca de las instrucciones que pertenecen al cuerpo de main. Revisa también qué llave cierra ese cuerpo: una instrucción no puede quedar fuera del lugar donde debe ejecutarse."
         },
         {
-          "type": "multiple_choice",
-          "id": "return_no_imprime",
-          "question": "Un programa ejecuta std::cout << \"Listo\"; y después return 0;. ¿Qué salida de texto produce?",
-          "options": [
-            "0",
-            "Listo0",
-            "Listo"
+          "type": "paragraph",
+          "text": "Ahora la estructura ya está preparada en cada ejercicio. Decide qué pieza falta en la instrucción de salida: el texto entre comillas, la operación que lo envía a la consola o el signo que termina la instrucción. Las otras líneas conservan las funciones que acabamos de estudiar."
+        },
+        {
+          "type": "fill_code",
+          "id": "literal_construido",
+          "question": "Escribe un único literal de texto, con comillas dobles, para mostrar Muelle cerrado.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "\"Muelle cerrado\""
           ],
-          "correctIndex": 2,
-          "explanation": "return no inserta el cero en std::cout. El mensaje visible sigue siendo Listo."
+          "explanation": "El hueco pide \"Muelle cerrado\", con comillas dobles alrededor del texto. El operador y el punto y coma ya están escritos. El programa muestra el contenido del literal, no sus comillas."
+        },
+        {
+          "type": "fill_code",
+          "id": "operador_salida",
+          "question": "Escribe únicamente el operador de dos caracteres que envía el texto del literal a std::cout.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout ___ \"Puerta abierta\";\n    return 0;\n}\n",
+          "answers": [
+            "<<"
+          ],
+          "explanation": "El hueco sustituye al operador completo <<. Los dos signos juntos envían el contenido del literal a std::cout; escribir sólo uno no realiza esa operación."
+        },
+        {
+          "type": "fill_code",
+          "id": "terminador_salida",
+          "question": "Escribe únicamente el carácter que termina esta instrucción de salida.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Turno iniciado\"___\n    return 0;\n}\n",
+          "answers": [
+            ";"
+          ],
+          "explanation": "El literal ya tiene sus dos comillas. Después de la comilla de cierre falta el punto y coma que termina la instrucción. Ese signo queda fuera del texto que se muestra."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para leer el próximo programa, sigue sólo la instrucción que escribe en la consola. Distingue el contenido del literal de las comillas y los signos del código. La terminación de main no añade un número al mensaje."
+        },
+        {
+          "type": "output_prediction",
+          "id": "literal_independiente",
+          "question": "Predice la salida. Escribe el mensaje sin las comillas del código y conserva el espacio entre las palabras. El programa no añade un salto de línea al mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Archivo preparado\";\n    return 0;\n}\n",
+          "answers": [
+            "Archivo preparado"
+          ],
+          "explanation": "Se muestra Archivo preparado, con un espacio entre las palabras. Las comillas, el punto y coma y los saltos de línea que separan las instrucciones del código fuente no forman parte de esta salida.",
+          "outputComparison": "exact"
         }
       ]
     },
@@ -235,7 +319,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Construir un mensaje exacto"
+          "text": "Construir una salida en el editor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de escribir una instrucción completa, comprueba que sabes qué determina su mensaje. Lee el programa y separa dos cuestiones: qué texto muestra ahora y qué parte tendrías que cambiar para mostrar otro."
         },
         {
           "type": "output_prediction",
@@ -251,65 +339,69 @@
           "reviewFeedback": "Revisa qué caracteres están dentro del literal y distingue ese contenido de las comillas y de los signos que estructuran la instrucción."
         },
         {
-          "type": "heading",
-          "text": "Modificar únicamente el mensaje"
-        },
-        {
-          "type": "paragraph",
-          "text": "Modifica únicamente el contenido del literal de texto en este editor, entre las comillas dobles. Conserva intacto todo el resto del programa, incluidas las comillas que delimitan ese contenido. El programa debe mostrar este mensaje exacto:\n\nCaja recibida\n\nConserva el espacio entre las palabras. La salida debe contener únicamente ese mensaje, sin comillas ni un salto de línea final.\n\nPulsa Compilar, ejecutar y comprobar. Observa la salida nueva y el veredicto. Si aparece Incorrecto, revisa el contenido del literal, corrige la diferencia y vuelve a ejecutar esta misma actividad. Una compilación fallida muestra un diagnóstico, es decir, un mensaje que informa del problema detectado. Hay que corregir ese problema y volver a compilar antes de poder comprobar la salida (Stroustrup, 2024).\n\nEl icono Reiniciar código, a la derecha de C++ en la barra de la consola, permite recuperar el punto de partida si necesitas rehacer el intento.",
-          "emphasis": [
-            {
-              "text": "Modifica únicamente el contenido del literal de texto"
-            },
-            {
-              "text": "Conserva intacto todo el resto del programa"
-            },
-            {
-              "text": "Compilar, ejecutar y comprobar"
-            },
-            {
-              "text": "esta misma actividad"
-            },
-            {
-              "text": "Reiniciar código"
-            }
-          ]
-        },
-        {
-          "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Zona inicial\";\n    return 0;\n}\n",
-          "outputCheck": {
-            "inputComparison": "exact",
-            "cases": [
-              {
-                "standardInput": "",
-                "outputs": [
-                  "Caja recibida"
-                ],
-                "explanation": "Las comillas delimitan el literal y no forman parte del mensaje.",
-                "reviewFeedback": [
-                  {
-                    "outputs": [
-                      "Zona segura"
-                    ],
-                    "text": "Revisa el mensaje solicitado en esta actividad y qué caracteres contiene el literal que acabas de ejecutar."
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
           "type": "multiple_choice",
           "id": "cambiar_mensaje",
-          "question": "Después de estas comprobaciones, ¿qué cambio modifica directamente el mensaje sin cambiar la estructura de main?",
+          "question": "En el programa mostrado, ¿qué cambio modifica directamente el mensaje sin cambiar la estructura de main?",
           "options": [
             "Cambiar main por un nombre cualquiera.",
             "Eliminar #include <iostream>.",
             "Cambiar los caracteres dentro de las comillas del literal."
           ],
           "correctIndex": 2,
-          "explanation": "El literal proporciona el texto. Cambiar el punto de entrada o quitar #include <iostream> altera una parte necesaria de este programa."
+          "explanation": "Los caracteres del literal determinan el texto mostrado. Cambiarlos permite escribir otro mensaje. El nombre main y la cabecera conservan sus funciones: cambiarlos no es la manera de elegir el texto."
+        },
+        {
+          "type": "heading",
+          "text": "Escribir la instrucción que falta"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor ya contiene la cabecera y el cuerpo de main. La zona antes de return 0; está vacía: ahí escribirás la instrucción que falta. No se recibe ninguna entrada. El programa debe mostrar exactamente el siguiente texto, con un espacio entre las palabras y sin un salto de línea al final:"
+        },
+        {
+          "type": "paragraph",
+          "text": "Acceso preparado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe una instrucción de salida completa usando las piezas practicadas: el nombre de la salida, el operador, el literal con el mensaje y su terminador. Conserva la cabecera, el nombre de main y la instrucción de terminación. Luego pulsa Compilar."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este editor, el botón inicia tres acciones relacionadas. Primero, las herramientas intentan construir el programa a partir del código. Si lo consiguen, la app lo ejecuta: entonces se llevan a cabo sus instrucciones. Por último, comprueba si el texto obtenido coincide con el solicitado. Preparar el programa, ejecutarlo y comprobar su resultado son acciones distintas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si aparece un diagnóstico de compilación, el código todavía no ha podido convertirse en un programa que se pueda ejecutar. Revisa los signos y el lugar donde escribiste la instrucción. Si el programa se ejecuta pero muestra otro texto, compara las palabras y el espacio interior con la salida requerida. Corrige lo necesario y vuelve a comprobarlo."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Acceso preparado"
+                ],
+                "explanation": "La instrucción construida debe escribir Acceso preparado. No se introducen datos y no se pide un salto de línea final."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comparar la instrucción construida"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Acceso preparado\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La instrucción std::cout << \"Acceso preparado\"; proporciona el mensaje y termina antes de return 0;. Las comillas delimitan el texto y no se muestran. La cabecera y las llaves mantienen la estructura del programa."
         }
       ]
     },
@@ -317,68 +409,56 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Qué se conserva al cambiar el mensaje"
+          "text": "Reparar una instrucción incorrecta"
         },
         {
           "type": "paragraph",
-          "text": "La ejecución que resolvió el objetivo produjo Caja recibida. Las comillas delimitan el literal dentro del código y no forman parte del mensaje (Stroustrup, 2024).\n\nLa comprobación de salida admite distintas implementaciones que produzcan los caracteres solicitados; no exige un número concreto de instrucciones.",
-          "emphasis": [
-            {
-              "text": "La ejecución que resolvió el objetivo",
-              "style": "bold"
-            },
-            {
-              "text": "distintas implementaciones",
-              "style": "bold"
-            }
-          ]
+          "text": "El segundo programa ya intenta mostrar un mensaje, pero contiene dos signos incorrectos en la instrucción de salida. Tu trabajo es repararlos, conservando el texto y el resto del programa. Esta vez no hace falta crear otra instrucción ni cambiar las palabras del mensaje."
         },
         {
           "type": "paragraph",
-          "text": "El cambio que produce Caja recibida está dentro del literal. `main` y la cabecera conservan su función. `return 0;` comunica la terminación correcta sin imprimir un cero; los caracteres que se muestran proceden de la instrucción de salida (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "dentro del literal"
-            },
-            {
-              "text": "sin imprimir un cero"
-            }
-          ]
-        },
-        {
-          "type": "heading",
-          "text": "Aplicar el cambio a otro mensaje"
+          "text": "Compara la operación que aparece entre la salida y el literal con la que has practicado. Después revisa el signo situado tras la comilla de cierre. Haz la corrección en el editor y pulsa Compilar. Si queda un error, lee el diagnóstico y vuelve a revisar esa instrucción."
         },
         {
           "type": "paragraph",
-          "text": "En este nuevo editor, el punto de partida muestra Caja recibida. Modifica únicamente el contenido del literal de texto para mostrar Zona segura, con un espacio y sin salto final. Conserva intacto todo el resto del programa, incluidas las comillas que delimitan ese contenido. Pulsa Compilar, ejecutar y comprobar y corrige el intento si el resultado no coincide. Esta actividad conserva la estructura que acabas de utilizar.",
-          "emphasis": [
-            {
-              "text": "este nuevo editor"
-            },
-            {
-              "text": "Modifica únicamente el contenido del literal de texto"
-            }
-          ]
+          "text": "No se recibe ninguna entrada. Al quedar corregido, el programa debe mostrar exactamente este texto, sin salto de línea final:"
+        },
+        {
+          "type": "paragraph",
+          "text": "Registro completo"
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Caja recibida\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout < \"Registro completo\":\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
               {
                 "standardInput": "",
                 "outputs": [
-                  "Zona segura"
-                ]
+                  "Registro completo"
+                ],
+                "explanation": "Después de corregir los dos signos, se muestra Registro completo. No se cambia el literal ni se añade una segunda impresión."
               }
             ]
           }
         },
         {
+          "type": "heading",
+          "text": "Comparar la reparación"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Registro completo\";\n    return 0;\n}\n"
+        },
+        {
           "type": "paragraph",
-          "text": "Una solución cambia los caracteres entre comillas y conserva los elementos que permiten mostrar el texto. El veredicto de esta actividad corresponde sólo a Zona segura."
+          "text": "El operador << sustituye al signo < que no realizaba este envío de texto. El punto y coma sustituye al signo final incorrecto y queda fuera de las comillas. El contenido \"Registro completo\" se conserva. Así hemos corregido la escritura de la instrucción, sin cambiar lo que se quería comunicar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya has construido un literal, completado las piezas de una instrucción, organizado un programa, escrito una salida y reparado errores de escritura. En la siguiente lección usaremos varias instrucciones para controlar el orden y la separación de los mensajes."
         }
       ]
     }
@@ -559,63 +639,98 @@
         "id": "page_0000",
         "blocks": [
           "block_0000_0000",
-          "block_0000_0001",
-          "block_0000_0002",
-          "block_0000_0003",
-          "block_0000_0004"
+          "p1u1l2_objetivo",
+          "p1u1l2_primer_literal",
+          "p1u1l2_literal_contenido",
+          "p1u1l2_literal_espacio",
+          "p1u1l2_construir_literal_fragmento",
+          "p1u1l2_fragmento_salida",
+          "p1u1l2_salida_primera_lectura",
+          "p1u1l2_fragmento_contexto",
+          "p1u1l2_predecir_fragmento"
         ]
       },
       {
         "id": "page_0001",
         "blocks": [
           "block_0001_0000",
-          "block_0001_0001",
-          "block_0001_0002",
-          "block_0001_0003",
-          "block_0001_0004"
+          "p1u1l2_operador_fragmento",
+          "p1u1l2_leer_operador",
+          "p1u1l2_dos_signos",
+          "p1u1l2_construir_operador_fragmento",
+          "p1u1l2_signo_final_fragmento",
+          "p1u1l2_terminador_fragmento",
+          "p1u1l2_construir_terminador_fragmento",
+          "p1u1l2_reparar_signos_fragmento"
         ]
       },
       {
         "id": "page_0002",
         "blocks": [
           "block_0002_0000",
-          "block_0002_0001",
-          "block_0002_0002",
+          "p1u1l2_compilador",
+          "p1u1l2_cabecera",
+          "p1u1l2_explicar_cabecera",
+          "p1u1l2_nombre_salida",
+          "p1u1l2_marco_main",
+          "p1u1l2_explicar_main",
           "block_0002_0003",
-          "block_0002_0004",
-          "block_0002_0005"
+          "p1u1l2_terminar_main",
+          "p1u1l2_explicar_return",
+          "p1u1l2_convencion_return",
+          "p1u1l2_primer_programa_completo",
+          "p1u1l2_seguir_programa_completo",
+          "p1u1l2_signos_marco",
+          "block_0000_0004",
+          "block_0003_0003"
         ]
       },
       {
         "id": "page_0003",
         "blocks": [
           "block_0003_0000",
-          "block_0003_0001",
+          "p1u1l2_ordenar_instrucciones",
           "block_0003_0002",
-          "block_0003_0003"
+          "p1u1l2_recuperar_tres_piezas",
+          "block_0001_0004",
+          "block_0002_0004",
+          "block_0002_0005",
+          "p1u1l2_leer_sin_confundir",
+          "block_0001_0003"
         ]
       },
       {
         "id": "page_0004",
         "blocks": [
           "block_0004_0000",
+          "p1u1l2_recuperacion_cambio",
           "block_0004_0003",
-          "modificar_mensaje_titulo",
-          "block_0004_0001",
-          "block_0004_0002",
-          "block_0004_0004"
+          "block_0004_0004",
+          "p1u1l2_construccion_titulo",
+          "p1u1l2_construccion_objetivo",
+          "p1u1l2_construccion_salida",
+          "p1u1l2_construccion_acciones",
+          "p1u1l2_compilar_ejecutar_comparar",
+          "p1u1l2_construccion_comprobar",
+          "p1u1l2_construir_salida",
+          "p1u1l2_construir_referencia_titulo",
+          "p1u1l2_construir_referencia_codigo",
+          "p1u1l2_construir_referencia_razon"
         ]
       },
       {
         "id": "page_0005",
         "blocks": [
           "block_0005_0000",
-          "block_0005_0001",
-          "block_0005_0003",
-          "block_0005_0004",
-          "block_0005_0005",
-          "block_0005_0006",
-          "block_0005_0007"
+          "p1u1l2_reparacion_objetivo",
+          "p1u1l2_reparacion_comprobar",
+          "p1u1l2_reparacion_salida_contexto",
+          "p1u1l2_reparacion_salida",
+          "p1u1l2_reparar_salida",
+          "p1u1l2_reparar_referencia_titulo",
+          "p1u1l2_reparar_referencia_codigo",
+          "p1u1l2_reparar_referencia_razon",
+          "p1u1l2_cierre"
         ]
       }
     ],
@@ -1121,6 +1236,474 @@
           "block": 2
         },
         "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l2_objetivo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l2_primer_literal",
+        "sha256": "254e9b9a52820190b2852e0c3c75d2febb6b0d6be5da582afc42bc3d4bd95489",
+        "storage": {
+          "page": 7,
+          "block": 1
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l2_literal_contenido",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 2
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l2_literal_espacio",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 3
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l2_construir_literal_fragmento",
+        "sha256": "1a4e349236cd8bedb99723a1d7677da6b349ea163324e2db8e62a67f139e5e52",
+        "storage": {
+          "page": 7,
+          "block": 4
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l2_fragmento_salida",
+        "sha256": "e2c9a123eab0c9d9f0eca7f3b01b9f3424f68f1a1ad65d933dc743cd3ba05164",
+        "storage": {
+          "page": 7,
+          "block": 5
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l2_salida_primera_lectura",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 6
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l2_fragmento_contexto",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 7
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l2_predecir_fragmento",
+        "sha256": "677d18fe32c45038bb43b0f74bfbabd3cbc41e5a613616098bf82e7571ae5f6c",
+        "storage": {
+          "page": 7,
+          "block": 8
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l2_operador_fragmento",
+        "sha256": "b881c6c0f5255a8fad9d6d3142d13b66168a026bfcdb36eaf9c3fed50cc3454c",
+        "storage": {
+          "page": 7,
+          "block": 9
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l2_leer_operador",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 10
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l2_dos_signos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 11
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l2_construir_operador_fragmento",
+        "sha256": "b757278ea9253e94d972c9d9e0843da1b859e353ed7d7fcdc3b85c7322ea5433",
+        "storage": {
+          "page": 7,
+          "block": 12
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l2_signo_final_fragmento",
+        "sha256": "c1bd2b38b18d798f2e70575c2d43fd9c71dde021ada9adfef027638d7c28c3f2",
+        "storage": {
+          "page": 7,
+          "block": 13
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l2_terminador_fragmento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 14
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l2_construir_terminador_fragmento",
+        "sha256": "69b9c38e26a296bee8b2b9a1f5b4b7be29d1f7bddf10c5b39c0fe08d0bfe065b",
+        "storage": {
+          "page": 7,
+          "block": 15
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l2_reparar_signos_fragmento",
+        "sha256": "1be8d788ed1a73e040be361f2abaa74dfd6b5dae6adc1ca24bccee5d6243f3d4",
+        "storage": {
+          "page": 7,
+          "block": 16
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l2_compilador",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 17
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_cabecera",
+        "sha256": "4d57703c392e7ec2b793fe0cbde37713941c0db835d1d6816588cd74aec2884e",
+        "storage": {
+          "page": 7,
+          "block": 18
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_explicar_cabecera",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 19
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_nombre_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 20
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_marco_main",
+        "sha256": "643f5a5a74c9abfb5af514978f6b60e2c66aa47f05cebe0b92d418b54abb8854",
+        "storage": {
+          "page": 7,
+          "block": 21
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_explicar_main",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 22
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_terminar_main",
+        "sha256": "5f817f342255ced7bf35ebae6bb21634a6a50d4b7d5de05f5620f8e56811691f",
+        "storage": {
+          "page": 7,
+          "block": 23
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_explicar_return",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 24
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_convencion_return",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 25
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_primer_programa_completo",
+        "sha256": "ff483e2fc4a28e8b778a1f479aa930b50342430bc8a52ca4331cfefabdfefa1d",
+        "storage": {
+          "page": 7,
+          "block": 26
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_seguir_programa_completo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 27
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_signos_marco",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 28
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l2_ordenar_instrucciones",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 29
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u1l2_recuperar_tres_piezas",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 30
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u1l2_leer_sin_confundir",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 31
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u1l2_recuperacion_cambio",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 32
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l2_construccion_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 33
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l2_construccion_objetivo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 34
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l2_construccion_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 35
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l2_construccion_acciones",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 36
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l2_compilar_ejecutar_comparar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 37
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l2_construccion_comprobar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 38
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l2_construir_salida",
+        "sha256": "ac806e90566979951d886cd822a4a85cfc5e1317efc04f0d85148f745c21ff35",
+        "storage": {
+          "page": 7,
+          "block": 39
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l2_construir_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 40
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l2_construir_referencia_codigo",
+        "sha256": "6a28f0d42eddb435db9fa7a449f179f60bfa31f8471f7b0083ac6f24e712326f",
+        "storage": {
+          "page": 7,
+          "block": 41
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l2_construir_referencia_razon",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 42
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u1l2_reparacion_objetivo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 43
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u1l2_reparacion_comprobar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 44
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u1l2_reparacion_salida_contexto",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 45
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u1l2_reparacion_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 46
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u1l2_reparar_salida",
+        "sha256": "fde1bc6a9a681bd8e854d0329e1eb96d4b402c4a83063a808d92cbbc85b4d3fd",
+        "storage": {
+          "page": 7,
+          "block": 47
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u1l2_reparar_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 48
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u1l2_reparar_referencia_codigo",
+        "sha256": "e83cef09f648e7ec26e60893dbc755118d3d101e21f1a3312baa475497cc55c1",
+        "storage": {
+          "page": 7,
+          "block": 49
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u1l2_reparar_referencia_razon",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 50
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u1l2_cierre",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 51
+        },
+        "progressPage": "page_0005"
       }
     ],
     "editorial": [
@@ -1183,6 +1766,76 @@
         "id": "block_0004_0001",
         "beforeSha256": "d6dc1f2d0e8756eee143d2228cdebc103a1536f4dd4ad49cba484a62dabb4c3f",
         "afterSha256": "1cf60c1545d32b4902fc4cca26c0e117c57a463da8f7e5b9a2ce3d7a29a02c87"
+      },
+      {
+        "id": "block_0000_0000",
+        "beforeSha256": "8309d76d93a1e7e1cee78dba96792775c586ff466dc78fb4f67137ad5600f64c",
+        "afterSha256": "c22389ab857af4f7af532e2ceec7431ce535160546f728b2766805a2a8bcd8cb"
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "68ed74a22cae5a8ddad1b8c658b66387f6864fd4f30ff1651132ac8b119d43dd",
+        "afterSha256": "9c9016cfa8631b6297f0df86589fbf70f75bacb671e7f8155603bc972513b190"
+      },
+      {
+        "id": "block_0002_0000",
+        "beforeSha256": "1f26b7f2df63c2e9d8fb1078454be92feee849a1207b184281ee3235230cf7df",
+        "afterSha256": "012cb2f89f7f42c19074cbbffae7f6dab208bf032bda79785acb3e292078389e"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "73e36f6b77452d9b6a528446825249fe6f4fd5fce81ae9e920f401dd3da2df3e",
+        "afterSha256": "befd24858a71a57b5056b7e84a677a3515a626dc730eaa902fac8f0c1d6952ca"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "2b79ae3098852467f0de0ade4ee153e7b3ea2b75b8a95c1452b279227f9fcd72",
+        "afterSha256": "64bcb79d7e04cb18ef0915480486276178091974194a9d66f04ec3cb1aca2fa9"
+      },
+      {
+        "id": "block_0005_0000",
+        "beforeSha256": "e9ea0c7d5b7c12f4df513325863ef2d9a409dda84dc92fc0eb9fb2ef462ce60e",
+        "afterSha256": "89e5a31e5bd3a0afed1371f70985670a8d9d57a037cf63748f265c5e734e5bd0"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "a62ae26542a8851bb2f193b34cc275a83f930100868641063bf3d57d45806747",
+        "afterSha256": "579b9f2d3fee13dce2cd6a00d9f38e842c5bff382fce105a0b6d670cb8407f69"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "5313e3c8ade896ffd1d070cb96e27beff9d94b818c4178bc42ab8ecd79617a05",
+        "afterSha256": "3a2166816dde246c1e9359bfa00b8ccb06f5396c5d262c8d6e159bc2a8827081"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "359576e4b382b04afd544f44945a2d3c5e5485dab30fef60674fb25ae22f0286",
+        "afterSha256": "441e67385a6f870b537efe07b8fc0a3e3c4c96fc036d9d50440119528ddb1302"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "ef95ecdda93d2e87a00e88943515588d0d6296c82afa881abee6ad4e0ac3fe18",
+        "afterSha256": "055840c5453c04a758e55e77b4391a7825dff89e0125e717407cd2df73c7b683"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "68adc8bd7a31a9fe1ffacf5df6346d86aefcf9016f96e75260a01d63e2981441",
+        "afterSha256": "0731c9d3e2b701d2321c746e0ce48caaab709fbe03cd89e2638b9f24c682a336"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "5a3f46e9d5c535602c4c8479450d11a2f0a6f815916aecb48ed49b0553abdeb1",
+        "afterSha256": "905e49c72d3c29ce47e11e8cc99f701f13c2ed40a3659b3a79922cc3d2a1f089"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "39f74eac9f1eca35053c42740243ac445d3c4dc8ad8b1c30f15c2ceb567ae91f",
+        "afterSha256": "f4c536bfb5516438438429883b79b44b6d57c82cb906b6039ca31b92f1547ec6"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "f4c536bfb5516438438429883b79b44b6d57c82cb906b6039ca31b92f1547ec6",
+        "afterSha256": "e6363476353eeafc704a72b7155da2c00c1335c280b20d6874a7222be1077d1e"
       }
     ],
     "retired": [
@@ -1241,6 +1894,293 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Zona segura\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0000_0001",
+        "page": "page_0000",
+        "next": "block_0000_0004",
+        "block": {
+          "type": "paragraph",
+          "text": "Vamos a construir un programa que muestre un mensaje. El texto escrito en C++ es su código fuente: describe las acciones que queremos ejecutar (Stroustrup, 2024).\n\nEn el ejemplo, localiza primero el mensaje Inicio confirmado. Después recorreremos las partes que permiten mostrarlo. No necesitas conocer todavía todos los detalles de una biblioteca o de una función para empezar a relacionar cada pieza con una acción concreta.",
+          "emphasis": [
+            {
+              "text": "código fuente"
+            }
+          ]
+        }
+      },
+      {
+        "id": "block_0000_0002",
+        "page": "page_0000",
+        "next": "block_0000_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Inicio confirmado\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0000_0003",
+        "page": "page_0000",
+        "next": "block_0000_0004",
+        "block": {
+          "type": "paragraph",
+          "text": "El compilador es una herramienta que analiza el código fuente según las reglas de C++ y, si lo acepta, lo traduce a instrucciones para la computadora. Esa traducción forma parte de la construcción del programa (Stroustrup, 2024).\n\nUna biblioteca reúne recursos que otros programas pueden utilizar. La biblioteca estándar de C++ incluye los de entrada y salida. La cabecera <iostream> contiene las declaraciones de esos recursos: la información que permite al compilador reconocer nombres como std::cout y cómo utilizarlos. #include <iostream> incorpora esa información al preparar nuestro código; esta es la forma que utilizaremos en el editor de código (Stroustrup, 2024).\n\nstd::cout es el flujo de salida: recibe los datos que vamos a mostrar. El prefijo std:: permite identificar cout entre los nombres de la biblioteca estándar. En la instrucción del ejemplo, el texto situado entre comillas es el mensaje que enviamos a ese flujo (Stroustrup, 2024).\n\nmain contiene las instrucciones de este programa, encerradas entre las llaves { y }. Primero se envía el mensaje; después return 0; termina main y comunica al sistema que el programa finalizó correctamente. Ese cero no se envía a la salida: informar al sistema y mostrar un mensaje son acciones diferentes (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "Una biblioteca reúne recursos"
+            },
+            {
+              "text": "std::cout es el flujo de salida"
+            },
+            {
+              "text": "main contiene las instrucciones de este programa"
+            },
+            {
+              "text": "Ese cero no se envía a la salida"
+            }
+          ]
+        }
+      },
+      {
+        "id": "block_0001_0001",
+        "page": "page_0001",
+        "next": "block_0001_0003",
+        "block": {
+          "type": "paragraph",
+          "text": "Las comillas dobles delimitan un literal de texto: permiten escribir un texto concreto dentro del código. En \"Puerto listo\", el mensaje es Puerto listo. Las comillas señalan sus límites y no se muestran como parte de ese mensaje (Stroustrup, 2024).\n\nEl punto y coma termina la instrucción de salida. Pertenece a las reglas de escritura del lenguaje, llamadas sintaxis; no se agrega al mensaje. Al leer el código, distingue los caracteres que delimitan o terminan una instrucción de los datos que esa instrucción envía (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "Las comillas dobles delimitan un literal de texto"
+            },
+            {
+              "text": "El punto y coma termina la instrucción de salida"
+            }
+          ]
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "page": "page_0001",
+        "next": "block_0001_0003",
+        "block": {
+          "type": "paragraph",
+          "text": "En std::cout << \"Puerto listo\";, los dos signos << forman un operador: una marca que indica una operación. Aquí la operación consiste en insertar el texto de la derecha en el flujo de salida de la izquierda. Por eso lo llamamos operador de inserción (Stroustrup, 2024).\n\nConserva juntos los dos signos. Un solo < es otro operador de C++ y no expresa esta inserción. Más adelante estudiaremos su uso; ahora necesitamos distinguirlo para escribir y revisar nuestras instrucciones de salida (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "operador de inserción"
+            },
+            {
+              "text": "Conserva juntos los dos signos"
+            }
+          ]
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "page": "page_0002",
+        "next": "block_0002_0003",
+        "block": {
+          "type": "paragraph",
+          "text": "main es el punto de entrada de estos programas: allí comienza la ejecución de las instrucciones que escribimos. Las llaves { y } delimitan su cuerpo, es decir, el grupo de instrucciones que contiene (Stroustrup, 2024).\n\nEn int main(), int indica que main devuelve un resultado de tipo entero, como el 0 de return 0;. Los paréntesis forman parte de la definición; en esta forma están vacíos. En la siguiente unidad estudiaremos los tipos y después construiremos otras funciones. Por ahora, conserva completa esta estructura y distingue el resultado devuelto del texto mostrado (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "main es el punto de entrada"
+            },
+            {
+              "text": "un resultado de tipo entero"
+            }
+          ]
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "page": "page_0002",
+        "next": "block_0002_0003",
+        "block": {
+          "type": "paragraph",
+          "text": "Cada instrucción de salida de nuestros ejemplos termina con ;. Eso no significa que cada línea del archivo necesite uno. El punto y coma señala el final de esa instrucción; un cambio de línea del archivo, por sí solo, no lo sustituye (Stroustrup, 2024).\n\n#include <iostream> es una directiva: prepara el código incorporando la información de la cabecera. Esta directiva no lleva ; al final. Las llaves { y } delimitan el cuerpo de main; no se necesita ; después de la llave que cierra esa función. En el ejemplo completo puedes reconocer dónde se termina una instrucción de salida, dónde se incluye una cabecera y dónde se cierra main (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "El punto y coma señala el final de esa instrucción"
+            },
+            {
+              "text": "Esta directiva no lleva ; al final"
+            },
+            {
+              "text": "Las llaves { y } delimitan el cuerpo de main"
+            }
+          ]
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "page": "page_0003",
+        "next": "block_0003_0002",
+        "block": {
+          "type": "paragraph",
+          "text": "Ahora combinaremos las piezas conocidas. En estos programas, #include <iostream> aparece antes de usar std::cout para hacer disponibles las declaraciones necesarias. La instrucción que muestra el mensaje queda dentro del cuerpo de main (Stroustrup, 2024).\n\nEn la actividad siguiente, construye primero la estructura y sitúa después las acciones en el orden solicitado. La llave final cierra el cuerpo; no es un carácter que debamos mostrar en la consola.",
+          "emphasis": [
+            {
+              "text": "dentro del cuerpo de main"
+            }
+          ]
+        }
+      },
+      {
+        "id": "modificar_mensaje_titulo",
+        "page": "page_0004",
+        "next": "block_0004_0004",
+        "block": {
+          "type": "heading",
+          "text": "Modificar únicamente el mensaje"
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "page": "page_0004",
+        "next": "block_0004_0004",
+        "block": {
+          "type": "paragraph",
+          "text": "Modifica únicamente el contenido del literal de texto en este editor, entre las comillas dobles. Conserva intacto todo el resto del programa, incluidas las comillas que delimitan ese contenido. El programa debe mostrar este mensaje exacto:\n\nCaja recibida\n\nConserva el espacio entre las palabras. La salida debe contener únicamente ese mensaje, sin comillas ni un salto de línea final.\n\nPulsa Compilar, ejecutar y comprobar. Observa la salida nueva y el veredicto. Si aparece Incorrecto, revisa el contenido del literal, corrige la diferencia y vuelve a ejecutar esta misma actividad. Una compilación fallida muestra un diagnóstico, es decir, un mensaje que informa del problema detectado. Hay que corregir ese problema y volver a compilar antes de poder comprobar la salida (Stroustrup, 2024).\n\nEl icono Reiniciar código, a la derecha de C++ en la barra de la consola, permite recuperar el punto de partida si necesitas rehacer el intento.",
+          "emphasis": [
+            {
+              "text": "Modifica únicamente el contenido del literal de texto"
+            },
+            {
+              "text": "Conserva intacto todo el resto del programa"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            },
+            {
+              "text": "esta misma actividad"
+            },
+            {
+              "text": "Reiniciar código"
+            }
+          ]
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "page": "page_0004",
+        "next": "block_0004_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Zona inicial\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caja recibida"
+                ],
+                "explanation": "Las comillas delimitan el literal y no forman parte del mensaje.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Zona segura"
+                    ],
+                    "text": "Revisa el mensaje solicitado en esta actividad y qué caracteres contiene el literal que acabas de ejecutar."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "page": "page_0005",
+        "next": "",
+        "block": {
+          "type": "paragraph",
+          "text": "La ejecución que resolvió el objetivo produjo Caja recibida. Las comillas delimitan el literal dentro del código y no forman parte del mensaje (Stroustrup, 2024).\n\nLa comprobación de salida admite distintas implementaciones que produzcan los caracteres solicitados; no exige un número concreto de instrucciones.",
+          "emphasis": [
+            {
+              "text": "La ejecución que resolvió el objetivo",
+              "style": "bold"
+            },
+            {
+              "text": "distintas implementaciones",
+              "style": "bold"
+            }
+          ]
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "page": "page_0005",
+        "next": "",
+        "block": {
+          "type": "paragraph",
+          "text": "El cambio que produce Caja recibida está dentro del literal. `main` y la cabecera conservan su función. `return 0;` comunica la terminación correcta sin imprimir un cero; los caracteres que se muestran proceden de la instrucción de salida (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "dentro del literal"
+            },
+            {
+              "text": "sin imprimir un cero"
+            }
+          ]
+        }
+      },
+      {
+        "id": "block_0005_0004",
+        "page": "page_0005",
+        "next": "",
+        "block": {
+          "type": "heading",
+          "text": "Aplicar el cambio a otro mensaje"
+        }
+      },
+      {
+        "id": "block_0005_0005",
+        "page": "page_0005",
+        "next": "",
+        "block": {
+          "type": "paragraph",
+          "text": "En este nuevo editor, el punto de partida muestra Caja recibida. Modifica únicamente el contenido del literal de texto para mostrar Zona segura, con un espacio y sin salto final. Conserva intacto todo el resto del programa, incluidas las comillas que delimitan ese contenido. Pulsa Compilar, ejecutar y comprobar y corrige el intento si el resultado no coincide. Esta actividad conserva la estructura que acabas de utilizar.",
+          "emphasis": [
+            {
+              "text": "este nuevo editor"
+            },
+            {
+              "text": "Modifica únicamente el contenido del literal de texto"
+            }
+          ]
+        }
+      },
+      {
+        "id": "block_0005_0006",
+        "page": "page_0005",
+        "next": "",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Caja recibida\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Zona segura"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0007",
+        "page": "page_0005",
+        "next": "",
+        "block": {
+          "type": "paragraph",
+          "text": "Una solución cambia los caracteres entre comillas y conserva los elementos que permiten mostrar el texto. El veredicto de esta actividad corresponde sólo a Zona segura."
         }
       }
     ],
@@ -2252,6 +3192,1706 @@
             ]
           }
         ]
+      },
+      {
+        "retired": [
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0003_0001",
+          "modificar_mensaje_titulo",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0005_0001",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006",
+          "block_0005_0007"
+        ],
+        "current": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              "block_0000_0000",
+              "block_0000_0001",
+              "block_0000_0002",
+              "block_0000_0003",
+              "block_0000_0004"
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              "block_0001_0000",
+              "block_0001_0001",
+              "block_0001_0002",
+              "block_0001_0003",
+              "block_0001_0004"
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              "block_0002_0000",
+              "block_0002_0001",
+              "block_0002_0002",
+              "block_0002_0003",
+              "block_0002_0004",
+              "block_0002_0005"
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              "block_0003_0000",
+              "block_0003_0001",
+              "block_0003_0002",
+              "block_0003_0003"
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              "block_0004_0000",
+              "block_0004_0003",
+              "modificar_mensaje_titulo",
+              "block_0004_0001",
+              "block_0004_0002",
+              "block_0004_0004"
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              "block_0005_0000",
+              "block_0005_0001",
+              "block_0005_0003",
+              "block_0005_0004",
+              "block_0005_0005",
+              "block_0005_0006",
+              "block_0005_0007"
+            ]
+          }
+        ],
+        "pages": [
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Un programa pequeño y completo"
+              },
+              {
+                "type": "paragraph",
+                "text": "Vamos a construir un programa que muestre un mensaje. El texto escrito en C++ es su código fuente: describe las acciones que queremos ejecutar (Stroustrup, 2024).\n\nEn el ejemplo, localiza primero el mensaje Inicio confirmado. Después recorreremos las partes que permiten mostrarlo. No necesitas conocer todavía todos los detalles de una biblioteca o de una función para empezar a relacionar cada pieza con una acción concreta.",
+                "emphasis": [
+                  {
+                    "text": "código fuente"
+                  }
+                ]
+              },
+              {
+                "type": "code",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Inicio confirmado\";\n    return 0;\n}\n"
+              },
+              {
+                "type": "paragraph",
+                "text": "El compilador es una herramienta que analiza el código fuente según las reglas de C++ y, si lo acepta, lo traduce a instrucciones para la computadora. Esa traducción forma parte de la construcción del programa (Stroustrup, 2024).\n\nUna biblioteca reúne recursos que otros programas pueden utilizar. La biblioteca estándar de C++ incluye los de entrada y salida. La cabecera <iostream> contiene las declaraciones de esos recursos: la información que permite al compilador reconocer nombres como std::cout y cómo utilizarlos. #include <iostream> incorpora esa información al preparar nuestro código; esta es la forma que utilizaremos en el editor de código (Stroustrup, 2024).\n\nstd::cout es el flujo de salida: recibe los datos que vamos a mostrar. El prefijo std:: permite identificar cout entre los nombres de la biblioteca estándar. En la instrucción del ejemplo, el texto situado entre comillas es el mensaje que enviamos a ese flujo (Stroustrup, 2024).\n\nmain contiene las instrucciones de este programa, encerradas entre las llaves { y }. Primero se envía el mensaje; después return 0; termina main y comunica al sistema que el programa finalizó correctamente. Ese cero no se envía a la salida: informar al sistema y mostrar un mensaje son acciones diferentes (Stroustrup, 2024).",
+                "emphasis": [
+                  {
+                    "text": "Una biblioteca reúne recursos"
+                  },
+                  {
+                    "text": "std::cout es el flujo de salida"
+                  },
+                  {
+                    "text": "main contiene las instrucciones de este programa"
+                  },
+                  {
+                    "text": "Ese cero no se envía a la salida"
+                  }
+                ]
+              },
+              {
+                "type": "multiple_choice",
+                "id": "accion_visible",
+                "question": "¿Qué parte del ejemplo produce el mensaje visible?",
+                "options": [
+                  "#include <iostream>",
+                  "std::cout << \"Inicio confirmado\";",
+                  "return 0;"
+                ],
+                "correctIndex": 1,
+                "explanation": "La instrucción con std::cout muestra el mensaje. #include <iostream> permite usar ese recurso y return 0 comunica al sistema cómo terminó el programa."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Comillas, contenido y terminador"
+              },
+              {
+                "type": "paragraph",
+                "text": "Las comillas dobles delimitan un literal de texto: permiten escribir un texto concreto dentro del código. En \"Puerto listo\", el mensaje es Puerto listo. Las comillas señalan sus límites y no se muestran como parte de ese mensaje (Stroustrup, 2024).\n\nEl punto y coma termina la instrucción de salida. Pertenece a las reglas de escritura del lenguaje, llamadas sintaxis; no se agrega al mensaje. Al leer el código, distingue los caracteres que delimitan o terminan una instrucción de los datos que esa instrucción envía (Stroustrup, 2024).",
+                "emphasis": [
+                  {
+                    "text": "Las comillas dobles delimitan un literal de texto"
+                  },
+                  {
+                    "text": "El punto y coma termina la instrucción de salida"
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "text": "En std::cout << \"Puerto listo\";, los dos signos << forman un operador: una marca que indica una operación. Aquí la operación consiste en insertar el texto de la derecha en el flujo de salida de la izquierda. Por eso lo llamamos operador de inserción (Stroustrup, 2024).\n\nConserva juntos los dos signos. Un solo < es otro operador de C++ y no expresa esta inserción. Más adelante estudiaremos su uso; ahora necesitamos distinguirlo para escribir y revisar nuestras instrucciones de salida (Stroustrup, 2024).",
+                "emphasis": [
+                  {
+                    "text": "operador de inserción"
+                  },
+                  {
+                    "text": "Conserva juntos los dos signos"
+                  }
+                ]
+              },
+              {
+                "type": "output_prediction",
+                "id": "literal_independiente",
+                "question": "Predice la salida. Escribe el mensaje sin las comillas del código y conserva el espacio entre las palabras. El programa no añade un salto de línea al mensaje.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Archivo preparado\";\n    return 0;\n}\n",
+                "answers": [
+                  "Archivo preparado"
+                ],
+                "explanation": "Se muestra Archivo preparado, con un espacio entre las palabras. Las comillas, el punto y coma y los saltos de línea que separan las instrucciones del código fuente no forman parte de esta salida.",
+                "outputComparison": "exact"
+              },
+              {
+                "type": "fill_code",
+                "id": "literal_construido",
+                "question": "Escribe un único literal de texto, con comillas dobles, para mostrar Muelle cerrado.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    std::cout << ___;\n    return 0;\n}\n",
+                "answers": [
+                  "\"Muelle cerrado\""
+                ],
+                "explanation": "Las comillas delimitan el literal; std::cout recibe su contenido."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "El cuerpo de main y la biblioteca"
+              },
+              {
+                "type": "paragraph",
+                "text": "main es el punto de entrada de estos programas: allí comienza la ejecución de las instrucciones que escribimos. Las llaves { y } delimitan su cuerpo, es decir, el grupo de instrucciones que contiene (Stroustrup, 2024).\n\nEn int main(), int indica que main devuelve un resultado de tipo entero, como el 0 de return 0;. Los paréntesis forman parte de la definición; en esta forma están vacíos. En la siguiente unidad estudiaremos los tipos y después construiremos otras funciones. Por ahora, conserva completa esta estructura y distingue el resultado devuelto del texto mostrado (Stroustrup, 2024).",
+                "emphasis": [
+                  {
+                    "text": "main es el punto de entrada"
+                  },
+                  {
+                    "text": "un resultado de tipo entero"
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "text": "Cada instrucción de salida de nuestros ejemplos termina con ;. Eso no significa que cada línea del archivo necesite uno. El punto y coma señala el final de esa instrucción; un cambio de línea del archivo, por sí solo, no lo sustituye (Stroustrup, 2024).\n\n#include <iostream> es una directiva: prepara el código incorporando la información de la cabecera. Esta directiva no lleva ; al final. Las llaves { y } delimitan el cuerpo de main; no se necesita ; después de la llave que cierra esa función. En el ejemplo completo puedes reconocer dónde se termina una instrucción de salida, dónde se incluye una cabecera y dónde se cierra main (Stroustrup, 2024).",
+                "emphasis": [
+                  {
+                    "text": "El punto y coma señala el final de esa instrucción"
+                  },
+                  {
+                    "text": "Esta directiva no lleva ; al final"
+                  },
+                  {
+                    "text": "Las llaves { y } delimitan el cuerpo de main"
+                  }
+                ]
+              },
+              {
+                "type": "multiple_choice",
+                "id": "nombre_entrada",
+                "question": "En el programa que estamos construyendo, ¿qué nombre debe conservarse como punto de entrada?",
+                "options": [
+                  "Main",
+                  "inicio",
+                  "main"
+                ],
+                "correctIndex": 2,
+                "explanation": "C++ distingue mayúsculas y minúsculas. El punto de entrada de este programa es main."
+              },
+              {
+                "type": "fill_code",
+                "id": "operador_salida",
+                "question": "Escribe únicamente el operador de dos caracteres que inserta el texto en std::cout.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    std::cout ___ \"Puerta abierta\";\n    return 0;\n}\n",
+                "answers": [
+                  "<<"
+                ],
+                "explanation": "El operador de inserción en este flujo es <<, con dos signos."
+              },
+              {
+                "type": "fill_code",
+                "id": "terminador_salida",
+                "question": "Escribe únicamente el carácter que termina esta instrucción de salida.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Turno iniciado\"___\n    return 0;\n}\n",
+                "answers": [
+                  ";"
+                ],
+                "explanation": "El punto y coma termina esta instrucción; no es parte del mensaje."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Construir la estructura completa"
+              },
+              {
+                "type": "paragraph",
+                "text": "Ahora combinaremos las piezas conocidas. En estos programas, #include <iostream> aparece antes de usar std::cout para hacer disponibles las declaraciones necesarias. La instrucción que muestra el mensaje queda dentro del cuerpo de main (Stroustrup, 2024).\n\nEn la actividad siguiente, construye primero la estructura y sitúa después las acciones en el orden solicitado. La llave final cierra el cuerpo; no es un carácter que debamos mostrar en la consola.",
+                "emphasis": [
+                  {
+                    "text": "dentro del cuerpo de main"
+                  }
+                ]
+              },
+              {
+                "type": "order_code",
+                "id": "armar_programa",
+                "question": "Ordena las piezas para construir un programa que muestre Acceso autorizado.",
+                "fragments": [
+                  "    std::cout << \"Acceso autorizado\";",
+                  "#include <iostream>",
+                  "    return 0;",
+                  "}",
+                  "int main() {"
+                ],
+                "correctOrder": [
+                  1,
+                  4,
+                  0,
+                  2,
+                  3
+                ],
+                "explanation": "`#include <iostream>` incorpora las declaraciones necesarias para usar `std::cout`. Dentro de las llaves de `main`, la instrucción `std::cout << \"Acceso autorizado\";` escribe el mensaje. `return 0;` termina la función y la última llave cierra su cuerpo.",
+                "reviewFeedback": "Distingue las líneas que preparan la biblioteca de las instrucciones que pertenecen al cuerpo de main. Revisa también qué llave cierra ese cuerpo: una instrucción no puede quedar fuera del lugar donde debe ejecutarse."
+              },
+              {
+                "type": "multiple_choice",
+                "id": "return_no_imprime",
+                "question": "Un programa ejecuta std::cout << \"Listo\"; y después return 0;. ¿Qué salida de texto produce?",
+                "options": [
+                  "0",
+                  "Listo0",
+                  "Listo"
+                ],
+                "correctIndex": 2,
+                "explanation": "return no inserta el cero en std::cout. El mensaje visible sigue siendo Listo."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Construir un mensaje exacto"
+              },
+              {
+                "type": "output_prediction",
+                "id": "prediccion_zona_inicial",
+                "question": "Lee el programa mostrado y predice el mensaje que produce. Conserva el espacio entre palabras; no añadas comillas ni un salto de línea final.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Zona inicial\";\n    return 0;\n}\n",
+                "answers": [
+                  "Zona inicial"
+                ],
+                "outputComparison": "exact",
+                "explanation": "El literal contiene Zona inicial. La instrucción lo envía a std::cout; return 0; no añade un cero. La predicción corresponde a ese programa, con un espacio entre sus dos palabras y sin salto final.",
+                "reviewFeedback": "Revisa qué caracteres están dentro del literal y distingue ese contenido de las comillas y de los signos que estructuran la instrucción."
+              },
+              {
+                "type": "heading",
+                "text": "Modificar únicamente el mensaje"
+              },
+              {
+                "type": "paragraph",
+                "text": "Modifica únicamente el contenido del literal de texto en este editor, entre las comillas dobles. Conserva intacto todo el resto del programa, incluidas las comillas que delimitan ese contenido. El programa debe mostrar este mensaje exacto:\n\nCaja recibida\n\nConserva el espacio entre las palabras. La salida debe contener únicamente ese mensaje, sin comillas ni un salto de línea final.\n\nPulsa Compilar, ejecutar y comprobar. Observa la salida nueva y el veredicto. Si aparece Incorrecto, revisa el contenido del literal, corrige la diferencia y vuelve a ejecutar esta misma actividad. Una compilación fallida muestra un diagnóstico, es decir, un mensaje que informa del problema detectado. Hay que corregir ese problema y volver a compilar antes de poder comprobar la salida (Stroustrup, 2024).\n\nEl icono Reiniciar código, a la derecha de C++ en la barra de la consola, permite recuperar el punto de partida si necesitas rehacer el intento.",
+                "emphasis": [
+                  {
+                    "text": "Modifica únicamente el contenido del literal de texto"
+                  },
+                  {
+                    "text": "Conserva intacto todo el resto del programa"
+                  },
+                  {
+                    "text": "Compilar, ejecutar y comprobar"
+                  },
+                  {
+                    "text": "esta misma actividad"
+                  },
+                  {
+                    "text": "Reiniciar código"
+                  }
+                ]
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Zona inicial\";\n    return 0;\n}\n",
+                "outputCheck": {
+                  "inputComparison": "exact",
+                  "cases": [
+                    {
+                      "standardInput": "",
+                      "outputs": [
+                        "Caja recibida"
+                      ],
+                      "explanation": "Las comillas delimitan el literal y no forman parte del mensaje.",
+                      "reviewFeedback": [
+                        {
+                          "outputs": [
+                            "Zona segura"
+                          ],
+                          "text": "Revisa el mensaje solicitado en esta actividad y qué caracteres contiene el literal que acabas de ejecutar."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "multiple_choice",
+                "id": "cambiar_mensaje",
+                "question": "Después de estas comprobaciones, ¿qué cambio modifica directamente el mensaje sin cambiar la estructura de main?",
+                "options": [
+                  "Cambiar main por un nombre cualquiera.",
+                  "Eliminar #include <iostream>.",
+                  "Cambiar los caracteres dentro de las comillas del literal."
+                ],
+                "correctIndex": 2,
+                "explanation": "El literal proporciona el texto. Cambiar el punto de entrada o quitar #include <iostream> altera una parte necesaria de este programa."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Qué se conserva al cambiar el mensaje"
+              },
+              {
+                "type": "paragraph",
+                "text": "La ejecución que resolvió el objetivo produjo Caja recibida. Las comillas delimitan el literal dentro del código y no forman parte del mensaje (Stroustrup, 2024).\n\nLa comprobación de salida admite distintas implementaciones que produzcan los caracteres solicitados; no exige un número concreto de instrucciones.",
+                "emphasis": [
+                  {
+                    "text": "La ejecución que resolvió el objetivo",
+                    "style": "bold"
+                  },
+                  {
+                    "text": "distintas implementaciones",
+                    "style": "bold"
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "text": "El cambio que produce Caja recibida está dentro del literal. `main` y la cabecera conservan su función. `return 0;` comunica la terminación correcta sin imprimir un cero; los caracteres que se muestran proceden de la instrucción de salida (Stroustrup, 2024).",
+                "emphasis": [
+                  {
+                    "text": "dentro del literal"
+                  },
+                  {
+                    "text": "sin imprimir un cero"
+                  }
+                ]
+              },
+              {
+                "type": "heading",
+                "text": "Aplicar el cambio a otro mensaje"
+              },
+              {
+                "type": "paragraph",
+                "text": "En este nuevo editor, el punto de partida muestra Caja recibida. Modifica únicamente el contenido del literal de texto para mostrar Zona segura, con un espacio y sin salto final. Conserva intacto todo el resto del programa, incluidas las comillas que delimitan ese contenido. Pulsa Compilar, ejecutar y comprobar y corrige el intento si el resultado no coincide. Esta actividad conserva la estructura que acabas de utilizar.",
+                "emphasis": [
+                  {
+                    "text": "este nuevo editor"
+                  },
+                  {
+                    "text": "Modifica únicamente el contenido del literal de texto"
+                  }
+                ]
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Caja recibida\";\n    return 0;\n}\n",
+                "outputCheck": {
+                  "inputComparison": "exact",
+                  "cases": [
+                    {
+                      "standardInput": "",
+                      "outputs": [
+                        "Zona segura"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "paragraph",
+                "text": "Una solución cambia los caracteres entre comillas y conserva los elementos que permiten mostrar el texto. El veredicto de esta actividad corresponde sólo a Zona segura."
+              }
+            ]
+          }
+        ],
+        "compilerPuzzlesRequired": true,
+        "referenceAfter": [
+          {
+            "activity": "block_0004_0002",
+            "blocks": [
+              "block_0005_0000",
+              "block_0005_0001",
+              "block_0005_0003"
+            ]
+          },
+          {
+            "activity": "block_0005_0006",
+            "blocks": [
+              "block_0005_0007"
+            ]
+          }
+        ],
+        "activityAfter": [
+          {
+            "activity": "block_0005_0006",
+            "requires": [
+              "block_0004_0002"
+            ]
+          }
+        ],
+        "textSemantics": {
+          "version": 1,
+          "fields": [
+            {
+              "block": "block_0000_0000",
+              "path": "/text",
+              "sourceSha256": "2ffaae7497f50889132f4e1672ffae3dff6930d2227df140b96ef6a4292a636e",
+              "spans": []
+            },
+            {
+              "block": "block_0000_0001",
+              "path": "/text",
+              "sourceSha256": "3227fcd41849b786d38ce0e70fab1b9c987c7bceba2ded5e182d874d1573bff2",
+              "spans": [
+                {
+                  "start": 74,
+                  "end": 77,
+                  "text": "C++",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 143,
+                  "end": 161,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                },
+                {
+                  "start": 207,
+                  "end": 224,
+                  "text": "Inicio confirmado",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0003",
+              "path": "/text",
+              "sourceSha256": "0ff03f83592f69150756512f5d41ac9b95342ea2d3cb8a7e3b2aa690ac43eefc",
+              "spans": [
+                {
+                  "start": 82,
+                  "end": 85,
+                  "text": "C++",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 210,
+                  "end": 228,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                },
+                {
+                  "start": 324,
+                  "end": 327,
+                  "text": "C++",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 373,
+                  "end": 383,
+                  "text": "<iostream>",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 493,
+                  "end": 502,
+                  "text": "std::cout",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 523,
+                  "end": 542,
+                  "text": "#include <iostream>",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 654,
+                  "end": 672,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                },
+                {
+                  "start": 675,
+                  "end": 684,
+                  "text": "std::cout",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 757,
+                  "end": 762,
+                  "text": "std::",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 783,
+                  "end": 787,
+                  "text": "cout",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 935,
+                  "end": 953,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                },
+                {
+                  "start": 956,
+                  "end": 960,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 1034,
+                  "end": 1035,
+                  "text": "{",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 1038,
+                  "end": 1039,
+                  "text": "}",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 1078,
+                  "end": 1087,
+                  "text": "return 0;",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 1096,
+                  "end": 1100,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 1167,
+                  "end": 1171,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 1262,
+                  "end": 1280,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/question",
+              "sourceSha256": "bf8a836c86fb69ad66114770a0fbde6ba74a2c92647da56768f239e317e89900",
+              "spans": []
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/explanation",
+              "sourceSha256": "93a93dee94d1bde5260b663060de54e3d2f58853882771734c3c75a39c917819",
+              "spans": [
+                {
+                  "start": 19,
+                  "end": 28,
+                  "text": "std::cout",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 49,
+                  "end": 68,
+                  "text": "#include <iostream>",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 96,
+                  "end": 104,
+                  "text": "return 0",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/options/0",
+              "sourceSha256": "cd10014fa472b79d29a53025f2a9cffc45ee77dcfa184a75f434aa2210ee35fa",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 19,
+                  "text": "#include <iostream>",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/options/1",
+              "sourceSha256": "53013ce135e3dd613c28b288af2cea36f8ebf1fdb6c4443370ab7cbfdee96bb5",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 33,
+                  "text": "std::cout << \"Inicio confirmado\";",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/options/2",
+              "sourceSha256": "6be2e46a3d0765fd4d08def164c35b75afcc481db6fd11cc5118c4e2c20b634d",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 9,
+                  "text": "return 0;",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0000",
+              "path": "/text",
+              "sourceSha256": "efa7eb174bd2dabd184888e947e6332d99999e1b2af33b83faba3aa05eb814f1",
+              "spans": []
+            },
+            {
+              "block": "block_0001_0001",
+              "path": "/text",
+              "sourceSha256": "1f2934de9dc512dbcb24f7bd9f0d52bed63cf8d44457c8b5342aa51ea1f9a639",
+              "spans": [
+                {
+                  "start": 109,
+                  "end": 123,
+                  "text": "\"Puerto listo\"",
+                  "role": "string",
+                  "reading": "natural"
+                },
+                {
+                  "start": 139,
+                  "end": 151,
+                  "text": "Puerto listo",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 229,
+                  "end": 247,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                },
+                {
+                  "start": 518,
+                  "end": 536,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0002",
+              "path": "/text",
+              "sourceSha256": "04f8faa2d6156b16237d2730758755089952d80fce93d39835018424687ba955",
+              "spans": [
+                {
+                  "start": 3,
+                  "end": 31,
+                  "text": "std::cout << \"Puerto listo\";",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 37,
+                  "end": 40,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 48,
+                  "end": 50,
+                  "text": "<<",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 250,
+                  "end": 268,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                },
+                {
+                  "start": 291,
+                  "end": 294,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 311,
+                  "end": 312,
+                  "text": "<",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 333,
+                  "end": 336,
+                  "text": "C++",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 488,
+                  "end": 506,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/question",
+              "sourceSha256": "1b02ce8c0133ab49a236661bfc4248c04fce191e0deca22ca59b4b5ba837b59c",
+              "spans": []
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/explanation",
+              "sourceSha256": "dea10a8d47cd260341dea71016cd1ce5dc718ad3cb4ffc4b79368ea0f478d7a7",
+              "spans": [
+                {
+                  "start": 11,
+                  "end": 28,
+                  "text": "Archivo preparado",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 34,
+                  "end": 36,
+                  "text": "un",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0004",
+              "path": "/question",
+              "sourceSha256": "acb56ad051c2a0f3dac5c58c1a61f2a952d6a0970527e582b516460c623081f8",
+              "spans": [
+                {
+                  "start": 69,
+                  "end": 83,
+                  "text": "Muelle cerrado",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0004",
+              "path": "/explanation",
+              "sourceSha256": "20d5fb8ca77a4ebed037e96e34d4f69cbe171a3d8fa5a1b8bb221056491b28ab",
+              "spans": [
+                {
+                  "start": 35,
+                  "end": 44,
+                  "text": "std::cout",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0000",
+              "path": "/text",
+              "sourceSha256": "670538d545f834419ac1dc1db971131a1926cd879ea7bafc44713462b8c36785",
+              "spans": [
+                {
+                  "start": 13,
+                  "end": 17,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0001",
+              "path": "/text",
+              "sourceSha256": "b4fa457a51b577a36f5809e2f1b715f3a89522cfbb4216e7e5db9ebd0c11f17a",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 4,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 123,
+                  "end": 124,
+                  "text": "{",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 127,
+                  "end": 128,
+                  "text": "}",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 199,
+                  "end": 217,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                },
+                {
+                  "start": 223,
+                  "end": 233,
+                  "text": "int main()",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 235,
+                  "end": 238,
+                  "text": "int",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 250,
+                  "end": 254,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 301,
+                  "end": 302,
+                  "text": "0",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 306,
+                  "end": 315,
+                  "text": "return 0;",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 576,
+                  "end": 594,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0002",
+              "path": "/text",
+              "sourceSha256": "f6f576851ee5f6c32530b8e9fd816d176e168db28a501a0bea3918b947036814",
+              "spans": [
+                {
+                  "start": 60,
+                  "end": 61,
+                  "text": ";",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 234,
+                  "end": 252,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                },
+                {
+                  "start": 255,
+                  "end": 274,
+                  "text": "#include <iostream>",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 379,
+                  "end": 380,
+                  "text": ";",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 402,
+                  "end": 403,
+                  "text": "{",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 406,
+                  "end": 407,
+                  "text": "}",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 431,
+                  "end": 435,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 452,
+                  "end": 453,
+                  "text": ";",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 630,
+                  "end": 634,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 635,
+                  "end": 653,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0003",
+              "path": "/question",
+              "sourceSha256": "eac6d162f14dfc6d60ddde5312ba390eec9780d61d80e25d6a06b457c7b9d5e2",
+              "spans": []
+            },
+            {
+              "block": "block_0002_0003",
+              "path": "/explanation",
+              "sourceSha256": "3bf4e1b2ac3cbc292097d025c1449ef32ecf587c9f45d324329d84b7f6aa0f5a",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 3,
+                  "text": "C++",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 79,
+                  "end": 83,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0003",
+              "path": "/options/0",
+              "sourceSha256": "eb814be3ca3b78c0734c560518be2a03e8d8f6e7e26447224cc7c7b105e1193e",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 4,
+                  "text": "Main",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0003",
+              "path": "/options/1",
+              "sourceSha256": "e980e67bc2f06641f23e62a14329c883c6e31203df3cf26a4c364df2e5d9d081",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 6,
+                  "text": "inicio",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0003",
+              "path": "/options/2",
+              "sourceSha256": "0d6e4079e36703ebd37c00722f5891d28b0e2811dc114b129215123adcce3605",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 4,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0004",
+              "path": "/question",
+              "sourceSha256": "45189d5ad238631efea997a1f2509a365994deb3bed64b46003f45944fe4052f",
+              "spans": [
+                {
+                  "start": 34,
+                  "end": 37,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 73,
+                  "end": 82,
+                  "text": "std::cout",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0004",
+              "path": "/explanation",
+              "sourceSha256": "fd1c7393ac07e6481fef8f8e8ffad1a4a06a9ddbf114f79eac6f1bbeefd4eb94",
+              "spans": [
+                {
+                  "start": 42,
+                  "end": 44,
+                  "text": "<<",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 50,
+                  "end": 53,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0005",
+              "path": "/question",
+              "sourceSha256": "e9ad96840f32bf42b431554d5d766ad8bd4c9b16f9c33d4391d4764f62bed206",
+              "spans": []
+            },
+            {
+              "block": "block_0002_0005",
+              "path": "/explanation",
+              "sourceSha256": "1fbdf4b7b0d525039427b0cb81706aaf5ea2f1d1dbdb15878aff058d6a9c7864",
+              "spans": []
+            },
+            {
+              "block": "block_0003_0000",
+              "path": "/text",
+              "sourceSha256": "4d1da7c9a519f85932d805797be449c7f5189d836241f953cf7c7cc121ed4b8f",
+              "spans": []
+            },
+            {
+              "block": "block_0003_0001",
+              "path": "/text",
+              "sourceSha256": "5d8d20acc4e294d9abc1a846fb7f1b3ebfc4f10e09f477042b9022d562752262",
+              "spans": [
+                {
+                  "start": 61,
+                  "end": 80,
+                  "text": "#include <iostream>",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 103,
+                  "end": 112,
+                  "text": "std::cout",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 231,
+                  "end": 235,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 236,
+                  "end": 254,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0002",
+              "path": "/question",
+              "sourceSha256": "9d40ff7ea4304c182fb898333822af78aaba383e63ee598da3e317e41d1523bf",
+              "spans": [
+                {
+                  "start": 57,
+                  "end": 74,
+                  "text": "Acceso autorizado",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0002",
+              "path": "/explanation",
+              "sourceSha256": "60d676de2ed953914099a4dc6288b7466e97a3a70bc11bcb6169b2c86f652822",
+              "spans": [
+                {
+                  "start": 1,
+                  "end": 20,
+                  "text": "#include <iostream>",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 72,
+                  "end": 81,
+                  "text": "std::cout",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 109,
+                  "end": 113,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 132,
+                  "end": 165,
+                  "text": "std::cout << \"Acceso autorizado\";",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 188,
+                  "end": 197,
+                  "text": "return 0;",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0002",
+              "path": "/reviewFeedback",
+              "sourceSha256": "7b6559878de91207497998781c09a5ba0642d33d03c0f6c4fb0891d00ca8cbbd",
+              "spans": [
+                {
+                  "start": 97,
+                  "end": 101,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0003",
+              "path": "/question",
+              "sourceSha256": "fd52e39eb2c8eb995042b5900bb398a48f1fdff71160e588224464b7e9ea09f2",
+              "spans": [
+                {
+                  "start": 20,
+                  "end": 41,
+                  "text": "std::cout << \"Listo\";",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 52,
+                  "end": 61,
+                  "text": "return 0;",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0003",
+              "path": "/explanation",
+              "sourceSha256": "1b28746a956f4fcfeb0e3d1e64407419b04f8b387a768ed099c3d4af9497f550",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 6,
+                  "text": "return",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 21,
+                  "end": 25,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 29,
+                  "end": 38,
+                  "text": "std::cout",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 72,
+                  "end": 77,
+                  "text": "Listo",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0003",
+              "path": "/options/0",
+              "sourceSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 1,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0003",
+              "path": "/options/1",
+              "sourceSha256": "32ea69e3594e747751622cf90f147f976462a9009fe4ff1fda5206f640175afa",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 6,
+                  "text": "Listo0",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0003",
+              "path": "/options/2",
+              "sourceSha256": "b5fa51d564a9d8809f67c15dd6aef17cb1ebffbaa416b42978e079134adf568e",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 5,
+                  "text": "Listo",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0000",
+              "path": "/text",
+              "sourceSha256": "8d74152a024ae0c7ef4b79ce010e7a51580976836318e53ad11cb0fdadc8d3bb",
+              "spans": []
+            },
+            {
+              "block": "block_0004_0003",
+              "path": "/question",
+              "sourceSha256": "a1299f5fcc562260414ac9136337d77199cb18e4d362eec976c201ed34a2e43f",
+              "spans": []
+            },
+            {
+              "block": "block_0004_0003",
+              "path": "/explanation",
+              "sourceSha256": "8397553636b05c72a59949a90221785f4f29315bc2222e72e1e7329d9bb3bd33",
+              "spans": [
+                {
+                  "start": 20,
+                  "end": 32,
+                  "text": "Zona inicial",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 60,
+                  "end": 69,
+                  "text": "std::cout",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 71,
+                  "end": 80,
+                  "text": "return 0;",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 93,
+                  "end": 97,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 145,
+                  "end": 147,
+                  "text": "un",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 166,
+                  "end": 169,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0003",
+              "path": "/reviewFeedback",
+              "sourceSha256": "0fd348b3d92270ae0f81ce97308265837ba584caff213fd37a97a680c4a15ed9",
+              "spans": []
+            },
+            {
+              "block": "modificar_mensaje_titulo",
+              "path": "/text",
+              "sourceSha256": "a2ba1988929e045cdc266b8c0058c9d3030a01cbfa05ca35e8c0d1badb4fa4ce",
+              "spans": []
+            },
+            {
+              "block": "block_0004_0001",
+              "path": "/text",
+              "sourceSha256": "60a8ec741bef1ae3f90b968e5c2d35f41427f066b869b18ffb0d01439207e37e",
+              "spans": [
+                {
+                  "start": 241,
+                  "end": 254,
+                  "text": "Caja recibida",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 774,
+                  "end": 792,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                },
+                {
+                  "start": 838,
+                  "end": 841,
+                  "text": "C++",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/outputCheck/cases/0/explanation",
+              "sourceSha256": "ea179f1b2a4ea65ce0db813ecbf4087625ae3cab6d70ef4e410c4de5162cefbb",
+              "spans": []
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+              "sourceSha256": "a6a6a61d09a5ccc0f2bbb24d20df59218160c5279b67c1cdaba4d04b4b3a12bf",
+              "spans": []
+            },
+            {
+              "block": "block_0004_0004",
+              "path": "/question",
+              "sourceSha256": "5a76f65097a83f7be09c90a068119d624a16a185b21abc47769fa70c22cfb116",
+              "spans": [
+                {
+                  "start": 107,
+                  "end": 111,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0004",
+              "path": "/explanation",
+              "sourceSha256": "14f3b25fa537123e890d2e2e7bb292e3bdeaa0edc1b38811cd056ccfede15121",
+              "spans": [
+                {
+                  "start": 70,
+                  "end": 89,
+                  "text": "#include <iostream>",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0004",
+              "path": "/options/0",
+              "sourceSha256": "d6335ea811045a95cc92252579d10db9fde0627d2dbff438fb4c7f1a98fa926d",
+              "spans": [
+                {
+                  "start": 8,
+                  "end": 12,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0004",
+              "path": "/options/1",
+              "sourceSha256": "64907a095e16262b6422b3ae24251009ba3741e2cdfbff0a9795519f0df7ffa5",
+              "spans": [
+                {
+                  "start": 9,
+                  "end": 28,
+                  "text": "#include <iostream>",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0004",
+              "path": "/options/2",
+              "sourceSha256": "fe842e67f436eb61bde386e637fb580e82b21d835e262d06525be9f5bf932c01",
+              "spans": []
+            },
+            {
+              "block": "block_0005_0000",
+              "path": "/text",
+              "sourceSha256": "3707e9a6606d3a0107a7bd2c9d3f7b5f368f7938c6b7ef1a9af3733f3eb69771",
+              "spans": []
+            },
+            {
+              "block": "block_0005_0001",
+              "path": "/text",
+              "sourceSha256": "1fdc6ed55e4817669c7599075903643331d813e79dd38a34ae7e99458630155f",
+              "spans": [
+                {
+                  "start": 46,
+                  "end": 59,
+                  "text": "Caja recibida",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 143,
+                  "end": 161,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0003",
+              "path": "/text",
+              "sourceSha256": "9c124c85a3faf778ebfbdeeb411e20955129eefc129a2ea31547b8f89673751e",
+              "spans": [
+                {
+                  "start": 22,
+                  "end": 35,
+                  "text": "Caja recibida",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 62,
+                  "end": 66,
+                  "text": "main",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 105,
+                  "end": 114,
+                  "text": "return 0;",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 165,
+                  "end": 169,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 239,
+                  "end": 257,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0004",
+              "path": "/text",
+              "sourceSha256": "00ffda19b96504c4b45edeb23524358573fdb15d56b43c46859c070d31a2f064",
+              "spans": []
+            },
+            {
+              "block": "block_0005_0005",
+              "path": "/text",
+              "sourceSha256": "93833bc961d665f777c62195c531bf8d9ecdc007eaeb649b0f9be5f6e477ddfc",
+              "spans": [
+                {
+                  "start": 50,
+                  "end": 63,
+                  "text": "Caja recibida",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 132,
+                  "end": 143,
+                  "text": "Zona segura",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 149,
+                  "end": 151,
+                  "text": "un",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0007",
+              "path": "/text",
+              "sourceSha256": "feb049e8e0c85386f1a1a0b3ee7fb16f0589ada34990e2c313d755d377f972b3",
+              "spans": [
+                {
+                  "start": 156,
+                  "end": 167,
+                  "text": "Zona segura",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            }
+          ],
+          "rootFields": [
+            {
+              "path": "/title",
+              "sourceSha256": "e3a306aae5ed055c875731ae095e615e1d6444cbc090b31f03f39a8465a64843",
+              "spans": []
+            }
+          ]
+        },
+        "editorialPrefix": {
+          "count": 12,
+          "sha256": "3cec0887a008a2779b5a9012738c9a1b5eadbebd846e80b99857c15f90aebb7f"
+        }
       }
     ],
     "orderRefinements": [
@@ -2280,25 +4920,27 @@
   },
   "referenceAfter": [
     {
-      "activity": "block_0004_0002",
+      "activity": "p1u1l2_construir_salida",
       "blocks": [
-        "block_0005_0000",
-        "block_0005_0001",
-        "block_0005_0003"
+        "p1u1l2_construir_referencia_titulo",
+        "p1u1l2_construir_referencia_codigo",
+        "p1u1l2_construir_referencia_razon"
       ]
     },
     {
-      "activity": "block_0005_0006",
+      "activity": "p1u1l2_reparar_salida",
       "blocks": [
-        "block_0005_0007"
+        "p1u1l2_reparar_referencia_titulo",
+        "p1u1l2_reparar_referencia_codigo",
+        "p1u1l2_reparar_referencia_razon"
       ]
     }
   ],
   "activityAfter": [
     {
-      "activity": "block_0005_0006",
+      "activity": "p1u1l2_reparar_salida",
       "requires": [
-        "block_0004_0002"
+        "p1u1l2_construir_salida"
       ]
     }
   ],
@@ -2309,169 +4951,8 @@
       {
         "block": "block_0000_0000",
         "path": "/text",
-        "sourceSha256": "2ffaae7497f50889132f4e1672ffae3dff6930d2227df140b96ef6a4292a636e",
+        "sourceSha256": "3780354238a8cce16a509857697f0d3f25ab7768b55a680e795a501a476c6a2e",
         "spans": []
-      },
-      {
-        "block": "block_0000_0001",
-        "path": "/text",
-        "sourceSha256": "3227fcd41849b786d38ce0e70fab1b9c987c7bceba2ded5e182d874d1573bff2",
-        "spans": [
-          {
-            "start": 74,
-            "end": 77,
-            "text": "C++",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 143,
-            "end": 161,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 207,
-            "end": 224,
-            "text": "Inicio confirmado",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0000_0003",
-        "path": "/text",
-        "sourceSha256": "0ff03f83592f69150756512f5d41ac9b95342ea2d3cb8a7e3b2aa690ac43eefc",
-        "spans": [
-          {
-            "start": 82,
-            "end": 85,
-            "text": "C++",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 210,
-            "end": 228,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 324,
-            "end": 327,
-            "text": "C++",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 373,
-            "end": 383,
-            "text": "<iostream>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 493,
-            "end": 502,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 523,
-            "end": 542,
-            "text": "#include <iostream>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 654,
-            "end": 672,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 675,
-            "end": 684,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 757,
-            "end": 762,
-            "text": "std::",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 783,
-            "end": 787,
-            "text": "cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 935,
-            "end": 953,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 956,
-            "end": 960,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1034,
-            "end": 1035,
-            "text": "{",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1038,
-            "end": 1039,
-            "text": "}",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1078,
-            "end": 1087,
-            "text": "return 0;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1096,
-            "end": 1100,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1167,
-            "end": 1171,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1262,
-            "end": 1280,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
       },
       {
         "block": "block_0000_0004",
@@ -2482,26 +4963,26 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "93a93dee94d1bde5260b663060de54e3d2f58853882771734c3c75a39c917819",
+        "sourceSha256": "882e8449955b78fb84d83fa63cfdd0a78e94fc0127777a2cbc3bd6a1f34c5e3b",
         "spans": [
           {
-            "start": 19,
-            "end": 28,
+            "start": 0,
+            "end": 9,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 49,
-            "end": 68,
-            "text": "#include <iostream>",
+            "start": 160,
+            "end": 169,
+            "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 96,
-            "end": 104,
-            "text": "return 0",
+            "start": 178,
+            "end": 182,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2552,106 +5033,8 @@
       {
         "block": "block_0001_0000",
         "path": "/text",
-        "sourceSha256": "efa7eb174bd2dabd184888e947e6332d99999e1b2af33b83faba3aa05eb814f1",
+        "sourceSha256": "821f6e473fa9de052f66e38898d94f1bb481e317cc036575fb9a967ee9b070ee",
         "spans": []
-      },
-      {
-        "block": "block_0001_0001",
-        "path": "/text",
-        "sourceSha256": "1f2934de9dc512dbcb24f7bd9f0d52bed63cf8d44457c8b5342aa51ea1f9a639",
-        "spans": [
-          {
-            "start": 109,
-            "end": 123,
-            "text": "\"Puerto listo\"",
-            "role": "string",
-            "reading": "natural"
-          },
-          {
-            "start": 139,
-            "end": 151,
-            "text": "Puerto listo",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 229,
-            "end": 247,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 518,
-            "end": 536,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0001_0002",
-        "path": "/text",
-        "sourceSha256": "04f8faa2d6156b16237d2730758755089952d80fce93d39835018424687ba955",
-        "spans": [
-          {
-            "start": 3,
-            "end": 31,
-            "text": "std::cout << \"Puerto listo\";",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 37,
-            "end": 40,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 48,
-            "end": 50,
-            "text": "<<",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 250,
-            "end": 268,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 291,
-            "end": 294,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 311,
-            "end": 312,
-            "text": "<",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 333,
-            "end": 336,
-            "text": "C++",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 488,
-            "end": 506,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
       },
       {
         "block": "block_0001_0003",
@@ -2697,184 +5080,22 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "20d5fb8ca77a4ebed037e96e34d4f69cbe171a3d8fa5a1b8bb221056491b28ab",
+        "sourceSha256": "a5736c9ff9612e03381b2a4f272bea2852a1829b59a393469d363c7f24cd83b0",
         "spans": [
           {
-            "start": 35,
-            "end": 44,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 14,
+            "end": 30,
+            "text": "\"Muelle cerrado\"",
+            "role": "string",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0002_0000",
         "path": "/text",
-        "sourceSha256": "670538d545f834419ac1dc1db971131a1926cd879ea7bafc44713462b8c36785",
-        "spans": [
-          {
-            "start": 13,
-            "end": 17,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          }
-        ]
-      },
-      {
-        "block": "block_0002_0001",
-        "path": "/text",
-        "sourceSha256": "b4fa457a51b577a36f5809e2f1b715f3a89522cfbb4216e7e5db9ebd0c11f17a",
-        "spans": [
-          {
-            "start": 0,
-            "end": 4,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 123,
-            "end": 124,
-            "text": "{",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 127,
-            "end": 128,
-            "text": "}",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 199,
-            "end": 217,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 223,
-            "end": 233,
-            "text": "int main()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 235,
-            "end": 238,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 250,
-            "end": 254,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 301,
-            "end": 302,
-            "text": "0",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 306,
-            "end": 315,
-            "text": "return 0;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 576,
-            "end": 594,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0002_0002",
-        "path": "/text",
-        "sourceSha256": "f6f576851ee5f6c32530b8e9fd816d176e168db28a501a0bea3918b947036814",
-        "spans": [
-          {
-            "start": 60,
-            "end": 61,
-            "text": ";",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 234,
-            "end": 252,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 255,
-            "end": 274,
-            "text": "#include <iostream>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 379,
-            "end": 380,
-            "text": ";",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 402,
-            "end": 403,
-            "text": "{",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 406,
-            "end": 407,
-            "text": "}",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 431,
-            "end": 435,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 452,
-            "end": 453,
-            "text": ";",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 630,
-            "end": 634,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 635,
-            "end": 653,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "2e66078964d314d6208138cdb62a9e614d2467382ab996b968d6a6273df493c3",
+        "spans": []
       },
       {
         "block": "block_0002_0003",
@@ -2948,18 +5169,11 @@
       {
         "block": "block_0002_0004",
         "path": "/question",
-        "sourceSha256": "45189d5ad238631efea997a1f2509a365994deb3bed64b46003f45944fe4052f",
+        "sourceSha256": "b09cda4bc214cd60ff56a206bf8d68dd223a6cc2e74d559a3a65549f2a63a9c8",
         "spans": [
           {
-            "start": 34,
-            "end": 37,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 73,
-            "end": 82,
+            "start": 82,
+            "end": 91,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
@@ -2969,21 +5183,21 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "fd1c7393ac07e6481fef8f8e8ffad1a4a06a9ddbf114f79eac6f1bbeefd4eb94",
+        "sourceSha256": "5ba2dd9d3c1a90712c1ed764a1db6e9f6fe61859a46bc7a1c560e6a155388909",
         "spans": [
           {
-            "start": 42,
-            "end": 44,
+            "start": 40,
+            "end": 42,
             "text": "<<",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 50,
-            "end": 53,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 100,
+            "end": 109,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2996,49 +5210,14 @@
       {
         "block": "block_0002_0005",
         "path": "/explanation",
-        "sourceSha256": "1fbdf4b7b0d525039427b0cb81706aaf5ea2f1d1dbdb15878aff058d6a9c7864",
+        "sourceSha256": "18f02b3e480581c85d16f5b9f873ea508c9f4486df303738de2a2d11930fc486",
         "spans": []
       },
       {
         "block": "block_0003_0000",
         "path": "/text",
-        "sourceSha256": "4d1da7c9a519f85932d805797be449c7f5189d836241f953cf7c7cc121ed4b8f",
+        "sourceSha256": "9e423f42633cbf2149322ed117ffc70acd4be6cc7091ce831c70fa95cd75fbf5",
         "spans": []
-      },
-      {
-        "block": "block_0003_0001",
-        "path": "/text",
-        "sourceSha256": "5d8d20acc4e294d9abc1a846fb7f1b3ebfc4f10e09f477042b9022d562752262",
-        "spans": [
-          {
-            "start": 61,
-            "end": 80,
-            "text": "#include <iostream>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 103,
-            "end": 112,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 231,
-            "end": 235,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 236,
-            "end": 254,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
       },
       {
         "block": "block_0003_0002",
@@ -3057,42 +5236,28 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "60d676de2ed953914099a4dc6288b7466e97a3a70bc11bcb6169b2c86f652822",
+        "sourceSha256": "b2822ef495fccfbf3ca80353113a8e56637ab4458a7f6448d40231b870752057",
         "spans": [
           {
-            "start": 1,
-            "end": 20,
-            "text": "#include <iostream>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 72,
-            "end": 81,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 109,
-            "end": 113,
+            "start": 24,
+            "end": 28,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 132,
-            "end": 165,
-            "text": "std::cout << \"Acceso autorizado\";",
+            "start": 118,
+            "end": 127,
+            "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 197,
-            "text": "return 0;",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 202,
+            "end": 219,
+            "text": "Acceso autorizado",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3134,35 +5299,28 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "1b28746a956f4fcfeb0e3d1e64407419b04f8b387a768ed099c3d4af9497f550",
+        "sourceSha256": "e531b6f3ad0be3c5c9e1104d51deae4942c495b23fb7c07e8a0c2b064e9a9083",
         "spans": [
           {
-            "start": 0,
-            "end": 6,
-            "text": "return",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 21,
-            "end": 25,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 29,
+            "start": 33,
             "end": 38,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 72,
-            "end": 77,
             "text": "Listo",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 57,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 70,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3211,7 +5369,7 @@
       {
         "block": "block_0004_0000",
         "path": "/text",
-        "sourceSha256": "8d74152a024ae0c7ef4b79ce010e7a51580976836318e53ad11cb0fdadc8d3bb",
+        "sourceSha256": "11c3a871af3929164f1e34cf42739d26e5ce52ffa44318953d45a5cc83a93247",
         "spans": []
       },
       {
@@ -3276,59 +5434,13 @@
         "spans": []
       },
       {
-        "block": "modificar_mensaje_titulo",
-        "path": "/text",
-        "sourceSha256": "a2ba1988929e045cdc266b8c0058c9d3030a01cbfa05ca35e8c0d1badb4fa4ce",
-        "spans": []
-      },
-      {
-        "block": "block_0004_0001",
-        "path": "/text",
-        "sourceSha256": "60a8ec741bef1ae3f90b968e5c2d35f41427f066b869b18ffb0d01439207e37e",
-        "spans": [
-          {
-            "start": 241,
-            "end": 254,
-            "text": "Caja recibida",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 774,
-            "end": 792,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 838,
-            "end": 841,
-            "text": "C++",
-            "role": "cpp",
-            "reading": "technical"
-          }
-        ]
-      },
-      {
-        "block": "block_0004_0002",
-        "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "ea179f1b2a4ea65ce0db813ecbf4087625ae3cab6d70ef4e410c4de5162cefbb",
-        "spans": []
-      },
-      {
-        "block": "block_0004_0002",
-        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
-        "sourceSha256": "a6a6a61d09a5ccc0f2bbb24d20df59218160c5279b67c1cdaba4d04b4b3a12bf",
-        "spans": []
-      },
-      {
         "block": "block_0004_0004",
         "path": "/question",
-        "sourceSha256": "5a76f65097a83f7be09c90a068119d624a16a185b21abc47769fa70c22cfb116",
+        "sourceSha256": "812cddd2c521c2cada31fac20dd8214abcc78d304f118a9cd46a0e7bcf16d537",
         "spans": [
           {
-            "start": 107,
-            "end": 111,
+            "start": 99,
+            "end": 103,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
@@ -3338,12 +5450,12 @@
       {
         "block": "block_0004_0004",
         "path": "/explanation",
-        "sourceSha256": "14f3b25fa537123e890d2e2e7bb292e3bdeaa0edc1b38811cd056ccfede15121",
+        "sourceSha256": "886d839acafabe8b54699531054df3836ce99949a91c36f32186f52393f984d3",
         "spans": [
           {
-            "start": 70,
-            "end": 89,
-            "text": "#include <iostream>",
+            "start": 109,
+            "end": 113,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
           }
@@ -3386,24 +5498,37 @@
       {
         "block": "block_0005_0000",
         "path": "/text",
-        "sourceSha256": "3707e9a6606d3a0107a7bd2c9d3f7b5f368f7938c6b7ef1a9af3733f3eb69771",
+        "sourceSha256": "2224767d3e18259c852f91b6ea49329f99d08039fe238ba7fbb499bb9b529f44",
         "spans": []
       },
       {
-        "block": "block_0005_0001",
+        "block": "p1u1l2_objetivo",
         "path": "/text",
-        "sourceSha256": "1fdc6ed55e4817669c7599075903643331d813e79dd38a34ae7e99458630155f",
+        "sourceSha256": "cf6420c40f32a4352b1c5fb2206ccc4924ed1f909da23cac4089080da3e721b8",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_literal_contenido",
+        "path": "/text",
+        "sourceSha256": "416b84971c7a8b1d500262feec7d0de651722d505081f61cddb1d454057cd1ef",
         "spans": [
           {
-            "start": 46,
-            "end": 59,
-            "text": "Caja recibida",
-            "role": "output",
+            "start": 19,
+            "end": 31,
+            "text": "Puerto listo",
+            "role": "string",
             "reading": "natural"
           },
           {
-            "start": 143,
-            "end": 161,
+            "start": 217,
+            "end": 231,
+            "text": "\"Puerto listo\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 282,
+            "end": 300,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -3411,41 +5536,407 @@
         ]
       },
       {
-        "block": "block_0005_0003",
+        "block": "p1u1l2_literal_espacio",
         "path": "/text",
-        "sourceSha256": "9c124c85a3faf778ebfbdeeb411e20955129eefc129a2ea31547b8f89673751e",
+        "sourceSha256": "77e18cf922fd7ecf5314921069cb991554785851b12fd27872e9e839e2b02de7",
         "spans": [
           {
-            "start": 22,
-            "end": 35,
-            "text": "Caja recibida",
+            "start": 17,
+            "end": 23,
+            "text": "Puerto",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 31,
+            "text": "listo",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_construir_literal_fragmento",
+        "path": "/question",
+        "sourceSha256": "b4032f6f6e571ca07afe8690e84249ba1ff513b754575bc06326e9a0411085e3",
+        "spans": [
+          {
+            "start": 49,
+            "end": 62,
+            "text": "Entrada libre",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_construir_literal_fragmento",
+        "path": "/explanation",
+        "sourceSha256": "1bfaeb2e8074e6dba7b1e68d517e9b50efb0ba157e4968681324d2ee5b94bc14",
+        "spans": [
+          {
+            "start": 14,
+            "end": 29,
+            "text": "\"Entrada libre\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 119,
+            "text": "Entrada libre",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_salida_primera_lectura",
+        "path": "/text",
+        "sourceSha256": "6792b2a443262718ff180d1d00087cb60adf0d499068d9267063910927661d31",
+        "spans": [
+          {
+            "start": 60,
+            "end": 69,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 250,
+            "end": 252,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 347,
+            "end": 365,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_fragmento_contexto",
+        "path": "/text",
+        "sourceSha256": "9c86b6cc28ddd1091db27c83b34a7647dfa0cd7134dc2b7c1957fdf82d372827",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_predecir_fragmento",
+        "path": "/question",
+        "sourceSha256": "0723bd09156c24ae4e64de5cf92459e6c054d2dac64525327c3f28bbac650239",
+        "spans": [
+          {
+            "start": 70,
+            "end": 79,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_predecir_fragmento",
+        "path": "/explanation",
+        "sourceSha256": "121e8a259d2d3d320f60ec2f87118e85b3a55067ede94240ed2a56386ab0344c",
+        "spans": [
+          {
+            "start": 45,
+            "end": 60,
+            "text": "Ruta disponible",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_leer_operador",
+        "path": "/text",
+        "sourceSha256": "f171de1a34b32e74a5139e283126a429490e5c41421daa33e42d44acb7489cd7",
+        "spans": [
+          {
+            "start": 34,
+            "end": 43,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 74,
+            "end": 76,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 146,
+            "text": "\"Equipo preparado\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 186,
+            "text": ";",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_dos_signos",
+        "path": "/text",
+        "sourceSha256": "497e05a9c0f66351d766fea2fd9801601059e7f7409018db9f35f5074067b93c",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_construir_operador_fragmento",
+        "path": "/question",
+        "sourceSha256": "4d398449346a65728bc362f8e6e99b45135b4071d99848d07136f42fdfb2d62f",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_construir_operador_fragmento",
+        "path": "/explanation",
+        "sourceSha256": "7c8118ca4446416bf6405567bc83ad9ac29c745b97e8ac721bc2559e27195ab2",
+        "spans": [
+          {
+            "start": 36,
+            "end": 38,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_terminador_fragmento",
+        "path": "/text",
+        "sourceSha256": "3262a2b55e554f3bf81137bd958f98f183279659e40c4af10e80583865025a6d",
+        "spans": [
+          {
+            "start": 116,
+            "end": 129,
+            "text": "Turno cerrado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 62,
-            "end": 66,
+            "start": 260,
+            "end": 278,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_construir_terminador_fragmento",
+        "path": "/question",
+        "sourceSha256": "1e2f4af4074461f3f67ba7362700cf9b5176541760b453dc5a4df9fadee8d15a",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_construir_terminador_fragmento",
+        "path": "/explanation",
+        "sourceSha256": "00574b75abed66ea4f8c8f87cd40777b9771faa42f0040543908f940e4f02811",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_reparar_signos_fragmento",
+        "path": "/question",
+        "sourceSha256": "62d1eb8144a2ad4b9c8a083117beabbc58bebc103080961428e45d6d7b3c798f",
+        "spans": [
+          {
+            "start": 12,
+            "end": 39,
+            "text": "std::cout < \"Pedido listo\":",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_reparar_signos_fragmento",
+        "path": "/explanation",
+        "sourceSha256": "3668576bb0210b8ef0292be1ffa7d5e11b5616ea567d2e7198623cc397a54b7d",
+        "spans": [
+          {
+            "start": 19,
+            "end": 20,
+            "text": "<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 39,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 100,
+            "text": "\"Pedido listo\"",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_reparar_signos_fragmento",
+        "path": "/options/0",
+        "sourceSha256": "6656c30e7131e22c83b89d1cde6d7c4f1925451e304f8f72767da757f6df544f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 29,
+            "text": "std::cout << \"Pedido listo:\";",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_reparar_signos_fragmento",
+        "path": "/options/1",
+        "sourceSha256": "be278f3c8462e875a04abd224db6237142de5f96cc71bf70cc3247380f537052",
+        "spans": [
+          {
+            "start": 0,
+            "end": 27,
+            "text": "std::cout < \"Pedido listo\";",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_reparar_signos_fragmento",
+        "path": "/options/2",
+        "sourceSha256": "5999cfe1b7c1c0376e8893e64317838ee5088e3f37cc80f210d84bacc03baef2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 28,
+            "text": "std::cout << \"Pedido listo\";",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_compilador",
+        "path": "/text",
+        "sourceSha256": "30446dc20efdb40bb49ae99a674a84d3f6ef06c10ee83125369ee0de8e70198a",
+        "spans": [
+          {
+            "start": 57,
+            "end": 60,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 226,
+            "end": 244,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_explicar_cabecera",
+        "path": "/text",
+        "sourceSha256": "ead47e37e753a9f3bcccb0bf7421f05722527f7f7d437817509d7c1223ec2515",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 111,
+            "end": 130,
+            "text": "#include <iostream>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 198,
+            "end": 207,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 217,
+            "text": "iostream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 350,
+            "end": 368,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_nombre_salida",
+        "path": "/text",
+        "sourceSha256": "1730e2c77d9a4ff4be134fb07381aba3742c56022455ab9e767497565d13e9f1",
+        "spans": [
+          {
+            "start": 33,
+            "end": 42,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 58,
+            "text": "std::",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_explicar_main",
+        "path": "/text",
+        "sourceSha256": "b5a00ab0739b2e8fb8294a43c4c79d55eb75c5c74730623f2aca32348c570371",
+        "spans": [
+          {
+            "start": 143,
+            "end": 147,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 105,
-            "end": 114,
-            "text": "return 0;",
+            "start": 316,
+            "end": 320,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 165,
-            "end": 169,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 239,
-            "end": 257,
+            "start": 470,
+            "end": 488,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -3453,52 +5944,364 @@
         ]
       },
       {
-        "block": "block_0005_0004",
+        "block": "p1u1l2_explicar_return",
         "path": "/text",
-        "sourceSha256": "00ffda19b96504c4b45edeb23524358573fdb15d56b43c46859c070d31a2f064",
+        "sourceSha256": "d0663b939f054ba93fe7a9a0614b0b77d5f398aac31b672bc23369104332dc1f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 20,
+            "end": 24,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 92,
+            "end": 101,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 270,
+            "end": 288,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_convencion_return",
+        "path": "/text",
+        "sourceSha256": "b0a48ddf6596e19eab8040264d2d09df969db3b33e6f6fdb7608a92610d8bd6b",
+        "spans": [
+          {
+            "start": 44,
+            "end": 53,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 93,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 133,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 279,
+            "end": 297,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_seguir_programa_completo",
+        "path": "/text",
+        "sourceSha256": "2e3133f44d906988183ecb3b88cb9cc9b8802cc1383321123e39c0143888c065",
+        "spans": [
+          {
+            "start": 90,
+            "end": 94,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 144,
+            "text": "Inicio confirmado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 163,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_signos_marco",
+        "path": "/text",
+        "sourceSha256": "7624664c8f14116b57debcb6b6ba9b7bc14d4b52ed95743e975f1322c3f7c440",
+        "spans": [
+          {
+            "start": 81,
+            "end": 90,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 135,
+            "text": "#include <iostream>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 170,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_ordenar_instrucciones",
+        "path": "/text",
+        "sourceSha256": "5fd1db45c3d5f116b3d68f2e148fb47cdd29b200988a03c8b7cda4296b246fd8",
+        "spans": [
+          {
+            "start": 92,
+            "end": 96,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_recuperar_tres_piezas",
+        "path": "/text",
+        "sourceSha256": "654bd7e88cf21586fa04d03d47255fccfc86b1dd4343b177e8e61d290c5ca582",
         "spans": []
       },
       {
-        "block": "block_0005_0005",
+        "block": "p1u1l2_leer_sin_confundir",
         "path": "/text",
-        "sourceSha256": "93833bc961d665f777c62195c531bf8d9ecdc007eaeb649b0f9be5f6e477ddfc",
+        "sourceSha256": "ed57307102635791129bb9f32695d180372eda1a07635a560ba47b371e510436",
         "spans": [
           {
-            "start": 50,
-            "end": 63,
-            "text": "Caja recibida",
-            "role": "output",
-            "reading": "natural"
+            "start": 178,
+            "end": 182,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_recuperacion_cambio",
+        "path": "/text",
+        "sourceSha256": "bac3eaa88df5af3099d5df528c190d82f1740a8c2df5b706534c339e6f8490cc",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_construccion_titulo",
+        "path": "/text",
+        "sourceSha256": "1324ab6f5d7fbf34c168cab42f7437d11909b5a616ea5f50c3734a0cae325567",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_construccion_objetivo",
+        "path": "/text",
+        "sourceSha256": "377c8c18832f597422e400b4f4bbe8893644d5b734d1129cc26b2d9e326272e9",
+        "spans": [
+          {
+            "start": 49,
+            "end": 53,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 132,
-            "end": 143,
-            "text": "Zona segura",
-            "role": "output",
-            "reading": "natural"
-          },
+            "start": 72,
+            "end": 81,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_construccion_salida",
+        "path": "/text",
+        "sourceSha256": "5b36234da43fa889221c985622ab2c2749ff901a8120d6ebb74d505212cd9f5f",
+        "spans": [
           {
-            "start": 149,
-            "end": 151,
-            "text": "un",
-            "role": "data",
+            "start": 0,
+            "end": 16,
+            "text": "Acceso preparado",
+            "role": "output",
             "reading": "natural"
           }
         ]
       },
       {
-        "block": "block_0005_0007",
+        "block": "p1u1l2_construccion_acciones",
         "path": "/text",
-        "sourceSha256": "feb049e8e0c85386f1a1a0b3ee7fb16f0589ada34990e2c313d755d377f972b3",
+        "sourceSha256": "b7bf13811deebe5a07d7c6b3fec7d47e81a5434851b980f3ef16fda694b9839b",
         "spans": [
           {
-            "start": 156,
-            "end": 167,
-            "text": "Zona segura",
+            "start": 189,
+            "end": 193,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_compilar_ejecutar_comparar",
+        "path": "/text",
+        "sourceSha256": "d9b6c9e352a8ffd02a61c85e141dd5f70c6abc574a5d322ef5969e24980461ab",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_construccion_comprobar",
+        "path": "/text",
+        "sourceSha256": "50cbe461ca0dc60363f09a5d965cfd8d8e2a46e19a4e8efa454afdf4aa1d1c01",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_construir_salida",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "0bd24cec1f824823223ecc84ade56f7cd1ebe17d55ec7dc8706ae5baa291ceed",
+        "spans": [
+          {
+            "start": 40,
+            "end": 56,
+            "text": "Acceso preparado",
             "role": "output",
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "p1u1l2_construir_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "01f357a6b4afb5bd58ce8ac418f140ea74f6ccfac3b8cd34271eae1b255dd69b",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_construir_referencia_razon",
+        "path": "/text",
+        "sourceSha256": "35e183a65dfdaf3f4b2ac45785b145d75710fdb13bb875426e6ca42de138b4ec",
+        "spans": [
+          {
+            "start": 15,
+            "end": 47,
+            "text": "std::cout << \"Acceso preparado\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 99,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_reparacion_objetivo",
+        "path": "/text",
+        "sourceSha256": "1939e4b15acaafd42a2b06a2da7e15c7043bf65f9e70582f8172934ad448fc6f",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_reparacion_comprobar",
+        "path": "/text",
+        "sourceSha256": "7f290a3fd89b200eed12030ff13805699ab87d0a606372a7f8d08d029ede77ff",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_reparacion_salida_contexto",
+        "path": "/text",
+        "sourceSha256": "2005a30bf544bfa4db0b38bed020db6819fe6bcec739bb8820b3478aba3abc49",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_reparacion_salida",
+        "path": "/text",
+        "sourceSha256": "03cdefbf35290d173b9feff3e6e198349f443b8f06601d1d4169576860f1b582",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "Registro completo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_reparar_salida",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "b300e5f557b457347befc6ac28c2c364cea38d9b04e04aaa134679d72902e914",
+        "spans": [
+          {
+            "start": 47,
+            "end": 64,
+            "text": "Registro completo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_reparar_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "a704a0816827d1438a85e9b00e1c315c04c84e43685aac290481e3b3a6bf1e33",
+        "spans": []
+      },
+      {
+        "block": "p1u1l2_reparar_referencia_razon",
+        "path": "/text",
+        "sourceSha256": "78b37a58716abd6e8307b72792fd7facf7451af238d4105e52b54d675ccefa0a",
+        "spans": [
+          {
+            "start": 12,
+            "end": 14,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 35,
+            "text": "<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 189,
+            "text": "\"Registro completo\"",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l2_cierre",
+        "path": "/text",
+        "sourceSha256": "a62eb9e0c76f7a76acbba6440266f8e07d59efa407a9f3484cb8e22e3116d68a",
+        "spans": []
       }
     ],
     "rootFields": [

@@ -1,0 +1,1127 @@
+{
+  "id": "cpp_language_memory_oop__clases_con_varias_bases__distinguir_una_base_repetida_por_dos_caminos",
+  "title": "Distinguir una base repetida por dos caminos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La misma clase base puede aparecer por dos caminos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta ahora las dos bases de un objeto eran independientes. Ahora CanalA deriva de Registro y CanalB también deriva de Registro. DobleRuta reúne ambos canales. Para llegar desde DobleRuta a Registro hay dos caminos: pasar por CanalA o pasar por CanalB."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta jerarquía, cada camino conserva su propia parte Registro. Un DobleRuta tiene dos partes de ese tipo, cada una con su propio numero_. No son dos nombres para un mismo entero. La construcción de cada canal prepara su Registro a partir del argumento correspondiente (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tampoco se ha copiado un Registro que ya existiera para producir el otro. Los dos se construyen como partes diferentes de un único objeto completo DobleRuta. Pueden comenzar con datos distintos o iguales y seguir siendo partes independientes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir primero el canal y después su Registro"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde un DobleRuta puede obtenerse sin ambigüedad una referencia CanalA&: sólo hay un CanalA en el objeto. Desde esa referencia se obtiene Registro&, porque dentro de ese CanalA sólo hay un Registro. El mismo procedimiento permite elegir el Registro que pertenece al CanalB."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada declaración de referencia conserva el objeto al que se refiere. canal_a y registro_a permiten acceder a la rama elegida y a su parte base; no construyen copias ni transfieren propiedad. Todas las vistas del siguiente programa se utilizan mientras dato sigue vivo (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l3_elegir_rama_y_despues_base_repetida",
+          "language": "cpp",
+          "question": "Escribe la salida completa antes y después de modificar los dos registros elegidos.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\nint main() {\n    DobleRuta dato{4, 9};\n    CanalA& canal_a = dato;\n    CanalB& canal_b = dato;\n    Registro& registro_a = canal_a;\n    Registro& registro_b = canal_b;\n    std::cout << registro_a.leer() << ':' << registro_b.leer() << '|';\n    registro_a.fijar(6);\n    registro_b.fijar(2);\n    std::cout << registro_a.leer() << ':' << registro_b.leer();\n    return 0;\n}\n",
+          "answers": [
+            "4:9|6:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El Registro de CanalA comienza con cuatro y el de CanalB con nueve. Las dos referencias se obtienen mediante los canales correspondientes. registro_a guarda seis sólo en el primero; registro_b guarda dos sólo en el segundo. Las consultas finales observan seis y dos. No se han fusionado los registros por tener el mismo tipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los punteros pueden seguir la misma selección: primero se obtiene un puntero al canal y después uno a Registro desde ese canal. No se necesita calcular posiciones en memoria ni suponer direcciones iguales o diferentes para usar esa conversión."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una vista directa a Registro no indica cuál de los dos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con las definiciones anteriores, los siguientes intentos se analizan por separado como rechazos de compilación. Aunque todos los caminos sean públicos, el tipo Registro no identifica por sí solo cuál de las dos partes se solicita."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "DobleRuta dato{4, 9};\nconst Registro& registro = dato;"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "DobleRuta dato{4, 9};\nconst Registro* registro = &dato;"
+        },
+        {
+          "type": "paragraph",
+          "text": "La conversión hacia una base debe determinar una parte base única. Aquí la conversión directa desde el objeto completo encuentra dos Registro. Elegir un canal antes de pedir Registro elimina esa duda para esa vista (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u10l3_publico_no_significa_subobjeto_unico",
+          "question": "¿Por qué añadir const a la vista no permite aceptar esas conversiones directas?",
+          "options": [
+            "Porque const exige copiar antes todas las bases del objeto.",
+            "Porque const restringe los cambios por la vista, pero no elige entre los dos Registro que contiene DobleRuta.",
+            "Porque tener una base repetida hace inválida la declaración completa de DobleRuta, aunque se elija un canal."
+          ],
+          "correctIndex": 1,
+          "explanation": "La relación pública no basta cuando hay dos partes del mismo tipo. const no decide qué canal debe utilizarse; sólo restringe las modificaciones que podrían hacerse mediante una vista ya obtenida. DobleRuta sí puede construirse y puede utilizarse el Registro de una rama escogida expresamente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Que ambos registros almacenen el mismo número tampoco escogería una rama ni los convertiría en una sola parte. Las conversiones no se resuelven comparando los datos guardados."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Calificar con el canal también selecciona la parte utilizada"
+        },
+        {
+          "type": "paragraph",
+          "text": "dato.CanalA::leer() indica el camino por CanalA para usar la función heredada de Registro. dato.CanalB::leer() indica el otro. La misma calificación permite usar fijar sobre una parte concreta."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l3_llamadas_calificadas_por_rama_de_base_repetida",
+          "language": "cpp",
+          "question": "Escribe las dos lecturas después de la modificación calificada.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\nint main() {\n    DobleRuta dato{3, 8};\n    dato.CanalA::fijar(5);\n    std::cout << dato.CanalA::leer() << ':' << dato.CanalB::leer();\n    return 0;\n}\n",
+          "answers": [
+            "5:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El Registro de CanalA comienza con tres y el de CanalB con ocho. La llamada dato.CanalA::fijar(5) sólo sustituye el dato del primero. Las consultas calificadas obtienen después cinco por CanalA y ocho por CanalB."
+        },
+        {
+          "type": "paragraph",
+          "text": "No basta con escribir dato.Registro::leer(). Ese nombre identifica la declaración de la función, pero Registro sigue apareciendo dos veces en el objeto completo. La calificación con el antepasado repetido no expresa cuál de los dos caminos se quiere recorrer (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Encontrar una función no basta para escoger el objeto que la recibe"
+        },
+        {
+          "type": "paragraph",
+          "text": "CanalA y CanalB no declaran una función leer propia: ambos heredan la misma declaración Registro::leer. Por eso el problema de dato.leer() no consiste en elegir entre dos cuerpos distintos escritos en las ramas. Incluso con una única declaración identificada, falta determinar sobre qué Registro debe realizarse la llamada (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El using de la siguiente clase nombra la función que CanalA hereda. Analiza si nombrar esa declaración hace única la parte Registro necesaria para ejecutar la llamada."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass ConUsing : public CanalA, public CanalB {\npublic:\n    ConUsing(int a, int b) : CanalA{a}, CanalB{b} {}\n    using CanalA::leer;\n};\nint main() {\n    ConUsing dato{4, 9};\n    std::cout << dato.leer();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u10l3_using_no_repara_conversion_a_base_repetida",
+          "question": "Según las reglas de C++23, ¿qué falta resolver después de escribir using CanalA::leer?",
+          "options": [
+            "El using debe nombrar Registro::leer directamente; cambiar ese nombre seleccionaría una única parte Registro.",
+            "Hace falta añadir otro using por CanalB: reunir los nombres de ambas ramas haría única la conversión a Registro.",
+            "La llamada sigue necesitando una parte Registro concreta; nombrar esa función heredada no elimina la conversión ambigua desde ConUsing."
+          ],
+          "correctIndex": 2,
+          "explanation": "El using nombra Registro::leer a través de CanalA, pero esa función pertenece a Registro. El objeto ConUsing sigue conteniendo dos partes Registro y no queda seleccionada una para ejecutar esa llamada. Nombrar directamente Registro::leer o reunir nombres mediante using tampoco elige la parte. Elegir primero una rama o calificar la llamada con la rama permite utilizar la parte concreta."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la comprobación del autor, MSVC 19.51.36260 aceptó este caso, mientras que Clang 21 en modo C++23 lo rechazó por la conversión ambigua. Esa aceptación observada en MSVC no elimina la ambigüedad que establecen las reglas de C++23. La respuesta se apoya en esas reglas, no en suponer que todos los compiladores producen el mismo diagnóstico (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una función propia de la rama es otra declaración"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora CanalPropio sí declara su propia función leer. Dentro de ella, Registro::leer() utiliza el único Registro que contiene ese CanalPropio. CanalB conserva el otro Registro por su camino independiente."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalPropio : public Registro {\npublic:\n    explicit CanalPropio(int numero) : Registro{numero} {}\n    int leer() const { return Registro::leer(); }\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass ConFuncionPropia : public CanalPropio, public CanalB {\npublic:\n    ConFuncionPropia(int a, int b) : CanalPropio{a}, CanalB{b} {}\n    using CanalPropio::leer;\n};\nint main() {\n    ConFuncionPropia dato{4, 9};\n    std::cout << dato.leer();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "using CanalPropio::leer nombra una función que pertenece a CanalPropio. ConFuncionPropia sólo contiene un CanalPropio, por lo que dato.leer() puede utilizar esa parte sin convertir directamente todo dato a Registro. El cuerpo de la función usa después el Registro de esa rama y consulta su número, cuatro. El Registro de CanalB sigue guardando nueve."
+        },
+        {
+          "type": "paragraph",
+          "text": "La diferencia está en dónde se declaró la función: antes ambas ramas sólo heredaban Registro::leer; aquí hay otra declaración, CanalPropio::leer, con un cuerpo propio. Un using no crea por sí mismo ese cuerpo ni transforma una declaración heredada en una función nueva de la rama (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir y destruir las dos partes base"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la traza siguiente, RegistroConTraza escribe R+ y su número al construirse y R- y su número al destruirse. TrazaA escribe A+ y A- en sus cuerpos; TrazaB escribe B+ y B-. DobleConTraza escribe D+ y D-. Uso corresponde al cuerpo de main y Fin aparece después del bloque."
+        },
+        {
+          "type": "paragraph",
+          "text": "DobleConTraza prepara primero TrazaA y después TrazaB según el orden en que declara esas bases. Cada rama prepara antes su propio RegistroConTraza. El cuerpo del destructor de la clase completa se ejecuta antes de destruir las partes base. Después, esas partes se destruyen en el orden inverso al de su declaración. En cada rama se ejecuta primero su cuerpo destructor y después se destruye su RegistroConTraza (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l3_traza_de_dos_partes_del_mismo_tipo_base",
+          "language": "cpp",
+          "question": "Escribe toda la traza desde la construcción hasta Fin.",
+          "code": "#include <iostream>\n\nclass RegistroConTraza {\npublic:\n    explicit RegistroConTraza(int numero) : numero_{numero} {\n        std::cout << \"R+\" << numero_ << '|';\n    }\n    ~RegistroConTraza() { std::cout << \"R-\" << numero_ << '|'; }\nprivate:\n    int numero_;\n};\nclass TrazaA : public RegistroConTraza {\npublic:\n    explicit TrazaA(int numero) : RegistroConTraza{numero} {\n        std::cout << \"A+|\";\n    }\n    ~TrazaA() { std::cout << \"A-|\"; }\n};\nclass TrazaB : public RegistroConTraza {\npublic:\n    explicit TrazaB(int numero) : RegistroConTraza{numero} {\n        std::cout << \"B+|\";\n    }\n    ~TrazaB() { std::cout << \"B-|\"; }\n};\nclass DobleConTraza : public TrazaA, public TrazaB {\npublic:\n    DobleConTraza(int a, int b) : TrazaA{a}, TrazaB{b} {\n        std::cout << \"D+|\";\n    }\n    ~DobleConTraza() { std::cout << \"D-|\"; }\n};\nint main() {\n    {\n        DobleConTraza dato{4, 9};\n        std::cout << \"Uso|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "R+4|A+|R+9|B+|D+|Uso|D-|B-|R-9|A-|R-4|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Primero se construye el RegistroConTraza con cuatro y termina el cuerpo de TrazaA. Después se construye el RegistroConTraza con nueve y termina TrazaB. Al final se ejecuta el cuerpo de DobleConTraza y main escribe Uso. Al salir del bloque se ejecuta ~DobleConTraza; después se destruye TrazaB con su RegistroConTraza de nueve, y finalmente TrazaA con el suyo de cuatro. Hay dos ejecuciones del destructor de RegistroConTraza porque hay dos partes distintas, no porque una misma parte se destruya dos veces."
+        },
+        {
+          "type": "paragraph",
+          "text": "La destrucción completa se inicia automáticamente al salir del bloque. No se ejecuta delete ni se llama manualmente a los destructores de las ramas o de RegistroConTraza."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La copia completa conserva por separado las dos ramas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copiar un DobleRuta construye otro objeto completo. La copia generada copia CanalA y CanalB, cada uno con su propio Registro. El nuevo objeto también tiene dos partes de ese tipo; sus datos se obtienen de las partes correspondientes del origen (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l3_copia_completa_de_las_dos_ramas",
+          "language": "cpp",
+          "question": "Escribe las dos lecturas de original y después las dos de copia.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\nclass CanalB : public Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass DobleRuta : public CanalA, public CanalB {\npublic:\n    DobleRuta(int a, int b) : CanalA{a}, CanalB{b} {}\n};\nint main() {\n    DobleRuta original{2, 7};\n    DobleRuta copia{original};\n    original.CanalA::fijar(5);\n    copia.CanalB::fijar(9);\n    std::cout << original.CanalA::leer() << ':' << original.CanalB::leer()\n              << '|' << copia.CanalA::leer() << ':' << copia.CanalB::leer();\n    return 0;\n}\n",
+          "answers": [
+            "5:7|2:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Ambos objetos comienzan con dos en la rama CanalA y siete en CanalB. Después sólo cambia CanalA de original, que guarda cinco, y sólo cambia CanalB de copia, que guarda nueve. original conserva siete en su otra rama y copia conserva dos en la suya. Las cuatro partes Registro pertenecen a dos objetos completos diferentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cambio, una referencia Registro& obtenida mediante una rama sigue observando esa parte existente. No es una copia independiente. Al obtener una vista, hay que identificar la parte elegida y mantener vivo el objeto al que pertenece mientras se utiliza esa referencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ofrecer por separado las lecturas exterior e interior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una estación conserva dos lecturas: una del exterior y otra del interior. La clase Sensor guarda una lectura int y permite consultarla o sustituirla. Exterior e Interior derivan de Sensor por separado; Estacion reúne esas dos ramas. Este diseño necesita dos lecturas independientes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al diseñar una estación nueva, dos miembros Sensor permiten expresar directamente que conserva dos sensores, mediante composición. Esta práctica proporciona una jerarquía con dos ramas para aprender a seleccionar las partes que ya contiene; el objetivo es comprender ese mecanismo y sus consecuencias."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Sensor {\npublic:\n    explicit Sensor(int lectura) : lectura_{lectura} {}\n    int leer() const { return lectura_; }\n    void fijar(int lectura) { lectura_ = lectura; }\nprivate:\n    int lectura_;\n};\n\nclass Exterior : public Sensor {\npublic:\n    explicit Exterior(int lectura) : Sensor{lectura} {}\n};\n\nclass Interior : public Sensor {\npublic:\n    explicit Interior(int lectura) : Sensor{lectura} {}\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Estacion ofrecerá sensor_exterior y sensor_interior. Cada función devuelve const Sensor& para consultar una de las dos partes ya existentes. Primero debe obtener una referencia a la rama que corresponde y después devolver desde ella la referencia Sensor. El tipo de rama permite elegir cuál de las dos partes Sensor se utilizará."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa sólo los nombres de los tipos en los dos huecos: la rama exterior en sensor_exterior y la rama interior en sensor_interior. const y & ya están escritos. Conserva el constructor y las declaraciones de retorno. No sustituyas la referencia de rama por un objeto copiado."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u10l3_construir_vistas_de_dos_sensores",
+          "question": "Completa el tipo de cada referencia intermedia para devolver la parte Sensor de la rama exterior y de la rama interior, respectivamente.",
+          "template": "class Estacion : public Exterior, public Interior {\npublic:\n    Estacion(int exterior, int interior)\n        : Exterior{exterior}, Interior{interior} {}\n\n    const Sensor& sensor_exterior() const {\n        const []& rama = *this;\n        return rama;\n    }\n\n    const Sensor& sensor_interior() const {\n        const []& rama = *this;\n        return rama;\n    }\n};\n",
+          "answers": [
+            "Exterior",
+            "Interior"
+          ],
+          "answerAlternatives": [
+            [
+              "Exterior",
+              "::Exterior"
+            ],
+            [
+              "Interior",
+              "::Interior"
+            ]
+          ],
+          "explanation": "La primera referencia debe tener tipo const Exterior& y la segunda const Interior&. Desde cada rama sólo hay una parte Sensor correspondiente, por lo que return rama puede obtener la referencia base sin elegir entre dos partes. Convertir directamente *this, que designa una Estacion, a const Sensor& sería ambiguo. Las referencias intermedias no crean sensores nuevos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Las referencias intermedias no son sensores temporales"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Estacion : public Exterior, public Interior {\npublic:\n    Estacion(int exterior, int interior)\n        : Exterior{exterior}, Interior{interior} {}\n\n    const Sensor& sensor_exterior() const {\n        const Exterior& rama = *this;\n        return rama;\n    }\n\n    const Sensor& sensor_interior() const {\n        const Interior& rama = *this;\n        return rama;\n    }\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En sensor_exterior, rama se refiere a la parte Exterior de la Estacion actual. Esa parte ya contiene su Sensor. return rama devuelve una referencia a ese Sensor. En sensor_interior se recorren los mismos pasos mediante Interior. Los dos retornos tienen el mismo tipo const Sensor&, pero se refieren a partes distintas (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La variable local rama deja de existir al terminar su función. Sin embargo, no era un objeto Exterior o Interior nuevo: era una referencia a una parte de la estación. Dejar de usar ese nombre local no destruye la parte a la que se refería. La referencia devuelta puede seguir utilizándose mientras la estación correspondiente siga viva (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las vistas devueltas son constantes: permiten leer, pero no llamar a fijar mediante ellas. El programa sí puede cambiar la estación modificable dato indicando Exterior::fijar o Interior::fijar. Esas llamadas seleccionan la parte que debe cambiar. No crean una lectura compartida ni modifican automáticamente la otra parte."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l3_cambiar_una_lectura_sin_cambiar_la_otra",
+          "language": "cpp",
+          "question": "Escribe las tres líneas completas. Primero se consultan las vistas iniciales; después se cambia el exterior y al final el interior.",
+          "code": "#include <iostream>\n\nclass Sensor {\npublic:\n    explicit Sensor(int lectura) : lectura_{lectura} {}\n    int leer() const { return lectura_; }\n    void fijar(int lectura) { lectura_ = lectura; }\nprivate:\n    int lectura_;\n};\n\nclass Exterior : public Sensor {\npublic:\n    explicit Exterior(int lectura) : Sensor{lectura} {}\n};\n\nclass Interior : public Sensor {\npublic:\n    explicit Interior(int lectura) : Sensor{lectura} {}\n};\nclass Estacion : public Exterior, public Interior {\npublic:\n    Estacion(int exterior, int interior)\n        : Exterior{exterior}, Interior{interior} {}\n\n    const Sensor& sensor_exterior() const {\n        const Exterior& rama = *this;\n        return rama;\n    }\n\n    const Sensor& sensor_interior() const {\n        const Interior& rama = *this;\n        return rama;\n    }\n};\nint main() {\n    Estacion dato{6, 19};\n    const Sensor& fuera = dato.sensor_exterior();\n    const Sensor& dentro = dato.sensor_interior();\n    std::cout << fuera.leer() << '|' << dentro.leer() << '\\n';\n    dato.Exterior::fijar(8);\n    std::cout << fuera.leer() << '|' << dentro.leer() << '\\n';\n    dato.Interior::fijar(17);\n    std::cout << fuera.leer() << '|' << dentro.leer();\n    return 0;\n}\n",
+          "answers": [
+            "6|19\n8|19\n8|17"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las vistas comienzan sobre las lecturas seis y diecinueve. Exterior::fijar cambia sólo el Sensor de Exterior a ocho; Interior conserva diecinueve. Después Interior::fijar cambia sólo su Sensor a diecisiete. fuera y dentro siguen sobre las dos partes de dato, por lo que muestran las modificaciones correspondientes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir las vistas de una lectura copiada y de una estación copiada"
+        },
+        {
+          "type": "paragraph",
+          "text": "vista es una referencia al Sensor exterior de original. lectura_copiada se construye como otro objeto Sensor con el valor que se consulta por esa vista. copia se construye como otra Estacion completa, que tiene sus propias partes Exterior e Interior. Después se cambia sólo el exterior de original y sólo el interior de copia."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l3_copia_de_una_parte_y_copia_completa",
+          "language": "cpp",
+          "question": "Escribe las dos líneas de salida después de las modificaciones.",
+          "code": "#include <iostream>\n\nclass Sensor {\npublic:\n    explicit Sensor(int lectura) : lectura_{lectura} {}\n    int leer() const { return lectura_; }\n    void fijar(int lectura) { lectura_ = lectura; }\nprivate:\n    int lectura_;\n};\n\nclass Exterior : public Sensor {\npublic:\n    explicit Exterior(int lectura) : Sensor{lectura} {}\n};\n\nclass Interior : public Sensor {\npublic:\n    explicit Interior(int lectura) : Sensor{lectura} {}\n};\nclass Estacion : public Exterior, public Interior {\npublic:\n    Estacion(int exterior, int interior)\n        : Exterior{exterior}, Interior{interior} {}\n\n    const Sensor& sensor_exterior() const {\n        const Exterior& rama = *this;\n        return rama;\n    }\n\n    const Sensor& sensor_interior() const {\n        const Interior& rama = *this;\n        return rama;\n    }\n};\nint main() {\n    Estacion original{4, 15};\n    const Sensor& vista = original.sensor_exterior();\n    Sensor lectura_copiada{vista};\n    Estacion copia{original};\n    original.Exterior::fijar(7);\n    copia.Interior::fijar(18);\n    std::cout << vista.leer() << '|' << lectura_copiada.leer()\n              << '|' << original.sensor_interior().leer() << '\\n';\n    std::cout << copia.sensor_exterior().leer() << '|'\n              << copia.sensor_interior().leer();\n    return 0;\n}\n",
+          "answers": [
+            "7|4|15\n4|18"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista sigue sobre el exterior de original y observa siete. lectura_copiada es otro Sensor y conserva cuatro. El interior de original sigue siendo quince. La estación copia conserva cuatro en su exterior y cambia su interior a dieciocho. Copiar la estación copia las dos partes; obtener una vista sólo permite utilizar una parte existente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Por qué la vista puede seguir utilizándose después del retorno"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se conservan los dos métodos completos de Estacion y se escribe Estacion dato{10, 20}; seguido de const Sensor& consulta = dato.sensor_interior();. Después se llama a consulta.leer() mientras dato sigue vivo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u10l3_duracion_de_la_parte_base_elegida",
+          "question": "¿Por qué esa consulta sigue siendo válida después de terminar sensor_interior?",
+          "options": [
+            "La referencia local rama prolonga por sí sola la vida del Sensor, incluso después de destruir dato.",
+            "Los dos retornos const Sensor& eligen siempre el primer Sensor de la lista de bases, sin importar el tipo de rama.",
+            "rama era una referencia a Interior de dato; el retorno se refiere al Sensor de esa parte, que sigue existiendo dentro de dato."
+          ],
+          "correctIndex": 2,
+          "explanation": "No se construyó un Sensor temporal al obtener la referencia. La rama Interior y su Sensor ya formaban parte de dato y siguen vivos después de terminar la función. El tipo de rama elige la parte interior, aunque las dos funciones de consulta tengan el mismo tipo de retorno. Destruir dato sí terminaría la existencia de esas partes; la referencia no prolonga por sí sola la vida de la estación."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "ee144c3954c98144d61fda036e5aacf241a286004cdecb5ab70df2ed2d75320e"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "8d535deed0028e75215bf51b9fbfb002265b035bb7822cf9c48ddf5f9ca5b915"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "511957ccb4a92e922ac85fc87089ffd94fee4f04a9aad593190069522d7b5c12"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "135155bb7abe5f52ca2718833b138cb2cf42839657fba892ebc2b3a0adf6cab8"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "f7cb8fde01d58e7c7c6e0595ff67750e6d2f6169afde29813e018c5a24b9d1cb"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "b67c41f16f93a3f4e57c69b1f3670ada235c5c897ae55965c13454745e2f0bba"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "7d20c80037b967ffa3d91e9eb4accc6d2119cac968313ba808ae554bb42233b0"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "22359e664f0cfea4c7cbbeb00cd0fc10be86f21c2697f6525e7d5af28460c603"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "eb7e86910bc551fe801e52ac2a4d6289e595144d9c67e912845c7f3dcd1888ef"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "bb5d90493aed94bb87c3a5d1c515be50a1f7fa8b1d1c532e666e707fc705e5a6"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "185f3436aa4048c62a919dd088767968dffdde3fefec5fe86ca35b8656f04e72"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "11aff492f86b62e6171701da472c1f8d910d927ae465ebf917e53ac080b22399"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "538049f2408c0fd3d031f19e380f4587db5f931faebfe245d17e2d4f5499c931"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "80e05afa0e37663d5ce92fcc133863d0bdbe9aa3ff1570f4c9761596b1e98616"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "55de4cc768731b4ce47280807fda6c05e200e29c18c5b9a628fb7eda6c2ee511"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "27c753abec2e9d2ac5a3d66bbb1c971b025003fa61f737e8855cd56395b3ef3a"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "8d336ffcac3f1b76d85b985ab52dbd1c839ffd20a0983f0c307b72318e1d76a0"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "39493ab8d906889b215ea183df0d0afdd526ac9e2b8894ab5739a8cba26d296a",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "ee144c3954c98144d61fda036e5aacf241a286004cdecb5ab70df2ed2d75320e"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "8d535deed0028e75215bf51b9fbfb002265b035bb7822cf9c48ddf5f9ca5b915"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "511957ccb4a92e922ac85fc87089ffd94fee4f04a9aad593190069522d7b5c12"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "135155bb7abe5f52ca2718833b138cb2cf42839657fba892ebc2b3a0adf6cab8"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "f7cb8fde01d58e7c7c6e0595ff67750e6d2f6169afde29813e018c5a24b9d1cb"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "b67c41f16f93a3f4e57c69b1f3670ada235c5c897ae55965c13454745e2f0bba"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "7d20c80037b967ffa3d91e9eb4accc6d2119cac968313ba808ae554bb42233b0"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "22359e664f0cfea4c7cbbeb00cd0fc10be86f21c2697f6525e7d5af28460c603"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "eb7e86910bc551fe801e52ac2a4d6289e595144d9c67e912845c7f3dcd1888ef"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "bb5d90493aed94bb87c3a5d1c515be50a1f7fa8b1d1c532e666e707fc705e5a6"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "185f3436aa4048c62a919dd088767968dffdde3fefec5fe86ca35b8656f04e72"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "11aff492f86b62e6171701da472c1f8d910d927ae465ebf917e53ac080b22399"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "538049f2408c0fd3d031f19e380f4587db5f931faebfe245d17e2d4f5499c931"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "80e05afa0e37663d5ce92fcc133863d0bdbe9aa3ff1570f4c9761596b1e98616"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "55de4cc768731b4ce47280807fda6c05e200e29c18c5b9a628fb7eda6c2ee511"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "27c753abec2e9d2ac5a3d66bbb1c971b025003fa61f737e8855cd56395b3ef3a"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "8d336ffcac3f1b76d85b985ab52dbd1c839ffd20a0983f0c307b72318e1d76a0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

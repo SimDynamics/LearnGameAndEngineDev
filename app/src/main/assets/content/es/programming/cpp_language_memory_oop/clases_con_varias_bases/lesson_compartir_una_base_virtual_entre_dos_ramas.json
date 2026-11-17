@@ -1,0 +1,1233 @@
+{
+  "id": "cpp_language_memory_oop__clases_con_varias_bases__compartir_una_base_virtual_entre_dos_ramas",
+  "title": "Compartir una base virtual entre dos ramas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos caminos que necesitan un mismo registro"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes reunimos dos ramas que contenían dos Registro independientes. Ese diseño sirve cuando cada rama debe conservar su propio número. Ahora queremos otro contrato: los dos canales deben usar un mismo Registro. Si uno cambia su número, una consulta por el otro debe observar ese cambio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para expresar esa parte compartida, las dos ramas declaran a Registro como base virtual. virtual se escribe en la relación de herencia, junto a public. En este caso virtual public y public virtual expresan lo mismo. Encuentro reúne después las dos ramas sin repetir Registro como otra base directa (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un Encuentro contiene un CanalA, un CanalB y un solo Registro compartido por esas dos ramas. No se crean primero dos registros para fusionarlos después. Las declaraciones de las relaciones de herencia determinan que esa parte común sea única."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Quién prepara la base depende del objeto completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "En CanalA solo_a{3};, el objeto completo tiene tipo CanalA. Su constructor prepara Registro con su inicializador Registro{numero}. Lo mismo sucede con un CanalB construido por separado."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cambio, dentro de un Encuentro las ramas son partes de un objeto mayor. Es el constructor de Encuentro el que prepara la base virtual compartida mediante Registro{numero}. Los inicializadores de Registro escritos en CanalA y CanalB no vuelven a prepararla. Por eso los argumentos diez y veinte que Encuentro proporciona a sus ramas no sustituyen el número común (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Llamamos clase más derivada a la clase del objeto completo en esta construcción: CanalA para solo_a, CanalB para solo_b y Encuentro para conjunto. Su constructor se encarga de las bases virtuales de ese objeto. Si posteriormente construimos un objeto completo de otra clase derivada de Encuentro, esa nueva clase asumirá la misma responsabilidad."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l4_ramas_aisladas_y_objeto_completo",
+          "language": "cpp",
+          "question": "Escribe los tres números que conservan los objetos construidos por separado.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\nint main() {\n    CanalA solo_a{3};\n    CanalB solo_b{8};\n    Encuentro conjunto{6};\n    std::cout << solo_a.leer() << ':' << solo_b.leer()\n              << ':' << conjunto.leer();\n    return 0;\n}\n",
+          "answers": [
+            "3:8:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "solo_a prepara su Registro con tres y solo_b prepara otro Registro con ocho. conjunto es otro objeto completo y su constructor Encuentro prepara su base virtual con seis. Los tres objetos completos no comparten entre sí un Registro: lo comparten las dos ramas que están dentro de cada Encuentro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Las dos ramas observan la misma parte"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el programa siguiente, canal_a y canal_b siguen siendo referencias a las dos ramas. directa y acceso se obtienen ahora desde Encuentro directamente: sólo hay un Registro que elegir. Las conversiones usan esa parte del objeto vivo; no requieren calcular desplazamientos ni suponer una dirección de memoria concreta (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l4_vistas_de_la_base_virtual_comun",
+          "language": "cpp",
+          "question": "Escribe las consultas iniciales y las tres consultas posteriores al cambio.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\nint main() {\n    Encuentro dato{7};\n    CanalA& canal_a = dato;\n    CanalB& canal_b = dato;\n    Registro& directa = dato;\n    Registro* acceso = &dato;\n    std::cout << canal_a.leer() << ':' << canal_b.leer() << '|';\n    canal_a.fijar(4);\n    std::cout << directa.leer() << ':' << acceso->leer()\n              << ':' << canal_b.leer();\n    return 0;\n}\n",
+          "answers": [
+            "7:7|4:4:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos ramas comienzan consultando el mismo Registro con siete. canal_a.fijar(4) cambia ese único número a cuatro. directa, acceso y canal_b utilizan después esa misma parte y observan cuatro. Las referencias a las ramas no son copias de sus datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las vistas no prolongan la vida de dato. Aquí todas las consultas ocurren mientras ese Encuentro sigue existiendo dentro de main. Tener una parte compartida entre las ramas no la convierte en un objeto independiente que sobreviva al Encuentro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ignorar el inicializador también omite sus argumentos"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta variante, elegir recibe una etiqueta de texto y un número. Escribe la etiqueta y devuelve el número. Las llamadas a elegir aparecen dentro de los inicializadores de Registro, de modo que sus mensajes permiten reconocer cuáles se ejecutan. Los cuerpos de las dos ramas escriben A y B; el cuerpo del objeto que las reúne escribe E."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando una rama forma parte de otro objeto completo, su inicializador de la base virtual se ignora durante la ejecución. Tampoco se evalúan los argumentos de ese inicializador. Esto no elimina el constructor de la rama: sus otros inicializadores y su cuerpo siguen teniendo su función (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l4_argumentos_de_inicializadores_virtuales_ignorados",
+          "language": "cpp",
+          "question": "Escribe la salida completa: primero se construye solo y después conjunto.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nint elegir(const char* etiqueta, int numero) {\n    std::cout << etiqueta << '|';\n    return numero;\n}\n\nclass CanalConEfectoA : virtual public Registro {\npublic:\n    explicit CanalConEfectoA(int numero)\n        : Registro{elegir(\"ElegirA\", numero)} {\n        std::cout << \"A|\";\n    }\n};\n\nclass CanalConEfectoB : virtual public Registro {\npublic:\n    explicit CanalConEfectoB(int numero)\n        : Registro{elegir(\"ElegirB\", numero)} {\n        std::cout << \"B|\";\n    }\n};\n\nclass EncuentroConEfecto : public CanalConEfectoA, public CanalConEfectoB {\npublic:\n    explicit EncuentroConEfecto(int numero)\n        : Registro{elegir(\"ElegirE\", numero)},\n          CanalConEfectoA{30}, CanalConEfectoB{40} {\n        std::cout << \"E|\";\n    }\n};\nint main() {\n    CanalConEfectoA solo{2};\n    std::cout << solo.leer() << '|';\n    EncuentroConEfecto conjunto{7};\n    std::cout << conjunto.leer();\n    return 0;\n}\n",
+          "answers": [
+            "ElegirA|A|2|ElegirE|A|B|E|7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Al construir solo, CanalConEfectoA es la clase del objeto completo: ejecuta elegir con ElegirA, prepara Registro con dos y escribe A. Después se consulta ese dos. Al construir conjunto, sólo el inicializador de Registro de EncuentroConEfecto ejecuta elegir, con ElegirE y siete. Las ramas ejecutan sus cuerpos A y B, pero no las llamadas elegir de sus inicializadores ignorados. Finalmente se escribe E y se consulta siete."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lo ignorado es el inicializador de Registro de cada rama. Las llamadas a los constructores de las ramas sí reciben treinta y cuarenta. Además, ignorar un inicializador durante la ejecución no autoriza a escribir nombres inexistentes o expresiones inválidas en el código fuente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Omitir el inicializador no elige una de las ramas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora RegistroConDefecto ofrece dos constructores. El constructor sin argumentos guarda cero expresamente; el que recibe int guarda ese número. EncuentroConDefecto inicializa las dos ramas, pero omite un inicializador propio para la base virtual."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este caso se intenta construir la base virtual mediante su constructor sin argumentos. No se utiliza como sustituto el número proporcionado a la primera rama ni el proporcionado a la segunda. El cero de este ejemplo procede del inicializador numero_{0} escrito en RegistroConDefecto() (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l4_omision_usa_constructor_por_defecto_de_base_virtual",
+          "language": "cpp",
+          "question": "Escribe el número de solo y después el de conjunto.",
+          "code": "#include <iostream>\n\nclass RegistroConDefecto {\npublic:\n    RegistroConDefecto() : numero_{0} {}\n    explicit RegistroConDefecto(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprivate:\n    int numero_;\n};\n\nclass CanalDefectoA : virtual public RegistroConDefecto {\npublic:\n    explicit CanalDefectoA(int numero) : RegistroConDefecto{numero} {}\n};\n\nclass CanalDefectoB : virtual public RegistroConDefecto {\npublic:\n    explicit CanalDefectoB(int numero) : RegistroConDefecto{numero} {}\n};\n\nclass EncuentroConDefecto : public CanalDefectoA, public CanalDefectoB {\npublic:\n    EncuentroConDefecto(int a, int b) : CanalDefectoA{a}, CanalDefectoB{b} {}\n};\nint main() {\n    CanalDefectoA solo{8};\n    EncuentroConDefecto conjunto{3, 6};\n    std::cout << solo.leer() << ':' << conjunto.leer();\n    return 0;\n}\n",
+          "answers": [
+            "8:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "solo tiene tipo CanalDefectoA y prepara su base con ocho. conjunto tiene tipo EncuentroConDefecto: al omitir su inicializador de RegistroConDefecto, usa el constructor sin argumentos, que guarda cero. Los argumentos tres y seis sólo llegan a las ramas; sus inicializadores de la base virtual se ignoran en esta construcción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Sin constructor válido sin argumentos, la omisión se rechaza"
+        },
+        {
+          "type": "paragraph",
+          "text": "Volvemos al Registro inicial, cuyo constructor declarado exige un int y que no tiene uno invocable sin argumentos. Con ese Registro y las dos ramas CanalA y CanalB, se intenta definir esta nueva clase. El fragmento se analiza como rechazo de compilación; no es un programa que debamos ejecutar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class EncuentroSinNumero : public CanalA, public CanalB {\npublic:\n    EncuentroSinNumero() : CanalA{4}, CanalB{9} {}\n};\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u10l4_omision_sin_constructor_default_virtual",
+          "question": "¿Por qué EncuentroSinNumero no puede construirse con ese constructor?",
+          "options": [
+            "Porque tendría que preparar su base virtual Registro sin argumentos y no hay un constructor válido para hacerlo; las ramas no aportan ese inicializador por él.",
+            "Porque la primera rama exige usar cuatro y la segunda exige usar nueve, y C++ compara ambos números para detectar el conflicto.",
+            "Porque una clase con base virtual no puede ofrecer nunca un constructor sin argumentos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Al construir el objeto completo EncuentroSinNumero, le corresponde preparar Registro. Su lista omite esa base virtual, por lo que se necesitaría un constructor de Registro invocable sin argumentos. No existe en este modelo. Los inicializadores Registro de las ramas se ignoran y no resuelven la omisión. Un constructor sin argumentos de la clase completa sí podría ser válido si preparase Registro con un número elegido o si Registro ofreciese un constructor adecuado sin argumentos."
+        },
+        {
+          "type": "paragraph",
+          "text": "En particular, la clase completa puede nombrar una base virtual indirecta en su lista de inicializadores. Ese permiso es el que permite escribir Registro{numero} en Encuentro, aunque sus bases directas sean CanalA y CanalB (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una construcción y una destrucción de la parte compartida"
+        },
+        {
+          "type": "paragraph",
+          "text": "RegistroConTraza escribe R+ y su número al construirse, y R- y su número al destruirse. Los cuerpos de TrazaA y TrazaB escriben A+ y B+ al construirse, y A- y B- al destruirse. El miembro marca_, de tipo Marca, escribe M+ y M-. El cuerpo de EncuentroConTraza escribe E+ y E-."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero se prepara la base virtual RegistroConTraza. Después se preparan TrazaA y TrazaB, en el orden declarado como bases directas. A continuación se construye marca_ y al final se ejecuta el cuerpo de EncuentroConTraza. La base compartida ya existe cuando comienzan las dos ramas (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l4_orden_con_base_virtual_y_miembro",
+          "language": "cpp",
+          "question": "Escribe la traza completa, desde la primera construcción hasta Fin.",
+          "code": "#include <iostream>\n\nclass RegistroConTraza {\npublic:\n    explicit RegistroConTraza(int numero) : numero_{numero} {\n        std::cout << \"R+\" << numero_ << '|';\n    }\n    ~RegistroConTraza() { std::cout << \"R-\" << numero_ << '|'; }\nprivate:\n    int numero_;\n};\n\nclass TrazaA : virtual public RegistroConTraza {\npublic:\n    explicit TrazaA(int numero) : RegistroConTraza{numero} {\n        std::cout << \"A+|\";\n    }\n    ~TrazaA() { std::cout << \"A-|\"; }\n};\n\nclass TrazaB : virtual public RegistroConTraza {\npublic:\n    explicit TrazaB(int numero) : RegistroConTraza{numero} {\n        std::cout << \"B+|\";\n    }\n    ~TrazaB() { std::cout << \"B-|\"; }\n};\n\nclass Marca {\npublic:\n    Marca() { std::cout << \"M+|\"; }\n    ~Marca() { std::cout << \"M-|\"; }\n};\n\nclass EncuentroConTraza : public TrazaA, public TrazaB {\npublic:\n    explicit EncuentroConTraza(int numero)\n        : RegistroConTraza{numero}, TrazaA{10}, TrazaB{20}, marca_{} {\n        std::cout << \"E+|\";\n    }\n    ~EncuentroConTraza() { std::cout << \"E-|\"; }\nprivate:\n    Marca marca_;\n};\nint main() {\n    {\n        EncuentroConTraza dato{5};\n        std::cout << \"Uso|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "R+5|A+|B+|M+|E+|Uso|E-|M-|B-|A-|R-5|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Primero se construye RegistroConTraza con cinco. Después terminan los cuerpos de TrazaA y TrazaB; se construye marca_ y termina el cuerpo de EncuentroConTraza. main escribe Uso. Al salir del bloque, se ejecuta primero el cuerpo ~EncuentroConTraza; se destruye marca_; después las ramas en orden inverso, TrazaB y TrazaA. Finalmente se destruye la única base virtual RegistroConTraza y main escribe Fin. Las ramas no vuelven a destruir por separado esa base común."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta destrucción, el cuerpo del destructor del objeto completo va antes que sus miembros y bases. Después se destruyen el miembro y las bases en el orden inverso de su preparación; la base virtual común queda para el final. Todo se inicia al salir del bloque, sin llamadas manuales a destructores (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar crea otro objeto con su propia parte compartida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Encuentro copia{original}; construye un segundo objeto completo. La construcción de copia generada copia sus bases y miembros, y prepara una sola vez la base virtual de ese nuevo objeto. Cada Encuentro conserva su propio Registro; la copia no convierte las ramas de dos objetos completos distintos en vistas de un único registro global (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l4_copia_independiente_de_objeto_con_base_virtual",
+          "language": "cpp",
+          "question": "Escribe el número de original, el de copia y la consulta a copia por CanalB.",
+          "code": "#include <iostream>\n\nclass Registro {\npublic:\n    explicit Registro(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\n    void fijar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass CanalA : virtual public Registro {\npublic:\n    explicit CanalA(int numero) : Registro{numero} {}\n};\n\nclass CanalB : public virtual Registro {\npublic:\n    explicit CanalB(int numero) : Registro{numero} {}\n};\nclass Encuentro : public CanalA, public CanalB {\npublic:\n    explicit Encuentro(int numero)\n        : Registro{numero}, CanalA{10}, CanalB{20} {}\n};\nint main() {\n    Encuentro original{4};\n    Encuentro copia{original};\n    copia.CanalA::fijar(9);\n    original.CanalB::fijar(2);\n    std::cout << original.leer() << ':' << copia.leer()\n              << ':' << copia.CanalB::leer();\n    return 0;\n}\n",
+          "answers": [
+            "2:9:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los dos objetos completos comienzan con cuatro en sus registros independientes. Cambiar por CanalA de copia guarda nueve en el Registro de copia, que también observa su CanalB. Cambiar por CanalB de original guarda dos en otro Registro. Por eso la consulta de original observa dos y las dos consultas de copia observan nueve."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este ejemplo estudia construcción de copia, que crea otro objeto. La asignación entre objetos ya existentes de estas jerarquías se estudiará en otro apartado; no se debe trasladar a ella la regla que acabamos de comprobar para la construcción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Base virtual y función virtual responden a decisiones distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "virtual en class CanalA : virtual public Registro determina qué parte base comparten las ramas. virtual en una declaración de función miembro permite seleccionar una sobrescritura al llamar mediante una interfaz base. Son usos distintos de la misma palabra. Las funciones leer y fijar de nuestro Registro son ordinarias: compartir esa base no las convierte en funciones virtuales (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u10l4_no_confundir_base_virtual_con_funcion_virtual",
+          "question": "¿Qué explica que un cambio mediante CanalA se observe también mediante CanalB en Encuentro?",
+          "options": [
+            "leer y fijar se vuelven virtuales automáticamente y copian el número de una rama a la otra en cada llamada.",
+            "Las dos ramas utilizan la misma parte Registro del objeto, aunque leer y fijar no sean funciones virtuales.",
+            "El compilador mantiene dos registros y elige en cada consulta el que haya recibido el cambio más reciente."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las dos relaciones hacia Registro se declararon virtuales. Dentro de este Encuentro, las dos ramas comparten una sola parte Registro con un solo numero_. fijar sustituye ese dato y leer lo consulta. No hay una sincronización entre dos registros ni hace falta una sobrescritura de leer para producir ese resultado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después combinaremos relaciones virtuales y no virtuales para reconocer qué partes se comparten y cuáles siguen separadas. Aquí hemos establecido el caso en el que las dos ramas declaran virtual la relación con Registro y el objeto completo contiene una sola parte común."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar un código común y un dato propio en cada rama"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una Ficha tiene un código que identifica el objeto. Su parte ConValor conserva un valor; su parte ConMarca conserva una marca. Las dos partes deben consultar el mismo código de la ficha, mientras que valor y marca permanecen como datos separados."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Codigo {\npublic:\n    explicit Codigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void cambiar_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa las dos relaciones con Codigo para compartir una única parte de ese tipo. Después completa el inicializador que prepara el código cuando se construye una Ficha completa. Conserva las relaciones públicas, los datos de las ramas y los demás inicializadores."
+        },
+        {
+          "type": "paragraph",
+          "text": "ConValor y ConMarca reciben también un código porque pueden construirse por separado. Cuando forman parte de una Ficha, el inicializador de la base virtual que escriba Ficha es el que prepara la parte compartida."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u10l4_construir_codigo_comun_en_ficha",
+          "question": "Completa las dos palabras que hacen virtual la relación con Codigo y el nombre de la base que debe inicializar Ficha para guardar su código común.",
+          "template": "class ConValor : public [] Codigo {\npublic:\n    ConValor(int codigo, int valor) : Codigo{codigo}, valor_{valor} {}\n    int valor() const { return valor_; }\n    void cambiar_valor(int valor) { valor_ = valor; }\nprivate:\n    int valor_;\n};\n\nclass ConMarca : public [] Codigo {\npublic:\n    ConMarca(int codigo, int marca) : Codigo{codigo}, marca_{marca} {}\n    int marca() const { return marca_; }\nprivate:\n    int marca_;\n};\n\nclass Ficha : public ConValor, public ConMarca {\npublic:\n    Ficha(int codigo, int valor, int marca)\n        : []{codigo}, ConValor{codigo, valor}, ConMarca{codigo, marca} {}\n};\n",
+          "answers": [
+            "virtual",
+            "virtual",
+            "Codigo"
+          ],
+          "answerAlternatives": [
+            [
+              "virtual"
+            ],
+            [
+              "virtual"
+            ],
+            [
+              "Codigo",
+              "::Codigo"
+            ]
+          ],
+          "explanation": "Cada relación con Codigo se declara virtual. Ficha contiene así un único Codigo compartido por ConValor y ConMarca y lo inicializa con Codigo{codigo}. Los inicializadores Codigo de las ramas se utilizan al construir esas ramas como objetos completos; se ignoran al ejecutarse sus constructores como partes de Ficha. El valor y la marca siguen inicializándose en sus respectivas ramas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compartir el código dentro de cada objeto y copiar fichas completas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class ConValor : public virtual Codigo {\npublic:\n    ConValor(int codigo, int valor) : Codigo{codigo}, valor_{valor} {}\n    int valor() const { return valor_; }\n    void cambiar_valor(int valor) { valor_ = valor; }\nprivate:\n    int valor_;\n};\n\nclass ConMarca : public virtual Codigo {\npublic:\n    ConMarca(int codigo, int marca) : Codigo{codigo}, marca_{marca} {}\n    int marca() const { return marca_; }\nprivate:\n    int marca_;\n};\n\nclass Ficha : public ConValor, public ConMarca {\npublic:\n    Ficha(int codigo, int valor, int marca)\n        : Codigo{codigo}, ConValor{codigo, valor}, ConMarca{codigo, marca} {}\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Codigo{codigo} prepara la única parte Codigo antes de las bases directas ConValor y ConMarca. Esas bases preparan valor_ y marca_. Cada constructor termina después su propio cuerpo. Las funciones codigo y cambiar_codigo siguen siendo funciones ordinarias: virtual en la relación de base determina qué parte se comparte, no convierte esas funciones en virtuales (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el programa siguiente se construye una copia completa de la ficha antes de modificar original. copia obtiene su propio código, valor y marca. Las dos vistas por_valor y por_marca, en cambio, se refieren a partes de original. Cambiar el código de original puede observarse por ambas vistas; cambiar el código de copia afecta a otro objeto."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l4_codigo_compartido_y_copia_completa",
+          "language": "cpp",
+          "question": "Escribe las dos líneas completas tras los cambios de código y valor.",
+          "code": "#include <iostream>\n\nclass Codigo {\npublic:\n    explicit Codigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void cambiar_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nclass ConValor : public virtual Codigo {\npublic:\n    ConValor(int codigo, int valor) : Codigo{codigo}, valor_{valor} {}\n    int valor() const { return valor_; }\n    void cambiar_valor(int valor) { valor_ = valor; }\nprivate:\n    int valor_;\n};\n\nclass ConMarca : public virtual Codigo {\npublic:\n    ConMarca(int codigo, int marca) : Codigo{codigo}, marca_{marca} {}\n    int marca() const { return marca_; }\nprivate:\n    int marca_;\n};\n\nclass Ficha : public ConValor, public ConMarca {\npublic:\n    Ficha(int codigo, int valor, int marca)\n        : Codigo{codigo}, ConValor{codigo, valor}, ConMarca{codigo, marca} {}\n};\nint main() {\n    Ficha original{7, 4, 9};\n    const ConValor& por_valor = original;\n    const ConMarca& por_marca = original;\n    Ficha copia{original};\n    original.cambiar_codigo(5);\n    original.cambiar_valor(-2);\n    copia.cambiar_codigo(8);\n    std::cout << por_valor.codigo() << '|' << por_marca.codigo() << '|'\n              << original.valor() << '|' << original.marca() << '\\n';\n    std::cout << copia.codigo() << '|' << copia.valor() << '|' << copia.marca();\n    return 0;\n}\n",
+          "answers": [
+            "5|5|-2|9\n8|4|9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos vistas de original observan su código cinco porque ambas alcanzan el mismo Codigo. Su valor pasa a menos dos y su marca conserva nueve. copia es otro objeto completo: cambia su código a ocho y conserva los datos copiados, cuatro y nueve. Tener una base compartida dentro de cada ficha no comparte los datos entre fichas distintas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La clase que forma el objeto completo puede cambiar"
+        },
+        {
+          "type": "paragraph",
+          "text": "FichaFirmada añade firma_ a una Ficha. Una Ficha construida por separado inicializa su Codigo. Cuando Ficha es una parte de FichaFirmada, es FichaFirmada quien debe inicializar esa base virtual, aunque Codigo no sea su base directa (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el inicializador que guarda en el código común el parámetro codigo de FichaFirmada. La llamada Ficha{100, valor, marca} ya está proporcionada. El número cien se entrega al constructor de Ficha como argumento; ese constructor tiene el cuerpo vacío y su inicializador de Codigo se ignora cuando Ficha es una parte de este objeto más derivado. Sus ramas siguen preparando valor_ y marca_."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u10l4_inicializar_codigo_desde_clase_completa",
+          "question": "Completa la base virtual que debe inicializar FichaFirmada con su propio parámetro codigo. Conserva la llamada proporcionada a Ficha y los demás elementos.",
+          "template": "class FichaFirmada : public Ficha {\npublic:\n    FichaFirmada(int codigo, int valor, int marca, int firma)\n        : []{codigo}, Ficha{100, valor, marca}, firma_{firma} {}\n\n    int firma() const { return firma_; }\nprivate:\n    int firma_;\n};\n",
+          "answers": [
+            "Codigo"
+          ],
+          "answerAlternatives": [
+            [
+              "Codigo",
+              "::Codigo"
+            ]
+          ],
+          "explanation": "FichaFirmada debe escribir Codigo{codigo}. Esta clase forma el objeto completo del ejercicio. El inicializador Codigo{codigo} de Ficha no se ejecuta cuando Ficha es una parte de FichaFirmada; por eso entregar cien a ese constructor no establece el código compartido. Ficha sigue preparando sus bases directas y FichaFirmada prepara firma_."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una vista Ficha sigue refiriéndose al objeto completo existente"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class FichaFirmada : public Ficha {\npublic:\n    FichaFirmada(int codigo, int valor, int marca, int firma)\n        : Codigo{codigo}, Ficha{100, valor, marca}, firma_{firma} {}\n\n    int firma() const { return firma_; }\nprivate:\n    int firma_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "sola se construye como una Ficha completa. completa se construye como una FichaFirmada. parte es una referencia constante a la parte Ficha de completa: no reconstruye una ficha ni vuelve a inicializar el código. La consulta por esa referencia alcanza el Codigo que ya preparó FichaFirmada."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l4_objeto_completo_y_vista_a_ficha",
+          "language": "cpp",
+          "question": "Escribe las consultas de sola, parte y completa, seguidas por la firma.",
+          "code": "#include <iostream>\n\nclass Codigo {\npublic:\n    explicit Codigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void cambiar_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nclass ConValor : public virtual Codigo {\npublic:\n    ConValor(int codigo, int valor) : Codigo{codigo}, valor_{valor} {}\n    int valor() const { return valor_; }\n    void cambiar_valor(int valor) { valor_ = valor; }\nprivate:\n    int valor_;\n};\n\nclass ConMarca : public virtual Codigo {\npublic:\n    ConMarca(int codigo, int marca) : Codigo{codigo}, marca_{marca} {}\n    int marca() const { return marca_; }\nprivate:\n    int marca_;\n};\n\nclass Ficha : public ConValor, public ConMarca {\npublic:\n    Ficha(int codigo, int valor, int marca)\n        : Codigo{codigo}, ConValor{codigo, valor}, ConMarca{codigo, marca} {}\n};\nclass FichaFirmada : public Ficha {\npublic:\n    FichaFirmada(int codigo, int valor, int marca, int firma)\n        : Codigo{codigo}, Ficha{100, valor, marca}, firma_{firma} {}\n\n    int firma() const { return firma_; }\nprivate:\n    int firma_;\n};\nint main() {\n    Ficha sola{13, 6, 2};\n    FichaFirmada completa{17, 6, 2, 21};\n    const Ficha& parte = completa;\n    std::cout << sola.codigo() << '|' << parte.codigo() << '|'\n              << completa.codigo() << '|' << completa.firma();\n    return 0;\n}\n",
+          "answers": [
+            "13|17|17|21"
+          ],
+          "outputComparison": "exact",
+          "explanation": "sola tiene el código trece inicializado por su constructor Ficha. completa tiene el código diecisiete inicializado por FichaFirmada. parte sigue sobre esa misma completa y observa diecisiete; obtener la referencia no ejecuta otro constructor. La firma de completa es veintiuno. El cien entregado internamente a Ficha no sustituyó el código que preparó la clase completa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una base virtual sin constructor por defecto necesita su inicializador"
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor que hemos declarado en Codigo exige un int y no hay uno invocable sin argumentos. Se conserva todo el código de la práctica y se modifica únicamente FichaFirmada para quitar Codigo{codigo} de su lista de inicializadores. La llamada Ficha{100, valor, marca} permanece."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u10l4_inicializador_virtual_no_se_delega_a_parte",
+          "question": "¿Qué ocurre al intentar construir una FichaFirmada con esa modificación?",
+          "options": [
+            "Se rechaza: la clase completa necesita inicializar Codigo y no hay un constructor por defecto que pueda utilizar al omitir ese inicializador.",
+            "Se guarda cien en Codigo porque la llamada a Ficha toma el control de la base virtual cuando falta el inicializador exterior.",
+            "Se construye con el código cero: omitir el inicializador de una base siempre pone a cero sus datos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Omitir el inicializador en FichaFirmada no activa el de Ficha para esa base virtual. Se intentaría inicializar Codigo por defecto, pero no hay un constructor Codigo sin argumentos. El programa se rechaza; no se inventa un constructor que ponga su dato a cero ni se traslada la inicialización a una rama."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "91cbf053bbe7ad1c173a5b975c7a14bf8fe8e56fc5c70f6ed031abde248deb5c"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "f84aa58183e7ddbc35e151d672f0338974610373b5f28bcca5d1d59cdfda37ed"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "bc7edae95ad33b5db1b3ec3a02e8dfaa5619ff66d05a39465f03354c2f1aa730"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "9fc3095ad2de4f432fe09c99a4afa2a2d9c367d394cf38da88c0a6a50ba18ff5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "a816774bf0fef5c3b353f9709f66a073cf2f6de66182e8e3873dd31e7842e2a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "e9a38bddd2095d507c89f403064e4b0b86a12a46cdb9bbd8fb464fadb84b5c3c"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "bf4d4bd27ba0320f8a39e875bb29397ef15f0dcca1249f3b2d4ce8f4732a3cdf"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "2399df099c93824bbc74a8d66f289609b58fabf24190414a52939c940955f5b2"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "e61958e6e11ec7e06d304e9373faefc9ab7961caa89636f44448d38a9271e969"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "9ac8f12788f521224f5c6902d215e0a664918ad143e410e3fd5375a35eb93a46"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "76f451778edec72f1ab05019956a222faf0c4245cbaa8695f4ecbb3066053494"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "79b3700dbd355ee41a235e08c81bc8f52d004d8881ed8e82709ccb1c0fcbba17"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "5a6caf0983cabb0cf64f1563276e83528d1f2e6dc16c06414c6c4400ed49575e"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "3d7fa83517530f951e76ca76cd63ebeae30f6933d24dd97e05beeaa1ae57ca75"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "c0027365b6fa91fc84b23a93adcaed8cfeca913e594f7412472a54ffd9a4bdfd"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "8b03793aba365cc36ebae1948948dfc0a6032f49e8467e1981553328184dc6f1"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "27ff897ba8bb96b43b2d1d5887984b203879786ad5658e6d6fe5268eb8a1fa6a"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "b1731982e3f7673c6f01ad5d1dec53ffa4aa4c9dd0ff50613cf8f4006c204940"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "9787490f0a85a81e4271202bd61c22807fc35041e0b9ed0f5bec7d45f6bcee1b",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "91cbf053bbe7ad1c173a5b975c7a14bf8fe8e56fc5c70f6ed031abde248deb5c"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "f84aa58183e7ddbc35e151d672f0338974610373b5f28bcca5d1d59cdfda37ed"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "bc7edae95ad33b5db1b3ec3a02e8dfaa5619ff66d05a39465f03354c2f1aa730"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "9fc3095ad2de4f432fe09c99a4afa2a2d9c367d394cf38da88c0a6a50ba18ff5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "a816774bf0fef5c3b353f9709f66a073cf2f6de66182e8e3873dd31e7842e2a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "e9a38bddd2095d507c89f403064e4b0b86a12a46cdb9bbd8fb464fadb84b5c3c"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "bf4d4bd27ba0320f8a39e875bb29397ef15f0dcca1249f3b2d4ce8f4732a3cdf"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "2399df099c93824bbc74a8d66f289609b58fabf24190414a52939c940955f5b2"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "e61958e6e11ec7e06d304e9373faefc9ab7961caa89636f44448d38a9271e969"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "9ac8f12788f521224f5c6902d215e0a664918ad143e410e3fd5375a35eb93a46"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "76f451778edec72f1ab05019956a222faf0c4245cbaa8695f4ecbb3066053494"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "79b3700dbd355ee41a235e08c81bc8f52d004d8881ed8e82709ccb1c0fcbba17"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "5a6caf0983cabb0cf64f1563276e83528d1f2e6dc16c06414c6c4400ed49575e"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "3d7fa83517530f951e76ca76cd63ebeae30f6933d24dd97e05beeaa1ae57ca75"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "c0027365b6fa91fc84b23a93adcaed8cfeca913e594f7412472a54ffd9a4bdfd"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "8b03793aba365cc36ebae1948948dfc0a6032f49e8467e1981553328184dc6f1"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "27ff897ba8bb96b43b2d1d5887984b203879786ad5658e6d6fe5268eb8a1fa6a"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "b1731982e3f7673c6f01ad5d1dec53ffa4aa4c9dd0ff50613cf8f4006c204940"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
