@@ -349,7 +349,14 @@ struct SimulationView::Impl {
                     SendMessageW(child,EM_SETZOOM,1,1);
                     SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(selected_base),FALSE);
                 }
-                if(!set_rich_text_zoom(child,target))
+                // Rebuilding base fonts for a new monitor is not a
+                // request to change the student's independent editor zoom.
+                // Reapply its exact previous native ratio after WM_SETFONT.
+                const bool local_input=rebase&&id==input_id&&numerator>0&&denominator>0;
+                const bool accepted=local_input?
+                    SendMessageW(child,EM_SETZOOM,numerator,denominator)!=FALSE:
+                    set_rich_text_zoom(child,target);
+                if(!accepted)
                     throw std::runtime_error("RichEdit rechazó la escala de la simulación.");
             }
         }catch(...){
