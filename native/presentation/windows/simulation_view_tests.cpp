@@ -1966,6 +1966,24 @@ void original_order_reading_session(HWND host) {
         text(view,original_order_id)==expected,
         "Stepping reconstructed the source RichEdit or lost the learner's selection");
 
+    // A learner may read the middle of the source rather than its final
+    // line. Step changes must not snap that reading position to the top or end.
+    SendMessageW(original,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    SendMessageW(original,EM_LINESCROLL,0,10);
+    const auto middle=scroll_state(original);
+    check(middle.position.y>0&&middle.position.y<earlier.position.y&&
+        middle.selection.cpMin==selected.cpMin&&middle.selection.cpMax==selected.cpMax,
+        "Cannot prepare a mid-document original-order reading position");
+    check(view.go_to_step(4)&&view.go_to_step(5),
+        "Cannot move between two frames of the same source");
+    const auto retained_middle=scroll_state(original);
+    check(retained_middle.position.y==middle.position.y&&
+        retained_middle.first==middle.first&&
+        retained_middle.selection.cpMin==selected.cpMin&&
+        retained_middle.selection.cpMax==selected.cpMax&&rewrites==0,
+        "A step update moved a mid-document source reader without new data");
+    SendMessageW(original,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+
     // Font, DPI and width changes must independently preserve the long
     // original-order panel, not only the calculated stdout RichEdit.
     const auto still_at_end=[&](const char* reason){
