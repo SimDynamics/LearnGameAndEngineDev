@@ -24,20 +24,63 @@ std::string text(const JsonObject& object, const wchar_t* name) {
     return winrt::to_string(value.GetString());
 }
 struct Resolved { std::filesystem::path path; std::string locale; };
-Resolved resolve(const std::filesystem::path& root, std::string_view locale, const std::filesystem::path& relative) {
+Resolved resolve(const std::filesystem::path& root, std::string_view locale, const std::filesystem::path& relative,
+                 bool exact_locale = false) {
     for (const auto language : {std::string(locale),std::string("es")}) {
+        if (exact_locale && language != locale) continue;
         const auto path = root / language / relative;
         state::require_safe_path(path);
         if (std::filesystem::is_regular_file(state::native_io_path(path))) return {path,language};
     }
     return {};
 }
-IJsonValue read(const std::filesystem::path& path) {
-    auto bytes = state::read_bytes(path,8 * 1024 * 1024);
-    std::string_view text(reinterpret_cast<const char*>(bytes.data()),bytes.size());
-    if (text.starts_with("\xEF\xBB\xBF")) text.remove_prefix(3);
-    return JsonValue::Parse(winrt::to_hstring(text));
+struct CatalogDocument { IJsonValue value; std::string source; };
+CatalogDocument read(const std::filesystem::path& path, std::size_t maximum = 8 * 1024 * 1024) {
+    const auto bytes = state::read_bytes(path,maximum);
+    std::string source(reinterpret_cast<const char*>(bytes.data()),bytes.size());
+    if (source.starts_with("\xEF\xBB\xBF")) source.erase(0,3);
+    return {JsonValue::Parse(winrt::to_hstring(source)),std::move(source)};
 }
+struct EditionResourceIdentity {
+    std::optional<CourseEdition> edition;
+    std::string id, course_id, unit_id;
+};
+EditionResourceIdentity edition_resource_identity(const std::filesystem::path& asset,
+                                                  std::string_view locale) {
+    struct Cached {
+        std::filesystem::file_time_type stamp;
+        std::uintmax_t size = 0;
+        EditionResourceIdentity identity;
+    };
+    static std::mutex lock;
+    static std::map<std::pair<std::filesystem::path,std::string>,Cached> entries;
+    const auto path = state::native_io_path(asset);
+    const auto stamp = std::filesystem::last_write_time(path);
+    const auto size = std::filesystem::file_size(path);
+    const auto cache_key = std::make_pair(asset,std::string(locale));
+    {
+        const std::lock_guard guard(lock);
+        const auto found = entries.find(cache_key);
+        if (found != entries.end() && found->second.stamp == stamp && found->second.size == size)
+            return found->second.identity;
+    }
+    const auto document = read(asset,32 * 1024 * 1024);
+    const auto object = document.value.GetObject();
+    EditionResourceIdentity result;
+    result.edition = parse_course_edition_metadata(document.source,locale);
+    if (object.HasKey(L"id")) result.id = text(object,L"id");
+    if (object.HasKey(L"courseId")) result.course_id = text(object,L"courseId");
+    if (object.HasKey(L"unitId")) result.unit_id = text(object,L"unitId");
+    require(std::filesystem::last_write_time(path) == stamp && std::filesystem::file_size(path) == size,
+        "el recurso de edición cambió durante la lectura.");
+    {
+        const std::lock_guard guard(lock);
+        if (entries.size() >= 2048) entries.erase(entries.begin());
+        entries[cache_key] = Cached{stamp,size,result};
+    }
+    return result;
+}
+
 std::string route_title(std::string_view route, std::string_view locale) {
     if (route == "programming") return locale == "fr" ? "Programmation avancée et architecture des moteurs" : locale == "en" ? "Advanced Programming and Engine Architecture" : "Programación Avanzada y Arquitectura de Motores";
     return locale == "fr" ? "Mathématiques et physique" : locale == "en" ? "Mathematics and Physics" : "Matemáticas y Física";
@@ -108,6 +151,7 @@ curriculum::CatalogPage load_catalog(const std::filesystem::path& content_root, 
     try {
         CatalogPage result{location,{},{}};
         const auto level = catalog_level(location);
+        std::optional<CourseEdition> parent_edition;
         if (level == CatalogLevel::routes) {
             result.title = location.locale == "fr" ? "Parcours" : location.locale == "en" ? "Learning paths" : "Rutas de aprendizaje";
             for (const auto id : {"programming","math_physics"}) {
@@ -122,19 +166,35 @@ curriculum::CatalogPage load_catalog(const std::filesystem::path& content_root, 
             require(std::ranges::any_of(parent.entries,[&](const auto& entry) { return entry.id == owner; }),
                 "la ubicación no está publicada en su índice padre.");
         }
-        const auto asset = resolve(content_root,location.locale,catalog_index_path(location));
+        if (level == CatalogLevel::lessons) {
+            auto course = location; course.unit.clear(); course.lesson.clear();
+            const auto owner = resolve(content_root,location.locale,catalog_index_path(course));
+            require(!owner.path.empty(),"no existe el índice padre de la edición.");
+            const auto parent = read(owner.path);
+            parent_edition = parse_course_edition_metadata(parent.source,owner.locale);
+        }
+        const auto asset = resolve(content_root,parent_edition ? parent_edition->locale : location.locale,
+            catalog_index_path(location),parent_edition.has_value());
         require(!asset.path.empty(),"este índice todavía no contiene material instalado.");
-        const auto json = read(asset.path);
+        const auto document = read(asset.path);
+        const auto& json = document.value;
+        std::optional<CourseEdition> edition;
         JsonArray entries;
         if (level == CatalogLevel::courses) {
             entries = json.GetArray(); result.title = route_title(location.route,location.locale);
         } else {
             const auto object = json.GetObject(); result.title = text(object,L"title");
+            edition = parse_course_edition_metadata(document.source,asset.locale);
+            if (edition) require(edition->course_id == location.course,"la edición pertenece a otro curso.");
             if (level == CatalogLevel::units) {
                 require(text(object,L"id") == location.course,"el índice pertenece a otro curso.");
+                require(!uses_course_edition_namespace(location.course),"el ID del curso no puede usar un espacio de unidad reservado.");
                 entries = object.GetNamedArray(L"units");
             } else {
                 require(text(object,L"courseId") == location.course && text(object,L"unitId") == location.unit,"el índice pertenece a otra unidad.");
+                require(edition == parent_edition,"la unidad no pertenece a la edición activa de su curso.");
+                require(edition ? course_edition_unit_id(*edition,location.unit) :
+                    !uses_course_edition_namespace(location.unit),"la unidad necesita la edición correspondiente.");
                 entries = object.GetNamedArray(L"lessons");
             }
         }
@@ -144,6 +204,9 @@ curriculum::CatalogPage load_catalog(const std::filesystem::path& content_root, 
             const auto item = value.GetObject(); CatalogEntry entry;
             entry.id = text(item,L"id"); entry.title = text(item,L"title");
             require(!entry.title.empty() && ids.insert(entry.id).second,"título vacío o identificador duplicado.");
+            if (edition) require(level == CatalogLevel::units ? course_edition_unit_id(*edition,entry.id) :
+                course_edition_lesson_id(*edition,entry.id),"la entrada mezcla identidades de otra edición.");
+            else require(!uses_course_edition_namespace(entry.id),"un espacio de edición reservado necesita su descriptor.");
             const auto number = item.GetNamedValue(L"number");
             require(number.ValueType() == JsonValueType::Number,"número de entrada inválido.");
             const auto ordinal = number.GetNumber();
@@ -151,8 +214,17 @@ curriculum::CatalogPage load_catalog(const std::filesystem::path& content_root, 
             entry.number = static_cast<std::size_t>(ordinal);
             const auto relative = level == CatalogLevel::lessons ? catalog_lesson_path(location,entry.id)
                 : catalog_index_path(catalog_child(location,entry.id));
-            const auto installed = resolve(content_root,location.locale,relative);
+            const auto installed = resolve(content_root,edition ? edition->locale : location.locale,relative,edition.has_value());
             entry.asset = installed.path; entry.asset_locale = installed.locale; entry.available = !entry.asset.empty();
+            if (edition) {
+                require(entry.available,"la edición activa tiene una entrada sin recurso en su idioma.");
+                const auto child = edition_resource_identity(entry.asset,entry.asset_locale);
+                require(child.edition == edition,"el recurso no declara la misma edición que su índice.");
+                if (level == CatalogLevel::units)
+                    require(child.course_id == edition->course_id && child.unit_id == entry.id,
+                        "el recurso de unidad pertenece a otro índice.");
+                else require(child.id == entry.id,"el recurso de lección pertenece a otro índice.");
+            }
             result.entries.push_back(std::move(entry));
         }
         return result;

@@ -345,6 +345,48 @@ function(lgaed_add_catalog_test)
     set_tests_properties(native.catalog PROPERTIES TIMEOUT 30)
 endfunction()
 
+# Course editions use new curricular owners; the same production controls
+# verify isolation in the full application build and focused ReaderBuild.
+function(lgaed_add_course_edition_tests)
+    set(_edition_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/course-edition")
+    set(_edition_fixture_manifest "${_edition_fixture_dir}/manifest.json")
+    add_custom_command(OUTPUT "${_edition_fixture_manifest}"
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/course_edition_fixture_source.py"
+            --output-dir "${_edition_fixture_dir}"
+        BYPRODUCTS
+            "${_edition_fixture_dir}/content/es/programming/courses.json"
+            "${_edition_fixture_dir}/legacy-course.json"
+            "${_edition_fixture_dir}/content/es/programming/qa_edition/course_qa_edition.json"
+            "${_edition_fixture_dir}/content/es/programming/qa_edition/original/unit_original.json"
+            "${_edition_fixture_dir}/content/es/programming/qa_edition/original/lesson_primera.json"
+            "${_edition_fixture_dir}/content/es/programming/qa_edition/edition_es_1__inicio/unit_edition_es_1__inicio.json"
+            "${_edition_fixture_dir}/content/es/programming/qa_edition/edition_es_1__inicio/lesson_primera.json"
+            "${_edition_fixture_dir}/content/es/programming/qa_edition/edition_es_1__inicio/lesson_segunda.json"
+            "${_edition_fixture_dir}/content/es/programming/qa_other/course_qa_other.json"
+            "${_edition_fixture_dir}/content/es/programming/qa_other/independiente/unit_independiente.json"
+            "${_edition_fixture_dir}/content/es/programming/qa_other/independiente/lesson_primera.json"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/course_edition_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/course_edition.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/image_resources.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/simulation.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/bibliography_revision.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
+        COMMENT "Preparing isolated course-edition fixtures with the production authoring contract"
+        VERBATIM)
+    add_custom_target(lgaed_course_edition_fixtures DEPENDS "${_edition_fixture_manifest}")
+    add_executable(lgaed_course_edition_tests native/platform/windows/course_edition_tests.cpp)
+    target_link_libraries(lgaed_course_edition_tests PRIVATE lgaed_curricular_windows)
+    add_dependencies(lgaed_course_edition_tests lgaed_course_edition_fixtures)
+    add_test(NAME native.course_edition COMMAND lgaed_course_edition_tests "${_edition_fixture_dir}")
+    add_test(NAME native.course_edition_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_course_edition.py)
+    set_tests_properties(native.course_edition PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    set_tests_properties(native.course_edition_authoring PROPERTIES TIMEOUT 30)
+endfunction()
+
 # Reuse the same authenticated U9 option revision in the full build and
 # ReaderBuild. The real hidden lesson view does not require audio synthesis.
 function(lgaed_add_general_choice_editorial_tests)
@@ -506,6 +548,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
     set_tests_properties(native.lesson_menu native.lesson_scroll_render
         PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
     lgaed_add_catalog_test()
+    lgaed_add_course_edition_tests()
     lgaed_add_general_choice_editorial_tests()
     lgaed_add_boolean_battery_tests()
     lgaed_add_reduction_tests()
@@ -1861,6 +1904,7 @@ if(BUILD_TESTING)
     set_tests_properties(native.calculator_internal_window PROPERTIES TIMEOUT 120)
     set_tests_properties(native.tools_view PROPERTIES TIMEOUT 90)
     lgaed_add_catalog_test()
+    lgaed_add_course_edition_tests()
     add_executable(lgaed_catalog_view_tests native/presentation/windows/catalog_view_tests.cpp)
     target_link_libraries(lgaed_catalog_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.catalog_view COMMAND lgaed_catalog_view_tests)

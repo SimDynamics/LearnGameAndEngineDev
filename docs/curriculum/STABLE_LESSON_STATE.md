@@ -1792,3 +1792,214 @@ hereda desplazamiento ni escucha de la anterior. La validación de estas marcas
 acredita estructura, límites y fuentes; no sustituye la revisión de significado
 de Work ni la observación visual y escucha durante el estudio del usuario.
 
+
+
+## Nueva edición de un curso con progreso independiente en Windows
+
+Esta operación sirve cuando el usuario autoriza rehacer un curso y los objetivos
+anteriores deben comenzar pendientes. La autorización vigente corresponde a
+Programación 1 en español. Habilitar el mecanismo no publica contenido nuevo ni
+reinicia por sí solo un perfil: Work prepara y publica la nueva edición.
+
+Una edición tiene unidades y lecciones con identidades curriculares nuevas. Las
+respuestas, intentos, borradores y posiciones de lectura continúan usando el
+mecanismo normal de almacenamiento, pero bajo esas identidades nuevas. Los
+archivos anteriores permanecen donde estaban, fuera del índice activo. No se
+copian a otra carpeta histórica, no se borran y no se convierten sus aciertos en
+aciertos de objetivos nuevos. Los demás cursos, preferencias generales,
+proyectos y grabaciones conservan sus ubicaciones. Un audio compatible puede
+reutilizarse sin acreditar la escucha del nuevo curso.
+
+### Descriptor y nombres
+
+El índice de curso, cada índice de unidad activo y cada lección activa llevan
+exactamente el mismo objeto:
+
+~~~json
+"courseEdition": {
+  "version": 1,
+  "courseId": "cpp_fundamentals",
+  "locale": "es",
+  "id": "programar_desde_cero_2026",
+  "generation": 1
+}
+~~~
+
+`version` identifica este contrato. `generation` empieza en 1 y aumenta
+exactamente una unidad al publicar otra edición. La ausencia del descriptor
+identifica el contenido histórico. Una edición publicada no puede volver a esa
+ausencia, bajar su generación, saltar generaciones ni cambiar su descriptor
+dentro de la misma generación. Su `id` descriptivo debe diferir del de la edición
+inmediatamente anterior. Reutilizar un nombre descriptivo de una edición más
+antigua no reutiliza su estado, porque la generación forma parte de los IDs.
+
+`courseId` utiliza de 1 a 256 caracteres ASCII alfanuméricos, guion o guion bajo,
+sin la secuencia reservada `__edition_`. El `id` descriptivo utiliza esos mismos
+caracteres, entre 1 y 64, y no puede ser `legacy`. La generación es un entero de
+1 a 1 000 000; `true`, decimales y exponentes no representan enteros válidos para
+este campo. `locale` identifica el recurso realmente escrito: `es`, `en` o `fr`.
+
+La forma de las identidades es:
+
+~~~text
+Unidad:  <courseId>__edition_<locale>_<generation>__<nombreUnidad>
+Lección: <courseId>__edition_<locale>_<generation>__<nombreUnidad>__<nombreLeccion>
+~~~
+
+Los nombres de unidad y lección tienen entre 1 y 128 caracteres ASCII; empiezan
+y terminan con letra o cifra, admiten guion y guion bajo interior y no contienen
+`__`. La identidad completa tiene como máximo 256 caracteres. Esta separación
+permite conservar las reglas de rutas del cargador y evita confundir dos
+divisiones distintas de un mismo nombre.
+
+Por ejemplo, para la primera edición española:
+
+| Recurso | Ejemplo |
+| --- | --- |
+| ID de unidad | `cpp_fundamentals__edition_es_1__inicio` |
+| Carpeta de unidad | `edition_es_1__inicio` |
+| Índice de unidad | `unit_edition_es_1__inicio.json` |
+| ID de lección | `cpp_fundamentals__edition_es_1__inicio__primer_programa` |
+| Archivo de lección | `lesson_primer_programa.json` |
+
+Estos nombres son ejemplos de la capacidad, no una organización curricular
+impuesta. Work decide los nombres, el orden, los programas y la práctica. El
+índice `course_cpp_fundamentals.json` conserva el ID del curso; sus entradas
+activas pasan a las unidades de la edición actual. Las unidades históricas
+permanecen como recursos existentes, sin entradas activas en ese índice.
+
+El cargador comprueba la coincidencia del descriptor, la identidad y la ruta en
+los tres niveles. Una edición española no toma silenciosamente una unidad o
+lección inglesa, francesa o histórica como respaldo. Los recursos EN/FR
+anteriores permanecen sin editar; sus familias y su edición no se atribuyen a
+las lecciones españolas nuevas.
+
+### Preparar una lección nueva
+
+1. Verificar la publicación de referencia de la rama que se esté editando.
+2. Redactar el índice de curso con el descriptor y sus unidades nuevas. Redactar
+   los índices de esas unidades con el mismo descriptor y sus lecciones.
+3. Crear cada lección en su ruta nueva con el ID correspondiente. El documento
+   contiene sus páginas, bloques y relaciones actuales, sin un `stateLayout`
+   anterior. No tomar el mapa de otra edición ni regenerarlo dentro de un
+   archivo ya publicado.
+4. Ejecutar `prepare-edition` sobre esa fuente nueva. La acción autentica el
+   curso publicado en Git, comprueba su generación, verifica la referencia del
+   índice de unidad y exige que la ruta y el ID de lección sean nuevos.
+5. Revisar el resultado generado e incorporarlo únicamente al archivo nuevo
+   correspondiente. Repetir la preparación para las demás lecciones de la
+   edición.
+
+La acción admite que otras lecciones nuevas estén todavía en redacción. Esa
+tolerancia solo corresponde a la preparación: la validación de publicación
+exige que todas las lecciones activas estén completas.
+
+Ejemplo completo de preparación, desde PowerShell en el PC Windows, cuando Work
+ya haya redactado el índice y la fuente nueva del ejemplo:
+
+~~~powershell
+$ErrorActionPreference = 'Stop'
+Set-Location 'E:\Projects\LearnGameAndEngineDev-Work'
+
+$published = & git ls-remote --exit-code origin refs/heads/main
+if ($LASTEXITCODE -ne 0 -or -not $published) {
+    throw 'No se pudo identificar la publicación actual de main.'
+}
+$baseCommit = ($published -split '\s+')[0]
+& git cat-file -e ($baseCommit + '^{commit}')
+if ($LASTEXITCODE -ne 0) {
+    throw 'Incorpora primero esa publicación con el flujo de actualización autorizado.'
+}
+
+$qaDirectory = 'C:\LGAED-QA\course-edition-authoring'
+New-Item -ItemType Directory -Force -Path $qaDirectory | Out-Null
+$source = '.\app\src\main\assets\content\es\programming\cpp_fundamentals\edition_es_1__inicio\lesson_primer_programa.json'
+$prepared = Join-Path $qaDirectory ('lesson_primer_programa-' + [guid]::NewGuid().ToString('N') + '.json')
+
+python .\scripts\curriculum\stable_state_layout.py prepare-edition $source --locale es --base-ref $baseCommit --output $prepared
+if ($LASTEXITCODE -ne 0) {
+    throw 'La lección nueva no quedó preparada.'
+}
+Write-Output "Resultado para revisar e incorporar a la fuente nueva: $prepared"
+~~~
+
+El bloque lee Git y la fuente; crea únicamente el resultado nuevo en QA.
+`--output` utiliza creación exclusiva y rechaza un archivo que ya exista.
+No modifica el original, el índice de Git, una rama ni datos del estudiante.
+
+La función equivalente para generadores de autoría y fixtures es
+`course_edition.prepare_edition_lesson(document, descriptor)`. Devuelve una
+copia y valida sus relaciones. Sus páginas reciben `page_0000`, `page_0001`,
+etcétera; los bloques reciben `block_0000_0000`, `block_0001_0000`, etcétera.
+Se pueden declarar relaciones como `referenceAfter` con esas identidades antes
+de preparar la fuente; el resultado completo se valida después de construir el
+mapa. La función pura no sustituye la autenticación del árbol contra Git que
+realizan la CLI y la puerta de publicación.
+
+El mapa v2 inicial describe literalmente esa nueva fuente. Su familia contiene
+solo el locale de la edición y su SHA corresponde a la fuente inicial con el
+descriptor incluido, excluyendo únicamente `stateLayout` y el overlay validado
+`textSemantics`, como en las demás primeras entregas v2. No inventa revisiones,
+retiros ni adiciones anteriores. Después de publicar esa fuente se aplican las
+reglas ordinarias de autenticación, revisión y conservación de su propia
+edición. `prepare-edition` rechaza volver a preparar una ruta ya publicada.
+
+### Publicación y comprobación
+
+Publicar conjuntamente el índice de curso, los índices de unidad y todas las
+lecciones activas de la nueva edición. La frontera de edición exige rutas e IDs
+nuevos y conserva literalmente todos los recursos anteriores del curso bajo su
+directorio, salvo su índice de curso actualizado. El árbol incompleto no es una
+edición aceptada. Tampoco se admite activar una lección de otra unidad, dejar
+una lección nueva fuera de su índice, mezclar descriptores ni activar una unidad
+histórica dentro de la edición actual.
+
+El validador principal ya llama a la comprobación global de ediciones. Después
+de incorporar todos los archivos nuevos, comprobar de nuevo la publicación de
+referencia y ejecutar este bloque completo en PowerShell:
+
+~~~powershell
+$ErrorActionPreference = 'Stop'
+Set-Location 'E:\Projects\LearnGameAndEngineDev-Work'
+$published = & git ls-remote --exit-code origin refs/heads/main
+if ($LASTEXITCODE -ne 0 -or -not $published) {
+    throw 'No se pudo identificar la publicación actual de main.'
+}
+$baseCommit = ($published -split '\s+')[0]
+& git cat-file -e ($baseCommit + '^{commit}')
+if ($LASTEXITCODE -ne 0) {
+    throw 'Incorpora primero esa publicación con el flujo de actualización autorizado.'
+}
+python .\scripts\curriculum\validar_json_programacion.py --course cpp_fundamentals --base-ref $baseCommit
+if ($LASTEXITCODE -ne 0) {
+    throw 'La edición no supera el contrato curricular y su procedencia.'
+}
+~~~
+
+Esta comprobación no acredita reproducción de audio ni interacción nativa.
+Las pruebas pertinentes deben ejecutarse en el PC Windows autorizado. Los
+targets `native.course_edition_authoring` y `native.course_edition` cubren la
+autoría y la integración nativa con datos QA; no deben presentarse como
+ejecutados por existir en el proyecto.
+
+Después de incorporar la publicación, cerrar y volver a abrir la app Windows:
+la sesión de generación de audio conserva el catálogo que cargó al iniciarse.
+Comprobar el recorrido desde la primera página, los objetivos pendientes y la
+ausencia de respuestas o pausas de la edición anterior. Las grabaciones
+compatibles se conservan; la edición no borra la caché para hacer esa
+comprobación.
+
+### Límites que se conservan
+
+Una nueva edición permite redactar otra organización y otros objetivos mediante
+las interacciones generales que el motor admite. No habilita automáticamente
+capacidades técnicas cerradas. Por ejemplo, `compileCheck` conserva sus
+diagnósticos y propietarios publicados; añadir el descriptor no transforma una
+capacidad cerrada en una regla de evaluación libre.
+
+También se conservan los controles de los pocos payloads históricos que tienen
+una revisión especial de respuesta, referencia o compilador. No se omiten sus
+archivos de procedencia ni se normalizan otros hashes para hacerlos pasar por
+nuevas fuentes. Si la nueva enseñanza necesita una capacidad general adicional,
+corresponde implementarla expresamente. Las pruebas de autoría incluyen el
+rechazo de este intento de eludir una protección histórica.

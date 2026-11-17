@@ -33,6 +33,9 @@ _bibliography_spec.loader.exec_module(bibliography_revision)
 _format_spec = import_util.spec_from_file_location("lgaed_code_format", Path(__file__).with_name("code_format_compat.py"))
 code_format = import_util.module_from_spec(_format_spec)
 _format_spec.loader.exec_module(code_format)
+_edition_spec = import_util.spec_from_file_location("lgaed_course_edition", Path(__file__).with_name("course_edition.py"))
+course_edition = import_util.module_from_spec(_edition_spec)
+_edition_spec.loader.exec_module(course_edition)
 
 
 class LayoutError(ValueError):
@@ -5107,6 +5110,7 @@ def _validate_order_visual_separators(document: dict) -> None:
 
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
+    course_edition.validate_lesson(document, require_layout=True)
     if "compilerPuzzlesRequired" in document:
         require(type(document["compilerPuzzlesRequired"]) is bool, "compilerPuzzlesRequired must be boolean")
     mapping = _validate_state_layout(document)
@@ -6285,7 +6289,8 @@ def _validate_family_baseline(repository: Path, commit: str, family: str, member
                     "A first language delivery cannot claim earlier additions, retirements or revisions")
             source = {key: value for key, value in document.items()
                       if key != "stateLayout" and key not in TEXT_PRESENTATION_FIELDS}
-            literal = prepare(source)["stateLayout"]
+            literal = (course_edition.literal_layout(source, pages=_pages, state_fingerprint=state_fingerprint)
+                       if "courseEdition" in source else prepare(source)["stateLayout"])
             require(meta["origin"] == literal["origin"] and meta["current"] == literal["current"],
                     "A first language delivery must retain its literal original page and block identities")
             require(manifest[locale] == {"sha256": fingerprint(source), "origin": literal["origin"]},
@@ -6329,6 +6334,13 @@ def check_repository(repository: Path, base_ref: str | None) -> dict:
             except (ValueError, KeyError, TypeError) as exc:
                 raise LayoutError(f"Invalid presentation relationships in {path}: {exc}") from exc
     mapped = {path for path, document in documents.items() if "stateLayout" in document}
+    editions = (any("courseEdition" in document or "__edition_" in str(document.get("id", ""))
+                    for document in documents.values())
+                or any("courseEdition" in load(path)
+                       for path in content.glob("*/*/*/course_*.json"))
+                or any("courseEdition" in load(path) for path in content.rglob("unit_*.json")))
+    require(not editions or base_ref is not None,
+            "courseEdition publication requires --base-ref with the verified remote HEAD")
     # A metadata-bearing tree cannot claim safety without its published history.
     require(not mapped or base_ref is not None,
             "stateLayout publication requires --base-ref with the verified remote HEAD")
@@ -6340,6 +6352,7 @@ def check_repository(repository: Path, base_ref: str | None) -> dict:
                     "Published stateLayout metadata requires --base-ref even when it was removed locally")
         return {"base_commit": None, "mapped_lessons": 0, "families": 0}
     commit = resolve_base_commit(repository, base_ref)
+    edition_report = course_edition.check_repository(repository, commit, documents=documents)
     prior_paths = _lesson_paths_at(repository, commit)
     prior_mapped = {}
     for path in _mapped_paths_at(repository, commit):
@@ -6379,7 +6392,8 @@ def check_repository(repository: Path, base_ref: str | None) -> dict:
         except (ValueError, KeyError, TypeError) as exc:
             raise LayoutError(family + ": " + str(exc)) from exc
         checked_families += 1
-    return {"base_commit": commit, "mapped_lessons": len(mapped), "families": checked_families}
+    return {"base_commit": commit, "mapped_lessons": len(mapped), "families": checked_families,
+            **edition_report}
 
 
 def published_family(source: Path, locale: str, base_ref: str) -> tuple[dict, dict[str, dict]]:
@@ -6410,7 +6424,7 @@ def published_family(source: Path, locale: str, base_ref: str) -> tuple[dict, di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "revise-choice-editorial", "revise-ordinary-editorial", "revise-math-prompt-editorial", "revise-compiler-cases", "revise-compiler-client-cases", "revise-compiler-cmake-recipe", "reorder-compiler-cases", "check", "check-tree"))
+    parser.add_argument("action", choices=("prepare", "prepare-edition", "reorder", "refine-order-lines", "revise-choice-option", "revise-choice-editorial", "revise-ordinary-editorial", "revise-math-prompt-editorial", "revise-compiler-cases", "revise-compiler-client-cases", "revise-compiler-cmake-recipe", "reorder-compiler-cases", "check", "check-tree"))
     parser.add_argument("source", type=Path, help="Lesson JSON; repository directory for check-tree")
     parser.add_argument("--plan", type=Path, help="JSON list of stable page/block IDs in display order")
     parser.add_argument("--output", type=Path, help="New path; never overwrite a Work/Codex file")
@@ -6473,6 +6487,20 @@ def main() -> None:
             print(f"State transitions and shipped translations checked against {report['base_commit']}: "
                   f"{report['mapped_lessons']} mapped lessons in {report['families']} families. "
                   "This does not verify an Android build or device execution.")
+            return
+        if args.action == "prepare-edition":
+            require(args.base_ref is not None and args.output is not None,
+                    "prepare-edition requires --base-ref and an exclusive --output")
+            require(args.previous is None and args.plan is None and args.additions is None
+                    and args.identity is None and not editorial_returns,
+                    "A new edition cannot claim a previous lesson, reorder or editorial migration")
+            result = course_edition.prepare_from_repository(args.source, args.base_ref, locale=args.locale)
+            with args.output.open("x", encoding="utf-8", newline="\n") as out:
+                json.dump(result, out, ensure_ascii=False, indent=2, allow_nan=False)
+                out.write("\n")
+            print("Prepared a new edition source without changing the authored asset or student data. "
+                  "Publish its course index, unit indices and complete lessons atomically; "
+                  "run check-tree against the verified base and reopen the Windows app.")
             return
         source = load(args.source)
         require(type(source) is dict, "A lesson must be a JSON object")

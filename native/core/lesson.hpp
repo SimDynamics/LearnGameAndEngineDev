@@ -1,4 +1,6 @@
 #pragma once
+
+#include "core/course_edition.hpp"
 #include "core/text_semantics.hpp"
 #include "core/rejection_diagnostic_facts.hpp"
 #include "core/report_observation_check.hpp"
@@ -403,6 +405,7 @@ struct Lesson {
     // Exact lesson-owned public strings; paths are rooted at the lesson and
     // have no invented block identity or effect on stored exercise addresses.
     std::map<std::string,TextSemantics> text_semantics;
+    std::optional<CourseEdition> course_edition;
 };
 
 // Preserves the identities of existing stdout objectives while allowing the

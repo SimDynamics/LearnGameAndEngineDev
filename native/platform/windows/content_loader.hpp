@@ -9,6 +9,11 @@ namespace lgaed::windows {
 // Content loading, preparation and the visible reader share this one contract.
 [[nodiscard]] std::optional<std::string> narration_language_tag(std::string_view authored);
 
+// Reads the shared descriptor of a course, unit or lesson. Absence is legacy;
+// malformed descriptors fail before any current-course state is opened.
+[[nodiscard]] std::optional<curriculum::CourseEdition> parse_course_edition_metadata(
+    std::string_view utf8, std::string_view expected_locale = "es");
+
 // Windows' complete JSON parser; malformed or unsupported contracts throw.
 [[nodiscard]] curriculum::Lesson load_lesson(
     const std::filesystem::path& path, std::string_view expected_locale = "es");

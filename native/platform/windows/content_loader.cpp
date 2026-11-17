@@ -962,6 +962,100 @@ private:
         return cursor;
     }
 };
+std::optional<CourseEdition> read_course_edition(
+        const JsonObject& root, std::string_view locale, std::string_view source) {
+    if (!root.HasKey(L"courseEdition")) return {};
+    const OriginalJson original(source);
+    const auto descriptor = original.member(original.root(), "courseEdition");
+    require_integer_json_numbers(original.text(descriptor));
+    const auto object = root.GetNamedObject(L"courseEdition");
+    allowed_keys(object, {"version", "courseId", "locale", "id", "generation"}, true);
+    for (const auto field : {"version", "courseId", "locale", "id", "generation"})
+        (void)original.member(descriptor, field); // Reject duplicated known properties.
+    require(integer(object.GetNamedValue(L"version"), 1) == 1, "Unsupported course edition version");
+    CourseEdition edition{text(object, "courseId"), text(object, "locale"), text(object, "id"),
+        integer(object.GetNamedValue(L"generation"), 1000000)};
+    validate_course_edition(edition);
+    require(edition.locale == locale, "Course edition belongs to another asset language");
+    return edition;
+}
+void bind_course_edition(Lesson& lesson) {
+    if (!lesson.course_edition) {
+        require(!uses_course_edition_namespace(lesson.id),
+            "A reserved course-edition identity requires its descriptor");
+        return;
+    }
+    const auto& edition = *lesson.course_edition;
+    require(course_edition_lesson_id(edition, lesson.id),
+        "Lesson identity does not belong to its course edition");
+    auto& layout = lesson.state_layout;
+    require(layout.version == 2 && layout.locale == edition.locale &&
+            layout.family.size() == 1 && layout.family.contains(edition.locale),
+        "A course edition requires its own single-language state layout v2");
+    // A descriptor cannot be changed under already stored state, even when the
+    // authored display label changes without changing its generation namespace.
+    layout.lineage = sha256(course_edition_frame(edition) + layout.lineage);
+}
+struct EditionIndex {
+    JsonObject object;
+    std::string source;
+};
+EditionIndex read_edition_index(const std::filesystem::path& path) {
+    std::ifstream input(path, std::ios::binary);
+    require(input.good(), "Cannot open the active course-edition index");
+    std::string source{std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
+    require(!input.bad() && source.size() <= 8 * 1024 * 1024,
+        "Cannot read the active course-edition index");
+    if (source.starts_with("\xEF\xBB\xBF")) source.erase(0, 3);
+    return {JsonObject::Parse(key(source)), std::move(source)};
+}
+void validate_course_edition_file(const std::filesystem::path& path, const Lesson& lesson) {
+    // Legacy translated assets retain their historical per-file ES fallback,
+    // including existing files outside the new Spanish edition's active index.
+    if (!lesson.course_edition) return;
+    try {
+        const auto& edition = *lesson.course_edition;
+        const auto unit_folder = path.parent_path();
+        const auto course_folder = unit_folder.parent_path();
+        const auto unit_slug = unit_folder.filename().string();
+        const auto unit_id = edition.course_id + "__" + unit_slug;
+        require(course_folder.filename().string() == edition.course_id &&
+                course_folder.parent_path().parent_path().filename().string() == edition.locale &&
+                (course_folder.parent_path().filename() == L"programming" ||
+                 course_folder.parent_path().filename() == L"math_physics") &&
+                course_edition_unit_id(edition, unit_id),
+            "Course-edition lesson is outside its declared course, language or unit");
+        require(lesson.id.starts_with(unit_id + "__") &&
+                path.filename().string() == "lesson_" + lesson.id.substr(unit_id.size() + 2) + ".json",
+            "Course-edition lesson file does not match its published identity");
+        const auto course = read_edition_index(course_folder / ("course_" + edition.course_id + ".json"));
+        require(text(course.object, "id") == edition.course_id &&
+                read_course_edition(course.object, edition.locale, course.source) == lesson.course_edition,
+            "Lesson edition differs from its active course index");
+        std::set<std::string> units;
+        for (const auto& item : array(course.object, "units")) {
+            const auto id = text(item.GetObject(), "id");
+            require(course_edition_unit_id(edition, id) && units.insert(id).second,
+                "Course edition contains a mixed or duplicated unit identity");
+        }
+        require(units.contains(unit_id), "Course-edition unit is not active in its course index");
+        const auto unit = read_edition_index(unit_folder / ("unit_" + unit_slug + ".json"));
+        require(text(unit.object, "courseId") == edition.course_id && text(unit.object, "unitId") == unit_id &&
+                read_course_edition(unit.object, edition.locale, unit.source) == lesson.course_edition,
+            "Lesson edition differs from its active unit index");
+        std::set<std::string> lessons;
+        for (const auto& item : array(unit.object, "lessons")) {
+            const auto id = text(item.GetObject(), "id");
+            require(course_edition_lesson_id(edition, id) && id.starts_with(unit_id + "__") &&
+                    lessons.insert(id).second,
+                "Course edition contains a mixed or duplicated lesson identity");
+        }
+        require(lessons.contains(lesson.id), "Course-edition lesson is not active in its unit index");
+    } catch (const winrt::hresult_error& error) {
+        throw std::runtime_error("Course edition index JSON/contract error: " + utf8(error.message()));
+    }
+}
+
 void require_math_prompt_contract(std::string_view current,std::string_view previous,bool historical=false) {
     const OriginalJson live(current),original(previous);
     const auto live_root=live.root(),old_root=original.root();
@@ -3644,6 +3738,19 @@ void resolve_addresses(Lesson& lesson) {
 }
 }
 
+std::optional<curriculum::CourseEdition> parse_course_edition_metadata(
+        std::string_view source, std::string_view expected_locale) {
+    require(known_locale(expected_locale), "Unsupported asset language");
+    ensure_winrt_apartment();
+    try {
+        if (source.starts_with("\xEF\xBB\xBF")) source.remove_prefix(3);
+        require(source.size() <= 32 * 1024 * 1024, "Course-edition metadata too large");
+        return read_course_edition(JsonObject::Parse(key(source)), expected_locale, source);
+    } catch (const winrt::hresult_error& error) {
+        throw std::runtime_error("Course edition JSON/contract error: " + utf8(error.message()));
+    }
+}
+
 std::optional<std::string> narration_language_tag(std::string_view authored) {
     return narration_tag(winrt::to_hstring(authored));
 }
@@ -5235,6 +5342,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         require(source.size() <= 32 * 1024 * 1024, "Lesson file too large");
         const auto root = JsonObject::Parse(winrt::to_hstring(source));
         Lesson lesson; lesson.id = text(root, "id"); lesson.title = text(root, "title"); lesson.locale = expected_locale;
+        lesson.course_edition = read_course_edition(root, expected_locale, source);
         if (root.HasKey(L"compilerPuzzlesRequired")) {
             const auto required = root.GetNamedValue(L"compilerPuzzlesRequired");
             require(required.ValueType() == JsonValueType::Boolean,"compilerPuzzlesRequired must be boolean");
@@ -5247,6 +5355,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
             require_integer_json_numbers(source);
             lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale, lesson.id,root,source);
         } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);reject_unmapped_compiler_revisions(pages);}
+        bind_course_edition(lesson);
         read_relationships(root,lesson);
         const OriginalJson original(source);
         const auto original_pages = original.elements(original.member(original.root(),"pages"));
@@ -5288,7 +5397,9 @@ curriculum::Lesson load_lesson(const std::filesystem::path& path, std::string_vi
     std::ifstream input(path, std::ios::binary); require(input.good(), "Cannot open lesson file");
     const std::string bytes{std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
     require(!input.bad(), "Cannot read lesson file");
-    auto lesson = parse_lesson_json(bytes, expected_locale); lesson.source_path = path; return lesson;
+    auto lesson = parse_lesson_json(bytes, expected_locale);
+    validate_course_edition_file(path, lesson);
+    lesson.source_path = path; return lesson;
 }
 curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::string_view expected_locale) {
     require(known_locale(expected_locale),"Unsupported asset language");
@@ -5299,6 +5410,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         const auto root = JsonObject::Parse(winrt::to_hstring(source));
         Lesson lesson; lesson.id = text(root,"id"); lesson.title = text(root,"title");
         lesson.locale = expected_locale; lesson.raw_json = source;
+        lesson.course_edition = read_course_edition(root, expected_locale, source);
         if (root.HasKey(L"compilerPuzzlesRequired")) {
             const auto required = root.GetNamedValue(L"compilerPuzzlesRequired");
             require(required.ValueType() == JsonValueType::Boolean,"compilerPuzzlesRequired must be boolean");
@@ -5311,6 +5423,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
             require_integer_json_numbers(source);
             lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale,lesson.id,root,source);
         } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);reject_unmapped_compiler_revisions(pages);}
+        bind_course_edition(lesson);
         read_relationships(root,lesson);
         // Every explicit curricular compiler objective participates in linear
         // progress, independently of the historical lesson-wide opt-in flag.
@@ -5410,7 +5523,8 @@ curriculum::Lesson load_lesson_progress_metadata(const std::filesystem::path& pa
     std::ifstream input(path,std::ios::binary); require(input.good(),"Cannot open lesson progress metadata");
     const std::string source{std::istreambuf_iterator<char>(input),std::istreambuf_iterator<char>()};
     require(!input.bad(),"Cannot read lesson progress metadata");
-    try { auto lesson = parse_lesson_progress_metadata(source,expected_locale); lesson.source_path = path; return lesson; }
+    try { auto lesson = parse_lesson_progress_metadata(source,expected_locale);
+        validate_course_edition_file(path, lesson); lesson.source_path = path; return lesson; }
     catch(const std::exception& failure){throw std::runtime_error(path.string()+": "+failure.what());}
 }
 } // namespace lgaed::windows
