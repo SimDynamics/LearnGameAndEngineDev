@@ -2058,10 +2058,10 @@ void static_simulation_text_is_not_restreamed(HWND host) {
     check(SetWindowSubclass(title,probe,title_probe,
         reinterpret_cast<DWORD_PTR>(&streams.title))!=FALSE,
         "Cannot observe the native simulation title");
-    struct Guard {HWND title,description;SUBCLASSPROC callback;
-        ~Guard(){if(IsWindow(title))RemoveWindowSubclass(title,callback,title_probe);
-            if(IsWindow(description))RemoveWindowSubclass(description,callback,description_probe);}
-    } guard{title,description,probe};
+    struct Guard {HWND title,description;SUBCLASSPROC callback;UINT_PTR title_id,description_id;
+        ~Guard(){if(IsWindow(title))RemoveWindowSubclass(title,callback,title_id);
+            if(IsWindow(description))RemoveWindowSubclass(description,callback,description_id);}
+    } guard{title,description,probe,title_probe,description_probe};
     check(SetWindowSubclass(description,probe,description_probe,
         reinterpret_cast<DWORD_PTR>(&streams.description))!=FALSE,
         "Cannot observe the native simulation description");
