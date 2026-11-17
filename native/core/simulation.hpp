@@ -79,6 +79,11 @@ void validate_simulation_spec(const SimulationSpec& spec);
 // Lines retain their historical literal meaning and optional final LF/CRLF.
 // Text JSON is an explicit format (never inferred): [] and [""] are different.
 // Integers keep signed decimal lines; JSON is limited to arrays of text values.
+// When an editor will immediately display the computed trace, parse and
+// validate it once instead of discarding a trace and computing it again.
+[[nodiscard]] SimulationTrace simulation_parse_input_trace(
+    const SimulationSpec& spec, std::string_view input,
+    SimulationInputFormat format = SimulationInputFormat::lines);
 [[nodiscard]] std::vector<SimulationValue> simulation_parse_input(
     const SimulationSpec& spec, std::string_view input,
     SimulationInputFormat format = SimulationInputFormat::lines);
