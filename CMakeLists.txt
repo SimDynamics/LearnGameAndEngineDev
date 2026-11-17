@@ -254,6 +254,10 @@ function(lgaed_add_simulation_tests)
         "${CMAKE_SOURCE_DIR}/native/presentation/windows/fixtures/simulation_state_layout.json")
     add_test(NAME native.simulation_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_simulation.py)
+    # Focused Windows QA: build the native model, UI and lesson tests without
+    # compiling or launching the complete application.
+    add_custom_target(lgaed_simulation_qa_targets
+        DEPENDS lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests)
     set_tests_properties(native.simulation_model native.simulation_authoring PROPERTIES TIMEOUT 30)
     set_tests_properties(native.simulation_view native.simulation_lesson PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
 endfunction()

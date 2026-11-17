@@ -378,6 +378,25 @@ El validador habitual de Programación llama al mismo contrato desde los cursos
 estructurales y desde la validación de estado. Se inspeccionan también los
 bloques retirados y las presentaciones históricas que contienen simulaciones.
 
+Desde el checkout `LearnGameAndEngineDev-Codex` en Windows, la compilación
+y comprobación enfocadas de todo el contrato de simulación se realizan en
+PowerShell con:
+
+```powershell
+& '.\scripts\windows\Test-Simulation.ps1' -Preset windows-x64-debug
+```
+
+El comando usa las herramientas locales autorizadas y el objetivo CMake
+`lgaed_simulation_qa_targets`, sin construir la aplicación completa. Exige
+que CTest encuentre exactamente cuatro pruebas:
+`native.simulation_model`, `native.simulation_view`,
+`native.simulation_lesson` y `native.simulation_authoring`. Después las
+ejecuta de forma secuencial. Las ventanas de la prueba nativa permanecen
+ocultas. Los registros se conservan en `out/build/<preset>/logs/` y las
+capturas de regresión en el directorio temporal de CTest para simulaciones.
+No modifica perfiles reales ni ejecuta GitHub Actions. No se debe atribuir
+una aprobación Windows a la mera publicación del script.
+
 Desde la raíz del repositorio, las pruebas acotadas de autoría se ejecutan con:
 
 ```text
