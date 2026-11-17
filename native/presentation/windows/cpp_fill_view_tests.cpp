@@ -171,6 +171,40 @@ void drag_parity(HWND host){
     const auto saved=view.response_json();const auto source=edit_text(labels[1]);SendMessageW(labels[1],EM_SETSEL,2,5);SendMessageW(labels[1],WM_CHAR,L'x',1);check(edit_text(labels[1])==source,"A display-only code token accepted text editing");
     view.set_text_scale(150);(void)view.height_for_width(width);int numerator=0,denominator=0;SendMessageW(labels[1],EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
     CHARRANGE selection{};SendMessageW(labels[1],EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));check(denominator>0&&numerator*100==150*denominator&&selection.cpMin==2&&selection.cpMax==5&&view.response_json()==saved&&edit_text(labels[1])==source,"Scaling the shared drag bank lost original source, syntax-view selection, identities or150% zoom");
+    // Fail the third RichEdit after earlier labels already accepted 125%.
+    // The native callback cannot throw and the view must roll every label
+    // back to 150%, preserving token identity, selection and source text.
+    const auto reject_zoom=[](HWND item,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR)->LRESULT{
+        if(message==EM_SETZOOM)return FALSE;
+        return DefSubclassProc(item,message,wp,lp);
+    };
+    check(SetWindowSubclass(labels[2],reject_zoom,83,0)!=FALSE,
+        "Cannot install the hidden code-token zoom rejection probe");
+    bool rejected_scale=false;
+    try {view.set_text_scale(125);}
+    catch(const std::runtime_error&){rejected_scale=true;}
+    RemoveWindowSubclass(labels[2],reject_zoom,83);
+    check(rejected_scale,"Code-fill bank reported a partially rejected scale as applied");
+    for(std::size_t index=0;index<labels.size();++index){
+        int actual_numerator=0,actual_denominator=0;
+        check(SendMessageW(labels[index],EM_GETZOOM,
+            reinterpret_cast<WPARAM>(&actual_numerator),
+            reinterpret_cast<LPARAM>(&actual_denominator))!=FALSE&&
+            actual_numerator>=1&&actual_numerator<=64&&
+            actual_denominator>=1&&actual_denominator<=64&&
+            MulDiv(actual_numerator,100,actual_denominator)==150,
+            "A failed code-token zoom left other native labels at the wrong scale");
+        check(edit_text(labels[index])==model.choices[index],
+            "A rejected token zoom changed a displayed source choice");
+    }
+    CHARRANGE restored_selection{};
+    SendMessageW(labels[1],EM_EXGETSEL,0,
+        reinterpret_cast<LPARAM>(&restored_selection));
+    check(view.response_json()==saved&&
+        restored_selection.cpMin==selection.cpMin&&
+        restored_selection.cpMax==selection.cpMax,
+        "The failed token zoom modified the draft or a text selection");
     const auto normal_height=view.height_for_width(width);view.set_palette_host(host);const auto tray_height=view.palette_height_for_width(220);MoveWindow(bank,0,400,220,tray_height,TRUE);
     check(GetParent(bank)==host&&view.palette_window()==bank&&GetDlgItem(bank,2001)==cards[1]&&view.height_for_width(width)<normal_height&&view.response_json()==saved,"Fullscreen created a token-bank copy, kept it in the scrolling body or changed its draft");
     SCROLLINFO range{sizeof(range),SIF_RANGE|SIF_PAGE};GetScrollInfo(bank,SB_HORZ,&range);check(range.nMax-range.nMin+1>static_cast<int>(range.nPage),"The single-band fullscreen bank lost actual horizontal overflow");
