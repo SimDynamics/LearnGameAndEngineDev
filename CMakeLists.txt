@@ -246,6 +246,17 @@ function(lgaed_add_simulation_tests)
     set_tests_properties(native.simulation_view native.simulation_lesson PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
 endfunction()
 
+# Keep these authoring checks available in both local Windows QA profiles.
+# They use disposable documents and never rewrite published lesson assets.
+function(lgaed_add_order_editorial_authoring_tests)
+    add_test(NAME native.order_equivalence_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_order_equivalence_authoring.py)
+    set_tests_properties(native.order_equivalence_authoring PROPERTIES TIMEOUT 30)
+    add_test(NAME native.ordinary_explanation_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_ordinary_explanation_revision.py)
+    set_tests_properties(native.ordinary_explanation_authoring PROPERTIES TIMEOUT 120)
+endfunction()
+
 # Shared by the complete application test configuration and the focused real
 # math-worker QA. Fixtures are pinned Git publications plus an in-memory
 # authoring proposal; this never rewrites the curricular lesson.
@@ -534,6 +545,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_curricular_reader_test_targets()
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     lgaed_add_simulation_tests()
+    lgaed_add_order_editorial_authoring_tests()
     include(cmake/StateImportTests.cmake)
     lgaed_add_catalog_history_fixtures()
     # Run the real-control menu/scroll cases before costly compiler probes.
@@ -851,6 +863,7 @@ option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
 if(BUILD_TESTING)
     lgaed_add_named_rule_source_tests()
     lgaed_add_simulation_tests()
+    lgaed_add_order_editorial_authoring_tests()
     lgaed_add_cpp_expression_repair_tests()
     include(cmake/StateImportTests.cmake)
     lgaed_add_curricular_reader_test_targets()
@@ -1353,9 +1366,6 @@ if(BUILD_TESTING)
     add_test(NAME native.work_exact_editorials COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_work_exact_editorials.py)
     set_tests_properties(native.work_exact_editorials PROPERTIES TIMEOUT 120)
-    add_test(NAME native.ordinary_explanation_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
-        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_ordinary_explanation_revision.py)
-    set_tests_properties(native.ordinary_explanation_authoring PROPERTIES TIMEOUT 120)
     add_executable(lgaed_editorial_return_tests native/core/editorial_return_tests.cpp)
     target_link_libraries(lgaed_editorial_return_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_dependencies(lgaed_editorial_return_tests lgaed_editorial_return_fixture)
@@ -1541,6 +1551,9 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_order_code_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.order_code_view COMMAND lgaed_order_code_view_tests)
     set_tests_properties(native.order_code_view PROPERTIES TIMEOUT 40)
+    add_test(NAME native.order_code_whitespace_view
+        COMMAND lgaed_order_code_view_tests --whitespace)
+    set_tests_properties(native.order_code_whitespace_view PROPERTIES TIMEOUT 60)
     add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_assignment_editorial_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_session_editorial_fixtures)

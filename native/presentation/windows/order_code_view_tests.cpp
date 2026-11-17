@@ -1,4 +1,5 @@
 #include "presentation/windows/order_code_view.hpp"
+#include "core/compile_check_test_fixture.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "platform/windows/content_loader.hpp"
@@ -451,8 +452,74 @@ void generic_order_groups_accept_new_owner() {
     marker+=std::string_view("\"sourceSha256\":\"").size();
     forged.replace(marker,1,"0");
     reject(forged);
+    // Escapes are characters in one physical card. Rebuild each disposable
+    // source identity so a malformed multiline card fails for its line break,
+    // rather than merely borrowing a stale state or root-source fingerprint.
+    const auto with_cards=[&](const std::vector<std::string>& cards) {
+        auto root=JsonObject::Parse(winrt::to_hstring(reviewed));
+        const auto block=root.GetNamedArray(L"pages").GetObjectAt(0)
+            .GetNamedArray(L"blocks").GetObjectAt(0);
+        JsonArray fragments;
+        for(const auto& card:cards)
+            fragments.Append(JsonValue::CreateStringValue(winrt::to_hstring(card)));
+        block.Insert(L"fragments",fragments);
+        auto payload=JsonObject::Parse(block.Stringify());
+        payload.Remove(L"question");
+        payload.Remove(L"explanation");
+        const auto digest=JsonValue::CreateStringValue(winrt::to_hstring(
+            test::compile_check_test_fingerprint(payload)));
+        const auto layout=root.GetNamedObject(L"stateLayout");
+        layout.GetNamedArray(L"origin").GetObjectAt(0)
+            .GetNamedArray(L"blocks").GetObjectAt(0).Insert(L"sha256",digest);
+        layout.GetNamedObject(L"family").GetNamedObject(L"es")
+            .GetNamedArray(L"origin").GetObjectAt(0)
+            .GetNamedArray(L"blocks").GetObjectAt(0).Insert(L"sha256",digest);
+        root.GetNamedArray(L"orderEquivalenceGroups").GetObjectAt(0)
+            .Insert(L"sourceSha256",digest);
+        return winrt::to_string(root.Stringify());
+    };
+    const std::vector<std::vector<std::string>> escaped_sources{
+        {R"cpp(const char newline = '\n';)cpp",
+         R"cpp(const char carriage_return = '\r';)cpp", "return 0;"},
+        {R"cpp(const char* first = "uno\ndos";)cpp",
+         R"cpp(const char* second = "tres\rcuatro";)cpp", "return 0;"},
+        {R"cpp(const char* first = "C:\\notes\\reports";)cpp",
+         R"cpp(const char* second = R"(C:\notes\reports)";)cpp", "return 0;"},
+    };
+    for(const auto& cards:escaped_sources) {
+        const auto json=with_cards(cards);
+        auto previous_json=JsonObject::Parse(winrt::to_hstring(json));
+        previous_json.Remove(L"orderEquivalenceGroups");
+        const auto previous=windows::parse_lesson_json(
+            winrt::to_string(previous_json.Stringify()),"es");
+        const auto lesson=windows::parse_lesson_json(json,"es");
+        const auto progress=windows::parse_lesson_progress_metadata(json,"es");
+        const auto& old=previous.pages.at(0).blocks.at(0);
+        const auto& current=lesson.pages.at(0).blocks.at(0);
+        const auto& projected=progress.pages.at(0).blocks.at(0);
+        check(current.fragments==cards&&projected.fragments==cards&&
+              current.correct_order==old.correct_order&&
+              current.order_equivalence_groups==after.order_equivalence_groups&&
+              projected.order_equivalence_groups==current.order_equivalence_groups&&
+              curriculum::evaluate_order(current,swapped).correct&&
+              curriculum::evaluate_order(projected,swapped).correct&&
+              !curriculum::evaluate_order(current,invalid).correct&&
+              current.raw_json==old.raw_json&&
+              curriculum::order_representation_frame(current)==
+                  curriculum::order_representation_frame(old)&&
+              curriculum::exercise_key(lesson,current)==
+                  curriculum::exercise_key(previous,old)&&
+              curriculum::draft_key("programming",lesson,current)==
+                  curriculum::draft_key("programming",previous,old),
+            "Literal escapes or Windows paths changed one-line cards, evaluation or state");
+    }
+    for(const std::string_view newline:{"\n","\r","\r\n"}) {
+        auto cards=escaped_sources.front();
+        cards[0]+=std::string(newline)+"int extra{3};";
+        reject(with_cards(cards));
+    }
     std::cout<<"PASS generic order root: new stable owner, swapped independent cards, "
-        "original response, source digest and catalog state\n";
+        "original response, source digest, literal escapes, physical line rejection and catalog state\n";
 }
 
 void optional_visual_chips_do_not_publish_answers(HWND host){

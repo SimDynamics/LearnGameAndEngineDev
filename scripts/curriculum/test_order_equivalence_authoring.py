@@ -34,7 +34,114 @@ def authored():
     return before, after
 
 
+def escaped_order_source():
+    return {
+        "id": "orden_escapes_qa", "title": "Literales y rutas en una línea",
+        "pages": [{"blocks": [{
+            "type": "order_code",
+            "question": "Declara los datos antes de mostrarlos.",
+            "fragments": [
+                r"char salto = '\n';",
+                r"char retorno = '\r';",
+                r'const char* separadores = "\n\r";',
+                r'const char* ruta = "C:\\nuevo\\registros";',
+                "std::cout << salto << retorno << separadores << ruta;",
+            ],
+            "correctOrder": [0, 1, 2, 3, 4],
+            "explanation": "Las cuatro declaraciones son independientes."
+        }]}],
+    }
+
+
+def declare_escaped_group(before):
+    after = deepcopy(before)
+    identity = after["stateLayout"]["current"][0]["blocks"][0]
+    after["orderEquivalenceGroups"] = [{
+        "activity": identity,
+        "sourceSha256": state.state_fingerprint(after["pages"][0]["blocks"][0]),
+        "groups": [[0, 1, 2, 3]],
+    }]
+    return after, identity
+
+
 class IndependentOrderAuthoring(unittest.TestCase):
+    def test_literal_escapes_and_windows_paths_remain_one_physical_line(self):
+        source = escaped_order_source()
+        pristine = deepcopy(source)
+        before = state.prepare_v2(source, "es", {"es": source})
+        declared, _ = declare_escaped_group(before)
+        after = state.prepare_v2(declared, "es", {"es": before}, before)
+        self.assertEqual(state.validate(before), state.validate(after))
+        state.validate_transition(before, after)
+        self.assertEqual(source, pristine)
+        self.assertEqual(after["pages"], before["pages"])
+        self.assertEqual(after["stateLayout"], before["stateLayout"])
+        self.assertEqual(after["orderEquivalenceGroups"],
+                         declared["orderEquivalenceGroups"])
+
+    def test_physical_lf_cr_and_crlf_cannot_be_independent_cards(self):
+        for ending in ("\n", "\r", "\r\n"):
+            with self.subTest(ending=repr(ending)):
+                source = escaped_order_source()
+                source["id"] = "orden_lineas_fisicas_qa"
+                fragments = [
+                    "int primero = 1;", "int segundo = 2;",
+                    "int tercero = 3;", "int cuarto = 4;",
+                    "return primero + segundo + tercero + cuarto;",
+                ]
+                source["pages"][0]["blocks"][0]["fragments"] = fragments
+                fragments[0] = fragments[0].replace(" = ", " =" + ending + "    ")
+                # Older order exercises may contain multiline fragments. The
+                # new independent-card rubric requires one physical line.
+                before = state.prepare_v2(source, "es", {"es": source})
+                declared, _ = declare_escaped_group(before)
+                original = deepcopy(declared)
+                with self.assertRaisesRegex(state.LayoutError, "single physical lines"):
+                    state.validate(declared)
+                with self.assertRaisesRegex(state.LayoutError, "single physical lines"):
+                    state.validate_transition(before, declared)
+                with self.assertRaisesRegex(state.LayoutError, "single physical lines"):
+                    state.prepare_v2(declared, "es", {"es": before}, before)
+                self.assertEqual(declared, original)
+
+    def test_escaped_literals_keep_their_contract_through_later_spacing(self):
+        source = escaped_order_source()
+        before = state.prepare_v2(source, "es", {"es": source})
+        declared, identity = declare_escaped_group(before)
+        state.validate_transition(before, declared)
+        original = deepcopy(declared)
+        candidate = deepcopy(declared)
+        candidate["pages"][0]["blocks"][0]["fragments"][0] = (
+            r"char salto  =  '\n';"
+        )
+        formatted = state.prepare_v2(candidate, "es", {"es": declared}, declared)
+        self.assertEqual(state.validate(formatted), state.validate(declared))
+        state.validate_transition(declared, formatted)
+        self.assertEqual(declared, original)
+        self.assertEqual(formatted["orderEquivalenceGroups"],
+                         declared["orderEquivalenceGroups"])
+        for field in ("origin", "family"):
+            self.assertEqual(formatted["stateLayout"][field],
+                             declared["stateLayout"][field])
+        self.assertEqual(formatted["stateLayout"]["sourceFormatRevisions"], [{
+            "id": identity, "block": declared["pages"][0]["blocks"][0],
+        }])
+        current = formatted["pages"][0]["blocks"][0]
+        previous = declared["pages"][0]["blocks"][0]
+        self.assertEqual(current["correctOrder"], previous["correctOrder"])
+        self.assertEqual(current["fragments"][1:], previous["fragments"][1:])
+        self.assertNotEqual(current["fragments"][0], previous["fragments"][0])
+        for index, changed in (
+                (0, r"char salto  =  '\t';"),
+                (3, r'const char* ruta = "C:\\otro\\registros";')):
+            with self.subTest(changed_literal=index):
+                forged = deepcopy(formatted)
+                forged["pages"][0]["blocks"][0]["fragments"][index] = changed
+                with self.assertRaises(state.LayoutError):
+                    state.validate(forged)
+                with self.assertRaises(state.LayoutError):
+                    state.prepare_v2(forged, "es", {"es": formatted}, formatted)
+
     def test_original_owner_and_six_permutations_are_declared(self):
         before, after = authored()
         state.validate(before)

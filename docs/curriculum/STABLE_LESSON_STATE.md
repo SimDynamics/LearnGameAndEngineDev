@@ -248,17 +248,17 @@ y contrasta el resultado con el archivo publicado. La firma de estado del bloque
 debe permanecer igual. El validador curricular sigue autorizando las revisiones:
 no se flexibilizan respuestas ni código.
 
-### Revisión general de explicaciones de actividades ordinarias
+### Revisión general de preguntas y explicaciones de actividades ordinarias
 
-Work puede revisar `/explanation` de `multiple_choice`, `output_prediction`,
-`fill_code`, `order_code`, `drag_fill_code` e `inline_fill_code` sin registrar
-cada frase en una lista de autorizaciones. La capacidad se limita a sustituir
-una explicación existente y no vacía por otra explicación no vacía del mismo
-propietario. Pregunta, opciones, índice correcto, programas, fragmentos,
-respuestas, reglas de comparación, guías, tipo, identidad y cualquier otro
-campo del bloque conservan igualdad completa. Esta revisión no permite añadir
-o quitar campos ni combinar una modificación del contrato con el cambio de
-explicación.
+Work puede revisar `/question` y/o `/explanation` de `multiple_choice`,
+`output_prediction`, `fill_code`, `order_code`, `drag_fill_code` e
+`inline_fill_code` sin registrar cada frase en una lista de autorizaciones.
+Puede modificar uno de esos campos o ambos en la misma revisión. Cada campo
+revisado debe existir y contener texto no vacío antes y después del cambio.
+Opciones, índice correcto, programas, fragmentos, respuestas, reglas de
+comparación, guías, tipo, identidad y cualquier campo no revisado conservan
+igualdad completa. No se permite añadir o quitar campos del bloque ni cambiar
+el contrato de evaluación junto a la redacción.
 
 La autorización necesita las dos lecciones completas. El validador curricular
 lee la anterior desde el commit publicado indicado en `--base-ref`, verifica
@@ -266,32 +266,54 @@ la familia y la transición, y conserva el documento entregado antes de proyecta
 sus bloques a posiciones históricas. Comprueba la dirección inmutable, los dos
 bloques reales y la cadena editorial completa de ese propietario; no basta con
 que coincidan sus firmas de estado, que excluyen varios campos públicos.
-Las explicaciones de selección múltiple también pasan esta comprobación cuando
-cambian. Las autorizaciones históricas concretas conservan su alcance anterior.
+Las preguntas y explicaciones de selección múltiple también pasan esta
+comprobación cuando cambian. Las autorizaciones históricas concretas conservan
+su alcance anterior.
 
-Para preparar la revisión, Work cambia sólo la explicación, actualiza su
-descriptor `textSemantics` para el mismo `block` y `/explanation`, y utiliza
-`prepare_v2` con la publicación anterior y su familia. El descriptor debe
-corresponder al texto nuevo y declarar sus rangos mediante los helpers de
-autoría existentes. `spans: []` declara explícitamente prosa; la ausencia de
-descriptor no cumple esta vía general. La publicación antigua puede no tener
-marcado, pero, si lo tiene, se valida con su texto antiguo. Se conservan los
-demás descriptores y los idiomas no editados.
+Para preparar la revisión, Work utiliza `revise_ordinary_editorial` con la
+lección publicada, la identidad y los campos que decide corregir:
+
+```python
+revised = stable_state_layout.revise_ordinary_editorial(
+    published, identity, {
+        "question": {"text": revised_question, "spans": question_spans},
+        "explanation": {"text": revised_explanation, "spans": explanation_spans},
+    })
+```
+
+Se omite la entrada del campo que no cambia. Cada entrada declara exactamente
+`text` y `spans`; el helper calcula la huella del texto y añade la prueba
+editorial completa. `spans: []` declara explícitamente prosa; la ausencia de
+descriptor no cumple esta vía general. Work indica los rangos UTF-16 mediante
+los helpers de autoría existentes. Si un campo ya tenía segmentos, el helper
+rechaza borrarlos todos silenciosamente. Los descriptores de opciones, guías y
+otros campos no revisados permanecen exactos, al igual que los idiomas ajenos.
+La preparación existente mediante `prepare_v2` continúa admitida cuando Work
+entrega los textos, sus descriptores y la publicación anterior correspondientes.
+
+El comando `revise-ordinary-editorial` recibe el archivo de campos mediante
+`--editorial-fields`, además de la identidad, fuente publicada y destino nuevo
+habituales. Si el bloque completo recupera una versión anterior de su propia
+cadena, los campos incluyen `returnTo` con el ordinal auténtico de esa revisión.
+No se recorta el historial ni se simula una redacción inédita para eludir el
+retorno explícito.
 
 `preserves_previous_exercise` acepta `previous_document` y `current_document`
 como argumentos nombrados para este caso. Ambos proceden del mismo flujo de
 validación contra Git; una pareja de bloques aislados conserva las reglas
-anteriores y no obtiene por sí sola este permiso. No se añaden propiedades al
-JSON ni se cambian las firmas, direcciones de respuesta o reglas del runtime.
+anteriores y no obtiene por sí sola este permiso. La función interna
+`preserves_ordinary_explanation_revision` conserva su nombre histórico, pero
+comprueba tanto preguntas como explicaciones. No se añaden propiedades al bloque
+ni se cambian las firmas, direcciones de respuesta o reglas del runtime.
 Las guardas especiales siguen activas, incluida la pareja protegida de opción
 y explicación de tokens, los retornos editoriales explícitos y los archivos
 de procedencia de las revisiones exclusivamente bibliográficas.
 
 La comprobación acredita conservación contractual y procedencia editorial,
-no la corrección pedagógica de una redacción ni una escucha anterior. La nueva
-explicación utiliza la recuperación de lectura existente; no autoriza conceder
-crédito de escucha, reproducir audio automáticamente ni conservar milisegundos
-de un pasaje incompatible.
+no la corrección pedagógica de una redacción ni una escucha anterior. Los
+pasajes revisados utilizan la recuperación de lectura existente; no se concede
+crédito de escucha, no se reproduce audio automáticamente ni se conservan
+milisegundos de un pasaje incompatible.
 
 ### Revisión exclusivamente bibliográfica de una explicación
 

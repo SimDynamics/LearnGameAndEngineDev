@@ -5031,9 +5031,10 @@ def _validate_order_equivalence_groups(document: dict) -> None:
         require(type(block) is dict and block.get("type") == "order_code",
                 "Order equivalences require one existing evaluated order_code owner")
         fragments, order = block.get("fragments"), block.get("correctOrder")
+        # Escaped characters in C++ literals do not split a physical card.
         require(type(fragments) is list and 2 <= len(fragments) <= 256 and
                 all(type(fragment) is str and fragment.strip() and
-                    "\\n" not in fragment and "\\r" not in fragment
+                    "\n" not in fragment and "\r" not in fragment
                     for fragment in fragments) and
                 type(order) is list and len(order) == len(fragments) and
                 all(type(index) is int for index in order) and

@@ -1,4 +1,4 @@
-"""General explanation authoring preserves authentic owners and all other fields."""
+"""Ordinary prose revisions preserve authentic owners and protected fields."""
 from contextlib import redirect_stderr, redirect_stdout
 from copy import deepcopy
 from functools import lru_cache
@@ -48,6 +48,18 @@ def refresh_field(document, identity, path):
     fields = document.setdefault("textSemantics", {"version": 1, "fields": []})["fields"]
     fields[:] = [field for field in fields if (field["block"], field["path"]) != (identity, path)]
     fields.append(layout.text_semantics.make_field(document, identity, path, []))
+
+
+def with_revised_question(document, identity):
+    """Append a compatible question revision without discarding existing spans."""
+    question = layout._blocks(document)[identity]["question"]
+    markers = document.get("textSemantics", {}).get("fields", [])
+    previous = next((field for field in markers
+                     if (field["block"], field["path"]) == (identity, "/question")), None)
+    spans = deepcopy(previous["spans"]) if previous is not None else []
+    return layout.revise_ordinary_editorial(document, identity, {
+        "question": {"text": question + " Otra pregunta QA.", "spans": spans},
+    })
 
 
 def synthetic(kind):
@@ -131,23 +143,51 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
                 with self.subTest(name=name, added=field):
                     self.assertFalse(preserved(name, before, changed))
 
-    def test_valid_state_chain_does_not_hide_question_or_review_edits(self):
-        for name, field in (("empty_vector", "question"), ("boundary_cases", "question"),
-                            ("case_sensitive_label", "reviewFeedback")):
+    def test_authenticated_question_and_explanation_revisions_are_compatible(self):
+        for name in ("empty_vector", "boundary_cases"):
             before, after, _ = candidate(name)
             identity = fixtures.CASES[name]["identity"]
-            changed = deepcopy(after)
-            block = layout._blocks(changed)[identity]
-            if field == "reviewFeedback":
-                block[field][0] += " Otra guía QA."
-                refresh_field(changed, identity, "/reviewFeedback/0")
-            else:
-                block[field] += " Otra pregunta QA."
-                refresh_field(changed, identity, "/question")
-            repoint_last_edge(changed, identity)
-            layout.validate_transition(before, changed)
-            with self.subTest(name=name, field=field):
-                self.assertFalse(preserved(name, before, changed))
+            changed = with_revised_question(after, identity)
+            with self.subTest(name=name):
+                layout.validate_transition(before, changed)
+                self.assertTrue(preserved(name, before, changed))
+                self.assertEqual(after["stateLayout"]["editorial"],
+                                 changed["stateLayout"]["editorial"][:-1])
+                old, new = blocks(before, changed, identity)
+                self.assertFalse(contract.preserves_previous_exercise(
+                    PREFIX + fixtures.CASES[name]["lesson"],
+                    *fixtures.CASES[name]["historical"], old, new))
+
+    def test_revised_question_requires_its_own_marking_and_provenance(self):
+        for name in ("empty_vector", "boundary_cases"):
+            before, after, _ = candidate(name)
+            identity = fixtures.CASES[name]["identity"]
+            valid = with_revised_question(after, identity)
+            for mutation in ("missing_marker", "stale_marker", "missing_edge"):
+                changed = deepcopy(valid)
+                fields = changed["textSemantics"]["fields"]
+                if mutation == "missing_marker":
+                    fields[:] = [field for field in fields
+                                 if (field["block"], field["path"]) != (identity, "/question")]
+                elif mutation == "stale_marker":
+                    marker = next(field for field in fields
+                                  if (field["block"], field["path"]) == (identity, "/question"))
+                    marker["sourceSha256"] = "0" * 64
+                else:
+                    changed["stateLayout"]["editorial"].pop()
+                with self.subTest(name=name, mutation=mutation):
+                    self.assertFalse(preserved(name, before, changed))
+
+    def test_valid_state_chain_does_not_hide_review_edits(self):
+        name = "case_sensitive_label"
+        before, after, _ = candidate(name)
+        identity = fixtures.CASES[name]["identity"]
+        changed = deepcopy(after)
+        layout._blocks(changed)[identity]["reviewFeedback"][0] += " Otra guía QA."
+        refresh_field(changed, identity, "/reviewFeedback/0")
+        repoint_last_edge(changed, identity)
+        layout.validate_transition(before, changed)
+        self.assertFalse(preserved(name, before, changed))
 
     def test_ownership_comes_from_historical_address_not_visible_position_or_block_id(self):
         name = "case_sensitive_label"
@@ -326,18 +366,38 @@ class OrdinaryExplanationMainTest(unittest.TestCase):
         self.assertEqual(1, code, output)
         self.assertIn("explanation", output)
 
+    def test_main_requires_current_marking_for_a_question_revision(self):
+        for marking in ("authored", "missing", "stale"):
+            def revise(name, before, after):
+                if name != "boundary_cases":
+                    return
+                identity = fixtures.CASES[name]["identity"]
+                revised = with_revised_question(after, identity)
+                fields = revised["textSemantics"]["fields"]
+                if marking == "missing":
+                    fields[:] = [field for field in fields
+                                 if (field["block"], field["path"]) != (identity, "/question")]
+                elif marking == "stale":
+                    marker = next(field for field in fields
+                                  if (field["block"], field["path"]) == (identity, "/question"))
+                    marker["sourceSha256"] = "0" * 64
+                after.clear()
+                after.update(revised)
+            with self.subTest(marking=marking):
+                code, output = self.run_main(revise)
+                self.assertEqual(0 if marking == "authored" else 1, code, output)
+
     def test_main_rejects_extra_changes_even_with_updated_editorial_hashes(self):
         for target, field in (("empty_vector", "code"), ("range_copy", "answers"),
-                              ("boundary_cases", "question"), ("boundary_cases", "correctIndex"),
+                              ("boundary_cases", "correctIndex"),
                               ("case_sensitive_label", "reviewFeedback"), ("empty_vector", "id")):
             def inject(name, before, after):
                 if name != target:
                     return
                 identity = fixtures.CASES[name]["identity"]
                 block = layout._blocks(after)[identity]
-                if field in ("code", "question"):
+                if field == "code":
                     block[field] += " Cambio no autorizado."
-                    if field == "question": refresh_field(after, identity, "/question")
                 elif field == "answers": block[field] = ["incorrecto"]
                 elif field == "correctIndex": block[field] = 0
                 elif field == "reviewFeedback":
