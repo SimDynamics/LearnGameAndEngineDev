@@ -2764,6 +2764,78 @@ void output_scenario_reading_isolated(HWND host) {
         view.step_index()==0,
         "Switching to the independent output session changed the model state");
 }
+
+void output_applied_data_reading_isolated(HWND host) {
+    auto spec=fixture(SimulationViewMode::summary);
+    spec.scenarios.clear();
+    spec.values.clear();
+    for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
+    SimulationView view(host,spec,"es");
+    resize(view,800);
+    const auto output=GetDlgItem(view.window(),output_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(output&&editor&&GetDlgItem(view.window(),apply_id),
+        "An applied-output-session fixture is missing native controls");
+    const auto expected=text(view,output_id);
+    const auto original=scroll_state(output);
+    check(original.has_range&&original.vertical.nPage>0&&
+        original.vertical.nMax-original.vertical.nMin+1>
+            static_cast<int>(original.vertical.nPage),
+        "The applied-output fixture needs a genuinely scrollable output");
+
+    // Reordering the source changes its trace and source positions, but
+    // stable sorting deliberately leaves stdout byte-for-byte identical.
+    // The learner's prior output selection must not leak into that new trace.
+    SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    const LONG length=static_cast<LONG>(GetWindowTextLengthW(output));
+    const CHARRANGE last{std::max<LONG>(LONG{0},length-LONG{5}),length};
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&last));
+    SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    const auto old_reading=scroll_state(output);
+    check(old_reading.position.y>0&&
+        old_reading.selection.cpMin==last.cpMin&&
+        old_reading.selection.cpMax==last.cpMax,
+        "Could not prepare the prior applied-data reading position");
+
+    std::string reversed;
+    for(std::int64_t value=63;value>=0;--value){
+        if(!reversed.empty())reversed+='\n';
+        reversed+=std::to_string(value);
+    }
+    set_edit_text(editor,reversed);
+    click(view,apply_id);
+    pump(host);
+    const auto fresh=scroll_state(output);
+    check(text(view,error_id).empty()&&text(view,output_id)==expected&&
+        view.step_index()==0,
+        "Applying a reordered source changed computed stdout or model validity");
+    check(fresh.first==0&&fresh.position.y==0&&
+        fresh.selection.cpMin==0&&fresh.selection.cpMax==0,
+        "Applying new data with equal stdout retained an old output selection or scroll");
+    check(name(GetDlgItem(view.window(),array_id)).find("origen índice 63")!=std::string::npos,
+        "Applying reordered input lost the origin of the sorted first element");
+
+    // A rejected draft does not become a new trace and must preserve the
+    // active output, including the learner's own scroll and selection.
+    SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&last));
+    SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    const auto retained=scroll_state(output);
+    check(retained.position.y>0&&
+        retained.selection.cpMin==last.cpMin&&
+        retained.selection.cpMax==last.cpMax,
+        "Could not prepare selection before the rejected edit");
+    set_edit_text(editor,"no_es_un_entero");
+    click(view,apply_id);
+    pump(host);
+    const auto after_rejection=scroll_state(output);
+    check(!text(view,error_id).empty()&&text(view,output_id)==expected&&
+        after_rejection.position.y==retained.position.y&&
+        after_rejection.selection.cpMin==retained.selection.cpMin&&
+        after_rejection.selection.cpMax==retained.selection.cpMax,
+        "A rejected input discarded the valid output reading session");
+}
+
 void scrollable_text_keyboard(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::summary);spec.values.clear();
     for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
@@ -2877,6 +2949,7 @@ int main(int argc,char** argv)try {
     run("wheel_edges_resume_reader",[&]{wheel_edges_resume_reader(host.value);});
     run("accumulated_output_scroll_follows_new_groups",[&]{accumulated_output_scroll_follows_new_groups(host.value);});
     run("output_scenario_reading_isolated",[&]{output_scenario_reading_isolated(host.value);});
+    run("output_applied_data_reading_isolated",[&]{output_applied_data_reading_isolated(host.value);});
     run("scrollable_text_keyboard",[&]{scrollable_text_keyboard(host.value,captures);});
     check(!IsWindowVisible(host.value)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=host.value,"Simulation QA activated the desktop");
     if(failures){std::cerr<<"FAIL native simulation view: "<<failures<<" independent scenario(s) failed\n";return 1;}
