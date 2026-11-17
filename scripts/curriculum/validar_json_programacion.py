@@ -1871,14 +1871,13 @@ def _validate_cpp_fundamentals(base_commit):
                                        relative, origin_p, origin_b, block, current,
                                        previous_document=old, current_document=delivered))
                         require(allowed, relative, f"código legacy previo modificado p{pn+1} b{bn+1}")
-                    elif (kind != "multiple_choice"
-                          or block.get("question") != current.get("question")
-                          or block.get("explanation") != current.get("explanation")) or (
-                        Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix(),
-                        origin_p + 1,
-                        origin_b + 1,
-                    ) in (MULTIPLE_CHOICE_OPTION_PERMUTATIONS.keys() | MULTIPLE_CHOICE_DISTRACTOR_REVISIONS.keys()
-                          | CHOICE_OPTION_REVISION_LOCATIONS):
+                    else:
+                        # Check every published exercise, including choices whose
+                        # question/explanation did not change. Earlier validated
+                        # stateLayout projections return an authenticated choice
+                        # revision to its historical answer contract, while
+                        # changed options/correctIndex without authorization
+                        # must never bypass the original-response guard.
                         require(preserves_previous_exercise(relative, origin_p, origin_b, block, current,
                                     previous_document=old, current_document=delivered), relative,
                                 f"{previous_exercise_difference(block, current)} p{pn+1} b{bn+1}")
