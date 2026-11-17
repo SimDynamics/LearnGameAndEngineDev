@@ -412,8 +412,12 @@ Avanzar, retroceder o saltar a un paso tampoco admite una presentación
 parcial. Si RichEdit rechaza la actualización después de seleccionar otro
 estado, el simulador recupera el paso, la salida, las variables, las barras
 y los puntos de lectura anteriores. Un aviso accesible explica el fallo,
-sin propagar la excepción fuera de los controles Win32. El intento siguiente
-puede avanzar normalmente y retira ese aviso transitorio; si había un
+sin propagar la excepción fuera de los controles Win32. La limpieza de un
+aviso transitorio ocurre antes de notificar a los observadores del modelo:
+si un observador inicia otro paso que falla, la notificación exterior no
+puede borrar el error del intento interior. La regresión Win32
+`reentrant_navigation_keeps_newer_native_error` comprueba esa reentrada.
+El intento siguiente puede avanzar normalmente y retira ese aviso transitorio; si había un
 diagnóstico distinto del editor, vuelve a mostrarlo. La regresión nativa
 `step_navigation_rolls_back_native_presentation_failure` verifica esos
 efectos sin modificar el conjunto de datos aplicado. Requiere Windows.

@@ -1106,8 +1106,14 @@ struct SimulationView::Impl {
                     frequency_total_height)
                 scroll_frequencies(frequency_total_height);
             if(reveal_decision)reveal_current_histogram_decision();
-            publish();
+            // publish() invokes arbitrary client callbacks, which may
+            // reenter go() and register a NEW navigation failure. Clear only
+            // this successful attempt's transient notice BEFORE publishing;
+            // otherwise the outer frame would erase the nested failure.
+            // A callback may also destroy the view: never access members
+            // after publish returns.
             navigation_error.clear();previous_navigation_error.clear();
+            publish();
             return true;
         }catch(const std::exception& failure){
             // RichEdit may have already streamed the next step's output.
