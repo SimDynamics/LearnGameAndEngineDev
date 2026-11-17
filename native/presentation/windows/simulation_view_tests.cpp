@@ -946,6 +946,67 @@ void histogram_reflow_retains_visible_group(HWND host) {
 }
 
 
+
+void histogram_first_overflow_does_not_jump_to_last_group(HWND host) {
+    auto spec=fixture(SimulationViewMode::summary);
+    spec.values.clear();spec.scenarios.clear();spec.editable=false;
+    for(std::int64_t value=0;value<9;++value)spec.values.emplace_back(value);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");
+    resize(view,1180);
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    check(chart,"The compact histogram is missing");
+    const auto scroll=[&]{
+        SCROLLINFO state{sizeof(state),SIF_RANGE|SIF_PAGE|SIF_POS};
+        check(GetScrollInfo(chart,SB_VERT,&state)&&state.nPage>0,
+            "Cannot inspect the native histogram scroll range");
+        return state;
+    };
+    const auto full=scroll();
+    check(full.nMax-full.nMin+1<=static_cast<int>(full.nPage)&&
+        full.nPos==0&&view.frequency_card_bounds_in_canvas(0)&&
+        view.frequency_card_bounds_in_canvas(8),
+        "The wide nine-group histogram must fit without internal scrolling");
+
+    // Origin and end are both zero while everything fits. Widening the range
+    // must not reinterpret that position as an intentional SB_BOTTOM.
+    resize(view,340);
+    const auto overflow=scroll();
+    check(overflow.nMax-overflow.nMin+1>static_cast<int>(overflow.nPage)&&
+        overflow.nPos==0&&view.frequency_card_bounds_in_canvas(0)&&
+        !view.frequency_card_bounds_in_canvas(8)&&spec==authored,
+        "The first histogram overflow skipped directly to its last groups");
+
+    // Return through a fully fitting view, then narrow it again. A bottom
+    // scroll from an earlier layout must not leak through the no-overflow
+    // transition and move the learner away from the first row.
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    const auto at_end=scroll();
+    check(at_end.nPos>0&&view.frequency_card_bounds_in_canvas(8),
+        "Cannot reach the real end of the narrow histogram");
+    resize(view,1180);
+    const auto fitted_again=scroll();
+    check(fitted_again.nPos==0&&
+        fitted_again.nMax-fitted_again.nMin+1<=
+            static_cast<int>(fitted_again.nPage),
+        "The wide histogram retained a phantom scrollbar");
+    resize(view,340);
+    const auto narrowed_again=scroll();
+    check(narrowed_again.nPos==0&&view.frequency_card_bounds_in_canvas(0)&&
+        !view.frequency_card_bounds_in_canvas(8)&&spec==authored,
+        "Reflow to a narrow histogram reused an obsolete bottom anchor");
+
+    // A genuine scrollable bottom does carry through a new reader zoom.
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    view.set_text_scale(150);resize(view,340);
+    const auto zoomed=scroll();
+    const auto final_row=std::max(zoomed.nMin,zoomed.nMax-
+        std::max(0,static_cast<int>(zoomed.nPage)-1));
+    check(zoomed.nPos==final_row&&view.frequency_card_bounds_in_canvas(8)&&
+        spec==authored,
+        "An explicitly chosen last row stopped following the end on reader zoom");
+}
+
 void explicit_decision_jumps_reveal_histogram_bar(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     spec.values.clear();spec.scenarios.clear();spec.editable=false;
@@ -3704,6 +3765,7 @@ int main(int argc,char** argv)try {
     run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
     run("histogram_follows_new_groups_only_at_end",[&]{histogram_follows_new_groups_only_at_end(host.value);});
     run("histogram_reflow_retains_visible_group",[&]{histogram_reflow_retains_visible_group(host.value);});
+    run("histogram_first_overflow_does_not_jump_to_last_group",[&]{histogram_first_overflow_does_not_jump_to_last_group(host.value);});
     run("explicit_decision_jumps_reveal_histogram_bar",[&]{explicit_decision_jumps_reveal_histogram_bar(host.value);});
     run("candidate_frequency_filter",[&]{candidate_frequency_filter(host.value);});
     run("neighboring_values_explain_group_boundaries",[&]{neighboring_values_explain_group_boundaries(host.value);});
