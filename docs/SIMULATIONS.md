@@ -578,6 +578,18 @@ capturas de regresión en el directorio temporal de CTest para simulaciones.
 No modifica perfiles reales ni ejecuta GitHub Actions. No se debe atribuir
 una aprobación Windows a la mera publicación del script.
 
+La prueba `native.simulation_lesson` incluye casos de integración del
+**lector Windows real** con datos `[]`, `[""]`, `["", "patio", "patio"]`
+y `["", " "]`. Verifica que el cargador completo y el de progreso
+reconozcan el mismo contrato; que el simulador muestre valores vacíos
+sin descartarlos; que avance y retroceda manteniendo la salida exacta
+de cada estado; y que la edición explícita entre comillas conserve el
+dato vacío y los espacios. Comprueba también que la exploración no
+genera respuestas ni modifica el progreso de la lección. Utiliza
+lecciones sintéticas y perfiles QA, no datos del estudiante. La
+implementación de la prueba no constituye una ejecución verificada
+hasta correrla en Windows local.
+
 Desde la raíz del repositorio, las pruebas acotadas de autoría se ejecutan con:
 
 ```text

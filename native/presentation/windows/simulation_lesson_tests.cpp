@@ -279,6 +279,137 @@ int main(int argc,char** argv)try {
     check(!IsWindowVisible(host.value),"Simulation QA activated a user desktop window");
     DestroyWindow(view.value);view.value=nullptr;
 
+    // Exercise the exact lesson-reader mount, not only the JSON adapter and
+    // stand-alone view. Each disposable case gets its own lesson identity,
+    // including one empty string that must never become a missing element.
+    struct EmptyLabelCase {
+        const wchar_t* json;
+        std::vector<curriculum::SimulationValue> values;
+    };
+    const std::vector<EmptyLabelCase> empty_cases{
+        {L"[]",{}},
+        {L"[\"\"]",{std::string("")}},
+        {L"[\"\",\"patio\",\"patio\"]",{std::string(""),std::string("patio"),std::string("patio")}},
+        {L"[\"\",\" \"]",{std::string(""),std::string(" ")}}
+    };
+    const auto native_caption=[](HWND target) {
+        check(target!=nullptr,"Missing native control in the empty-label reader");
+        std::wstring buffer(static_cast<std::size_t>(GetWindowTextLengthW(target))+1,L'\0');
+        buffer.resize(static_cast<std::size_t>(GetWindowTextW(target,buffer.data(),
+            static_cast<int>(buffer.size()))));
+        return utf8(buffer);
+    };
+    for(std::size_t index=0;index<empty_cases.size();++index) {
+        const auto& sample=empty_cases[index];
+        auto empty_root=JsonObject::Parse(winrt::to_hstring(source));
+        empty_root.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(
+            "qa_simulation_empty_label_reader_"+std::to_string(index))));
+        auto simulation=simulation_block(empty_root).GetNamedObject(L"simulation");
+        simulation.Insert(L"valueType",JsonValue::CreateStringValue(L"text"));
+        simulation.Insert(L"values",JsonArray::Parse(sample.json));
+        JsonObject scenario;
+        scenario.Insert(L"id",JsonValue::CreateStringValue(L"qa_empty"));
+        scenario.Insert(L"label",JsonValue::CreateStringValue(L"Escenario vacío"));
+        scenario.Insert(L"values",JsonArray::Parse(L"[]"));
+        JsonArray scenarios;scenarios.Append(scenario);
+        simulation.Insert(L"scenarios",scenarios);
+        const auto json=winrt::to_string(empty_root.Stringify());
+        const auto empty_lesson=windows::parse_lesson_json(json,"es");
+        const auto empty_metadata=windows::parse_lesson_progress_metadata(json,"es");
+        const auto& spec=empty_lesson.pages[0].blocks[1].simulation;
+        check(spec&&spec->text_values&&spec->values==sample.values&&
+            empty_metadata.pages[0].blocks[1].simulation==spec,
+            "Empty string, significant space or zero elements changed at lesson load");
+        const auto expected=curriculum::build_simulation_trace(*spec);
+        Window mounted{create_lesson_view(host.value,environment,empty_lesson,hooks)};
+        check(mounted.value,"Cannot mount a native lesson containing empty text labels");
+        MoveWindow(mounted.value,0,0,1000,800,TRUE);pump();
+        const auto child=descendant(mounted.value,1105);
+        check(child,"Empty-label lesson did not mount the native simulation");
+        const auto canvas=descendant(child,105),output=descendant(child,110),
+            next_button=button_named(child,L"Siguiente"),
+            previous_button=button_named(child,L"Anterior"),
+            step_selector=descendant(child,121),input=descendant(child,115),
+            format=descendant(child,120),apply=button_named(child,L"Aplicar datos"),
+            select_scenario=descendant(child,103);
+        check(canvas&&output&&next_button&&previous_button&&step_selector&&
+            input&&format&&apply&&select_scenario,
+            "Empty-label lesson omitted a required native simulation control");
+        check(SendMessageW(step_selector,CB_GETCOUNT,0,0)==
+                static_cast<LRESULT>(expected.frames.size())&&
+            !IsWindowEnabled(previous_button),
+            "Empty-label lesson exposed the wrong number of computed steps");
+        const auto array_name=native_caption(canvas);
+        check((array_name.find("No hay valores.")!=std::string::npos)==sample.values.empty(),
+            "The array view confused [] with a nonempty array");
+        if(!sample.values.empty()) {
+            check(array_name.find("índice 0: \"\" (cadena vacía)")!=std::string::npos,
+                "The first empty string was not represented as an actual indexed element");
+            check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+                edit_text(input).find("[\"\"")!=std::string::npos,
+                "An empty string was not editable in the explicit JSON text format");
+        }
+        const auto initial_state=state::encode(read_lesson_state(mounted.value));
+        for(std::size_t stage=0;stage<expected.frames.size();++stage) {
+            check(edit_text(output)==expected.frames[stage].output&&
+                SendMessageW(step_selector,CB_GETCURSEL,0,0)==
+                    static_cast<LRESULT>(stage),
+                "Native lesson exposed future output or another step's state");
+            if(stage+1<expected.frames.size()) {
+                check(IsWindowEnabled(next_button),
+                    "A non-terminal empty-label state disabled Next");
+                SendMessageW(next_button,BM_CLICK,0,0);pump();
+            }
+        }
+        check(!IsWindowEnabled(next_button),
+            "The final empty-label decision offered an invented next step");
+        for(std::size_t stage=expected.frames.size();stage>1;--stage) {
+            check(IsWindowEnabled(previous_button),
+                "Empty-label lesson cannot revisit a previously calculated state");
+            SendMessageW(previous_button,BM_CLICK,0,0);pump();
+            check(edit_text(output)==expected.frames[stage-2].output,
+                "Backwards navigation retained a later group's output");
+        }
+        check(!IsWindowEnabled(previous_button)&&
+            state::encode(read_lesson_state(mounted.value))==initial_state,
+            "Exploring empty-label groups changed the lesson's graded progress");
+
+        SendMessageW(select_scenario,CB_SETCURSEL,1,0);
+        SendMessageW(child,WM_COMMAND,MAKEWPARAM(103,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(select_scenario));pump();
+        check(native_caption(canvas).find("No hay valores.")!=std::string::npos&&
+            edit_text(output).empty()&&!IsWindowEnabled(next_button),
+            "Selecting an empty scenario retained old text groups or output");
+
+        // Explicit editing has to distinguish two text items ["", " "]
+        // from both [] and [""], without creating a curricular response.
+        SendMessageW(format,CB_SETCURSEL,1,0);
+        SendMessageW(child,WM_COMMAND,MAKEWPARAM(120,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(format));pump();
+        check(SetWindowTextW(input,L"[\"\", \" \"]"),
+            "Cannot enter an explicit empty label and a significant space");
+        SendMessageW(apply,BM_CLICK,0,0);pump();
+        const auto edited=curriculum::build_simulation_trace(*spec,
+            std::vector<curriculum::SimulationValue>{
+                std::string(""),std::string(" ")});
+        check(SendMessageW(step_selector,CB_GETCOUNT,0,0)==
+                static_cast<LRESULT>(edited.frames.size())&&
+            native_caption(canvas).find("índice 0: \"\" (cadena vacía)")!=std::string::npos&&
+            native_caption(canvas).find("índice 1: \" \" (1 espacio)")!=std::string::npos,
+            "Applying text data lost either an empty string or a significant space");
+        for(std::size_t stage=0;stage<edited.frames.size();++stage) {
+            check(edit_text(output)==edited.frames[stage].output,
+                "Text input editor or native output changed the calculated empty-label trace");
+            if(stage+1<edited.frames.size()) {
+                SendMessageW(next_button,BM_CLICK,0,0);pump();
+            }
+        }
+        check(state::encode(read_lesson_state(mounted.value))==initial_state&&
+            !state::get_response(read_lesson_state(mounted.value),
+                empty_lesson,empty_lesson.pages[0].blocks[1]),
+            "Editing a simulation was incorrectly stored as a graded response");
+    }
+
     // Exercise bookmark successor routing through the trusted model adapter.
     // Authenticated JSON retirement is covered separately by the authoring
     // tests; this fixture isolates the native visible-region contract.
