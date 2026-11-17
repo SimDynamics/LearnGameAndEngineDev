@@ -333,6 +333,17 @@ solamente los grupos que ya terminaron. `done` conserva el resultado final.
 Un array vacío produce únicamente `empty`, sin accesos a elementos ni líneas
 de salida.
 
+Cuando la salida de muchos grupos necesita una barra de desplazamiento,
+contar otro elemento sin terminar su grupo **no reemplaza el texto ni
+reinicia la posición de lectura**. Si se añade una nueva línea y el
+estudiante estaba leyendo el final, la salida se desplaza hasta mostrarla.
+Si había vuelto manualmente a una línea anterior para compararla, el
+simulador conserva esa posición aunque lleguen nuevas líneas. Cambiar el
+zoom o actualizar colores tampoco debe devolverlo involuntariamente
+al principio. La regresión nativa
+`accumulated_output_scroll_follows_new_groups` comprueba estos casos
+sin cambiar el contrato de salida ni los datos originales.
+
 ### Barras de frecuencia calculadas
 
 La vista Windows muestra un diagrama de barras a partir de las **frecuencias
