@@ -163,6 +163,10 @@ struct SimulationView::Impl {
     bool initializing=true,arranging=false,layout_valid=false;
     std::shared_ptr<bool> alive=std::make_shared<bool>(true);
     std::string error,input_key,output_model_key,original_order_model_key;
+    // Reapplying even identical values begins a new reading session.
+    // Content identity remains stable for narration, but native caret/scroll
+    // must not be borrowed from the previous application.
+    std::size_t applied_revision=0,output_reading_revision=0,original_order_reading_revision=0;
     std::size_t output_scenario=0,original_order_scenario=0;
     COLORREF original_order_ink=CLR_INVALID;
 
@@ -821,7 +825,8 @@ struct SimulationView::Impl {
         const auto original_window=item(original_order_id);
         const auto previous_original=visible_text.find(original_order_id);
         const bool same_original_session=previous_original!=visible_text.end()&&
-            original_order_model_key==input_key&&original_order_scenario==scenario;
+            original_order_model_key==input_key&&original_order_scenario==scenario&&
+            original_order_reading_revision==applied_revision;
         const auto current_ink=reader_theme::foreground(original_window);
         const bool original_unchanged=same_original_session&&
             previous_original->second==original&&original_order_ink==current_ink;
@@ -902,7 +907,8 @@ struct SimulationView::Impl {
         // source data. Its scroll and text selection still belong to a new
         // reading session and must not inherit the earlier scenario's caret.
         const bool same_output_model=previous_output!=visible_text.end()&&
-            output_model_key==input_key&&output_scenario==scenario;
+            output_model_key==input_key&&output_scenario==scenario&&
+            output_reading_revision==applied_revision;
         POINT output_scroll{};
         const bool restore_output_scroll=same_output_model;
         bool follow_output_end=false;
@@ -985,6 +991,7 @@ struct SimulationView::Impl {
         }
         original_order_model_key=input_key;
         original_order_scenario=scenario;
+        original_order_reading_revision=applied_revision;
         original_order_ink=current_ink;
         if(restore_output_scroll){
             if(follow_output_end)
@@ -1000,6 +1007,7 @@ struct SimulationView::Impl {
         }
         output_model_key=input_key;
         output_scenario=scenario;
+        output_reading_revision=applied_revision;
         InvalidateRect(canvas,nullptr,FALSE);InvalidateRect(item(variables_id),nullptr,FALSE);
         InvalidateRect(frequencies,nullptr,FALSE);
     }
@@ -1085,6 +1093,7 @@ struct SimulationView::Impl {
         frequency_wheel_remainder=0;
         frequency_scroll=0;frequency_total_height=0;frequency_candidates_only=false;
         pressed_frequency_group.reset();
+        ++applied_revision;
         input_key=std::move(identity);position=0;error.clear();
         if(replacement){input_format=next_format;set_edit_text(item(input_id),*replacement);}
         rebuild_groups();rebuild_steps();update();publish();
