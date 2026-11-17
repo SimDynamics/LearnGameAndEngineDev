@@ -728,21 +728,24 @@ struct SimulationView::Impl {
         const bool output_changed=previous_output==visible_text.end()||
             previous_output->second!=state.output;
         POINT output_scroll{};
-        bool restore_output_scroll=false,follow_output_end=false;
-        if(output_changed&&previous_output!=visible_text.end()){
-            restore_output_scroll=true;
+        const bool restore_output_scroll=previous_output!=visible_text.end();
+        bool follow_output_end=false;
+        if(restore_output_scroll){
+            // Even recoloring unchanged text for a theme update may reflow
+            // native RichEdit; retain the learner's actual viewport.
             SendMessageW(output_window,EM_GETSCROLLPOS,0,
                 reinterpret_cast<LPARAM>(&output_scroll));
-            SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE|SIF_POS};
-            const bool at_end=GetScrollInfo(output_window,SB_VERT,&scroll)&&
-                scroll.nPage>0&&
-                scroll.nPos>=std::max(scroll.nMin,
-                    scroll.nMax-std::max(0,static_cast<int>(scroll.nPage)-1));
-            // Follow a new line only when the learner was already at the
-            // bottom. If they scrolled up to reread an earlier group, keep
-            // that viewport even as more output is calculated.
-            follow_output_end=at_end&&state.output.size()>previous_output->second.size()&&
-                state.output.compare(0,previous_output->second.size(),previous_output->second)==0;
+            if(output_changed){
+                SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE|SIF_POS};
+                const bool at_end=GetScrollInfo(output_window,SB_VERT,&scroll)&&
+                    scroll.nPage>0&&
+                    scroll.nPos>=std::max(scroll.nMin,
+                        scroll.nMax-std::max(0,static_cast<int>(scroll.nPage)-1));
+                // Follow a new line only when the learner was already at the
+                // bottom. Otherwise preserve their earlier reading position.
+                follow_output_end=at_end&&state.output.size()>previous_output->second.size()&&
+                    state.output.compare(0,previous_output->second.size(),previous_output->second)==0;
+            }
         }
         visible_text[output_id]=state.output;
         if(output_changed)set_edit_text(output_window,state.output);
