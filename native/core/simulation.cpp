@@ -464,7 +464,7 @@ std::string simulation_frame_text(const SimulationSpec& spec,
     return result;
 }
 
-std::vector<SimulationValue> simulation_parse_input(const SimulationSpec& spec, std::string_view input,
+SimulationTrace simulation_parse_input_trace(const SimulationSpec& spec, std::string_view input,
         SimulationInputFormat format) {
     validate_simulation_spec(spec);
     require(format == SimulationInputFormat::lines || format == SimulationInputFormat::json,
@@ -490,8 +490,13 @@ std::vector<SimulationValue> simulation_parse_input(const SimulationSpec& spec, 
         at = newline + 1;
     }
     validate_values(values, spec.text_values, !spec.sort);
-    (void)make_trace(spec, values);
-    return values;
+    return make_trace(spec, values);
+}
+
+std::vector<SimulationValue> simulation_parse_input(const SimulationSpec& spec, std::string_view input,
+        SimulationInputFormat format) {
+    auto validated = simulation_parse_input_trace(spec, input, format);
+    return std::move(validated.original);
 }
 
 std::string simulation_input_text(const std::vector<SimulationValue>& values, SimulationInputFormat format) {
