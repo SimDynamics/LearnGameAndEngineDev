@@ -1040,6 +1040,19 @@ struct SimulationView::Impl {
         if(initializing)return;const auto life=alive;const auto layout=callbacks.layout_changed,changed=callbacks.changed;
         if(layout)layout();if(*life&&changed)changed();
     }
+    // A changed/layout observer is external code. A failure in it does not
+    // invalidate an already updated frame; it must not trigger a model rollback.
+    // Do not hide a newer native error created by a reentrant notification.
+    void report_navigation_notification_failure(std::string_view message) noexcept {
+        if(!navigation_error.empty())return;
+        try{
+            previous_navigation_error=error;
+            report_native_error("No se pudo notificar el cambio de paso. ",message);
+            navigation_error=error;
+        }catch(...){
+            OutputDebugStringW(L"No se pudo registrar el fallo del observador de simulación.\n");
+        }
+    }
     // A direct step/decision selection should reveal its actual completed
     // group, even after the learner has scrolled to an unrelated histogram
     // row. Sequential Next/Previous keeps manual scrolling independent.
@@ -1113,8 +1126,6 @@ struct SimulationView::Impl {
             // A callback may also destroy the view: never access members
             // after publish returns.
             navigation_error.clear();previous_navigation_error.clear();
-            publish();
-            return true;
         }catch(const std::exception& failure){
             // RichEdit may have already streamed the next step's output.
             // Do not commit a half-presented frame or let its exception cross
@@ -1141,6 +1152,17 @@ struct SimulationView::Impl {
             }
             return false;
         }
+        // Native presentation has committed. A later observer exception
+        // must not roll back this step (or a successful nested step). Both
+        // changed and layout_changed callbacks can run arbitrary client code.
+        const auto life=alive;
+        try{publish();}
+        catch(const std::exception& failure){
+            if(*life)report_navigation_notification_failure(failure.what());
+        }catch(...){
+            if(*life)report_navigation_notification_failure("Excepción no identificada del observador.");
+        }
+        return true;
     }
     const std::vector<SimulationValue>& original_data()const{return scenario?spec.scenarios.at(scenario-1).values:spec.values;}
     // Recovery uses the historical text-stream route first. If a native

@@ -417,6 +417,13 @@ aviso transitorio ocurre antes de notificar a los observadores del modelo:
 si un observador inicia otro paso que falla, la notificación exterior no
 puede borrar el error del intento interior. La regresión Win32
 `reentrant_navigation_keeps_newer_native_error` comprueba esa reentrada.
+La notificación de cambio se realiza fuera de la transacción del paso:
+si un observador externo lanza una excepción, el paso ya calculado no
+retrocede. El aviso accesible distingue el fallo de notificación de un
+error de presentación, y no sustituye un error posterior procedente de
+una navegación anidada. Las pruebas
+`navigation_callback_failure_keeps_committed_steps` y
+`reentrant_success_survives_outer_observer_exception` cubren ambos casos.
 La regresión `navigation_retry_preserves_previous_invalid_draft` verifica
 además que un fallo temporal de navegación no borre el diagnóstico anterior
 de datos editados inválidos cuando el siguiente paso sí se complete.

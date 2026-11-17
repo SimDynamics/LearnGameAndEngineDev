@@ -2559,6 +2559,9 @@ void reentrant_navigation_keeps_newer_native_error(HWND host) {
         // fails, so only the inner attempt must keep an outstanding warning.
         fault.armed=true;
         nested_accepted=active->go_to_step(2);
+        // The outer callback itself also throws. It must never override
+        // the newer failure originating inside the nested navigation.
+        throw std::runtime_error("Excepción tardía del observador exterior");
     };
     SimulationView view(host,spec,"es",callbacks);
     active=&view;
@@ -2605,6 +2608,70 @@ void reentrant_navigation_keeps_newer_native_error(HWND host) {
         text(view,output_id)=="-8:1\n"&&text(view,error_id).empty()&&
         spec==authored,
         "Outer publish discarded the inner failure identity before retry");
+}
+
+void navigation_callback_failure_keeps_committed_steps(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    bool throw_next=false;
+    int notifications=0;
+    SimulationCallbacks listeners{};
+    listeners.changed=[&] {
+        ++notifications;
+        if(throw_next){
+            throw_next=false;
+            throw std::runtime_error("Excepción de prueba del observador");
+        }
+    };
+    SimulationView view(host,spec,"es",listeners);resize(view,820);
+    throw_next=true;
+    check(view.go_to_step(2),"A valid model navigation must not fail due to its observer");
+    const auto warning=text(view,error_id);
+    check(notifications>=1&&view.step_index()==2&&
+        text(view,output_id)=="-8:1\n"&&
+        warning.find("No se pudo notificar el cambio de paso.")!=std::string::npos&&
+        warning.find("Excepción de prueba del observador")!=std::string::npos&&
+        spec==authored,
+        "Observer failure rolled back an already committed simulation frame");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==warning;
+    }),"The committed-step observer failure was not accessible to narration");
+    check(view.go_to_step(3)&&view.step_index()==3&&
+        text(view,output_id)=="-8:1\n"&&text(view,error_id).empty()&&
+        spec==authored,
+        "After an observer exception, normal navigation could not clear the warning");
+}
+
+void reentrant_success_survives_outer_observer_exception(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    bool reenter=false,nested_ok=false;
+    int notifications=0;
+    SimulationView* instance=nullptr;
+    SimulationCallbacks listeners{};
+    listeners.changed=[&]{
+        ++notifications;
+        if(!reenter)return;
+        reenter=false;
+        nested_ok=instance->go_to_step(2);
+        throw std::runtime_error("Fallo posterior a la navegación anidada");
+    };
+    SimulationView view(host,spec,"es",listeners);instance=&view;
+    resize(view,820);
+    reenter=true;
+    check(view.go_to_step(1),
+        "The outer navigation should commit despite its observer exception");
+    const auto warning=text(view,error_id);
+    check(nested_ok&&notifications>=2&&view.step_index()==2&&
+        text(view,output_id)=="-8:1\n"&&
+        warning.find("No se pudo notificar el cambio de paso.")!=std::string::npos&&
+        warning.find("Fallo posterior a la navegación anidada")!=std::string::npos&&
+        spec==authored,
+        "An outer observer exception overwrote an already committed inner step");
+    check(view.go_to_step(3)&&view.step_index()==3&&
+        text(view,error_id).empty()&&spec==authored,
+        "A valid retry did not clear the outer observer's transient warning");
 }
 
 void navigation_retry_preserves_previous_invalid_draft(HWND host) {
@@ -4656,6 +4723,8 @@ int main(int argc,char** argv)try {
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("step_navigation_rolls_back_native_presentation_failure",[&]{step_navigation_rolls_back_native_presentation_failure(host.value);});
     run("reentrant_navigation_keeps_newer_native_error",[&]{reentrant_navigation_keeps_newer_native_error(host.value);});
+    run("navigation_callback_failure_keeps_committed_steps",[&]{navigation_callback_failure_keeps_committed_steps(host.value);});
+    run("reentrant_success_survives_outer_observer_exception",[&]{reentrant_success_survives_outer_observer_exception(host.value);});
     run("navigation_retry_preserves_previous_invalid_draft",[&]{navigation_retry_preserves_previous_invalid_draft(host.value);});
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
     run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
