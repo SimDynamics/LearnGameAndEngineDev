@@ -3088,7 +3088,7 @@ struct LessonView {
         if (current.type == BlockType::heading) { text_row(current.text, control_id(index, 0), false, current.emphasis, RichTextRole::heading); return; }
         if(current.type==BlockType::simulation) {
             vm.simulation=std::make_unique<SimulationView>(pane,*current.simulation,lesson.locale,
-                SimulationCallbacks{[this]{if(!updating){reflow();notify_content();}},
+                SimulationCallbacks{[this]{if(!updating)notify_content();},
                     [this]{if(!updating)reflow();},
                     [this](HWND origin,UINT message,WPARAM keys,LPARAM point){
                         return drag_message(origin,message,keys,point);
