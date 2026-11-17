@@ -441,6 +441,18 @@ Los espacios entre tarjetas y las áreas ocultas tras el desplazamiento
 no son destinos. El puntero indica cuándo una tarjeta es seleccionable.
 El selector de pasos, los botones de decisión y las casillas del array
 siguen ofreciendo las rutas alternativas por teclado y ratón.
+
+Al **seleccionar directamente una decisión** desde el selector de pasos
+o desde los botones **Decisión anterior / siguiente**, el histograma desplaza
+lo necesario para mostrar la tarjeta del grupo escogido, incluso después de
+saltar muchos grupos. Si esa barra ya está visible, no desplaza el gráfico.
+Un grupo que se mantiene oculto por **Mostrar solo candidatos** no aparece
+por el simple hecho de seleccionarlo: el filtro sigue respetando el máximo
+calculado. En cambio, **Anterior / Siguiente** paso a paso conservan el
+desplazamiento manual anterior. Repetir la selección directa del paso actual
+permite recuperar su tarjeta sin cambiar el modelo ni acreditar respuestas.
+La prueba Win32 `explicit_decision_jumps_reveal_histogram_bar` comprueba
+estos límites en `walkthrough` y `candidates`; requiere ejecución en Windows.
 En **summary**, las barras son informativas y no cambian el estado.
 
 Las barras utilizan como escala vertical la mayor frecuencia entre los
