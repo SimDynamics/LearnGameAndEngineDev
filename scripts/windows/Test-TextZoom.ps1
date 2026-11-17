@@ -78,7 +78,7 @@ try {
     $stderrPath = Join-Path $logs 'text-zoom-qa.stderr.log'
     $arguments = @(
         '--preset', $Preset, '--tests-regex', $regex,
-        '--output-on-failure', '--no-tests=error', '-j', '1'
+        '--output-on-failure', '--no-tests=error', '--timeout', '240', '-j', '1'
     )
     $process = $null
     try {
