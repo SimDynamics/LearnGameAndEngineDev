@@ -22,7 +22,8 @@ using namespace lgaed::curriculum;
 using namespace lgaed::presentation;
 constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_id=110,previous_id=111,next_id=112,reset_id=113,input_id=115,apply_id=116,restore_id=117,error_id=118,
-    input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,group_first_id=200;
+    input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
+    previous_decision_id=124,next_decision_id=125,group_first_id=200;
 std::filesystem::path failure_captures;
 void capture(HWND window,const std::filesystem::path& path);
 void fitted_text(SimulationView& view);
@@ -465,6 +466,97 @@ void calculated_step_changes(HWND host) {
     resize(narrow,340);bounds(narrow,"long transition labels at 150 percent");
     check(narrow.go_to_step(2)&&
         !text(narrow,transition_id).empty(),"Long changed-variable labels were clipped or hidden");
+}
+void decision_navigation(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    const auto computed=build_simulation_trace(spec);
+    check(computed.candidate_frames==std::vector<std::size_t>({2,7,9}),
+        "Fixture no longer exposes three independently calculated decisions");
+    int changes=0,layouts=0;
+    SimulationView view(host,spec,"es",{
+        [&]{++changes;},[&]{++layouts;}
+    });
+    resize(view,850);
+    const auto previous=GetDlgItem(view.window(),previous_decision_id);
+    const auto next=GetDlgItem(view.window(),next_decision_id);
+    check(previous&&next&&IsWindowVisible(previous)&&IsWindowVisible(next)&&
+        !IsWindowEnabled(previous)&&IsWindowEnabled(next),
+        "Walkthrough decision controls are absent or have wrong initial bounds");
+    const auto pick=[&](std::size_t index,std::string_view output) {
+        check(view.step_index()==index&&text(view,output_id)==output&&
+            text(view,explanation_id)==computed.frames[index].explanation&&
+            SendMessageW(GetDlgItem(view.window(),step_selector_id),CB_GETCURSEL,0,0)==static_cast<LRESULT>(index),
+            "Decision navigation did not select the exact model state and current narration");
+    };
+    click(view,next_decision_id);pick(2,"-8:1\n");
+    check(!IsWindowEnabled(previous)&&IsWindowEnabled(next),
+        "First decision is not the earliest available decision");
+    click(view,next_decision_id);pick(7,"-8:1\n3:4\n");
+    click(view,next_decision_id);pick(9,"-8:1\n3:4\n10:1\n");
+    check(!IsWindowEnabled(next)&&IsWindowEnabled(previous),
+        "Final decision incorrectly allows jumping past its last comparison");
+    click(view,previous_decision_id);pick(7,"-8:1\n3:4\n");
+    click(view,previous_decision_id);pick(2,"-8:1\n");
+    check(!IsWindowEnabled(previous),"First decision has a nonexistent previous comparison");
+    check(view.go_to_step(8)&&IsWindowEnabled(previous)&&IsWindowEnabled(next),
+        "Between two decisions the controls did not offer both directions");
+    click(view,previous_decision_id);pick(7,"-8:1\n3:4\n");
+    check(view.go_to_step(8),"Unable to inspect the state before the last decision");
+    click(view,next_decision_id);pick(9,"-8:1\n3:4\n10:1\n");
+    check(view.go_to_step(10)&&IsWindowEnabled(previous)&&!IsWindowEnabled(next),
+        "The terminal state invented another future decision");
+    click(view,previous_decision_id);pick(9,"-8:1\n3:4\n10:1\n");
+    click(view,reset_id);pick(0,"");
+    check(!IsWindowEnabled(previous)&&IsWindowEnabled(next),
+        "Reset retained navigation history instead of current model decisions");
+    check(changes>=10&&layouts==changes&&spec==authored,
+        "Decision jumps modified authored input or failed to refresh the reader");
+
+    set_edit_text(GetDlgItem(view.window(),input_id),"5\n5\n5");
+    click(view,apply_id);
+    check(view.step_count()==6&&!IsWindowEnabled(previous)&&IsWindowEnabled(next),
+        "Replacing the array retained decision targets from the previous trace");
+    click(view,next_decision_id);
+    check(view.step_index()==4&&text(view,output_id)=="5:3\n"&&
+        !IsWindowEnabled(previous)&&!IsWindowEnabled(next),
+        "A single group introduced a second decision or reused previous outputs");
+    click(view,restore_id);pick(0,"");
+    click(view,next_decision_id);pick(2,"-8:1\n");
+    check(IsWindowEnabled(next)&&spec==authored,
+        "Restoration did not rebuild all original decision targets");
+
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(selector,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(view.step_index()==0&&view.step_count()==8&&IsWindowEnabled(next),
+        "Scenario change retained previous group count or jump position");
+    click(view,next_decision_id);
+    check(view.step_index()==3&&text(view,output_id)=="4:2\n",
+        "First scenario decision was not derived from the selected input");
+    click(view,next_decision_id);
+    check(view.step_index()==6&&text(view,output_id)=="4:2\n9:2\n"&&
+        !IsWindowEnabled(next),"Tie scenario skipped its equality decision");
+    click(view,previous_decision_id);
+    check(view.step_index()==3&&text(view,output_id)=="4:2\n",
+        "Backward scenario jump retained a future candidate");
+
+    SendMessageW(selector,CB_SETCURSEL,2,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(view.step_count()==1&&view.step_index()==0&&
+        !IsWindowVisible(previous)&&!IsWindowVisible(next)&&
+        !IsWindowEnabled(previous)&&!IsWindowEnabled(next),
+        "An empty array exposed nonexistent decision navigation");
+    for(const auto mode:{SimulationViewMode::array,SimulationViewMode::groups,
+                         SimulationViewMode::candidates,SimulationViewMode::summary}) {
+        auto different=fixture(mode);
+        SimulationView other(host,different,"es");resize(other,850);
+        check(!IsWindowVisible(GetDlgItem(other.window(),previous_decision_id))&&
+            !IsWindowVisible(GetDlgItem(other.window(),next_decision_id)),
+            "Decision shortcuts appeared outside a step-by-step walkthrough");
+    }
 }
 void navigation(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);const auto authored=spec;const auto trace=build_simulation_trace(spec);
@@ -1121,6 +1213,7 @@ int main(int argc,char** argv)try {
         pump(host.value);
     };
     run("calculated_step_changes",[&]{calculated_step_changes(host.value);});
+    run("decision_navigation",[&]{decision_navigation(host.value);});
     run("navigation",[&]{navigation(host.value,captures);});
     run("walkthrough_cell_selection",[&]{walkthrough_cell_selection(host.value);});
     run("original_order_comparison",[&]{original_order_comparison(host.value);});

@@ -11,6 +11,7 @@
 #include <array>
 #include <cstdint>
 #include <cstdlib>
+#include <iterator>
 #include <limits>
 #include <stdexcept>
 #include <utility>
@@ -25,7 +26,8 @@ constexpr int title_id=100,description_id=101,scenario_label_id=102,scenario_id=
     array_label_id=104,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_label_id=109,output_id=110,previous_id=111,next_id=112,reset_id=113,
     input_label_id=114,input_id=115,apply_id=116,restore_id=117,error_id=118,
-    groups_label_id=119,input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,group_first_id=200;
+    groups_label_id=119,input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
+    previous_decision_id=124,next_decision_id=125,group_first_id=200;
 bool passive_message(UINT message) {
     return message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||
         message==WM_MOUSEMOVE||message==WM_CAPTURECHANGED||message==WM_CANCELMODE||message==WM_NCDESTROY;
@@ -160,6 +162,23 @@ struct SimulationView::Impl {
         return trace.frames.at(position);
     }
     bool stepping()const{return spec.view==SimulationViewMode::walkthrough||spec.view==SimulationViewMode::candidates;}
+    // Decision indices come exclusively from the immutable core trace.
+    // Skip phases within a group without pretending they were executed by
+    // the learner. The previous decision is always strictly before position.
+    std::optional<std::size_t> previous_decision()const {
+        if(spec.view!=SimulationViewMode::walkthrough)return std::nullopt;
+        const auto& steps=trace.candidate_frames;
+        const auto it=std::lower_bound(steps.begin(),steps.end(),position);
+        if(it==steps.begin())return std::nullopt;
+        return *std::prev(it);
+    }
+    std::optional<std::size_t> next_decision()const {
+        if(spec.view!=SimulationViewMode::walkthrough)return std::nullopt;
+        const auto& steps=trace.candidate_frames;
+        const auto it=std::upper_bound(steps.begin(),steps.end(),position);
+        if(it==steps.end())return std::nullopt;
+        return *it;
+    }
     HWND create(const wchar_t* type,int id,DWORD style=0) {
         const auto child=CreateWindowExW(0,type,L"",WS_CHILD|WS_VISIBLE|style,0,0,1,1,host,
             reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)),GetModuleHandleW(nullptr),nullptr);
@@ -241,6 +260,7 @@ struct SimulationView::Impl {
         SetWindowPos(item(explanation_id),canvas,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
         SetWindowPos(item(output_id),statistics_window,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
         button(previous_id,"Anterior");button(next_id,"Siguiente");button(reset_id,"Reiniciar");
+        button(previous_decision_id,"Decisión anterior");button(next_decision_id,"Siguiente decisión");
         reader_theme::primary_button(item(next_id));
         const auto format=create(L"COMBOBOX",input_format_id,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL);
         SendMessageW(format,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
@@ -443,6 +463,8 @@ struct SimulationView::Impl {
         EnableWindow(item(previous_id),stepping()&&position>0);
         EnableWindow(item(next_id),stepping()&&position+1<count());
         EnableWindow(item(reset_id),stepping()&&position>0);
+        EnableWindow(item(previous_decision_id),previous_decision().has_value());
+        EnableWindow(item(next_decision_id),next_decision().has_value());
         for(std::size_t i=0;i<group_buttons.size();++i)SendMessageW(group_buttons[i],BM_SETCHECK,i==position?BST_CHECKED:BST_UNCHECKED,0);
         const auto description=array_text();SetWindowTextW(canvas,wide(description).c_str());accessible(canvas,description);
         NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,canvas,OBJID_CLIENT,CHILDID_SELF);
@@ -630,6 +652,8 @@ struct SimulationView::Impl {
             if(horizontal)top+=h+gap;top+=px(8);
         };
         buttons({previous_id,next_id,reset_id},stepping());
+        buttons({previous_decision_id,next_decision_id},
+            spec.view==SimulationViewMode::walkthrough&&!trace.candidate_frames.empty());
         text_row(input_label_id,spec.editable);
         const bool text_format=spec.editable&&spec.text_values;
         place(input_format_id,margin,top,available,sp(150),text_format);if(text_format)top+=sp(38)+px(8);
@@ -768,6 +792,8 @@ struct SimulationView::Impl {
         if(id==previous_id){if(position)go(position-1);}
         else if(id==next_id)go(position+1);
         else if(id==reset_id)go(0);
+        else if(id==previous_decision_id){if(const auto target=previous_decision())go(*target);}
+        else if(id==next_decision_id){if(const auto target=next_decision())go(*target);}
         else if(id==apply_id&&spec.editable)apply_input();
         else if(id==restore_id&&spec.editable)replace_data(original_data(),true);
         else if(id>=group_first_id&&static_cast<std::size_t>(id-group_first_id)<group_buttons.size())go(id-group_first_id);

@@ -275,7 +275,26 @@ campos al JSON ni modifica respuestas, logros o datos de entrada.
 
 Anterior y Siguiente recorren los estados calculados. El selector **Ir a un paso**
 permite saltar directamente a una fase del recorrido, por ejemplo al primer grupo,
-a un empate o al resultado final. En la vista **candidates**, el selector muestra
+a un empate o al resultado final.
+
+En **walkthrough**, los botones **Decisión anterior** y **Siguiente decisión**
+permiten visitar sólo las fases en las que termina un grupo y se compara su
+frecuencia con el máximo. Se omiten temporalmente los pasos de recuento para
+encontrar rápidamente comparaciones, pero siguen disponibles con Anterior,
+Siguiente, pulsando una casilla y mediante el selector de fases. Por ejemplo,
+los tres grupos de `[10, 3, -8, 3, 3, 3]` producen decisiones en las
+posiciones internas de traza `2`, `7` y `9` (pasos visibles 3, 8 y 10).
+
+Cada botón encuentra la decisión estrictamente anterior o posterior al
+**paso actual del modelo**, no a la última decisión visitada. Los saltos
+conservan exactamente la salida y los candidatos calculados de ese paso;
+no acreditan ejercicios ni suponen que el estudiante haya ejecutado los
+pasos intermedios. Los destinos se vuelven a calcular al aplicar nuevos
+datos, seleccionar un escenario o restablecerlos. Si no hay grupos, los
+botones desaparecen. En las vistas de grupos, candidatos, array y resumen,
+se mantienen los controles de navegación correspondientes sin duplicarlos.
+
+En la vista **candidates**, el selector muestra
 los grupos completados. Funciona también con el teclado y contiene sólo estados
 calculados para los datos actuales. Al editar, aplicar o restablecer datos, sus
 entradas se recalculan; no conserva posiciones ni resultados de otro escenario.
