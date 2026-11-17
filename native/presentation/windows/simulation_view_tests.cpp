@@ -2886,6 +2886,12 @@ void output_zoom_preserves_reading_anchor(HWND host) {
     remains_anchored("A native DPI font rebase lost stdout's reading anchor");
     view.set_text_scale(100);resize(view,800);
     remains_anchored("Returning to the original reader scale lost the output anchor");
+    // The parent can reflow before its subsequent WM_SIZE notification.
+    // The same logical result should stay in view at both widths.
+    resize(view,540);
+    remains_anchored("Narrow parent width moved stdout to another result");
+    resize(view,800);
+    remains_anchored("Restoring the parent width moved stdout to another result");
 
     // The student already at the end should remain at the end, rather than
     // being pinned to a stale top-line character after a new scale.
