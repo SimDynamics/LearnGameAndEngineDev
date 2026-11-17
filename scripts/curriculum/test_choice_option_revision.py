@@ -64,6 +64,81 @@ def historical_block(document, identity):
 
 
 class ChoiceOptionRevisionTest(unittest.TestCase):
+    def test_published_u9_option_precision_uses_general_authenticated_review(self):
+        """An existing authored choice can be clarified without changing its answer.
+
+        Read the actual shipping lesson. This is a proposed in-memory revision,
+        not an edit to Work's curricular source or its protected older versions.
+        """
+        relative = (PREFIX + "datos_propios_y_estado_valido/"
+                    "lesson_construir_y_comprobar_un_modelo_de_pedidos.json")
+        before = layout.load(Path(__file__).resolve().parents[2] / relative)
+        identity = "block_0007_0002"
+        original = block(before, identity)
+        old_text = "La operación incumple su precondición aunque conserve una cantidad válida."
+        revised_text = ("La operación incumple la condición para aceptar la transición, "
+                        "aunque conserve una cantidad válida.")
+        self.assertEqual(("multiple_choice", 0), (original["type"], original["correctIndex"]))
+        self.assertEqual(old_text, original["options"][0])
+        self.assertEqual(3, len(original["options"]))
+        self.assertIn("Debe aceptar cualquier transición", original["options"][1])
+        source_snapshot = deepcopy(before)
+        proposed = layout.revise_choice_editorial(before, identity, 0, revised_text)
+        current = block(proposed, identity)
+        self.assertEqual(before, source_snapshot)
+        self.assertEqual(dict(original, options=[revised_text, *original["options"][1:]]),
+                         current)
+        self.assertEqual(original["correctIndex"], current["correctIndex"])
+        self.assertEqual(before["stateLayout"]["origin"], proposed["stateLayout"]["origin"])
+        self.assertEqual(before["stateLayout"]["current"], proposed["stateLayout"]["current"])
+        self.assertEqual(before["stateLayout"]["family"], proposed["stateLayout"]["family"])
+        self.assertEqual(before["stateLayout"]["editorial"],
+                         proposed["stateLayout"]["editorial"][:-1])
+        self.assertEqual({"id": identity, "block": original,
+                          "optionIndex": 0, "replacement": revised_text,
+                          "semanticBefore": layout._choice_semantic_entry(before, identity, 0)},
+                         proposed["stateLayout"]["choiceRevisions"][-1])
+        self.assertEqual(layout._choice_semantic_entry(before, identity, 1),
+                         layout._choice_semantic_entry(proposed, identity, 1))
+        self.assertEqual(layout._choice_semantic_entry(before, identity, 2),
+                         layout._choice_semantic_entry(proposed, identity, 2))
+        layout.validate_transition(before, proposed)
+        aligned = layout.align_for_previous_validation(before, proposed)
+        positions = [(p, b) for p, page in enumerate(before["stateLayout"]["current"])
+                     for b, owner in enumerate(page["blocks"]) if owner == identity]
+        self.assertEqual(1, len(positions))
+        old_address = layout.validate(before)[positions[0]]
+        restored = block(aligned, identity)
+        self.assertEqual(original, restored)
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *old_address, original, restored,
+            previous_document=before, current_document=proposed))
+        # A caller cannot bypass the archival projector and pass its changed
+        # response directly to the older exercise-preservation guard.
+        self.assertFalse(contract.preserves_previous_exercise(
+            relative, *old_address, original, current,
+            previous_document=before, current_document=proposed))
+
+        for mutation in ("answer", "other-option", "guide", "missing-archive", "stale-mark"):
+            invalid = deepcopy(proposed)
+            current = block(invalid, identity)
+            if mutation == "answer":
+                current["correctIndex"] = 1
+            elif mutation == "other-option":
+                current["options"][1] += " No autorizado."
+            elif mutation == "guide":
+                current["reviewFeedback"][0] += " No autorizado."
+            elif mutation == "missing-archive":
+                invalid["stateLayout"]["choiceRevisions"].clear()
+            else:
+                marker = next(item for item in invalid["textSemantics"]["fields"]
+                              if (item["block"], item["path"]) == (identity, "/options/0"))
+                marker["sourceSha256"] = "0" * 64
+            if mutation in ("answer", "other-option", "guide"):
+                invalid["stateLayout"]["editorial"][-1]["afterSha256"] = layout.fingerprint(current)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                layout.validate_transition(before, invalid)
+
     def test_u11l18_consultation_revision_changes_only_the_requested_distractor(self):
         payload = published_bytes(TABLE_LESSON)
         self.assertEqual(TABLE_SOURCE_SHA256, hashlib.sha256(payload).hexdigest())
