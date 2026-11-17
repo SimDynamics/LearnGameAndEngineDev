@@ -189,6 +189,24 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
                     previous_document=published, current_document=invalid))
         self.assertNotIn("explanation", layout._blocks(published)[stable_id])
 
+    def test_authenticated_choice_projection_retains_historical_answer(self):
+        """The legacy exercise check must also accept proven option-only edits."""
+        before = synthetic_missing_explanation("multiple_choice")
+        identity = "block_0000_0000"
+        old = layout._blocks(before)[identity]
+        self.assertEqual("multiple_choice", old["type"])
+        edited = layout.revise_choice_editorial(before, identity, 0,
+                                                 "Opción A revisada sin alterar la respuesta.")
+        self.assertNotEqual(old, layout._blocks(edited)[identity])
+        projection = layout.align_for_previous_validation(before, edited)
+        historical = layout._blocks(projection)[identity]
+        self.assertEqual(old, historical)
+        self.assertTrue(contract.preserves_previous_exercise(
+            SYNTHETIC_PATH, 0, 0, old, historical,
+            previous_document=before, current_document=edited))
+        self.assertEqual(old["correctIndex"], layout._blocks(edited)[identity]["correctIndex"])
+        self.assertEqual(old["options"][1], layout._blocks(edited)[identity]["options"][1])
+
     def test_missing_optional_explanation_remains_a_protected_authored_field(self):
         before = synthetic_missing_explanation("drag_fill_code")
         identity = "block_0000_0000"
@@ -658,6 +676,26 @@ class OrdinaryExplanationMainTest(unittest.TestCase):
         code, output = self.run_main()
         self.assertEqual(0, code, output)
         self.assertIn("5 lecciones", output)
+
+    def test_main_dispatches_historical_check_for_unchanged_choice_prose(self):
+        """The published option/answer contract is checked even with same prose."""
+        target = "boundary_cases"
+        identity = fixtures.CASES[target]["identity"]
+        captured = contract.preserves_previous_exercise
+        def unchanged_choice(name, before, after):
+            if name == target:
+                after.clear()
+                after.update(deepcopy(before))
+        with patch.object(contract, "preserves_previous_exercise", wraps=captured) as guard:
+            code, output = self.run_main(unchanged_choice)
+        self.assertEqual(0, code, output)
+        matches = [call for call in guard.call_args_list
+                   if (len(call.args) >= 5
+                       and call.args[3].get("type") == "multiple_choice"
+                       and call.args[3].get("id") == layout._blocks(candidate(target)[0])[identity].get("id")
+                       and call.args[3].get("question") == call.args[4].get("question")
+                       and call.args[3].get("explanation") == call.args[4].get("explanation"))]
+        self.assertTrue(matches, "Unchanged question prose bypassed its historical answer guard")
 
     def test_main_checks_multiple_choice_explanations_instead_of_skipping_them(self):
         def remove_marking(name, before, after):
