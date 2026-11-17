@@ -1983,8 +1983,25 @@ struct SimulationView::Impl {
             if(message==WM_PRINTCLIENT){self->paint(reinterpret_cast<HDC>(wp));return 0;}
             if(message==WM_ERASEBKGND)return 1;
             if(message==WM_MOUSEWHEEL)return SendMessageW(GetParent(item),message,wp,lp);
-        }catch(const std::exception& failure){self->error=std::string("No se pudo actualizar la simulación. ")+failure.what();
-            if(self->item(error_id)){SetWindowTextW(self->item(error_id),wide(self->error).c_str());ShowWindow(self->item(error_id),SW_SHOWNOACTIVATE);}return 0;}
+        }catch(const std::exception& failure){
+            self->error=std::string("No se pudo actualizar la simulación. ")+failure.what();
+            if(const auto field=self->item(error_id)){
+                // An emergency Win32 error cannot rely on set_label/update:
+                // the same RichEdit operation may be failing. Nonetheless
+                // its visible text and spoken region must describe the same
+                // diagnostic, not the earlier successful model state.
+                SetWindowTextW(field,wide(self->error).c_str());
+                ShowWindow(field,SW_SHOWNOACTIVATE);
+                try {
+                    self->visible_text[error_id]=self->error;
+                    self->accessible(field,self->error);
+                    NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,field,OBJID_CLIENT,CHILDID_SELF);
+                }catch(...){
+                    OutputDebugStringW(L"No se pudo registrar la lectura del error nativo.\n");
+                }
+            }
+            return 0;
+        }
         if(message==WM_NCDESTROY){self->host=nullptr;SetWindowLongPtrW(item,GWLP_USERDATA,0);}
         return DefWindowProcW(item,message,wp,lp);
     }
