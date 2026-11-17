@@ -950,18 +950,48 @@ void console_queued_mouse_focus_and_hit_regions() {
         };
         const auto inside=[&](POINT point) {
             RECT client{};GetClientRect(display,&client);
-            check(PtInRect(&client,point),"The queued gesture point lies outside the actual console client");
+            POINT scroll{};SendMessageW(display,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+            check(PtInRect(&client,point),"The queued gesture point lies outside the actual console client: point="+
+                std::to_string(point.x)+","+std::to_string(point.y)+", client="+
+                std::to_string(client.left)+","+std::to_string(client.top)+","+std::to_string(client.right)+","+std::to_string(client.bottom)+
+                ", scroll="+std::to_string(scroll.x)+","+std::to_string(scroll.y)+", first_visible_line="+
+                std::to_string(SendMessageW(display,EM_GETFIRSTVISIBLELINE,0,0)));
             return point;
         };
         const auto glyph_point=[&](LONG character,bool right_half) {
-            const auto start=position(character),next=position(character+1);
-            LONG width=next.y==start.y?next.x-start.x:0;
-            if(width<=1&&character>0) {
-                const auto previous=position(character-1);
-                if(previous.y==start.y)width=start.x-previous.x;
+            const auto measure=[&] {
+                const auto start=position(character),next=position(character+1);
+                LONG width=next.y==start.y?next.x-start.x:0;
+                if(width<=1&&character>0) {
+                    const auto previous=position(character-1);
+                    if(previous.y==start.y)width=start.x-previous.x;
+                }
+                check(width>1,"The independent glyph endpoints have no usable advance");
+                return POINT{start.x+std::max<LONG>(1,right_half?width*3/4:width/4),start.y+line_height()/2};
+            };
+            auto point=measure();RECT client{};GetClientRect(display,&client);
+            if(!PtInRect(&client,point)) {
+                // The wheel preserves selection, but its native viewport can
+                // leave a different document line visible. Prepare the next
+                // independent click on the actual range before measuring it;
+                // never clamp an offscreen point onto an unrelated glyph.
+                const auto before=selection();const auto focus=GetFocus();const auto before_scale=scale();
+                POINT scroll{};SendMessageW(display,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+                std::cout<<"INFO reveal queued glyph surface="<<surface<<", character="<<character<<", scale="<<before_scale
+                    <<", point="<<point.x<<","<<point.y<<", client="<<client.right<<","<<client.bottom
+                    <<", scroll="<<scroll.x<<","<<scroll.y<<"\n";
+                Microsoft::WRL::ComPtr<IRichEditOle> rich;
+                SendMessageW(display,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
+                Microsoft::WRL::ComPtr<ITextDocument> document;Microsoft::WRL::ComPtr<ITextRange> range;
+                check(rich&&SUCCEEDED(rich.As(&document))&&document->Range(character,character+1,&range)==S_OK&&range&&
+                    SUCCEEDED(range->ScrollIntoView(tomStart)),"Cannot bring the independently addressed glyph into its native viewport");
+                pump(fixture.host);
+                const auto after=selection();
+                check(after.cpMin==before.cpMin&&after.cpMax==before.cpMax&&GetFocus()==focus&&scale()==before_scale&&edit_text(display)==text,
+                    "Preparing the next glyph click changed the native selection, focus, scale or text");
+                point=measure();
             }
-            check(width>1,"The independent glyph endpoints have no usable advance");
-            return inside({start.x+std::max<LONG>(1,right_half?width*3/4:width/4),start.y+line_height()/2});
+            return inside(point);
         };
         const auto blank_point=[&](bool below) {
             RECT client{};GetClientRect(display,&client);
@@ -1083,11 +1113,11 @@ void console_queued_mouse_focus_and_hit_regions() {
             const std::array<LONG,3> characters{static_cast<LONG>(word+4),
                 static_cast<LONG>(word+10),static_cast<LONG>(native_text.size()-1)};
             for(const auto character:characters)for(const bool right_half:{false,true}) {
-                const auto point=glyph_point(character,right_half);
                 point_context="character="+std::to_string(character)+", right_half="+std::to_string(right_half)+
-                    ", full="+std::to_string(full)+", scale="+std::to_string(expected_scale)+
-                    ", point="+std::to_string(point.x)+","+std::to_string(point.y);
+                    ", full="+std::to_string(full)+", scale="+std::to_string(expected_scale);
                 app_trace.clear();
+                const auto point=glyph_point(character,right_half);
+                point_context+=", point="+std::to_string(point.x)+","+std::to_string(point.y);
                 const auto native=native_selection(point,character);
                 click_sequence(point,true);
                 const auto selected=selection();
@@ -1128,8 +1158,10 @@ void console_queued_mouse_focus_and_hit_regions() {
         };
         text_points(false,base);gutter(false,base);
         const auto blank_click=[&](bool below,bool full,int expected_scale) {
-            const auto point=blank_point(below);
             point_context="blank below="+std::to_string(below)+", full="+std::to_string(full)+", scale="+std::to_string(expected_scale);
+            app_trace.clear();const auto point=blank_point(below);
+            point_context+=", point="+std::to_string(point.x)+","+std::to_string(point.y);
+            check(!rich_text_hit_test(display,point),"The independent blank-click point fell on an actual glyph");
             const auto native=native_selection(point,0);
             click_sequence(point,false);
             const auto selected=selection();
@@ -2496,10 +2528,17 @@ void simulated_code_and_choice_cards() {
         reading_script(fixture.view)==script_before_fullscreen&&read_lesson_state(fixture.view).preferences==preferences_before_zoom,
         "Normal readonly Ctrl+wheel exceeded 150 percent, zoomed another block or changed saved settings/narration");
     control_wheel_to_scale(fixture.host,code,100);
+    require(read_lesson_state(fixture.view).preferences==preferences_before_zoom&&
+        rich_edit_scale(editor)==initial_editor_scale&&reading_script(fixture.view)==script_before_fullscreen,
+        "Restoring normal readonly zoom changed saved preferences, another editor or narration");
     const auto pane=GetParent(code);SendMessageW(fixture.view,WM_VSCROLL,SB_PAGEDOWN,0);pump(fixture.host);
     SCROLLINFO original_scroll{sizeof(original_scroll),SIF_POS};GetScrollInfo(pane,SB_VERT,&original_scroll);
     RECT original_code_bounds{};GetWindowRect(code,&original_code_bounds);
     require(original_scroll.nPos>0,"Readonly fullscreen regression did not begin below the lesson top");
+    // PageDown intentionally updates the lesson's saved scroll position.
+    // Fullscreen/zoom must preserve this new position, not the earlier top.
+    require(flush_lesson_view(fixture.view),"Cannot persist the explicit page scroll before fullscreen");
+    const auto fullscreen_preferences=read_lesson_state(fixture.view).preferences;
     fixture.click(0,20);
     require(fixture.control(0,1)==code&&fixture.text(0,1)==original&&!(GetWindowLongPtrW(first,GWL_STYLE)&WS_VISIBLE)&&
             reading_script(fixture.view)==script_before_fullscreen&&(GetWindowLongPtrW(code,GWL_STYLE)&WS_VSCROLL),
@@ -2515,15 +2554,27 @@ void simulated_code_and_choice_cards() {
     control_wheel_to_scale(fixture.host,code,150);
     double_click_blank();
     control_wheel(fixture.host,code,WHEEL_DELTA);
-    require(rich_edit_scale(code)==150&&fixture.fullscreen()&&rich_edit_scale(editor)==initial_editor_scale&&
-        read_lesson_state(fixture.view).preferences==preferences_before_zoom&&reading_script(fixture.view)==script_before_fullscreen,
-        "Fullscreen readonly Ctrl+wheel exceeded its local limit or changed another block, settings or narration");
+    require(rich_edit_scale(code)==150&&fixture.fullscreen(),
+        "Fullscreen readonly Ctrl+wheel changed mode or scale: fullscreen="+std::to_string(fixture.fullscreen())+
+        ", scale="+std::to_string(rich_edit_scale(code)));
+    require(rich_edit_scale(editor)==initial_editor_scale,
+        "Fullscreen readonly Ctrl+wheel changed another editor's scale: expected="+std::to_string(initial_editor_scale)+
+        ", actual="+std::to_string(rich_edit_scale(editor)));
+    require(read_lesson_state(fixture.view).preferences==fullscreen_preferences,
+        "Fullscreen readonly Ctrl+wheel changed saved preferences after the explicit PageDown baseline");
+    require(reading_script(fixture.view)==script_before_fullscreen,
+        "Fullscreen readonly Ctrl+wheel changed the page's narration script");
     control_wheel_to_scale(fixture.host,code,100);
+    require(read_lesson_state(fixture.view).preferences==fullscreen_preferences&&
+        rich_edit_scale(editor)==initial_editor_scale&&reading_script(fixture.view)==script_before_fullscreen,
+        "Restoring fullscreen readonly zoom changed saved preferences, another editor or narration");
     fixture.escape();
     SCROLLINFO restored_scroll{sizeof(restored_scroll),SIF_POS};GetScrollInfo(pane,SB_VERT,&restored_scroll);
     RECT restored_code_bounds{};GetWindowRect(code,&restored_code_bounds);
     require(restored_scroll.nPos==original_scroll.nPos&&EqualRect(&restored_code_bounds,&original_code_bounds)&&
         reading_script(fixture.view)==script_before_fullscreen,"Leaving fullscreen lost the exact normal-page offset or changed its narration script");
+    require(read_lesson_state(fixture.view).preferences==fullscreen_preferences,
+        "Leaving readonly fullscreen changed the saved preferences of the scrolled page");
     require(!fixture.fullscreen()&&fixture.control(0,1)==code&&fixture.control(1,20)==first&&(GetWindowLongPtrW(first,GWL_STYLE)&WS_VISIBLE),
             "Leaving simulated-code fullscreen replaced controls or lost the exercise");
     const auto source=fixture.text(2,10);fixture.replace(2,10,source+"// borrador que debe conservarse\n");const auto draft=fixture.text(2,10);
