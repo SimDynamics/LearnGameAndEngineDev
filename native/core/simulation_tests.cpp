@@ -1,6 +1,7 @@
 #include "core/simulation.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <iostream>
 #include <limits>
@@ -440,6 +441,76 @@ void exhaustive_small_arrays() {
     }
 }
 
+// Exhaust text arrays using the explicitly documented UTF-8 byte order.
+// Rank is determined by the fixture, not by the engine comparator.
+void exhaustive_small_text_arrays() {
+    constexpr std::array<std::string_view,4> labels{"", " ", "patio", "á"};
+    auto spec=example();spec.text_values=true;
+    for(std::size_t size=0;size<=4;++size) {
+        std::size_t combinations=1;
+        for(std::size_t i=0;i<size;++i)combinations*=labels.size();
+        for(std::size_t pattern=0;pattern<combinations;++pattern) {
+            const auto verify=[&](bool condition,const char* reason){
+                if(!condition)throw std::runtime_error(
+                    "Exhaustive text simulation length="+std::to_string(size)+
+                    " pattern="+std::to_string(pattern)+": "+reason);
+            };
+            std::array<std::size_t,labels.size()> counts{};
+            spec.values.clear();
+            auto encoded=pattern;
+            for(std::size_t i=0;i<size;++i) {
+                const auto index=encoded%labels.size();
+                encoded/=labels.size();
+                spec.values.emplace_back(std::string(labels[index]));
+                ++counts[index];
+            }
+            const auto trace=build_simulation_trace(spec);
+            std::vector<SimulationValue> expected_order;
+            for(std::size_t i=0;i<labels.size();++i)
+                for(std::size_t count=0;count<counts[i];++count)
+                    expected_order.emplace_back(std::string(labels[i]));
+            verify(trace.original==spec.values&&trace.ordered==expected_order,
+                "UTF-8 byte order or source data was lost");
+            std::size_t maximum=0,position=0,group_index=0;
+            std::vector<SimulationValue> leaders;
+            std::string output;
+            for(std::size_t i=0;i<labels.size();++i) {
+                if(counts[i]==0)continue;
+                const auto value=SimulationValue{std::string(labels[i])};
+                verify(group_index<trace.groups.size()&&
+                    trace.groups[group_index].begin==position&&
+                    trace.groups[group_index].end==position+counts[i]&&
+                    trace.groups[group_index].value==value,
+                    "Empty, space-only and ordinary text groups were merged");
+                const auto phase=counts[i]>maximum?SimulationPhase::new_maximum:
+                    counts[i]==maximum?SimulationPhase::tie:SimulationPhase::below_maximum;
+                if(counts[i]>maximum) {
+                    maximum=counts[i];leaders={value};
+                }else if(counts[i]==maximum)leaders.push_back(value);
+                output+=std::string(labels[i])+":"+std::to_string(counts[i])+"\n";
+                verify(group_index<trace.candidate_frames.size(),
+                    "The text group's completed decision is missing");
+                const auto& decision=trace.frames.at(trace.candidate_frames[group_index]);
+                verify(decision.phase==phase&&decision.maximum==maximum&&
+                    decision.leaders==leaders&&decision.output==output&&
+                    decision.frequency==counts[i]&&decision.group==group_index+1,
+                    "An empty label or an equal-frequency text candidate changed the decision");
+                position+=counts[i];++group_index;
+            }
+            verify(group_index==trace.groups.size()&&
+                group_index==trace.candidate_frames.size(),
+                "A text group was duplicated or omitted");
+            const auto& terminal=trace.frames.back();
+            if(size==0)verify(terminal.phase==SimulationPhase::empty&&terminal.output.empty()&&
+                    terminal.leaders.empty(),"Empty text array fabricated a group");
+            else verify(terminal.phase==SimulationPhase::done&&
+                    terminal.maximum==maximum&&terminal.leaders==leaders&&
+                    terminal.output==output&&terminal.end==size,
+                    "Text output, candidates or final range changed");
+        }
+    }
+}
+
 void parsed_trace_reuse() {
     auto spec=example();
     spec.values=integers({7,1,7});
@@ -533,6 +604,7 @@ int main() {
         expansion_bounds_and_modes();
         parsed_trace_reuse();
         exhaustive_small_arrays();
+        exhaustive_small_text_arrays();
         std::cout << "PASS native simulation: calculated groups, ranges, frequencies, maxima/ties, text order, "
             "edited inputs, exact replay, accessible state, strict contracts and bounded expansion\n";
         return 0;
