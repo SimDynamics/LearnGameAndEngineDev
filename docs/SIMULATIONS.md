@@ -229,7 +229,10 @@ completo, no cambios parciales de la traza. Si el modelo calcula una entrada
 válida, pero un control Win32 rechaza su presentación posterior, se recuperan
 los datos anteriormente aplicados, el paso, el selector, las barras, la salida
 y la posición de lectura. El borrador enviado se conserva para corregirlo
-o reintentar, y no se informa de que los datos quedaron aplicados.
+o reintentar, y no se informa de que los datos quedaron aplicados. Si el fallo
+proviene de la presentación Win32, el aviso visible también actualiza su
+nombre accesible y la región de narración, incluso si el formateador RichEdit
+continúa rechazando la operación.
 Se restaura la traza por movimiento, sin duplicar una segunda copia de
 hasta 8 MiB. Las regresiones `applying_valid_data_is_atomic_after_native_failure`
 y `scenario_change_is_atomic_after_native_failure` provocan una única
