@@ -2428,6 +2428,49 @@ void input_wheel_session_boundaries(HWND host) {
         "A wheel gesture altered the initial simulation fixture");
     SetFocus(nullptr);
 }
+void reader_scale_wheel_session_boundaries(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    SimulationView view(host,spec,"es");
+    SimulationView untouched(host,spec,"es");
+    resize(view,820);resize(untouched,820);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto explanation=GetDlgItem(view.window(),explanation_id);
+    const auto draft=edit_text(editor);
+    const auto position=view.step_index();
+    const auto other_contents=rich_edit_contents(untouched);
+    SetFocus(editor);
+    check(GetFocus()==editor,"Cannot focus the editor for reader-scale wheel transition");
+
+    // Half a high-resolution wheel turn at 100% must not be inherited by
+    // a new global reader scale. Only two NEW halves form one new notch.
+    control_wheel(host,editor,WHEEL_DELTA/2);
+    check(rich_edit_scale(editor)==100,"First partial wheel delta already changed the editor");
+    view.set_text_scale(125);resize(view,820);
+    check(rich_edit_scale(editor)==125&&rich_edit_scale(explanation)==125,
+        "Applying the reader scale did not update both native text controls");
+    control_wheel(host,editor,WHEEL_DELTA/2);
+    check(rich_edit_scale(editor)==125,
+        "Reader zoom reused an earlier partial Ctrl+wheel delta");
+    control_wheel(host,editor,WHEEL_DELTA/2);
+    check(rich_edit_scale(editor)==135,
+        "New reader scale cannot accumulate a fresh high-resolution wheel notch");
+
+    // A second change of global scale must also discard the half-notch
+    // left by the preceding editor session.
+    control_wheel(host,editor,WHEEL_DELTA/2);
+    view.set_text_scale(100);resize(view,820);
+    control_wheel(host,editor,WHEEL_DELTA/2);
+    check(rich_edit_scale(editor)==100&&rich_edit_scale(explanation)==100,
+        "Returning to the base reader scale inherited an obsolete wheel fraction");
+    control_wheel(host,editor,WHEEL_DELTA/2);
+    check(rich_edit_scale(editor)==110,
+        "Returning to the base reader scale disabled new wheel accumulation");
+    check(view.step_index()==position&&edit_text(editor)==draft&&
+        rich_edit_contents(untouched)==other_contents&&
+        rich_edit_scale(GetDlgItem(untouched.window(),input_id))==100,
+        "Reader-scale transitions changed the active model, draft or another simulation");
+    SetFocus(nullptr);
+}
 void parent_width_changes(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);int layouts=0,changes=0;
     SimulationView view(host,spec,"es",{[&]{++changes;},[&]{++layouts;}});resize(view,800);
@@ -2645,6 +2688,7 @@ int main(int argc,char** argv)try {
     run("editable_input_keyboard_focus",[&]{editable_input_keyboard_focus(host.value);});
     run("scale_limits_and_local_control_wheel",[&]{scale_limits_and_local_control_wheel(host.value);});
     run("input_wheel_session_boundaries",[&]{input_wheel_session_boundaries(host.value);});
+    run("reader_scale_wheel_session_boundaries",[&]{reader_scale_wheel_session_boundaries(host.value);});
     run("parent_width_changes",[&]{parent_width_changes(host.value);});
     run("long_labels_and_literal_values",[&]{long_labels_and_literal_values(host.value,captures);});
     run("wheel_edges_resume_reader",[&]{wheel_edges_resume_reader(host.value);});
