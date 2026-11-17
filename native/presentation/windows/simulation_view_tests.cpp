@@ -2530,6 +2530,79 @@ void empty_text_values(HWND host,const std::filesystem::path& captures) {
     }
     check(grouped==authored,"Exploration mutated the authored text values or scenarios");
 }
+
+void interactive_simulation_feedback_narration_ids(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.text_values=true;
+    spec.values={std::string("patio"),std::string("patio")};
+    spec.scenarios.clear();
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,810);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto format=GetDlgItem(view.window(),input_format_id);
+    const auto help=GetDlgItem(view.window(),input_label_id);
+    const auto feedback=GetDlgItem(view.window(),error_id);
+    check(editor&&format&&help&&feedback,
+        "Missing controls for dynamic simulation narration checks");
+    const auto region=[&](HWND target) {
+        for(const auto& item:view.reading_regions())
+            if(item.target==target)
+                return std::pair{item.key,item.source_text};
+        return std::pair<std::string,std::string>{};
+    };
+    const auto choose=[&](int mode) {
+        check(SendMessageW(format,CB_SETCURSEL,mode,0)!=CB_ERR,
+            "The requested data input format is unavailable");
+        SendMessageW(view.window(),WM_COMMAND,
+            MAKEWPARAM(input_format_id,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(format));
+        pump();
+    };
+    const auto line=region(help);
+    check(line.first=="input-label"&&
+        line.second.find("un texto por línea")!=std::string::npos,
+        "The original line-input narration identity was not preserved");
+    choose(1);
+    const auto quoted=region(help);
+    check(quoted.first=="input-format/json"&&quoted.first!=line.first&&
+        quoted.second.find("lista de textos entre comillas")!=std::string::npos&&
+        region(feedback).first.empty()&&spec==authored,
+        "JSON input help reused the line-format narration identity");
+    choose(0);
+    check(region(help)==line&&spec==authored,
+        "Returning to line input changed its stable narration identity");
+    choose(1);
+    check(region(help)==quoted&&
+        view.step_index()==0&&spec==authored,
+        "Reopening JSON input did not recover the same authored help");
+
+    set_edit_text(editor,"[\"\",]");
+    click(view,apply_id);
+    const auto trailing_comma=region(feedback);
+    check(!trailing_comma.first.empty()&&
+        trailing_comma.first.find("/error/")!=std::string::npos&&
+        trailing_comma.second.find("No se aplicaron los datos")!=std::string::npos,
+        "A rejected JSON list did not create independent spoken feedback");
+    set_edit_text(editor,"{}");
+    click(view,apply_id);
+    const auto wrong_kind=region(feedback);
+    check(!wrong_kind.first.empty()&&
+        wrong_kind.first!=trailing_comma.first&&
+        wrong_kind.second!=trailing_comma.second&&
+        wrong_kind.first.find("{}")==std::string::npos,
+        "Different diagnostics at the same step reused stale narrated feedback");
+    set_edit_text(editor,"[\"\",]");
+    click(view,apply_id);
+    check(region(feedback)==trailing_comma,
+        "Repeating an identical error created an unstable reading identity");
+
+    set_edit_text(editor,"[\"patio\"]");
+    click(view,apply_id);
+    check(region(feedback).first.empty()&&
+        region(help)==quoted&&view.step_index()==0&&spec==authored,
+        "Applying corrected input retained old diagnostic narration");
+}
+
 void editable_input_keyboard_focus(HWND host) {
     // Use the real dialog message pump: a multiline RichEdit must not trap
     // Tab, insert whitespace, or replace a student's pending data.
@@ -3496,6 +3569,7 @@ int main(int argc,char** argv)try {
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});
+    run("interactive_simulation_feedback_narration_ids",[&]{interactive_simulation_feedback_narration_ids(host.value);});
     run("editable_input_keyboard_focus",[&]{editable_input_keyboard_focus(host.value);});
     run("scale_limits_and_local_control_wheel",[&]{scale_limits_and_local_control_wheel(host.value);});
     run("input_wheel_session_boundaries",[&]{input_wheel_session_boundaries(host.value);});
