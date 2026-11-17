@@ -2607,6 +2607,65 @@ void reentrant_navigation_keeps_newer_native_error(HWND host) {
         "Outer publish discarded the inner failure identity before retry");
 }
 
+void navigation_retry_preserves_previous_invalid_draft(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(6),
+        "Cannot prepare a simulation frame before rejecting a pending draft");
+    const auto previous_output=text(view,output_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(editor&&output,"Missing native editor and output");
+    set_edit_text(editor,"2147483648");
+    click(view,apply_id);
+    const auto prior_error=text(view,error_id);
+    check(!prior_error.empty()&&
+        prior_error.find("No se aplicaron los datos.")!=std::string::npos&&
+        view.step_index()==6&&text(view,output_id)==previous_output,
+        "An invalid pending editor draft was accepted or the applied trace changed");
+
+    int remaining=1;
+    const auto reject_once=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& count=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&count>0){--count;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53494e49;
+    check(SetWindowSubclass(output,reject_once,hook_id,
+        reinterpret_cast<DWORD_PTR>(&remaining))!=FALSE,
+        "Cannot install native fault for an invalid draft");
+    struct Unhook {
+        HWND window;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+    } guard{output,reject_once,hook_id};
+    click(view,next_id);
+    const auto temporary_error=text(view,error_id);
+    check(remaining==0&&view.step_index()==6&&
+        temporary_error.find("No se pudo cambiar el paso.")!=std::string::npos&&
+        text(view,input_id)=="2147483648"&&
+        text(view,output_id)==previous_output,
+        "A transient native error erased the rejected draft or advanced the state");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==temporary_error;
+    }),"The transient navigation error was not available to the narrator");
+
+    // A successful Next clears only the native incident. The original
+    // invalid-data diagnosis still belongs to the pending editor draft,
+    // even though the applied simulation advances by one frame.
+    click(view,next_id);
+    check(view.step_index()==7&&text(view,error_id)==prior_error&&
+        text(view,input_id)=="2147483648"&&
+        text(view,output_id)=="-8:1\n3:4\n"&&spec==authored,
+        "A successful retry discarded the previously rejected input feedback");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==prior_error;
+    }),"The original draft feedback lost its accessible reading after retry");
+}
+
 void applying_valid_data_is_atomic_after_native_failure(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     spec.scenarios.clear();
@@ -4597,6 +4656,7 @@ int main(int argc,char** argv)try {
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("step_navigation_rolls_back_native_presentation_failure",[&]{step_navigation_rolls_back_native_presentation_failure(host.value);});
     run("reentrant_navigation_keeps_newer_native_error",[&]{reentrant_navigation_keeps_newer_native_error(host.value);});
+    run("navigation_retry_preserves_previous_invalid_draft",[&]{navigation_retry_preserves_previous_invalid_draft(host.value);});
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
     run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
     run("scenario_change_keeps_origin_error_when_editor_rollback_fails",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value);});

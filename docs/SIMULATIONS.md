@@ -417,6 +417,9 @@ aviso transitorio ocurre antes de notificar a los observadores del modelo:
 si un observador inicia otro paso que falla, la notificación exterior no
 puede borrar el error del intento interior. La regresión Win32
 `reentrant_navigation_keeps_newer_native_error` comprueba esa reentrada.
+La regresión `navigation_retry_preserves_previous_invalid_draft` verifica
+además que un fallo temporal de navegación no borre el diagnóstico anterior
+de datos editados inválidos cuando el siguiente paso sí se complete.
 El intento siguiente puede avanzar normalmente y retira ese aviso transitorio; si había un
 diagnóstico distinto del editor, vuelve a mostrarlo. La regresión nativa
 `step_navigation_rolls_back_native_presentation_failure` verifica esos
