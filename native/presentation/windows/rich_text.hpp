@@ -33,6 +33,10 @@ struct RichTextContext {
 }
 [[nodiscard]] std::wstring wide(std::string_view utf8);
 [[nodiscard]] std::string utf8(std::wstring_view text);
+// RichEdit accepts zoom fractions only when both components are 1..64.
+// Convert reader percentages to the exact fraction or closest valid ratio.
+// Returns false if the control rejects the native EM_SETZOOM operation.
+[[nodiscard]] bool set_rich_text_zoom(HWND edit,int percentage);
 // Observes actual character geometry and zoom without changing selection,
 // scroll, text, focus or Undo. Whitespace remains available for lesson gestures.
 [[nodiscard]] bool rich_text_hit_test(HWND edit,POINT point);
