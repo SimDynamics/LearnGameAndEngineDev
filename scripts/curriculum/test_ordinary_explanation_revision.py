@@ -125,6 +125,70 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
                 layout.validate_transition(before, after)
                 self.assertNotIn("explanation", layout._blocks(before)[identity])
 
+    def test_published_u1l4_missing_explanation_preserves_original_activity(self):
+        """Check a relocated, published drag-fill owner with a real state history.
+
+        This is a read-only test of the shipping lesson, not permission to
+        rewrite its JSON or to special-case its question/answer. Work authors
+        the actual explanation through the same generic mechanism.
+        """
+        relative = ("app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                    "programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json")
+        published = layout.load(Path(__file__).resolve().parents[2] / relative)
+        stable_id = "block_0004_0001"
+        current_positions = published["stateLayout"]["current"]
+        matches = [(p, b) for p, page in enumerate(current_positions)
+                   for b, identity in enumerate(page["blocks"]) if identity == stable_id]
+        self.assertEqual(1, len(matches))
+        current_position = matches[0]
+        original_address = layout.validate(published)[current_position]
+        owner = layout._blocks(published)[stable_id]
+        self.assertEqual(("drag_fill_code", "piezas_estructura"),
+                         (owner["type"], owner["id"]))
+        self.assertNotIn("explanation", owner)
+        self.assertEqual([0, 1, 2], owner["correctOrder"])
+        self.assertEqual(5, len(owner["choices"]))
+
+        wording = ("Cada hueco corresponde a una parte de la estructura. "
+                   "La función se llama main, << envía el texto a std::cout "
+                   "y el punto y coma termina la instrucción.")
+        drafted = layout.revise_ordinary_editorial(published, stable_id, {
+            "explanation": {"text": wording, "spans": []}
+        })
+        current = layout._blocks(drafted)[stable_id]
+        self.assertEqual(dict(owner, explanation=wording), current)
+        self.assertEqual(published["stateLayout"]["origin"],
+                         drafted["stateLayout"]["origin"])
+        self.assertEqual(published["stateLayout"]["current"],
+                         drafted["stateLayout"]["current"])
+        self.assertEqual(published["stateLayout"]["editorial"],
+                         drafted["stateLayout"]["editorial"][:-1])
+        self.assertEqual(layout.state_fingerprint(owner),
+                         layout.state_fingerprint(current))
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *original_address, owner, current,
+            previous_document=published, current_document=drafted))
+        self.assertFalse(contract.preserves_previous_exercise(
+            relative, *original_address, owner, current))
+
+        # An authentic new explanation does not authorize other changes, even
+        # if a caller recalculates the visible editorial hash afterward.
+        for altered_field in ("correctOrder", "question", "choices"):
+            invalid = deepcopy(drafted)
+            changed = layout._blocks(invalid)[stable_id]
+            if altered_field == "correctOrder":
+                changed[altered_field] = [1, 0, 2]
+            elif altered_field == "question":
+                changed[altered_field] += " Otro requisito."
+            else:
+                changed[altered_field][0] = "incorrecta"
+            invalid["stateLayout"]["editorial"][-1]["afterSha256"] = layout.fingerprint(changed)
+            with self.subTest(field=altered_field):
+                self.assertFalse(contract.preserves_previous_exercise(
+                    relative, *original_address, owner, changed,
+                    previous_document=published, current_document=invalid))
+        self.assertNotIn("explanation", layout._blocks(published)[stable_id])
+
     def test_missing_optional_explanation_remains_a_protected_authored_field(self):
         before = synthetic_missing_explanation("drag_fill_code")
         identity = "block_0000_0000"
