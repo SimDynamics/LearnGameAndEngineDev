@@ -2659,6 +2659,9 @@ void accumulated_output_scroll_follows_new_groups(HWND host) {
         "The accumulated output fixture has no native vertical overflow");
     check(text(view,output_id).ends_with("20:1\n"),
         "The output fixture did not finish its twentieth group");
+    // Ignore initial construction of the long viewport; count only the
+    // subsequent start/decision transitions being verified.
+    stream_rewrites=0;
 
     SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
     const auto bottom=scroll_state(output);
