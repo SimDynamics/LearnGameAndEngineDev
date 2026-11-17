@@ -2273,6 +2273,25 @@ void scale_limits_and_local_control_wheel(HWND host) {
     control_wheel(host,input,WHEEL_DELTA);
     check(rich_edit_scale(input)==120,
         "Cannot prepare the editor's independent scale before rollback");
+    // Seed a real native Redo history without changing the final input.
+    // A font/zoom transaction must never clear this history, selection
+    // or caret focus when a later RichEdit rejects its scale.
+    const auto draft_before=edit_text(input);
+    SendMessageW(input,EM_SETSEL,0,0);
+    SendMessageW(input,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"x"));
+    check(SendMessageW(input,EM_UNDO,0,0)!=FALSE&&
+        SendMessageW(input,EM_CANREDO,0,0)!=FALSE&&
+        edit_text(input)==draft_before,
+        "Cannot prepare real native undo/redo evidence for the zoom transaction");
+    CHARRANGE selected{1,3},selection_after{};
+    SendMessageW(input,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    SendMessageW(input,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection_after));
+    const auto undo_before=SendMessageW(input,EM_CANUNDO,0,0);
+    const auto redo_before=SendMessageW(input,EM_CANREDO,0,0);
+    const auto modified_before=SendMessageW(input,EM_GETMODIFY,0,0);
+    POINT scroll_before{};
+    SendMessageW(input,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll_before));
+    const auto focus_before=GetFocus();
     const auto rejected_panel=GetDlgItem(first.window(),progress_label_id);
     check(rejected_panel,"Missing late RichEdit for a transactional scale test");
     const auto fail_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
@@ -2288,6 +2307,18 @@ void scale_limits_and_local_control_wheel(HWND host) {
     RemoveWindowSubclass(rejected_panel,fail_zoom,75);
     check(rejected_reader_scale&&rich_edit_scale(input)==120,
         "Rejected reader zoom was committed or erased the editor-local scale");
+    CHARRANGE selection_restored{};
+    POINT scroll_restored{};
+    SendMessageW(input,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection_restored));
+    SendMessageW(input,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll_restored));
+    check(GetFocus()==focus_before&&
+        selection_restored.cpMin==selection_after.cpMin&&
+        selection_restored.cpMax==selection_after.cpMax&&
+        undo_before==SendMessageW(input,EM_CANUNDO,0,0)&&
+        redo_before==SendMessageW(input,EM_CANREDO,0,0)&&
+        modified_before==SendMessageW(input,EM_GETMODIFY,0,0)&&
+        scroll_before.x==scroll_restored.x&&scroll_before.y==scroll_restored.y,
+        "Rejected reader zoom changed editor caret, selection, Undo/Redo, modification or scroll");
     for(auto child=GetWindow(first.window(),GW_CHILD);child;
             child=GetWindow(child,GW_HWNDNEXT)){
         wchar_t kind[48]{};GetClassNameW(child,kind,48);
