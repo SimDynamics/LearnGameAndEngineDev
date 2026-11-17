@@ -2216,8 +2216,8 @@ void editable_input_keyboard_focus(HWND host) {
             "The editable simulation lacks a tab-navigable input or apply button");
         const auto before=edit_text(editor);
         const auto step=view.step_index();
-        check(SetFocus(editor)!=nullptr||GetFocus()==editor,
-            "Cannot focus the native simulation input");
+        SetFocus(editor);
+        check(GetFocus()==editor,"Cannot focus the native simulation input");
         key(host,VK_TAB);
         check(GetFocus()==apply&&edit_text(editor)==before&&view.step_index()==step,
             "Tab inserted text or failed to reach Apply from the multiline editor");
@@ -2242,8 +2242,25 @@ void scale_limits_and_local_control_wheel(HWND host) {
     }
     check(rich_edit_scale(input)==150,"Ctrl+wheel did not reach the native 150 percent limit");
     control_wheel(host,input,WHEEL_DELTA);check(rich_edit_scale(input)==150,"An extra Ctrl+wheel event exceeded 150 percent");
-    control_wheel(host,input,-WHEEL_DELTA);check(rich_edit_scale(input)>0&&rich_edit_scale(input)<150,
-        "Ctrl+wheel did not reduce the local data editor's text scale");
+    control_wheel(host,input,-WHEEL_DELTA);check(rich_edit_scale(input)==140,
+        "Ctrl+wheel did not reduce the local data editor's scale by one step");
+    control_wheel(host,input,WHEEL_DELTA/2);
+    check(rich_edit_scale(input)==140,
+        "Half a high-resolution wheel notch prematurely changed the editor zoom");
+    control_wheel(host,input,WHEEL_DELTA/2);
+    check(rich_edit_scale(input)==150,
+        "Two high-resolution half-notches did not produce one zoom step");
+    control_wheel(host,input,WHEEL_DELTA/2);
+    SendMessageW(input,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(WHEEL_DELTA)),0);
+    control_wheel(host,input,WHEEL_DELTA/2);
+    check(rich_edit_scale(input)==150,
+        "Ordinary scrolling improperly changed zoom or carried a stale Ctrl+wheel fraction");
+    for(int step=0;step<20;++step)control_wheel(host,input,-WHEEL_DELTA);
+    check(rich_edit_scale(input)==50,
+        "Ctrl+wheel passed below the simulation data editor's minimum scale");
+    control_wheel(host,input,-WHEEL_DELTA);
+    check(rich_edit_scale(input)==50,
+        "Ctrl+wheel did not stop at the 50 percent minimum");
     check(rich_edit_scale(GetDlgItem(first.window(),explanation_id))==100&&rich_edit_scale(GetDlgItem(first.window(),output_id))==100,
         "The local input gesture changed another simulation control's scale");
     (void)rich_edit_fonts(second,100);
