@@ -1199,6 +1199,67 @@ struct SimulationView::Impl {
         OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\n");
         return false;
     }
+    void toggle_frequency_filter() {
+        if(!completed_groups())return;
+        const auto old_mode=frequency_candidates_only;
+        const auto old_scroll=frequency_scroll,old_height=frequency_total_height;
+        const auto old_wheel=frequency_wheel_remainder;
+        const auto old_pressed=pressed_frequency_group;
+        const auto old_error=error,old_navigation=navigation_error;
+        const auto old_previous_navigation=previous_navigation_error;
+        const auto output_anchor=capture_output_reading_anchor();
+        const auto source_anchor=capture_output_reading_anchor(original_order_id);
+        const auto chart_anchor=capture_histogram_anchor();
+        try {
+            frequency_candidates_only=!old_mode;
+            frequency_wheel_remainder=0;frequency_scroll=0;
+            pressed_frequency_group.reset();
+            // A successful independent filter change dismisses only the
+            // previous transient native warning, not an invalid edit.
+            if(!navigation_error.empty()&&error==navigation_error)
+                error=previous_navigation_error;
+            navigation_error.clear();previous_navigation_error.clear();
+            update();
+        }catch(const std::exception& failure){
+            // The filter belongs to this reading session, not to the core
+            // trace. A late RichEdit/layout error cannot leave mixed modes.
+            const auto reason=std::string(failure.what());
+            frequency_candidates_only=old_mode;
+            frequency_scroll=old_scroll;frequency_total_height=old_height;
+            frequency_wheel_remainder=old_wheel;
+            pressed_frequency_group=old_pressed;
+            error=old_error;navigation_error=old_navigation;
+            previous_navigation_error=old_previous_navigation;
+            try {
+                update();
+                restore_output_reading_anchor(output_anchor);
+                restore_output_reading_anchor(source_anchor,original_order_id);
+                restore_histogram_anchor(chart_anchor);
+            }catch(...){
+                OutputDebugStringW(L"No se pudo reconstruir el filtro anterior de frecuencias.\n");
+            }
+            previous_navigation_error=old_navigation.empty()||old_error!=old_navigation?
+                old_error:old_previous_navigation;
+            report_native_error("No se pudo cambiar el filtro de frecuencias. ",reason);
+            navigation_error=error;
+            try{publish();}catch(...){
+                OutputDebugStringW(L"No se pudo notificar el fallo del filtro de frecuencias.\n");
+            }
+            return;
+        }
+        // The filter and its accessible narration are committed. Client
+        // callbacks can reenter or throw, but must never revert this choice.
+        const auto life=alive;
+        try{publish();}
+        catch(const std::exception& failure){
+            if(*life)report_committed_notification_failure(
+                "Filtro actualizado; falló la notificación del cambio. ",failure.what());
+        }catch(...){
+            if(*life)report_committed_notification_failure(
+                "Filtro actualizado; falló la notificación del cambio. ",
+                "Excepción no identificada del observador.");
+        }
+    }
     void replace_trace(SimulationTrace candidate,bool replace_editor) {
         // Only fully validated traces reach this commit point. In particular,
         // parsed editor input already had its expansion checked by the core.
@@ -1935,11 +1996,7 @@ struct SimulationView::Impl {
         if(id==previous_id){if(position)go(position-1);}
         else if(id==next_id)go(position+1);
         else if(id==reset_id)go(0);
-        else if(id==frequency_filter_id&&completed_groups()){
-            frequency_candidates_only=!frequency_candidates_only;
-            frequency_wheel_remainder=0;
-            frequency_scroll=0;pressed_frequency_group.reset();update();publish();
-        }
+        else if(id==frequency_filter_id&&completed_groups())toggle_frequency_filter();
         else if(id==previous_decision_id){if(const auto target=previous_decision())go(*target,true);}
         else if(id==next_decision_id){if(const auto target=next_decision())go(*target,true);}
         else if(id==apply_id&&spec.editable)apply_input();

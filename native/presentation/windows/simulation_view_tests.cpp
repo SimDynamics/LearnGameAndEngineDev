@@ -1120,6 +1120,104 @@ void explicit_decision_jumps_reveal_histogram_bar(HWND host) {
         "Direct navigation leaked a losing bar through the active candidate filter");
 }
 
+void candidate_filter_rejects_native_and_observer_failures(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    bool throw_on_notify=false;
+    int notifications=0;
+    SimulationCallbacks callbacks{};
+    callbacks.changed=[&]{
+        ++notifications;
+        if(throw_on_notify){
+            throw_on_notify=false;
+            throw std::runtime_error("Fallo QA de aviso del filtro");
+        }
+    };
+    SimulationView view(host,spec,"es",callbacks);resize(view,850);
+    check(view.go_to_step(7),"Cannot prepare two completed frequency bars");
+    const auto filter=GetDlgItem(view.window(),frequency_filter_id);
+    const auto bars=GetDlgItem(view.window(),frequencies_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(filter&&bars&&output&&control_shown(filter),
+        "The computed candidate-frequency filter is not available");
+    const auto all_name=name(bars),initial_output=text(view,output_id);
+    const auto key=[&]{
+        for(const auto& region:view.reading_regions())
+            if(region.key.find("/frequencies/")!=std::string::npos)return region.key;
+        return std::string{};
+    };
+    const auto all_key=key();
+    check(all_key.find("/frequencies/all")!=std::string::npos&&
+        native_text(filter)=="Mostrar solo candidatos",
+        "The initial group-comparison mode has an invalid identity");
+    const CHARRANGE selected{0,4};
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    int failures_left=1;
+    const auto reject_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& remaining=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&remaining>0){--remaining;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x5349464c;
+    check(SetWindowSubclass(output,reject_zoom,hook_id,
+        reinterpret_cast<DWORD_PTR>(&failures_left))!=FALSE,
+        "Cannot intercept a late native frequency-filter zoom");
+    struct Unhook {
+        HWND child;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(child))RemoveWindowSubclass(child,callback,id);}
+    } guard{output,reject_zoom,hook_id};
+    click(view,frequency_filter_id);
+    const auto failure=text(view,error_id);
+    CHARRANGE retained{};
+    SendMessageW(output,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&retained));
+    check(failures_left==0&&view.step_index()==7&&
+        text(view,output_id)==initial_output&&name(bars)==all_name&&
+        key()==all_key&&native_text(filter)=="Mostrar solo candidatos"&&
+        retained.cpMin==selected.cpMin&&retained.cpMax==selected.cpMax&&
+        failure.find("No se pudo cambiar el filtro de frecuencias.")!=std::string::npos&&
+        failure.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+        spec==authored,
+        "A rejected frequency-filter presentation changed the mode or its reading");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==failure;
+    }),"The filter's native error was not available to narration");
+
+    click(view,frequency_filter_id);
+    const auto candidates_key=key();
+    check(view.step_index()==7&&text(view,error_id).empty()&&
+        candidates_key.find("/frequencies/candidates")!=std::string::npos&&
+        native_text(filter)=="Mostrar todos los grupos"&&
+        name(bars).find("Frecuencias de 1 grupo candidato entre 2 grupos terminados")!=std::string::npos&&
+        text(view,output_id)==initial_output&&spec==authored,
+        "The filter did not recover after a late native rejection");
+
+    // A callback failure happens after the filter and accessible view have
+    // committed. It must not be reported as a rejected filter operation.
+    throw_on_notify=true;
+    click(view,frequency_filter_id);
+    const auto notice=text(view,error_id);
+    check(!throw_on_notify&&notifications>=3&&view.step_index()==7&&
+        key()==all_key&&name(bars)==all_name&&
+        native_text(filter)=="Mostrar solo candidatos"&&
+        text(view,output_id)==initial_output&&
+        notice.find("Filtro actualizado; falló la notificación del cambio.")!=std::string::npos&&
+        notice.find("Fallo QA de aviso del filtro")!=std::string::npos&&
+        notice.find("No se pudo cambiar el filtro de frecuencias.")==std::string::npos&&
+        spec==authored,
+        "A throwing observer rolled back an already accepted frequency filter");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==notice;
+    }),"The committed filter notification warning was not narratable");
+
+    click(view,frequency_filter_id);
+    check(text(view,error_id).empty()&&key()==candidates_key&&
+        native_text(filter)=="Mostrar todos los grupos"&&spec==authored,
+        "The valid filter retry retained the callback warning or wrong mode");
+}
+
 void candidate_frequency_filter(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -4877,6 +4975,7 @@ int main(int argc,char** argv)try {
     run("histogram_reflow_retains_visible_group",[&]{histogram_reflow_retains_visible_group(host.value);});
     run("histogram_first_overflow_does_not_jump_to_last_group",[&]{histogram_first_overflow_does_not_jump_to_last_group(host.value);});
     run("explicit_decision_jumps_reveal_histogram_bar",[&]{explicit_decision_jumps_reveal_histogram_bar(host.value);});
+    run("candidate_filter_rejects_native_and_observer_failures",[&]{candidate_filter_rejects_native_and_observer_failures(host.value);});
     run("candidate_frequency_filter",[&]{candidate_frequency_filter(host.value);});
     run("neighboring_values_explain_group_boundaries",[&]{neighboring_values_explain_group_boundaries(host.value);});
     run("calculated_step_changes",[&]{calculated_step_changes(host.value);});

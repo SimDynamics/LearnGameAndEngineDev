@@ -541,6 +541,15 @@ relativa cuando un grupo posterior alcanza un máximo mayor: no cambió la
 frecuencia original, cambió la escala de comparación conocida hasta entonces.
 La escala se identifica en el título del diagrama.
 
+Cambiar entre **Todos los grupos** y **Sólo candidatos** también constituye
+una operación completa de presentación. Si RichEdit rechaza un cambio
+tardío, el filtro, el rótulo, el desplazamiento y la identidad de narración
+recuperan el modo anterior; no se altera el paso ni la traza aplicada.
+Si el observador falla después de un cambio válido, el filtro queda activo
+y se muestra un aviso de notificación separado del error de presentación.
+La regresión Win32 `candidate_filter_rejects_native_and_observer_failures`
+comprueba el rechazo, la recuperación y los reintentos.
+
 Cuando existen grupos terminados con frecuencia inferior al máximo actual,
 el botón **Mostrar solo candidatos** permite filtrar el diagrama para
 comparar únicamente los grupos que siguen empatados en el máximo. Los
