@@ -340,20 +340,38 @@ Las guardas especiales siguen activas, incluida la pareja protegida de opción
 y explicación de tokens, los retornos editoriales explícitos y los archivos
 de procedencia de las revisiones exclusivamente bibliográficas.
 
-La comprobación focalizada se encuentra registrada en CTest como
-`native.ordinary_explanation_authoring`. Después de configurar el preset
-local Windows x64 Debug, se puede ejecutar desde el checkout autorizado:
+La verificación focalizada de autoría y nueva edición se ejecuta **sólo
+en el checkout Windows autorizado de Codex** mediante un script que prepara
+el ejecutable y las fuentes sintéticas necesarias, sin compilar toda la app
+ni ejecutar la batería completa:
 
 ~~~powershell
-ctest --preset windows-x64-debug -R '^native[.]ordinary_explanation_authoring$' --output-on-failure
+& '.\scripts\windows\Test-Curriculum-Edition.ps1' -Preset windows-x64-debug
 ~~~
 
-Cubre los seis tipos de actividad, la incorporación opcional de una
-explicación, el desplazamiento de página con origen intacto, dos
-revisiones consecutivas, la combinación atómica con una pregunta
-revisada y los rechazos de pruebas o marcadores alterados. Registrar
-sus resultados reales antes de acreditar la capacidad; la existencia
-del test no demuestra que haya pasado en Windows.
+La comprobación exige encontrar y ejecutar exactamente estas tres pruebas
+CTest, de manera secuencial:
+
+`native.ordinary_explanation_authoring` comprueba los seis tipos de
+actividad ordinaria, la incorporación de una explicación opcional, el
+desplazamiento de página con identidad de origen intacta, dos revisiones
+consecutivas, la combinación atómica con una pregunta revisada y los
+rechazos de historiales o marcadores alterados.
+
+`native.course_edition_authoring` comprueba la publicación autenticada
+de una edición de curso con nuevas identidades y recursos históricos
+conservados.
+
+`native.course_edition` comprueba la carga nativa Windows de esa edición
+con las fuentes sintéticas generadas para QA.
+
+El script verifica la rama `Codex` antes de construir, confirma la
+presencia exacta de las tres pruebas, oculta su consola, conserva la
+salida y errores en `out/build/<preset>/logs/curriculum-edition-qa.*.log`
+y restaura las variables de entorno temporales. No toca `main`, los
+perfiles personales ni el currículo de Work. Registrar los resultados
+reales de esta ejecución antes de acreditar una capacidad; **publicar
+el script no equivale a haber ejecutado las pruebas en Windows**.
 
 La comprobación acredita conservación contractual y procedencia editorial,
 no la corrección pedagógica de una redacción ni una escucha anterior. Los
