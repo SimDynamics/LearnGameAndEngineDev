@@ -2562,16 +2562,44 @@ void interactive_simulation_feedback_narration_ids(HWND host) {
     check(line.first=="input-label"&&
         line.second.find("un texto por línea")!=std::string::npos,
         "The original line-input narration identity was not preserved");
+    // A static help panel is still a real selectable RichEdit. Navigating a
+    // trace must not re-stream it and erase the student's selected text.
+    int help_streams=0;
+    const auto help_stream_probe=[](HWND window,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR context)->LRESULT {
+        if(message==EM_STREAMIN)++*reinterpret_cast<int*>(context);
+        return DefSubclassProc(window,message,wp,lp);
+    };
+    constexpr UINT_PTR help_probe_id=0x53494850;
+    check(SetWindowSubclass(help,help_stream_probe,help_probe_id,
+        reinterpret_cast<DWORD_PTR>(&help_streams))!=FALSE,
+        "Cannot inspect the real input-help RichEdit");
+    struct HelpStreamGuard {
+        HWND window;SUBCLASSPROC callback;UINT_PTR id;
+        ~HelpStreamGuard(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+    } guard{help,help_stream_probe,help_probe_id};
+    const CHARRANGE selected{1,4};
+    CHARRANGE actual{};
+    SendMessageW(help,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    check(view.go_to_step(1)&&view.go_to_step(2)&&view.go_to_step(0),
+        "Cannot navigate the original simulation steps");
+    SendMessageW(help,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&actual));
+    check(help_streams==0&&actual.cpMin==selected.cpMin&&
+        actual.cpMax==selected.cpMax&&region(help)==line,
+        "Unchanged help was re-streamed and lost its selection during a step");
     choose(1);
     const auto quoted=region(help);
     check(quoted.first=="input-format/json"&&quoted.first!=line.first&&
         quoted.second.find("lista de textos entre comillas")!=std::string::npos&&
         region(feedback).first.empty()&&spec==authored,
         "JSON input help reused the line-format narration identity");
+    check(help_streams==1,"Switching to JSON did not refresh input help once");
     choose(0);
+    check(help_streams==2,"Switching back to lines did not refresh input help once");
     check(region(help)==line&&spec==authored,
         "Returning to line input changed its stable narration identity");
     choose(1);
+    check(help_streams==3,"Returning to JSON unexpectedly skipped or duplicated its help");
     check(region(help)==quoted&&
         view.step_index()==0&&spec==authored,
         "Reopening JSON input did not recover the same authored help");
@@ -2601,6 +2629,18 @@ void interactive_simulation_feedback_narration_ids(HWND host) {
     check(region(feedback).first.empty()&&
         region(help)==quoted&&view.step_index()==0&&spec==authored,
         "Applying corrected input retained old diagnostic narration");
+    check(help_streams==3,
+        "A diagnostic or corrected model input needlessly rebuilt static input help");
+    view.set_text_scale(125);resize(view,810);
+    check(help_streams==4&&rich_edit_scale(help)==125,
+        "A real reader scale change did not reformat the input help exactly once");
+    check(view.go_to_step(1)&&help_streams==4,
+        "The help was re-streamed during a step at the new reader scale");
+    SendMessageW(view.window(),WM_DPICHANGED_AFTERPARENT,0,0);pump(host);
+    resize(view,810);
+    check(help_streams==5&&rich_edit_scale(help)==125&&
+        region(help)==quoted&&spec==authored,
+        "A DPI font rebase lost the input help or caused redundant RichEdit streaming");
 }
 
 void editable_input_keyboard_focus(HWND host) {
