@@ -364,6 +364,10 @@ struct SimulationView::Impl {
         SendMessageW(format,CB_SETCURSEL,0,0);accessible(format,"Formato de los datos editables");
         const auto editor=create(MSFTEDIT_CLASS,input_id,WS_TABSTOP|ES_MULTILINE|ES_AUTOVSCROLL|WS_VSCROLL);
         reader_theme::apply(editor,reader_theme::Surface::field);use_plain_text_input(editor);
+        // RichEdit may request Tab even in a dialog. Leave ordinary editing
+        // native, but allow Tab/Shift+Tab to reach the next real control.
+        if(!SetWindowSubclass(editor,input_tab_proc,3,0))
+            throw std::runtime_error("No se pudo preparar la navegación del editor de datos.");
         SendMessageW(editor,WM_SETFONT,reinterpret_cast<WPARAM>(base_font),FALSE);
         SendMessageW(editor,EM_EXLIMITTEXT,0,65536);
         button(apply_id,"Aplicar datos");button(restore_id,"Restablecer datos");
@@ -1197,6 +1201,17 @@ struct SimulationView::Impl {
         else if(id==restore_id&&spec.editable)replace_data(original_data(),true);
         else if(id>=group_first_id&&static_cast<std::size_t>(id-group_first_id)<group_buttons.size())go(id-group_first_id);
         return 0;
+    }
+    static LRESULT CALLBACK input_tab_proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR) {
+        if(message==WM_GETDLGCODE){
+            const auto flags=DefSubclassProc(edit,message,wp,lp);
+            const auto* key=reinterpret_cast<const MSG*>(lp);
+            if(key&&key->message==WM_KEYDOWN&&key->wParam==VK_TAB)
+                return flags&~(DLGC_WANTTAB|DLGC_WANTALLKEYS);
+            return flags;
+        }
+        if(message==WM_NCDESTROY)RemoveWindowSubclass(edit,input_tab_proc,3);
+        return DefSubclassProc(edit,message,wp,lp);
     }
     static LRESULT CALLBACK passive_proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
         auto* self=reinterpret_cast<Impl*>(raw);
