@@ -251,7 +251,8 @@ function(lgaed_add_simulation_tests)
     target_link_libraries(lgaed_simulation_lesson_tests PRIVATE lgaed_curricular_windows)
     add_test(NAME native.simulation_lesson COMMAND lgaed_simulation_lesson_tests
         "${CMAKE_SOURCE_DIR}/docs/examples/array_runs_simulation.json"
-        "${CMAKE_SOURCE_DIR}/native/presentation/windows/fixtures/simulation_state_layout.json")
+        "${CMAKE_SOURCE_DIR}/native/presentation/windows/fixtures/simulation_state_layout.json"
+        "${CMAKE_SOURCE_DIR}/docs/examples/array_runs_empty_text_simulation.json")
     add_test(NAME native.simulation_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_simulation.py)
     # Focused Windows QA: build the native model, UI and lesson tests without
