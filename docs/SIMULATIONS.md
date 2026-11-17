@@ -230,8 +230,13 @@ incompatible. Los mensajes de error de intentos diferentes en el mismo paso
 también tienen identidades separadas cuando cambia el diagnóstico visible:
 se calcula una clave opaca y estable a partir del **mensaje**, sin incluir
 el borrador introducido. Repetir el mismo error conserva su identidad;
-corregir los datos lo retira del recorrido de lectura. La regresión nativa
-`interactive_simulation_feedback_narration_ids` comprueba ambas rutas;
+corregir los datos lo retira del recorrido de lectura. El panel de
+ayuda mantiene también su selección y documento RichEdit durante pasos,
+errores y aplicación de otros datos si el formato sigue siendo el mismo;
+no retransmite un texto idéntico. Un cambio real entre líneas y lista
+entre comillas sí actualiza la ayuda; zoom, DPI o apariencia actualizan su
+formato visual sin atribuirle una escucha anterior. La regresión nativa
+`interactive_simulation_feedback_narration_ids` comprueba estas rutas;
 su ejecución debe acreditarse en Windows.
 
 En el editor nativo de datos, **Tab** pasa al siguiente control y
