@@ -2499,6 +2499,67 @@ void applying_valid_data_is_atomic_after_native_failure(HWND host) {
         "The retried Apply did not compute the newly submitted input");
 }
 
+
+void scenario_change_is_atomic_after_native_failure(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the original applied scenario for atomic rollback");
+    const auto previous_step=view.step_index();
+    const auto previous_count=view.step_count();
+    const auto previous_output=text(view,output_id);
+    const auto previous_editor=text(view,input_id);
+    const auto previous_array=name(GetDlgItem(view.window(),array_id));
+    const auto previous_identity=view.reading_regions()[2].key;
+    const auto scenario=GetDlgItem(view.window(),scenario_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(scenario&&output&&SendMessageW(scenario,CB_GETCURSEL,0,0)==0,
+        "Cannot inspect the original native scenario selection");
+
+    int failures_left=1;
+    const auto reject_once=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& pending=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&pending>0){--pending;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR reject_id=0x53495343;
+    check(SetWindowSubclass(output,reject_once,reject_id,
+        reinterpret_cast<DWORD_PTR>(&failures_left))!=FALSE,
+        "Cannot simulate a late native rejection when changing scenario");
+    struct Unhook {
+        HWND window;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+    } guard{output,reject_once,reject_id};
+
+    const CHARRANGE selection{0,4};
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    check(SendMessageW(scenario,CB_SETCURSEL,1,0)!=CB_ERR,
+        "The alternative authored scenario is missing");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    CHARRANGE after{};
+    SendMessageW(output,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+    check(failures_left==0&&SendMessageW(scenario,CB_GETCURSEL,0,0)==0&&
+        previous_output==text(view,output_id)&&
+        previous_array==name(GetDlgItem(view.window(),array_id))&&
+        previous_editor==text(view,input_id)&&
+        view.step_index()==previous_step&&view.step_count()==previous_count&&
+        view.reading_regions()[2].key==previous_identity&&
+        after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&
+        spec==authored,
+        "A rejected native scenario switch left the previous model or selector inconsistent");
+    check(SendMessageW(scenario,CB_SETCURSEL,1,0)!=CB_ERR,
+        "Cannot retry the alternate authored scenario");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(SendMessageW(scenario,CB_GETCURSEL,0,0)==1&&
+        view.step_index()==0&&view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="4:2\n9:2\n"&&spec==authored,
+        "A valid scenario retry retained the rejected model or old output");
+}
+
 void editable_data(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);SimulationView view(host,spec,"es");resize(view,820);
     check(view.go_to_step(view.step_count()-1),"Cannot prepare an edited data test");
@@ -3872,6 +3933,7 @@ int main(int argc,char** argv)try {
     run("static_simulation_text_is_not_restreamed",[&]{static_simulation_text_is_not_restreamed(host.value);});
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
+    run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});
