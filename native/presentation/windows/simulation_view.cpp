@@ -1182,7 +1182,13 @@ struct SimulationView::Impl {
     }
     int measured_height(int requested) {
         requested=std::max(1,requested);
-        return layout_valid&&requested==width?height:arrange(requested,true);
+        if(layout_valid&&requested==width)return height;
+        // The parent may measure/reflow this child before sending WM_SIZE.
+        // Keep the learner on the same output line across width changes too.
+        const auto reading=capture_output_reading_anchor();
+        const auto required=arrange(requested,true);
+        restore_output_reading_anchor(reading);
+        return required;
     }
     // Use rendered cell rectangles, regardless of text scale or row wrapping.
     // The walkthrough frame represents a counted element, never a future
@@ -1647,7 +1653,9 @@ struct SimulationView::Impl {
             if(message==WM_DRAWITEM&&lp&&reader_theme::draw_button(*reinterpret_cast<DRAWITEMSTRUCT*>(lp)))return TRUE;
             if(message==WM_SIZE&&!self->initializing&&!self->arranging){RECT area{};GetClientRect(item,&area);
                 const auto requested=std::max(1,static_cast<int>(area.right-area.left));
-                if(!self->layout_valid||requested!=self->width){const auto required=self->arrange(requested,true);
+                if(!self->layout_valid||requested!=self->width){const auto reading=self->capture_output_reading_anchor();
+                    const auto required=self->arrange(requested,true);
+                    self->restore_output_reading_anchor(reading);
                     // A parent's normal placement uses the already measured
                     // width. Only an independent width change needs reflow.
                     const auto callback=self->callbacks.layout_changed;
