@@ -3520,6 +3520,86 @@ void input_format_conversion_rejects_native_failures(HWND host) {
         "Input-format conversion did not recover after a late native failure");
 }
 
+void input_format_callback_failure_keeps_converted_draft(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.text_values=true;
+    spec.values={std::string("patio"),std::string("patio")};
+    spec.scenarios.clear();
+    const auto authored=spec;
+    bool nested_conversion=false,throw_on_rejected=false,nested_ok=false;
+    int notifications=0;
+    SimulationView* current=nullptr;
+    SimulationCallbacks callbacks{};
+    callbacks.changed=[&]{
+        ++notifications;
+        if(nested_conversion){
+            nested_conversion=false;
+            nested_ok=current->go_to_step(0);
+            throw std::runtime_error("Fallo QA tras convertir la lista");
+        }
+        if(throw_on_rejected){
+            throw_on_rejected=false;
+            throw std::runtime_error("Fallo QA tras rechazo del formato");
+        }
+    };
+    SimulationView view(host,spec,"es",callbacks);current=&view;
+    resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the applied text trace before a format notification error");
+    const auto previous_count=view.step_count();
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto format=GetDlgItem(view.window(),input_format_id);
+    check(editor&&format,"Missing editable input controls");
+    const auto select=[&](int index){
+        check(SendMessageW(format,CB_SETCURSEL,index,0)!=CB_ERR,
+            "Cannot choose the requested text format");
+        SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(input_format_id,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(format));pump();
+    };
+    set_edit_text(editor,"sol\nluna");
+    nested_conversion=true;
+    select(1);
+    const auto warning=text(view,error_id);
+    check(nested_ok&&notifications>=2&&
+        SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+        text(view,input_id)=="[\"sol\", \"luna\"]"&&
+        view.step_index()==0&&view.step_count()==previous_count&&
+        text(view,output_id).empty()&&
+        warning.find("Formato convertido; falló la notificación del cambio.")!=std::string::npos&&
+        warning.find("Fallo QA tras convertir la lista")!=std::string::npos&&
+        warning.find("No se cambió el formato")==std::string::npos&&
+        spec==authored,
+        "A conversion observer exception discarded the accepted format or a nested step");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==warning;
+    }),"An accepted conversion's observer warning was absent from narration");
+
+    // Now reject an actually malformed JSON draft, and throw from its
+    // error-notification observer. The rejection is still the reason to
+    // display, rather than a false native presentation failure.
+    const std::string malformed="[\"sol\",]";
+    set_edit_text(editor,malformed);
+    throw_on_rejected=true;
+    select(0);
+    const auto rejected=text(view,error_id);
+    check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+        text(view,input_id)==malformed&&
+        rejected.find("No se cambió el formato; se conservaron los datos escritos.")!=std::string::npos&&
+        rejected.find("No se pudo actualizar la simulación.")==std::string::npos&&
+        view.step_index()==0&&view.step_count()==previous_count&&spec==authored,
+        "A rejected format's observer exception hid the invalid-input diagnosis");
+
+    set_edit_text(editor,"[\"sol\", \"luna\"]");
+    select(0);
+    check(SendMessageW(format,CB_GETCURSEL,0,0)==0&&
+        text(view,input_id)=="sol\nluna"&&text(view,error_id).empty()&&
+        view.step_index()==0&&view.step_count()==previous_count&&
+        view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="patio:2\n"&&spec==authored,
+        "A valid format retry changed the already-applied trace or retained stale warnings");
+}
+
 void input_format_conversion_reports_unrecoverable_draft(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     spec.text_values=true;
@@ -4826,6 +4906,7 @@ int main(int argc,char** argv)try {
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
     run("input_format_conversion_rejects_native_failures",[&]{input_format_conversion_rejects_native_failures(host.value);});
+    run("input_format_callback_failure_keeps_converted_draft",[&]{input_format_callback_failure_keeps_converted_draft(host.value);});
     run("input_format_conversion_reports_unrecoverable_draft",[&]{input_format_conversion_reports_unrecoverable_draft(host.value);});
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});
     run("interactive_simulation_feedback_narration_ids",[&]{interactive_simulation_feedback_narration_ids(host.value);});

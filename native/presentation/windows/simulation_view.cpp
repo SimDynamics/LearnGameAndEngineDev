@@ -1348,6 +1348,8 @@ struct SimulationView::Impl {
         const auto editor=item(input_id);
         const auto previous_format=input_format;
         const auto previous_wheel=input_wheel_delta;
+        const auto previous_navigation=navigation_error;
+        const auto previous_navigation_previous=previous_navigation_error;
         const auto reading=capture_output_reading_anchor(input_id);
         std::optional<std::string> previous_text;
         try {
@@ -1360,10 +1362,16 @@ struct SimulationView::Impl {
             if(edit_text(editor)!=converted)
                 throw std::runtime_error("RichEdit no conservó el formato solicitado.");
             input_format=requested;input_wheel_delta=0;error.clear();
-            update();publish();
+            // The changed help and native selector must be presented before
+            // a format conversion can be committed. Observer callbacks are
+            // deliberately excluded from this rollback boundary.
+            navigation_error.clear();previous_navigation_error.clear();
+            update();
         }catch(const std::exception& failure){
             const auto reason=std::string(failure.what());
             input_format=previous_format;input_wheel_delta=previous_wheel;
+            navigation_error=previous_navigation;
+            previous_navigation_error=previous_navigation_previous;
             bool restored=previous_text.has_value();
             if(previous_text){
                 bool unchanged=false;
@@ -1384,7 +1392,25 @@ struct SimulationView::Impl {
                 error="No se cambió el formato; se conservaron los datos escritos. "+reason;
             update();
             restore_output_reading_anchor(reading,input_id);
-            publish();
+            // Even a throwing observer must not overwrite the meaningful
+            // conversion error which the learner needs to correct.
+            try{publish();}catch(...){
+                OutputDebugStringW(L"Falló una notificación tras rechazar el cambio de formato.\n");
+            }
+            return;
+        }
+        // At this point the converted draft and help are already committed.
+        // A listener can navigate again or throw, but neither action may
+        // roll back the accepted input format.
+        const auto life=alive;
+        try{publish();}
+        catch(const std::exception& failure){
+            if(*life)report_committed_notification_failure(
+                "Formato convertido; falló la notificación del cambio. ",failure.what());
+        }catch(...){
+            if(*life)report_committed_notification_failure(
+                "Formato convertido; falló la notificación del cambio. ",
+                "Excepción no identificada del observador.");
         }
     }
     int measure(std::string_view text,int available,HFONT selected=nullptr)const {

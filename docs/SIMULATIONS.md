@@ -221,7 +221,13 @@ al recorrido. Si la conversión perdería un dato —por ejemplo, una cadena vac
 al pasar a líneas— o el borrador no es válido, se conserva el texto y el formato
 anterior y se muestra el motivo. El cambio de formato también es transaccional:
 se comprueba que RichEdit haya escrito el contenido convertido y que la vista
-acepte su presentación antes de confirmarlo. Un rechazo silencioso de escritura
+acepte su presentación antes de confirmarlo. Las notificaciones a observadores
+se realizan después: si el formato ya se convirtió y un observador falla, se
+conservan los datos, la selección de formato y cualquier paso anidado válido.
+Si la entrada era inválida, su diagnóstico conserva prioridad aunque también
+falle la notificación. La regresión Win32
+`input_format_callback_failure_keeps_converted_draft` cubre ambos casos.
+Un rechazo silencioso de escritura
 o un fallo tardío de presentación restablecen formato, borrador, selección,
 posición de lectura y ayuda anteriores sin modificar la traza aplicada.
 Si incluso la restauración nativa falla, el motor no afirma que el borrador
