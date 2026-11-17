@@ -13,9 +13,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <limits>
 #include <memory>
+#include <numeric>
 #include <regex>
 #include <set>
 #include <stdexcept>
@@ -883,6 +885,34 @@ std::string utf8(std::wstring_view source) {
     if (!length) throw std::runtime_error("Invalid UTF-16 text");
     std::string result(static_cast<std::size_t>(length), '\0');
     WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, source.data(), static_cast<int>(source.size()), result.data(), length, nullptr, nullptr); return result;
+}
+bool set_rich_text_zoom(HWND edit,int percentage) {
+    if(!IsWindow(edit))return false;
+    // EM_SETZOOM rejects numerator or denominator outside [1,64].
+    // Simplify exact percentages first, then approximate other percentages
+    // with the closest representable rational, without changing the document.
+    percentage=std::clamp(percentage,25,150);
+    const int divisor=std::gcd(percentage,100);
+    int numerator=percentage/divisor,denominator=100/divisor;
+    if(numerator>64||denominator>64){
+        int best_numerator=1,best_denominator=1;
+        int best_error=std::abs(100-percentage);
+        for(int candidate_denominator=1;candidate_denominator<=64;++candidate_denominator){
+            const int candidate_numerator=std::clamp(
+                (percentage*candidate_denominator+50)/100,1,64);
+            const int candidate_error=std::abs(
+                candidate_numerator*100-percentage*candidate_denominator);
+            if(static_cast<std::int64_t>(candidate_error)*best_denominator<
+                static_cast<std::int64_t>(best_error)*candidate_denominator){
+                best_numerator=candidate_numerator;
+                best_denominator=candidate_denominator;
+                best_error=candidate_error;
+            }
+        }
+        numerator=best_numerator;
+        denominator=best_denominator;
+    }
+    return SendMessageW(edit,EM_SETZOOM,numerator,denominator)!=FALSE;
 }
 void set_edit_hint(HWND edit,std::string_view text,COLORREF color,bool centered) {
     if(!IsWindow(edit))throw std::invalid_argument("An edit hint requires a live RichEdit");
