@@ -7,6 +7,7 @@ on:
       - scripts/curriculum/validar_json_programacion.py
       - scripts/curriculum/validate_programming_practice_tools.py
       - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_stable_state_layout.py
       - scripts/curriculum/code_format_compat.py
       - scripts/curriculum/test_code_format_compat.py
       - scripts/curriculum/test_source_format_retirement.py
@@ -40,6 +41,14 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Comprobar blobs históricos y rutas largas
+        working-directory: scripts/curriculum
+        run: >-
+          python -B -m unittest
+          test_stable_state_layout.RepositoryGateTest.test_baseline_blob_ignores_a_worktree_filename_ambiguity
+          test_stable_state_layout.RepositoryGateTest.test_baseline_blob_reads_a_long_path_without_a_filename_probe
+          test_stable_state_layout.RepositoryGateTest.test_missing_baseline_blob_cannot_fall_back_to_the_working_tree
+          -v
       - name: Verify source-format fixtures and combined editorial revisions
         run: python -B -m unittest discover -s scripts/curriculum -p test_code_format_compat.py -v
       - name: Verify published formatted sources survive later retirement history

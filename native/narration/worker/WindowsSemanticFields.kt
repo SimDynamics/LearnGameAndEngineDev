@@ -92,6 +92,7 @@ internal object WindowsSemanticFields {
             when {
                 kind in setOf("heading","paragraph","note") -> text(block,"text","")
                 kind=="image" -> for (name in listOf("alt","caption")) text(block,name,"")
+                kind=="simulation" -> for (name in listOf("title","description")) text(block,name,"")
                 kind in setOf("multiple_choice","fill_code","output_prediction","order_code","drag_fill_code","inline_fill_code") -> {
                     for (name in listOf("question","explanation")) text(block,name,"")
                     if (kind=="multiple_choice") strings(block.optJSONArray("options"),"/options")

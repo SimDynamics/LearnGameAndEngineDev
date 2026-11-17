@@ -73,6 +73,9 @@ $qaSuiteConfig = switch ($Suite) {
             Targets = @(
                 'lgaed_lesson_reader_tests',
                 'lgaed_lesson_view_tests',
+                'lgaed_simulation_tests',
+                'lgaed_simulation_view_tests',
+                'lgaed_simulation_lesson_tests',
                 'lgaed_u11_declarations_reader_tests',
                 'lgaed_u6_diagnostic_flow_tests',
                 'lgaed_cpp_project_view_tests',
@@ -132,6 +135,7 @@ $qaSuiteConfig = switch ($Suite) {
             Tests = @(
                 'native.narration_worker',
                 'native.narration_spanish_pcm',
+                'native.simulation_narration',
                 'native.narration_player_failure_diagnostic'
             )
         }
@@ -359,7 +363,21 @@ $qaCommands = @(
     "call `"$qaVcVars`" x64 $qaSdkVersion -vcvars_ver=$($qaManifest.visualStudio.msvcToolset)",
     'if errorlevel 1 exit /b %errorlevel%',
     "`"$qaCMake`" -S `"$qaRoot`" -B `"$qaBuild`" -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/WindowsToolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DLGAED_DEFAULT_PROFILE=Codex -D$($qaSuiteConfig.CMakeOption)=ON `"-DPython3_EXECUTABLE=$qaPython`" `"-DGIT_EXECUTABLE=$qaGit`" $qaRuntimeOptions $qaWasiDependencyOption",
-    'if errorlevel 1 exit /b %errorlevel%',
+    'if errorlevel 1 exit /b %errorlevel%'
+)
+if ($Suite -eq 'ReaderBuild') {
+    # Run the new control's exact contracts before compiling the large
+    # historical test translation units. Failed UI iterations retain their
+    # native captures and diagnostics without repeating the older suites.
+    $qaSimulationPattern = '^native\.(simulation_model|simulation_view|simulation_lesson|simulation_authoring)$'
+    $qaCommands += @(
+        "`"$qaCMake`" --build `"$qaBuild`" --target lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests --parallel 2",
+        'if errorlevel 1 exit /b %errorlevel%',
+        "`"$qaCTest`" --test-dir `"$qaBuild`" -R `"$qaSimulationPattern`" --verbose --output-on-failure --no-tests=error --output-junit `"$qaBuild\simulation-results.xml`"",
+        'if errorlevel 1 exit /b %errorlevel%'
+    )
+}
+$qaCommands += @(
     "`"$qaCMake`" --build `"$qaBuild`" --target $qaBuildTargets --parallel 2",
     'exit /b %errorlevel%'
 )
@@ -368,7 +386,7 @@ $qaCommandFile = Join-Path $env:RUNNER_TEMP "lgaed-$($qaSuiteConfig.Results)-bui
 New-Item -ItemType Directory -Path $qaBuild -Force | Out-Null
 & $env:ComSpec /d /v:off /c $qaCommandFile 2>&1 |
     Tee-Object -FilePath (Join-Path $qaBuild 'native-build.log') | Write-Host
-if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite target did not configure or compile." }
+if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite build or early regression checks failed." }
 
 if ($Suite -eq 'ReaderBuild') {
     # The original reader/U6 executables are only compiled. The focused
@@ -395,7 +413,7 @@ if ($Suite -eq 'ReaderBuild') {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the focused reader and catalog test registration.' }
     $qaUiListing = ($qaUiListingText -join "`n") | ConvertFrom-Json
     $qaUiNames = @($qaUiListing.tests | ForEach-Object { $_.name })
-    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_u3_cmake_structure', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_editor_viewport', 'native.code_editor', 'native.code_format_compat', 'native.cpp_expression_repair', 'native.named_rule_source', 'native.named_rule_runtime', 'native.cpp_cmake_graph', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles', 'native.semantic_retirement_view', 'native.compiler_case_order_view', 'native.compiler_case_revision_view', 'native.catalog', 'native.general_choice_editorial_authoring', 'native.general_choice_editorial', 'native.general_choice_editorial_reader', 'native.boolean_battery', 'native.boolean_battery_runtime', 'native.reduction', 'native.reduction_runtime', 'native.integer_battery', 'native.integer_battery_runtime', 'native.open_battery_runtime', 'native.rich_text_hit_geometry', 'native.lesson_menu', 'native.lesson_scroll_render')
+    $qaUiExpected = @('native.simulation_model', 'native.simulation_view', 'native.simulation_lesson', 'native.simulation_authoring', 'native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_u3_cmake_structure', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_editor_viewport', 'native.code_editor', 'native.code_format_compat', 'native.cpp_expression_repair', 'native.named_rule_source', 'native.named_rule_runtime', 'native.cpp_cmake_graph', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles', 'native.semantic_retirement_view', 'native.compiler_case_order_view', 'native.compiler_case_revision_view', 'native.catalog', 'native.general_choice_editorial_authoring', 'native.general_choice_editorial', 'native.general_choice_editorial_reader', 'native.boolean_battery', 'native.boolean_battery_runtime', 'native.reduction', 'native.reduction_runtime', 'native.integer_battery', 'native.integer_battery_runtime', 'native.open_battery_runtime', 'native.rich_text_hit_geometry', 'native.lesson_menu', 'native.lesson_scroll_render')
     if ($qaUiNames.Count -ne $qaUiExpected.Count -or
         (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
         throw 'ReaderBuild must register independent native glyph hit geometry, console fullscreen/zoom, menu/scroll, Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery, stateful reduction, integer CMake battery and original open-battery execution regressions.'
@@ -403,11 +421,13 @@ if ($Suite -eq 'ReaderBuild') {
     # Obtain console, CMake structure, U3 semantics and named-rule variation
     # evidence before the remaining compiler cases. A failure in one must
     # retain the other independent diagnostics.
-    # Exclude these from the second call so each registered test runs once.
+    # Simulation contracts already ran before the larger build. Keep the
+    # existing focal checks and execute each registered test exactly once.
     $qaFocalPattern = '^native\.(lesson_menu|rich_text_hit_geometry|cpp_cmake_graph|cpp_project_u3_cmake_structure|u3_runtime_semantics|named_rule_runtime)$'
+    $qaCompletedPattern = "($qaSimulationPattern)|($qaFocalPattern)"
     & $qaCTest --test-dir $qaBuild -R $qaFocalPattern --verbose --output-on-failure --no-tests=error --timeout 300
     if ($LASTEXITCODE -ne 0) { throw 'A native console, CMake structure, U3 semantic or named-rule regression failed.' }
-    & $qaCTest --test-dir $qaBuild -E $qaFocalPattern --output-on-failure --no-tests=error --timeout 300 --stop-on-failure
+    & $qaCTest --test-dir $qaBuild -E $qaCompletedPattern --output-on-failure --no-tests=error --timeout 300 --stop-on-failure
     if ($LASTEXITCODE -ne 0) { throw 'A focused native reader, catalog, compiler or Win32 regression failed.' }
     Write-Host 'PASS original reader/U6 executables compiled and linked; catalog, general-choice reading preservation, boolean battery execution/provenance, console fullscreen/zoom and Escape, actual Win32 History dialogs and focused published lesson execution/reopen/reset tested. No reader/audio playback executed.'
     return

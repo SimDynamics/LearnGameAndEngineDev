@@ -63,6 +63,7 @@ FIELDS = {
     "note": {"type", "text", "emphasis"},
     "code": {"type", "language", "code"},
     "image": set(_state_layout.image_resources.FIELDS),
+    "simulation": set(_state_layout.simulation.FIELDS),
     "multiple_choice": {"type", "id", "question", "options", "correctIndex", "explanation", "reviewFeedback"},
     "fill_code": {"type", "id", "question", "language", "code", "answers", "explanation", "answerComparison", "reviewFeedback"},
     "output_prediction": {"type", "id", "question", "language", "code", "answers", "explanation", "outputComparison", "reviewFeedback"},
@@ -74,7 +75,7 @@ FIELDS = {
     # Contenedor compartido ya admitido por MathPuzzleParser en ambas rutas.
     "math_puzzle": {"type", "schemaVersion", "version", "id", "prompt", "question", "representations", "tools", "responses", "feedback"},
 }
-EXERCISES = set(FIELDS) - {"heading", "paragraph", "note", "code", "cpp_compiler", "image"}
+EXERCISES = set(FIELDS) - {"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"}
 COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles", "cmake", "outputCheck", "compileCheck"}
 REVIEW_FEEDBACK_TYPES = {"multiple_choice", "fill_code", "output_prediction", "order_code", "drag_fill_code", "inline_fill_code"}
 SOURCE_SUFFIXES = {"cpp", "cc", "cxx", "c++"}
@@ -830,6 +831,13 @@ def validate_image_contract(block, where, content_root=None):
             _state_layout.image_resources.validate_resource(block, content_root)
     except (ValueError, OSError) as error:
         require(False, where, f"imagen curricular no válida: {error}")
+
+
+def validate_simulation_contract(block, where):
+    try:
+        _state_layout.simulation.validate_contract(block)
+    except (ValueError, KeyError, TypeError) as error:
+        require(False, where, f"simulación curricular no válida: {error}")
 
 
 def validate_code_presentation_contract(block, where):
@@ -1754,6 +1762,8 @@ def _validate_cpp_fundamentals(base_commit):
                 validate_paragraph_emphasis_contract(block, where)
                 if kind == "math_puzzle":
                     validate_math_puzzle_contract(block, where)
+                if kind == "simulation":
+                    validate_simulation_contract(block, where)
                 if kind == "cpp_compiler":
                     validate_cpp_compiler(block, where, document=doc, position=(pn - 1, bn - 1))
                 if kind == "image":

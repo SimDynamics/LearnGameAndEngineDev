@@ -151,6 +151,22 @@ class CurriculumVisibleSemanticsTest(unittest.TestCase):
         self.assertEqual(before, self.foreground("Vecino inalterado."))
         self.assertEqual(self.background(lesson), reply)
 
+    def test_simulation_prepares_only_static_authored_fields_not_future_states(self):
+        block = json.loads((ROOT / "docs/examples/array_runs_simulation.json").read_text(encoding="utf-8"))
+        block["title"] = "Recorrido con identidad propia"
+        block["description"] = "y"
+        for phase in block["simulation"]["explanations"]:
+            block["simulation"]["explanations"][phase] = "ESTADO_FUTURO: {value} {frequency}"
+        explicit = descriptor("y", role="cpp")
+        for marked in (False, True):
+            with self.subTest(marked=marked):
+                lesson = self.lesson(block, [("/description", "y", explicit)] if marked else [])
+                reply = self.background(lesson)
+                self.assert_prepared(block["title"], None, reply)
+                self.assert_prepared("y", explicit if marked else None, reply)
+                self.assert_prepared("Vecino inalterado.", None, reply)
+                self.assertNotIn("ESTADO_FUTURO", " ".join(part["text"] for part in reply))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -238,7 +238,7 @@ void validate_reference_relationships(const Lesson& lesson) {
             const auto position = stable_block_position(lesson,identity);
             if (!position) throw std::invalid_argument("Reference presentation block does not exist");
             const auto type = lesson.pages[position->page].blocks[position->block].type;
-            if (type != BlockType::heading && type != BlockType::paragraph && type != BlockType::note && type != BlockType::code && type != BlockType::image)
+            if (type != BlockType::heading && type != BlockType::paragraph && type != BlockType::note && type != BlockType::code && type != BlockType::image && type != BlockType::simulation)
                 throw std::invalid_argument("An exercise or editor cannot be hidden as a reference");
             if (position->page < target->page || (position->page == target->page && position->block <= target->block))
                 throw std::invalid_argument("A reference must follow its activity in visual order");
@@ -350,8 +350,13 @@ Block compiler_case_revision_previous_block(
     previous.project_files=revision.previous_project_files;
     if(revision.previous_cmake_graph_check)
         previous.cmake_graph_check=revision.previous_cmake_graph_check;
-    previous.output_check->input_comparison=revision.previous_output_check.input_comparison;
-    previous.output_check->cases=revision.previous_output_check.cases;
+    if(revision.preserves_root_output_check) {
+        if(!revision.client_revision||!revision.client_revision->cmake_recipe)
+            throw std::invalid_argument("Only a CMake recipe revision can preserve a root output contract");
+    } else {
+        previous.output_check->input_comparison=revision.previous_output_check.input_comparison;
+        previous.output_check->cases=revision.previous_output_check.cases;
+    }
     previous.source_format_original_initial_code=revision.previous_source_format_initial_code;
     previous.source_format_original_project_files=revision.previous_source_format_project_files;
     previous.text_semantics=revision.previous_case_text_semantics;
@@ -371,8 +376,10 @@ Block compiler_case_revision_after_block(
     }
     auto revised=compiler_case_revision_previous_block(owner,revision);
     revised.raw_json=revision.after_raw_json;
-    revised.output_check->input_comparison=revision.revised_output_check.input_comparison;
-    revised.output_check->cases=revision.revised_output_check.cases;
+    if(!revision.preserves_root_output_check) {
+        revised.output_check->input_comparison=revision.revised_output_check.input_comparison;
+        revised.output_check->cases=revision.revised_output_check.cases;
+    }
     revised.text_semantics=revision.revised_case_text_semantics;
     revised.compiler_client_epoch=revision.revised_client_epoch;
     if(revision.client_revision) {

@@ -1,0 +1,41 @@
+{
+  "type": "simulation",
+  "id": "recorrer_grupos_y_frecuencias",
+  "title": "Recorrer grupos y conservar los más frecuentes",
+  "description": "Modifica los datos o elige un escenario. La simulación ordena una copia, recorre sus grupos y calcula las frecuencias. Avanza o retrocede para comparar los índices, el máximo y los valores que lo alcanzan.",
+  "simulation": {
+    "version": 1,
+    "model": "arrayRunsV1",
+    "view": "walkthrough",
+    "valueType": "integer",
+    "values": [7, 3, 2, 7, 3, 9, 2, 3, 7],
+    "sort": true,
+    "editable": true,
+    "labels": {
+      "array": "Datos",
+      "start": "inicio",
+      "end": "fin",
+      "frequency": "frecuencia",
+      "maximum": "máximo",
+      "leaders": "valores con el máximo",
+      "output": "Salida calculada"
+    },
+    "explanations": {
+      "initial": "Hay {size} datos. La copia ordenada reúne los valores iguales; todavía no se ha contado ningún grupo.",
+      "start": "Comienza el grupo de {value} en el índice {start}. Su primer elemento ya está contado: la frecuencia vale {frequency} y el límite exclusivo vale {end}.",
+      "advance": "El siguiente elemento también vale {value}. El grupo comienza en {start} y termina antes de {end}: contiene {frequency} elementos.",
+      "newMaximum": "Termina el grupo de {value}. Su frecuencia, {frequency}, supera el máximo anterior. El nuevo máximo vale {maximum} y sus candidatos son {leaders}.",
+      "tie": "Termina el grupo de {value}. Su frecuencia, {frequency}, iguala el máximo {maximum}. Se conservan todos los candidatos: {leaders}.",
+      "belowMaximum": "Termina el grupo de {value}. Su frecuencia, {frequency}, es menor que el máximo {maximum}. Los candidatos siguen siendo {leaders}.",
+      "done": "El recorrido ha terminado. Se procesaron {groups} grupos de {size} datos. El índice final vale {end}; no se lee un elemento en esa posición. El máximo es {maximum} y lo alcanzan {leaders}.",
+      "empty": "No hay datos. No existe un primer elemento ni un grupo que contar; no se accede al array y no se produce una línea de salida."
+    },
+    "outputTemplate": "{value}: {frequency}",
+    "scenarios": [
+      {"id": "empate", "label": "Dos valores empatan", "values": [4, 1, 4, 1, 8]},
+      {"id": "iguales", "label": "Todos los valores son iguales", "values": [5, 5, 5, 5]},
+      {"id": "un_elemento", "label": "Un solo elemento", "values": [0]},
+      {"id": "vacio", "label": "Sin elementos", "values": []}
+    ]
+  }
+}

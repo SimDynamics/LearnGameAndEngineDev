@@ -840,6 +840,35 @@ void materialize(const curriculum::CppProjectFiles& files,const std::filesystem:
     for(const auto& [name,text]:files){const auto path=directory/project_path(name);state::require_safe_path(path);std::filesystem::create_directories(path.parent_path());state::require_safe_path(path);
         if(std::filesystem::is_regular_file(path)&&std::filesystem::file_size(path)==text.size()&&read_exact(path,text.size())==text)continue;write_exact(path,text);}
 }
+std::optional<std::string> materialized_project_mismatch(
+        const curriculum::CppProjectFiles& files,const std::filesystem::path& directory) {
+    state::require_safe_path(directory);
+    // Only the already validated, bounded request files belong to this check.
+    // Additional generated sources remain supported; File API paths alone do
+    // not authenticate the contents of the learner's materialized sources.
+    for(const auto& [name,text]:files) {
+        const auto path=directory/project_path(name);state::require_safe_path(path);
+        if(!std::filesystem::is_regular_file(path)||
+           std::filesystem::file_size(path)!=text.size()||read_exact(path,text.size())!=text)
+            return name;
+    }
+    return {};
+}
+void require_materialized_project(const CppRunRequest& request,
+        const std::filesystem::path& source,const std::filesystem::path& state_file,
+        std::string_view phase) {
+    const auto changed=materialized_project_mismatch(request.project_files,source);
+    if(!changed)return;
+    // An observed mutation invalidates generated availability only. Preserve
+    // the files for diagnosis, retained workspace data, drafts and run history.
+    auto saved=read_json(state_file);
+    for(const auto key:{L"configuration",L"linkProfile",L"built",L"artifact",L"artifactSha256"})
+        if(saved.HasKey(key))saved.Remove(key);
+    save_json(state_file,saved);
+    throw std::runtime_error("El archivo "+*changed+
+        " no coincide con el código del editor al comprobar "+std::string(phase)+
+        ". No se ejecutará el programa. Configura y construye de nuevo conservando los archivos del editor.");
+}
 std::shared_ptr<std::timed_mutex> project_mutex(const std::filesystem::path& workspace){static std::mutex lock;static std::map<std::filesystem::path,std::weak_ptr<std::timed_mutex>> locks;
     const std::lock_guard guard(lock);auto& entry=locks[workspace];if(const auto found=entry.lock())return found;auto value=std::make_shared<std::timed_mutex>();entry=value;return value;}
 struct Target{std::string type;std::vector<std::filesystem::path> artifacts;};
@@ -1410,7 +1439,8 @@ CppProjectAvailability inspect_unlocked(const CppRunRequest& request){CppProject
     if(!verify_workspace_identity(request,false))return result;const auto path=result.workspace/L"state.json";if(!std::filesystem::is_regular_file(path))return result;
     try{const auto saved=read_json(path);result.configured=json_text(saved,L"configuration")==result.configuration_fingerprint&&json_text(saved,L"linkProfile")==cmake_link_profile&&std::filesystem::is_regular_file(result.workspace/L"build.ninja");
         if(!result.configured)return result;const auto target=cmake_target(result.workspace,*request.cmake);result.target_type=target.type;
-        if(json_text(saved,L"built")!=result.project_fingerprint||result.target_type!="EXECUTABLE")return result;
+        if(json_text(saved,L"built")!=result.project_fingerprint||result.target_type!="EXECUTABLE"||
+           materialized_project_mismatch(request.project_files,result.workspace/L"p"))return result;
         const auto artifact=contained(result.workspace,project_path(json_text(saved,L"artifact")));
         if(std::ranges::find(target.artifacts,artifact)==target.artifacts.end()||!executable64(artifact)||state::sha256(state::read_bytes(artifact,128*1024*1024))!=json_text(saved,L"artifactSha256"))return result;
         result.artifact=artifact;result.built=true;
@@ -1539,6 +1569,7 @@ unset(_lgaed_link_kind)
                     "Explicit CMake rules need an original authored CMake file");
         }
         result.configuration=run_phase(cmake,arguments,result.run_directory,compiler_input,L"configuration",request.compile_timeout,request.output_limit_bytes,true,stop,true,fixed_environment);
+        require_materialized_project(request,source,state_file,"la configuración de CMake");
         if(!result.configuration.succeeded())return;if(!std::filesystem::is_regular_file(build_directory/L"build.ninja"))throw std::runtime_error("CMake did not generate real Ninja rules");
         const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;saved.Insert(L"configuration",JsonValue::CreateStringValue(winrt::to_hstring(result.configuration_fingerprint)));saved.Insert(L"linkProfile",JsonValue::CreateStringValue(winrt::to_hstring(cmake_link_profile)));save_json(state_file,saved);availability=inspect_unlocked(request);
     }
@@ -1577,6 +1608,7 @@ unset(_lgaed_link_kind)
             if(std::ranges::find(current_target.artifacts,old)!=current_target.artifacts.end()&&std::filesystem::is_regular_file(old)&&state::sha256(state::read_bytes(old,128*1024*1024))!=json_text(saved,L"artifactSha256"))std::filesystem::remove(old);}
         for(const auto key:{L"built",L"artifact",L"artifactSha256"})if(saved.HasKey(key))saved.Remove(key);save_json(state_file,saved);
         result.compilation=run_phase(cmake,{L"--build",build_directory.wstring(),L"--target",std::wstring(winrt::to_hstring(request.cmake->target)),L"--parallel",L"2"},result.run_directory,compiler_input,L"build",request.compile_timeout,request.output_limit_bytes,true,stop,true,fixed_environment);
+        require_materialized_project(request,source,state_file,"la construcción de CMake");
         if(!result.compilation.succeeded())return;const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;
         if(target.type=="EXECUTABLE"){for(const auto& artifact:target.artifacts)if(executable64(artifact)){result.artifact=artifact;break;}if(result.artifact.empty())throw std::runtime_error("The selected CMake executable did not produce a native x64 artifact inside its build directory");
             saved.Insert(L"built",JsonValue::CreateStringValue(winrt::to_hstring(result.project_fingerprint)));saved.Insert(L"artifact",JsonValue::CreateStringValue(result.artifact.lexically_relative(build_directory).generic_wstring()));saved.Insert(L"artifactSha256",JsonValue::CreateStringValue(winrt::to_hstring(state::sha256(state::read_bytes(result.artifact,128*1024*1024)))));save_json(state_file,saved);}
@@ -1587,7 +1619,11 @@ unset(_lgaed_link_kind)
         result.cmake_artifact_fingerprint=state::sha256(
             state::read_bytes(availability.artifact,128*1024*1024));
     if(action==CppRunRequest::Action::build)return;
+    if(action==CppRunRequest::Action::execute&&availability.configured&&
+       json_text(read_json(state_file),L"built")==result.project_fingerprint)
+        require_materialized_project(request,source,state_file,"la reutilización del ejecutable");
     if(!availability.built)throw std::runtime_error("Build the executable of the current project revision before running it");
+    require_materialized_project(request,source,state_file,"el inicio de la ejecución");
     result.compilation.status=CppPhaseStatus::completed;result.compilation.exit_code=0;result.artifact=availability.artifact;result.target_type=availability.target_type;result.executable=request.cmake->target;
     if(!defer_execution)result.execution=run_phase(result.artifact,{},result.run_directory,input,L"execution",request.execution_timeout,request.output_limit_bytes,false,stop,false,fixed_environment);
 }
@@ -3996,4 +4032,5 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
 }
 
 } // namespace lgaed::windows
+
 

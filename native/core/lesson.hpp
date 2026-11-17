@@ -12,6 +12,7 @@
 #include "core/cmake_graph_check.hpp"
 #include "core/cpp_project.hpp"
 #include "core/image_resource.hpp"
+#include "core/simulation.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -26,7 +27,7 @@
 namespace lgaed::curriculum {
 
 enum class BlockType { heading, paragraph, note, code, multiple_choice, output_prediction,
-                       fill_code, order_code, cpp_compiler, inline_fill_code, drag_fill_code, math_puzzle, image };
+                       fill_code, order_code, cpp_compiler, inline_fill_code, drag_fill_code, math_puzzle, image, simulation };
 // Derived from validated lesson-level metadata, never stored in a historical
 // editor block or its persisted response/fingerprint.
 enum class CompilerWorkflowCheck {
@@ -192,7 +193,8 @@ struct CompilerCaseOrderRevision {
     // this authenticated predecessor, never an authored or stored field.
     std::optional<CmakeGraphRequirement> previous_cmake_graph_check;
 };
-// A separately authored client adaptation changes one existing compiled file.
+// A separately authored source adaptation changes one existing compiled file
+// or one CMake recipe. The two authored modalities are mutually exclusive.
 // The loader derives its complete after-source and formatting provenance; no
 // draft is rewritten when a lesson adopts this publication.
 struct CompilerClientRevision {
@@ -200,6 +202,7 @@ struct CompilerClientRevision {
     CppProjectFiles revised_project_files;
     std::optional<std::string> revised_source_format_initial_code;
     std::optional<CppProjectFiles> revised_source_format_project_files;
+    bool cmake_recipe = false;
 };
 // Ordinary replacements change only outputCheck.cases. The explicit client
 // modality also owns a source epoch, distinct from every earlier execution.
@@ -215,6 +218,9 @@ struct CompilerCaseRevision {
     std::map<std::string,TextSemantics> previous_case_text_semantics, revised_case_text_semantics;
     std::string previous_client_epoch, revised_client_epoch;
     std::optional<CompilerClientRevision> client_revision;
+    // A recipe can revise an editor whose objective is attached at the lesson
+    // root. Its raw archive has no outputCheck to replace that runtime goal.
+    bool preserves_root_output_check = false;
     // A client review may change a protected source. Each endpoint must keep
     // the graph hashes derived from its own complete authenticated project.
     std::optional<CmakeGraphRequirement> previous_cmake_graph_check;
@@ -293,6 +299,8 @@ struct Block {
     // Runtime-only provenance. Empty preserves all legacy objective bytes.
     // Each explicit client revision creates its own execution-receipt scope.
     std::string compiler_client_epoch;
+    // Exploration has its own stable block identity and never stores an answer.
+    std::optional<SimulationSpec> simulation;
 };
 struct Page {
     std::string stable_id;

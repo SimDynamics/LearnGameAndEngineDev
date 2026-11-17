@@ -80,6 +80,8 @@ def _block(contract, block, where, *, root, document, position, structure_only):
         _validate(contract, where, function, block, where)
     if kind == "math_puzzle":
         _validate(contract, where, contract.validate_math_puzzle_contract, block, where)
+    if kind == "simulation":
+        _validate(contract, where, contract.validate_simulation_contract, block, where)
     if kind == "cpp_compiler":
         kwargs = {} if structure_only else {"document": document, "position": position}
         _validate(contract, where, contract.validate_cpp_compiler, block, where, **kwargs)

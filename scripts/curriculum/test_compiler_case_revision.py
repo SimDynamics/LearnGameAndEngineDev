@@ -1771,6 +1771,266 @@ class RetirementEditorialPrefixTests(unittest.TestCase):
 
 
 
+class CompilerCmakeRecipeRevisionTests(unittest.TestCase):
+    owner = general_fixtures.OWNER
+
+    def publication(self, *, marked=True, extra=None):
+        document = general_fixtures.order_fixtures.synthetic_publication(marked=marked, project=True)
+        if extra is None:
+            return document
+        references = document.pop('referenceAfter')
+        document.pop('stateLayout')
+        document.pop('textSemantics', None)
+        extra(document['pages'][0]['blocks'][1])
+        result = layout.prepare_v2(document, 'es', {'es': document})
+        if 'outputCheck' in layout._blocks(result)[self.owner]:
+            result['referenceAfter'] = references
+        layout.validate(result)
+        return result
+
+    def source(self, document, path='CMakeLists.txt'):
+        return layout._compiler_client_source(layout._blocks(document)[self.owner], path)
+
+    def revise(self, document, source=None, *, path='CMakeLists.txt', return_to=None):
+        if source is None:
+            source = self.source(document, path) + '\ntarget_compile_options(alpha PRIVATE /W4)\n'
+        return layout.revise_compiler_cmake_recipe(document, self.owner,
+            {'path': path, 'source': source}, return_to=return_to)
+
+    def reject(self, operation):
+        with self.assertRaises((ValueError, KeyError, TypeError, IndexError)):
+            operation()
+
+    def open_battery_publication(self):
+        def edit(block):
+            block.pop('outputCheck')
+            block['initialCode'] = ''
+            block['projectFiles'] = [
+                {'path': 'CMakeLists.txt', 'initialCode':
+                 'cmake_minimum_required(VERSION 3.20)\nproject(Recipe LANGUAGES CXX)\n'
+                 'add_library(ajustes STATIC ajuste.cpp)\nadd_executable(alpha main.cpp)\n'
+                 'target_link_libraries(alpha PRIVATE ajustes)\n'},
+                {'path': 'ajuste.cpp', 'initialCode':
+                 'bool ajustar(int valor, int inferior, int superior, int& destino) {\n'
+                 '    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20 ||\n'
+                 '        superior < -20 || superior > 20 || inferior > superior) return false;\n'
+                 '    destino = valor < inferior ? inferior - valor : valor > superior ? superior - valor : 0;\n'
+                 '    return true;\n}\n'},
+                {'path': 'main.cpp', 'initialCode':
+                 'bool ajustar(int, int, int, int&);\n'
+                 'bool comparar(int numero, int valor, int inferior, int superior, int destino, bool acepta, int esperado) {\n'
+                 '    const bool obtenido = ajustar(valor, inferior, superior, destino);\n'
+                 '    return obtenido == acepta && destino == esperado;\n}\n'
+                 'int main() { return comparar(1, 2, 3, 7, 77, true, 1) ? 0 : 1; }\n'}]
+        document = self.publication(marked=False, extra=edit)
+        document['compilerOpenBatteryChecks'] = [{
+            'activity': self.owner, 'library': 'ajuste.cpp', 'test': 'main.cpp',
+            'function': 'ajustar', 'comparison': 'comparar', 'target': 'alpha',
+            'originalCases': [{'value': 2, 'lower': 3, 'upper': 7, 'initial': 77}]}]
+        layout.validate(document)
+        return document
+
+    def test_recipe_preserves_every_case_marker_other_file_and_original_identity(self):
+        before = self.publication()
+        before['textSemantics']['fields'].insert(1, layout.text_semantics.make_field(
+            before, general_fixtures.NOTE, '/text', []))
+        layout.validate(before)
+        untouched = deepcopy(before)
+        after = self.revise(before)
+        record = after['stateLayout']['compilerCaseRevisions'][-1]
+        self.assertEqual(set(record), {'id', 'block', 'recipe', 'cases', 'editorialIndex',
+                                      'historySha256', 'semanticBefore', 'semanticAfter'})
+        old, new = layout._blocks(before)[self.owner], layout._blocks(after)[self.owner]
+        self.assertEqual(record['block'], old)
+        self.assertEqual(record['cases'], old['outputCheck']['cases'])
+        self.assertEqual(record['semanticBefore'], record['semanticAfter'])
+        self.assertEqual(after['textSemantics'], before['textSemantics'])
+        restored = deepcopy(new)
+        restored['projectFiles'][0] = old['projectFiles'][0]
+        self.assertEqual(restored, old)
+        self.assertEqual(before, untouched)
+        self.assertEqual(layout.original_projection(after)['pages'], layout.original_projection(before)['pages'])
+        self.assertEqual(layout._blocks(layout.align_for_previous_validation(before, after))[self.owner], old)
+        for key in ('origin', 'family', 'current', 'additions'):
+            self.assertEqual(after['stateLayout'][key], before['stateLayout'][key])
+        contract.ERRORS.clear()
+        contract.validate_lesson_state_contract(after, 'cmake-recipe-fixture')
+        self.assertEqual(contract.ERRORS, [])
+
+    def test_existing_child_recipes_are_supported_without_creating_paths(self):
+        for path in ('component/CMakeLists.txt', 'cmake/warnings.cmake'):
+            with self.subTest(path=path):
+                before = self.publication(extra=lambda b: b['projectFiles'].append(
+                    {'path': path, 'initialCode': '# Avisos del proyecto.\n'}))
+                after = self.revise(before, 'target_compile_options(alpha PRIVATE /W3)\n', path=path)
+                self.assertEqual(layout._blocks(before)[self.owner]['projectFiles'][:-1],
+                                 layout._blocks(after)[self.owner]['projectFiles'][:-1])
+                layout.validate_transition(before, after)
+
+    def test_recipe_rejects_unsupported_paths_modes_noops_and_metadata(self):
+        before = self.publication()
+        for path in ('main.cpp', 'CMakelists.txt', 'missing.cmake', '../CMakeLists.txt', '', None):
+            self.reject(lambda: self.revise(before, 'project(Other)\n', path=path))
+        for source in (self.source(before), '', 'project(Bad)\0\n', None):
+            self.reject(lambda: self.revise(before, source, path='CMakeLists.txt') if source is not None else
+                layout.revise_compiler_cmake_recipe(before, self.owner, {'path': 'CMakeLists.txt', 'source': None}))
+        single = general_fixtures.order_fixtures.synthetic_publication(marked=False)
+        self.reject(lambda: layout.revise_compiler_cmake_recipe(single, self.owner,
+            {'path': 'main.cpp', 'source': 'int main() {}\n'}))
+        for edit in (lambda b: b.update(sourceFiles=['main.cpp']),
+                     lambda b: b.update(compileCheck={'expected': 'failure'}),
+                     lambda b: b['cmake'].update(target='two targets'),
+                     lambda b: b['projectFiles'][0].update(path='root.cmake')):
+            self.reject(lambda: self.revise(self.publication(marked=False, extra=edit)))
+        self.reject(lambda: layout.revise_compiler_cmake_recipe(before, self.owner,
+            {'path': 'CMakeLists.txt', 'source': 'project(Other)\n', 'draft': True}))
+
+    def test_recipe_cannot_change_cases_semantics_or_mix_client_mode(self):
+        before = self.publication()
+        original_case = layout._blocks(before)[self.owner]['outputCheck']['cases'][0]
+        self.assertIs(type(original_case['exitCode']), int)
+        self.assertEqual(original_case['exitCode'], 0)
+        after = self.revise(before)
+        for edit in (
+            lambda r: r.update(client={'path': 'main.cpp', 'source': 'int main() {}\n'}),
+            lambda r: r['cases'][0].update(standardInput='foreign\n'),
+            lambda r: r['cases'][0].update(exitCode=False),
+            lambda r: r['cases'][0].update(exitCode=0.0),
+            lambda r: r.update(semanticAfter=[]),
+            lambda r: r.update(cases=None)):
+            bad = deepcopy(after)
+            edit(bad['stateLayout']['compilerCaseRevisions'][-1])
+            self.reject(lambda: layout.validate(bad))
+        cases = layout._blocks(before)[self.owner]['outputCheck']['cases']
+        self.reject(lambda: layout.revise_compiler_cases(before, self.owner, cases,
+            case_semantics=[], recipe=after['stateLayout']['compilerCaseRevisions'][0]['recipe']))
+        self.reject(lambda: layout.revise_compiler_client_cases(before, self.owner,
+            after['stateLayout']['compilerCaseRevisions'][0]['recipe'], cases, case_semantics=[]))
+
+    def test_root_generated_battery_keeps_absent_output_check_and_its_complete_goal(self):
+        before = self.open_battery_publication()
+        after = self.revise(before)
+        record = after['stateLayout']['compilerCaseRevisions'][-1]
+        self.assertIsNone(record['cases'])
+        self.assertEqual(record['semanticBefore'], [])
+        self.assertEqual(record['semanticAfter'], [])
+        for document in (before, after, layout.align_for_previous_validation(before, after)):
+            self.assertNotIn('outputCheck', layout._blocks(document)[self.owner])
+        self.assertEqual(before['compilerOpenBatteryChecks'], after['compilerOpenBatteryChecks'])
+        layout.validate_transition(before, after)
+        without_goal = deepcopy(before)
+        without_goal.pop('compilerOpenBatteryChecks')
+        self.reject(lambda: self.revise(without_goal))
+        invalid = deepcopy(after)
+        invalid.pop('compilerOpenBatteryChecks')
+        self.reject(lambda: layout.validate(invalid))
+        invalid = deepcopy(after)
+        invalid['stateLayout']['compilerCaseRevisions'][0]['cases'] = []
+        self.reject(lambda: layout.validate(invalid))
+        self.reject(lambda: layout.revise_compiler_cases(before, self.owner, None, case_semantics=[]))
+
+    def test_explicit_return_keeps_recipe_epochs_and_does_not_hide_removed_history(self):
+        for before in (self.publication(), self.open_battery_publication()):
+            first = self.revise(before)
+            second = self.revise(first, self.source(before) + '\ntarget_compile_options(alpha PRIVATE /W3)\n')
+            self.reject(lambda: self.revise(second, self.source(before)))
+            self.reject(lambda: self.revise(second, self.source(before), return_to=1))
+            returned = self.revise(second, self.source(before), return_to=0)
+            self.assertEqual(layout._blocks(returned)[self.owner], layout._blocks(before)[self.owner])
+            self.assertEqual(returned['stateLayout']['compilerCaseRevisions'][:2],
+                             second['stateLayout']['compilerCaseRevisions'])
+            layout.validate_transition(before, returned)
+            for previous in (before, first, second):
+                self.assertEqual(layout._blocks(layout.align_for_previous_validation(previous, returned))[self.owner],
+                                 layout._blocks(previous)[self.owner])
+            bad = deepcopy(returned)
+            bad['stateLayout']['compilerCaseRevisions'].pop(1)
+            self.reject(lambda: layout.validate(bad))
+
+    def test_recipe_client_cases_orders_and_formatting_share_their_real_timeline(self):
+        for format_first in (False, True):
+            with self.subTest(format_first=format_first):
+                before = self.publication(marked=False)
+                start = general_fixtures.order_fixtures.formatted(before, self.owner) if format_first else before
+                recipe = self.revise(start)
+                prior = layout._blocks(recipe)[self.owner]
+                client = layout.revise_compiler_client_cases(recipe, self.owner,
+                    {'path': 'main.cpp', 'source': self.source(recipe, 'main.cpp').replace('value{}', 'value{1}')},
+                    prior['outputCheck']['cases'], case_semantics=[])
+                cases = layout.revise_compiler_cases(client, self.owner,
+                    [{'standardInput': '4\n', 'outputs': ['4\n']},
+                     {'standardInput': '5\n', 'outputs': ['5\n']}], case_semantics=[])
+                ordered = layout.reorder_compiler_cases(cases, self.owner, [1, 0])
+                formatted = ordered if format_first else general_fixtures.order_fixtures.formatted(ordered, self.owner)
+                final = self.revise(formatted, self.source(formatted).replace('/W4', '/W3'))
+                stages = (before, start, recipe, client, cases, ordered, formatted, final)
+                for previous, current in zip(stages, stages[1:]):
+                    layout.validate_transition(previous, current)
+                    aligned = layout._blocks(layout.align_for_previous_validation(previous, current))[self.owner]
+                    original = layout._blocks(previous)[self.owner]
+                    layout.code_format.require_source_lexical(original, aligned)
+                    self.assertEqual(layout.code_format.source_projection(aligned, original), original)
+                self.assertEqual(layout._compiler_case_order_contract(final, self.owner,
+                    layout._blocks(final)[self.owner]), layout._blocks(before)[self.owner])
+
+    def test_recipe_proof_does_not_authorize_collateral_changes_or_a_forged_prefix(self):
+        before = self.publication()
+        after = self.revise(before)
+        edits = (
+            lambda b: b['projectFiles'][1].update(initialCode='int main() { return 9; }\n'),
+            lambda b: b['cmake'].update(target='beta'),
+            lambda b: b.update(initialCode='int unrelated;\n'),
+            lambda b: b['outputCheck']['cases'][0].update(exitCode=1),
+            lambda b: b['outputCheck'].update(inputComparison='tokens'))
+        for edit in edits:
+            bad = deepcopy(after)
+            edit(layout._blocks(bad)[self.owner])
+            bad['stateLayout']['editorial'][-1]['afterSha256'] = layout.fingerprint(layout._blocks(bad)[self.owner])
+            self.reject(lambda: layout.validate(bad))
+        bad = deepcopy(after)
+        bad['stateLayout']['compilerCaseRevisions'][0]['historySha256'] = '0' * 64
+        self.reject(lambda: layout.validate(bad))
+        bad = deepcopy(after)
+        bad['stateLayout']['compilerCaseRevisions'][0]['block']['initialStandardInput'] = 'changed\n'
+        self.reject(lambda: layout.validate(bad))
+        self.reject(lambda: layout.validate_transition(after, before))
+
+    def test_recipe_retirement_snapshots_keep_their_own_source_epoch(self):
+        before = self.publication(marked=False)
+        first = self.revise(before)
+        retired = layout.retire(first, [general_fixtures.NOTE])
+        after = self.revise(retired, self.source(first).replace('/W4', '/W3'))
+        layout.validate_transition(first, after)
+        snapshot = after['stateLayout']['retirementHistory'][0]
+        view = {'pages': snapshot['pages'], 'stateLayout': {'current': snapshot['current']}}
+        self.assertEqual(layout._blocks(view)[self.owner], layout._blocks(first)[self.owner])
+
+    def test_recipe_cli_preserves_cases_and_refuses_overwrite_or_other_source_options(self):
+        from contextlib import redirect_stderr, redirect_stdout
+        import io
+        from unittest.mock import patch
+        before = self.publication()
+        expected = self.revise(before)
+        with tempfile.TemporaryDirectory(prefix='cmake-recipe-cli-') as directory:
+            root = Path(directory)
+            source, recipe, output = (root / name for name in ('source.json', 'recipe.json', 'new.json'))
+            source.write_text(json.dumps(before), encoding='utf-8')
+            recipe.write_text(json.dumps(expected['stateLayout']['compilerCaseRevisions'][0]['recipe']), encoding='utf-8')
+            original = source.read_bytes()
+            argv = ['stable_state_layout.py', 'revise-compiler-cmake-recipe', str(source),
+                    '--previous', str(source), '--identity', self.owner, '--recipe', str(recipe), '--output', str(output)]
+            with patch.object(sys, 'argv', argv), redirect_stdout(io.StringIO()):
+                layout.main()
+            self.assertEqual(json.loads(output.read_text()), expected)
+            saved = output.read_bytes()
+            for extra in ([], ['--client', str(recipe)], ['--cases', str(recipe)], ['--case-semantics', str(recipe)]):
+                with patch.object(sys, 'argv', argv + extra), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                    layout.main()
+            self.assertEqual(source.read_bytes(), original)
+            self.assertEqual(output.read_bytes(), saved)
+
+
 if __name__ == "__main__":
     unittest.main()
+
 

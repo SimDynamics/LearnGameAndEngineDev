@@ -22,6 +22,7 @@
 #include "presentation/windows/order_code_view.hpp"
 #include "core/order_source_text.hpp"
 #include "presentation/windows/curricular_image_view.hpp"
+#include "presentation/windows/simulation_view.hpp"
 #include "core/learning_flow.hpp"
 #include "core/compiler_flow.hpp"
 #include "core/lesson_entry_policy.hpp"
@@ -142,6 +143,7 @@ struct BlockControls {
     std::unique_ptr<MathPuzzleView> math;
     std::unique_ptr<OrderCodeView> order_view;
     std::unique_ptr<CurricularImageView> image;
+    std::unique_ptr<SimulationView> simulation;
     std::vector<HWND> choices;
     state::Response response;
     std::vector<std::size_t> order;
@@ -865,6 +867,22 @@ struct LessonView {
         for (std::size_t index = 0; index < controls.size(); ++index) {
             const auto& current = block(index); const auto& vm = controls[index];
             if (!vm.rendered || vm.locked) continue;
+            if(current.type==BlockType::simulation) {
+                if(vm.simulation)for(const auto& region:vm.simulation->reading_regions()) {
+                    const auto before=result.size();
+                    add(index,region.target,region.source_text);
+                    if(result.size()==before)continue;
+                    const auto prefix=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id;
+                    const bool title=region.key=="title",description=region.key=="description";
+                    result.back().key=prefix+"/simulation/"+region.key;
+                    result.back().anchor=result.back().key;
+                    result.back().passive_label=region.passive_label;
+                    if(title||description)if(const auto field=current.text_semantics.find(title?"/title":"/description");
+                        field!=current.text_semantics.end()&&field->second.source==region.source_text)
+                        result.back().text_semantics=field->second;
+                }
+                continue;
+            }
             if(current.type==BlockType::image){
                 if(vm.image&&!vm.image->loaded())add(index,vm.status,vm.image->error());
                 add(index,find_item(control_id(index,0)),current.image->alt);
@@ -1230,8 +1248,11 @@ struct LessonView {
                     region.text_semantics=field->second;
                 const auto prefix=lesson.id+'/'+lesson.locale+'/'+page_id+'/'+current.stable_id;
                 region.key=prefix+'/'+std::to_string(control_id(index,part));region.anchor=prefix+"/part/"+std::to_string(part);
-                if(curriculum::retired_block(lesson,current.stable_id))if(const auto next=curriculum::active_block_successor(lesson,current.stable_id))
-                    region.retired_successor=lesson.id+'/'+lesson.locale+'/'+lesson.pages[next->page].stable_id+'/'+lesson.pages[next->page].blocks[next->block].stable_id+"/part/";
+                if(curriculum::retired_block(lesson,current.stable_id))if(const auto next=curriculum::active_block_successor(lesson,current.stable_id)) {
+                    const auto& successor=lesson.pages[next->page].blocks[next->block];
+                    region.retired_successor=lesson.id+'/'+lesson.locale+'/'+lesson.pages[next->page].stable_id+'/'+successor.stable_id+
+                        (successor.type==BlockType::simulation?"/simulation/":"/part/");
+                }
                 result.push_back(std::move(region));
             };
             if(page==0&&find_item(lesson_heading_id)) {
@@ -1243,6 +1264,15 @@ struct LessonView {
             for(std::size_t index=0;index<historical.pages[page].blocks.size();++index){const auto& current=historical.pages[page].blocks[index];
                 if(!available(current))continue;
                 const auto response=state::get_response(data,historical,current);
+                if(current.type==BlockType::simulation) {
+                    for(const auto& entry:std::vector<std::pair<std::string,std::string>>{
+                            {"title",current.simulation->title},{"description",current.simulation->description}}) {
+                        emit(index,current,entry.first=="title"?0:19,entry.second,false,"/"+entry.first);
+                        result.back().key=lesson.id+'/'+lesson.locale+'/'+page_id+'/'+current.stable_id+"/simulation/"+entry.first;
+                        result.back().anchor=result.back().key;
+                    }
+                    continue;
+                }
                 if(current.type==BlockType::image){
                     emit(index,current,0,current.image->alt,false,"/alt");
                     emit(index,current,19,current.image->caption,false,"/caption");continue;
@@ -2111,7 +2141,7 @@ struct LessonView {
             if (std::wstring_view(name) != MSFTEDIT_CLASS) SendMessageW(item, WM_SETFONT, reinterpret_cast<WPARAM>(compact_font&&GetDlgCtrlID(item)>=1000&&(GetDlgCtrlID(item)-1000)%100==36?compact_font:content_font), TRUE);
             else SendMessageW(item,EM_SETZOOM,content_text_scale(),100);
         }
-        for(auto& vm:controls){if(vm.math)vm.math->set_text_scale(content_text_scale());if(vm.fill)vm.fill->set_text_scale(content_text_scale());if(vm.order_view)vm.order_view->set_text_scale(content_text_scale());if(vm.project)vm.project->set_text_scale(content_text_scale());}
+        for(auto& vm:controls){if(vm.simulation)vm.simulation->set_text_scale(content_text_scale());if(vm.math)vm.math->set_text_scale(content_text_scale());if(vm.fill)vm.fill->set_text_scale(content_text_scale());if(vm.order_view)vm.order_view->set_text_scale(content_text_scale());if(vm.project)vm.project->set_text_scale(content_text_scale());}
         if (button_font) DeleteObject(button_font);
         if (content_button_font) DeleteObject(content_button_font);
         button_font = font;
@@ -3091,6 +3121,17 @@ struct LessonView {
             if (const auto saved = state::get_response(data, lesson, current)) vm.response = *saved;
         if(current.type==BlockType::math_puzzle&&!verified_math.contains(key(index)))vm.response.correct=false;
         if (current.type == BlockType::heading) { text_row(current.text, control_id(index, 0), false, current.emphasis, RichTextRole::heading); return; }
+        if(current.type==BlockType::simulation) {
+            vm.simulation=std::make_unique<SimulationView>(pane,*current.simulation,lesson.locale,
+                SimulationCallbacks{[this]{if(!updating){reflow();notify_content();}},
+                    [this]{if(!updating)reflow();},
+                    [this](HWND origin,UINT message,WPARAM keys,LPARAM point){
+                        return drag_message(origin,message,keys,point);
+                    }},current.text_semantics);
+            SetWindowLongPtrW(vm.simulation->window(),GWLP_ID,control_id(index,5));
+            rows.push_back({{vm.simulation->window()},{0},100,false});
+            return;
+        }
         if(current.type==BlockType::image){
             vm.image=std::make_unique<CurricularImageView>(pane,control_id(index,5),lesson.source_path,*current.image);
             actions.push_back({control_id(index,5),ActionType::image_detail,index});
@@ -3616,6 +3657,7 @@ struct LessonView {
                     if(vm.fill&&row.cells[0]==vm.fill->window())row.logical_height=MulDiv(vm.fill->height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
                     if(vm.order_view&&row.cells[0]==vm.order_view->window())row.logical_height=MulDiv(vm.order_view->height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
                     if(vm.image&&row.cells[0]==vm.image->window())row.logical_height=MulDiv(vm.image->height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
+                    if(vm.simulation&&row.cells[0]==vm.simulation->window())row.logical_height=MulDiv(vm.simulation->height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
                     if(vm.project&&row.cells[0]==vm.project->window())row.logical_height=MulDiv(vm.project->height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
                     if(vm.project&&row.cells[0]==vm.project->configuration_window())row.logical_height=MulDiv(vm.project->configuration_height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
                 }
@@ -3844,6 +3886,10 @@ struct LessonView {
     }
     bool enter_key(const MSG& message){
         if(import_open)return false;
+        // The event belongs to the child control even if another window took
+        // focus before a queued key is dispatched. Never turn it into Next page.
+        for(const auto& vm:controls)if(vm.simulation&&
+            (message.hwnd==vm.simulation->window()||IsChild(vm.simulation->window(),message.hwnd)))return false;
         if(message.message==WM_KEYUP){const bool handled=enter_held;enter_held=false;return handled;}
         if(message.message!=WM_KEYDOWN)return false;
         if(enter_held&&(message.lParam&(LPARAM{1}<<30)))return true;
@@ -3851,6 +3897,7 @@ struct LessonView {
         std::optional<std::size_t> focused_block;
         bool editor_owns=false;
         for(std::size_t i=0;focused&&i<controls.size();++i){const auto& vm=controls[i];
+            if(vm.simulation&&(focused==vm.simulation->window()||IsChild(vm.simulation->window(),focused)))return false;
             if(vm.project&&((focused==vm.project->window()||IsChild(vm.project->window(),focused))
                 ||(vm.project->configuration_window()&&(focused==vm.project->configuration_window()||IsChild(vm.project->configuration_window(),focused)))))return false;
             if(focused==vm.source||focused==vm.input){focused_block=i;editor_owns=true;break;}

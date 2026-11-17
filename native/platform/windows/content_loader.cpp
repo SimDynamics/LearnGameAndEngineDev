@@ -981,6 +981,98 @@ void require_math_prompt_contract(std::string_view current,std::string_view prev
     require(live.ordered_frame(live_root,live_ignored)==original.ordered_frame(old_root,old_ignored),
         "A mathematical prompt revision changed evaluation data, property order or numeric tokens");
 }
+SimulationSpec read_simulation(const JsonObject& block) {
+    allowed_keys(block,{"type","id","title","description","simulation"});
+    // Validate the original UTF-16 units before WinRT can replace an unpaired
+    // surrogate during UTF-8 conversion. The core must see the authored data.
+    const auto strict_utf8=[](const winrt::hstring& authored) {
+        for(decltype(authored.size()) at=0;at<authored.size();++at) {
+            const auto unit=authored[at];
+            if(unit>=0xd800&&unit<=0xdbff) {
+                require(at+1<authored.size()&&authored[at+1]>=0xdc00&&authored[at+1]<=0xdfff,
+                    "A simulation string contains an invalid Unicode scalar");
+                ++at;
+            }else require(unit<0xdc00||unit>0xdfff,
+                "A simulation string contains an invalid Unicode scalar");
+        }
+        return utf8(authored);
+    };
+    const auto strict_text=[&](const JsonObject& object,std::string_view name) {
+        const auto property=object.GetNamedValue(key(name));
+        require(property.ValueType()==JsonValueType::String,"Expected a simulation string");
+        return strict_utf8(property.GetString());
+    };
+    SimulationSpec spec;
+    spec.title=strict_text(block,"title");spec.description=strict_text(block,"description");
+    if(block.HasKey(L"id")) {
+        const auto id=strict_text(block,"id");const auto visible=key(id);
+        require(id.size()<=128&&id.find('\0')==id.npos&&
+                std::ranges::any_of(visible,[](wchar_t c){return c!=0x85&&!narration_space(c);}),
+            "A simulation block id must be nonblank bounded text");
+    }
+    const auto value=block.GetNamedObject(L"simulation");
+    allowed_keys(value,{"version","model","view","valueType","values","sort",
+        "editable","labels","explanations","outputTemplate","scenarios"});
+    require(integer(value.GetNamedValue(L"version"),1)==1,
+        "Unsupported simulation version");
+    spec.model=strict_text(value,"model");
+    const std::map<std::string,SimulationViewMode> modes{
+        {"array",SimulationViewMode::array},{"groups",SimulationViewMode::groups},
+        {"walkthrough",SimulationViewMode::walkthrough},
+        {"candidates",SimulationViewMode::candidates},{"summary",SimulationViewMode::summary}};
+    const auto mode=strict_text(value,"view");
+    require(modes.contains(mode),"Unknown simulation presentation");
+    spec.view=modes.at(mode);
+    const auto kind=strict_text(value,"valueType");
+    require(kind=="integer"||kind=="text","Unknown simulation value type");
+    spec.text_values=kind=="text";
+    spec.sort=value.GetNamedBoolean(L"sort");
+    spec.editable=value.GetNamedBoolean(L"editable");
+    const auto read_values=[&](const JsonArray& entries) {
+        require(entries.Size()<=64,"A simulation accepts at most 64 values");
+        std::vector<SimulationValue> result;
+        for(const auto& entry:entries) {
+            if(spec.text_values) {
+                require(entry.ValueType()==JsonValueType::String,
+                    "A text simulation requires string values");
+                result.emplace_back(strict_utf8(entry.GetString()));
+            }else{
+                require(entry.ValueType()==JsonValueType::Number,
+                    "An integer simulation requires numeric values");
+                const auto number=entry.GetNumber();
+                require(std::isfinite(number)&&std::trunc(number)==number&&
+                        number>=-2147483648.0&&number<=2147483647.0,
+                    "A simulation integer must fit in signed 32 bits");
+                result.emplace_back(static_cast<std::int64_t>(number));
+            }
+        }
+        return result;
+    };
+    spec.values=read_values(array(value,"values"));
+    const auto labels=value.GetNamedObject(L"labels");
+    allowed_keys(labels,{"array","start","end","frequency","maximum","leaders","output"},true);
+    spec.labels={strict_text(labels,"array"),strict_text(labels,"start"),strict_text(labels,"end"),
+        strict_text(labels,"frequency"),strict_text(labels,"maximum"),strict_text(labels,"leaders"),strict_text(labels,"output")};
+    const auto explanations=value.GetNamedObject(L"explanations");
+    allowed_keys(explanations,{"initial","start","advance","newMaximum","tie","belowMaximum","done","empty"},true);
+    spec.explanations={strict_text(explanations,"initial"),strict_text(explanations,"start"),
+        strict_text(explanations,"advance"),strict_text(explanations,"newMaximum"),
+        strict_text(explanations,"tie"),strict_text(explanations,"belowMaximum"),
+        strict_text(explanations,"done"),strict_text(explanations,"empty")};
+    spec.output_template=strict_text(value,"outputTemplate");
+    if(value.HasKey(L"scenarios")) {
+        const auto scenarios=array(value,"scenarios");
+        require(scenarios.Size()<=8,"A simulation accepts at most eight scenarios");
+        for(const auto& entry:scenarios) {
+            const auto scenario=entry.GetObject();
+            allowed_keys(scenario,{"id","label","values"},true);
+            spec.scenarios.push_back({strict_text(scenario,"id"),strict_text(scenario,"label"),
+                read_values(array(scenario,"values"))});
+        }
+    }
+    validate_simulation_spec(spec);
+    return spec;
+}
 Block read_block(const JsonObject& value,std::string_view original,
     const JsonObject* authenticated_source_before=nullptr);
 std::string bibliography_string(const winrt::hstring& value){
@@ -1648,9 +1740,10 @@ std::optional<StateReadingRevision> composed_feedback_reading_revision(const Jso
 // Case-order provenance is independent of the closed compiler expansions.
 // Canonical full cases, including runtime channels and comparison modes, are
 // compared separately: state_fingerprint intentionally omits some channels.
-std::string compiler_case_contract(const JsonObject& block) {
-    require(text(block,"type")=="cpp_compiler"&&block.HasKey(L"outputCheck")&&
+std::string compiler_case_contract(const JsonObject& block,bool allow_root_output=false) {
+    require(text(block,"type")=="cpp_compiler"&&(block.HasKey(L"outputCheck")||allow_root_output)&&
         !block.HasKey(L"compileCheck"),"Case ordering requires an output-check compiler");
+    if(!block.HasKey(L"outputCheck"))return "root-output-contract";
     return fingerprint(without_compiler_guidance(block).GetNamedObject(L"outputCheck"));
 }
 JsonObject permuted_compiler_cases(const JsonObject& before,
@@ -1699,13 +1792,18 @@ void copy_compiler_client(const JsonObject& target,const JsonObject& source,std:
     if(!source.HasKey(L"cmake")&&source.HasKey(L"initialCode"))
         target.Insert(L"initialCode",source.GetNamedValue(L"initialCode"));
 }
+bool is_cmake_recipe_path(std::string_view path) {
+    const auto leaf=path.substr(path.find_last_of('/')+1);
+    return leaf=="CMakeLists.txt"||path.ends_with(".cmake");
+}
 bool compiler_client_matches(const JsonObject& source,const JsonObject& expected,
         std::string_view path,bool allow_format) {
     if(source.HasKey(L"projectFiles")!=expected.HasKey(L"projectFiles")||
             source.HasKey(L"cmake")!=expected.HasKey(L"cmake"))return false;
     const auto same=[&](const std::string& before,const std::string& after) {
         return before==after||(allow_format&&curriculum::code_format::equivalent(
-            before,after,curriculum::code_format::Language::cpp));
+            before,after,is_cmake_recipe_path(path)?curriculum::code_format::Language::cmake:
+                curriculum::code_format::Language::cpp));
     };
     if(!source.HasKey(L"projectFiles"))
         return path=="main.cpp"&&!source.HasKey(L"cmake")&&!source.HasKey(L"sourceFiles")&&
@@ -1763,6 +1861,43 @@ JsonObject revised_compiler_cases(const JsonObject& before,const JsonArray& case
     require(fingerprint(result)!=fingerprint(before),"A compiler case revision must change its declared cases");
     return result;
 }
+JsonObject revised_compiler_recipe(const JsonObject& before,const JsonObject& item) {
+    const auto recipe=item.GetNamedObject(L"recipe");
+    allowed_keys(recipe,{"path","source"},true);
+    require(!before.HasKey(L"compileCheck"),"A CMake recipe cannot change a compilation diagnostic");
+    for(const auto& value:array(before,"projectFiles"))
+        allowed_keys(value.GetObject(),{"path","initialCode"},true);
+    const auto parsed=read_block(before,utf8(before.Stringify()));
+    require(parsed.type==BlockType::cpp_compiler&&parsed.cmake&&before.HasKey(L"projectFiles"),
+        "A recipe revision requires an existing CMake project");
+    require(std::ranges::any_of(parsed.project_files,[](const auto& file) {
+        return is_cpp_source_file(file.first);
+    }),"A recipe revision must retain an existing C++ source");
+    const auto path=text(recipe,"path"),source=text(recipe,"source");
+    const auto position=compiler_client_file(before,path);
+    require(is_cmake_recipe_path(path)&&position.has_value(),
+        "A recipe revision must select an existing CMakeLists.txt or .cmake file");
+    require(!source.empty()&&source.find('\0')==source.npos&&
+        source!=text(array(before,"projectFiles").GetObjectAt(*position),"initialCode"),
+        "A recipe revision requires changed nonempty text without NUL");
+    if(before.HasKey(L"outputCheck")) {
+        (void)compiler_case_contract(before);
+        require(fingerprint(array(item,"cases"))==
+            fingerprint(array(before.GetNamedObject(L"outputCheck"),"cases")),
+            "A recipe revision must retain every original output case");
+    } else {
+        require(item.GetNamedValue(L"cases").ValueType()==JsonValueType::Null&&
+            array(item,"semanticBefore").Size()==0&&array(item,"semanticAfter").Size()==0,
+            "A root-evaluated recipe must preserve absent cases and case semantics");
+    }
+    require(fingerprint(array(item,"semanticBefore"))==fingerprint(array(item,"semanticAfter")),
+        "A recipe revision cannot change case semantics");
+    auto result=JsonObject::Parse(before.Stringify());
+    array(result,"projectFiles").GetObjectAt(*position).Insert(L"initialCode",
+        JsonValue::CreateStringValue(key(source)));
+    (void)read_block(result,utf8(result.Stringify()));
+    return result;
+}
 struct CompilerCaseVersion {
     JsonObject before,after;
     std::vector<std::size_t> order;
@@ -1771,6 +1906,24 @@ struct CompilerCaseVersion {
     std::size_t editorial_index=0;
     std::string client_path,client_epoch;
 };
+void validate_compiler_recipe_objectives(const JsonObject& root,const Lesson& lesson) {
+    for(const auto& revision:lesson.state_layout.compiler_case_revisions) {
+        if(!revision.preserves_root_output_check)continue;
+        require(revision.client_revision&&revision.client_revision->cmake_recipe&&
+            root.HasKey(L"compilerOpenBatteryChecks"),
+            "A recipe without outputCheck needs its authored root battery objective");
+        const auto entries=array(root,"compilerOpenBatteryChecks");
+        bool authored=false;
+        for(const auto& entry:entries)
+            if(text(entry.GetObject(),"activity")==revision.id)authored=true;
+        require(authored,"A recipe cannot borrow another editor's root battery objective");
+        const auto position=stable_block_position(lesson,revision.id);
+        require(position.has_value(),"A recipe must retain its active objective owner");
+        const auto& owner=lesson.pages.at(position->page).blocks.at(position->block);
+        require(owner.cmake&&owner.output_check&&!owner.output_check->cases.empty()&&!owner.compile_check,
+            "A root-evaluated recipe must retain its complete runtime output contract");
+    }
+}
 struct CompilerCaseHistory {
     std::vector<CompilerCaseVersion> versions;
     std::map<std::string,std::set<std::size_t>> published_epochs;
@@ -1814,7 +1967,7 @@ CompilerCaseHistories compiler_case_histories(
         auto& history=result[std::string(record.id)];
         const auto before=JsonObject::Parse(key(record.raw_json));
         if(!history.versions.empty())
-            require(compiler_case_contract(before)==compiler_case_contract(history.versions.back().after),
+            require(compiler_case_contract(before,true)==compiler_case_contract(history.versions.back().after,true),
                 "Case ordering changed an existing case, channel or comparison mode");
         const auto after=record.order?permuted_compiler_cases(before,*record.order):
             JsonObject::Parse(key(record.after_raw_json));
@@ -1871,10 +2024,10 @@ CompilerCaseHistories compiler_case_histories(
 std::size_t compiler_case_epoch(const JsonObject& source,
         const CompilerCaseHistory& history,bool historical,
         std::optional<std::size_t> editorial_prefix={}) {
-    const auto contract=compiler_case_contract(source);
+    const auto contract=compiler_case_contract(source,true);
     const auto matches=[&](std::size_t epoch) {
         const auto expected=epoch?history.versions.at(epoch-1).after:history.versions.front().before;
-        if(contract!=compiler_case_contract(expected))return false;
+        if(contract!=compiler_case_contract(expected,true))return false;
         return std::ranges::all_of(history.client_paths,[&](const auto& path) {
             return compiler_client_matches(source,expected,path,history.source_formatted);
         });
@@ -1916,8 +2069,11 @@ JsonObject compiler_case_projection(const JsonObject& source,
             copy_compiler_client(result,version.before,version.client_path);
         }
         if(version.case_revision) {
-            result.GetNamedObject(L"outputCheck").Insert(L"cases",
-                array(version.before.GetNamedObject(L"outputCheck"),"cases"));
+            if(version.before.HasKey(L"outputCheck"))
+                result.GetNamedObject(L"outputCheck").Insert(L"cases",
+                    array(version.before.GetNamedObject(L"outputCheck"),"cases"));
+            else require(!result.HasKey(L"outputCheck"),
+                "A recipe history cannot introduce an unrecorded output contract");
         } else {
             const auto cases=array(result.GetNamedObject(L"outputCheck"),"cases");
             require(cases.Size()==version.order.size(),"Case-order projection changed its authenticated case count");
@@ -2119,7 +2275,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             "Compiler case revisions require Spanish stateLayout v2");
         for(const auto& value:records) {
             const auto item=value.GetObject();
-            if(item.HasKey(L"client"))allowed_keys(item,
+            if(item.HasKey(L"recipe"))allowed_keys(item,
+                {"id","block","cases","editorialIndex","historySha256","semanticBefore","semanticAfter","recipe"},true);
+            else if(item.HasKey(L"client"))allowed_keys(item,
                 {"id","block","cases","editorialIndex","historySha256","semanticBefore","semanticAfter","client"},true);
             else allowed_keys(item,
                 {"id","block","cases","editorialIndex","historySha256","semanticBefore","semanticAfter"},true);
@@ -2128,7 +2286,10 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 "Unknown or inactive compiler case-revision owner");
             const auto previous=item.GetNamedObject(L"block");
             const auto client=item.HasKey(L"client")?std::optional<JsonObject>{item.GetNamedObject(L"client")}:std::nullopt;
-            const auto revised=revised_compiler_cases(previous,array(item,"cases"),client);
+            const auto recipe=item.HasKey(L"recipe")?std::optional<JsonObject>{item.GetNamedObject(L"recipe")}:std::nullopt;
+            const auto revised=recipe?revised_compiler_recipe(previous,item):
+                revised_compiler_cases(previous,array(item,"cases"),client);
+            record.preserves_root_output_check=recipe&&!previous.HasKey(L"outputCheck");
             record.raw_json=utf8(previous.Stringify());record.after_raw_json=utf8(revised.Stringify());
             record.sha256=fingerprint(previous);record.record_sha256=fingerprint(item);
             record.history_sha256=text(item,"historySha256");
@@ -2136,15 +2297,19 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             record.editorial_index=integer(item.GetNamedValue(L"editorialIndex"),100000);
             const auto before_block=read_block(previous,record.raw_json);
             const auto after_block=read_block(revised,record.after_raw_json);
-            require(before_block.output_check&&after_block.output_check,
+            require((before_block.output_check&&after_block.output_check)||
+                (record.preserves_root_output_check&&!before_block.output_check&&!after_block.output_check),
                 "A compiler case revision requires both complete output contracts");
             record.previous_initial_code=before_block.initial_code;
             record.previous_project_files=before_block.project_files;
-            record.previous_output_check=*before_block.output_check;
-            record.revised_output_check=*after_block.output_check;
-            if(client) {
+            if(!record.preserves_root_output_check) {
+                record.previous_output_check=*before_block.output_check;
+                record.revised_output_check=*after_block.output_check;
+            }
+            if(client||recipe) {
                 CompilerClientRevision change;
-                change.path=text(*client,"path");change.revised_initial_code=after_block.initial_code;
+                change.path=text(recipe?*recipe:*client,"path");
+                change.cmake_recipe=recipe.has_value();change.revised_initial_code=after_block.initial_code;
                 change.revised_project_files=after_block.project_files;
                 record.client_revision=std::move(change);
             }
@@ -2262,7 +2427,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             require((retired.next.empty() || (valid_id(retired.next) && result.signatures.contains(retired.next))) &&
                     retired.next != retired.id,"Invalid retired activity successor");
             const auto block = item.GetNamedObject(L"block"); const auto type = text(block,"type");
-            require(type == "heading" || type == "paragraph" || type == "note" || type == "code" || type == "cpp_compiler" || type == "image",
+            require(type == "heading" || type == "paragraph" || type == "note" || type == "code" || type == "cpp_compiler" || type == "image" || type == "simulation",
                     "Only compiler activities and their presentation blocks can be retired");
             auto projected=block;
             if(const auto format=source_format_originals.find(retired.id);
@@ -2772,12 +2937,13 @@ Block read_block(const JsonObject& value,std::string_view original,
     const std::map<std::string, BlockType> types{{"heading", BlockType::heading}, {"paragraph", BlockType::paragraph}, {"note", BlockType::note}, {"code", BlockType::code},
         {"multiple_choice", BlockType::multiple_choice}, {"output_prediction", BlockType::output_prediction}, {"fill_code", BlockType::fill_code},
         {"order_code", BlockType::order_code}, {"cpp_compiler", BlockType::cpp_compiler},
-        {"inline_fill_code",BlockType::inline_fill_code}, {"drag_fill_code",BlockType::drag_fill_code}, {"image",BlockType::image}};
+        {"inline_fill_code",BlockType::inline_fill_code}, {"drag_fill_code",BlockType::drag_fill_code}, {"image",BlockType::image}, {"simulation",BlockType::simulation}};
     const std::set<std::string> mathematics{"math_puzzle","math_multiple_choice_single","math_multiple_choice_multi","math_numeric_input",
         "math_multi_input","math_expression_input","math_structured_answer","math_equation_fill_blanks","math_ordering_drag","math_number_line",
         "math_slider_interaction","math_matching_drag","math_coordinate_graph_builder","math_geometry_builder","math_rigid_angle_copy","math_segment_transport"};
     require(types.contains(type) || mathematics.contains(type), "Unsupported block type: " + type);
     result.type = mathematics.contains(type) ? BlockType::math_puzzle : types.at(type);
+    if(result.type==BlockType::simulation)result.simulation=read_simulation(value);
     if(result.type==BlockType::image){
         allowed_keys(value,{"type","id","imageId","src","alt","caption"});
         result.image=ImageResource{text(value,"imageId"),text(value,"src"),text(value,"alt"),optional_text(value,"caption")};
@@ -2987,6 +3153,7 @@ struct SemanticPublicFields {
         const auto type=kind(source);
         if(type=="heading"||type=="paragraph"||type=="note")string_field(source,"text","");
         else if(type=="image")for(const auto name:{"alt","caption"})string_field(source,name,"");
+        else if(type=="simulation")for(const auto name:{"title","description"})string_field(source,name,"");
         else if(type=="multiple_choice"||type=="fill_code"||type=="output_prediction"||type=="order_code"||type=="drag_fill_code"||type=="inline_fill_code"){
             for(const auto name:{"question","explanation"})string_field(source,name,"");
             if(type=="multiple_choice")strings(values(source,"options"),"/options");
@@ -3265,7 +3432,7 @@ void resolve_addresses(Lesson& lesson) {
         if(format)apply_source_format(previous,*format);
         revision.previous_initial_code=previous.initial_code;
         revision.previous_project_files=previous.project_files;
-        revision.previous_output_check=*previous.output_check;
+        if(!revision.preserves_root_output_check)revision.previous_output_check=*previous.output_check;
         revision.previous_source_format_initial_code=previous.source_format_original_initial_code;
         revision.previous_source_format_project_files=previous.source_format_original_project_files;
         revision.previous_client_epoch=client_epoch(revision.id,source,revision.editorial_index);
@@ -5108,6 +5275,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
+        validate_compiler_recipe_objectives(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);
@@ -5229,6 +5397,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
+        validate_compiler_recipe_objectives(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);
