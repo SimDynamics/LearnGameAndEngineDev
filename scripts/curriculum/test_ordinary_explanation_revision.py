@@ -690,25 +690,52 @@ class OrdinaryExplanationMainTest(unittest.TestCase):
         self.assertEqual(0, code, output)
         self.assertIn("5 lecciones", output)
 
-    def test_main_dispatches_historical_check_for_unchanged_choice_prose(self):
-        """The published option/answer contract is checked even with same prose."""
+    def test_main_fast_path_checks_entire_choice_not_just_unchanged_prose(self):
+        """Avoid redundant state validation but never exempt changed responses."""
         target = "boundary_cases"
-        identity = fixtures.CASES[target]["identity"]
+        case = fixtures.CASES[target]
+        relative = PREFIX + case["lesson"]
+        identity = case["identity"]
         captured = contract.preserves_previous_exercise
+
         def unchanged_choice(name, before, after):
             if name == target:
                 after.clear()
                 after.update(deepcopy(before))
+
         with patch.object(contract, "preserves_previous_exercise", wraps=captured) as guard:
             code, output = self.run_main(unchanged_choice)
         self.assertEqual(0, code, output)
-        matches = [call for call in guard.call_args_list
-                   if (len(call.args) >= 5
-                       and call.args[3].get("type") == "multiple_choice"
-                       and call.args[3].get("id") == layout._blocks(candidate(target)[0])[identity].get("id")
-                       and call.args[3].get("question") == call.args[4].get("question")
-                       and call.args[3].get("explanation") == call.args[4].get("explanation"))]
-        self.assertTrue(matches, "Unchanged question prose bypassed its historical answer guard")
+        self.assertFalse([
+            call for call in guard.call_args_list
+            if (len(call.args) >= 5 and call.args[0] == relative
+                and call.args[3].get("type") == "multiple_choice")
+        ], "An identical choice was needlessly sent through expensive legacy validators")
+
+        before, _, _ = candidate(target)
+        old = layout._blocks(before)[identity]
+        # The prose remains literally identical in both invalid edits.
+        for field in ("correctIndex", "options"):
+            altered = deepcopy(old)
+            if field == "correctIndex":
+                altered[field] = (old[field] + 1) % len(old["options"])
+            else:
+                altered[field][0] += " Respuesta alterada."
+            with self.subTest(field=field):
+                self.assertEqual(old["question"], altered["question"])
+                self.assertEqual(old["explanation"], altered["explanation"])
+                self.assertFalse(contract.preserves_previous_exercise(
+                    relative, *case["historical"], old, altered,
+                    previous_document=before, current_document=before))
+
+        def changed_answer(name, before, after):
+            if name == target:
+                after.clear()
+                after.update(deepcopy(before))
+                layout._blocks(after)[identity]["correctIndex"] = (
+                    old["correctIndex"] + 1) % len(old["options"])
+        code, output = self.run_main(changed_answer)
+        self.assertEqual(1, code, output)
 
     def test_main_checks_multiple_choice_explanations_instead_of_skipping_them(self):
         def remove_marking(name, before, after):
