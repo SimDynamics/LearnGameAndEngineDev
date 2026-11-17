@@ -143,6 +143,10 @@ def _index(contract, document, key, path, course_id):
                          f"[{course_id}] entrada {number} de {key} requiere id y title textuales")
         if not valid:
             continue
+        # The native index contract has exactly these three authored fields.
+        # Unknown metadata must not be silently ignored on future courses.
+        contract.require(set(entry) == {"id", "number", "title"}, path,
+                         f"[{course_id}] entrada {number} de {key} contiene campos no admitidos")
         label = "lecciones" if key == "lessons" else "unidades"
         contract.require(type(entry.get("number")) is int and entry["number"] == number,
                          path, f"[{course_id}] numeración de {label} discontinua o no entera")
