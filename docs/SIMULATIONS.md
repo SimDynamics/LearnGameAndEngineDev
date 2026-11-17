@@ -239,6 +239,29 @@ solamente los grupos que ya terminaron. `done` conserva el resultado final.
 Un array vacío produce únicamente `empty`, sin accesos a elementos ni líneas
 de salida.
 
+### Qué cambió en el paso
+
+La vista nativa de recorrido muestra **Cambios desde el estado anterior**
+calculados a partir de dos estados consecutivos de la traza. Se enumeran
+únicamente las variables que cambiaron: grupo, inicio, límite exclusivo,
+frecuencia, máximo y candidatos, usando las etiquetas de la lección para
+los campos que pueden personalizarse. Si aparece nueva salida, el panel
+indica cuántas líneas se añadieron, sin repetir ni adelantar la salida
+futura. Los valores de texto en los candidatos conservan comillas y las
+aclaraciones de vacío o espacios.
+
+Al saltar directamente del paso 1 al 9, el panel compara **el paso 8 con
+el 9**, no el último paso que el estudiante visitó. En `groups` y
+`candidates`, contrasta los grupos terminados consecutivos; el primer
+grupo se compara con el estado inicial. La vista `array`, el resumen,
+el primer paso del recorrido y los escenarios vacíos no inventan un
+cambio anterior.
+
+El panel es una lectura derivada y no calificable, accesible al lector
+de Windows sólo en el estado actual. Si el texto ocupa demasiadas
+líneas, mantiene desplazamiento nativo y acceso por teclado. No añade
+campos al JSON ni modifica respuestas, logros o datos de entrada.
+
 Anterior y Siguiente recorren los estados calculados. El selector **Ir a un paso**
 permite saltar directamente a una fase del recorrido, por ejemplo al primer grupo,
 a un empate o al resultado final. En la vista **candidates**, el selector muestra

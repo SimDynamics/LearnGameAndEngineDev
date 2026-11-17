@@ -22,7 +22,7 @@ using namespace lgaed::curriculum;
 using namespace lgaed::presentation;
 constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_id=110,previous_id=111,next_id=112,reset_id=113,input_id=115,apply_id=116,restore_id=117,error_id=118,
-    input_format_id=120,step_selector_id=121,original_order_id=122,group_first_id=200;
+    input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,group_first_id=200;
 std::filesystem::path failure_captures;
 void capture(HWND window,const std::filesystem::path& path);
 void fitted_text(SimulationView& view);
@@ -310,6 +310,126 @@ void group_colors_are_visible(HWND canvas) {
     const auto first=GetPixel(dc,inset,y),second=GetPixel(dc,bounds.right/6+inset,y),third=GetPixel(dc,bounds.right/3+inset,y);
     SelectObject(dc,old);DeleteObject(bitmap);DeleteDC(dc);ReleaseDC(canvas,screen);
     check(first!=CLR_INVALID&&first!=second&&second==third,"Array mode did not visibly distinguish equal-value groups by color");
+}
+void calculated_step_changes(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    const auto trace=build_simulation_trace(spec);
+    SimulationView view(host,spec,"es");resize(view,820);
+    const auto delta=GetDlgItem(view.window(),transition_id);
+    check(delta&&!IsWindowVisible(delta)&&text(view,transition_id).empty(),
+        "An initial frame fabricated a previous state");
+    const auto delta_key=[&](const SimulationView& current){
+        for(const auto& region:current.reading_regions())
+            if(region.key.find("/transition")!=std::string::npos)return region.key;
+        return std::string{};
+    };
+    check(delta_key(view).empty(),"The reader exposed a delta before the first observation");
+    check(view.go_to_step(1),"The first counted frame is missing");
+    const auto first=text(view,transition_id);
+    check(IsWindowVisible(delta)&&first.find("Cambios desde el estado anterior:")!=std::string::npos&&
+        first.find("grupo: 0 → 1")!=std::string::npos&&
+        first.find("fin: 0 → 1")!=std::string::npos&&
+        first.find("frecuencia: 0 → 1")!=std::string::npos&&
+        first.find("Salida:") == std::string::npos,
+        "The first count does not show its exact changed variables");
+    const auto first_key=delta_key(view);
+    check(!first_key.empty(),"The current-step changes are missing from narration");
+    check(view.go_to_step(2),"Cannot inspect a completed group decision");
+    const auto maximum=text(view,transition_id);
+    check(maximum.find("máxima: 0 → 1")!=std::string::npos&&
+        maximum.find("mayores: ninguno → -8")!=std::string::npos&&
+        maximum.find("Salida: +1 línea")!=std::string::npos&&
+        maximum.find("10:1")==std::string::npos&&delta_key(view)!=first_key,
+        "A decision delta omitted the new maximum or exposed future output");
+    check(view.go_to_step(4),"Cannot select a later count directly");
+    const auto progress=text(view,transition_id);
+    check(progress.find("fin: 2 → 3")!=std::string::npos&&
+        progress.find("frecuencia: 1 → 2")!=std::string::npos&&
+        progress.find("máxima:")==std::string::npos&&
+        progress.find("Salida:")==std::string::npos,
+        "A direct jump compared the last visited frame instead of adjacent model states");
+    check(view.go_to_step(7),"Cannot inspect a later maximum");
+    const auto new_max=text(view,transition_id);
+    check(new_max.find("máxima: 1 → 4")!=std::string::npos&&
+        new_max.find("mayores: -8 → 3")!=std::string::npos&&
+        new_max.find("Salida: +1 línea")!=std::string::npos&&
+        trace.frames[7].output=="-8:1\n3:4\n",
+        "A later decision changed candidates or accumulated output incorrectly");
+    check(view.go_to_step(view.step_count()-1),"The terminal frame is missing");
+    check(text(view,transition_id).find("frecuencia: 1 → 0")!=std::string::npos&&
+        text(view,transition_id).find("Salida:")==std::string::npos,
+        "The final frame invented another emitted line");
+    check(view.go_to_step(0)&&!IsWindowVisible(delta)&&delta_key(view).empty(),
+        "Reset leaked a completed transition to the initial frame");
+    check(spec==authored,"Navigating transitions modified the authored lesson");
+    set_edit_text(GetDlgItem(view.window(),input_id),"2147483648");
+    click(view,apply_id);
+    check(!text(view,error_id).empty()&&text(view,transition_id).empty(),
+        "Invalid edited data fabricated a transition despite rejection");
+    set_edit_text(GetDlgItem(view.window(),input_id),"1\n3\n1");
+    click(view,apply_id);
+    check(view.go_to_step(2)&&text(view,transition_id).find("mayores: ninguno → 1")!=std::string::npos,
+        "The transition still uses the old data after applying a new valid array");
+    click(view,restore_id);
+    check(view.step_index()==0&&!IsWindowVisible(delta)&&
+        view.go_to_step(2)&&text(view,transition_id)==maximum,
+        "Restoration did not reconstruct the original verified transition");
+
+    const auto scenario=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(scenario,CB_SETCURSEL,2,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(view.step_count()==1&&text(view,transition_id).empty()&&!IsWindowVisible(delta)&&
+        delta_key(view).empty(),"An empty scenario retained a previous data transition");
+
+    for(const auto mode:{SimulationViewMode::groups,SimulationViewMode::candidates}) {
+        auto derived=fixture(mode);derived.editable=false;
+        SimulationView other(host,derived,"es");resize(other,850);
+        const auto current=text(other,transition_id);
+        check(current.find("grupo: 0 → 1")!=std::string::npos&&
+            current.find("Salida: +1 línea")!=std::string::npos,
+            "A completed-group view did not compare its first group with the empty state");
+        check(other.go_to_step(1),"Cannot inspect the next completed group");
+        const auto next=text(other,transition_id);
+        check(next.find("grupo: 1 → 2")!=std::string::npos&&
+            next.find("máxima: 1 → 4")!=std::string::npos&&
+            next.find("Salida: +1 línea")!=std::string::npos,
+            "Group navigation does not compare adjacent completed groups");
+    }
+    for(const auto mode:{SimulationViewMode::array,SimulationViewMode::summary}) {
+        auto static_spec=fixture(mode);
+        SimulationView still(host,static_spec,"es");resize(still,820);
+        check(!IsWindowVisible(GetDlgItem(still.window(),transition_id))&&
+            text(still,transition_id).empty(),
+            "A static simulation fabricated an intermediate transition");
+    }
+    auto texts=fixture(SimulationViewMode::walkthrough);
+    texts.text_values=true;texts.scenarios.clear();
+    texts.values={std::string(""),std::string(" "),std::string(" ")};
+    SimulationView quoted(host,texts,"es");resize(quoted,820);
+    check(quoted.go_to_step(2)&&
+        text(quoted,transition_id).find("mayores: ninguno → \"\" (cadena vacía)")!=std::string::npos,
+        "An empty text candidate was confused with no candidate");
+    check(quoted.go_to_step(5)&&
+        text(quoted,transition_id).find("mayores: \"\" (cadena vacía) → \" \" (1 espacio)")!=std::string::npos,
+        "Significant spaces were discarded from a candidate change");
+
+    auto multiline=fixture(SimulationViewMode::walkthrough);
+    multiline.scenarios.clear();multiline.output_template="Valor {value}\nFrecuencia {frequency}";
+    SimulationView lines(host,multiline,"es");resize(lines,820);
+    check(lines.go_to_step(2)&&
+        text(lines,transition_id).find("Salida: +2 líneas")!=std::string::npos,
+        "Multiple output lines were incorrectly counted as one");
+    auto long_labels=fixture(SimulationViewMode::walkthrough);
+    long_labels.scenarios.clear();
+    long_labels.labels.leaders=std::string(80,'L');
+    long_labels.values.clear();
+    for(int value=0;value<64;++value)long_labels.values.emplace_back(static_cast<std::int64_t>(value));
+    SimulationView narrow(host,long_labels,"es");narrow.set_text_scale(150);
+    resize(narrow,340);bounds(narrow,"long transition labels at 150 percent");
+    check(narrow.go_to_step(2)&&
+        !text(narrow,transition_id).empty(),"Long changed-variable labels were clipped or hidden");
 }
 void navigation(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);const auto authored=spec;const auto trace=build_simulation_trace(spec);
@@ -965,6 +1085,7 @@ int main(int argc,char** argv)try {
         catch(...){++failures;std::cerr<<"FAIL simulation scenario "<<label<<": unknown native failure\n";}
         pump(host.value);
     };
+    run("calculated_step_changes",[&]{calculated_step_changes(host.value);});
     run("navigation",[&]{navigation(host.value,captures);});
     run("walkthrough_cell_selection",[&]{walkthrough_cell_selection(host.value);});
     run("original_order_comparison",[&]{original_order_comparison(host.value);});

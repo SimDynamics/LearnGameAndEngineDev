@@ -25,7 +25,7 @@ constexpr int title_id=100,description_id=101,scenario_label_id=102,scenario_id=
     array_label_id=104,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_label_id=109,output_id=110,previous_id=111,next_id=112,reset_id=113,
     input_label_id=114,input_id=115,apply_id=116,restore_id=117,error_id=118,
-    groups_label_id=119,input_format_id=120,step_selector_id=121,original_order_id=122,group_first_id=200;
+    groups_label_id=119,input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,group_first_id=200;
 bool passive_message(UINT message) {
     return message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||
         message==WM_MOUSEMOVE||message==WM_CAPTURECHANGED||message==WM_CANCELMODE||message==WM_NCDESTROY;
@@ -168,7 +168,7 @@ struct SimulationView::Impl {
         return child;
     }
     HWND label(int id) {
-        const bool scrolling=id==output_id||id==explanation_id||id==original_order_id;
+        const bool scrolling=id==output_id||id==explanation_id||id==original_order_id||id==transition_id;
         const auto child=create(MSFTEDIT_CLASS,id,ES_READONLY|ES_MULTILINE|(scrolling?ES_AUTOVSCROLL|WS_VSCROLL:0));
         SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(base_font),FALSE);
         SendMessageW(child,EM_SETTARGETDEVICE,0,0);
@@ -223,7 +223,7 @@ struct SimulationView::Impl {
         reader_theme::apply(host,reader_theme::Surface::card);fonts();
         (void)CoCreateInstance(CLSID_AccPropServices,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(accessibility.GetAddressOf()));
         for(const auto id:{title_id,description_id,scenario_label_id,array_label_id,original_order_id,
-                step_id,explanation_id,output_label_id,input_label_id,error_id,groups_label_id})label(id);
+                step_id,explanation_id,transition_id,output_label_id,input_label_id,error_id,groups_label_id})label(id);
         const auto selector=create(L"COMBOBOX",scenario_id,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL);
         SendMessageW(selector,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
         SendMessageW(selector,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(L"Datos originales"));
@@ -335,6 +335,49 @@ struct SimulationView::Impl {
         if(state.leaders.empty())return "ninguno";
         std::string result;for(const auto& value:state.leaders){if(!result.empty())result+=", ";result+=simulation_value_display_text(value);}return result;
     }
+    // A phase transition is derived only from validated, already-calculated
+    // frames. Direct jumps still compare adjacent *model* states instead of
+    // accidentally comparing the last state visited by the learner.
+    std::string transition_text()const {
+        if(spec.view==SimulationViewMode::array||spec.view==SimulationViewMode::summary)return {};
+        if(spec.view!=SimulationViewMode::walkthrough&&trace.candidate_frames.empty())return {};
+        const SimulationFrame* before=nullptr;
+        if(spec.view==SimulationViewMode::walkthrough){
+            if(position==0)return {};
+            before=&trace.frames.at(position-1);
+        }else if(spec.view==SimulationViewMode::groups||spec.view==SimulationViewMode::candidates)
+            before=position?&trace.frames.at(trace.candidate_frames.at(position-1)):&trace.frames.front();
+        if(!before)return {};
+        const auto& after=frame();
+        std::vector<std::string> changes;
+        const auto number=[&](std::string_view label,std::size_t previous,std::size_t current){
+            if(previous!=current)
+                changes.push_back(std::string(label)+": "+std::to_string(previous)+" → "+std::to_string(current));
+        };
+        number("grupo",before->group,after.group);
+        number(spec.labels.start,before->begin,after.begin);
+        number(spec.labels.end,before->end,after.end);
+        number(spec.labels.frequency,before->frequency,after.frequency);
+        number(spec.labels.maximum,before->maximum,after.maximum);
+        if(before->leaders!=after.leaders)
+            changes.push_back(spec.labels.leaders+": "+leader_text(*before)+" → "+leader_text(after));
+        if(before->output!=after.output){
+            // The core appends each group's output. Show the new line count,
+            // not the complete output of another or future frame.
+            if(after.output.size()>=before->output.size()&&
+                    after.output.compare(0,before->output.size(),before->output)==0){
+                const auto from=after.output.begin()+
+                    static_cast<std::string::difference_type>(before->output.size());
+                const auto lines=std::count(from,after.output.end(),'\n');
+                changes.push_back(spec.labels.output+": +"+std::to_string(lines)+
+                    (lines==1?" línea":" líneas"));
+            }else changes.push_back(spec.labels.output+": actualizada");
+        }
+        if(changes.empty())return {};
+        std::string result="Cambios desde el estado anterior:";
+        for(const auto& change:changes)result+='\n'+change;
+        return result;
+    }
     void update() {
         layout_valid=false;requested_heights.clear();
         const auto& state=frame();
@@ -351,6 +394,7 @@ struct SimulationView::Impl {
         else if(spec.view==SimulationViewMode::groups)status=trace.groups.empty()?"No hay grupos":"Grupo "+std::to_string(position+1)+" de "+std::to_string(trace.groups.size());
         else if(spec.view==SimulationViewMode::summary)status="Resumen de los grupos";
         set_label(step_id,status);set_label(explanation_id,state.explanation);
+        set_label(transition_id,transition_text());
         if(stepping())SendMessageW(item(step_selector_id),CB_SETCURSEL,static_cast<WPARAM>(position),0);
         statistics.clear();
         if(spec.view==SimulationViewMode::candidates){
@@ -504,8 +548,8 @@ struct SimulationView::Impl {
         const auto text_row=[&](int id,bool shown=true,int minimum=0){const auto found=visible_text.find(id);const auto text=found==visible_text.end()?std::string_view{}:std::string_view(found->second);
             shown=shown&&(!text.empty()||minimum>0);
             int full_height=std::max(minimum,measure(text,available,id==title_id?heading_font:font));
-            const bool scrolling=id==output_id||id==explanation_id||id==original_order_id;
-            const auto limit=scrolling?sp(id==original_order_id?180:id==output_id?240:400):std::numeric_limits<int>::max();
+            const bool scrolling=id==output_id||id==explanation_id||id==original_order_id||id==transition_id;
+            const auto limit=scrolling?sp(id==original_order_id?180:id==transition_id?220:id==output_id?240:400):std::numeric_limits<int>::max();
             int h=std::min(full_height,limit);
             if(shown&&move){bool settled=false;
                 // REQRESIZE already supplies the requested control size. Adding
@@ -550,7 +594,7 @@ struct SimulationView::Impl {
         text_row(step_id);
         place(step_selector_id,margin,top,available,sp(240),stepping());
         if(stepping())top+=sp(38)+px(8);
-        text_row(explanation_id);
+        text_row(explanation_id);text_row(transition_id);
         const bool stats=spec.view!=SimulationViewMode::array;
         const auto stats_height=statistics_layout(available);place(variables_id,margin,top,available,stats_height,stats);if(stats)top+=stats_height+px(8);
         const bool output=spec.view==SimulationViewMode::walkthrough||spec.view==SimulationViewMode::candidates||spec.view==SimulationViewMode::summary;
@@ -677,7 +721,8 @@ struct SimulationView::Impl {
         add(array_label_id,prefix+"array-label");
         add(original_order_id,"state/"+std::to_string(scenario)+"/"+input_key+"/original-order");
         result.push_back({prefix+"array",array_text(),canvas,true});
-        add(step_id,prefix+"step");add(explanation_id,prefix+"explanation");add(variables_id,prefix+"variables");
+        add(step_id,prefix+"step");add(explanation_id,prefix+"explanation");
+        add(transition_id,prefix+"transition");add(variables_id,prefix+"variables");
         add(output_label_id,prefix+"output-label");add(output_id,prefix+"output");add(input_label_id,"input-label");add(error_id,prefix+"error");
         return result;
     }
