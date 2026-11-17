@@ -1245,9 +1245,17 @@ struct SimulationView::Impl {
             return flags;}
         if(self->callbacks.passive_gesture&&passive_message(message)){
             const auto handled=self->callbacks.passive_gesture(item,message,wp,lp);if(handled&&message!=WM_NCDESTROY)return *handled;}
-        if(message==WM_MOUSEWHEEL){SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE};
-            if(!GetScrollInfo(item,SB_VERT,&scroll)||!scroll.nPage||scroll.nMax-scroll.nMin+1<=static_cast<int>(scroll.nPage))
-                return SendMessageW(GetParent(item),message,wp,lp);}
+        if(message==WM_MOUSEWHEEL){
+            // Read-only RichEdit must not interpret Ctrl+wheel as an
+            // independent, unbounded text zoom. Its layout and narration
+            // belong to the lesson reader's scale and reflow contract.
+            if(GET_KEYSTATE_WPARAM(wp)&MK_CONTROL)
+                return SendMessageW(GetParent(item),message,wp,lp);
+            SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE};
+            if(!GetScrollInfo(item,SB_VERT,&scroll)||!scroll.nPage||
+                scroll.nMax-scroll.nMin+1<=static_cast<int>(scroll.nPage))
+                return SendMessageW(GetParent(item),message,wp,lp);
+        }
         if(message==WM_NCDESTROY)RemoveWindowSubclass(item,passive_proc,1);
         return DefSubclassProc(item,message,wp,lp);
     }
