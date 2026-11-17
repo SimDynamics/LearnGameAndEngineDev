@@ -421,7 +421,20 @@ aclaraciones de vacío o espacios.
 En las fases `start` y `advance`, el panel identifica el **dato contado**
 mediante su índice `end - 1` y el valor calculado de la copia ordenada.
 No presenta `end` como un acceso válido, ni afirma que la decisión final
-de un grupo haya leído otro elemento. Al terminar cada grupo, el panel
+de un grupo haya leído otro elemento.
+
+Además, muestra la **relación con el elemento anterior**. Para el índice
+cero indica que todavía no existe un elemento previo. En los demás
+índices ya contados presenta los dos índices y sus valores: si coinciden,
+explica por qué el grupo continúa; si son diferentes, explica por qué
+comienza un grupo nuevo. Por ejemplo, con `[-8, 3, 3]`, la lectura del
+índice 1 compara `-8` con `3` y abre un grupo; la del índice 2
+compara `3` con `3` y mantiene el mismo grupo. Sólo se consultan los
+índices `end - 2` y `end - 1` cuando existen; nunca el elemento futuro
+`datos[end]`. Las cadenas vacías y los espacios conservan su
+representación explícita entre comillas.
+
+Al terminar cada grupo, el panel
 también muestra la comparación efectiva entre su frecuencia y el
 **máximo anterior a la decisión**: `>` reemplaza candidatos, `=` agrega
 el valor empatado y `<` los conserva. Por ejemplo, `4 > 1` explica

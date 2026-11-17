@@ -1075,6 +1075,125 @@ void calculated_step_changes(HWND host) {
     check(narrow.go_to_step(2)&&
         !text(narrow,transition_id).empty(),"Long changed-variable labels were clipped or hidden");
 }
+void neighboring_values_explain_group_boundaries(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    const auto current=[&]{return text(view,transition_id);};
+    const auto reading=[&]{
+        for(const auto& region:view.reading_regions())
+            if(region.key.find("/transition")!=std::string::npos)
+                return region.source_text;
+        return std::string{};
+    };
+    check(view.step_index()==0&&current().empty()&&reading().empty(),
+        "The initial frame invented a previous-element comparison");
+    check(view.go_to_step(1)&&
+        current().find("Dato contado: índice 0 = -8")!=std::string::npos&&
+        current().find("Primera posición: el índice 0 no tiene un elemento anterior.")!=std::string::npos&&
+        current().find("Relación con el anterior:")==std::string::npos,
+        "The first element tried to read the preceding index -1");
+    check(view.go_to_step(2)&&
+        current().find("Relación con el anterior:")==std::string::npos,
+        "A completed-group decision falsely compared another pair of elements");
+
+    check(view.go_to_step(3),"Missing the first element of the second group");
+    const auto boundary=current();
+    check(boundary.find("Relación con el anterior: índice 0 = -8; índice 1 = 3. Son diferentes: comienza un grupo nuevo.")!=std::string::npos&&
+        boundary.find("índice 2 =")==std::string::npos&&
+        reading()==boundary,
+        "The second group did not explain the distinct previous observed value");
+    check(view.go_to_step(4),"Missing the repeated value");
+    const auto equal=current();
+    check(equal.find("Relación con el anterior: índice 1 = 3; índice 2 = 3. Son iguales: continúa el grupo.")!=std::string::npos&&
+        equal.find("índice 3 =")==std::string::npos,
+        "Repeated neighbors did not explain why the group continues");
+    check(view.go_to_step(6)&&
+        current().find("Relación con el anterior: índice 3 = 3; índice 4 = 3. Son iguales: continúa el grupo.")!=std::string::npos,
+        "The last repeated value compared a future neighbor or wrong index");
+    check(view.go_to_step(8)&&
+        current().find("Relación con el anterior: índice 4 = 3; índice 5 = 10. Son diferentes: comienza un grupo nuevo.")!=std::string::npos&&
+        current().find("índice 6 =")==std::string::npos,
+        "The final group compared a past visited frame rather than adjacent values");
+    for(const auto stage:{7,9,10}){
+        check(view.go_to_step(static_cast<std::size_t>(stage))&&
+            current().find("Relación con el anterior:")==std::string::npos&&
+            current().find("Primera posición:")==std::string::npos,
+            "Decision or final frames fabricated a new comparison of neighbors");
+    }
+    check(view.go_to_step(3)&&current()==boundary&&
+        view.go_to_step(4)&&current()==equal,
+        "Direct jumps rewrote neighboring-element comparisons");
+
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(selector,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(view.step_index()==0&&current().empty(),
+        "A scenario change retained a previous neighboring comparison");
+    check(view.go_to_step(4)&&
+        current().find("Relación con el anterior: índice 1 = 4; índice 2 = 9. Son diferentes: comienza un grupo nuevo.")!=std::string::npos,
+        "The tie scenario used old array values for the group boundary");
+
+    set_edit_text(GetDlgItem(view.window(),input_id),"1\n1\n2");
+    click(view,apply_id);
+    check(view.step_index()==0&&current().empty(),
+        "Applying new data kept the previous comparison visible");
+    check(view.go_to_step(2)&&
+        current().find("Relación con el anterior: índice 0 = 1; índice 1 = 1. Son iguales: continúa el grupo.")!=std::string::npos,
+        "Newly applied equal values did not recalculate the comparison");
+    check(view.go_to_step(4)&&
+        current().find("Relación con el anterior: índice 1 = 1; índice 2 = 2. Son diferentes: comienza un grupo nuevo.")!=std::string::npos,
+        "Newly applied distinct values reused an older boundary");
+    const auto saved=current();
+    set_edit_text(GetDlgItem(view.window(),input_id),"2147483648");
+    click(view,apply_id);
+    check(!text(view,error_id).empty()&&current()==saved,
+        "Rejected input incorrectly replaced the applied neighbor comparison");
+    click(view,restore_id);
+    check(view.step_index()==0&&current().empty()&&
+        view.go_to_step(4)&&
+        current().find("Relación con el anterior: índice 1 = 4; índice 2 = 9.")!=std::string::npos,
+        "Restoring a scenario did not recover its own neighbor values");
+
+    SendMessageW(selector,CB_SETCURSEL,2,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(view.step_count()==1&&current().empty()&&reading().empty(),
+        "An empty array fabricated predecessor comparisons");
+
+    auto text_spec=fixture(SimulationViewMode::walkthrough);
+    text_spec.text_values=true;text_spec.scenarios.clear();
+    text_spec.values={std::string(""),std::string(" "),std::string(" ")};
+    SimulationView words(host,text_spec,"es");resize(words,820);
+    check(words.go_to_step(3)&&
+        text(words,transition_id).find(
+            "Relación con el anterior: índice 0 = \"\" (cadena vacía); índice 1 = \" \" (1 espacio). Son diferentes: comienza un grupo nuevo.")!=std::string::npos,
+        "An empty text value was confused with a significant space at the boundary");
+    check(words.go_to_step(4)&&
+        text(words,transition_id).find(
+            "Relación con el anterior: índice 1 = \" \" (1 espacio); índice 2 = \" \" (1 espacio). Son iguales: continúa el grupo.")!=std::string::npos,
+        "Two space-only text values were incorrectly treated as distinct");
+
+    auto unchanged=fixture(SimulationViewMode::walkthrough);
+    unchanged.scenarios.clear();unchanged.sort=false;
+    unchanged.values=numbers({-8,0,0});
+    SimulationView already_sorted(host,unchanged,"es");resize(already_sorted,820);
+    check(already_sorted.go_to_step(3)&&
+        text(already_sorted,transition_id).find(
+            "Relación con el anterior: índice 0 = -8; índice 1 = 0. Son diferentes: comienza un grupo nuevo.")!=std::string::npos,
+        "Neighbor comparisons should work without sorting a copy");
+    for(const auto mode:{SimulationViewMode::array,SimulationViewMode::summary,
+                         SimulationViewMode::groups,SimulationViewMode::candidates}){
+        auto other_spec=fixture(mode);
+        SimulationView other(host,other_spec,"es");resize(other,820);
+        check(text(other,transition_id).find("Relación con el anterior:")==std::string::npos,
+            "Non-walkthrough views incorrectly claimed to count a new element");
+    }
+    view.set_text_scale(150);resize(view,340);
+    bounds(view,"empty-neighbor scenario at 150 percent");
+    check(spec==authored,"Neighbor-comparison exploration modified the authored lesson");
+}
 void completed_scenario_comparison(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -2191,6 +2310,7 @@ int main(int argc,char** argv)try {
     run("histogram_card_navigation",[&]{histogram_card_navigation(host.value);});
     run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
     run("candidate_frequency_filter",[&]{candidate_frequency_filter(host.value);});
+    run("neighboring_values_explain_group_boundaries",[&]{neighboring_values_explain_group_boundaries(host.value);});
     run("calculated_step_changes",[&]{calculated_step_changes(host.value);});
     run("completed_scenario_comparison",[&]{completed_scenario_comparison(host.value);});
     run("decision_navigation",[&]{decision_navigation(host.value);});

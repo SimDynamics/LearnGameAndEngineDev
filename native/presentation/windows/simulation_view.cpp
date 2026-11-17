@@ -510,8 +510,25 @@ struct SimulationView::Impl {
         // Derive both statements from actual frames, never authored prose.
         if(after.phase==SimulationPhase::start||after.phase==SimulationPhase::advance){
             const auto observed=after.end-1;
+            const auto& current_value=trace.ordered.at(observed);
             changes.push_back("Dato contado: índice "+std::to_string(observed)+" = "+
-                simulation_value_display_text(trace.ordered.at(observed)));
+                simulation_value_display_text(current_value));
+            if(observed==0){
+                changes.push_back("Primera posición: el índice 0 no tiene un elemento anterior.");
+            }else{
+                // Both values have already been observed in the immutable
+                // computed trace. Never compare against the NEXT element
+                // or claim the exclusive 'end' boundary is an array index.
+                const auto& previous_value=trace.ordered.at(observed-1);
+                const bool equal=previous_value==current_value;
+                changes.push_back("Relación con el anterior: índice "+
+                    std::to_string(observed-1)+" = "+
+                    simulation_value_display_text(previous_value)+
+                    "; índice "+std::to_string(observed)+" = "+
+                    simulation_value_display_text(current_value)+
+                    (equal?". Son iguales: continúa el grupo.":
+                        ". Son diferentes: comienza un grupo nuevo."));
+            }
         }else if(after.phase==SimulationPhase::new_maximum||
                  after.phase==SimulationPhase::tie||
                  after.phase==SimulationPhase::below_maximum){
