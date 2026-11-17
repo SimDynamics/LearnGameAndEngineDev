@@ -420,6 +420,9 @@ void expansion_bounds_and_modes() {
     spec = original;
     validate_simulation_spec(spec);
     rejected([&] { (void)build_simulation_trace(spec, huge); }, "Oversized edited expansion was accepted");
+    const auto encoded=simulation_input_text(huge,SimulationInputFormat::json);
+    rejected([&] { (void)simulation_parse_input_trace(spec,encoded,SimulationInputFormat::json); },
+        "Reusable parsed trace bypassed the 8 MiB expansion limit");
     check(spec == original, "Rejected expansion modified the authored model");
 }
 } // namespace
