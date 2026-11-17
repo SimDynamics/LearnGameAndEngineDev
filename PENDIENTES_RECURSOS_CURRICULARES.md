@@ -10,6 +10,14 @@ Sin pendientes.
 
 ## CAPACIDADES POR IMPLEMENTAR E INTEGRAR
 
+### SIMULACION_ARRAY_RUNS_ETIQUETAS_VACIAS
+
+- **ESTADO:** PENDIENTE. La simulación `arrayRunsV1` integrada admite textos no vacíos; el ejercicio curricular también admite una etiqueta vacía.
+- **UBICACIÓN:** Programación 1, U5L13, `app/src/main/assets/content/es/programming/cpp_fundamentals/colecciones_y_recorridos/lesson_contar_frecuencias_y_conservar_empates.json`, construcción de etiquetas y sus casos de cadena vacía. El contrato actual de `docs/SIMULATIONS.md` restringe cada texto a uno o más bytes.
+- **OBJETIVO:** representar fielmente los mismos datos que utiliza el programa, distinguiendo una colección vacía de una colección que contiene la cadena vacía. No retirar este caso del currículo para acomodarlo al modelo.
+- **CAPACIDAD Y EXPERIENCIA DESEADAS:** admitir valores de texto vacíos en los datos y escenarios, ofrecer una forma inequívoca de introducirlos y mostrarlos, y distinguirlos de un texto compuesto por espacios. Codex elige la representación y la edición; la etiqueta visible no debe cambiar el dato comparado ni su frecuencia. Conservar las entradas válidas anteriores.
+- **ESTADOS CORRECTOS Y VERIFICACIÓN:** `[]` no tiene grupos, máximo cero y ningún candidato; `[""]` tiene un grupo de frecuencia uno y la cadena vacía como candidato. `["", "patio", "patio"]` produce los grupos `[0,1)` y `[1,3)`, frecuencias uno y dos, y máximo dos alcanzado por patio. Distinguir también `["", " "]`: dos datos diferentes, ambos con frecuencia uno. Comprobar selección, recorrido, retroceso, escenarios y edición mediante las capacidades generales, sin una excepción por lección. Work integrará la simulación al llegar a esa explicación; ahora continúa la revisión desde U1.
+
 ### CURRICULO_NUEVA_EDICION_Y_REINICIO_LIMITADO_AL_CURSO
 
 - **ESTADO:** PENDIENTE. El usuario autoriza rehacer Programación 1 desde el inicio y reiniciar su progreso para que el contenido anterior no limite la enseñanza ni las prácticas.
