@@ -168,11 +168,12 @@ El panel **entrada aplicada antes de ordenar** es una lectura independiente de
 la salida calculada. Al avanzar o retroceder en el mismo recorrido, no se vuelve
 a escribir su texto: conserva la selección y el punto donde el estudiante estaba
 leyendo. También conserva su ubicación cuando cambia el zoom, el DPI o el ancho
-disponible, incluyendo un intento de zoom rechazado. Al elegir otro escenario o
-aplicar datos distintos inicia una lectura nueva, **aunque el texto de origen
-coincida exactamente**; en ese caso la selección y el desplazamiento se
-reinician. Un borrador inválido no sustituye la entrada aplicada ni pierde la
-lectura anterior. La regresión Win32 `original_order_reading_session` comprueba
+disponible, incluyendo un intento de zoom rechazado. Al elegir otro escenario,
+aplicar datos o restablecerlos comienza **una sesión de lectura nueva**, incluso
+cuando se aplican exactamente los mismos valores y el texto de origen coincide:
+la selección y el desplazamiento se reinician. Un borrador inválido no inicia
+otra sesión, no sustituye la entrada aplicada ni pierde la lectura anterior.
+La regresión Win32 `original_order_reading_session` comprueba
 estos límites con una lista de 64 valores; requiere ejecución local en Windows.
 
 En cada casilla de la **copia ordenada** aparece también su **índice de origen**
