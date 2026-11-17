@@ -303,6 +303,286 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
             self.assertEqual(original_bytes, source.read_bytes())
 
 
+class GeneralChoiceCompositionTests(unittest.TestCase):
+    """Compose real U9 option/prose revisions across a skipped publication."""
+    OTHER = "block_0006_0001"
+    THIRD = "block_0003_0002"
+    QUESTION = (
+        "¿Qué prueba permite distinguir un rechazo correcto de una operación "
+        "que escribe antes de comprobar?"
+    )
+    EXPLANATION = (
+        "Después del rechazo, consulta la cantidad guardada. Devolver false "
+        "no demuestra que se haya conservado: el bool sólo comunica el rechazo."
+    )
+
+    @classmethod
+    def setUpClass(cls):
+        cls.original = json.loads(fixture_bytes("--write-original"))
+        layout.validate(cls.original)
+
+    @staticmethod
+    def marker(document, identity, path):
+        return next(field for field in document["textSemantics"]["fields"]
+                    if field["block"] == identity and field["path"] == path)
+
+    def choice(self, document):
+        return layout.revise_choice_editorial(document, OWNER, 0, REVISED)
+
+    def ordinary(self, document, fields=("question",)):
+        edits = {}
+        for field in fields:
+            if field == "question":
+                edits[field] = {"text": self.QUESTION, "spans": []}
+            else:
+                edits[field] = {
+                    "text": self.EXPLANATION,
+                    "spans": [
+                        layout.text_semantics.select(
+                            self.EXPLANATION, "false", "output", reading="natural"),
+                        layout.text_semantics.select(
+                            self.EXPLANATION, "bool", "cpp", reading="technical"),
+                    ],
+                }
+        return layout.revise_ordinary_editorial(document, self.OTHER, edits)
+
+    def test_real_question_revision_accepts_all_three_edges_and_publication_guard(self):
+        import validar_json_programacion as contract
+
+        original = deepcopy(self.original)
+        reviewed = self.choice(original)
+        current = self.ordinary(reviewed)
+        for label, before, after in (
+                ("A-B", original, reviewed), ("B-C", reviewed, current),
+                ("A-C", original, current)):
+            with self.subTest(edge=label):
+                layout.validate_transition(before, after)
+                self.assertEqual(layout.validate(original), layout.validate(after))
+        self.assertEqual(self.original, original, "Authoring changed the input lesson")
+        self.assertEqual(layout._blocks(reviewed)[OWNER], layout._blocks(current)[OWNER])
+        for field in ("origin", "current", "family"):
+            self.assertEqual(original["stateLayout"][field], current["stateLayout"][field])
+        self.assertEqual(reviewed["stateLayout"]["choiceRevisions"],
+                         current["stateLayout"]["choiceRevisions"])
+        self.assertEqual(reviewed["textSemantics"]["rootFields"],
+                         current["textSemantics"]["rootFields"])
+
+        aligned = layout.align_for_previous_validation(original, current)
+        self.assertEqual(original["pages"][7]["blocks"][2],
+                         aligned["pages"][7]["blocks"][2])
+        self.assertEqual(self.QUESTION, aligned["pages"][6]["blocks"][1]["question"])
+        path = "app/src/main/assets/content/es/" + RELATIVE
+        old, new = layout._blocks(original)[self.OTHER], layout._blocks(current)[self.OTHER]
+        self.assertTrue(contract.preserves_ordinary_explanation_revision(
+            path, 6, 1, old, new, original, current))
+        self.assertTrue(contract.preserves_previous_exercise(
+            path, 6, 1, old, new, previous_document=original, current_document=current))
+
+    def test_reverse_order_and_one_or_two_changed_fields(self):
+        for fields in (("question",), ("explanation",), ("question", "explanation")):
+            with self.subTest(fields=fields):
+                ordinary_first = self.ordinary(self.original, fields)
+                choice_last = self.choice(ordinary_first)
+                choice_first = self.choice(self.original)
+                ordinary_last = self.ordinary(choice_first, fields)
+                for before, after in (
+                        (self.original, ordinary_first), (ordinary_first, choice_last),
+                        (self.original, choice_last), (choice_first, ordinary_last),
+                        (self.original, ordinary_last)):
+                    layout.validate_transition(before, after)
+                self.assertEqual(choice_last["pages"], ordinary_last["pages"])
+                self.assertEqual(choice_last["textSemantics"], ordinary_last["textSemantics"])
+                self.assertEqual(choice_last["stateLayout"]["choiceRevisions"],
+                                 ordinary_last["stateLayout"]["choiceRevisions"])
+                # Histories reflect the actual publication order, not a merged proof.
+                self.assertNotEqual(choice_last["stateLayout"]["editorial"],
+                                    ordinary_last["stateLayout"]["editorial"])
+
+    def test_several_revisions_other_owners_and_explicit_return_remain_authenticated(self):
+        first = self.ordinary(self.choice(self.original))
+        second = layout.revise_ordinary_editorial(first, self.OTHER, {
+            "question": {"text": "¿Qué prueba observa el estado que queda después del rechazo?",
+                         "spans": []}})
+        third_text = layout._blocks(self.original)[self.THIRD]["explanation"] + (
+            " La regla de unicidad debe comprobarse donde se administra la colección.")
+        third = layout.revise_ordinary_editorial(second, self.THIRD, {
+            "explanation": {"text": third_text, "spans": []}})
+        several = layout.revise_choice_editorial(
+            third, "block_0005_0004", 2,
+            "Acceder siempre al elemento cero para mostrar algún dato.")
+        for current in (first, second, third, several):
+            layout.validate_transition(self.original, current)
+            self.assertEqual(layout.validate(self.original), layout.validate(current))
+        self.assertEqual(2, len(several["stateLayout"]["choiceRevisions"]))
+
+        original_owner = layout._blocks(self.original)[self.OTHER]
+        owner_history = [edge for edge in self.original["stateLayout"]["editorial"]
+                         if edge["id"] == self.OTHER]
+        restored = layout.revise_ordinary_editorial(several, self.OTHER, {
+            "question": {"text": original_owner["question"],
+                         "spans": deepcopy(self.marker(
+                             self.original, self.OTHER, "/question")["spans"])},
+            "returnTo": len(owner_history)})
+        layout.validate_transition(several, restored)
+        layout.validate_transition(self.original, restored)
+        proof = restored["stateLayout"]["editorial"][-1]
+        self.assertEqual(len(owner_history), proof["returnTo"]["revision"])
+        self.assertEqual(layout._blocks(several)[self.OTHER],
+                         proof["returnTo"]["previousBlock"])
+        for mutation in ("owner", "prefix", "snapshot", "revision"):
+            invalid = deepcopy(restored)
+            edge = invalid["stateLayout"]["editorial"][-1]
+            if mutation == "owner":
+                edge["id"] = self.THIRD
+            elif mutation == "prefix":
+                edge["returnTo"]["historySha256"] = "0" * 64
+            elif mutation == "snapshot":
+                edge["returnTo"]["previousBlock"]["options"][0] = "Origen inventado"
+            else:
+                edge["returnTo"]["revision"] = 999
+            with self.subTest(return_mutation=mutation), self.assertRaises(layout.LayoutError):
+                layout.validate_transition(self.original, invalid)
+
+    def test_previously_unmarked_field_or_first_overlay_can_be_authored(self):
+        for mode in ("missing-field", "missing-overlay"):
+            with self.subTest(mode=mode):
+                original = deepcopy(self.original)
+                if mode == "missing-field":
+                    original["textSemantics"]["fields"] = [
+                        field for field in original["textSemantics"]["fields"]
+                        if (field["block"], field["path"]) != (self.OTHER, "/question")]
+                else:
+                    del original["textSemantics"]
+                layout.validate(original)
+                reviewed = self.choice(original)
+                current = self.ordinary(reviewed)
+                layout.validate_transition(original, current)
+                self.assertEqual(self.OTHER, current["textSemantics"]["fields"][-1]["block"])
+                self.assertEqual("/question", current["textSemantics"]["fields"][-1]["path"])
+                reverse = self.choice(self.ordinary(original))
+                layout.validate_transition(original, reverse)
+                self.assertEqual(current["textSemantics"], reverse["textSemantics"])
+                if mode == "missing-overlay":
+                    self.assertEqual({"version", "fields"}, set(current["textSemantics"]))
+                    self.assertEqual(1, len(current["textSemantics"]["fields"]))
+                    self.assertIsNone(current["stateLayout"]["choiceRevisions"][0]["semanticBefore"])
+                    reverse_fields = self.ordinary(reviewed, ("explanation", "question"))
+                    layout.validate_transition(original, reverse_fields)
+                    self.assertEqual(["/explanation", "/question"],
+                                     [field["path"] for field in reverse_fields["textSemantics"]["fields"]])
+                    for mutation in ("root", "unrelated", "owner"):
+                        invalid = deepcopy(current)
+                        if mutation == "root":
+                            invalid["textSemantics"]["rootFields"] = []
+                        elif mutation == "unrelated":
+                            invalid["textSemantics"]["fields"].append(
+                                layout.text_semantics.make_field(
+                                    invalid, OWNER, "/question", []))
+                        else:
+                            invalid["textSemantics"]["fields"] = [
+                                layout.text_semantics.make_field(
+                                    invalid, self.THIRD, "/question", [])]
+                        layout.validate(invalid)
+                        with self.subTest(extra=mutation), self.assertRaises(layout.LayoutError):
+                            layout.validate_transition(original, invalid)
+
+    def test_valid_unrelated_mark_changes_are_not_covered_by_the_new_proof(self):
+        current = self.ordinary(self.choice(self.original))
+        for identity, path in (
+                (self.OTHER, "/explanation"), (self.OTHER, "/options/0"),
+                (self.OTHER, "/reviewFeedback/0"), (self.THIRD, "/question"),
+                (OWNER, "/question")):
+            invalid = deepcopy(current)
+            marker = self.marker(invalid, identity, path)
+            self.assertTrue(marker["spans"])
+            marker["spans"][0]["role"] = "prose"
+            # The descriptor is individually valid. The composed transition
+            # must still preserve the exact unchanged source's authored marks.
+            layout.validate(invalid)
+            with self.subTest(owner=identity, path=path), self.assertRaisesRegex(
+                    layout.LayoutError, "unrelated text marker"):
+                layout.validate_transition(self.original, invalid)
+        for mutation in ("roots", "order", "version"):
+            invalid = deepcopy(current)
+            if mutation == "roots":
+                del invalid["textSemantics"]["rootFields"]
+            elif mutation == "order":
+                invalid["textSemantics"]["fields"].reverse()
+            else:
+                invalid["textSemantics"]["version"] = 2
+            with self.subTest(metadata=mutation), self.assertRaises(layout.LayoutError):
+                layout.validate_transition(self.original, invalid)
+
+    def test_changed_field_needs_current_descriptor_and_preserves_nonempty_spans(self):
+        for fields, path in ((("question",), "/question"), (("explanation",), "/explanation")):
+            current = self.ordinary(self.choice(self.original), fields)
+            mutations = ["missing", "stale", "wrong-owner"]
+            if path == "/explanation":
+                mutations.append("empty-spans")
+            for mutation in mutations:
+                invalid = deepcopy(current)
+                marker = self.marker(invalid, self.OTHER, path)
+                if mutation == "missing":
+                    invalid["textSemantics"]["fields"].remove(marker)
+                elif mutation == "stale":
+                    marker["sourceSha256"] = self.marker(
+                        self.original, self.OTHER, path)["sourceSha256"]
+                elif mutation == "wrong-owner":
+                    marker["block"] = self.THIRD
+                else:
+                    marker["spans"] = []
+                    layout.validate(invalid)
+                with self.subTest(field=path, mutation=mutation), self.assertRaises(layout.LayoutError):
+                    layout.validate_transition(self.original, invalid)
+
+    def test_complete_payload_archive_and_proof_are_still_required(self):
+        current = self.ordinary(self.choice(self.original))
+        for mutation in ("answer", "option", "choice-owner", "archive", "proof"):
+            invalid = deepcopy(current)
+            if mutation == "answer":
+                layout._blocks(invalid)[self.OTHER]["correctIndex"] = 1
+                invalid["stateLayout"]["editorial"][-1]["afterSha256"] = (
+                    layout.fingerprint(layout._blocks(invalid)[self.OTHER]))
+            elif mutation == "option":
+                layout._blocks(invalid)[self.OTHER]["options"][1] = "Una opción distinta"
+                self.marker(invalid, self.OTHER, "/options/1").update(
+                    layout.text_semantics.make_field(invalid, self.OTHER, "/options/1", []))
+                invalid["stateLayout"]["editorial"][-1]["afterSha256"] = (
+                    layout.fingerprint(layout._blocks(invalid)[self.OTHER]))
+            elif mutation == "choice-owner":
+                layout._blocks(invalid)[OWNER]["question"] += " Una pregunta distinta."
+            elif mutation == "archive":
+                invalid["stateLayout"]["choiceRevisions"][0]["block"]["question"] += " Inventada."
+            else:
+                invalid["stateLayout"]["editorial"].pop()
+            with self.subTest(mutation=mutation), self.assertRaises(layout.LayoutError):
+                layout.validate_transition(self.original, invalid)
+
+    def test_ordinary_predicate_requires_supported_existing_fields_and_full_payload(self):
+        original = deepcopy(layout._blocks(self.original)[self.THIRD])
+        current = dict(original, question="¿Qué ocurre al copiar el pedido?")
+        self.assertEqual(("question",), layout.ordinary_editorial_fields(original, current))
+        self.assertEqual((), layout.ordinary_editorial_fields(original, original))
+        for mutation in ("answer", "boolean-answer", "feedback", "missing", "empty", "type"):
+            invalid = deepcopy(current)
+            before = deepcopy(original)
+            if mutation == "answer":
+                invalid["correctIndex"] = 2
+            elif mutation == "boolean-answer":
+                self.assertEqual(1, before["correctIndex"])
+                invalid["correctIndex"] = True
+            elif mutation == "feedback":
+                invalid["reviewFeedback"][0] = "Otra guía"
+            elif mutation == "missing":
+                del before["question"]
+            elif mutation == "empty":
+                invalid["question"] = " "
+            else:
+                before["type"] = invalid["type"] = "paragraph"
+            with self.subTest(mutation=mutation):
+                self.assertEqual((), layout.ordinary_editorial_fields(before, invalid))
+
+
 class GeneralQuestionEditorialTests(unittest.TestCase):
     """The author may clarify a question without changing its expected answer."""
 

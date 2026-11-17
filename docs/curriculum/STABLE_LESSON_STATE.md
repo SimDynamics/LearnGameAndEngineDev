@@ -315,6 +315,37 @@ pasajes revisados utilizan la recuperación de lectura existente; no se concede
 crédito de escucha, no se reproduce audio automáticamente ni se conservan
 milisegundos de un pasaje incompatible.
 
+### Opción y enunciados de actividades distintas en una misma entrega
+
+Una revisión de opción puede combinarse con preguntas o explicaciones corregidas
+de otras actividades de la misma lección. Work prepara cada cambio mediante
+`revise_choice_editorial` y `revise_ordinary_editorial`, conserva sus pruebas
+editoriales y valida el resultado acumulado contra la publicación anterior.
+La revisión completa admite ambos órdenes de preparación; no exige publicar
+cada paso por separado.
+
+El archivo de la opción mantiene su bloque anterior exacto y su
+`semanticBefore`. Sólo cambia la huella de esa opción. Para cada otro propietario
+revisado, únicamente pueden cambiar `/question` y/o `/explanation`, con texto
+existente y no vacío en ambas versiones y su descriptor actual explícito.
+Código, opciones, respuesta, guías y demás campos de ese propietario deben
+permanecer exactos. Un campo que ya estaba marcado conserva segmentos; la
+corrección no puede borrar todos sus resaltados.
+
+Los descriptores de los campos que no cambian, su orden relativo y las
+propiedades de la raíz siguen protegidos. Corregir una pregunta no permite
+recolorear una opción ni usar las marcas de otra actividad. El propietario de
+la opción revisada conserva el alcance exclusivo de su revisión: esta composición
+no autoriza modificar también su pregunta, explicación o respuesta.
+
+La puerta de publicación comprueba también las preguntas de selección múltiple
+cuando su explicación permanece igual. Una cadena editorial válida no sustituye
+el descriptor de la pregunta nueva ni permite alterar marcas de campos ajenos.
+Las regresiones de autoría y de publicación se encuentran en
+`test_general_choice_editorial.py` y `test_ordinary_explanation_revision.py`;
+su ejecución y las comprobaciones funcionales corresponden al PC Windows
+autorizado.
+
 ### Revisión exclusivamente bibliográfica de una explicación
 
 `scripts/curriculum/bibliography_revision.py` reconoce una revisión conservadora

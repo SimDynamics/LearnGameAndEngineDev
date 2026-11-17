@@ -1416,15 +1416,8 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
             not isinstance(previous_document, dict) or
             not isinstance(current_document, dict)):
         return False
-    revised_fields = tuple(
-        field for field in ("question", "explanation")
-        if old.get(field) != current.get(field))
-    if not revised_fields or any(
-            not isinstance(old.get(field), str) or not old[field].strip()
-            or not isinstance(current.get(field), str) or not current[field].strip()
-            for field in revised_fields):
-        return False
-    if current != dict(old, **{field: current[field] for field in revised_fields}):
+    revised_fields = _state_layout.ordinary_editorial_fields(old, current)
+    if not revised_fields:
         return False
     try:
         if not is_structural_course_id(course_id):
@@ -1876,7 +1869,9 @@ def _validate_cpp_fundamentals(base_commit):
                                        relative, origin_p, origin_b, block, current,
                                        previous_document=old, current_document=delivered))
                         require(allowed, relative, f"código legacy previo modificado p{pn+1} b{bn+1}")
-                    elif kind != "multiple_choice" or block.get("explanation") != current.get("explanation") or (
+                    elif (kind != "multiple_choice"
+                          or block.get("question") != current.get("question")
+                          or block.get("explanation") != current.get("explanation")) or (
                         Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix(),
                         origin_p + 1,
                         origin_b + 1,

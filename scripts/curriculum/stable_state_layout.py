@@ -50,6 +50,8 @@ PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
 FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
+ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
+                                      "order_code", "drag_fill_code", "inline_fill_code"})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code", "math_puzzle"})
 
@@ -5328,6 +5330,80 @@ def revise_math_prompt_editorial(document: dict, identity: str, prompt: str, *,
     return result
 
 
+def ordinary_editorial_fields(before: dict, after: dict) -> tuple[str, ...]:
+    """Recognize a complete prose-only revision; never authorize it by a hash alone.
+
+    This is a predicate for the ordinary editorial guard, not a dispatch test:
+    callers must still send mixed wording/contract changes to that guard so
+    they are rejected. Provenance, authored semantics and identity are checked
+    by the full document/transition validators.
+    """
+    if (type(before) is not dict or type(after) is not dict
+            or type(before.get("type")) is not str
+            or before["type"] not in ORDINARY_EDITORIAL_TYPES):
+        return ()
+    fields = tuple(field for field in ("question", "explanation")
+                   if before.get(field) != after.get(field))
+    if not fields or any(
+            type(before.get(field)) is not str or not before[field].strip()
+            or type(after.get(field)) is not str or not after[field].strip()
+            for field in fields):
+        return ()
+    expected = {**before, **{field: after[field] for field in fields}}
+    if after != expected:
+        return ()
+    # Python equates True with 1. Keep the existing typed JSON contract too,
+    # after comparing the complete payload rather than its state-only digest.
+    try:
+        return fields if fingerprint(after) == fingerprint(expected) else ()
+    except (ValueError, TypeError, UnicodeError):
+        return ()
+
+
+def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
+                                          expected: dict | None,
+                                          choice_owners: set[str]) -> dict | None:
+    """Permit only changed prose paths of other intact ordinary owners.
+
+    Both documents and the append-only proof chain have already been checked
+    by the transition validator. The current overlay has also been validated
+    against exact text, UTF-16 selections and supported public fields.
+    """
+    before, after = _blocks(previous), _blocks(current)
+    allowed = {(identity, "/" + field)
+               for identity, block in before.items() if identity not in choice_owners
+               for field in ordinary_editorial_fields(block, after.get(identity))}
+    if not allowed:
+        return expected
+    overlay = current.get(text_semantics.ROOT_FIELD)
+    require(type(overlay) is dict,
+            "A composed ordinary revision needs explicit authored semantics")
+    markers = {(entry["block"], entry["path"]): entry for entry in overlay["fields"]}
+    require(allowed <= markers.keys(),
+            "Every composed ordinary field needs its exact authored descriptor")
+    if expected is None:
+        # This is exactly the container created by revise_ordinary_editorial
+        # for previously unmarked prose. Root fields cannot be invented here.
+        expected = {"version": 1, "fields": []}
+    existing = set()
+    for field in expected["fields"]:
+        key = (field["block"], field["path"])
+        existing.add(key)
+        if key in allowed:
+            replacement = markers[key]
+            require(not field["spans"] or bool(replacement["spans"]),
+                    "A revised marked field cannot silently lose all its authored highlights")
+            field.clear()
+            field.update(deepcopy(replacement))
+    # Existing entries retain their order. Only newly authored eligible fields
+    # may be appended, in the order used by the ordinary authoring helper.
+    for field in overlay["fields"]:
+        key = (field["block"], field["path"])
+        if key in allowed and key not in existing:
+            expected["fields"].append(deepcopy(field))
+    return expected
+
+
 def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dict:
     """Author one or two question/explanation fields under an existing v2 owner.
 
@@ -5342,10 +5418,8 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
             "Ordinary editorial revision requires a published Spanish v2 lesson")
     _identity(identity)
     original = _blocks(document).get(identity)
-    require(type(original) is dict and original.get("type") in {
-        "multiple_choice", "fill_code", "output_prediction",
-        "order_code", "drag_fill_code", "inline_fill_code"},
-        "Ordinary editorial revisions belong to existing graded prose owners")
+    require(type(original) is dict and original.get("type") in ORDINARY_EDITORIAL_TYPES,
+            "Ordinary editorial revisions belong to existing graded prose owners")
     require(type(edits) is dict and set(edits) <= {"question", "explanation", "returnTo"},
             "Author only existing question/explanation fields and an optional explicit return")
     return_to = edits.get("returnTo")
@@ -5853,6 +5927,8 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
             if marker is not None:
                 marker["sourceSha256"] = hashlib.sha256(
                     item["replacement"].encode("utf-8")).hexdigest()
+        expected_semantics = _compose_ordinary_editorial_semantics(
+            baseline, current, expected_semantics, {item["id"] for item in new_general_choices})
         require(expected_semantics == current.get(text_semantics.ROOT_FIELD),
                 "Editorial choice revised an unrelated text marker or semantic span")
     new_closed_sources = _new_closed_compiler_sources(baseline, current)

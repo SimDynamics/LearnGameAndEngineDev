@@ -327,7 +327,9 @@ class OrdinaryExplanationMainTest(unittest.TestCase):
                                  "--", layout.CONTENT_DIRECTORY]:
                     output = "\0".join(fixtures.COMMIT + ":" + relative for relative in sorted(sources)
                                        if "stateLayout" in json.loads(sources[relative])) + "\0"
-                elif len(command) == 3 and command[:2] == ["git", "show"]:
+                elif (command[:2] == ["git", "show"] and
+                      (len(command) == 3 or
+                       (len(command) == 4 and command[3] == "--"))):
                     commit, relative = command[2].split(":", 1)
                     self.assertEqual(fixtures.COMMIT, commit)
                     output = sources[relative].decode("utf-8")
@@ -386,6 +388,52 @@ class OrdinaryExplanationMainTest(unittest.TestCase):
             with self.subTest(marking=marking):
                 code, output = self.run_main(revise)
                 self.assertEqual(0 if marking == "authored" else 1, code, output)
+
+    def test_main_checks_question_only_multiple_choice_revision(self):
+        # Start from the published block, not the candidate whose explanation
+        # already changed: that older scenario enters the explanation guard.
+        for marking in ("authored", "missing", "stale", "unrelated"):
+            def revise(name, before, after):
+                if name != "boundary_cases":
+                    return
+                identity = fixtures.CASES[name]["identity"]
+                revised = with_revised_question(before, identity)
+                old, current = blocks(before, revised, identity)
+                self.assertEqual("multiple_choice", old["type"])
+                self.assertEqual(old["explanation"], current["explanation"])
+                self.assertEqual(dict(old, question=current["question"]), current)
+                fields = revised["textSemantics"]["fields"]
+                if marking == "missing":
+                    fields[:] = [field for field in fields
+                                 if (field["block"], field["path"]) != (identity, "/question")]
+                elif marking == "stale":
+                    marker = next(field for field in fields
+                                  if (field["block"], field["path"]) == (identity, "/question"))
+                    marker["sourceSha256"] = "0" * 64
+                elif marking == "unrelated":
+                    original = next((field for field in fields
+                                     if (field["block"], field["path"]) ==
+                                     (identity, "/options/0")), None)
+                    spans = [] if original and original["spans"] else [
+                        layout.text_semantics.select(
+                            current["options"][0], current["options"][0],
+                            "prose", reading="natural")]
+                    marker = layout.text_semantics.make_field(
+                        revised, identity, "/options/0", spans)
+                    self.assertNotEqual(original, marker)
+                    if original is None:
+                        fields.append(marker)
+                    else:
+                        fields[fields.index(original)] = marker
+                after.clear()
+                after.update(revised)
+            with self.subTest(marking=marking):
+                code, output = self.run_main(revise)
+                self.assertEqual(0 if marking == "authored" else 1, code, output)
+                if marking in ("missing", "unrelated"):
+                    self.assertIn("campos previos modificados sin autorización: question", output)
+                elif marking == "stale":
+                    self.assertIn("Text semantic source fingerprint is stale", output)
 
     def test_main_rejects_extra_changes_even_with_updated_editorial_hashes(self):
         for target, field in (("empty_vector", "code"), ("range_copy", "answers"),
