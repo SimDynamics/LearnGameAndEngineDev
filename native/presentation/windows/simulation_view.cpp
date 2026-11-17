@@ -948,7 +948,27 @@ struct SimulationView::Impl {
     }
     bool go(std::size_t next) {
         if(next>=count())return false;if(next==position)return true;
-        position=next;update();publish();return true;
+        const auto old_visible=frequency_indices().size();
+        bool followed_last_bar=false;
+        if(old_visible&&frequencies){
+            // When every old bar fitted, a newly completed group should also
+            // be revealed. Once scrolling is possible, follow only if the
+            // learner was at the bottom; an earlier group being studied must
+            // not be displaced by future decisions.
+            SCROLLINFO previous{sizeof(previous),SIF_RANGE|SIF_PAGE|SIF_POS};
+            if(GetScrollInfo(frequencies,SB_VERT,&previous)&&previous.nPage>0){
+                const auto last=std::max(previous.nMin,previous.nMax-
+                    std::max(0,static_cast<int>(previous.nPage)-1));
+                followed_last_bar=previous.nPos>=last;
+            }
+        }
+        position=next;update();
+        const auto indices=frequency_indices();
+        if(followed_last_bar&&indices.size()>old_visible&&
+                !indices.empty()&&indices.back()+1==completed_groups()&&
+                frequency_total_height)
+            scroll_frequencies(frequency_total_height);
+        publish();return true;
     }
     const std::vector<SimulationValue>& original_data()const{return scenario?spec.scenarios.at(scenario-1).values:spec.values;}
     void replace_trace(SimulationTrace candidate,bool replace_editor) {
