@@ -1913,6 +1913,88 @@ void original_order_comparison(HWND host) {
         name(GetDlgItem(long_view.window(),array_id)).find("índice 63: 63 (origen índice 0)")!=std::string::npos,
         "Long source comparison or its per-cell source mapping is incomplete");
 }
+
+void original_order_reading_session(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.values.clear();
+    for(std::int64_t value=63;value>=0;--value)
+        spec.values.emplace_back(value);
+    spec.scenarios={{"identical","Mismo origen, otro escenario",spec.values}};
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");
+    resize(view,800);
+    const auto original=GetDlgItem(view.window(),original_order_id);
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(original&&selector&&editor,"Missing source comparison controls");
+    const auto expected=text(view,original_order_id);
+    check(expected.find("índice 63: 0")!=std::string::npos,
+        "The long source comparison is incomplete");
+
+    int rewrites=0;
+    const auto probe=[](HWND control,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT {
+        if(message==EM_STREAMIN)++*reinterpret_cast<int*>(raw);
+        return DefSubclassProc(control,message,wp,lp);
+    };
+    constexpr UINT_PTR probe_id=0x53494d4f;
+    check(SetWindowSubclass(original,probe,probe_id,
+        reinterpret_cast<DWORD_PTR>(&rewrites))!=FALSE,
+        "Cannot inspect original-order RichEdit document streaming");
+    struct ProbeGuard {
+        HWND control;SUBCLASSPROC callback;UINT_PTR id;
+        ~ProbeGuard(){if(IsWindow(control))RemoveWindowSubclass(control,callback,id);}
+    } guard{original,probe,probe_id};
+
+    const CHARRANGE selected{0,4};
+    SendMessageW(original,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    SendMessageW(original,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    const auto earlier=scroll_state(original);
+    check(earlier.position.y>0&&earlier.first>0&&
+        earlier.selection.cpMin==selected.cpMin&&
+        earlier.selection.cpMax==selected.cpMax,
+        "Cannot prepare a selected earlier source with a scrolled original-order panel");
+    // Advancing or reviewing decisions changes the trace's current output,
+    // but it never changes the original input's order or source indices.
+    check(view.go_to_step(1)&&view.go_to_step(2)&&
+          view.go_to_step(3)&&view.go_to_step(1),
+        "Cannot navigate the same source trace for original-order preservation");
+    const auto kept=scroll_state(original);
+    check(rewrites==0&&kept.position.y==earlier.position.y&&
+        kept.selection.cpMin==selected.cpMin&&
+        kept.selection.cpMax==selected.cpMax&&
+        text(view,original_order_id)==expected,
+        "Stepping reconstructed the source RichEdit or lost the learner's selection");
+
+    // Re-selecting an equivalent scenario is still a different reading
+    // session. Identical displayed source text must not inherit old scroll.
+    check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "The duplicate source scenario is unavailable");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    const auto reset=scroll_state(original);
+    check(rewrites==1&&text(view,original_order_id)==expected&&
+        reset.first==0&&reset.position.y==0&&
+        reset.selection.cpMin==0&&reset.selection.cpMax==0&&
+        view.step_index()==0&&spec==authored,
+        "A separate scenario retained the previous original-source reading session");
+
+    // A rejected editor draft never becomes a new source. Its error
+    // message may update the page, but it must not reset source reading.
+    SendMessageW(original,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    SendMessageW(original,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    const auto before_rejection=scroll_state(original);
+    set_edit_text(editor,"no_es_entero");
+    click(view,apply_id);
+    const auto after_rejection=scroll_state(original);
+    check(!text(view,error_id).empty()&&rewrites==1&&
+        after_rejection.position.y==before_rejection.position.y&&
+        after_rejection.selection.cpMin==selected.cpMin&&
+        after_rejection.selection.cpMax==selected.cpMax&&
+        text(view,original_order_id)==expected&&spec==authored,
+        "Rejected input rebuilt the original source or lost its reading position");
+}
+
 void editable_data(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);SimulationView view(host,spec,"es");resize(view,820);
     check(view.go_to_step(view.step_count()-1),"Cannot prepare an edited data test");
@@ -3083,6 +3165,7 @@ int main(int argc,char** argv)try {
     run("counted_cell_emphasis",[&]{counted_cell_emphasis(host.value,captures);});
     run("walkthrough_cell_selection",[&]{walkthrough_cell_selection(host.value);});
     run("original_order_comparison",[&]{original_order_comparison(host.value);});
+    run("original_order_reading_session",[&]{original_order_reading_session(host.value);});
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
