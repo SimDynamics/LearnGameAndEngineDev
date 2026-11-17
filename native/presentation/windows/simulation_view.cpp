@@ -29,7 +29,7 @@ constexpr int title_id=100,description_id=101,scenario_label_id=102,scenario_id=
     input_label_id=114,input_id=115,apply_id=116,restore_id=117,error_id=118,
     groups_label_id=119,input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
     previous_decision_id=124,next_decision_id=125,result_comparison_id=126,
-    frequencies_id=127,frequencies_label_id=128,group_first_id=200;
+    frequencies_id=127,frequencies_label_id=128,frequency_filter_id=129,group_first_id=200;
 bool passive_message(UINT message) {
     return message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||
         message==WM_MOUSEMOVE||message==WM_CAPTURECHANGED||message==WM_CANCELMODE||message==WM_NCDESTROY;
@@ -132,6 +132,7 @@ struct SimulationView::Impl {
     SimulationInputFormat input_format=SimulationInputFormat::lines;
     int width=1,height=1,scale=100,canvas_height=1;
     int frequency_scroll=0,frequency_total_height=0;
+    bool frequency_candidates_only=false;
     bool initializing=true,arranging=false,layout_valid=false;
     std::shared_ptr<bool> alive=std::make_shared<bool>(true);
     std::string error,input_key;
@@ -186,12 +187,35 @@ struct SimulationView::Impl {
                 trace.candidate_frames.begin());
         return 0;
     }
+    std::vector<std::size_t> frequency_indices()const {
+        std::vector<std::size_t> indices;
+        const auto available=completed_groups();
+        indices.reserve(available);
+        for(std::size_t i=0;i<available;++i){
+            if(frequency_candidates_only&&
+                std::ranges::find(frame().leaders,trace.groups[i].value)==frame().leaders.end())
+                continue;
+            indices.push_back(i);
+        }
+        return indices;
+    }
+    bool frequency_filter_useful()const {
+        if(completed_groups()<2)return false;
+        for(std::size_t i=0;i<completed_groups();++i)
+            if(std::ranges::find(frame().leaders,trace.groups[i].value)==frame().leaders.end())
+                return true;
+        return false;
+    }
     std::string frequency_text()const {
-        const auto visible=completed_groups();
-        if(!visible)return {};
-        std::string result="Frecuencias de "+std::to_string(visible)+
-            (visible==1?" grupo terminado":" grupos terminados");
-        for(std::size_t i=0;i<visible;++i){
+        const auto indices=frequency_indices();
+        if(indices.empty())return {};
+        std::string result="Frecuencias de "+std::to_string(indices.size())+
+            (frequency_candidates_only?
+                (indices.size()==1?" grupo candidato":" grupos candidatos"):
+                (indices.size()==1?" grupo terminado":" grupos terminados"));
+        if(frequency_candidates_only)result+=" entre "+std::to_string(completed_groups())+
+            (completed_groups()==1?" grupo terminado":" grupos terminados");
+        for(const auto i:indices){
             const auto& group=trace.groups[i];
             const bool candidate=std::ranges::find(frame().leaders,group.value)!=frame().leaders.end();
             result+=". Grupo "+std::to_string(i+1)+": "+simulation_value_display_text(group.value)+
@@ -306,6 +330,7 @@ struct SimulationView::Impl {
         SetWindowPos(item(output_id),statistics_window,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
         button(previous_id,"Anterior");button(next_id,"Siguiente");button(reset_id,"Reiniciar");
         button(previous_decision_id,"Decisión anterior");button(next_decision_id,"Siguiente decisión");
+        button(frequency_filter_id,"Mostrar solo candidatos");
         reader_theme::primary_button(item(next_id));
         const auto format=create(L"COMBOBOX",input_format_id,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL);
         SendMessageW(format,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
@@ -503,8 +528,14 @@ struct SimulationView::Impl {
             " · "+std::to_string(trace.ordered.size())+" elementos");
         set_label(original_order_id,original);
         set_label(groups_label_id,"Selecciona un grupo");
-        set_label(frequencies_label_id,"Frecuencias de grupos terminados · escala máxima visible "+
-            std::to_string(std::max<std::size_t>(1,frame().maximum)));
+        set_label(frequencies_label_id,std::string(frequency_candidates_only?
+            "Frecuencias de candidatos":"Frecuencias de grupos terminados")+
+            " · escala máxima visible "+std::to_string(std::max<std::size_t>(1,frame().maximum)));
+        SetWindowTextW(item(frequency_filter_id),wide(
+            frequency_candidates_only?"Mostrar todos los grupos":"Mostrar solo candidatos").c_str());
+        accessible(item(frequency_filter_id),frequency_candidates_only?
+            "Mostrar las barras de todos los grupos terminados":
+            "Filtrar barras para mostrar sólo candidatos al máximo actual");
         const auto frequency_description=frequency_text();
         SetWindowTextW(frequencies,wide(frequency_description).c_str());
         accessible(frequencies,frequency_description);
@@ -574,7 +605,7 @@ struct SimulationView::Impl {
             replacement=simulation_input_text(candidate.original,next_format);
         }
         trace=std::move(candidate);source_positions=std::move(next_source_positions);
-        frequency_scroll=0;frequency_total_height=0;
+        frequency_scroll=0;frequency_total_height=0;frequency_candidates_only=false;
         input_key=std::move(identity);position=0;error.clear();
         if(replacement){input_format=next_format;set_edit_text(item(input_id),*replacement);}
         rebuild_groups();rebuild_steps();update();publish();
@@ -748,12 +779,17 @@ struct SimulationView::Impl {
         const bool stats=spec.view!=SimulationViewMode::array;
         const auto stats_height=statistics_layout(available);place(variables_id,margin,top,available,stats_height,stats);if(stats)top+=stats_height+px(8);
         const auto groups_done=completed_groups();
+        const auto displayed=frequency_indices().size();
         text_row(frequencies_label_id,groups_done>0);
+        const bool filter=groups_done>0&&
+            (frequency_filter_useful()||frequency_candidates_only);
+        place(frequency_filter_id,margin,top,available,sp(44),filter);
+        if(filter)top+=sp(44)+px(8);
         if(groups_done){
             // A large histogram must not turn the whole study page into a
             // many-thousand-pixel chart. Show a viewport with an internal
             // scrollbar, while keeping every group's accessible description.
-            const auto full=frequency_height(available,groups_done);
+            const auto full=frequency_height(available,displayed);
             const int max_viewport=sp(440);
             const bool overflow=full>max_viewport;
             if(move){
@@ -768,7 +804,7 @@ struct SimulationView::Impl {
                 RECT client{};GetClientRect(frequencies,&client);
                 // Scrollbar presence can reduce the client width by a column.
                 // Recompute the full height after Windows applies the style.
-                frequency_total_height=frequency_height(std::max(1,client.right),groups_done);
+                frequency_total_height=frequency_height(std::max(1,client.right),displayed);
                 SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE|SIF_POS};
                 scroll.nMin=0;scroll.nMax=std::max(0,frequency_total_height-1);
                 scroll.nPage=static_cast<UINT>(std::max(1L,client.bottom));
@@ -895,12 +931,13 @@ struct SimulationView::Impl {
         const auto colors=reader_theme::palette(host);
         FillRect(dc,&area,reader_theme::brush(reader_theme::Surface::card));
         SetBkMode(dc,TRANSPARENT);
-        const auto visible=completed_groups();
+        const auto indices=frequency_indices();
+        const auto visible=indices.size();
         if(!visible)return;
         const int gap=sp(8),columns=frequency_columns(std::max(1,area.right),visible);
         const int card_width=std::max(1,(area.right-gap*(columns-1))/columns);
         std::size_t greatest=1;
-        for(std::size_t i=0;i<visible;++i)
+        for(const auto i:indices)
             greatest=std::max(greatest,trace.groups[i].end-trace.groups[i].begin);
         for(std::size_t i=0;i<visible;++i){
             const int row=static_cast<int>(i/static_cast<std::size_t>(columns));
@@ -909,7 +946,8 @@ struct SimulationView::Impl {
             const int top=sp(8)+row*sp(138)-frequency_scroll;
             if(top+sp(130)<=0||top>=area.bottom)continue;
             const RECT card{left,top,left+card_width,top+sp(130)};
-            const auto& group=trace.groups[i];
+            const auto group_index=indices[i];
+            const auto& group=trace.groups[group_index];
             const auto count=group.end-group.begin;
             const bool leader=std::ranges::find(frame().leaders,group.value)!=frame().leaders.end();
             const auto card_brush=CreateSolidBrush(colors.field);
@@ -924,7 +962,7 @@ struct SimulationView::Impl {
             caption.top+=sp(5);caption.bottom=caption.top+sp(20);
             auto old_font=SelectObject(dc,index_font);
             SetTextColor(dc,colors.text);
-            const auto headline=wide(std::string(leader?"★ ":"")+"Grupo "+std::to_string(i+1));
+            const auto headline=wide(std::string(leader?"★ ":"")+"Grupo "+std::to_string(group_index+1));
             DrawTextW(dc,headline.c_str(),-1,&caption,DT_CENTER|DT_SINGLELINE|DT_END_ELLIPSIS|DT_NOPREFIX);
             const int baseline=top+sp(87);
             const int maximum_height=sp(56);
@@ -1004,6 +1042,10 @@ struct SimulationView::Impl {
         if(id==previous_id){if(position)go(position-1);}
         else if(id==next_id)go(position+1);
         else if(id==reset_id)go(0);
+        else if(id==frequency_filter_id&&completed_groups()){
+            frequency_candidates_only=!frequency_candidates_only;
+            frequency_scroll=0;update();publish();
+        }
         else if(id==previous_decision_id){if(const auto target=previous_decision())go(*target);}
         else if(id==next_decision_id){if(const auto target=next_decision())go(*target);}
         else if(id==apply_id&&spec.editable)apply_input();

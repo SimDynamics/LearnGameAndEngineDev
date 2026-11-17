@@ -293,6 +293,27 @@ relativa cuando un grupo posterior alcanza un máximo mayor: no cambió la
 frecuencia original, cambió la escala de comparación conocida hasta entonces.
 La escala se identifica en el título del diagrama.
 
+Cuando existen grupos terminados con frecuencia inferior al máximo actual,
+el botón **Mostrar solo candidatos** permite filtrar el diagrama para
+comparar únicamente los grupos que siguen empatados en el máximo. Los
+números de grupo y sus valores no cambian: se ocultan visualmente los
+grupos no candidatos, no se eliminan de los datos ni de las decisiones.
+El botón cambia a **Mostrar todos los grupos** para recuperar la
+distribución completa. Si todos los grupos terminados son candidatos, no
+se ofrece el filtro inicialmente. Si ya estaba activado al retroceder a
+un estado con todos los grupos empatados, el botón sigue disponible para
+volver a mostrar todos los grupos.
+
+El filtro utiliza exclusivamente los grupos **ya terminados** y los
+candidatos **del paso actual**. No puede adelantar la frecuencia de un grupo
+en curso ni mostrar un resultado futuro. Al activarlo o desactivarlo, el
+gráfico vuelve al inicio de su desplazamiento y recalcula su tamaño; no
+cambia el paso, la salida, los datos originales, los objetivos de
+evaluación ni la narración de otras partes de la página. Cambiar de
+escenario, aplicar nuevos datos o restablecerlos devuelve el filtro a
+**todos los grupos**. En textos conserva la distinción entre `""`,
+`" "` y otros datos que no deben mezclarse.
+
 La disposición se adapta al ancho y al zoom de texto y acepta hasta los
 64 grupos permitidos por el modelo. Para evitar que una lección tenga un
 gráfico de miles de píxeles de altura, el área visible de las barras se

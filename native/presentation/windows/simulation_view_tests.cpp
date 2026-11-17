@@ -24,7 +24,7 @@ constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variab
     output_id=110,previous_id=111,next_id=112,reset_id=113,input_id=115,apply_id=116,restore_id=117,error_id=118,
     input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
     previous_decision_id=124,next_decision_id=125,result_comparison_id=126,
-    frequencies_id=127,frequencies_label_id=128,group_first_id=200;
+    frequencies_id=127,frequencies_label_id=128,frequency_filter_id=129,group_first_id=200;
 std::filesystem::path failure_captures;
 void capture(HWND window,const std::filesystem::path& path);
 void fitted_text(SimulationView& view);
@@ -492,6 +492,124 @@ void progressive_frequency_bars(HWND host,const std::filesystem::path& captures)
         check(zero.nPos==0,"The histogram did not restore its original scroll origin");
         check(scaled.step_index()==0,"Scrolling histogram cards modified the summary state");
     }
+}
+void candidate_frequency_filter(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,850);
+    const auto bars=GetDlgItem(view.window(),frequencies_id);
+    const auto filter=GetDlgItem(view.window(),frequency_filter_id);
+    check(bars&&filter&&!control_shown(filter),
+        "The filter is visible before any completed groups exist");
+    check(view.go_to_step(2)&&!control_shown(filter),
+        "A one-group chart presented a redundant candidate filter");
+    check(view.go_to_step(7),"Cannot reach the second completed group");
+    const auto original=name(bars);
+    check(control_shown(filter)&&native_text(filter)=="Mostrar solo candidatos"&&
+        original.find("Frecuencias de 2 grupos terminados")!=std::string::npos,
+        "A completed losing group should allow comparing all bars with the leaders");
+    const auto reading=[&](const SimulationView& current)->std::string{
+        for(const auto& region:current.reading_regions())
+            if(region.key.find("/frequencies")!=std::string::npos)return region.source_text;
+        return {};
+    };
+    const auto output=text(view,output_id),step=view.step_index();
+    click(view,frequency_filter_id);
+    const auto only=name(bars);
+    check(view.step_index()==step&&text(view,output_id)==output&&
+        native_text(filter)=="Mostrar todos los grupos"&&
+        only.find("Frecuencias de 1 grupo candidato entre 2 grupos terminados")!=std::string::npos&&
+        only.find("Grupo 1:")==std::string::npos&&
+        only.find("Grupo 2: 3, frecuencia 4, candidato al máximo actual")!=std::string::npos&&
+        only.find("Grupo 3:")==std::string::npos&&reading(view)==only,
+        "Filtering candidates showed a losing/future group or changed the trace state");
+    click(view,frequency_filter_id);
+    check(name(bars)==original&&native_text(filter)=="Mostrar solo candidatos"&&
+        view.step_index()==step&&text(view,output_id)==output,
+        "Showing all groups did not restore the same immutable computed bars");
+
+    check(view.go_to_step(9),"Cannot complete the third group");
+    click(view,frequency_filter_id);
+    const auto third=name(bars);
+    check(third.find("Frecuencias de 1 grupo candidato entre 3 grupos terminados")!=std::string::npos&&
+        third.find("Grupo 1:")==std::string::npos&&
+        third.find("Grupo 2: 3, frecuencia 4")!=std::string::npos&&
+        third.find("Grupo 3:")==std::string::npos,
+        "Candidate-only mode did not account for the last completed losing group");
+    check(view.go_to_step(0)&&!control_shown(bars)&&reading(view).empty()&&
+        view.step_index()==0,"Returning to the beginning leaked future candidate bars");
+    check(view.go_to_step(2)&&name(bars).find("Grupo 2:")==std::string::npos,
+        "Returning to an earlier decision leaked a later candidate");
+    click(view,frequency_filter_id);
+    check(native_text(filter)=="Mostrar solo candidatos",
+        "The filter could not be disabled after navigating backwards");
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(selector,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(view.step_index()==0&&!control_shown(filter),
+        "Changing the scenario did not reset the candidate filter");
+    check(view.go_to_step(6),"Cannot reach the tie decision");
+    const auto tie=name(bars);
+    check(tie.find("Grupo 1: 4, frecuencia 2, candidato al máximo actual")!=std::string::npos&&
+        tie.find("Grupo 2: 9, frecuencia 2, candidato al máximo actual")!=std::string::npos&&
+        !control_shown(filter),
+        "A tie incorrectly hid a candidate or offered an ineffective filter");
+
+    SendMessageW(selector,CB_SETCURSEL,2,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(!control_shown(filter)&&!control_shown(bars)&&reading(view).empty(),
+        "An empty scenario retained a previous candidate filter");
+    check(spec==authored,"Exploring frequency filters mutated authored lesson data");
+
+    auto summary=fixture(SimulationViewMode::summary);
+    SimulationView final(host,summary,"es");resize(final,850);
+    const auto summary_bars=GetDlgItem(final.window(),frequencies_id);
+    const auto summary_filter=GetDlgItem(final.window(),frequency_filter_id);
+    check(control_shown(summary_filter),"Summary with losing groups has no candidate filter");
+    click(final,frequency_filter_id);
+    check(final.step_index()==0&&name(summary_bars).find("Frecuencias de 1 grupo candidato")!=std::string::npos&&
+        name(summary_bars).find("Grupo 1:")==std::string::npos&&
+        name(summary_bars).find("Grupo 3:")==std::string::npos,
+        "Filtering a static summary changed a step or included losing groups");
+
+    auto labels=fixture(SimulationViewMode::summary);
+    labels.text_values=true;labels.scenarios.clear();
+    labels.values={std::string(""),std::string(" "),std::string(" ")};
+    SimulationView text_view(host,labels,"es");resize(text_view,850);
+    click(text_view,frequency_filter_id);
+    const auto text_chart=name(GetDlgItem(text_view.window(),frequencies_id));
+    check(text_chart.find("Grupo 1:")==std::string::npos&&
+        text_chart.find("Grupo 2: \" \" (1 espacio), frecuencia 2")!=std::string::npos&&
+        text_chart.find("Frecuencias de 1 grupo candidato")!=std::string::npos,
+        "A whitespace-only candidate was confused with an empty string when filtering");
+
+    auto many=fixture(SimulationViewMode::summary);many.scenarios.clear();
+    many.values.clear();
+    for(std::int64_t value=0;value<62;++value)many.values.emplace_back(value);
+    many.values.emplace_back(std::int64_t{0});
+    SimulationView scaled(host,many,"es");scaled.set_text_scale(150);
+    resize(scaled,340);bounds(scaled,"many histogram candidates at narrow zoom");
+    const auto many_bars=GetDlgItem(scaled.window(),frequencies_id);
+    SCROLLINFO before{sizeof(before),SIF_ALL};
+    check(GetScrollInfo(many_bars,SB_VERT,&before)&&
+        before.nMax+1>static_cast<int>(before.nPage),
+        "The unfiltered 62-group chart does not have an internal scroll range");
+    click(scaled,frequency_filter_id);
+    RECT small{};GetClientRect(many_bars,&small);
+    check(name(many_bars).find("Frecuencias de 1 grupo candidato entre 62 grupos terminados")!=std::string::npos&&
+        name(many_bars).find("Grupo 2:")==std::string::npos&&
+        !(GetWindowLongPtrW(many_bars,GWL_STYLE)&WS_TABSTOP)&&
+        small.bottom>0&&small.bottom<=MulDiv(MulDiv(440,
+            static_cast<int>(GetDpiForWindow(many_bars)),96),150,100),
+        "Filtering the long chart failed to shrink its viewport and drop the scroll focus");
+    click(scaled,frequency_filter_id);
+    SCROLLINFO after{sizeof(after),SIF_ALL};
+    check(GetScrollInfo(many_bars,SB_VERT,&after)&&after.nPos==0&&
+        after.nMax+1>static_cast<int>(after.nPage)&&
+        name(many_bars).find("Grupo 62: 61, frecuencia 1")!=std::string::npos,
+        "Restoring all 62 groups lost the full scroll range or the last group");
 }
 void calculated_step_changes(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
@@ -1526,6 +1644,7 @@ int main(int argc,char** argv)try {
         pump(host.value);
     };
     run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
+    run("candidate_frequency_filter",[&]{candidate_frequency_filter(host.value);});
     run("calculated_step_changes",[&]{calculated_step_changes(host.value);});
     run("completed_scenario_comparison",[&]{completed_scenario_comparison(host.value);});
     run("decision_navigation",[&]{decision_navigation(host.value);});
