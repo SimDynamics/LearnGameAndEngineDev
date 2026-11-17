@@ -883,6 +883,68 @@ void histogram_follows_new_groups_only_at_end(HWND host) {
         "Returning to an earlier model step retained future histogram bars");
 }
 
+
+void histogram_reflow_retains_visible_group(HWND host) {
+    auto spec=fixture(SimulationViewMode::summary);
+    spec.values.clear();spec.scenarios.clear();
+    for(std::int64_t i=0;i<64;++i)spec.values.emplace_back(i);
+    const auto source=spec;
+    SimulationView view(host,spec,"es");resize(view,340);
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    check(chart,"Missing histogram for reading reflow");
+    const auto state=[&]{
+        SCROLLINFO value{sizeof(value),SIF_RANGE|SIF_PAGE|SIF_POS};
+        check(GetScrollInfo(chart,SB_VERT,&value)&&value.nPage>0,
+            "Cannot inspect histogram scroll during reflow");
+        return value;
+    };
+    const auto end=[&](const SCROLLINFO& value){
+        return std::max(value.nMin,value.nMax-
+            std::max(0,static_cast<int>(value.nPage)-1));
+    };
+    check(end(state())>0,"The 64-group chart must have internal overflow");
+    for(int row=0;row<25;++row)
+        SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_LINEDOWN,0),0);
+    const auto middle=state();
+    check(middle.nPos>0&&middle.nPos<end(middle),
+        "Cannot prepare a mid-chart reading position");
+    std::size_t tracked=64;
+    for(std::size_t group=0;group<64;++group)
+        if(view.frequency_card_bounds_in_canvas(group)){tracked=group;break;}
+    check(tracked>0&&tracked<60,
+        "Cannot identify a previously visible histogram group");
+    const auto before_name=name(chart);
+    const auto nearby=[&](int zoom,const char* reason){
+        const auto frame=view.frequency_card_bounds_in_canvas(tracked);
+        const auto dpi=static_cast<int>(GetDpiForWindow(chart));
+        const int row_height=MulDiv(MulDiv(138,dpi,96),zoom,100);
+        check(frame.has_value()&&frame->top<=row_height&&
+            name(chart)==before_name&&spec==source,reason);
+    };
+    view.set_text_scale(150);resize(view,340);
+    nearby(150,"Zoom moved the currently viewed histogram group offscreen");
+    resize(view,680);
+    nearby(150,"Changing histogram columns lost the visible group");
+    SendMessageW(view.window(),WM_DPICHANGED_AFTERPARENT,0,0);pump(host);
+    resize(view,680);
+    nearby(150,"DPI rebase moved the histogram to another group");
+    resize(view,340);
+    nearby(150,"Narrowing the histogram again lost the prior group");
+    view.set_text_scale(100);resize(view,340);
+    nearby(100,"Restoring the scale did not retain the group being studied");
+
+    // At the end, the student's anchor is the last row rather than a
+    // particular middle group; keep it visible as the row count changes.
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    check(state().nPos==end(state()),"Cannot reach histogram end");
+    view.set_text_scale(150);resize(view,340);
+    check(state().nPos==end(state())&&spec==source,
+        "Zooming at the histogram end left the last cards hidden");
+    resize(view,680);
+    check(state().nPos==end(state())&&spec==source,
+        "Widening the histogram after a bottom scroll lost its end");
+}
+
 void candidate_frequency_filter(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -3335,6 +3397,7 @@ int main(int argc,char** argv)try {
     run("histogram_card_navigation",[&]{histogram_card_navigation(host.value);});
     run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
     run("histogram_follows_new_groups_only_at_end",[&]{histogram_follows_new_groups_only_at_end(host.value);});
+    run("histogram_reflow_retains_visible_group",[&]{histogram_reflow_retains_visible_group(host.value);});
     run("candidate_frequency_filter",[&]{candidate_frequency_filter(host.value);});
     run("neighboring_values_explain_group_boundaries",[&]{neighboring_values_explain_group_boundaries(host.value);});
     run("calculated_step_changes",[&]{calculated_step_changes(host.value);});
