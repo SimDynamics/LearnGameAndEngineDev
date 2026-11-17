@@ -7,6 +7,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -494,6 +495,24 @@ void exhaustive_small_text_arrays() {
                     expected_order.emplace_back(std::string(labels[i]));
             verify(trace.original==spec.values&&trace.ordered==expected_order,
                 "UTF-8 byte order or source data was lost");
+            auto preordered=spec;
+            preordered.sort=false;
+            preordered.values=expected_order;
+            const auto direct=build_simulation_trace(preordered);
+            verify(direct.original==expected_order&&direct.ordered==expected_order&&
+                direct.groups==trace.groups&&direct.frames==trace.frames&&
+                direct.candidate_frames==trace.candidate_frames,
+                "sort=false changed text grouping, an empty label or a decision");
+            if(spec.values!=expected_order){
+                auto unsorted_spec=spec;
+                unsorted_spec.sort=false;
+                rejected([&]{(void)build_simulation_trace(unsorted_spec);},
+                    "sort=false accepted unsorted text authored data");
+                const auto draft=simulation_input_text(spec.values,SimulationInputFormat::json);
+                rejected([&]{(void)simulation_parse_input_trace(
+                    preordered,draft,SimulationInputFormat::json);},
+                    "sort=false accepted an unsorted text editor draft");
+            }
             std::size_t maximum=0,position=0,group_index=0;
             std::vector<SimulationValue> leaders;
             std::string output;
