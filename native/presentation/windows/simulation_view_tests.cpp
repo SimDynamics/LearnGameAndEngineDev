@@ -2887,6 +2887,55 @@ LRESULT CALLBACK wheel_edge_probe(HWND window,UINT message,WPARAM wp,LPARAM lp,
     if(message==WM_NCDESTROY)RemoveWindowSubclass(window,wheel_edge_probe,31);
     return DefSubclassProc(window,message,wp,lp);
 }
+void histogram_wheel_fraction_step_sessions(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.scenarios.clear();spec.values.clear();
+    for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,340);
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    check(chart&&view.go_to_step(40),
+        "Cannot prepare 20 completed histogram groups");
+    const auto scroll=[&]{
+        SCROLLINFO state{sizeof(state),SIF_RANGE|SIF_PAGE|SIF_POS};
+        check(GetScrollInfo(chart,SB_VERT,&state)&&state.nPage>0,
+            "Cannot inspect the native histogram scroll position");
+        return state;
+    };
+    const auto pixels_per_notch=MulDiv(75,
+        static_cast<int>(GetDpiForWindow(chart)),96);
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    const auto first=scroll();
+    check(first.nPos==0&&first.nMax+1>static_cast<int>(first.nPage),
+        "The walkthrough does not have an overflowing 20-group chart");
+    const auto tiny=[&]{
+        SendMessageW(chart,WM_MOUSEWHEEL,
+            MAKEWPARAM(0,static_cast<WORD>(-1)),0);
+    };
+    tiny();
+    // Counting the next group's first element does not add a bar. Its
+    // visual wheel session must retain a subpixel fraction.
+    check(view.go_to_step(41),"Cannot count the next group's first element");
+    tiny();
+    const auto same_cards=scroll();
+    check(same_cards.nPos==2*pixels_per_notch/WHEEL_DELTA&&
+        spec==authored,
+        "The unchanged histogram discarded a partial wheel gesture across steps");
+
+    // Completing the group changes the visible card set; a fractional
+    // movement from its old geometry must not leak to the next chart.
+    check(view.go_to_step(42),"Cannot complete the next group");
+    const auto before=scroll();
+    check(before.nPos<before.nMax-
+        std::max(0,static_cast<int>(before.nPage)-1),
+        "The new group unexpectedly moved the chart to its last row");
+    for(int i=0;i<3;++i)tiny();
+    const auto after=scroll();
+    check(after.nPos-before.nPos==3*pixels_per_notch/WHEEL_DELTA&&
+        spec==authored,
+        "The new group's histogram inherited an obsolete wheel fraction");
+}
+
 void wheel_edges_resume_reader(HWND host) {
     // The parent is a hidden QA window, not the user's real study viewport.
     // Count only real Win32 wheel messages forwarded by the child.
@@ -3455,6 +3504,7 @@ int main(int argc,char** argv)try {
     run("parent_width_changes",[&]{parent_width_changes(host.value);});
     run("long_labels_and_literal_values",[&]{long_labels_and_literal_values(host.value,captures);});
     run("wheel_edges_resume_reader",[&]{wheel_edges_resume_reader(host.value);});
+    run("histogram_wheel_fraction_step_sessions",[&]{histogram_wheel_fraction_step_sessions(host.value);});
     run("accumulated_output_scroll_follows_new_groups",[&]{accumulated_output_scroll_follows_new_groups(host.value);});
     run("output_scenario_reading_isolated",[&]{output_scenario_reading_isolated(host.value);});
     run("output_applied_data_reading_isolated",[&]{output_applied_data_reading_isolated(host.value);});
