@@ -11,6 +11,7 @@
 #include <array>
 #include <cstdint>
 #include <cstdlib>
+#include <exception>
 #include <iterator>
 #include <limits>
 #include <stdexcept>
@@ -1087,16 +1088,77 @@ struct SimulationView::Impl {
                 next_format=SimulationInputFormat::json;
             replacement=simulation_input_text(candidate.original,next_format);
         }
-        trace=std::move(candidate);source_positions=std::move(next_source_positions);
-        // A partial Ctrl+wheel movement belongs to the previous edit state.
-        input_wheel_delta=0;
-        frequency_wheel_remainder=0;
-        frequency_scroll=0;frequency_total_height=0;frequency_candidates_only=false;
-        pressed_frequency_group.reset();
-        ++applied_revision;
-        input_key=std::move(identity);position=0;error.clear();
-        if(replacement){input_format=next_format;set_edit_text(item(input_id),*replacement);}
-        rebuild_groups();rebuild_steps();update();publish();
+        // An accepted model must not escape as "not applied" if a late
+        // native RichEdit/layout operation rejects the new presentation.
+        // Move the old trace rather than copying up to 8 MiB of frames.
+        const auto output_anchor=capture_output_reading_anchor();
+        const auto original_anchor=capture_output_reading_anchor(original_order_id);
+        const auto chart_anchor=capture_histogram_anchor();
+        const auto previous_editor=replacement?edit_text(item(input_id)):std::string{};
+        const auto previous_position=position,previous_revision=applied_revision;
+        const auto previous_output_revision=output_reading_revision;
+        const auto previous_original_revision=original_order_reading_revision;
+        const auto previous_output_scenario=output_scenario;
+        const auto previous_original_scenario=original_order_scenario;
+        const auto previous_ink=original_order_ink;
+        const auto previous_frequency_scroll=frequency_scroll;
+        const auto previous_frequency_height=frequency_total_height;
+        const auto previous_input_wheel=input_wheel_delta;
+        const auto previous_frequency_wheel=frequency_wheel_remainder;
+        const auto previous_filter=frequency_candidates_only;
+        const auto previous_pressed=pressed_frequency_group;
+        const auto previous_format=input_format;
+        auto previous_identity=std::move(input_key);
+        auto previous_error=std::move(error);
+        auto previous_output_key=std::move(output_model_key);
+        auto previous_original_key=std::move(original_order_model_key);
+        auto previous_trace=std::move(trace);
+        auto previous_positions=std::move(source_positions);
+        try {
+            trace=std::move(candidate);source_positions=std::move(next_source_positions);
+            // A partial Ctrl+wheel movement belongs to the previous edit state.
+            input_wheel_delta=0;
+            frequency_wheel_remainder=0;
+            frequency_scroll=0;frequency_total_height=0;frequency_candidates_only=false;
+            pressed_frequency_group.reset();
+            ++applied_revision;
+            input_key=std::move(identity);position=0;error.clear();
+            if(replacement){input_format=next_format;set_edit_text(item(input_id),*replacement);}
+            rebuild_groups();rebuild_steps();update();publish();
+        }catch(...){
+            // Restore the real applied trace and active reading session before
+            // the caller reports failure. Invalid drafts never replace this.
+            const auto failure=std::current_exception();
+            trace=std::move(previous_trace);source_positions=std::move(previous_positions);
+            input_key=std::move(previous_identity);error=std::move(previous_error);
+            output_model_key=std::move(previous_output_key);
+            original_order_model_key=std::move(previous_original_key);
+            position=previous_position;applied_revision=previous_revision;
+            output_reading_revision=previous_output_revision;
+            original_order_reading_revision=previous_original_revision;
+            output_scenario=previous_output_scenario;
+            original_order_scenario=previous_original_scenario;
+            original_order_ink=previous_ink;
+            frequency_scroll=previous_frequency_scroll;
+            frequency_total_height=previous_frequency_height;
+            input_wheel_delta=previous_input_wheel;
+            frequency_wheel_remainder=previous_frequency_wheel;
+            frequency_candidates_only=previous_filter;
+            pressed_frequency_group=previous_pressed;
+            input_format=previous_format;
+            if(replacement)set_edit_text(item(input_id),previous_editor);
+            try {
+                rebuild_groups();rebuild_steps();update();
+                restore_output_reading_anchor(output_anchor);
+                restore_output_reading_anchor(original_anchor,original_order_id);
+                restore_histogram_anchor(chart_anchor);
+            }catch(...){
+                // Preserve the originating error if the native control remains
+                // unavailable. The data model was restored before redrawing.
+                OutputDebugStringW(L"No se pudo restaurar la vista del simulador tras rechazar una actualización.\n");
+            }
+            std::rethrow_exception(failure);
+        }
     }
     void replace_data(std::vector<SimulationValue> values,bool replace_editor) {
         replace_trace(build_simulation_trace(spec,std::move(values)),replace_editor);
