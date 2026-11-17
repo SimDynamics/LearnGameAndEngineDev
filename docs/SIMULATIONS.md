@@ -233,6 +233,10 @@ o reintentar, y no se informa de que los datos quedaron aplicados. Si el fallo
 proviene de la presentación Win32, el aviso visible también actualiza su
 nombre accesible y la región de narración, incluso si el formateador RichEdit
 continúa rechazando la operación.
+Si la escritura del editor también falla durante la restauración, se intenta
+reponer literalmente el texto previo por `WM_SETTEXT`, sin volver a utilizar
+`EM_STREAMIN`. La vista sólo debe recuperar el modelo aplicado anterior, y
+el error original debe seguir visible y disponible para narración.
 Se restaura la traza por movimiento, sin duplicar una segunda copia de
 hasta 8 MiB. Las regresiones `applying_valid_data_is_atomic_after_native_failure`
 y `scenario_change_is_atomic_after_native_failure` provocan una única

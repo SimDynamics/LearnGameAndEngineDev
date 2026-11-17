@@ -1152,7 +1152,20 @@ struct SimulationView::Impl {
             if(replacement){
                 try{set_edit_text(item(input_id),previous_editor);}
                 catch(...){
-                    OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\n");
+                    // EM_STREAMIN can itself fail while rolling back a
+                    // scenario. Use a separate native whole-document route
+                    // instead of leaving the new editor text beside the old
+                    // model. Retain the first failure for the user.
+                    try{
+                        const auto editor=item(input_id);
+                        auto previous_native=wide(previous_editor);
+                        std::replace(previous_native.begin(),previous_native.end(),L'\n',L'\r');
+                        if(!editor||!SetWindowTextW(editor,previous_native.c_str())||
+                                edit_text(editor)!=previous_editor)
+                            OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\n");
+                    }catch(...){
+                        OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\n");
+                    }
                 }
             }
             try {
