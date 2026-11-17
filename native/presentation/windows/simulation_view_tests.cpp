@@ -61,6 +61,20 @@ void click(SimulationView& view,int id) {
     const auto button=GetDlgItem(view.window(),id);check(button&&IsWindowEnabled(button),"A required simulation button is absent or disabled");
     SendMessageW(button,BM_CLICK,0,0);pump();
 }
+// The fixture has six ordered cells in one row at the tested wide width.
+// Exercise the real Win32 canvas without injecting desktop-wide input.
+void click_group_cell(SimulationView& view,int cell,bool drag=false,bool modified=false) {
+    const auto canvas=GetDlgItem(view.window(),array_id);check(canvas,"Array canvas is missing");
+    RECT area{};GetClientRect(canvas,&area);
+    check(area.right>=700&&area.bottom>80,"Expected one visible row of six cells");
+    const int x=(cell*2+1)*area.right/12;
+    const int y=MulDiv(70,static_cast<int>(GetDpiForWindow(canvas)),96);
+    check(y<area.bottom,"Selected cell is outside the rendered canvas");
+    const auto keys=static_cast<WPARAM>(MK_LBUTTON|(modified?MK_CONTROL:0));
+    SendMessageW(canvas,WM_LBUTTONDOWN,keys,MAKELPARAM(x,y));
+    if(drag)SendMessageW(canvas,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(x+45,y));
+    SendMessageW(canvas,WM_LBUTTONUP,modified?MK_CONTROL:0,MAKELPARAM(x,y));pump();
+}
 std::string native_text(HWND window) {
     std::wstring value(static_cast<std::size_t>(GetWindowTextLengthW(window))+1,L'\0');
     value.resize(static_cast<std::size_t>(GetWindowTextW(window,value.data(),static_cast<int>(value.size()))));return utf8(value);
@@ -386,7 +400,15 @@ void modes(HWND host,const std::filesystem::path& captures) {
     for(const auto [mode,file]:std::array{
             std::pair{SimulationViewMode::array,"array-wide.bmp"},std::pair{SimulationViewMode::groups,"groups-wide.bmp"},
             std::pair{SimulationViewMode::candidates,"candidates-wide.bmp"},std::pair{SimulationViewMode::summary,"summary-wide.bmp"}}){
-        auto spec=fixture(mode);spec.editable=false;SimulationView view(host,spec,"es");resize(view,960);
+        auto spec=fixture(mode);spec.editable=false;
+        // The lesson reader handles canvas mouse messages for its drag gestures.
+        // Simulate a consuming parent handler to protect the click interaction.
+        SimulationCallbacks gestures{};
+        gestures.passive_gesture=[](HWND,UINT message,WPARAM,LPARAM)->std::optional<LRESULT>{
+            if(message==WM_LBUTTONDOWN||message==WM_LBUTTONUP)return LRESULT{0};
+            return std::nullopt;
+        };
+        SimulationView view(host,spec,"es",gestures);resize(view,960);
         const auto navigation_selector=GetDlgItem(view.window(),step_selector_id);
         check(navigation_selector&&bool(GetWindowLongPtrW(navigation_selector,GWL_STYLE)&WS_VISIBLE)==
             (mode==SimulationViewMode::candidates),
@@ -399,6 +421,18 @@ void modes(HWND host,const std::filesystem::path& captures) {
             check(text(view,variables_id).find("inicio: 1\nfin (exclusivo): 5")!=std::string::npos&&text(view,variables_id).find("frecuencia: 4")!=std::string::npos,
                 "Group selection showed another group's interval or frequency");
             check(name(GetDlgItem(view.window(),array_id)).find("[1, 5)")!=std::string::npos,"The selected interval has no non-color description");
+            click_group_cell(view,5);
+            check(view.step_index()==2&&SendMessageW(GetDlgItem(view.window(),group_first_id+2),BM_GETCHECK,0,0)==BST_CHECKED&&
+                text(view,variables_id).find("frecuencia: 1")!=std::string::npos,
+                "Clicking a rendered cell did not select its group after the parent consumed mouse events");
+            click_group_cell(view,0,true);
+            check(view.step_index()==2,"Dragging from a cell was incorrectly treated as a click");
+            click_group_cell(view,0,false,true);
+            check(view.step_index()==2,"Ctrl+click on an array cell changed the selected group");
+            click_group_cell(view,0);
+            check(view.step_index()==0&&SendMessageW(GetDlgItem(view.window(),group_first_id),BM_GETCHECK,0,0)==BST_CHECKED&&
+                text(view,variables_id).find("frecuencia: 1")!=std::string::npos,
+                "Clicking the first cell did not restore its group or radio selection");
             RECT selector{},array{};GetWindowRect(group,&selector);GetWindowRect(GetDlgItem(view.window(),array_id),&array);
             check(selector.bottom<=array.top,"The native group selector is not before the array");
             wchar_t statistics_class[96]{};GetClassNameW(GetDlgItem(view.window(),variables_id),statistics_class,96);
@@ -421,6 +455,10 @@ void modes(HWND host,const std::filesystem::path& captures) {
                 reinterpret_cast<LPARAM>(navigation_selector));pump();
             check(view.step_index()==2&&text(view,output_id)=="-8:1\n3:4\n10:1\n",
                 "Jumping to a candidate group did not refresh the complete trace");
+            click_group_cell(view,2);
+            check(view.step_index()==1&&text(view,output_id)=="-8:1\n3:4\n"&&
+                SendMessageW(navigation_selector,CB_GETCURSEL,0,0)==1,
+                "Clicking a member of the middle group did not select its completed candidate frame");
         }else{
             check(view.step_count()==1&&!(GetWindowLongPtrW(GetDlgItem(view.window(),next_id),GWL_STYLE)&WS_VISIBLE),"A static mode has visible step controls");
             if(mode==SimulationViewMode::summary)check(text(view,variables_id)=="máxima: 4\nmayores: 3","Summary values were not calculated");

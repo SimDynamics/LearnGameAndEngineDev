@@ -77,9 +77,9 @@ valores, las frecuencias ni los criterios de empate.
 | `view` | Uso |
 |---|---|
 | `array` | Examinar valores y posiciones del array. |
-| `groups` | Examinar los grupos contiguos de valores iguales. |
+| `groups` | Examinar los grupos contiguos de valores iguales, también pulsando una de sus casillas. |
 | `walkthrough` | Recorrer los pasos con índices, variables, explicación y salida. |
-| `candidates` | Comparar las decisiones que conservan o cambian los candidatos. |
+| `candidates` | Comparar las decisiones que conservan o cambian los candidatos, con selección directa del grupo. |
 | `summary` | Consultar el resultado calculado del recorrido completo. |
 
 Las agrupaciones, los índices y las frecuencias se calculan a partir de los
@@ -87,6 +87,13 @@ datos. El contenido no declara manualmente qué celdas pertenecen a cada grupo,
 qué número debe mostrar una variable ni cuál debe ser la respuesta final.
 Las etiquetas permiten presentar nombres adecuados a la explicación del curso;
 no cambian el significado de las variables del modelo.
+
+En **groups** y **candidates**, pulsar una casilla del array selecciona su grupo
+calculado. El clic no requiere acertar un color ni una respuesta; selecciona el
+intervalo al que pertenece la posición. Los arrastres, los clics modificados y
+los espacios entre casillas no cambian la selección. Los botones de grupos y
+el selector de fases mantienen la alternativa accesible por teclado. En las
+vistas de resumen y array, las casillas no cambian el estado.
 
 ## Datos, escenarios y edición
 
