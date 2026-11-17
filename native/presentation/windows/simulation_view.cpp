@@ -131,6 +131,7 @@ struct SimulationView::Impl {
     std::size_t position=0,scenario=0;
     SimulationInputFormat input_format=SimulationInputFormat::lines;
     int width=1,height=1,scale=100,canvas_height=1;
+    int frequency_scroll=0,frequency_total_height=0;
     bool initializing=true,arranging=false,layout_valid=false;
     std::shared_ptr<bool> alive=std::make_shared<bool>(true);
     std::string error,input_key;
@@ -573,6 +574,7 @@ struct SimulationView::Impl {
             replacement=simulation_input_text(candidate.original,next_format);
         }
         trace=std::move(candidate);source_positions=std::move(next_source_positions);
+        frequency_scroll=0;frequency_total_height=0;
         input_key=std::move(identity);position=0;error.clear();
         if(replacement){input_format=next_format;set_edit_text(item(input_id),*replacement);}
         rebuild_groups();rebuild_steps();update();publish();
@@ -649,6 +651,22 @@ struct SimulationView::Impl {
         if(!visible)return 0;
         const auto columns=static_cast<std::size_t>(frequency_columns(available,visible));
         return sp(8)+static_cast<int>((visible+columns-1)/columns)*sp(138)+sp(4);
+    }
+    void scroll_frequencies(int requested) {
+        if(!frequencies||!frequency_total_height)return;
+        SCROLLINFO range{sizeof(range),SIF_RANGE|SIF_PAGE|SIF_POS};
+        if(!GetScrollInfo(frequencies,SB_VERT,&range))return;
+        const int limit=std::max(range.nMin,range.nMax-
+            std::max(0,static_cast<int>(range.nPage)-1));
+        const int next=std::clamp(requested,range.nMin,limit);
+        if(next==range.nPos)return;
+        SCROLLINFO changed{sizeof(changed),SIF_POS};
+        changed.nPos=next;
+        SetScrollInfo(frequencies,SB_VERT,&changed,TRUE);
+        SCROLLINFO actual{sizeof(actual),SIF_POS};
+        GetScrollInfo(frequencies,SB_VERT,&actual);
+        frequency_scroll=actual.nPos;
+        InvalidateRect(frequencies,nullptr,FALSE);
     }
     int statistics_layout(int available) {
         const int gap=sp(10);int top=0;
@@ -731,8 +749,46 @@ struct SimulationView::Impl {
         const auto stats_height=statistics_layout(available);place(variables_id,margin,top,available,stats_height,stats);if(stats)top+=stats_height+px(8);
         const auto groups_done=completed_groups();
         text_row(frequencies_label_id,groups_done>0);
-        place(frequencies_id,margin,top,available,frequency_height(available,groups_done),groups_done>0);
-        if(groups_done)top+=frequency_height(available,groups_done)+px(8);
+        if(groups_done){
+            // A large histogram must not turn the whole study page into a
+            // many-thousand-pixel chart. Show a viewport with an internal
+            // scrollbar, while keeping every group's accessible description.
+            const auto full=frequency_height(available,groups_done);
+            const int max_viewport=sp(440);
+            const bool overflow=full>max_viewport;
+            if(move){
+                ShowScrollBar(frequencies,SB_VERT,overflow);
+                const auto style=GetWindowLongPtrW(frequencies,GWL_STYLE);
+                SetWindowLongPtrW(frequencies,GWL_STYLE,
+                    overflow?style|WS_TABSTOP:style&~WS_TABSTOP);
+            }
+            const int viewport=std::min(full,max_viewport);
+            place(frequencies_id,margin,top,available,viewport,true);
+            if(move){
+                RECT client{};GetClientRect(frequencies,&client);
+                // Scrollbar presence can reduce the client width by a column.
+                // Recompute the full height after Windows applies the style.
+                frequency_total_height=frequency_height(std::max(1,client.right),groups_done);
+                SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE|SIF_POS};
+                scroll.nMin=0;scroll.nMax=std::max(0,frequency_total_height-1);
+                scroll.nPage=static_cast<UINT>(std::max(1L,client.bottom));
+                scroll.nPos=frequency_scroll;
+                SetScrollInfo(frequencies,SB_VERT,&scroll,TRUE);
+                SCROLLINFO selected{sizeof(selected),SIF_POS};
+                GetScrollInfo(frequencies,SB_VERT,&selected);
+                frequency_scroll=selected.nPos;
+                InvalidateRect(frequencies,nullptr,FALSE);
+            }
+            top+=viewport+px(8);
+        }else{
+            if(move){
+                frequency_scroll=0;frequency_total_height=0;
+                ShowScrollBar(frequencies,SB_VERT,FALSE);
+                const auto style=GetWindowLongPtrW(frequencies,GWL_STYLE);
+                SetWindowLongPtrW(frequencies,GWL_STYLE,style&~WS_TABSTOP);
+            }
+            place(frequencies_id,0,0,1,1,false);
+        }
         const bool output=spec.view==SimulationViewMode::walkthrough||spec.view==SimulationViewMode::candidates||spec.view==SimulationViewMode::summary;
         text_row(output_label_id,output);text_row(output_id,output,sp(34));
         text_row(result_comparison_id);
@@ -850,7 +906,8 @@ struct SimulationView::Impl {
             const int row=static_cast<int>(i/static_cast<std::size_t>(columns));
             const int col=static_cast<int>(i%static_cast<std::size_t>(columns));
             const int left=col*(card_width+gap);
-            const int top=sp(8)+row*sp(138);
+            const int top=sp(8)+row*sp(138)-frequency_scroll;
+            if(top+sp(130)<=0||top>=area.bottom)continue;
             const RECT card{left,top,left+card_width,top+sp(130)};
             const auto& group=trace.groups[i];
             const auto count=group.end-group.begin;
@@ -1035,15 +1092,59 @@ struct SimulationView::Impl {
             SetWindowLongPtrW(item,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));
         }
         if(!self)return DefWindowProcW(item,message,wp,lp);
+        if(message==WM_GETDLGCODE){
+            const auto* key=reinterpret_cast<const MSG*>(lp);
+            if(key&&key->message==WM_KEYDOWN&&key->wParam==VK_TAB)return 0;
+            return DLGC_WANTARROWS;
+        }
         if(self->callbacks.passive_gesture&&passive_message(message)){
             const auto handled=self->callbacks.passive_gesture(item,message,wp,lp);
             if(handled&&message!=WM_NCDESTROY)return *handled;
+        }
+        RECT viewport{};GetClientRect(item,&viewport);
+        if(message==WM_VSCROLL){
+            SCROLLINFO state{sizeof(state),SIF_ALL};
+            GetScrollInfo(item,SB_VERT,&state);
+            int target=state.nPos;
+            switch(LOWORD(wp)){
+            case SB_LINEUP:target-=self->sp(45);break;
+            case SB_LINEDOWN:target+=self->sp(45);break;
+            case SB_PAGEUP:target-=viewport.bottom;break;
+            case SB_PAGEDOWN:target+=viewport.bottom;break;
+            case SB_TOP:target=0;break;
+            case SB_BOTTOM:target=self->frequency_total_height;break;
+            case SB_THUMBPOSITION:
+            case SB_THUMBTRACK:target=state.nTrackPos;break;
+            default:return 0;
+            }
+            self->scroll_frequencies(target);return 0;
+        }
+        if(message==WM_KEYDOWN&&self->frequency_total_height>viewport.bottom){
+            int target=self->frequency_scroll;
+            switch(wp){
+            case VK_UP:target-=self->sp(45);break;
+            case VK_DOWN:target+=self->sp(45);break;
+            case VK_PRIOR:target-=viewport.bottom;break;
+            case VK_NEXT:target+=viewport.bottom;break;
+            case VK_HOME:target=0;break;
+            case VK_END:target=self->frequency_total_height;break;
+            default:return DefWindowProcW(item,message,wp,lp);
+            }
+            self->scroll_frequencies(target);return 0;
+        }
+        if(message==WM_MOUSEWHEEL){
+            if((GET_KEYSTATE_WPARAM(wp)&MK_CONTROL)||
+                self->frequency_total_height<=viewport.bottom)
+                return SendMessageW(GetParent(item),message,wp,lp);
+            const auto delta=GET_WHEEL_DELTA_WPARAM(wp);
+            self->scroll_frequencies(self->frequency_scroll-
+                delta*self->sp(75)/WHEEL_DELTA);
+            return 0;
         }
         if(message==WM_PAINT){PAINTSTRUCT paint{};const auto dc=BeginPaint(item,&paint);
             self->paint_frequencies(dc);EndPaint(item,&paint);return 0;}
         if(message==WM_PRINTCLIENT){self->paint_frequencies(reinterpret_cast<HDC>(wp));return 0;}
         if(message==WM_ERASEBKGND)return 1;
-        if(message==WM_MOUSEWHEEL)return SendMessageW(GetParent(item),message,wp,lp);
         return DefWindowProcW(item,message,wp,lp);
     }
     static LRESULT CALLBACK statistics_procedure(HWND item,UINT message,WPARAM wp,LPARAM lp) {

@@ -338,6 +338,9 @@ void progressive_frequency_bars(HWND host,const std::filesystem::path& captures)
         "Counting an element revealed a frequency before its group's decision");
     check(view.go_to_step(2)&&control_shown(bars)&&control_shown(heading),
         "A completed group has no visual frequency representation");
+    check(!(GetWindowLongPtrW(bars,GWL_STYLE)&WS_TABSTOP)&&
+        !(GetWindowLongPtrW(bars,GWL_STYLE)&WS_VSCROLL),
+        "A one-group chart should not consume an extra keyboard tab stop");
     const auto first=name(bars);
     check(text(view,frequencies_label_id).find("escala máxima visible 1")!=std::string::npos,
         "The chart did not identify the frequency scale currently known");
@@ -399,8 +402,9 @@ void progressive_frequency_bars(HWND host,const std::filesystem::path& captures)
     SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
         reinterpret_cast<LPARAM>(scenario));pump();
     check(view.step_count()==1&&!control_shown(bars)&&
-        native_text(bars).empty()&&shown_group_count(view).empty(),
-        "The empty scenario retained a stale histogram and narration");
+        native_text(bars).empty()&&shown_group_count(view).empty()&&
+        !(GetWindowLongPtrW(bars,GWL_STYLE)&WS_TABSTOP),
+        "The empty scenario retained a stale histogram, navigation or narration");
 
     for(const auto mode:{SimulationViewMode::array,SimulationViewMode::groups}) {
         auto other=fixture(mode);
@@ -445,8 +449,48 @@ void progressive_frequency_bars(HWND host,const std::filesystem::path& captures)
         resize(scaled,340);bounds(scaled,"64 groups in responsive histogram");
         const auto all=GetDlgItem(scaled.window(),frequencies_id);
         RECT size{};GetClientRect(all,&size);
-        check(size.bottom>1500&&name(all).find("Grupo 64: 63, frecuencia 1")!=std::string::npos,
-            "The responsive histogram clipped its last group or lost data");
+        const auto dpi=static_cast<int>(GetDpiForWindow(all));
+        const auto limit=MulDiv(MulDiv(440,dpi,96),150,100);
+        SCROLLINFO initial{sizeof(initial),SIF_ALL};
+        check(size.bottom>0&&size.bottom<=limit&&
+            (GetWindowLongPtrW(all,GWL_STYLE)&WS_VSCROLL)&&
+            (GetWindowLongPtrW(all,GWL_STYLE)&WS_TABSTOP)&&
+            GetScrollInfo(all,SB_VERT,&initial)&&initial.nPos==0&&
+            initial.nMax+1>static_cast<int>(initial.nPage)&&
+            name(all).find("Grupo 64: 63, frecuencia 1")!=std::string::npos,
+            "The 64-group histogram is not bounded, keyboard-reachable or scrollable");
+        const auto authored=scaled.reading_regions();
+        SendMessageW(all,WM_VSCROLL,SB_BOTTOM,0);pump();
+        SCROLLINFO bottom{sizeof(bottom),SIF_ALL};
+        GetScrollInfo(all,SB_VERT,&bottom);
+        check(bottom.nPos>0&&bottom.nPos==bottom.nMax-static_cast<int>(bottom.nPage)+1&&
+            scaled.reading_regions().size()==authored.size(),
+            "Dragging to the final histogram groups changed narration or stopped early");
+        SendMessageW(all,WM_KEYDOWN,VK_HOME,1);pump();
+        SCROLLINFO top{sizeof(top),SIF_ALL};
+        GetScrollInfo(all,SB_VERT,&top);
+        check(top.nPos==0,"Home did not return to the start of the histogram");
+        SendMessageW(all,WM_KEYDOWN,VK_NEXT,1);pump();
+        SCROLLINFO paged{sizeof(paged),SIF_ALL};
+        GetScrollInfo(all,SB_VERT,&paged);
+        check(paged.nPos>0&&paged.nPos<bottom.nPos,
+            "PageDown did not move within the histogram without changing steps");
+        SendMessageW(all,WM_KEYDOWN,VK_END,1);pump();
+        SCROLLINFO ended{sizeof(ended),SIF_ALL};
+        GetScrollInfo(all,SB_VERT,&ended);
+        check(ended.nPos==bottom.nPos&&
+            name(all).find("Grupo 64: 63, frecuencia 1")!=std::string::npos,
+            "End did not reach the final group or changed the accessible values");
+        SendMessageW(all,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(WHEEL_DELTA)),0);pump();
+        SCROLLINFO wheeled{sizeof(wheeled),SIF_ALL};
+        GetScrollInfo(all,SB_VERT,&wheeled);
+        check(wheeled.nPos<ended.nPos,
+            "Mouse wheel did not scroll the chart within its own viewport");
+        SendMessageW(all,WM_KEYDOWN,VK_HOME,1);pump();
+        SCROLLINFO zero{sizeof(zero),SIF_POS};
+        GetScrollInfo(all,SB_VERT,&zero);
+        check(zero.nPos==0,"The histogram did not restore its original scroll origin");
+        check(scaled.step_index()==0,"Scrolling histogram cards modified the summary state");
     }
 }
 void calculated_step_changes(HWND host) {

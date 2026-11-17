@@ -293,11 +293,22 @@ relativa cuando un grupo posterior alcanza un máximo mayor: no cambió la
 frecuencia original, cambió la escala de comparación conocida hasta entonces.
 La escala se identifica en el título del diagrama.
 
-La disposición se adapta al ancho y al zoom de texto, distribuyendo los
-grupos en varias filas sin ocultar el último; acepta hasta los 64 grupos
-permitidos por el modelo. La representación no califica ejercicios ni
-escribe el progreso, y no permite consultar desde el lector ningún grupo
-futuro que el recorrido todavía no haya terminado.
+La disposición se adapta al ancho y al zoom de texto y acepta hasta los
+64 grupos permitidos por el modelo. Para evitar que una lección tenga un
+gráfico de miles de píxeles de altura, el área visible de las barras se
+limita a 440 unidades de presentación escaladas. Si hay más filas, se
+activa una barra de desplazamiento interna. El estudiante puede usar la
+rueda del ratón sobre el gráfico, desplazar su barra o alcanzarlo con
+Tab y recorrerlo con las flechas, Re Pág, Av Pág, Inicio y Fin. La rueda
+con Ctrl conserva su comportamiento de zoom o desplazamiento del lector.
+
+Al cambiar de escenario o aplicar datos nuevos, el gráfico vuelve al
+inicio; cambiar únicamente de paso conserva el desplazamiento mientras
+el grupo sigue visible. La descripción accesible contiene todos los grupos
+que ya están terminados, incluidos los que quedan fuera del área gráfica
+visible; nunca incluye resultados futuros. Un gráfico corto no añade
+un tabulador innecesario. La representación no califica ejercicios ni
+modifica el progreso o los datos del estudiante.
 
 ### Qué cambió en el paso
 
