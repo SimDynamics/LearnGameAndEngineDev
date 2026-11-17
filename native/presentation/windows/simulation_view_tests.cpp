@@ -2265,8 +2265,12 @@ void scale_limits_and_local_control_wheel(HWND host) {
     control_wheel(host,input,-WHEEL_DELTA);
     check(rich_edit_scale(input)==50,
         "Ctrl+wheel did not stop at the 50 percent minimum");
-    check(rich_edit_scale(GetDlgItem(first.window(),explanation_id))==100&&rich_edit_scale(GetDlgItem(first.window(),output_id))==100,
-        "The local input gesture changed another simulation control's scale");
+    const auto short_explanation=GetDlgItem(first.window(),explanation_id);
+    const auto short_output=GetDlgItem(first.window(),output_id);
+    control_wheel(host,short_explanation,WHEEL_DELTA);
+    control_wheel(host,short_output,-WHEEL_DELTA);
+    check(rich_edit_scale(short_explanation)==100&&rich_edit_scale(short_output)==100,
+        "A read-only simulation text control changed its own zoom after Ctrl+wheel");
     (void)rich_edit_fonts(second,100);
     check(rich_edit_contents(first)==first_contents&&rich_edit_contents(second)==second_contents&&
         first.step_index()==original_step&&name(GetDlgItem(first.window(),array_id))==original_array,
@@ -2373,6 +2377,13 @@ void scrollable_text_keyboard(HWND host,const std::filesystem::path& captures) {
         "Scrollable read-only content cannot be reached with Tab");
     KeyboardProbe explanation_probe(explanation),output_probe(output);
     const auto original_contents=rich_edit_contents(view);
+    // Long read-only text has genuine native overflow. Ctrl+wheel must go
+    // through the parent reader rather than zoom its RichEdit in isolation.
+    control_wheel(host,explanation,WHEEL_DELTA);
+    control_wheel(host,output,-WHEEL_DELTA);
+    check(rich_edit_scale(explanation)==100&&rich_edit_scale(output)==100&&
+        rich_edit_contents(view)==original_contents,
+        "Ctrl+wheel changed independently scaled, scrollable read-only text");
     if(!captures.empty())capture(view.window(),captures/"keyboard-scroll-initial.bmp");
     const auto selector=GetDlgItem(view.window(),scenario_id);SetFocus(selector);
     check(GetFocus()==selector,"Cannot focus the isolated native scenario control");
