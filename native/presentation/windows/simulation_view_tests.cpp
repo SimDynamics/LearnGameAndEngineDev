@@ -229,8 +229,14 @@ void fitted_text(SimulationView& view) {
         check(SetWindowSubclass(view.window(),height_request_probe,probe_id,reinterpret_cast<DWORD_PTR>(&probe)),"Cannot inspect native text height");
         SendMessageW(child,EM_REQUESTRESIZE,0,0);RemoveWindowSubclass(view.window(),height_request_probe,probe_id);
         check(probe.required>=0,"The visible RichEdit did not provide its native required height");
-        const bool bounded=(GetDlgCtrlID(child)==explanation_id||GetDlgCtrlID(child)==output_id)&&(style&WS_TABSTOP);
-        if(!bounded&&probe.required>window_height(child))throw std::runtime_error("RichEdit "+std::to_string(GetDlgCtrlID(child))+
+        // The native layout deliberately bounds five read-only fields and
+        // makes them keyboard-scrollable when their full text exceeds the cap.
+        // A scrollable viewport is not a clipped, unreachable text region.
+        const auto id=GetDlgCtrlID(child);
+        const bool bounded=(id==explanation_id||id==output_id||
+            id==original_order_id||id==transition_id||
+            id==result_comparison_id)&&(style&WS_TABSTOP);
+        if(!bounded&&probe.required>window_height(child))throw std::runtime_error("RichEdit "+std::to_string(id)+
             " needs "+std::to_string(probe.required)+" pixels but has "+std::to_string(window_height(child))+"; text would be clipped");
     }
 }
@@ -364,6 +370,33 @@ std::vector<COLORREF> frequency_header_pixels(SimulationView& view,std::size_t g
     DeleteDC(dc);ReleaseDC(chart,screen);
     check(!pixels.empty(),"The histogram header paint is empty");
     return pixels;
+}
+// Catch an omitted native label before the larger interaction scenarios
+// misdiagnose the resulting missing output, narration or layout state.
+void native_text_control_contract(HWND host) {
+    const auto spec=fixture(SimulationViewMode::walkthrough);
+    SimulationView view(host,spec,"es");
+    const std::array<int,16> required{
+        100,101,102,104,106,107,109,110,
+        114,118,119,122,123,126,128,130
+    };
+    for(const auto id:required){
+        const auto control=GetDlgItem(view.window(),id);
+        if(!control)throw std::runtime_error("Missing authored native text control "+std::to_string(id));
+        wchar_t type[48]{};
+        check(GetClassNameW(control,type,48)>0&&std::wstring_view(type)==MSFTEDIT_CLASS,
+            "An authored native text control is not a RichEdit");
+        constexpr LONG_PTR expected=ES_READONLY|ES_MULTILINE;
+        check((GetWindowLongPtrW(control,GWL_STYLE)&expected)==expected,
+            "An authored native text control lost its read-only multiline contract");
+    }
+    resize(view,820);
+    const auto trace=build_simulation_trace(spec);
+    check(text(view,output_id)==trace.frames.front().output,
+        "The mounted output does not match the initial computed frame");
+    check(view.go_to_step(trace.frames.size()-1)&&
+        text(view,output_id)==trace.frames.back().output,
+        "The mounted native output does not expose the completed computed result");
 }
 void current_frequency_decision(HWND host,const std::filesystem::path& captures) {
     const auto spec=fixture(SimulationViewMode::walkthrough);
@@ -2307,6 +2340,7 @@ int main(int argc,char** argv)try {
         catch(...){++failures;std::cerr<<"FAIL simulation scenario "<<label<<": unknown native failure\n";}
         pump(host.value);
     };
+    run("native_text_control_contract",[&]{native_text_control_contract(host.value);});
     run("current_frequency_decision",[&]{current_frequency_decision(host.value,captures);});
     run("histogram_card_navigation",[&]{histogram_card_navigation(host.value);});
     run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
