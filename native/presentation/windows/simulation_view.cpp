@@ -230,17 +230,69 @@ struct SimulationView::Impl {
                     static_cast<LPARAM>(target-current));
         }
     }
-    // Restore both scrollable views even when a late RichEdit zoom/reflow
-    // throws. Their reading positions are independent of the trace itself.
+    // Histogram cards are laid out in rows, so a pixel scroll offset does
+    // not identify the same groups once the width or text scale changes.
+    // Anchor the first visible row by its real group, with the fractional
+    // offset retained across row-height changes.
+    struct HistogramReadingAnchor {
+        std::size_t first_group=0;
+        int row_offset=0,pitch=1;
+        bool at_end=false;
+    };
+    std::optional<HistogramReadingAnchor> capture_histogram_anchor()const {
+        if(!frequencies||!IsWindow(frequencies)||
+                !(GetWindowLongPtrW(frequencies,GWL_STYLE)&WS_VISIBLE))
+            return std::nullopt;
+        const auto indices=frequency_indices();
+        if(indices.empty())return std::nullopt;
+        RECT viewport{};GetClientRect(frequencies,&viewport);
+        if(viewport.bottom<=0||viewport.right<=0)return std::nullopt;
+        SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE|SIF_POS};
+        if(!GetScrollInfo(frequencies,SB_VERT,&scroll)||!scroll.nPage)
+            return std::nullopt;
+        const int pitch=sp(138);
+        const auto row=static_cast<std::size_t>(
+            std::max(0,scroll.nPos-sp(8))/pitch);
+        const auto columns=static_cast<std::size_t>(
+            frequency_columns(viewport.right,indices.size()));
+        const auto slot=std::min(indices.size()-1,row*columns);
+        const auto end=std::max(scroll.nMin,scroll.nMax-
+            std::max(0,static_cast<int>(scroll.nPage)-1));
+        return HistogramReadingAnchor{indices[slot],
+            scroll.nPos-(sp(8)+static_cast<int>(row)*pitch),
+            pitch,scroll.nPos>=end};
+    }
+    void restore_histogram_anchor(
+            const std::optional<HistogramReadingAnchor>& saved){
+        if(!saved||!frequencies||!IsWindow(frequencies))return;
+        const auto indices=frequency_indices();
+        if(indices.empty())return;
+        if(saved->at_end){scroll_frequencies(frequency_total_height);return;}
+        const auto found=std::ranges::find(indices,saved->first_group);
+        if(found==indices.end())return;
+        RECT viewport{};GetClientRect(frequencies,&viewport);
+        if(viewport.right<=0||viewport.bottom<=0)return;
+        const auto columns=static_cast<std::size_t>(
+            frequency_columns(viewport.right,indices.size()));
+        const auto row=static_cast<int>(
+            static_cast<std::size_t>(found-indices.begin())/columns);
+        const auto offset=MulDiv(saved->row_offset,sp(138),saved->pitch);
+        scroll_frequencies(sp(8)+row*sp(138)+offset);
+    }
+    // Restore every independent reading surface, including if a late RichEdit
+    // zoom/reflow throws. Histogram scroll follows a group, not old pixels.
     struct SimulationReadingRestorer {
         Impl& view;
         std::optional<OutputReadingAnchor> output,original_order;
+        std::optional<HistogramReadingAnchor> histogram;
         explicit SimulationReadingRestorer(Impl& owner)
             :view(owner),output(owner.capture_output_reading_anchor()),
-             original_order(owner.capture_output_reading_anchor(original_order_id)){}
+             original_order(owner.capture_output_reading_anchor(original_order_id)),
+             histogram(owner.capture_histogram_anchor()){}
         ~SimulationReadingRestorer(){
             view.restore_output_reading_anchor(output);
             view.restore_output_reading_anchor(original_order,original_order_id);
+            view.restore_histogram_anchor(histogram);
         }
         SimulationReadingRestorer(const SimulationReadingRestorer&)=delete;
         SimulationReadingRestorer& operator=(const SimulationReadingRestorer&)=delete;
