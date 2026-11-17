@@ -945,6 +945,86 @@ void histogram_reflow_retains_visible_group(HWND host) {
         "Widening the histogram after a bottom scroll lost its end");
 }
 
+
+void explicit_decision_jumps_reveal_histogram_bar(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.values.clear();spec.scenarios.clear();spec.editable=false;
+    for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");
+    view.set_text_scale(150);resize(view,340);
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    const auto selector=GetDlgItem(view.window(),step_selector_id);
+    check(chart&&selector,"Missing Win32 controls for direct decision navigation");
+    const auto pick=[&](std::size_t step){
+        check(SendMessageW(selector,CB_SETCURSEL,
+            static_cast<WPARAM>(step),0)!=CB_ERR,
+            "The step selector cannot reach the requested decision");
+        SendMessageW(view.window(),WM_COMMAND,
+            MAKEWPARAM(step_selector_id,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(selector));pump();
+        check(view.step_index()==step,
+            "Direct step selection did not update the computed model");
+    };
+    check(!view.frequency_card_bounds_in_canvas(0),
+        "The initial state exposed a future histogram card");
+    // A direct jump skips fifty complete groups. The group being examined
+    // must be reachable on screen without the user manually scrolling down.
+    pick(102);
+    check(view.frequency_card_bounds_in_canvas(50).has_value()&&
+        !view.frequency_card_bounds_in_canvas(0).has_value()&&
+        !view.frequency_card_bounds_in_canvas(51).has_value()&&
+        text(view,output_id).ends_with("50:1\n"),
+        "A direct step jump left the selected group offscreen or leaked future data");
+    click(view,next_decision_id);
+    check(view.step_index()==104&&
+        view.frequency_card_bounds_in_canvas(51).has_value()&&
+        !view.frequency_card_bounds_in_canvas(52).has_value(),
+        "Next decision failed to reveal its actual group");
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    check(view.frequency_card_bounds_in_canvas(0).has_value()&&
+        !view.frequency_card_bounds_in_canvas(51).has_value(),
+        "Cannot inspect the first bars before testing explicit vs sequential moves");
+    click(view,previous_id);
+    click(view,next_id);
+    check(view.step_index()==104&&
+        !view.frequency_card_bounds_in_canvas(51).has_value()&&
+        view.frequency_card_bounds_in_canvas(0).has_value(),
+        "Sequential navigation unexpectedly stole a manually selected scroll position");
+    // Choosing the currently selected decision through the drop-down is an
+    // explicit reveal command even if it changes no model state.
+    pick(104);
+    check(view.frequency_card_bounds_in_canvas(51).has_value()&&
+        !view.frequency_card_bounds_in_canvas(0).has_value(),
+        "Re-selecting the current decision did not reveal its histogram card");
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    click(view,previous_decision_id);
+    check(view.step_index()==102&&
+        view.frequency_card_bounds_in_canvas(50).has_value(),
+        "Previous decision did not reveal the chosen group");
+    pick(2);
+    check(view.step_index()==2&&
+        view.frequency_card_bounds_in_canvas(0).has_value()&&
+        !view.frequency_card_bounds_in_canvas(1).has_value()&&
+        spec==authored,
+        "Returning to an early decision retained future bars or changed authored data");
+
+    auto candidates=fixture(SimulationViewMode::candidates);
+    candidates.values=spec.values;candidates.scenarios.clear();candidates.editable=false;
+    SimulationView candidate_view(host,candidates,"es");
+    candidate_view.set_text_scale(150);resize(candidate_view,340);
+    const auto candidate_selector=GetDlgItem(candidate_view.window(),step_selector_id);
+    check(candidate_selector&&SendMessageW(candidate_selector,CB_SETCURSEL,58,0)!=CB_ERR,
+        "Cannot select a distant completed group in candidates view");
+    SendMessageW(candidate_view.window(),WM_COMMAND,
+        MAKEWPARAM(step_selector_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(candidate_selector));pump();
+    check(candidate_view.step_index()==58&&
+        candidate_view.frequency_card_bounds_in_canvas(58).has_value()&&
+        !candidate_view.frequency_card_bounds_in_canvas(59).has_value(),
+        "Candidates mode did not reveal the directly selected group or disclosed a future one");
+}
+
 void candidate_frequency_filter(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -3593,6 +3673,7 @@ int main(int argc,char** argv)try {
     run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
     run("histogram_follows_new_groups_only_at_end",[&]{histogram_follows_new_groups_only_at_end(host.value);});
     run("histogram_reflow_retains_visible_group",[&]{histogram_reflow_retains_visible_group(host.value);});
+    run("explicit_decision_jumps_reveal_histogram_bar",[&]{explicit_decision_jumps_reveal_histogram_bar(host.value);});
     run("candidate_frequency_filter",[&]{candidate_frequency_filter(host.value);});
     run("neighboring_values_explain_group_boundaries",[&]{neighboring_values_explain_group_boundaries(host.value);});
     run("calculated_step_changes",[&]{calculated_step_changes(host.value);});
