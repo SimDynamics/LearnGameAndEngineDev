@@ -810,7 +810,8 @@ struct MathPuzzleView::Impl {
             reinterpret_cast<HMENU>(static_cast<INT_PTR>(next_id++)),GetModuleHandleW(nullptr),nullptr);
         if (!item) throw std::runtime_error("Cannot create a mathematics control");
         SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(_wcsicmp(name,MSFTEDIT_CLASS)==0?base_font:font),FALSE); reader_theme::apply(item,reader_theme::Surface::card);
-        if (_wcsicmp(name,MSFTEDIT_CLASS)==0) SendMessageW(item,EM_SETZOOM,text_scale,100);
+        if (_wcsicmp(name,MSFTEDIT_CLASS)==0&&!set_rich_text_zoom(item,text_scale))
+            throw std::runtime_error("RichEdit rechazó la escala del texto matemático.");
         return item;
     }
     HWND label(std::string value,std::string key = {},RichTextRole role = RichTextRole::body,bool passive = true,std::string_view math_mode="auto",const curriculum::TextSemantics* semantics=nullptr) {
@@ -1810,15 +1811,31 @@ void MathPuzzleView::set_enabled(bool enabled) {
     for(const auto& [canvas,fields]:impl_->graph_fields)for(std::size_t index=0;index<fields.size();++index){const auto [x,y]=fields[index];EnableWindow(x,enabled&&canvas->points[index].draggable);EnableWindow(y,enabled&&canvas->points[index].draggable);}
 }
 void MathPuzzleView::set_text_scale(int percentage) {
-    percentage=std::clamp(percentage,75,150);if(impl_->text_scale==percentage)return;impl_->text_scale=percentage;
+    percentage=std::clamp(percentage,75,150);if(impl_->text_scale==percentage)return;
     const auto next=CreateFontW(-MulDiv(18*percentage,static_cast<int>(GetDpiForWindow(impl_->host)),96*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,
         OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
     if(!next)throw std::runtime_error("Cannot scale mathematical text");
-    impl_->visit_cells(impl_->rows,[&](const auto& cell){const auto item=cell.window;
-        wchar_t name[32]{};GetClassNameW(item,name,32);
-        if(_wcsnicmp(name,L"RichEdit",8)==0)SendMessageW(item,EM_SETZOOM,percentage,100);
-        else SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(next),FALSE);
+    bool accepted=true;
+    impl_->visit_cells(impl_->rows,[&](const auto& cell){
+        wchar_t name[32]{};GetClassNameW(cell.window,name,32);
+        if(_wcsnicmp(name,L"RichEdit",8)==0&&
+            !set_rich_text_zoom(cell.window,percentage))accepted=false;
     });
+    if(!accepted){
+        impl_->visit_cells(impl_->rows,[&](const auto& cell){
+            wchar_t name[32]{};GetClassNameW(cell.window,name,32);
+            if(_wcsnicmp(name,L"RichEdit",8)==0)
+                (void)set_rich_text_zoom(cell.window,impl_->text_scale);
+        });
+        DeleteObject(next);
+        throw std::runtime_error("RichEdit rechazó la escala del texto matemático.");
+    }
+    impl_->visit_cells(impl_->rows,[&](const auto& cell){
+        wchar_t name[32]{};GetClassNameW(cell.window,name,32);
+        if(_wcsnicmp(name,L"RichEdit",8)!=0)
+            SendMessageW(cell.window,WM_SETFONT,reinterpret_cast<WPARAM>(next),FALSE);
+    });
+    impl_->text_scale=percentage;
     if(impl_->font)DeleteObject(impl_->font);impl_->font=next;
     for(const auto& canvas:impl_->canvases){canvas->scale_text(percentage);if(canvas->type=="segment_transport"&&canvas->fullscreen)canvas->expanded_layout();}
     impl_->requested_heights.clear();impl_->requested_widths.clear();impl_->intrinsic_widths.clear();if(impl_->current_width>0)impl_->arrange(impl_->current_width);
