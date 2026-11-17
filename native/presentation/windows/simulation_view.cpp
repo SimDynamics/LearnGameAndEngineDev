@@ -671,9 +671,9 @@ struct SimulationView::Impl {
         position=next;update();publish();return true;
     }
     const std::vector<SimulationValue>& original_data()const{return scenario?spec.scenarios.at(scenario-1).values:spec.values;}
-    void replace_data(std::vector<SimulationValue> values,bool replace_editor) {
-        // Validation and every frame finish before replacing the visible model.
-        auto candidate=build_simulation_trace(spec,std::move(values));
+    void replace_trace(SimulationTrace candidate,bool replace_editor) {
+        // Only fully validated traces reach this commit point. In particular,
+        // parsed editor input already had its expansion checked by the core.
         auto next_source_positions=stable_source_positions(candidate);
         auto identity=data_identity(candidate.original);
         auto next_format=input_format;
@@ -693,9 +693,18 @@ struct SimulationView::Impl {
         if(replacement){input_format=next_format;set_edit_text(item(input_id),*replacement);}
         rebuild_groups();rebuild_steps();update();publish();
     }
+    void replace_data(std::vector<SimulationValue> values,bool replace_editor) {
+        replace_trace(build_simulation_trace(spec,std::move(values)),replace_editor);
+    }
     void apply_input() {
-        try {auto values=simulation_parse_input(spec,edit_text(item(input_id)),input_format);replace_data(std::move(values),false);}
-        catch(const std::exception& failure){error=std::string("No se aplicaron los datos. ")+failure.what();update();publish();}
+        try {
+            // Parsing already builds and validates every frame. Reuse it,
+            // rather than computing all authored scenarios and the edit twice.
+            auto candidate=simulation_parse_input_trace(spec,edit_text(item(input_id)),input_format);
+            replace_trace(std::move(candidate),false);
+        }catch(const std::exception& failure){
+            error=std::string("No se aplicaron los datos. ")+failure.what();update();publish();
+        }
     }
     void change_input_format(SimulationInputFormat requested) {
         if(requested==input_format)return;
