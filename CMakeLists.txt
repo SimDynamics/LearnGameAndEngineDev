@@ -2265,6 +2265,16 @@ if(BUILD_TESTING)
         lgaed_system_speech_tests lgaed_system_speech_background_tests
         lgaed_narration_cpu_policy_tests lgaed_narration_shutdown_tests
         lgaed_narration_preferences_tests lgaed_profile_tests lgaed_profile_migration_tests lgaed_profile_session_tests)
+    # Native zoom regression: build only the six affected Win32 test hosts,
+    # not the full application executable. CTest selection is kept in the
+    # local Windows script, independent of CI or curricular authoring.
+    add_custom_target(lgaed_text_zoom_qa_targets DEPENDS
+        lgaed_rich_text_tests
+        lgaed_cpp_fill_view_tests
+        lgaed_order_code_view_tests
+        lgaed_math_puzzle_view_tests
+        lgaed_simulation_view_tests
+        lgaed_simulation_lesson_tests)
 endif()
 
 install(TARGETS LearnGameAndEngineDev lgaed_cpp_tool_host lgaed_system_speech_host RUNTIME DESTINATION bin)
