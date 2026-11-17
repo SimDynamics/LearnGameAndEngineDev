@@ -214,8 +214,14 @@ navegar. **Ctrl+rueda** ajusta sólo el zoom de ese campo en pasos de
 fracciones hasta una muesca completa. La rueda sin Ctrl conserva el
 desplazamiento ordinario, reinicia esa acumulación y no cambia el zoom.
 Estos gestos no aplican datos ni alteran las variables, el recorrido o las
-escalas de los demás paneles. Las comprobaciones de foco y rueda son parte
-de `native.simulation_view` y requieren ejecución nativa Windows.
+escalas de los demás paneles. RichEdit acepta el zoom mediante una fracción
+cuyo numerador y denominador son como máximo 64. El simulador reduce las
+escalas exactas antes de comunicarlas al control (por ejemplo, 150 % es
+`3/2`, no `150/100`) y aproxima a la fracción permitida más cercana los
+porcentajes sin representación exacta. Comprobar el valor aceptado evita que
+la escala visual y la altura calculada diverjan silenciosamente. Las
+comprobaciones de foco y rueda son parte de `native.simulation_view` y
+requieren ejecución nativa Windows.
 
 Hay como máximo ocho escenarios. Cada uno declara exclusivamente `id`, `label`
 y `values`. Su identificador es único, tiene de uno a 64 caracteres ASCII,
