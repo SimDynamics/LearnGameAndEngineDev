@@ -9,6 +9,7 @@
 #include <wrl/client.h>
 #include <algorithm>
 #include <array>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -2246,6 +2247,23 @@ void scale_limits_and_local_control_wheel(HWND host) {
     (void)rich_edit_fonts(first,100);
     first.set_text_scale(125);resize(first,800);
     (void)rich_edit_fonts(first,125);
+    // 101/100 cannot be sent directly to RichEdit: each fraction component
+    // is bounded to 64. The nearest legal ratio must still be accepted.
+    first.set_text_scale(101);resize(first,800);
+    for(auto child=GetWindow(first.window(),GW_CHILD);child;
+            child=GetWindow(child,GW_HWNDNEXT)){
+        wchar_t kind[48]{};
+        GetClassNameW(child,kind,48);
+        if(!(GetWindowLongPtrW(child,GWL_STYLE)&WS_VISIBLE)||
+            std::wstring_view(kind)!=MSFTEDIT_CLASS)continue;
+        int numerator=0,denominator=0;
+        check(SendMessageW(child,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),
+            reinterpret_cast<LPARAM>(&denominator))!=FALSE&&
+            numerator>=1&&numerator<=64&&denominator>=1&&denominator<=64,
+            "A non-round reader scale produced an invalid RichEdit fraction");
+        check(std::abs(MulDiv(numerator,100,denominator)-101)<=1,
+            "The closest native zoom ratio does not represent a 101 percent reader scale");
+    }
     first.set_text_scale(100);resize(first,800);
     const auto input=GetDlgItem(first.window(),input_id);
     const auto original_step=first.step_index();const auto original_array=name(GetDlgItem(first.window(),array_id));
