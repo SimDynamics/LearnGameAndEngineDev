@@ -238,9 +238,11 @@ reponer literalmente el texto previo por `EM_REPLACESEL` sobre todo el
 documento, sin volver a utilizar `EM_STREAMIN`; si el control rechaza también
 esa escritura, se intenta `WM_SETTEXT` y se coteja la lectura resultante.
 Los textos que parezcan encabezados RTF siguen siendo datos literales.
-También se coteja el texto tras un intento de restauración: un segundo
-`EM_STREAMIN` silencioso activa la recuperación literal, igual que un error
-nativo explícito.
+También se coteja el texto tras un intento de restauración: si un segundo
+`EM_STREAMIN` silencioso deja los datos nuevos donde debían estar los
+anteriores, se activa la recuperación literal, igual que ante un error
+nativo explícito. Si el texto anterior ya estaba intacto, no hace falta
+otra escritura.
 Antes de aceptar un escenario se compara el contenido real del editor con el
 texto previsto: un flujo que termina sin error, pero no escribe esos datos,
 también se rechaza. Ante un rollback, se restauran además la selección y la

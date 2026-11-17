@@ -2567,7 +2567,7 @@ void scenario_change_is_atomic_after_native_failure(HWND host) {
 }
 
 
-void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host) {
+void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host,bool silent_rollback=false) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
     SimulationView view(host,spec,"es");resize(view,820);
@@ -2595,16 +2595,24 @@ void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host) {
     // rollback-only editor stream fails too: this must not replace the original
     // diagnostic or prevent recovery of the previously applied trace.
     struct Rejections {
-        int editor_streams=0,editor_failure=0,zoom_failure=0;
+        bool silent_rollback=false;
+        int editor_streams=0,editor_failure=0,silent_failure=0,zoom_failure=0;
         int literal_replacements=0,editor_fallbacks=0;
     } errors;
+    errors.silent_rollback=silent_rollback;
     const auto reject_editor=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
             UINT_PTR,DWORD_PTR raw)->LRESULT{
         auto& state=*reinterpret_cast<Rejections*>(raw);
         if(message==EM_STREAMIN&&++state.editor_streams==2){
-            auto* stream=reinterpret_cast<EDITSTREAM*>(lp);
-            if(stream)stream->dwError=ERROR_WRITE_FAULT;
-            ++state.editor_failure;
+            if(state.silent_rollback){
+                // The previous candidate really was written. A silent failure
+                // leaves those new bytes in the draft during rollback.
+                ++state.silent_failure;
+            }else{
+                auto* stream=reinterpret_cast<EDITSTREAM*>(lp);
+                if(stream)stream->dwError=ERROR_WRITE_FAULT;
+                ++state.editor_failure;
+            }
             return 0;
         }
         if(message==EM_REPLACESEL)++state.literal_replacements;
@@ -2638,7 +2646,9 @@ void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host) {
     SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
         reinterpret_cast<LPARAM>(selector));pump();
     const auto diagnostic=text(view,error_id);
-    check(errors.editor_streams>=2&&errors.editor_failure==1&&errors.zoom_failure==1&&
+    check(errors.editor_streams>=2&&
+        errors.editor_failure==(silent_rollback?0:1)&&
+        errors.silent_failure==(silent_rollback?1:0)&&errors.zoom_failure==1&&
         errors.literal_replacements==1&&text(view,input_id)==old_editor&&
         diagnostic.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
         SendMessageW(selector,CB_GETCURSEL,0,0)==0&&
@@ -2721,7 +2731,9 @@ void scenario_change_rejects_silent_editor_stream(HWND host) {
         reinterpret_cast<LPARAM>(selector));pump();
     const auto after=scroll_state(editor);
     const auto diagnostic=text(view,error_id);
-    check(failures.streamed==2&&failures.literal_fallbacks==1&&
+    // Both streams were no-ops. The original draft is already intact, so a
+    // fallback replacement is unnecessary; do not claim one took place.
+    check(failures.streamed==2&&failures.literal_fallbacks==0&&
         diagnostic.find("RichEdit no conservó los datos del escenario.")!=std::string::npos&&
         SendMessageW(selector,CB_GETCURSEL,0,0)==0&&
         view.step_index()==old_step&&view.step_count()==old_count&&
@@ -4124,6 +4136,7 @@ int main(int argc,char** argv)try {
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
     run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
     run("scenario_change_keeps_origin_error_when_editor_rollback_fails",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value);});
+    run("scenario_change_keeps_origin_error_when_rollback_is_silent",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value,true);});
     run("scenario_change_rejects_silent_editor_stream",[&]{scenario_change_rejects_silent_editor_stream(host.value);});
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
