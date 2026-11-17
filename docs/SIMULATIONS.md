@@ -224,6 +224,18 @@ entrada revisada. Al abrir una simulación, seleccionar un escenario o
 restablecer sus datos, la presencia de una cadena vacía elige **Lista entre
 comillas** para que el dato pueda editarse sin ambigüedad.
 
+**Aplicar datos** y cambiar de escenario son operaciones de reemplazo
+completo, no cambios parciales de la traza. Si el modelo calcula una entrada
+válida, pero un control Win32 rechaza su presentación posterior, se recuperan
+los datos anteriormente aplicados, el paso, el selector, las barras, la salida
+y la posición de lectura. El borrador enviado se conserva para corregirlo
+o reintentar, y no se informa de que los datos quedaron aplicados.
+Se restaura la traza por movimiento, sin duplicar una segunda copia de
+hasta 8 MiB. Las regresiones `applying_valid_data_is_atomic_after_native_failure`
+y `scenario_change_is_atomic_after_native_failure` provocan una única
+falla tardía real de RichEdit y comprueban que el intento siguiente pueda
+aplicarse normalmente. Requieren ejecución local en Windows.
+
 El lector conserva una identidad de narración distinta para la ayuda del
 formato **Lista entre comillas**, sin perder la identidad histórica del
 formato por líneas. Así, cambiar el selector no reutiliza un audio de ayuda
