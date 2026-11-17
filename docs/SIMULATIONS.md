@@ -479,6 +479,14 @@ Tab y recorrerlo con las flechas, Re Pág, Av Pág, Inicio y Fin. La rueda
 con Ctrl conserva su comportamiento de zoom o desplazamiento del lector.
 Tanto el histograma como los paneles de texto extenso usan la rueda sin Ctrl
 para desplazarse internamente mientras puedan avanzar en esa dirección.
+En el histograma, los movimientos de una rueda de alta resolución acumulan
+fracciones inferiores a un píxel: varios gestos pequeños no deben perderse
+por redondeo. Esa fracción se reinicia al usar directamente la barra o el
+teclado, al cambiar la escala, los datos, el filtro o las tarjetas visibles
+del recorrido. Si los pasos siguen mostrando las mismas tarjetas, el gesto
+continúa acumulándose sin interrupción. Las pruebas Win32
+`wheel_edges_resume_reader` y `histogram_wheel_fraction_step_sessions`
+cubren estas condiciones y requieren ejecución local en Windows.
 Al alcanzar el principio o el final, entregan el gesto a la página para
 continuar leyendo la lección sin quedar atrapado en el simulador.
 
