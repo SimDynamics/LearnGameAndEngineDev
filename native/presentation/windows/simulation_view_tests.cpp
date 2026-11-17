@@ -2456,16 +2456,16 @@ void step_navigation_rolls_back_native_presentation_failure(HWND host) {
         "The fixture does not expose the expected uncommitted group result");
     const CHARRANGE selected{0,4};
     SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
-    int rejected=0;
+    int failures_left=1;
     const auto reject_once=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
             UINT_PTR,DWORD_PTR raw)->LRESULT {
-        auto& failures=*reinterpret_cast<int*>(raw);
-        if(message==EM_SETZOOM&&failures++==0)return FALSE;
+        auto& remaining=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&remaining>0){--remaining;return FALSE;}
         return DefSubclassProc(child,message,wp,lp);
     };
     constexpr UINT_PTR hook_id=0x53494e56;
     check(SetWindowSubclass(output,reject_once,hook_id,
-        reinterpret_cast<DWORD_PTR>(&rejected))!=FALSE,
+        reinterpret_cast<DWORD_PTR>(&failures_left))!=FALSE,
         "Cannot inject the late native rejection when advancing one step");
     struct Unhook {
         HWND child;SUBCLASSPROC callback;UINT_PTR id;
@@ -2475,7 +2475,7 @@ void step_navigation_rolls_back_native_presentation_failure(HWND host) {
     CHARRANGE actual{};
     SendMessageW(output,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&actual));
     const auto diagnostic=text(view,error_id);
-    check(rejected>=1&&
+    check(failures_left==0&&
         diagnostic.find("No se pudo cambiar el paso.")!=std::string::npos&&
         diagnostic.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
         view.step_index()==earlier&&view.step_count()==old_count&&
@@ -2521,6 +2521,24 @@ void step_navigation_rolls_back_native_presentation_failure(HWND host) {
         text(view,output_id)=="-8:1\n3:4\n"&&
         text(view,error_id).empty()&&spec==authored,
         "A valid retry retained a rejected navigation notice or wrong model");
+
+    // A canvas cell invokes go() from a child WndProc, not the parent's
+    // WM_COMMAND exception boundary. The native failure must remain local:
+    // no exception is allowed to cross the operating-system callback.
+    const auto completed_step=view.step_index();
+    const auto completed_stdout=text(view,output_id);
+    const auto completed_variables=text(view,variables_id);
+    failures_left=1;
+    click_array_cell(view,0);
+    check(failures_left==0&&view.step_index()==completed_step&&
+        text(view,output_id)==completed_stdout&&
+        text(view,variables_id)==completed_variables&&
+        text(view,error_id).find("No se pudo cambiar el paso.")!=std::string::npos,
+        "An array-cell navigation error escaped Win32 or partially advanced the model");
+    click_array_cell(view,0);
+    check(view.step_index()==1&&text(view,output_id).empty()&&
+        text(view,error_id).empty()&&spec==authored,
+        "The array-cell retry failed after the first native presentation rejection");
 }
 
 void applying_valid_data_is_atomic_after_native_failure(HWND host) {
