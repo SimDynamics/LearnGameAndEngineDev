@@ -173,16 +173,16 @@ struct SimulationView::Impl {
     int px(int value)const{return MulDiv(value,static_cast<int>(GetDpiForWindow(host)),96);}
     int sp(int value)const{return std::max(1,MulDiv(px(value),scale,100));}
     HWND item(int id)const{const auto found=controls.find(id);return found==controls.end()?nullptr:found->second;}
-    // Preserve the position in the text, rather than a pixel scroll offset.
-    // RichEdit's pixels and wrapped visual lines can change with reader zoom
-    // or monitor DPI, while this character belongs to the same stdout.
+    // Preserve a first-visible text character rather than a pixel offset.
+    // Both the raw output and original-order preview may wrap differently
+    // after reader zoom, DPI rebase or parent width changes.
     struct OutputReadingAnchor {
         LONG first_character = -1;
         CHARRANGE selection{};
         bool at_end = false;
     };
-    std::optional<OutputReadingAnchor> capture_output_reading_anchor()const {
-        const auto output=item(output_id);
+    std::optional<OutputReadingAnchor> capture_output_reading_anchor(int target_id=output_id)const {
+        const auto output=item(target_id);
         if(!output||!IsWindow(output))return std::nullopt;
         OutputReadingAnchor anchor;
         const auto first=SendMessageW(output,EM_GETFIRSTVISIBLELINE,0,0);
@@ -197,9 +197,9 @@ struct SimulationView::Impl {
                 scroll.nMax-std::max(0,static_cast<int>(scroll.nPage)-1));
         return anchor;
     }
-    void restore_output_reading_anchor(const std::optional<OutputReadingAnchor>& saved)const {
+    void restore_output_reading_anchor(const std::optional<OutputReadingAnchor>& saved,int target_id=output_id)const {
         if(!saved)return;
-        const auto output=item(output_id);
+        const auto output=item(target_id);
         if(!output||!IsWindow(output))return;
         const LONG length=static_cast<LONG>(GetWindowTextLengthW(output));
         const CHARRANGE selection{
@@ -219,16 +219,20 @@ struct SimulationView::Impl {
                     static_cast<LPARAM>(target-current));
         }
     }
-    // Always restore the active stdout reading position, including when a
-    // late RichEdit zoom/reflow fails and its caller exits through an exception.
-    struct OutputReadingRestorer {
+    // Restore both scrollable views even when a late RichEdit zoom/reflow
+    // throws. Their reading positions are independent of the trace itself.
+    struct SimulationReadingRestorer {
         Impl& view;
-        std::optional<OutputReadingAnchor> saved;
-        explicit OutputReadingRestorer(Impl& owner)
-            :view(owner),saved(owner.capture_output_reading_anchor()){}
-        ~OutputReadingRestorer(){view.restore_output_reading_anchor(saved);}
-        OutputReadingRestorer(const OutputReadingRestorer&)=delete;
-        OutputReadingRestorer& operator=(const OutputReadingRestorer&)=delete;
+        std::optional<OutputReadingAnchor> output,original_order;
+        explicit SimulationReadingRestorer(Impl& owner)
+            :view(owner),output(owner.capture_output_reading_anchor()),
+             original_order(owner.capture_output_reading_anchor(original_order_id)){}
+        ~SimulationReadingRestorer(){
+            view.restore_output_reading_anchor(output);
+            view.restore_output_reading_anchor(original_order,original_order_id);
+        }
+        SimulationReadingRestorer(const SimulationReadingRestorer&)=delete;
+        SimulationReadingRestorer& operator=(const SimulationReadingRestorer&)=delete;
     };
     const TextSemantics* semantic(std::string_view path)const {
         const auto found=semantics.find(std::string(path));return found==semantics.end()?nullptr:&found->second;
@@ -1237,7 +1241,7 @@ struct SimulationView::Impl {
         if(layout_valid&&requested==width)return height;
         // The parent may measure/reflow this child before sending WM_SIZE.
         // Keep the learner on the same output line, even on failed reflow.
-        OutputReadingRestorer reading{*this};
+        SimulationReadingRestorer reading{*this};
         return arrange(requested,true);
     }
     // Use rendered cell rectangles, regardless of text scale or row wrapping.
@@ -1704,14 +1708,14 @@ struct SimulationView::Impl {
             if(message==WM_SIZE&&!self->initializing&&!self->arranging){RECT area{};GetClientRect(item,&area);
                 const auto requested=std::max(1,static_cast<int>(area.right-area.left));
                 if(!self->layout_valid||requested!=self->width){int required=0;
-                    {OutputReadingRestorer reading{*self};required=self->arrange(requested,true);}
+                    {SimulationReadingRestorer reading{*self};required=self->arrange(requested,true);}
                     // A parent's normal placement uses the already measured
                     // width. Only an independent width change needs reflow.
                     const auto callback=self->callbacks.layout_changed;
                     if(callback&&required!=area.bottom-area.top)callback();}
                 return 0;}
             if(message==WM_DPICHANGED_AFTERPARENT&&!self->initializing){
-                {OutputReadingRestorer reading{*self};self->fonts();self->update();}
+                {SimulationReadingRestorer reading{*self};self->fonts();self->update();}
                 self->publish();return 0;}
             if(message==WM_PAINT){PAINTSTRUCT paint{};const auto dc=BeginPaint(item,&paint);self->paint(dc);EndPaint(item,&paint);return 0;}
             if(message==WM_PRINTCLIENT){self->paint(reinterpret_cast<HDC>(wp));return 0;}
@@ -1731,7 +1735,7 @@ SimulationView::~SimulationView()=default;
 HWND SimulationView::window()const{return impl_->host;}
 int SimulationView::height_for_width(int width){return impl_->measured_height(width);}
 void SimulationView::set_text_scale(int percentage){percentage=std::clamp(percentage,25,150);if(percentage==impl_->scale)return;
-    Impl::OutputReadingRestorer reading{*impl_};
+    Impl::SimulationReadingRestorer reading{*impl_};
     impl_->fonts(false,percentage);impl_->update();}
 std::size_t SimulationView::step_index()const{return impl_->position;}
 std::size_t SimulationView::step_count()const{return impl_->count();}
