@@ -2550,6 +2550,12 @@ void scenario_change_is_atomic_after_native_failure(HWND host) {
         after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&
         spec==authored,
         "A rejected native scenario switch left the previous model or selector inconsistent");
+    const auto diagnostic=text(view,error_id);
+    check(diagnostic.find("No se pudo actualizar la simulación.")!=std::string::npos&&
+        std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==GetDlgItem(view.window(),error_id)&&
+                region.source_text==diagnostic;
+        }),"A visible Win32 scenario error was absent from its current narration");
     check(SendMessageW(scenario,CB_SETCURSEL,1,0)!=CB_ERR,
         "Cannot retry the alternate authored scenario");
     SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
