@@ -25,7 +25,7 @@ constexpr int title_id=100,description_id=101,scenario_label_id=102,scenario_id=
     array_label_id=104,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_label_id=109,output_id=110,previous_id=111,next_id=112,reset_id=113,
     input_label_id=114,input_id=115,apply_id=116,restore_id=117,error_id=118,
-    groups_label_id=119,input_format_id=120,step_selector_id=121,group_first_id=200;
+    groups_label_id=119,input_format_id=120,step_selector_id=121,original_order_id=122,group_first_id=200;
 bool passive_message(UINT message) {
     return message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||
         message==WM_MOUSEMOVE||message==WM_CAPTURECHANGED||message==WM_CANCELMODE||message==WM_NCDESTROY;
@@ -148,7 +148,7 @@ struct SimulationView::Impl {
         return child;
     }
     HWND label(int id) {
-        const bool scrolling=id==output_id||id==explanation_id;
+        const bool scrolling=id==output_id||id==explanation_id||id==original_order_id;
         const auto child=create(MSFTEDIT_CLASS,id,ES_READONLY|ES_MULTILINE|(scrolling?ES_AUTOVSCROLL|WS_VSCROLL:0));
         SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(base_font),FALSE);
         SendMessageW(child,EM_SETTARGETDEVICE,0,0);
@@ -202,8 +202,8 @@ struct SimulationView::Impl {
         if(!host)throw std::runtime_error("No se pudo abrir la simulación.");
         reader_theme::apply(host,reader_theme::Surface::card);fonts();
         (void)CoCreateInstance(CLSID_AccPropServices,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(accessibility.GetAddressOf()));
-        for(const auto id:{title_id,description_id,scenario_label_id,array_label_id,step_id,explanation_id,
-                output_label_id,output_id,input_label_id,error_id,groups_label_id})label(id);
+        for(const auto id:{title_id,description_id,scenario_label_id,array_label_id,original_order_id,
+                step_id,explanation_id,output_label_id,input_label_id,error_id,groups_label_id})label(id);
         const auto selector=create(L"COMBOBOX",scenario_id,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL);
         SendMessageW(selector,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
         SendMessageW(selector,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(L"Datos originales"));
@@ -285,6 +285,16 @@ struct SimulationView::Impl {
         }
         SendMessageW(selector,CB_SETCURSEL,static_cast<WPARAM>(position),0);
     }
+    // The comparison uses applied data, never an unsubmitted editor draft.
+    std::string original_order_text()const {
+        if(!spec.sort||trace.original==trace.ordered)return {};
+        std::string result="Entrada aplicada antes de ordenar (sin modificar):";
+        for(std::size_t index=0;index<trace.original.size();++index){
+            result+='\n';
+            result+="índice "+std::to_string(index)+": "+simulation_value_display_text(trace.original[index]);
+        }
+        return result;
+    }
     std::string array_text()const {
         std::string text=spec.labels.array+". ";
         if(trace.ordered.empty())text+="No hay valores.";
@@ -306,7 +316,11 @@ struct SimulationView::Impl {
         const auto& state=frame();
         set_label(title_id,spec.title,RichTextRole::heading,semantic("/title"));
         set_label(description_id,spec.description,RichTextRole::body,semantic("/description"));
-        set_label(scenario_label_id,"Escenario");set_label(array_label_id,spec.labels.array+" · "+std::to_string(trace.ordered.size())+" elementos");
+        set_label(scenario_label_id,"Escenario");
+        const auto original=original_order_text();
+        set_label(array_label_id,spec.labels.array+(original.empty()?"":" · copia ordenada")+
+            " · "+std::to_string(trace.ordered.size())+" elementos");
+        set_label(original_order_id,original);
         set_label(groups_label_id,"Selecciona un grupo");
         std::string status;
         if(stepping())status=(spec.view==SimulationViewMode::candidates?"Grupo ":"Paso ")+std::to_string(position+1)+" de "+std::to_string(count());
@@ -460,8 +474,8 @@ struct SimulationView::Impl {
         const auto text_row=[&](int id,bool shown=true,int minimum=0){const auto found=visible_text.find(id);const auto text=found==visible_text.end()?std::string_view{}:std::string_view(found->second);
             shown=shown&&(!text.empty()||minimum>0);
             int full_height=std::max(minimum,measure(text,available,id==title_id?heading_font:font));
-            const bool scrolling=id==output_id||id==explanation_id;
-            const auto limit=scrolling?sp(id==output_id?240:400):std::numeric_limits<int>::max();
+            const bool scrolling=id==output_id||id==explanation_id||id==original_order_id;
+            const auto limit=scrolling?sp(id==original_order_id?180:id==output_id?240:400):std::numeric_limits<int>::max();
             int h=std::min(full_height,limit);
             if(shown&&move){bool settled=false;
                 // REQRESIZE already supplies the requested control size. Adding
@@ -501,6 +515,7 @@ struct SimulationView::Impl {
             top+=px(8);
         }
         text_row(array_label_id);
+        text_row(original_order_id);
         canvas_height=array_layout(available);place(array_id,margin,top,available,canvas_height,true);top+=canvas_height+px(12);
         text_row(step_id);
         place(step_selector_id,margin,top,available,sp(240),stepping());
@@ -620,7 +635,9 @@ struct SimulationView::Impl {
             (GetWindowLongPtrW(item(id),GWL_STYLE)&WS_VISIBLE))result.push_back({std::move(key),text->second,item(id),id==variables_id});};
         add(title_id,"title");add(description_id,"description");
         const auto prefix="state/"+std::to_string(scenario)+"/"+input_key+"/"+std::to_string(position)+"/";
-        add(array_label_id,prefix+"array-label");result.push_back({prefix+"array",array_text(),canvas,true});
+        add(array_label_id,prefix+"array-label");
+        add(original_order_id,"state/"+std::to_string(scenario)+"/"+input_key+"/original-order");
+        result.push_back({prefix+"array",array_text(),canvas,true});
         add(step_id,prefix+"step");add(explanation_id,prefix+"explanation");add(variables_id,prefix+"variables");
         add(output_label_id,prefix+"output-label");add(output_id,prefix+"output");add(input_label_id,"input-label");add(error_id,prefix+"error");
         return result;

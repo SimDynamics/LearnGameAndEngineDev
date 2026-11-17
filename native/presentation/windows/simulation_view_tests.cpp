@@ -22,7 +22,7 @@ using namespace lgaed::curriculum;
 using namespace lgaed::presentation;
 constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_id=110,previous_id=111,next_id=112,reset_id=113,input_id=115,apply_id=116,restore_id=117,error_id=118,
-    input_format_id=120,step_selector_id=121,group_first_id=200;
+    input_format_id=120,step_selector_id=121,original_order_id=122,group_first_id=200;
 std::filesystem::path failure_captures;
 void capture(HWND window,const std::filesystem::path& path);
 void fitted_text(SimulationView& view);
@@ -429,6 +429,86 @@ void walkthrough_cell_selection(HWND host) {
         std::equal(before.begin(),before.end(),after.begin(),[](const auto& a,const auto& b){
             return a.key==b.key&&a.source_text==b.source_text;}),
         "An empty-array click fabricated a step or changed reading state");
+}
+void original_order_comparison(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    const auto preview=GetDlgItem(view.window(),original_order_id);
+    check(preview&&IsWindowVisible(preview),"Sorting did not expose the source input");
+    const auto initial=text(view,original_order_id);
+    check(initial.find("Entrada aplicada antes de ordenar")!=std::string::npos&&
+        initial.find("índice 0: 10")!=std::string::npos&&
+        initial.find("índice 1: 3")!=std::string::npos&&
+        initial.find("índice 2: -8")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 0: -8")!=std::string::npos,
+        "Source and ordered copy were not compared at their distinct positions");
+    const auto reading_key=[&](const SimulationView& current) {
+        for(const auto& region:current.reading_regions())
+            if(region.key.find("/original-order")!=std::string::npos)return region.key;
+        return std::string{};
+    };
+    const auto initial_key=reading_key(view);
+    check(!initial_key.empty(),"The source comparison is absent from current narration");
+    check(view.go_to_step(view.step_count()-1)&&reading_key(view)==initial_key&&
+        text(view,original_order_id)==initial,
+        "Stepping changed the applied source or reidentified its narration");
+    resize(view,360);bounds(view,"narrow source order");
+    set_edit_text(GetDlgItem(view.window(),input_id),"1\n2\n3");
+    click(view,apply_id);resize(view,360);
+    check(!IsWindowVisible(preview)&&text(view,original_order_id).empty()&&
+        reading_key(view).empty()&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 0: 1")!=std::string::npos,
+        "Already sorted input retained a redundant source comparison");
+    set_edit_text(GetDlgItem(view.window(),input_id),"3\n1\n3");
+    click(view,apply_id);resize(view,820);
+    const auto edited=text(view,original_order_id);
+    check(IsWindowVisible(preview)&&edited.find("índice 0: 3")!=std::string::npos&&
+        edited.find("índice 1: 1")!=std::string::npos&&
+        name(GetDlgItem(view.window(),array_id)).find("índice 0: 1")!=std::string::npos&&
+        reading_key(view)!=initial_key,
+        "Applying unsorted values did not rebuild the comparison from those values");
+    click(view,restore_id);resize(view,820);
+    check(text(view,original_order_id)==initial&&reading_key(view)==initial_key&&spec==authored,
+        "Restore did not recover the original comparison or lesson data");
+    const auto scenario=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(scenario,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(text(view,original_order_id).find("índice 0: 9")!=std::string::npos&&
+        text(view,original_order_id).find("índice 1: 4")!=std::string::npos,
+        "A different scenario reused the previous source comparison");
+    SendMessageW(scenario,CB_SETCURSEL,2,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(!IsWindowVisible(preview)&&reading_key(view).empty()&&
+        view.step_count()==1,"Empty data retained an obsolete source comparison");
+
+    auto strings=fixture(SimulationViewMode::summary);
+    strings.text_values=true;strings.editable=false;strings.scenarios.clear();
+    strings.values={std::string(" "),std::string(""),std::string("patio")};
+    SimulationView text_view(host,strings,"es");resize(text_view,650);
+    check(IsWindowVisible(GetDlgItem(text_view.window(),original_order_id))&&
+        text(text_view,original_order_id).find("índice 0: \" \" (1 espacio)")!=std::string::npos&&
+        text(text_view,original_order_id).find("índice 1: \"\" (cadena vacía)")!=std::string::npos&&
+        name(GetDlgItem(text_view.window(),array_id)).find("índice 0: \"\" (cadena vacía)")!=std::string::npos,
+        "Original/ordered comparison collapsed empty or whitespace-only values");
+
+    auto no_sort=fixture(SimulationViewMode::array);no_sort.sort=false;
+    no_sort.values=numbers({-8,3,3,10});no_sort.scenarios.clear();
+    SimulationView unchanged(host,no_sort,"es");resize(unchanged,650);
+    check(!IsWindowVisible(GetDlgItem(unchanged.window(),original_order_id))&&
+        text(unchanged,original_order_id).empty(),
+        "Unsorted mode fabricated an ordering comparison");
+
+    auto many=fixture(SimulationViewMode::summary);many.scenarios.clear();
+    many.values.clear();for(std::int64_t value=63;value>=0;--value)many.values.emplace_back(value);
+    SimulationView long_view(host,many,"es");resize(long_view,360);bounds(long_view,"long original comparison");
+    const auto long_preview=GetDlgItem(long_view.window(),original_order_id);
+    check(IsWindowVisible(long_preview)&&
+        (GetWindowLongPtrW(long_preview,GWL_STYLE)&WS_TABSTOP)!=0&&
+        text(long_view,original_order_id).find("índice 63: 0")!=std::string::npos,
+        "Long source comparison lacks scrolling, keyboard access or its last value");
 }
 void editable_data(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);SimulationView view(host,spec,"es");resize(view,820);
@@ -868,6 +948,7 @@ int main(int argc,char** argv)try {
     };
     run("navigation",[&]{navigation(host.value,captures);});
     run("walkthrough_cell_selection",[&]{walkthrough_cell_selection(host.value);});
+    run("original_order_comparison",[&]{original_order_comparison(host.value);});
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});

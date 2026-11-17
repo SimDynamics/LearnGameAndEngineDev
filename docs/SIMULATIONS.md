@@ -138,6 +138,15 @@ también los valores numéricos de sus escenarios por textos o elimina esos
 escenarios. En este caso, `luna` y `sol` empatan con frecuencia dos.
 
 Con `sort: true`, el motor ordena una **copia** y conserva los datos de entrada.
+Cuando la ordenación cambia el orden, la vista presenta los dos estados:
+**entrada aplicada antes de ordenar**, con índices de origen, y **copia
+ordenada**, con los índices utilizados durante el recorrido. No altera los
+datos del estudiante ni confunde un borrador no aplicado con los datos
+vigentes. La comparación se actualiza al elegir un escenario, aplicar datos
+o restablecerlos; se oculta cuando no hay diferencia, incluso en arrays
+vacíos. En listas largas, el panel tiene un límite de altura, desplazamiento
+nativo y acceso por teclado. Los valores de texto conservan comillas y
+aclaraciones para distinguir cadenas vacías y espacios.
 La ordenación numérica es ascendente. La ordenación de texto compara bytes
 UTF-8; no aplica ordenación lingüística, conversión de mayúsculas ni eliminación
 de acentos. La cadena vacía precede a cualquier cadena no vacía. Por ejemplo,
