@@ -2367,6 +2367,77 @@ void long_labels_and_literal_values(HWND host,const std::filesystem::path& captu
     SelectObject(dc,old);ReleaseDC(second,dc);
     if(!captures.empty())capture(view.window(),captures/"groups-long-labels-narrow-150.bmp");
 }
+struct WheelEdgeProbe {int parent_messages=0;};
+LRESULT CALLBACK wheel_edge_probe(HWND window,UINT message,WPARAM wp,LPARAM lp,
+        UINT_PTR,DWORD_PTR context) {
+    if(message==WM_MOUSEWHEEL) {
+        ++reinterpret_cast<WheelEdgeProbe*>(context)->parent_messages;
+        return 0;
+    }
+    if(message==WM_NCDESTROY)RemoveWindowSubclass(window,wheel_edge_probe,31);
+    return DefSubclassProc(window,message,wp,lp);
+}
+void wheel_edges_resume_reader(HWND host) {
+    // The parent is a hidden QA window, not the user's real study viewport.
+    // Count only real Win32 wheel messages forwarded by the child.
+    auto spec=fixture(SimulationViewMode::summary);
+    spec.values.clear();
+    for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
+    SimulationView view(host,spec,"es");
+    resize(view,720);
+    const auto output=GetDlgItem(view.window(),output_id);
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    check(output&&chart,"An overflow child of the simulation is missing");
+    WheelEdgeProbe probe;
+    check(SetWindowSubclass(view.window(),wheel_edge_probe,31,
+        reinterpret_cast<DWORD_PTR>(&probe))!=FALSE,
+        "Cannot observe the simulated reader wheel messages");
+    struct Unhook {
+        HWND hwnd;
+        ~Unhook() {if(IsWindow(hwnd))RemoveWindowSubclass(hwnd,wheel_edge_probe,31);}
+    } unhook{view.window()};
+    const auto scroll=[&](HWND item){
+        SCROLLINFO info{sizeof(info),SIF_RANGE|SIF_PAGE|SIF_POS};
+        check(GetScrollInfo(item,SB_VERT,&info)!=FALSE,
+            "Cannot inspect a native simulation scrollbar");
+        return info;
+    };
+    const auto wheel=[&](HWND item,int delta){
+        SendMessageW(item,WM_MOUSEWHEEL,
+            MAKEWPARAM(0,static_cast<WORD>(delta)),0);
+    };
+    for(const auto item:{output,chart}) {
+        auto info=scroll(item);
+        check(info.nPage>0&&
+            info.nMax-info.nMin+1>static_cast<int>(info.nPage),
+            "The long read-only output or histogram has no actual overflow");
+        SendMessageW(item,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+        info=scroll(item);
+        check(info.nPos==info.nMin,
+            "Could not position an overflow child at the beginning");
+        probe.parent_messages=0;
+        wheel(item,WHEEL_DELTA);
+        check(probe.parent_messages==1,
+            "Scrolling upward at the first line trapped the lesson in its child");
+        wheel(item,-WHEEL_DELTA);
+        const auto moved=scroll(item);
+        check(moved.nPos>info.nPos,
+            "Scrolling toward hidden content failed to move the child scrollbar");
+        SendMessageW(item,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+        const auto bottom=scroll(item);
+        const int last=bottom.nMax-
+            std::max(0,static_cast<int>(bottom.nPage)-1);
+        check(bottom.nPos==last,
+            "Could not position an overflow child at its final scroll limit");
+        probe.parent_messages=0;
+        wheel(item,-WHEEL_DELTA);
+        check(probe.parent_messages==1,
+            "Scrolling downward at the last line trapped the lesson in its child");
+        check(scroll(item).nPos==last,
+            "A wheel movement past the edge corrupted the scrollbar position");
+    }
+}
+
 void scrollable_text_keyboard(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::summary);spec.values.clear();
     for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
@@ -2475,6 +2546,7 @@ int main(int argc,char** argv)try {
     run("input_wheel_session_boundaries",[&]{input_wheel_session_boundaries(host.value);});
     run("parent_width_changes",[&]{parent_width_changes(host.value);});
     run("long_labels_and_literal_values",[&]{long_labels_and_literal_values(host.value,captures);});
+    run("wheel_edges_resume_reader",[&]{wheel_edges_resume_reader(host.value);});
     run("scrollable_text_keyboard",[&]{scrollable_text_keyboard(host.value,captures);});
     check(!IsWindowVisible(host.value)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=host.value,"Simulation QA activated the desktop");
     if(failures){std::cerr<<"FAIL native simulation view: "<<failures<<" independent scenario(s) failed\n";return 1;}
