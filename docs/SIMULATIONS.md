@@ -493,12 +493,17 @@ respuesta ni otro paso de narración.
 La disposición se adapta al ancho y al zoom de texto y acepta hasta los
 64 grupos permitidos por el modelo. Al cambiar la escala, el DPI o el ancho,
 el desplazamiento se reconstruye tomando como referencia el **primer grupo
-visible**, no la coordenada de píxeles de la distribución anterior. Si el
-estudiante estaba viendo el final, conserva la última fila. Esta lectura
-es independiente de los datos, candidatos y decisiones computadas. La
-regresión Win32 `histogram_reflow_retains_visible_group` comprueba cambios
-de zoom, DPI y cantidad de columnas con una lista de 64 grupos; requiere
-ejecución nativa en Windows para acreditarse. Para evitar que una lección
+visible**, no la coordenada de píxeles de la distribución anterior.
+Si el gráfico anterior tenía **desplazamiento real** y el estudiante estaba
+en su última fila, se conserva el final. Cuando todas las tarjetas cabían
+sin desplazamiento, el inicio y el final coincidían: estrechar la ventana
+por primera vez **mantiene la primera fila**, sin saltar arbitrariamente a
+la última. Esta lectura es independiente de los datos, candidatos y
+decisiones computadas. Las regresiones Win32
+`histogram_reflow_retains_visible_group` y
+`histogram_first_overflow_does_not_jump_to_last_group` comprueban esos
+cambios de zoom, DPI y cantidad de columnas; requieren ejecución nativa
+en Windows para acreditarse. Para evitar que una lección
 tenga un gráfico de miles de píxeles de altura, el área visible de las barras se
 limita a 440 unidades de presentación escaladas. Si hay más filas, se
 activa una barra de desplazamiento interna. El estudiante puede usar la
