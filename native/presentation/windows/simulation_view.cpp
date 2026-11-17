@@ -140,6 +140,17 @@ struct SimulationView::Impl {
     struct Statistic {std::string label,value;RECT bounds{};};
     std::vector<Statistic> statistics;
     std::map<int,std::string> visible_text;
+    struct StaticTextStamp {
+        std::size_t fonts_revision=0;
+        int scale=100;
+        UINT dpi=96;
+        COLORREF text=0,muted=0,accent=0,card=0,field=0,
+            foreground=0,background=0;
+        bool high_contrast=false;
+        bool operator==(const StaticTextStamp&)const=default;
+    };
+    std::map<int,StaticTextStamp> static_text_stamps;
+    std::size_t fonts_revision=0;
     std::map<int,int> requested_heights;
     std::size_t position=0,scenario=0;
     SimulationInputFormat input_format=SimulationInputFormat::lines;
@@ -358,6 +369,20 @@ struct SimulationView::Impl {
         SetWindowSubclass(child,button_proc,2,reinterpret_cast<DWORD_PTR>(this));return child;
     }
     void set_label(int id,std::string text,RichTextRole role=RichTextRole::body,const TextSemantics* authored=nullptr) {
+        // Static authored text has a stable reading identity across model
+        // frames. Do not stream the same RichEdit document on each step.
+        // Palette and font revisions still invalidate its native formatting.
+        std::optional<StaticTextStamp> stamp;
+        if(id==title_id||id==description_id){
+            const auto palette=reader_theme::palette(host);
+            stamp=StaticTextStamp{fonts_revision,scale,GetDpiForWindow(host),
+                palette.text,palette.muted,palette.accent,palette.card,
+                palette.field,reader_theme::foreground(item(id)),
+                reader_theme::background(item(id)),palette.high_contrast};
+            const auto previous=visible_text.find(id),cached=static_text_stamps.find(id);
+            if(previous!=visible_text.end()&&previous->second==text&&
+                    cached!=static_text_stamps.end()&&cached->second==*stamp)return;
+        }
         visible_text[id]=std::move(text);
         set_rich_text(item(id),visible_text.at(id),{},false,role,locale,{}, {},authored);
         PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING|PFM_SPACEAFTER;
@@ -365,6 +390,7 @@ struct SimulationView::Impl {
         SendMessageW(item(id),EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
         if(!set_rich_text_zoom(item(id),scale))
             throw std::runtime_error("RichEdit rechazó la escala del texto de simulación.");
+        if(stamp)static_text_stamps[id]=*stamp;
     }
     void color_plain_text(int id) {
         CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_COLOR;
@@ -453,6 +479,7 @@ struct SimulationView::Impl {
                 SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
         }
         for(const auto handle:old)if(handle)DeleteObject(handle);
+        ++fonts_revision;
         layout_valid=false;requested_heights.clear();
     }
     void initialize(HWND parent) {
