@@ -22,7 +22,7 @@ namespace {
 using namespace lgaed::curriculum;
 using namespace lgaed::presentation;
 constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variables_id=108,
-    output_id=110,previous_id=111,next_id=112,reset_id=113,input_id=115,apply_id=116,restore_id=117,error_id=118,
+    output_id=110,previous_id=111,next_id=112,reset_id=113,input_label_id=114,input_id=115,apply_id=116,restore_id=117,error_id=118,
     input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
     previous_decision_id=124,next_decision_id=125,result_comparison_id=126,
     frequencies_id=127,frequencies_label_id=128,frequency_filter_id=129,
