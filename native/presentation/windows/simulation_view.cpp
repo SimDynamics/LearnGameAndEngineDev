@@ -423,11 +423,12 @@ struct SimulationView::Impl {
         SetWindowSubclass(child,button_proc,2,reinterpret_cast<DWORD_PTR>(this));return child;
     }
     void set_label(int id,std::string text,RichTextRole role=RichTextRole::body,const TextSemantics* authored=nullptr) {
-        // Static authored text has a stable reading identity across model
-        // frames. Do not stream the same RichEdit document on each step.
-        // Palette and font revisions still invalidate its native formatting.
+        // The authored heading/description and the editor's format help
+        // stay unchanged across model steps. Do not replace their native
+        // RichEdit document or reading selection without a text change.
+        // Palette, DPI and font revisions still invalidate their formatting.
         std::optional<StaticTextStamp> stamp;
-        if(id==title_id||id==description_id){
+        if(id==title_id||id==description_id||id==input_label_id){
             const auto palette=reader_theme::palette(host);
             stamp=StaticTextStamp{fonts_revision,scale,GetDpiForWindow(host),
                 palette.text,palette.muted,palette.accent,palette.card,
