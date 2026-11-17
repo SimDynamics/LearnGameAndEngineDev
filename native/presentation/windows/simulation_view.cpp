@@ -685,6 +685,8 @@ struct SimulationView::Impl {
             replacement=simulation_input_text(candidate.original,next_format);
         }
         trace=std::move(candidate);source_positions=std::move(next_source_positions);
+        // A partial Ctrl+wheel movement belongs to the previous edit state.
+        input_wheel_delta=0;
         frequency_scroll=0;frequency_total_height=0;frequency_candidates_only=false;
         pressed_frequency_group.reset();
         input_key=std::move(identity);position=0;error.clear();
@@ -697,6 +699,7 @@ struct SimulationView::Impl {
     }
     void change_input_format(SimulationInputFormat requested) {
         if(requested==input_format)return;
+        input_wheel_delta=0;
         // Converting a pending edit never applies it or moves the walkthrough.
         // A format that cannot represent every value leaves the edit intact.
         try {
@@ -1230,6 +1233,7 @@ struct SimulationView::Impl {
             }
             self->input_wheel_delta=0;
         }
+        if(message==WM_KILLFOCUS)self->input_wheel_delta=0;
         if(message==WM_NCDESTROY)RemoveWindowSubclass(edit,input_navigation_proc,3);
         return DefSubclassProc(edit,message,wp,lp);
     }
