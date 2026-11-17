@@ -22,12 +22,14 @@ using namespace curriculum;
 constexpr wchar_t view_class[]=L"LearnGameAndEngineDev.Simulation";
 constexpr wchar_t array_class[]=L"LearnGameAndEngineDev.SimulationArray";
 constexpr wchar_t statistics_class[]=L"LearnGameAndEngineDev.SimulationStatistics";
+constexpr wchar_t frequency_class[]=L"LearnGameAndEngineDev.SimulationFrequencies";
 constexpr int title_id=100,description_id=101,scenario_label_id=102,scenario_id=103,
     array_label_id=104,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_label_id=109,output_id=110,previous_id=111,next_id=112,reset_id=113,
     input_label_id=114,input_id=115,apply_id=116,restore_id=117,error_id=118,
     groups_label_id=119,input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
-    previous_decision_id=124,next_decision_id=125,result_comparison_id=126,group_first_id=200;
+    previous_decision_id=124,next_decision_id=125,result_comparison_id=126,
+    frequencies_id=127,frequencies_label_id=128,group_first_id=200;
 bool passive_message(UINT message) {
     return message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||
         message==WM_MOUSEMOVE||message==WM_CAPTURECHANGED||message==WM_CANCELMODE||message==WM_NCDESTROY;
@@ -109,7 +111,7 @@ struct SimulationView::Impl {
     std::string locale;
     SimulationCallbacks callbacks;
     std::map<std::string,TextSemantics> semantics;
-    HWND host=nullptr,canvas=nullptr;
+    HWND host=nullptr,canvas=nullptr,frequencies=nullptr;
     HMODULE rich=nullptr;
     HFONT font=nullptr,base_font=nullptr,heading_font=nullptr,index_font=nullptr,value_font=nullptr;
     Microsoft::WRL::ComPtr<IAccPropServices> accessibility;
@@ -170,6 +172,33 @@ struct SimulationView::Impl {
         return trace.frames.at(position);
     }
     bool stepping()const{return spec.view==SimulationViewMode::walkthrough||spec.view==SimulationViewMode::candidates;}
+    // The frequency chart never exposes groups the active walkthrough has
+    // not finished. A partial group is not a recorded histogram bar.
+    std::size_t completed_groups()const {
+        if(spec.view==SimulationViewMode::summary)return trace.groups.size();
+        if(spec.view==SimulationViewMode::candidates)
+            return trace.groups.empty()?0:std::min(trace.groups.size(),position+1);
+        if(spec.view==SimulationViewMode::walkthrough)
+            return static_cast<std::size_t>(
+                std::upper_bound(trace.candidate_frames.begin(),
+                                 trace.candidate_frames.end(),position)-
+                trace.candidate_frames.begin());
+        return 0;
+    }
+    std::string frequency_text()const {
+        const auto visible=completed_groups();
+        if(!visible)return {};
+        std::string result="Frecuencias de "+std::to_string(visible)+
+            (visible==1?" grupo terminado":" grupos terminados");
+        for(std::size_t i=0;i<visible;++i){
+            const auto& group=trace.groups[i];
+            const bool candidate=std::ranges::find(frame().leaders,group.value)!=frame().leaders.end();
+            result+=". Grupo "+std::to_string(i+1)+": "+simulation_value_display_text(group.value)+
+                ", "+spec.labels.frequency+" "+std::to_string(group.end-group.begin);
+            if(candidate)result+=", candidato al máximo actual";
+        }
+        return result;
+    }
     // Decision indices come exclusively from the immutable core trace.
     // Skip phases within a group without pretending they were executed by
     // the learner. The previous decision is always strictly before position.
@@ -242,7 +271,9 @@ struct SimulationView::Impl {
         for(const auto value:old)if(value)DeleteObject(value);
     }
     void initialize(HWND parent) {
-        register_class(view_class,procedure);register_class(array_class,array_procedure);register_class(statistics_class,statistics_procedure);
+        register_class(view_class,procedure);register_class(array_class,array_procedure);
+        register_class(statistics_class,statistics_procedure);
+        register_class(frequency_class,frequencies_procedure);
         rich=LoadLibraryW(L"Msftedit.dll");if(!rich)throw std::runtime_error("RichEdit no está disponible.");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,view_class,L"Simulación interactiva",WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN,
             0,0,1,1,parent,nullptr,GetModuleHandleW(nullptr),this);
@@ -251,7 +282,7 @@ struct SimulationView::Impl {
         (void)CoCreateInstance(CLSID_AccPropServices,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(accessibility.GetAddressOf()));
         for(const auto id:{title_id,description_id,scenario_label_id,array_label_id,original_order_id,
                 step_id,explanation_id,transition_id,output_label_id,result_comparison_id,
-                input_label_id,error_id,groups_label_id})label(id);
+                input_label_id,error_id,groups_label_id,frequencies_label_id})label(id);
         const auto selector=create(L"COMBOBOX",scenario_id,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL);
         SendMessageW(selector,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
         SendMessageW(selector,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(L"Datos originales"));
@@ -266,6 +297,10 @@ struct SimulationView::Impl {
         const auto statistics_window=CreateWindowExW(0,statistics_class,L"",WS_CHILD|WS_VISIBLE,0,0,1,1,host,
             reinterpret_cast<HMENU>(static_cast<INT_PTR>(variables_id)),GetModuleHandleW(nullptr),this);
         if(!statistics_window)throw std::runtime_error("No se pudieron mostrar las variables.");controls.emplace(variables_id,statistics_window);
+        frequencies=CreateWindowExW(0,frequency_class,L"",WS_CHILD|WS_VISIBLE,0,0,1,1,host,
+            reinterpret_cast<HMENU>(static_cast<INT_PTR>(frequencies_id)),GetModuleHandleW(nullptr),this);
+        if(!frequencies)throw std::runtime_error("No se pudieron mostrar las frecuencias.");
+        controls.emplace(frequencies_id,frequencies);
         SetWindowPos(item(explanation_id),canvas,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
         SetWindowPos(item(output_id),statistics_window,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
         button(previous_id,"Anterior");button(next_id,"Siguiente");button(reset_id,"Reiniciar");
@@ -467,6 +502,11 @@ struct SimulationView::Impl {
             " · "+std::to_string(trace.ordered.size())+" elementos");
         set_label(original_order_id,original);
         set_label(groups_label_id,"Selecciona un grupo");
+        set_label(frequencies_label_id,"Frecuencias de grupos terminados · escala máxima visible "+
+            std::to_string(std::max<std::size_t>(1,frame().maximum)));
+        const auto frequency_description=frequency_text();
+        SetWindowTextW(frequencies,wide(frequency_description).c_str());
+        accessible(frequencies,frequency_description);
         std::string status;
         if(stepping())status=(spec.view==SimulationViewMode::candidates?"Grupo ":"Paso ")+std::to_string(position+1)+" de "+std::to_string(count());
         else if(spec.view==SimulationViewMode::groups)status=trace.groups.empty()?"No hay grupos":"Grupo "+std::to_string(position+1)+" de "+std::to_string(trace.groups.size());
@@ -508,6 +548,7 @@ struct SimulationView::Impl {
         NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,canvas,OBJID_CLIENT,CHILDID_SELF);
         if(!initializing)arrange(width,true);
         InvalidateRect(canvas,nullptr,FALSE);InvalidateRect(item(variables_id),nullptr,FALSE);
+        InvalidateRect(frequencies,nullptr,FALSE);
     }
     void publish() {
         if(initializing)return;const auto life=alive;const auto layout=callbacks.layout_changed,changed=callbacks.changed;
@@ -599,6 +640,16 @@ struct SimulationView::Impl {
         if(!limit_text.empty()){const auto limit_height=measure(limit_text,available,index_font);limit_bounds={0,top+sp(5),available,top+sp(5)+limit_height};top=limit_bounds.bottom+sp(4);}
         return top;
     }
+    int frequency_columns(int available,std::size_t visible)const {
+        const int gap=sp(8);
+        return std::max(1,std::min(static_cast<int>(visible),
+            std::max(1,(available+gap)/(sp(100)+gap))));
+    }
+    int frequency_height(int available,std::size_t visible)const {
+        if(!visible)return 0;
+        const auto columns=static_cast<std::size_t>(frequency_columns(available,visible));
+        return sp(8)+static_cast<int>((visible+columns-1)/columns)*sp(138)+sp(4);
+    }
     int statistics_layout(int available) {
         const int gap=sp(10);int top=0;
         for(std::size_t first=0;first<statistics.size();){
@@ -678,6 +729,10 @@ struct SimulationView::Impl {
         text_row(explanation_id);text_row(transition_id);
         const bool stats=spec.view!=SimulationViewMode::array;
         const auto stats_height=statistics_layout(available);place(variables_id,margin,top,available,stats_height,stats);if(stats)top+=stats_height+px(8);
+        const auto groups_done=completed_groups();
+        text_row(frequencies_label_id,groups_done>0);
+        place(frequencies_id,margin,top,available,frequency_height(available,groups_done),groups_done>0);
+        if(groups_done)top+=frequency_height(available,groups_done)+px(8);
         const bool output=spec.view==SimulationViewMode::walkthrough||spec.view==SimulationViewMode::candidates||spec.view==SimulationViewMode::summary;
         text_row(output_label_id,output);text_row(output_id,output,sp(34));
         text_row(result_comparison_id);
@@ -779,6 +834,64 @@ struct SimulationView::Impl {
                 MoveToEx(dc,x,last.bottom+sp(2),nullptr);LineTo(dc,x,limit_bounds.top-sp(2));LineTo(dc,std::max<LONG>(0,x-sp(9)),limit_bounds.top-sp(2));}}
         SelectObject(dc,old_pen);DeleteObject(pen);SelectObject(dc,old);
     }
+    void paint_frequencies(HDC dc) {
+        RECT area{};GetClientRect(frequencies,&area);
+        const auto colors=reader_theme::palette(host);
+        FillRect(dc,&area,reader_theme::brush(reader_theme::Surface::card));
+        SetBkMode(dc,TRANSPARENT);
+        const auto visible=completed_groups();
+        if(!visible)return;
+        const int gap=sp(8),columns=frequency_columns(std::max(1,area.right),visible);
+        const int card_width=std::max(1,(area.right-gap*(columns-1))/columns);
+        std::size_t greatest=1;
+        for(std::size_t i=0;i<visible;++i)
+            greatest=std::max(greatest,trace.groups[i].end-trace.groups[i].begin);
+        for(std::size_t i=0;i<visible;++i){
+            const int row=static_cast<int>(i/static_cast<std::size_t>(columns));
+            const int col=static_cast<int>(i%static_cast<std::size_t>(columns));
+            const int left=col*(card_width+gap);
+            const int top=sp(8)+row*sp(138);
+            const RECT card{left,top,left+card_width,top+sp(130)};
+            const auto& group=trace.groups[i];
+            const auto count=group.end-group.begin;
+            const bool leader=std::ranges::find(frame().leaders,group.value)!=frame().leaders.end();
+            const auto card_brush=CreateSolidBrush(colors.field);
+            const auto border=CreatePen(PS_SOLID,leader?std::max(1,px(2)):1,
+                leader?colors.accent:colors.outline);
+            const auto old_brush=SelectObject(dc,card_brush),old_pen=SelectObject(dc,border);
+            RoundRect(dc,card.left,card.top,card.right,card.bottom,px(10),px(10));
+            SelectObject(dc,old_pen);SelectObject(dc,old_brush);
+            DeleteObject(border);DeleteObject(card_brush);
+
+            auto caption=card;caption.left+=sp(4);caption.right-=sp(4);
+            caption.top+=sp(5);caption.bottom=caption.top+sp(20);
+            auto old_font=SelectObject(dc,index_font);
+            SetTextColor(dc,colors.text);
+            const auto headline=wide(std::string(leader?"★ ":"")+"Grupo "+std::to_string(i+1));
+            DrawTextW(dc,headline.c_str(),-1,&caption,DT_CENTER|DT_SINGLELINE|DT_END_ELLIPSIS|DT_NOPREFIX);
+            const int baseline=top+sp(87);
+            const int maximum_height=sp(56);
+            const int bar_height=std::max(sp(3),
+                MulDiv(maximum_height,static_cast<int>(count),static_cast<int>(greatest)));
+            const RECT bar{left+card_width/3,baseline-bar_height,
+                left+2*card_width/3,baseline};
+            const auto paint=CreateSolidBrush(leader?colors.accent:
+                colors.high_contrast?colors.text:blend(colors.field,colors.accent,140));
+            FillRect(dc,&bar,paint);DeleteObject(paint);
+
+            auto value_rect=card;value_rect.left+=sp(4);value_rect.right-=sp(4);
+            value_rect.top=baseline+sp(3);value_rect.bottom=value_rect.top+sp(20);
+            const auto value=wide(simulation_value_display_text(group.value));
+            DrawTextW(dc,value.c_str(),-1,&value_rect,
+                DT_CENTER|DT_SINGLELINE|DT_END_ELLIPSIS|DT_NOPREFIX);
+            auto count_rect=card;count_rect.left+=sp(4);count_rect.right-=sp(4);
+            count_rect.top=value_rect.bottom;count_rect.bottom=count_rect.top+sp(16);
+            const auto quantity=wide("×"+std::to_string(count));
+            DrawTextW(dc,quantity.c_str(),-1,&count_rect,
+                DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);
+            SelectObject(dc,old_font);
+        }
+    }
     void paint_statistics(HWND window,HDC dc) {
         RECT area{};GetClientRect(window,&area);const auto colors=reader_theme::palette(host);
         FillRect(dc,&area,reader_theme::brush(reader_theme::Surface::card));SetBkMode(dc,TRANSPARENT);
@@ -807,6 +920,7 @@ struct SimulationView::Impl {
         result.push_back({prefix+"array",array_text(),canvas,true});
         add(step_id,prefix+"step");add(explanation_id,prefix+"explanation");
         add(transition_id,prefix+"transition");add(variables_id,prefix+"variables");
+        if(completed_groups())result.push_back({prefix+"frequencies",frequency_text(),frequencies,true});
         add(output_label_id,prefix+"output-label");add(output_id,prefix+"output");
         add(result_comparison_id,"state/"+std::to_string(scenario)+"/"+input_key+"/result-comparison");
         add(input_label_id,"input-label");add(error_id,prefix+"error");
@@ -910,6 +1024,24 @@ struct SimulationView::Impl {
         }
         if(message==WM_PAINT){PAINTSTRUCT paint{};const auto dc=BeginPaint(item,&paint);self->paint_array(dc);EndPaint(item,&paint);return 0;}
         if(message==WM_PRINTCLIENT){self->paint_array(reinterpret_cast<HDC>(wp));return 0;}
+        if(message==WM_ERASEBKGND)return 1;
+        if(message==WM_MOUSEWHEEL)return SendMessageW(GetParent(item),message,wp,lp);
+        return DefWindowProcW(item,message,wp,lp);
+    }
+    static LRESULT CALLBACK frequencies_procedure(HWND item,UINT message,WPARAM wp,LPARAM lp) {
+        auto* self=reinterpret_cast<Impl*>(GetWindowLongPtrW(item,GWLP_USERDATA));
+        if(message==WM_NCCREATE){
+            self=static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);
+            SetWindowLongPtrW(item,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));
+        }
+        if(!self)return DefWindowProcW(item,message,wp,lp);
+        if(self->callbacks.passive_gesture&&passive_message(message)){
+            const auto handled=self->callbacks.passive_gesture(item,message,wp,lp);
+            if(handled&&message!=WM_NCDESTROY)return *handled;
+        }
+        if(message==WM_PAINT){PAINTSTRUCT paint{};const auto dc=BeginPaint(item,&paint);
+            self->paint_frequencies(dc);EndPaint(item,&paint);return 0;}
+        if(message==WM_PRINTCLIENT){self->paint_frequencies(reinterpret_cast<HDC>(wp));return 0;}
         if(message==WM_ERASEBKGND)return 1;
         if(message==WM_MOUSEWHEEL)return SendMessageW(GetParent(item),message,wp,lp);
         return DefWindowProcW(item,message,wp,lp);

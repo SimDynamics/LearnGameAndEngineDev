@@ -269,6 +269,36 @@ solamente los grupos que ya terminaron. `done` conserva el resultado final.
 Un array vacío produce únicamente `empty`, sin accesos a elementos ni líneas
 de salida.
 
+### Barras de frecuencia calculadas
+
+La vista Windows muestra un diagrama de barras a partir de las **frecuencias
+realmente calculadas por el modelo**, no de números escritos por Work. Cada
+barra identifica el grupo y su valor; su altura representa cuántos elementos
+contiene. El rótulo de cantidad es numérico, así que no depende únicamente
+del color ni del tamaño. Los candidatos al máximo **actual** aparecen
+destacados también mediante una estrella. El lector puede acceder al
+nombre completo de cada grupo, su valor y frecuencia, incluso cuando un
+texto largo se acorta visualmente dentro de una tarjeta.
+
+En **walkthrough**, una barra sólo aparece **después de que termina la
+decisión de ese grupo**: contar el primer dato o avanzar dentro del grupo
+no muestra todavía su frecuencia total. En **candidates** se muestran los
+grupos que ya se han examinado; **summary** muestra el resultado de todos
+los grupos. La vista de selección **groups** conserva sus propios botones
+y la vista **array** sólo presenta las casillas, sin barras duplicadas.
+
+Las barras utilizan como escala vertical la mayor frecuencia entre los
+**grupos ya visibles**. Por eso, una barra anterior puede cambiar de altura
+relativa cuando un grupo posterior alcanza un máximo mayor: no cambió la
+frecuencia original, cambió la escala de comparación conocida hasta entonces.
+La escala se identifica en el título del diagrama.
+
+La disposición se adapta al ancho y al zoom de texto, distribuyendo los
+grupos en varias filas sin ocultar el último; acepta hasta los 64 grupos
+permitidos por el modelo. La representación no califica ejercicios ni
+escribe el progreso, y no permite consultar desde el lector ningún grupo
+futuro que el recorrido todavía no haya terminado.
+
 ### Qué cambió en el paso
 
 La vista nativa de recorrido muestra **Cambios desde el estado anterior**

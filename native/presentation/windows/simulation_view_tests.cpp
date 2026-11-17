@@ -23,7 +23,8 @@ using namespace lgaed::presentation;
 constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_id=110,previous_id=111,next_id=112,reset_id=113,input_id=115,apply_id=116,restore_id=117,error_id=118,
     input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
-    previous_decision_id=124,next_decision_id=125,result_comparison_id=126,group_first_id=200;
+    previous_decision_id=124,next_decision_id=125,result_comparison_id=126,
+    frequencies_id=127,frequencies_label_id=128,group_first_id=200;
 std::filesystem::path failure_captures;
 void capture(HWND window,const std::filesystem::path& path);
 void fitted_text(SimulationView& view);
@@ -317,6 +318,136 @@ void group_colors_are_visible(HWND canvas) {
     const auto first=GetPixel(dc,inset,y),second=GetPixel(dc,bounds.right/6+inset,y),third=GetPixel(dc,bounds.right/3+inset,y);
     SelectObject(dc,old);DeleteObject(bitmap);DeleteDC(dc);ReleaseDC(canvas,screen);
     check(first!=CLR_INVALID&&first!=second&&second==third,"Array mode did not visibly distinguish equal-value groups by color");
+}
+void progressive_frequency_bars(HWND host,const std::filesystem::path& captures) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,850);
+    const auto bars=GetDlgItem(view.window(),frequencies_id);
+    const auto heading=GetDlgItem(view.window(),frequencies_label_id);
+    check(bars&&heading&&!control_shown(bars)&&!control_shown(heading),
+        "The initial walkthrough revealed a not-yet-completed group");
+    const auto shown_group_count=[&](const SimulationView& current)->std::string{
+        for(const auto& region:current.reading_regions())
+            if(region.key.find("/frequencies")!=std::string::npos)return region.source_text;
+        return {};
+    };
+    check(shown_group_count(view).empty()&&native_text(bars).empty(),
+        "The hidden chart exposed future groups to native accessibility");
+    check(view.go_to_step(1)&&!control_shown(bars)&&shown_group_count(view).empty(),
+        "Counting an element revealed a frequency before its group's decision");
+    check(view.go_to_step(2)&&control_shown(bars)&&control_shown(heading),
+        "A completed group has no visual frequency representation");
+    const auto first=name(bars);
+    check(text(view,frequencies_label_id).find("escala máxima visible 1")!=std::string::npos,
+        "The chart did not identify the frequency scale currently known");
+    check(first.find("Frecuencias de 1 grupo terminado")!=std::string::npos&&
+        first.find("Grupo 1: -8, frecuencia 1, candidato al máximo actual")!=std::string::npos&&
+        first.find("Grupo 2:")==std::string::npos&&
+        shown_group_count(view)==first,
+        "The first bar does not describe precisely the completed groups");
+    wchar_t type[96]{};GetClassNameW(bars,type,96);
+    check(std::wstring_view(type)==L"LearnGameAndEngineDev.SimulationFrequencies",
+        "Frequency bars are not drawn by their native Win32 control");
+    check(view.go_to_step(5)&&name(bars)==first,
+        "The model exposed the second group's frequency while still counting");
+    check(view.go_to_step(7),"Could not complete the second group");
+    const auto second=name(bars);
+    check(text(view,frequencies_label_id).find("escala máxima visible 4")!=std::string::npos,
+        "Discovering a higher frequency did not change the chart's declared scale");
+    check(second.find("Frecuencias de 2 grupos terminados")!=std::string::npos&&
+        second.find("Grupo 1: -8, frecuencia 1")!=std::string::npos&&
+        second.find("Grupo 2: 3, frecuencia 4, candidato al máximo actual")!=std::string::npos&&
+        second.find("Grupo 3:")==std::string::npos,
+        "The second group's bars did not update after its maximum decision");
+    check(view.go_to_step(8)&&name(bars)==second,
+        "Starting the last group revealed its future frequency prematurely");
+    check(view.go_to_step(9),"Could not complete the final group");
+    const auto third=name(bars);
+    check(third.find("Frecuencias de 3 grupos terminados")!=std::string::npos&&
+        third.find("Grupo 3: 10, frecuencia 1")!=std::string::npos&&
+        third.find("Grupo 3: 10, frecuencia 1, candidato")==std::string::npos&&
+        third.find("Grupo 2: 3, frecuencia 4, candidato al máximo actual")!=std::string::npos,
+        "The chart marked a losing group as a candidate");
+    view.set_text_scale(150);resize(view,340);bounds(view,"frequency chart at 150 percent");
+    RECT native{};GetClientRect(bars,&native);
+    check(native.right>200&&native.bottom>250,
+        "Frequency chart did not wrap bars at the narrower reader width");
+    if(!captures.empty())capture(view.window(),captures/"frequencies-narrow-150.bmp");
+    check(view.go_to_step(0)&&!control_shown(bars)&&shown_group_count(view).empty(),
+        "Returning to initial step retained future histogram bars");
+    check(view.go_to_step(view.step_count()-1)&&name(bars)==third&&spec==authored,
+        "Terminal walkthrough lost completed group bars or changed authored data");
+
+    const auto scenario=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(scenario,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(!control_shown(bars)&&shown_group_count(view).empty()&&view.step_index()==0,
+        "Changing scenario leaked prior frequencies or retained the old frame");
+    check(view.go_to_step(3)&&name(bars).find("Frecuencias de 1 grupo terminado")!=std::string::npos&&
+        name(bars).find("Grupo 1: 4, frecuencia 2")!=std::string::npos,
+        "The tie scenario did not compute its first completed group");
+    check(view.go_to_step(6),"The tie scenario cannot reach the second completed group");
+    const auto tie=name(bars);
+    check(tie.find("Frecuencias de 2 grupos terminados")!=std::string::npos&&
+        tie.find("Grupo 1: 4, frecuencia 2, candidato al máximo actual")!=std::string::npos&&
+        tie.find("Grupo 2: 9, frecuencia 2, candidato al máximo actual")!=std::string::npos,
+        "Equal-frequency groups did not remain simultaneous candidate bars");
+
+    SendMessageW(scenario,CB_SETCURSEL,2,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(view.step_count()==1&&!control_shown(bars)&&
+        native_text(bars).empty()&&shown_group_count(view).empty(),
+        "The empty scenario retained a stale histogram and narration");
+
+    for(const auto mode:{SimulationViewMode::array,SimulationViewMode::groups}) {
+        auto other=fixture(mode);
+        SimulationView static_view(host,other,"es");resize(static_view,850);
+        const auto static_bars=GetDlgItem(static_view.window(),frequencies_id);
+        check(static_bars&&!control_shown(static_bars)&&
+            shown_group_count(static_view).empty(),
+            "An array-only or group-selector mode exposed unrelated histogram bars");
+    }
+    {
+        auto candidates=fixture(SimulationViewMode::candidates);
+        SimulationView visit(host,candidates,"es");resize(visit,850);
+        const auto candidate_bars=GetDlgItem(visit.window(),frequencies_id);
+        check(control_shown(candidate_bars)&&
+            name(candidate_bars).find("Frecuencias de 1 grupo terminado")!=std::string::npos,
+            "Candidates mode cannot visualize its first completed group");
+        check(visit.go_to_step(1)&&
+            name(candidate_bars).find("Frecuencias de 2 grupos terminados")!=std::string::npos&&
+            name(candidate_bars).find("Grupo 3:")==std::string::npos,
+            "Candidates mode revealed the future third group");
+    }
+    {
+        auto summary=fixture(SimulationViewMode::summary);
+        SimulationView final(host,summary,"es");resize(final,850);
+        const auto all=GetDlgItem(final.window(),frequencies_id);
+        check(control_shown(all)&&name(all).find("Frecuencias de 3 grupos terminados")!=std::string::npos,
+            "Summary does not show all verified groups");
+        auto texts=fixture(SimulationViewMode::summary);
+        texts.text_values=true;texts.scenarios.clear();
+        texts.values={std::string(""),std::string(" "),std::string(" ")};
+        SimulationView quoted(host,texts,"es");resize(quoted,850);
+        const auto text_bars=GetDlgItem(quoted.window(),frequencies_id);
+        check(name(text_bars).find("Grupo 1: \"\" (cadena vacía), frecuencia 1")!=std::string::npos&&
+            name(text_bars).find("Grupo 2: \" \" (1 espacio), frecuencia 2, candidato al máximo actual")!=std::string::npos,
+            "The chart lost meaningful spaces or empty string group identities");
+    }
+    {
+        auto many=fixture(SimulationViewMode::summary);many.scenarios.clear();
+        many.values.clear();
+        for(int value=0;value<64;++value)many.values.emplace_back(static_cast<std::int64_t>(value));
+        SimulationView scaled(host,many,"es");scaled.set_text_scale(150);
+        resize(scaled,340);bounds(scaled,"64 groups in responsive histogram");
+        const auto all=GetDlgItem(scaled.window(),frequencies_id);
+        RECT size{};GetClientRect(all,&size);
+        check(size.bottom>1500&&name(all).find("Grupo 64: 63, frecuencia 1")!=std::string::npos,
+            "The responsive histogram clipped its last group or lost data");
+    }
 }
 void calculated_step_changes(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
@@ -1350,6 +1481,7 @@ int main(int argc,char** argv)try {
         catch(...){++failures;std::cerr<<"FAIL simulation scenario "<<label<<": unknown native failure\n";}
         pump(host.value);
     };
+    run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
     run("calculated_step_changes",[&]{calculated_step_changes(host.value);});
     run("completed_scenario_comparison",[&]{completed_scenario_comparison(host.value);});
     run("decision_navigation",[&]{decision_navigation(host.value);});
