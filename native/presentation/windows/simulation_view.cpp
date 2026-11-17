@@ -412,6 +412,8 @@ struct SimulationView::Impl {
         if(!SetWindowSubclass(editor,input_navigation_proc,3,reinterpret_cast<DWORD_PTR>(this)))
             throw std::runtime_error("No se pudieron preparar los controles del editor de datos.");
         SendMessageW(editor,WM_SETFONT,reinterpret_cast<WPARAM>(base_font),FALSE);
+        if(!set_native_zoom(editor,scale))
+            throw std::runtime_error("RichEdit rechazó la escala inicial de los datos.");
         SendMessageW(editor,EM_EXLIMITTEXT,0,65536);
         button(apply_id,"Aplicar datos");button(restore_id,"Restablecer datos");
         if(spec.text_values&&std::ranges::any_of(trace.original,[](const auto& value){
