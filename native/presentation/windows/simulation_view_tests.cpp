@@ -2695,6 +2695,14 @@ void scenario_change_rejects_silent_editor_stream(HWND host) {
     for(int i=0;i<64;++i)draft+="linea_"+std::to_string(i)+"\n";
     draft+="árbol";
     set_edit_text(editor,draft);
+    // Insert a genuine native edit after the initial stream, so a needless
+    // rollback stream can be detected by the loss of Undo history.
+    const CHARRANGE at_end{-1,-1};
+    SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&at_end));
+    SendMessageW(editor,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"X"));
+    draft+="X";
+    check(text(view,input_id)==draft&&SendMessageW(editor,EM_CANUNDO,0,0)!=FALSE,
+        "Cannot prepare an undoable native edit in the previous draft");
     const CHARRANGE selected{10,17};
     SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
     SendMessageW(editor,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
@@ -2709,8 +2717,8 @@ void scenario_change_rejects_silent_editor_stream(HWND host) {
             UINT_PTR,DWORD_PTR raw)->LRESULT{
         auto& state=*reinterpret_cast<SilentStreams*>(raw);
         if(message==EM_STREAMIN&&++state.streamed<=2){
-            // Both candidate and rollback streams silently refuse to write
-            // without setting dwError. The rollback needs a distinct route.
+            // The candidate stream does not write anything. A second stream
+            // would be unnecessary and would discard the draft's Undo history.
             return 0;
         }
         if(message==EM_REPLACESEL)++state.literal_fallbacks;
@@ -2731,9 +2739,10 @@ void scenario_change_rejects_silent_editor_stream(HWND host) {
         reinterpret_cast<LPARAM>(selector));pump();
     const auto after=scroll_state(editor);
     const auto diagnostic=text(view,error_id);
-    // Both streams were no-ops. The original draft is already intact, so a
-    // fallback replacement is unnecessary; do not claim one took place.
-    check(failures.streamed==2&&failures.literal_fallbacks==0&&
+    // The candidate did not write anything, so rollback must not stream or
+    // replace the already-intact document, selection or Undo history.
+    check(failures.streamed==1&&failures.literal_fallbacks==0&&
+        SendMessageW(editor,EM_CANUNDO,0,0)!=FALSE&&
         diagnostic.find("RichEdit no conservó los datos del escenario.")!=std::string::npos&&
         SendMessageW(selector,CB_GETCURSEL,0,0)==0&&
         view.step_index()==old_step&&view.step_count()==old_count&&

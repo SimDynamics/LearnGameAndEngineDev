@@ -1082,6 +1082,11 @@ struct SimulationView::Impl {
     // failure from this best-effort native operation.
     bool restore_input_document(std::string_view previous) noexcept {
         const auto editor=item(input_id);
+        // A silent rejection may have left the old draft completely intact.
+        // Avoid a second stream in that case: it would erase the student's
+        // native Undo/Redo history without changing the document.
+        try{if(editor&&IsWindow(editor)&&edit_text(editor)==previous)return true;}
+        catch(...){}
         try{
             set_edit_text(editor,previous);
             if(edit_text(editor)==previous)return true;

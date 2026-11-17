@@ -245,8 +245,9 @@ Los textos que parezcan encabezados RTF siguen siendo datos literales.
 También se coteja el texto tras un intento de restauración: si un segundo
 `EM_STREAMIN` silencioso deja los datos nuevos donde debían estar los
 anteriores, se activa la recuperación literal, igual que ante un error
-nativo explícito. Si el texto anterior ya estaba intacto, no hace falta
-otra escritura.
+nativo explícito. Si el texto anterior ya estaba intacto, no se vuelve a
+escribir: se conservan también las operaciones de Deshacer/Rehacer del
+borrador y su selección de lectura.
 Antes de aceptar un escenario se compara el contenido real del editor con el
 texto previsto: un flujo que termina sin error, pero no escribe esos datos,
 también se rechaza. Ante un rollback, se restauran además la selección y la
