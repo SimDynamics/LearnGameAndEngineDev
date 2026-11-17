@@ -841,6 +841,21 @@ int main(int argc,char** argv){using namespace lgaed::presentation;
         view.set_enabled(false);click(wheel_row);check(view.order()==before&&IsWindowEnabled(wheel_row),"Solved ordering changed or dimmed its original syntax text");
         view.set_enabled(true);view.set_wrap(true);const auto narrow=view.height_for_width(px(180));view.set_wrap(false);
         check(narrow>view.height_for_width(px(180)),"Line wrapping did not use the actual resized text geometry");
+        // The ordering renderer still supports 400% in native QA while
+        // the actual lesson controls cap the learner's zoom at 150%.
+        for(const int percentage:{75,100,150,400}){
+            view.set_text_scale(percentage);
+            const auto row=GetDlgItem(view.window(),100);
+            int numerator=0,denominator=0;
+            check(SendMessageW(row,EM_GETZOOM,
+                reinterpret_cast<WPARAM>(&numerator),
+                reinterpret_cast<LPARAM>(&denominator))!=FALSE&&
+                numerator>0&&numerator<=64&&denominator>0&&denominator<=64&&
+                MulDiv(numerator,100,denominator)==percentage,
+                "A code-ordering card did not accept its native RichEdit zoom");
+            check(view.order()==before&&edit_text(row)==source[0],
+                "Zooming a code-ordering card modified its source or student order");
+        }
         view.set_text_scale(150);check(view.order()==before&&changes>=4,"Presentation changed authored fragment order");
         check(view.reading_regions()[0].second==source[before[0]],"Source text changed during wrapping/zoom");
         check(character(source_row,shaded_start).crTextColor==RGB(122,195,141)&&character(source_row,0).yHeight==rich_text_height(),
