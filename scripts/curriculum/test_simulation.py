@@ -84,22 +84,22 @@ class SimulationContractTest(unittest.TestCase):
         self.assertEqual((spec["model"], spec["valueType"], spec["view"]),
                          ("arrayRunsV1", "text", "walkthrough"))
         expected = {
-            "initial": (["", "patio", "patio"], [("", 1), ("patio", 2)], ["patio"]),
-            "coleccion_vacia": ([], [], []),
-            "cadena_vacia": ([""], [("", 1)], [""]),
-            "patio_repetido": (["", "patio", "patio"], [("", 1), ("patio", 2)], ["patio"]),
-            "vacia_y_espacio": (["", " "], [("", 1), (" ", 1)], ["", " "]),
+            "initial": (["", "patio", "patio"], [("", 1), ("patio", 2)], 2, ["patio"]),
+            "coleccion_vacia": ([], [], 0, []),
+            "cadena_vacia": ([""], [("", 1)], 1, [""]),
+            "patio_repetido": (["", "patio", "patio"], [("", 1), ("patio", 2)], 2, ["patio"]),
+            "vacia_y_espacio": (["", " "], [("", 1), (" ", 1)], 1, ["", " "]),
             "empate_y_espacios": (["", " ", "casa"],
-                                   [("", 1), (" ", 1), ("casa", 1)], ["", " ", "casa"]),
+                                   [("", 1), (" ", 1), ("casa", 1)], 1, ["", " ", "casa"]),
             "desorden_y_repeticiones": (["sol", " ", "sol", ""],
-                                         [("", 1), (" ", 1), ("sol", 2)], ["sol"]),
+                                         [("", 1), (" ", 1), ("sol", 2)], 2, ["sol"]),
         }
         authored_cases = {"initial": spec["values"]}
         authored_cases.update({item["id"]: item["values"] for item in spec["scenarios"]})
         self.assertEqual(set(authored_cases), set(expected))
         for case_id, values in authored_cases.items():
             with self.subTest(case=case_id):
-                source, groups_expected, leaders_expected = expected[case_id]
+                source, groups_expected, maximum_expected, leaders_expected = expected[case_id]
                 self.assertEqual(values, source)
                 ordered = sorted(values, key=lambda text: text.encode("utf-8"))
                 groups = []
@@ -110,7 +110,8 @@ class SimulationContractTest(unittest.TestCase):
                         groups.append((value, 1))
                 maximum = max((count for _, count in groups), default=0)
                 leaders = [value for value, count in groups if count == maximum]
-                self.assertEqual((groups, leaders), (groups_expected, leaders_expected))
+                self.assertEqual((groups, maximum, leaders),
+                                 (groups_expected, maximum_expected, leaders_expected))
                 self.assertGreater(simulation._trace_text_bytes(spec, values), 0)
         self.assertEqual(authored, original)
 
@@ -477,6 +478,30 @@ class SimulationIntegrationTest(unittest.TestCase):
         self.assertEqual(state.validate(added)[0, 0], (0, 0))
         self.assertEqual(state.validate(added)[2, 0], (2, 0))
         self.assertEqual(added["stateLayout"]["origin"], before["stateLayout"]["origin"])
+
+    def test_documented_text_example_has_an_independent_stable_owner(self):
+        """Work can add this ungraded model without adopting an old puzzle."""
+        raw = lesson(False)
+        before = state.prepare_v2(raw, "es", {"es": raw})
+        authoring = json.loads(EMPTY_TEXT_EXAMPLE.read_text(encoding="utf-8"))
+        plan = deepcopy(before["stateLayout"]["current"])
+        plan[1]["blocks"].append("new_text_example")
+        added = state.reorder(before, plan, [{
+            "id": "new_text_example", "storage": {"page": 3, "block": 0},
+            "progressPage": "page_0001", "block": authoring,
+        }])
+        state.validate_transition(before, added)
+        self.assertEqual(before["stateLayout"]["origin"],
+                         added["stateLayout"]["origin"])
+        self.assertEqual(state.validate(added)[1, 1], (3, 0))
+        self.assertEqual(added["pages"][1]["blocks"][1], authoring)
+        self.assertEqual(before["pages"][0]["blocks"][0],
+                         added["pages"][0]["blocks"][0])
+        self.assertEqual(before["pages"][2]["blocks"][0],
+                         added["pages"][2]["blocks"][0])
+        self.assertNotIn("new_text_example",
+                         {block["id"] for page in before["stateLayout"]["current"]
+                          for block in page["blocks"] if isinstance(block, dict)})
 
     def test_complete_contract_cannot_change_as_an_editorial_revision(self):
         raw = lesson()
