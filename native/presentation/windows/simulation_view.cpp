@@ -156,6 +156,8 @@ struct SimulationView::Impl {
     SimulationInputFormat input_format=SimulationInputFormat::lines;
     int width=1,height=1,scale=100,canvas_height=1;
     int frequency_scroll=0,frequency_total_height=0;
+    // Fraction of one histogram scroll pixel retained between high-res events.
+    int frequency_wheel_remainder=0;
     int input_wheel_delta=0;
     bool frequency_candidates_only=false;
     bool initializing=true,arranging=false,layout_valid=false;
@@ -525,6 +527,7 @@ struct SimulationView::Impl {
         // previous editor scale. Do not combine it with a new reader-scale
         // transaction or DPI rebase; only committed changes reset the delta.
         input_wheel_delta=0;
+        frequency_wheel_remainder=0;
         for(const auto& [id,child]:controls){
             wchar_t type[48]{};GetClassNameW(child,type,48);
             if(std::wstring_view(type)!=MSFTEDIT_CLASS)
@@ -1045,6 +1048,7 @@ struct SimulationView::Impl {
         trace=std::move(candidate);source_positions=std::move(next_source_positions);
         // A partial Ctrl+wheel movement belongs to the previous edit state.
         input_wheel_delta=0;
+        frequency_wheel_remainder=0;
         frequency_scroll=0;frequency_total_height=0;frequency_candidates_only=false;
         pressed_frequency_group.reset();
         input_key=std::move(identity);position=0;error.clear();
@@ -1568,6 +1572,7 @@ struct SimulationView::Impl {
         else if(id==reset_id)go(0);
         else if(id==frequency_filter_id&&completed_groups()){
             frequency_candidates_only=!frequency_candidates_only;
+            frequency_wheel_remainder=0;
             frequency_scroll=0;pressed_frequency_group.reset();update();publish();
         }
         else if(id==previous_decision_id){if(const auto target=previous_decision())go(*target);}
@@ -1745,6 +1750,7 @@ struct SimulationView::Impl {
         }
         RECT viewport{};GetClientRect(item,&viewport);
         if(message==WM_VSCROLL){
+            self->frequency_wheel_remainder=0;
             SCROLLINFO state{sizeof(state),SIF_ALL};
             GetScrollInfo(item,SB_VERT,&state);
             int target=state.nPos;
@@ -1762,6 +1768,7 @@ struct SimulationView::Impl {
             self->scroll_frequencies(target);return 0;
         }
         if(message==WM_KEYDOWN&&self->frequency_total_height>viewport.bottom){
+            self->frequency_wheel_remainder=0;
             int target=self->frequency_scroll;
             switch(wp){
             case VK_UP:target-=self->sp(45);break;
@@ -1775,12 +1782,21 @@ struct SimulationView::Impl {
             self->scroll_frequencies(target);return 0;
         }
         if(message==WM_MOUSEWHEEL){
-            const auto delta=GET_WHEEL_DELTA_WPARAM(wp);
+            const int delta=GET_WHEEL_DELTA_WPARAM(wp);
             if((GET_KEYSTATE_WPARAM(wp)&MK_CONTROL)||
-                !can_scroll_with_wheel(item,delta))
+                !can_scroll_with_wheel(item,delta)){
+                // At the edge, the reader owns the gesture. Do not carry a
+                // fractional child movement into the next independent scroll.
+                self->frequency_wheel_remainder=0;
                 return SendMessageW(GetParent(item),message,wp,lp);
-            self->scroll_frequencies(self->frequency_scroll-
-                delta*self->sp(75)/WHEEL_DELTA);
+            }
+            // Win32 reports partial high-resolution wheel units. Divide only
+            // after accumulating them, otherwise repeated tiny movements never
+            // cross the first native scroll pixel.
+            const int scaled=delta*self->sp(75)+self->frequency_wheel_remainder;
+            const int pixels=scaled/WHEEL_DELTA;
+            self->frequency_wheel_remainder=scaled%WHEEL_DELTA;
+            if(pixels)self->scroll_frequencies(self->frequency_scroll-pixels);
             return 0;
         }
         if(message==WM_PAINT){PAINTSTRUCT paint{};const auto dc=BeginPaint(item,&paint);
