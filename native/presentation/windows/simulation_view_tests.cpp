@@ -1059,6 +1059,124 @@ void navigation(HWND host,const std::filesystem::path& captures) {
     view.set_text_scale(100);resize(view,1050);if(!captures.empty())capture(view.window(),captures/"walkthrough-end-boundary.bmp");
     check(changes>=6&&layouts==changes,"UI changes did not refresh layout and current narration together");
 }
+// Inspect the rendered footer of a particular cell using the native
+// WM_PRINT path; no desktop input or visible QA window is required.
+std::vector<COLORREF> counted_cell_footer_pixels(SimulationView& view,std::size_t index) {
+    const auto region=view.cell_bounds_in_canvas(index);
+    check(region.has_value(),"Cannot sample a cell outside the applied data");
+    const auto canvas=GetDlgItem(view.window(),array_id);
+    RECT client{};GetClientRect(canvas,&client);
+    const auto screen=GetDC(canvas);
+    check(screen!=nullptr,"Cannot access the native array paint surface");
+    const auto dc=CreateCompatibleDC(screen);
+    const auto bitmap=CreateCompatibleBitmap(screen,std::max(1L,client.right),std::max(1L,client.bottom));
+    check(dc&&bitmap,"Cannot create a native array pixel snapshot");
+    const auto old=SelectObject(dc,bitmap);
+    SendMessageW(canvas,WM_PRINT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT|PRF_ERASEBKGND);
+    const int dpi=static_cast<int>(GetDpiForWindow(canvas));
+    const int inset=std::max(2,MulDiv(3,dpi,96));
+    const int footer=std::max(8,MulDiv(19,dpi,96));
+    std::vector<COLORREF> pixels;
+    for(int y=std::max(region->top+inset,region->bottom-inset-footer);
+            y<region->bottom-inset;y+=2){
+        for(int x=region->left+inset;x<region->right-inset;x+=2)
+            pixels.push_back(GetPixel(dc,x,y));
+    }
+    SelectObject(dc,old);DeleteObject(bitmap);DeleteDC(dc);ReleaseDC(canvas,screen);
+    check(!pixels.empty(),"The counted-cell footer was clipped to an empty rectangle");
+    return pixels;
+}
+void counted_cell_emphasis(HWND host,const std::filesystem::path& captures) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,1050);
+    const auto canvas=GetDlgItem(view.window(),array_id);
+    const auto initial=name(canvas);
+    check(initial.find("Casilla contada ahora:")==std::string::npos,
+        "The initial model state fabricated a counted element");
+
+    check(view.go_to_step(4),"Cannot reach a calculated advance frame");
+    const auto second_count=name(canvas);
+    check(second_count.find("Casilla contada ahora: índice 2 = 3.")!=std::string::npos&&
+        second_count.find("Casilla contada ahora: índice 3") ==std::string::npos,
+        "The highlighted cell does not identify the current observation");
+    const auto footer_when_counted=counted_cell_footer_pixels(view,2);
+    const auto regions=view.reading_regions();
+    const auto found=std::ranges::find_if(regions,[](const auto& region){
+        return GetDlgCtrlID(region.target)==array_id;
+    });
+    check(found!=regions.end()&&found->source_text==second_count,
+        "The counted-cell explanation is missing from native narration");
+    if(!captures.empty())capture(view.window(),captures/"counted-cell-index-2.bmp");
+
+    check(view.go_to_step(5),"Cannot reach the next calculated advance frame");
+    const auto third_count=name(canvas);
+    check(third_count.find("Casilla contada ahora: índice 3 = 3.")!=std::string::npos&&
+        third_count.find("Casilla contada ahora: índice 2") ==std::string::npos,
+        "Advancing kept the previous cell marked as the newly counted one");
+    const auto footer_when_previous=counted_cell_footer_pixels(view,2);
+    check(footer_when_counted!=footer_when_previous,
+        "The counted-cell outline and non-color footer were not painted");
+    if(!captures.empty())capture(view.window(),captures/"counted-cell-index-3.bmp");
+
+    check(view.go_to_step(7)&&name(canvas).find("Casilla contada ahora:")==std::string::npos,
+        "The new-maximum comparison pretended to count another element");
+    check(view.go_to_step(9)&&name(canvas).find("Casilla contada ahora:")==std::string::npos,
+        "A below-maximum decision pretended to count the last element again");
+    check(view.go_to_step(view.step_count()-1)&&
+        name(canvas).find("Casilla contada ahora:")==std::string::npos,
+        "The terminal model state retained a stale counted-cell label");
+    check(view.go_to_step(8)&&
+        name(canvas).find("Casilla contada ahora: índice 5 = 10.")!=std::string::npos,
+        "A new group's first observation did not focus its actual cell");
+
+    view.set_text_scale(150);resize(view,360);
+    bounds(view,"counted cell with zoom and multiple array rows");
+    click_array_cell(view,4);
+    check(view.step_index()==6&&
+        name(canvas).find("Casilla contada ahora: índice 4 = 3.")!=std::string::npos,
+        "Zoomed cell click did not show the correct current observation");
+    if(!captures.empty())capture(view.window(),captures/"counted-cell-narrow-150.bmp");
+
+    const auto scenario=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(scenario,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(name(canvas).find("Casilla contada ahora:")==std::string::npos,
+        "Scenario replacement kept the previous input's highlighted cell");
+    click_array_cell(view,3);
+    check(name(canvas).find("Casilla contada ahora: índice 3 = 9.")!=std::string::npos,
+        "The tie scenario used a stale observed value or sorted index");
+    SendMessageW(scenario,CB_SETCURSEL,2,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(name(canvas).find("Casilla contada ahora:")==std::string::npos&&
+        !view.cell_bounds_in_canvas(0),
+        "An empty scenario kept the last observation or a stale cell");
+
+    auto words=fixture(SimulationViewMode::walkthrough);
+    words.text_values=true;words.scenarios.clear();
+    words.values={std::string(""),std::string(" "),std::string(" ")};
+    SimulationView text_view(host,words,"es");resize(text_view,820);
+    check(text_view.go_to_step(1)&&
+        name(GetDlgItem(text_view.window(),array_id)).find(
+            "Casilla contada ahora: índice 0 = \"\" (cadena vacía).")!=std::string::npos,
+        "An empty text observation lost its unambiguous accessible value");
+    check(text_view.go_to_step(3)&&
+        name(GetDlgItem(text_view.window(),array_id)).find(
+            "Casilla contada ahora: índice 1 = \" \" (1 espacio).")!=std::string::npos,
+        "A space-only observation was confused with an empty string");
+
+    for(const auto mode:{SimulationViewMode::array,SimulationViewMode::summary,
+                         SimulationViewMode::groups,SimulationViewMode::candidates}){
+        auto other=fixture(mode);
+        SimulationView other_view(host,other,"es");resize(other_view,820);
+        check(name(GetDlgItem(other_view.window(),array_id)).find(
+            "Casilla contada ahora:")==std::string::npos,
+            "A non-walkthrough view fabricated a newly read cell");
+    }
+    check(spec==authored,"Highlighting a counted cell modified authored curriculum");
+}
 void walkthrough_cell_selection(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -1669,6 +1787,7 @@ int main(int argc,char** argv)try {
     run("completed_scenario_comparison",[&]{completed_scenario_comparison(host.value);});
     run("decision_navigation",[&]{decision_navigation(host.value);});
     run("navigation",[&]{navigation(host.value,captures);});
+    run("counted_cell_emphasis",[&]{counted_cell_emphasis(host.value,captures);});
     run("walkthrough_cell_selection",[&]{walkthrough_cell_selection(host.value);});
     run("original_order_comparison",[&]{original_order_comparison(host.value);});
     run("editable_data",[&]{editable_data(host.value,captures);});

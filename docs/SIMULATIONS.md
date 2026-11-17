@@ -91,8 +91,19 @@ no cambian el significado de las variables del modelo.
 En **groups** y **candidates**, pulsar una casilla del array selecciona su grupo
 calculado. En **walkthrough**, pulsar una casilla muestra el paso en el que
 **se acaba de contar ese elemento**: `start` si es el primero del grupo y
-`advance` si es uno de los siguientes. La decisión `newMaximum`, `tie` o
-`belowMaximum` no se anticipa, porque se produce después de terminar el grupo.
+`advance` si es uno de los siguientes. La casilla recién contada queda
+distinguida del resto del grupo mediante un borde más grueso y el rótulo
+visible **«contado»**. La descripción accesible añade su índice y el valor
+efectivamente observado, sin confundir los índices de la copia ordenada con
+los del origen. Este rótulo dispone de espacio propio incluso cuando hay
+varias filas, etiquetas largas o zoom de 150 %.
+
+En `initial`, `newMaximum`, `tie`, `belowMaximum`, `done` y `empty`,
+la vista no marca ninguna casilla como recién contada. Una decisión compara
+la frecuencia que ya se obtuvo, **no vuelve a leer** el último elemento ni
+anticipa el resultado de otro grupo. Volver atrás, elegir un escenario o
+aplicar datos nuevos vuelve a calcular el marcado a partir del paso actual;
+el marcado no cambia el algoritmo, la salida ni el progreso.
 
 El clic no requiere acertar un color ni una respuesta. Los arrastres, los clics
 modificados y los espacios entre casillas no cambian la selección. El cálculo

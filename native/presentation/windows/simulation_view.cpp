@@ -405,6 +405,15 @@ struct SimulationView::Impl {
         }
         return result;
     }
+    // Only start and advance count a new array element. The decision phases
+    // compare a finished group and must never appear as another element read.
+    std::optional<std::size_t> counted_cell()const {
+        if(spec.view!=SimulationViewMode::walkthrough)return std::nullopt;
+        const auto& step=frame();
+        if((step.phase!=SimulationPhase::start&&step.phase!=SimulationPhase::advance)||
+                step.end<=step.begin||step.end>trace.ordered.size())return std::nullopt;
+        return step.end-1;
+    }
     std::string array_text()const {
         std::string text=spec.labels.array+". ";
         if(trace.ordered.empty())text+="No hay valores.";
@@ -414,6 +423,9 @@ struct SimulationView::Impl {
             if(!source_positions.empty())text+=" (origen índice "+std::to_string(source_positions[i])+")";
         }
         const auto& state=frame();
+        if(const auto counted=counted_cell())
+            text+=". Casilla contada ahora: índice "+std::to_string(*counted)+
+                " = "+simulation_value_display_text(trace.ordered.at(*counted))+".";
         if(spec.view==SimulationViewMode::array){for(std::size_t i=0;i<trace.groups.size();++i){const auto& group=trace.groups[i];
             text+=". Grupo "+std::to_string(i+1)+": índices "+std::to_string(group.begin)+" a "+std::to_string(group.end-1)+".";}}
         else if(spec.view!=SimulationViewMode::summary){
@@ -660,13 +672,14 @@ struct SimulationView::Impl {
         for(std::size_t first=0;first<trace.ordered.size();first+=static_cast<std::size_t>(columns)){
             const auto last=std::min(trace.ordered.size(),first+static_cast<std::size_t>(columns));
             const auto origin_height=source_positions.empty()?0:sp(22);
-            int row=sp(spec.view==SimulationViewMode::array?88:68)+origin_height,marker_height=0;
+            const auto counted_height=spec.view==SimulationViewMode::walkthrough?sp(22):0;
+            int row=sp(spec.view==SimulationViewMode::array?88:68)+origin_height+counted_height,marker_height=0;
             for(auto i=first;i<last;++i){const auto dc=GetDC(host);const auto old=SelectObject(dc,font);
                 const auto content=wrapped_text(dc,simulation_value_display_text(trace.ordered[i]),std::max(1,cell_width-sp(16)));
                 RECT bounds{0,0,std::max(1,cell_width-sp(16)),0};DrawTextW(dc,content.c_str(),static_cast<int>(content.size()),&bounds,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);
                 SelectObject(dc,old);ReleaseDC(host,dc);
                 row=std::max(row,static_cast<int>(bounds.bottom)+
-                    sp(spec.view==SimulationViewMode::array?62:42)+origin_height);
+                    sp(spec.view==SimulationViewMode::array?62:42)+origin_height+counted_height);
                 if(const auto caption=marker_text(i);!caption.empty())marker_height=std::max(marker_height,measure(caption,cell_width,index_font)+sp(8));}
             for(auto i=first;i<last;++i){const auto x=static_cast<int>(i-first)*(cell_width+gap);
                 const auto caption=marker_text(i);if(!caption.empty())markers.push_back({{x,top,x+cell_width,top+marker_height-sp(8)},caption,{x+cell_width/2,top+marker_height}});
@@ -889,12 +902,20 @@ struct SimulationView::Impl {
             DrawTextW(dc,L"No hay valores.",-1,&empty,DT_CENTER|DT_VCENTER|DT_SINGLELINE|DT_NOPREFIX);SelectObject(dc,old);}
         const std::array<COLORREF,6> group_colors{RGB(83,164,240),RGB(66,189,145),RGB(239,172,67),RGB(186,133,235),RGB(233,123,151),RGB(87,190,203)};
         const auto selected_group=spec.view==SimulationViewMode::groups?position:frame().group?frame().group-1:0;
-        for(std::size_t i=0;i<cell_rects.size();++i){const auto active=selected(i);auto bounds=cell_rects[i];
+        const auto observed=counted_cell();
+        const auto counted_footer=spec.view==SimulationViewMode::walkthrough?sp(22):0;
+        for(std::size_t i=0;i<cell_rects.size();++i){
+            const bool counted=observed&&*observed==i;
+            const auto active=selected(i);auto bounds=cell_rects[i];
             const auto group=spec.view==SimulationViewMode::array?
                 static_cast<std::size_t>(std::ranges::find_if(trace.groups,[&](const auto& value){return i>=value.begin&&i<value.end;})-trace.groups.begin()):selected_group;
             const auto tint=colors.high_contrast?colors.accent:group_colors[group%group_colors.size()];
             const auto background=active?(colors.high_contrast?colors.accent:blend(colors.card,tint,70)):colors.field;
-            const auto brush=CreateSolidBrush(background);const auto pen=CreatePen(PS_SOLID,active?std::max(1,px(2)):1,active?tint:colors.outline);
+            const auto brush=CreateSolidBrush(background);
+            const auto pen=CreatePen(PS_SOLID,
+                counted?std::max(2,sp(3)):active?std::max(1,px(2)):1,
+                counted?(colors.high_contrast?colors.text:colors.accent):
+                    active?tint:colors.outline);
             const auto old_brush=SelectObject(dc,brush),old_pen=SelectObject(dc,pen);
             RoundRect(dc,bounds.left,bounds.top,bounds.right,bounds.bottom,px(10),px(10));SelectObject(dc,old_pen);SelectObject(dc,old_brush);DeleteObject(pen);DeleteObject(brush);
             const auto foreground=colors.high_contrast&&active?GetSysColor(COLOR_HIGHLIGHTTEXT):colors.text;
@@ -902,16 +923,27 @@ struct SimulationView::Impl {
             auto old=SelectObject(dc,index_font);SetTextColor(dc,foreground);
             const auto index=wide("índice "+std::to_string(i));DrawTextW(dc,index.c_str(),-1,&index_area,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);
             auto value_area=bounds;value_area.left+=sp(8);value_area.right-=sp(8);value_area.top=index_area.bottom+sp(3);
-            value_area.bottom-=sp(spec.view==SimulationViewMode::array?28:8)+(source_positions.empty()?0:sp(22));
+            value_area.bottom-=sp(spec.view==SimulationViewMode::array?28:8)+
+                (source_positions.empty()?0:sp(22))+counted_footer;
             SelectObject(dc,font);const auto value=wrapped_text(dc,simulation_value_display_text(trace.ordered[i]),value_area.right-value_area.left);
             DrawTextW(dc,value.c_str(),static_cast<int>(value.size()),&value_area,DT_CENTER|DT_WORDBREAK|DT_NOPREFIX|DT_EDITCONTROL);
             if(!source_positions.empty()){
                 auto origin=bounds;origin.left+=sp(4);origin.right-=sp(4);
-                origin.bottom-=sp(spec.view==SimulationViewMode::array?27:4);
+                origin.bottom-=sp(spec.view==SimulationViewMode::array?27:4)+counted_footer;
                 origin.top=origin.bottom-sp(20);
                 SelectObject(dc,index_font);
                 const auto label=wide("origen "+std::to_string(source_positions[i]));
                 DrawTextW(dc,label.c_str(),-1,&origin,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);
+            }
+            if(counted){
+                // Text identifies the counted cell independently of color;
+                // a footer reserved for all walkthrough frames prevents
+                // clipping when the author uses long labels or source indices.
+                auto caption=bounds;caption.left+=sp(5);caption.right-=sp(5);
+                caption.bottom-=sp(4);caption.top=caption.bottom-sp(20);
+                SelectObject(dc,index_font);SetTextColor(dc,foreground);
+                DrawTextW(dc,L"contado",7,&caption,
+                    DT_CENTER|DT_SINGLELINE|DT_END_ELLIPSIS|DT_NOPREFIX);
             }
             if(spec.view==SimulationViewMode::array){auto caption=bounds;caption.top=caption.bottom-sp(24);caption.bottom-=sp(4);SelectObject(dc,index_font);
                 const auto name=wide("grupo "+std::to_string(group+1));DrawTextW(dc,name.c_str(),-1,&caption,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);}
