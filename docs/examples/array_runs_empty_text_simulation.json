@@ -1,0 +1,43 @@
+{
+  "type": "simulation",
+  "id": "contar_etiquetas_incluyendo_vacios",
+  "title": "Contar etiquetas y distinguir cadenas vacías",
+  "description": "Ordena una copia de las etiquetas y recorre los grupos. La cadena vacía y la cadena que contiene un espacio son datos diferentes. Avanza por cada elemento y observa cuándo cambian las frecuencias y los candidatos.",
+  "simulation": {
+    "version": 1,
+    "model": "arrayRunsV1",
+    "view": "walkthrough",
+    "valueType": "text",
+    "values": ["", "patio", "patio"],
+    "sort": true,
+    "editable": true,
+    "labels": {
+      "array": "Etiquetas",
+      "start": "inicio",
+      "end": "fin",
+      "frequency": "frecuencia",
+      "maximum": "frecuencia máxima",
+      "leaders": "etiquetas más frecuentes",
+      "output": "Salida calculada"
+    },
+    "explanations": {
+      "initial": "Se aplicaron {size} etiquetas. La copia ordenada todavía no ha comenzado su recorrido.",
+      "start": "Se cuenta el primer elemento del grupo {group}: {value}. Su posición es {start}; el límite siguiente es {end} y la frecuencia comienza en {frequency}.",
+      "advance": "El grupo de {value} añade otro elemento igual. Ahora contiene {frequency} elementos y termina justo antes del índice {end}.",
+      "newMaximum": "El grupo de {value} termina con frecuencia {frequency}. Supera el máximo anterior: el nuevo máximo vale {maximum} y lo alcanzan {leaders}.",
+      "tie": "El grupo de {value} termina con frecuencia {frequency}. Iguala el máximo {maximum} y se agrega a los candidatos: {leaders}.",
+      "belowMaximum": "El grupo de {value} termina con frecuencia {frequency}, por debajo de {maximum}. Permanecen como candidatos {leaders}.",
+      "done": "Termina el recorrido de {size} etiquetas en {groups} grupos. El límite final es {end}, no una posición que deba leerse. La frecuencia máxima vale {maximum} y sus candidatos son {leaders}.",
+      "empty": "La colección está vacía. No hay etiquetas, grupos ni candidatos; la frecuencia máxima es cero."
+    },
+    "outputTemplate": "[{value}]={frequency}",
+    "scenarios": [
+      {"id": "coleccion_vacia", "label": "Ninguna etiqueta", "values": []},
+      {"id": "cadena_vacia", "label": "Una cadena vacía", "values": [""]},
+      {"id": "patio_repetido", "label": "Vacía y patio repetido", "values": ["", "patio", "patio"]},
+      {"id": "vacia_y_espacio", "label": "Cadena vacía y un espacio", "values": ["", " "]},
+      {"id": "empate_y_espacios", "label": "Empate entre tres etiquetas", "values": ["", " ", "casa"]},
+      {"id": "desorden_y_repeticiones", "label": "Orden inicial y grupos repetidos", "values": ["sol", " ", "sol", ""]}
+    ]
+  }
+}
