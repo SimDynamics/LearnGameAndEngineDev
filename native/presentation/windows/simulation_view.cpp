@@ -363,6 +363,9 @@ struct SimulationView::Impl {
                 SendMessageW(previous.child,EM_SETZOOM,
                     previous.numerator,previous.denominator);
             }
+            // Even a rejected intermediate zoom may have requested native
+            // RichEdit heights. Never reuse that provisional geometry.
+            layout_valid=false;requested_heights.clear();
             discard();
             throw;
         }
