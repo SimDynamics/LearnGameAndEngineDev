@@ -363,7 +363,21 @@ $qaCommands = @(
     "call `"$qaVcVars`" x64 $qaSdkVersion -vcvars_ver=$($qaManifest.visualStudio.msvcToolset)",
     'if errorlevel 1 exit /b %errorlevel%',
     "`"$qaCMake`" -S `"$qaRoot`" -B `"$qaBuild`" -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/WindowsToolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DLGAED_DEFAULT_PROFILE=Codex -D$($qaSuiteConfig.CMakeOption)=ON `"-DPython3_EXECUTABLE=$qaPython`" `"-DGIT_EXECUTABLE=$qaGit`" $qaRuntimeOptions $qaWasiDependencyOption",
-    'if errorlevel 1 exit /b %errorlevel%',
+    'if errorlevel 1 exit /b %errorlevel%'
+)
+if ($Suite -eq 'ReaderBuild') {
+    # Run the new control's exact contracts before compiling the large
+    # historical test translation units. Failed UI iterations retain their
+    # native captures and diagnostics without repeating the older suites.
+    $qaSimulationPattern = '^native\.(simulation_model|simulation_view|simulation_lesson|simulation_authoring)$'
+    $qaCommands += @(
+        "`"$qaCMake`" --build `"$qaBuild`" --target lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests --parallel 2",
+        'if errorlevel 1 exit /b %errorlevel%',
+        "`"$qaCTest`" --test-dir `"$qaBuild`" -R `"$qaSimulationPattern`" --verbose --output-on-failure --no-tests=error --output-junit `"$qaBuild\simulation-results.xml`"",
+        'if errorlevel 1 exit /b %errorlevel%'
+    )
+}
+$qaCommands += @(
     "`"$qaCMake`" --build `"$qaBuild`" --target $qaBuildTargets --parallel 2",
     'exit /b %errorlevel%'
 )
@@ -372,7 +386,7 @@ $qaCommandFile = Join-Path $env:RUNNER_TEMP "lgaed-$($qaSuiteConfig.Results)-bui
 New-Item -ItemType Directory -Path $qaBuild -Force | Out-Null
 & $env:ComSpec /d /v:off /c $qaCommandFile 2>&1 |
     Tee-Object -FilePath (Join-Path $qaBuild 'native-build.log') | Write-Host
-if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite target did not configure or compile." }
+if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite build or early regression checks failed." }
 
 if ($Suite -eq 'ReaderBuild') {
     # The original reader/U6 executables are only compiled. The focused
@@ -407,11 +421,13 @@ if ($Suite -eq 'ReaderBuild') {
     # Obtain console, CMake structure, U3 semantics and named-rule variation
     # evidence before the remaining compiler cases. A failure in one must
     # retain the other independent diagnostics.
-    # Exclude these from the second call so each registered test runs once.
-    $qaFocalPattern = '^native\.(simulation_model|simulation_view|simulation_lesson|simulation_authoring|lesson_menu|rich_text_hit_geometry|cpp_cmake_graph|cpp_project_u3_cmake_structure|u3_runtime_semantics|named_rule_runtime)$'
+    # Simulation contracts already ran before the larger build. Keep the
+    # existing focal checks and execute each registered test exactly once.
+    $qaFocalPattern = '^native\.(lesson_menu|rich_text_hit_geometry|cpp_cmake_graph|cpp_project_u3_cmake_structure|u3_runtime_semantics|named_rule_runtime)$'
+    $qaCompletedPattern = "($qaSimulationPattern)|($qaFocalPattern)"
     & $qaCTest --test-dir $qaBuild -R $qaFocalPattern --verbose --output-on-failure --no-tests=error --timeout 300
     if ($LASTEXITCODE -ne 0) { throw 'A native console, CMake structure, U3 semantic or named-rule regression failed.' }
-    & $qaCTest --test-dir $qaBuild -E $qaFocalPattern --output-on-failure --no-tests=error --timeout 300 --stop-on-failure
+    & $qaCTest --test-dir $qaBuild -E $qaCompletedPattern --output-on-failure --no-tests=error --timeout 300 --stop-on-failure
     if ($LASTEXITCODE -ne 0) { throw 'A focused native reader, catalog, compiler or Win32 regression failed.' }
     Write-Host 'PASS original reader/U6 executables compiled and linked; catalog, general-choice reading preservation, boolean battery execution/provenance, console fullscreen/zoom and Escape, actual Win32 History dialogs and focused published lesson execution/reopen/reset tested. No reader/audio playback executed.'
     return

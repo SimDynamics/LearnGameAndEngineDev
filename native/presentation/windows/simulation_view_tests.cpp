@@ -22,6 +22,8 @@ using namespace lgaed::presentation;
 constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_id=110,previous_id=111,next_id=112,reset_id=113,input_id=115,apply_id=116,restore_id=117,error_id=118,
     group_first_id=200;
+std::filesystem::path failure_captures;
+void capture(HWND window,const std::filesystem::path& path);
 void check(bool value,const char* reason){if(!value)throw std::runtime_error(reason);}
 void pump(HWND dialog=nullptr){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE))
     if(message.message!=WM_QUIT&&(!dialog||!IsDialogMessageW(dialog,&message))){TranslateMessage(&message);DispatchMessageW(&message);}}
@@ -72,15 +74,33 @@ std::string name(HWND window) {
     check(SUCCEEDED(accessible->get_accName(child,&value))&&value,"A native control has no accessible name");
     const auto result=utf8(value);SysFreeString(value);return result;
 }
-void bounds(SimulationView& view) {
+void bounds(SimulationView& view,const char* context="responsive layout") {
     RECT area{};GetClientRect(view.window(),&area);
     for(auto child=GetWindow(view.window(),GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT)){
         if(!(GetWindowLongPtrW(child,GWL_STYLE)&WS_VISIBLE))continue;
         RECT box{};GetWindowRect(child,&box);MapWindowPoints(nullptr,view.window(),reinterpret_cast<POINT*>(&box),2);
-        check(box.left>=0&&box.right<=area.right&&box.top>=0&&box.bottom<=area.bottom,
-            "A responsive control escaped the simulation viewport");
+        if(box.left<0||box.right>area.right||box.top<0||box.bottom>area.bottom){wchar_t type[96]{};GetClassNameW(child,type,96);
+            const auto rectangle=[](const RECT& value){return "["+std::to_string(value.left)+","+std::to_string(value.top)+","+
+                std::to_string(value.right)+","+std::to_string(value.bottom)+"]";};
+            const auto detail=std::string(context)+": control "+std::to_string(GetDlgCtrlID(child))+" ("+utf8(type)+") "+rectangle(box)+
+                " escaped viewport "+rectangle(area);
+            if(!failure_captures.empty())try{capture(view.window(),failure_captures/"failed-responsive-layout.bmp");}
+                catch(const std::exception& error){std::cerr<<"Cannot capture failure: "<<error.what()<<'\n';}
+            throw std::runtime_error(detail);}
         check(box.right>box.left&&box.bottom>box.top,"A visible simulation control has zero size");
     }
+}
+void plain_ink(HWND window) {
+    CHARFORMAT2W format{};format.cbSize=sizeof(format);
+    SendMessageW(window,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&format));
+    check((format.dwMask&CFM_COLOR)&&!(format.dwEffects&CFE_AUTOCOLOR)&&format.crTextColor==reader_theme::foreground(window),
+        "The plain input/output default ink does not use the current reader palette");
+    CHARRANGE before{},sample{0,1};SendMessageW(window,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&before));
+    SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&sample));format={};format.cbSize=sizeof(format);
+    SendMessageW(window,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
+    SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&before));
+    check((format.dwMask&CFM_COLOR)&&!(format.dwEffects&CFE_AUTOCOLOR)&&format.crTextColor==reader_theme::foreground(window),
+        "Existing plain input/output text retained unreadable ink");
 }
 void capture(HWND window,const std::filesystem::path& path) {
     RECT area{};GetClientRect(window,&area);const int width=area.right,height=area.bottom;
@@ -111,7 +131,7 @@ void group_colors_are_visible(HWND canvas) {
 void navigation(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);const auto authored=spec;const auto trace=build_simulation_trace(spec);
     int changes=0,layouts=0;SimulationView view(host,spec,"es",{[&]{++changes;},[&]{++layouts;}});
-    resize(view,1050);bounds(view);
+    resize(view,1050);bounds(view,"initial walkthrough");plain_ink(GetDlgItem(view.window(),input_id));
     check(view.step_index()==0&&view.step_count()==trace.frames.size(),"The view did not select the calculated initial frame");
     check(!IsWindowEnabled(GetDlgItem(view.window(),previous_id))&&IsWindowEnabled(GetDlgItem(view.window(),next_id)),"Initial step navigation limits are wrong");
     const auto initial=text(view,explanation_id),initial_array=name(GetDlgItem(view.window(),array_id));
@@ -126,14 +146,15 @@ void navigation(HWND host,const std::filesystem::path& captures) {
     SendMessageW(GetDlgItem(view.window(),next_id),WM_KEYUP,VK_RETURN,1);pump();
     check(view.step_index()==2,"One physical Enter activated more than one step");
     check(text(view,output_id)==trace.frames[2].output,"The public output did not match the selected frame");
+    plain_ink(GetDlgItem(view.window(),output_id));
     click(view,previous_id);check(view.step_index()==1&&text(view,output_id)==trace.frames[1].output,"Previous did not restore the exact prior output");
     click(view,reset_id);check(view.step_index()==0&&text(view,explanation_id)==initial&&name(GetDlgItem(view.window(),array_id))==initial_array,
         "Reset changed the data or failed to restore the original frame");
     check(view.reading_regions()[2].key==first_dynamic&&spec==authored,"Replay changed the authored model or its initial region identity");
     check(!view.go_to_step(view.step_count())&&view.step_index()==0,"An invalid step changed the view");
     check(view.go_to_step(trace.candidate_frames[1]),"Cannot select the calculated middle group");
-    resize(view,1050);bounds(view);if(!captures.empty())capture(view.window(),captures/"walkthrough-wide.bmp");
-    view.set_text_scale(150);resize(view,360);bounds(view);if(!captures.empty())capture(view.window(),captures/"walkthrough-narrow-150.bmp");
+    resize(view,1050);bounds(view,"wide walkthrough");if(!captures.empty())capture(view.window(),captures/"walkthrough-wide.bmp");
+    view.set_text_scale(150);resize(view,360);bounds(view,"narrow walkthrough");if(!captures.empty())capture(view.window(),captures/"walkthrough-narrow-150.bmp");
     check(view.go_to_step(view.step_count()-1),"Cannot reach the final step");
     check(!IsWindowEnabled(GetDlgItem(view.window(),next_id))&&text(view,output_id)==trace.frames.back().output,
         "The final native view has incorrect output or enables another step");
@@ -194,10 +215,11 @@ void modes(HWND host,const std::filesystem::path& captures) {
                 return region.target&&GetDlgCtrlID(region.target)==variables_id&&region.passive_label&&region.source_text.find("frecuencia: 4")!=std::string::npos;}),
                 "The current large value cards lack their accessible narration summary");
         }else if(mode==SimulationViewMode::candidates){
-            check(view.step_count()==3,"Candidates mode exposes unrelated intermediate frames");
+            check(view.step_count()==3&&text(view,step_id)=="Grupo 1 de 3","Candidates mode did not count completed groups correctly");
             check(text(view,variables_id).find("Valor examinado: -8")!=std::string::npos,"Candidates mode did not identify its first examined value");click(view,next_id);
             check(text(view,variables_id).find("Valor examinado: 3")!=std::string::npos&&text(view,variables_id).find("Valor examinado: -8")==std::string::npos,
                 "Advancing retained the previous examined candidate");
+            check(text(view,step_id)=="Grupo 2 de 3","The completed-group counter did not advance with its examined value");
             check(text(view,variables_id).find("máxima: 4")!=std::string::npos&&text(view,output_id)=="-8:1\n3:4\n","Candidate state was not derived from its completion frame");
         }else{
             check(view.step_count()==1&&!(GetWindowLongPtrW(GetDlgItem(view.window(),next_id),GWL_STYLE)&WS_VISIBLE),"A static mode has visible step controls");
@@ -205,8 +227,8 @@ void modes(HWND host,const std::filesystem::path& captures) {
             else {check(name(GetDlgItem(view.window(),array_id)).find("Grupo 2: índices 1 a 4")!=std::string::npos,
                 "Colored groups have no corresponding non-color group identity");group_colors_are_visible(GetDlgItem(view.window(),array_id));}
         }
-        bounds(view);if(!captures.empty())capture(view.window(),captures/file);
-        view.set_text_scale(150);resize(view,340);bounds(view);
+        bounds(view,file);if(!captures.empty())capture(view.window(),captures/file);
+        view.set_text_scale(150);resize(view,340);bounds(view,file);
         if(mode==SimulationViewMode::groups&&!captures.empty())capture(view.window(),captures/"groups-narrow-150.bmp");
         if(mode==SimulationViewMode::groups||mode==SimulationViewMode::candidates){const auto selector=GetDlgItem(view.window(),scenario_id);
             SendMessageW(selector,CB_SETCURSEL,2,0);SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(selector));pump();
@@ -225,7 +247,7 @@ void text_and_independent_views(HWND host,const std::filesystem::path& captures)
     check(text(first,output_id)==" sitio :2\nsol:1\n"&&text(second,output_id)=="faro:1\npatio:2\nsol:2\n",
         "Editing text lost meaningful spaces or modified another view");
     set_edit_text(GetDlgItem(first.window(),input_id),std::string(120,'x')+"\n😀");click(first,apply_id);
-    first.set_text_scale(150);resize(first,340);bounds(first);
+    first.set_text_scale(150);resize(first,340);bounds(first,"narrow long edited text");
     if(!captures.empty())capture(first.window(),captures/"text-narrow-long-value.bmp");
 }
 void long_labels_and_literal_values(HWND host,const std::filesystem::path& captures) {
@@ -237,7 +259,7 @@ void long_labels_and_literal_values(HWND host,const std::filesystem::path& captu
     const auto short_radio=window_height(GetDlgItem(baseline.window(),group_first_id+1));
     spec.values[1]=std::string(128,'x');spec.labels.start=std::string(80,'S');spec.labels.end=std::string(80,'E');
     spec.labels.frequency=std::string(80,'F');
-    SimulationView view(host,spec,"es");view.set_text_scale(150);resize(view,340);bounds(view);
+    SimulationView view(host,spec,"es");view.set_text_scale(150);resize(view,340);bounds(view,"narrow long group labels");
     const auto first=GetDlgItem(view.window(),group_first_id),second=GetDlgItem(view.window(),group_first_id+1);
     check(native_text(first).find("a&&b")!=std::string::npos&&name(first).find("a&b")!=std::string::npos,
         "A literal ampersand became a radio-button mnemonic or changed the accessible value");
@@ -259,7 +281,7 @@ void scrollable_text_keyboard(HWND host) {
     auto spec=fixture(SimulationViewMode::summary);spec.values.clear();
     for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
     spec.explanations.done.clear();for(int line=0;line<70;++line)spec.explanations.done+="Explicación de este paso.\n";
-    SimulationView view(host,spec,"es");resize(view,800);bounds(view);
+    SimulationView view(host,spec,"es");resize(view,800);bounds(view,"scrollable explanation/output");
     const auto explanation=GetDlgItem(view.window(),explanation_id),output=GetDlgItem(view.window(),output_id);
     check((GetWindowLongPtrW(explanation,GWL_STYLE)&WS_TABSTOP)&&(GetWindowLongPtrW(output,GWL_STYLE)&WS_TABSTOP),
         "Scrollable read-only content cannot be reached with Tab");
@@ -291,6 +313,7 @@ int main(int argc,char** argv)try {
     Window host{CreateWindowExW(WS_EX_CONTROLPARENT|WS_EX_NOACTIVATE,L"STATIC",L"Isolated simulation QA",WS_OVERLAPPEDWINDOW,
         0,0,1200,900,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr)};check(host.value,"Cannot create hidden simulation QA host");
     const auto captures=argc==2?std::filesystem::path(wide(argv[1])):std::filesystem::path{};
+    failure_captures=captures;
     navigation(host.value,captures);editable_data(host.value,captures);modes(host.value,captures);text_and_independent_views(host.value,captures);
     long_labels_and_literal_values(host.value,captures);scrollable_text_keyboard(host.value);
     check(!IsWindowVisible(host.value)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=host.value,"Simulation QA activated the desktop");

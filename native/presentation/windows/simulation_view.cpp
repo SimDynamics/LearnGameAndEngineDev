@@ -164,6 +164,12 @@ struct SimulationView::Impl {
         SendMessageW(item(id),EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
         SendMessageW(item(id),EM_SETZOOM,scale,100);
     }
+    void color_plain_text(int id) {
+        CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_COLOR;
+        format.crTextColor=reader_theme::foreground(item(id));
+        SendMessageW(item(id),EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&format));
+        SendMessageW(item(id),EM_SETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&format));
+    }
     void fonts() {
         const auto make=[&](int logical,bool scaled,const wchar_t* face,int weight=FW_NORMAL){
             const auto result=CreateFontW(-(scaled?sp(logical):px(logical)),0,0,0,weight,FALSE,FALSE,FALSE,
@@ -251,7 +257,7 @@ struct SimulationView::Impl {
         set_label(scenario_label_id,"Escenario");set_label(array_label_id,spec.labels.array+" · "+std::to_string(trace.ordered.size())+" elementos");
         set_label(groups_label_id,"Selecciona un grupo");
         std::string status;
-        if(stepping())status=(spec.view==SimulationViewMode::candidates?"Candidato ":"Paso ")+std::to_string(position+1)+" de "+std::to_string(count());
+        if(stepping())status=(spec.view==SimulationViewMode::candidates?"Grupo ":"Paso ")+std::to_string(position+1)+" de "+std::to_string(count());
         else if(spec.view==SimulationViewMode::groups)status=trace.groups.empty()?"No hay grupos":"Grupo "+std::to_string(position+1)+" de "+std::to_string(trace.groups.size());
         else if(spec.view==SimulationViewMode::summary)status="Resumen de los grupos";
         set_label(step_id,status);set_label(explanation_id,state.explanation);
@@ -269,7 +275,8 @@ struct SimulationView::Impl {
         visible_text[variables_id]=variables;SetWindowTextW(item(variables_id),wide(variables).c_str());accessible(item(variables_id),variables);
         NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,item(variables_id),OBJID_CLIENT,CHILDID_SELF);
         set_label(output_label_id,spec.labels.output+(state.output.empty()?" (vacía)":""));
-        visible_text[output_id]=state.output;set_edit_text(item(output_id),state.output);SendMessageW(item(output_id),EM_SETZOOM,scale,100);
+        visible_text[output_id]=state.output;set_edit_text(item(output_id),state.output);color_plain_text(output_id);
+        SendMessageW(item(output_id),EM_SETZOOM,scale,100);color_plain_text(input_id);
         set_label(input_label_id,spec.text_values?"Datos editables: un texto por línea.":"Datos editables: un entero por línea.");
         set_label(error_id,error);
         EnableWindow(item(previous_id),stepping()&&position>0);
