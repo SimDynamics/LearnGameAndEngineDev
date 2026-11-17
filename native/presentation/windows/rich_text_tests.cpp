@@ -23,6 +23,19 @@
 
 namespace {
 void check(bool condition, const char* message) { if (!condition) throw std::runtime_error(message); }
+// Testing geometry at 75..200% requires a real, accepted RichEdit scale.
+// The old zoom/100 calls were not checked and could measure the wrong font.
+void accepted_zoom(HWND edit,int percentage) {
+    check(lgaed::presentation::set_rich_text_zoom(edit,percentage),
+        "RichEdit rejected the requested native QA zoom");
+    int numerator=0,denominator=0;
+    check(SendMessageW(edit,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),
+        reinterpret_cast<LPARAM>(&denominator))!=FALSE&&
+        numerator>=1&&numerator<=64&&denominator>=1&&denominator<=64,
+        "RichEdit did not report a valid zoom fraction");
+    check(MulDiv(numerator,100,denominator)==percentage,
+        "RichEdit QA measured a different zoom from the requested percentage");
+}
 struct Window { HWND value; ~Window() { if (value) DestroyWindow(value); } };
 struct FormatVisibilityProbe {
     unsigned hidden=0,redraw_disabled=0;
@@ -128,7 +141,7 @@ void technical_background_geometry(const char* artifact=nullptr){
     std::size_t scenarios=0,added=0,removed=0;bool selection_visible=false,wrapped=false;NativeRaster example;
     for(const auto& source:sources)for(const LONG width:{280,520})for(const int zoom:{75,100,150,200})for(const bool dim:{false,true}){
         for(const auto target:{decorated.value,native.value})SetWindowPos(target,nullptr,0,0,width,240,SWP_NOZORDER|SWP_NOACTIVATE);
-        set_rich_text(decorated.value,source,emphasis);SendMessageW(decorated.value,EM_SETZOOM,zoom,100);
+        set_rich_text(decorated.value,source,emphasis);accepted_zoom(decorated.value,zoom);
         const auto text=wide(edit_text(decorated.value));
         if(dim){CHARRANGE rest{static_cast<LONG>(text.find(L"std::cout"))+4,static_cast<LONG>(text.size())};
             SendMessageW(decorated.value,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&rest));
@@ -187,7 +200,7 @@ void technical_background_geometry(const char* artifact=nullptr){
     // of different glyphs/fonts on ONE line. It knows no production formula.
     for(const int zoom:{75,100,150,200}){
         for(const auto target:{decorated.value,native.value})SetWindowPos(target,nullptr,0,0,1100,240,SWP_NOZORDER|SWP_NOACTIVATE);
-        set_rich_text(decorated.value,"Mira `return` `bool` `std::cout` `gypq` y prosa.",emphasis);SendMessageW(decorated.value,EM_SETZOOM,zoom,100);
+        set_rich_text(decorated.value,"Mira `return` `bool` `std::cout` `gypq` y prosa.",emphasis);accepted_zoom(decorated.value,zoom);
         SendMessageW(decorated.value,EM_SETSEL,0,0);clone_native_document(decorated.value,native.value);
         CHARFORMAT2W plain{};plain.cbSize=sizeof(plain);plain.dwMask=CFM_BACKCOLOR;plain.dwEffects=CFE_AUTOBACKCOLOR;
         SendMessageW(native.value,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&plain));
@@ -213,7 +226,7 @@ void technical_background_geometry(const char* artifact=nullptr){
         check(native_raster(decorated.value,clipped,flags).pixels==native_raster(native.value,clipped,flags).pixels,"An unsupported print mode changed visibility, erase options or clipping");
     {
         std::string text;for(int line=0;line<10;++line)text+="Lee `std::cout << \"gyp\";` y sigue.\n";
-        set_rich_text(decorated.value,text);SendMessageW(decorated.value,EM_SETZOOM,150,100);SendMessageW(decorated.value,EM_SETSEL,0,0);
+        set_rich_text(decorated.value,text);accepted_zoom(decorated.value,150);SendMessageW(decorated.value,EM_SETSEL,0,0);
         POINT zero{};SendMessageW(decorated.value,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&zero));const auto before=native_raster(decorated.value);
         POINT scroll{0,13};SendMessageW(decorated.value,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));SendMessageW(decorated.value,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
         check(scroll.y>0&&scroll.y<before.height,"The fixture did not exercise a partial-row scroll");const auto after=native_raster(decorated.value);
@@ -409,7 +422,7 @@ void curricular_role_formatting(){
         const auto code_ink=[&](std::wstring_view token){const auto visible=wide(program);const auto at=visible.find(token);
             check(at!=visible.npos,"The independent C++ color reference lost a token");return character(reference.value,static_cast<LONG>(at)).crTextColor;};
         for(const int zoom:{75,100,150,200}){
-            set_rich_text(target.value,source,emphasis);SendMessageW(target.value,EM_SETZOOM,zoom,100);
+            set_rich_text(target.value,source,emphasis);accepted_zoom(target.value,zoom);
             check(edit_text(target.value)==displayed,"Curricular roles rewrote text, Unicode, CRLF projection or visible delimiters");
             const auto text=wide(displayed);const auto prose=character(target.value,0).crTextColor;
             const auto expect=[&](std::wstring_view context,std::wstring_view token,COLORREF expected,bool highlighted){
@@ -627,7 +640,7 @@ void native_hit_geometry(HWND parent) {
         PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);
         paragraph.dwMask=PFM_SPACEBEFORE|PFM_SPACEAFTER|PFM_LINESPACING;
         SendMessageW(target.value,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
-        check(SendMessageW(target.value,EM_SETZOOM,zoom,100)!=FALSE,"Set the native geometry fixture zoom");
+        accepted_zoom(target.value,zoom);
         SendMessageW(target.value,EM_SETRECT,0,reinterpret_cast<LPARAM>(&format));
         SendMessageW(target.value,EM_EMPTYUNDOBUFFER,0,0);
         SendMessageW(target.value,EM_SETSEL,-1,-1);
@@ -954,7 +967,7 @@ int main(int argc,char** argv) {
             };
             for(const auto zoom:{75,100,125,150,175,200}){
                 SetFocus(parent.value);set_edit_hint(hinted.value,"");set_edit_text(hinted.value,"");
-                SendMessageW(hinted.value,EM_EMPTYUNDOBUFFER,0,0);SendMessageW(hinted.value,EM_SETZOOM,zoom,100);
+                SendMessageW(hinted.value,EM_EMPTYUNDOBUFFER,0,0);accepted_zoom(hinted.value,zoom);
                 const int padding=MulDiv(16,static_cast<int>(GetDpiForWindow(hinted.value)),96);
                 RECT area{};GetClientRect(hinted.value,&area);
                 const int inset=MulDiv(padding,100,zoom);
@@ -1036,7 +1049,7 @@ int main(int argc,char** argv) {
             set_rich_text(editor.value,"std::cout << 2;",{},true);
             check(character(editor.value,0).yHeight==270&&std::wstring(character(editor.value,0).szFaceName)==reader_theme::code_font_face(),
                 "Displayed code is still smaller than the original source editor");
-            SendMessageW(editor.value,EM_SETZOOM,150,100);
+            accepted_zoom(editor.value,150);
             const int dpi=static_cast<int>(GetDpiForWindow(editor.value));
             POINTL text_at{},space_at{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&text_at),1);
             SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&space_at),9);
@@ -1089,7 +1102,7 @@ int main(int argc,char** argv) {
             check((language.dwEffects&(CFE_BOLD|CFE_ITALIC))==(CFE_BOLD|CFE_ITALIC)&&(language.dwEffects&CFE_AUTOBACKCOLOR)&&std::wstring_view(language.szFaceName)==L"Roboto",
                 "The C++ exception lost its existing bold/italic prose treatment");
             for(const int zoom:{75,100,150,200}){
-                set_rich_text(editor.value,source,emphasis,false,RichTextRole::body,"es",{},{},&declared);SendMessageW(editor.value,EM_SETZOOM,zoom,100);
+                set_rich_text(editor.value,source,emphasis,false,RichTextRole::body,"es",{},{},&declared);accepted_zoom(editor.value,zoom);
                 std::vector<POINTL> positions;for(std::size_t at=0;at<visible.size();++at){POINTL point{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&point),at);positions.push_back(point);}
                 const auto lines=SendMessageW(editor.value,EM_GETLINECOUNT,0,0);
                 // Removing just native background ink supplies an independent
