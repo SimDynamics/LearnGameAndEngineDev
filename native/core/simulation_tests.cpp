@@ -346,6 +346,100 @@ void contract_rejections() {
     rejected([&] { (void)simulation_parse_input(sorted, "2\n1"); }, "Edited unsorted input was accepted");
 }
 
+// Exhaust every array of length 0..6 over {-1, 0, 1}. The oracle uses
+// independently sorted values and counts, not the engine's group/trace code.
+void exhaustive_small_arrays() {
+    auto spec=example();
+    for(std::size_t size=0;size<=6;++size){
+        std::size_t combinations=1;
+        for(std::size_t i=0;i<size;++i)combinations*=3;
+        for(std::size_t pattern=0;pattern<combinations;++pattern){
+            const auto verify=[&](bool condition,const char* reason){
+                if(!condition)throw std::runtime_error(
+                    "Exhaustive simulation length="+std::to_string(size)+
+                    " pattern="+std::to_string(pattern)+": "+reason);
+            };
+            std::vector<std::int64_t> original;
+            std::size_t digits=pattern;
+            for(std::size_t i=0;i<size;++i){
+                original.push_back(static_cast<std::int64_t>(digits%3)-1);
+                digits/=3;
+            }
+            spec.values.clear();
+            for(const auto value:original)spec.values.emplace_back(value);
+            const auto trace=build_simulation_trace(spec);
+            auto ordered=original;
+            std::sort(ordered.begin(),ordered.end());
+            std::vector<SimulationValue> expected_values;
+            for(const auto value:ordered)expected_values.emplace_back(value);
+            verify(trace.original==spec.values&&trace.ordered==expected_values,
+                "Original data or ordered copy changed");
+            if(ordered.empty()){
+                verify(trace.groups.empty()&&trace.candidate_frames.empty()&&
+                    trace.frames.size()==1&&
+                    trace.frames.front().phase==SimulationPhase::empty&&
+                    trace.frames.front().output.empty()&&trace.frames.front().leaders.empty(),
+                    "An empty input produced an invented step or candidate");
+                continue;
+            }
+            verify(trace.frames.front().phase==SimulationPhase::initial&&
+                trace.frames.front().maximum==0&&trace.frames.front().output.empty()&&
+                trace.frames.front().leaders.empty(),
+                "Initial frame exposed a computed result");
+            std::size_t frame_index=1,group_index=0,maximum=0;
+            std::vector<SimulationValue> leaders;
+            std::string expected_output;
+            for(std::size_t begin=0;begin<ordered.size();){
+                std::size_t end=begin+1;
+                while(end<ordered.size()&&ordered[end]==ordered[begin])++end;
+                const auto frequency=end-begin;
+                verify(group_index<trace.groups.size()&&
+                    trace.groups[group_index].begin==begin&&
+                    trace.groups[group_index].end==end&&
+                    trace.groups[group_index].value==SimulationValue{ordered[begin]},
+                    "A group has an incorrect half-open range or value");
+                for(std::size_t counted=1;counted<=frequency;++counted){
+                    verify(frame_index<trace.frames.size(),"Missing an observed-element frame");
+                    const auto& frame=trace.frames[frame_index++];
+                    verify(frame.phase==(counted==1?SimulationPhase::start:SimulationPhase::advance)&&
+                        frame.group==group_index+1&&frame.begin==begin&&frame.end==begin+counted&&
+                        frame.frequency==counted&&frame.maximum==maximum&&
+                        frame.leaders==leaders&&frame.output==expected_output,
+                        "Counting a value skipped a step or exposed a future decision");
+                }
+                const auto decision_position=frame_index;
+                verify(frame_index<trace.frames.size(),"Missing group decision");
+                const auto& decision=trace.frames[frame_index++];
+                const auto phase=frequency>maximum?SimulationPhase::new_maximum:
+                    frequency==maximum?SimulationPhase::tie:SimulationPhase::below_maximum;
+                if(frequency>maximum){
+                    maximum=frequency;
+                    leaders={SimulationValue{ordered[begin]}};
+                }else if(frequency==maximum)leaders.emplace_back(ordered[begin]);
+                expected_output+=std::to_string(ordered[begin])+":"+
+                    std::to_string(frequency)+"\n";
+                verify(decision.phase==phase&&decision.group==group_index+1&&
+                    decision.begin==begin&&decision.end==end&&
+                    decision.frequency==frequency&&decision.maximum==maximum&&
+                    decision.leaders==leaders&&decision.output==expected_output&&
+                    group_index<trace.candidate_frames.size()&&
+                    trace.candidate_frames[group_index]==decision_position,
+                    "Decision frame changed the maximum, tie, positions or accumulated output");
+                begin=end;++group_index;
+            }
+            verify(group_index==trace.groups.size()&&group_index==trace.candidate_frames.size()&&
+                frame_index+1==trace.frames.size(),
+                "An extra or missing step changed the finished trace");
+            const auto& done=trace.frames.back();
+            verify(done.phase==SimulationPhase::done&&
+                done.begin==size&&done.end==size&&done.frequency==0&&
+                done.maximum==maximum&&done.leaders==leaders&&
+                done.output==expected_output,
+                "Final step changed the observed result or read beyond the array");
+        }
+    }
+}
+
 void parsed_trace_reuse() {
     auto spec=example();
     spec.values=integers({7,1,7});
@@ -438,6 +532,7 @@ int main() {
         contract_rejections();
         expansion_bounds_and_modes();
         parsed_trace_reuse();
+        exhaustive_small_arrays();
         std::cout << "PASS native simulation: calculated groups, ranges, frequencies, maxima/ties, text order, "
             "edited inputs, exact replay, accessible state, strict contracts and bounded expansion\n";
         return 0;
