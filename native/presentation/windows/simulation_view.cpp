@@ -739,7 +739,9 @@ struct SimulationView::Impl {
             previous_original->second==original&&original_order_ink==current_ink;
         CHARRANGE original_selection{};
         POINT original_scroll{};
-        if(same_original_session&&!original_unchanged){
+        if(same_original_session&&!original.empty()){
+            // The same source can be reflowed even when its bytes and ink are
+            // unchanged: each simulation step may resize surrounding panels.
             SendMessageW(original_window,EM_EXGETSEL,0,
                 reinterpret_cast<LPARAM>(&original_selection));
             SendMessageW(original_window,EM_GETSCROLLPOS,0,
@@ -874,9 +876,9 @@ struct SimulationView::Impl {
         const auto description=array_text();SetWindowTextW(canvas,wide(description).c_str());accessible(canvas,description);
         NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,canvas,OBJID_CLIENT,CHILDID_SELF);
         if(!initializing)arrange(width,true);
-        if(same_original_session&&!original_unchanged){
-            // A palette change needs fresh formatting, but must not become a
-            // new reading session for unchanged applied data.
+        if(same_original_session&&!original.empty()){
+            // Keep the original's actual pixel scroll and selection throughout
+            // ordinary step/layout updates, including palette reformatting.
             const LONG length=static_cast<LONG>(GetWindowTextLengthW(original_window));
             const CHARRANGE restored{
                 std::clamp(original_selection.cpMin,LONG{0},length),
