@@ -1023,6 +1023,37 @@ void explicit_decision_jumps_reveal_histogram_bar(HWND host) {
         candidate_view.frequency_card_bounds_in_canvas(58).has_value()&&
         !candidate_view.frequency_card_bounds_in_canvas(59).has_value(),
         "Candidates mode did not reveal the directly selected group or disclosed a future one");
+
+    // A filtered candidate chart is not permitted to reveal a losing
+    // current group by bypassing its computed maximum. Navigation changes
+    // the decision, not the explicitly chosen histogram filter.
+    auto filtered_spec=fixture(SimulationViewMode::candidates);
+    filtered_spec.values=numbers({0,0});
+    filtered_spec.scenarios.clear();filtered_spec.editable=false;
+    for(std::int64_t value=1;value<=62;++value)
+        filtered_spec.values.emplace_back(value);
+    SimulationView filtered(host,filtered_spec,"es");
+    filtered.set_text_scale(150);resize(filtered,340);
+    const auto filtered_selector=GetDlgItem(filtered.window(),step_selector_id);
+    check(filtered_selector&&SendMessageW(filtered_selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "Cannot expose the first losing group");
+    SendMessageW(filtered.window(),WM_COMMAND,
+        MAKEWPARAM(step_selector_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(filtered_selector));pump();
+    click(filtered,frequency_filter_id);
+    check(filtered.frequency_card_bounds_in_canvas(0).has_value()&&
+        !filtered.frequency_card_bounds_in_canvas(1).has_value(),
+        "The candidate filter did not hide the losing group");
+    check(SendMessageW(filtered_selector,CB_SETCURSEL,40,0)!=CB_ERR,
+        "Cannot choose a distant losing group under the candidate filter");
+    SendMessageW(filtered.window(),WM_COMMAND,
+        MAKEWPARAM(step_selector_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(filtered_selector));pump();
+    check(filtered.step_index()==40&&
+        filtered.frequency_card_bounds_in_canvas(0).has_value()&&
+        !filtered.frequency_card_bounds_in_canvas(40).has_value()&&
+        name(GetDlgItem(filtered.window(),frequencies_id)).find("Grupo 41:")==std::string::npos,
+        "Direct navigation leaked a losing bar through the active candidate filter");
 }
 
 void candidate_frequency_filter(HWND host) {
