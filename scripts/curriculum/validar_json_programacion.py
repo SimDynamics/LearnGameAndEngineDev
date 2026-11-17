@@ -1405,11 +1405,13 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
                                            course_id="cpp_fundamentals"):
     """Authenticate question and/or explanation wording without changing answers.
 
-    Work may revise these existing authored prose fields independently or
-    together, but only under the same stable v2 owner and complete ordered
-    editorial transition. The historical program, options, solution, evaluation,
-    other guidance and identity must remain byte-exact. Every changed field
-    needs its own valid, explicitly authored text-semantics descriptor.
+    Work may revise existing question/explanation wording independently or
+    together, and may add a previously absent optional explanation under the
+    same stable v2 owner and a complete ordered editorial transition.
+    Existing fields cannot be deleted or emptied, and absent questions cannot
+    be invented. The historical program, options, solution, evaluation, other
+    guidance and identity must remain byte-exact. Every changed or introduced
+    field needs its own valid, explicitly authored text-semantics descriptor.
     """
     if (old.get("type") not in REVIEW_FEEDBACK_TYPES or
             current.get("type") != old.get("type") or

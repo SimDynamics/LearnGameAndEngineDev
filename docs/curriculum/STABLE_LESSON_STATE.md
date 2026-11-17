@@ -253,12 +253,21 @@ no se flexibilizan respuestas ni código.
 Work puede revisar `/question` y/o `/explanation` de `multiple_choice`,
 `output_prediction`, `fill_code`, `order_code`, `drag_fill_code` e
 `inline_fill_code` sin registrar cada frase en una lista de autorizaciones.
-Puede modificar uno de esos campos o ambos en la misma revisión. Cada campo
-revisado debe existir y contener texto no vacío antes y después del cambio.
+Puede modificar uno de esos campos o ambos en la misma revisión. Si
+`/question` o `/explanation` ya existían en el bloque publicado, su
+texto debe ser no vacío antes y después del cambio. **Excepción
+general y acotada:** si una actividad de esos tipos no tiene la propiedad
+opcional `/explanation`, Work puede añadirla con una revisión editorial
+autenticada y un descriptor `textSemantics` explícito. No se permite
+introducir una pregunta ausente, sustituir una propiedad anterior inválida
+ni vaciar o retirar una explicación ya publicada.
+
 Opciones, índice correcto, programas, fragmentos, respuestas, reglas de
 comparación, guías, tipo, identidad y cualquier campo no revisado conservan
-igualdad completa. No se permite añadir o quitar campos del bloque ni cambiar
-el contrato de evaluación junto a la redacción.
+igualdad completa. Sólo puede añadirse la propiedad opcional
+`/explanation` anteriormente ausente; no se autorizan otros campos
+nuevos o retirados ni cambios de evaluación. El historial de origen
+y las direcciones de respuesta permanecen intactos.
 
 La autorización necesita las dos lecciones completas. El validador curricular
 lee la anterior desde el commit publicado indicado en `--base-ref`, verifica
@@ -293,7 +302,16 @@ entrega los textos, sus descriptores y la publicación anterior correspondientes
 
 El comando `revise-ordinary-editorial` recibe el archivo de campos mediante
 `--editorial-fields`, además de la identidad, fuente publicada y destino nuevo
-habituales. Si el bloque completo recupera una versión anterior de su propia
+habituales. Para incorporar una explicación opcional anteriormente ausente,
+Work proporciona el objeto de campos
+`{"explanation": {"text": "Explicación desarrollada.", "spans": []}}`.
+`spans: []` declara de forma explícita una lectura de prosa sin marcado
+técnico; no es equivalente a omitir el descriptor semántico. Si hacen
+falta marcas técnicas, Work incluye los rangos UTF-16 compatibles en
+ese mismo objeto. La identidad estable se busca en el `stateLayout`
+publicado y puede diferir de la posición física tras reorganizar las
+páginas; la adición no modifica respuestas ni atribuye una lectura
+anterior al texto nuevo. Si el bloque completo recupera una versión anterior de su propia
 cadena, los campos incluyen `returnTo` con el ordinal auténtico de esa revisión.
 No se recorta el historial ni se simula una redacción inédita para eludir el
 retorno explícito.

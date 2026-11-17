@@ -79,7 +79,114 @@ def synthetic(kind):
     return before, layout.prepare_v2(draft, "es", {"es": before}, before)
 
 
+def synthetic_missing_explanation(kind):
+    # Reuse all existing response contracts; omit only the optional prose
+    # from the INITIAL published source, before creating its v2 provenance.
+    anchored, _ = synthetic(kind)
+    initial = deepcopy(anchored)
+    initial.pop("stateLayout", None)
+    initial.pop("textSemantics", None)
+    del initial["pages"][0]["blocks"][0]["explanation"]
+    return layout.prepare_v2(initial, "es", {"es": initial})
+
+
 class OrdinaryExplanationRevisionTest(unittest.TestCase):
+    def test_optional_missing_explanation_is_authored_without_changing_answers(self):
+        for kind in sorted(contract.REVIEW_FEEDBACK_TYPES):
+            with self.subTest(kind=kind):
+                before = synthetic_missing_explanation(kind)
+                identity = "block_0000_0000"
+                old = deepcopy(layout._blocks(before)[identity])
+                self.assertNotIn("explanation", old)
+                wording = f"Explicación QA del tipo {kind}: datos, operación y resultado."
+                after = layout.revise_ordinary_editorial(before, identity, {
+                    "explanation": {"text": wording, "spans": []}
+                })
+                new = layout._blocks(after)[identity]
+                self.assertEqual(dict(old, explanation=wording), new)
+                self.assertEqual(("explanation",), layout.ordinary_editorial_fields(old, new))
+                self.assertTrue(contract.preserves_ordinary_explanation_revision(
+                    SYNTHETIC_PATH, 0, 0, old, new, before, after))
+                self.assertEqual(layout.state_fingerprint(old), layout.state_fingerprint(new))
+                self.assertEqual(before["stateLayout"]["family"], after["stateLayout"]["family"])
+                self.assertEqual(before["stateLayout"]["origin"], after["stateLayout"]["origin"])
+                self.assertEqual(before["stateLayout"]["current"], after["stateLayout"]["current"])
+                self.assertEqual(before["stateLayout"]["editorial"],
+                                 after["stateLayout"]["editorial"][:-1])
+                self.assertEqual({
+                    "id": identity, "beforeSha256": layout.fingerprint(old),
+                    "afterSha256": layout.fingerprint(new)
+                }, after["stateLayout"]["editorial"][-1])
+                marker = next(field for field in after["textSemantics"]["fields"]
+                              if (field["block"], field["path"]) == (identity, "/explanation"))
+                self.assertEqual([], marker["spans"])
+                self.assertEqual(wording,
+                    layout.text_semantics.validate(after)[identity]["/explanation"]["source"])
+                layout.validate_transition(before, after)
+                self.assertNotIn("explanation", layout._blocks(before)[identity])
+
+    def test_missing_optional_explanation_remains_a_protected_authored_field(self):
+        before = synthetic_missing_explanation("drag_fill_code")
+        identity = "block_0000_0000"
+        old = layout._blocks(before)[identity]
+        after = layout.revise_ordinary_editorial(before, identity, {
+            "explanation": {"text": "Une cada pieza para formar la instrucción completa.", "spans": []}
+        })
+        new = layout._blocks(after)[identity]
+        self.assertTrue(contract.preserves_previous_exercise(
+            SYNTHETIC_PATH, 0, 0, old, new,
+            previous_document=before, current_document=after))
+        self.assertFalse(contract.preserves_ordinary_explanation_revision(
+            SYNTHETIC_PATH, 0, 0, old, new, None, None))
+        self.assertFalse(contract.preserves_previous_exercise(
+            SYNTHETIC_PATH, 0, 0, old, new))
+        self.assertEqual({"explanation"}, set(new) - set(old))
+
+        # A hash alone does not authorize a new field: the exact ordered
+        # editorial edge and source-marked /explanation must accompany it.
+        for mutation in ("no-proof", "no-mark", "stale-mark", "changed-answer",
+                         "extra-field", "changed-question", "deleted-mark", "empty-text"):
+            invalid = deepcopy(after)
+            current = layout._blocks(invalid)[identity]
+            if mutation == "no-proof":
+                invalid["stateLayout"]["editorial"].clear()
+            elif mutation == "no-mark":
+                invalid.pop("textSemantics")
+            elif mutation == "stale-mark":
+                invalid["textSemantics"]["fields"][0]["sourceSha256"] = "0" * 64
+            elif mutation == "changed-answer":
+                current["correctOrder"] = [1, 0, 2]
+            elif mutation == "extra-field":
+                current["notAuthorized"] = True
+            elif mutation == "changed-question":
+                current["question"] += " ¿Otra condición?"
+            elif mutation == "deleted-mark":
+                invalid["textSemantics"]["fields"] = []
+            else:
+                current["explanation"] = "   "
+            with self.subTest(mutation=mutation):
+                if mutation in ("changed-answer", "extra-field", "changed-question", "empty-text"):
+                    invalid["stateLayout"]["editorial"][-1]["afterSha256"] = layout.fingerprint(current)
+                self.assertFalse(contract.preserves_ordinary_explanation_revision(
+                    SYNTHETIC_PATH, 0, 0, old, current, before, invalid))
+
+        # A removed field, an absent question and a malformed old value do
+        # not become a general license to introduce arbitrary text.
+        self.assertEqual((), layout.ordinary_editorial_fields(
+            {"type": "drag_fill_code", "question": "Texto anterior"},
+            {"type": "drag_fill_code", "explanation": "Un texto distinto"}))
+        self.assertEqual((), layout.ordinary_editorial_fields(
+            {"type": "drag_fill_code", "explanation": ""},
+            {"type": "drag_fill_code", "explanation": "Un texto distinto"}))
+        with self.assertRaises(ValueError):
+            layout.revise_ordinary_editorial(before, identity, {
+                "explanation": {"text": "  ", "spans": []}
+            })
+        with self.assertRaises(ValueError):
+            layout.revise_ordinary_editorial(after, identity, {
+                "explanation": {"text": None, "spans": []}
+            })
+
     def test_all_five_work_proposals_keep_every_other_raw_field_and_provenance(self):
         for name, case in fixtures.CASES.items():
             with self.subTest(name=name):

@@ -5344,11 +5344,21 @@ def ordinary_editorial_fields(before: dict, after: dict) -> tuple[str, ...]:
         return ()
     fields = tuple(field for field in ("question", "explanation")
                    if before.get(field) != after.get(field))
-    if not fields or any(
-            type(before.get(field)) is not str or not before[field].strip()
-            or type(after.get(field)) is not str or not after[field].strip()
-            for field in fields):
+    if not fields:
         return ()
+    for field in fields:
+        updated = after.get(field)
+        if type(updated) is not str or not updated.strip():
+            return ()
+        # A previously absent optional explanation is new prose, not a
+        # change to an exercise contract. Still require an authenticated
+        # editorial edge and an explicit exact-source semantic descriptor.
+        # Do not extend this to absent questions or malformed old values.
+        if field == "explanation" and field not in before:
+            continue
+        original = before.get(field)
+        if type(original) is not str or not original.strip():
+            return ()
     expected = {**before, **{field: after[field] for field in fields}}
     if after != expected:
         return ()
@@ -5405,8 +5415,10 @@ def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
 
 
 def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dict:
-    """Author one or two question/explanation fields under an existing v2 owner.
+    """Author a question rewrite and/or optional explanation on a v2 owner.
 
+    An absent optional explanation may be introduced; an absent question,
+    empty old wording, answer change or implicit default is never authorized.
     Each field has the exact new "text" and explicitly authored UTF-16
     "spans". This never infers a highlight or rewrites an old narration range.
     If the complete resulting block existed earlier, the optional "returnTo"
@@ -5421,20 +5433,21 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
     require(type(original) is dict and original.get("type") in ORDINARY_EDITORIAL_TYPES,
             "Ordinary editorial revisions belong to existing graded prose owners")
     require(type(edits) is dict and set(edits) <= {"question", "explanation", "returnTo"},
-            "Author only existing question/explanation fields and an optional explicit return")
+            "Author only question/explanation prose fields and an optional explicit return")
     return_to = edits.get("returnTo")
     requested = {field: spec for field, spec in edits.items() if field != "returnTo"}
     require(bool(requested) and len(requested) <= 2,
-            "Author one or two existing question/explanation fields")
+            "Author one or two question/explanation prose fields")
     require(return_to is None or (type(return_to) is int and return_to >= 0),
             "An editorial return must name an explicit nonnegative revision")
     for field, spec in requested.items():
         require(type(spec) is dict and set(spec) == {"text", "spans"},
                 "Every revised field needs exact text and authored semantic spans")
         old, updated = original.get(field), spec["text"]
-        require(type(old) is str and old.strip() and type(updated) is str
-                and updated.strip() and updated != old,
-                "An editorial revision needs different nonblank existing wording")
+        authored_optional = field == "explanation" and field not in original
+        require((authored_optional or (type(old) is str and bool(old.strip())))
+                and type(updated) is str and bool(updated.strip()) and updated != old,
+                "An editorial revision needs nonblank wording or a newly authored optional explanation")
         require(type(spec["spans"]) is list,
                 "Author an explicit semantic span list, including [] for unmarked prose")
 
