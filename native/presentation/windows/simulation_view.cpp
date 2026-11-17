@@ -1003,7 +1003,8 @@ struct SimulationView::Impl {
     }
     bool go(std::size_t next) {
         if(next>=count())return false;if(next==position)return true;
-        const auto old_visible=frequency_indices().size();
+        const auto old_indices=frequency_indices();
+        const auto old_visible=old_indices.size();
         bool followed_last_bar=false;
         if(old_visible&&frequencies){
             // When every old bar fitted, a newly completed group should also
@@ -1025,6 +1026,9 @@ struct SimulationView::Impl {
         }
         position=next;update();
         const auto indices=frequency_indices();
+        // Fractional wheel movement belongs to the previous arrangement.
+        // Reset only when the set/order of visible cards actually changes.
+        if(indices!=old_indices)frequency_wheel_remainder=0;
         if(followed_last_bar&&indices.size()>old_visible&&
                 !indices.empty()&&indices.back()+1==completed_groups()&&
                 frequency_total_height)
