@@ -366,14 +366,19 @@ $qaCommands = @(
     'if errorlevel 1 exit /b %errorlevel%'
 )
 if ($Suite -eq 'ReaderBuild') {
-    # Run the new control's exact contracts before compiling the large
+    # Check simulations and real code gestures before compiling the other
     # historical test translation units. Failed UI iterations retain their
     # native captures and diagnostics without repeating the older suites.
     $qaSimulationPattern = '^native\.(simulation_model|simulation_view|simulation_lesson|simulation_authoring)$'
+    $qaGesturePattern = '^native\.(lesson_menu|lesson_scroll_render)$'
     $qaCommands += @(
         "`"$qaCMake`" --build `"$qaBuild`" --target lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests --parallel 2",
         'if errorlevel 1 exit /b %errorlevel%',
         "`"$qaCTest`" --test-dir `"$qaBuild`" -R `"$qaSimulationPattern`" --verbose --output-on-failure --no-tests=error --output-junit `"$qaBuild\simulation-results.xml`"",
+        'if errorlevel 1 exit /b %errorlevel%',
+        "`"$qaCMake`" --build `"$qaBuild`" --target lgaed_lesson_view_tests --parallel 2",
+        'if errorlevel 1 exit /b %errorlevel%',
+        "`"$qaCTest`" --test-dir `"$qaBuild`" -R `"$qaGesturePattern`" --verbose --output-on-failure --no-tests=error --timeout 300 --output-junit `"$qaBuild\lesson-gesture-results.xml`"",
         'if errorlevel 1 exit /b %errorlevel%'
     )
 }
@@ -418,15 +423,15 @@ if ($Suite -eq 'ReaderBuild') {
         (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
         throw 'ReaderBuild must register independent native glyph hit geometry, console fullscreen/zoom, menu/scroll, Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery, stateful reduction, integer CMake battery and original open-battery execution regressions.'
     }
-    # Obtain console, CMake structure, U3 semantics and named-rule variation
+    # Obtain CMake structure, U3 semantics and named-rule variation
     # evidence before the remaining compiler cases. A failure in one must
     # retain the other independent diagnostics.
-    # Simulation contracts already ran before the larger build. Keep the
-    # existing focal checks and execute each registered test exactly once.
-    $qaFocalPattern = '^native\.(lesson_menu|rich_text_hit_geometry|cpp_cmake_graph|cpp_project_u3_cmake_structure|u3_runtime_semantics|named_rule_runtime)$'
-    $qaCompletedPattern = "($qaSimulationPattern)|($qaFocalPattern)"
+    # Simulation and console gestures already ran before the larger build.
+    # Keep the other focal checks and execute each registered test once.
+    $qaFocalPattern = '^native\.(rich_text_hit_geometry|cpp_cmake_graph|cpp_project_u3_cmake_structure|u3_runtime_semantics|named_rule_runtime)$'
+    $qaCompletedPattern = "($qaSimulationPattern)|($qaGesturePattern)|($qaFocalPattern)"
     & $qaCTest --test-dir $qaBuild -R $qaFocalPattern --verbose --output-on-failure --no-tests=error --timeout 300
-    if ($LASTEXITCODE -ne 0) { throw 'A native console, CMake structure, U3 semantic or named-rule regression failed.' }
+    if ($LASTEXITCODE -ne 0) { throw 'A native glyph, CMake structure, U3 semantic or named-rule regression failed.' }
     & $qaCTest --test-dir $qaBuild -E $qaCompletedPattern --output-on-failure --no-tests=error --timeout 300 --stop-on-failure
     if ($LASTEXITCODE -ne 0) { throw 'A focused native reader, catalog, compiler or Win32 regression failed.' }
     Write-Host 'PASS original reader/U6 executables compiled and linked; catalog, general-choice reading preservation, boolean battery execution/provenance, console fullscreen/zoom and Escape, actual Win32 History dialogs and focused published lesson execution/reopen/reset tested. No reader/audio playback executed.'

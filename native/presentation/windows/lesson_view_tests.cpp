@@ -530,6 +530,7 @@ struct PopupCapture {
 void console_fullscreen_zoom_escape() {
     for(const int surface:{0,1,2}) {
         const bool output=surface!=0;
+        std::cout<<"BEGIN console_fullscreen_zoom_escape surface="<<surface<<"\n";
         Fixture fixture([](state::StateData& data,const curriculum::Lesson&) {
             data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{125};
             data.preferences["console_zoom_qa"]["unrelated"]=std::string("conservar");
@@ -607,47 +608,98 @@ void console_fullscreen_zoom_escape() {
         if(source)SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&source_selection));
         SetFocus(display);pump(fixture.host);
         const auto normal_scale=scale(),source_scale=source?rich_edit_scale(source):0;
-        const auto preferences=read_lesson_state(fixture.view).preferences;
+        // Finish the fixture's pending page/draft save before attributing a
+        // preference change to a gesture. read_lesson_state only copies data.
+        require(flush_lesson_view(fixture.view),"Cannot persist the console fixture before its gesture baseline");
+        const auto original_state=read_lesson_state(fixture.view);
+        const auto& preferences=original_state.preferences;
         const auto pane=GetParent(display),header=fixture.control(0,output?30:16);
         RECT normal_bounds{},normal_header{};GetWindowRect(display,&normal_bounds);GetWindowRect(header,&normal_header);
         SCROLLINFO normal_scroll{sizeof(normal_scroll),SIF_POS};GetScrollInfo(pane,SB_VERT,&normal_scroll);
-        const auto unchanged=[&] {
+        const auto preference_changes=[&](const state::StateData& observed) {
+            const auto describe=[](const auto* value)->std::string {
+                if(!value)return "<missing>";
+                if(const auto item=std::get_if<bool>(value))return *item?"true":"false";
+                if(const auto item=std::get_if<std::int64_t>(value))return std::to_string(*item);
+                if(const auto item=std::get_if<double>(value))return std::to_string(*item);
+                if(const auto item=std::get_if<std::string>(value))return "string("+std::to_string(item->size())+"):"+item->substr(0,160);
+                return "variant-index="+std::to_string(value->index());
+            };
+            std::set<std::pair<std::string,std::string>> keys;
+            for(const auto* data:{&original_state,&observed})for(const auto& [family,values]:data->preferences)
+                for(const auto& entry:values)keys.emplace(family,entry.first);
+            std::string differences;
+            for(const auto& [family,key]:keys) {
+                const auto* expected=state::find(original_state,family,key);
+                const auto* actual=state::find(observed,family,key);
+                if(expected&&actual&&*expected==*actual)continue;
+                differences+="\n  "+family+"/"+key+": expected="+describe(expected)+", actual="+describe(actual);
+            }
+            return differences;
+        };
+        const auto unchanged=[&](std::string_view action) {
             CHARRANGE current{};SendMessageW(display,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&current));
-            require(fixture.control(0,output?14:1)==display&&edit_text(display)==text&&
-                current.cpMin==selection.cpMin&&current.cpMax==selection.cpMax&&fixture.page()==0&&returned==0&&
-                reading_script(fixture.view)==script&&fixture.lesson.raw_json==raw&&GetFocus()==display&&
-                read_lesson_state(fixture.view).preferences==preferences,
-                "Console fullscreen/zoom changed its original HWND, text, selection, page or narration");
+            const auto actual_display=descendant(fixture.view,id(0,output?14:1)),focus=GetFocus();
+            const auto actual_text=edit_text(display);const auto actual_script=reading_script(fixture.view);
+            const auto actual_state=read_lesson_state(fixture.view);
+            int numerator=0,denominator=0;SendMessageW(display,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            const auto handle=[](HWND item){return std::to_string(reinterpret_cast<std::uintptr_t>(item))+"/id="+std::to_string(item?GetDlgCtrlID(item):-1);};
+            const auto context="surface="+std::to_string(surface)+", action="+std::string(action)+
+                ", fullscreen="+std::to_string(fixture.fullscreen())+", scale="+std::to_string(numerator)+"/"+std::to_string(denominator)+
+                ", HWND expected="+handle(display)+", actual="+handle(actual_display)+
+                ", focus expected="+handle(display)+", actual="+handle(focus)+
+                ", visible="+std::to_string(IsWindowVisible(display)!=FALSE)+", enabled="+std::to_string(IsWindowEnabled(display)!=FALSE)+
+                ", selection expected="+std::to_string(selection.cpMin)+","+std::to_string(selection.cpMax)+
+                ", actual="+std::to_string(current.cpMin)+","+std::to_string(current.cpMax)+
+                ", page expected=0, actual="+std::to_string(fixture.page())+", returned expected=0, actual="+std::to_string(returned)+
+                ", text_equal="+std::to_string(actual_text==text)+", text_bytes expected="+std::to_string(text.size())+", actual="+std::to_string(actual_text.size())+
+                ", narration_equal="+std::to_string(actual_script==script)+", regions expected="+std::to_string(script.size())+", actual="+std::to_string(actual_script.size())+
+                ", raw_json_equal="+std::to_string(fixture.lesson.raw_json==raw)+", preferences_equal="+std::to_string(actual_state.preferences==preferences)+
+                preference_changes(actual_state);
+            require(actual_display==display,"Console HWND changed: "+context);
+            require(actual_text==text,"Console text changed: "+context+"\nexpected text="+text+"\nactual text="+actual_text);
+            require(current.cpMin==selection.cpMin&&current.cpMax==selection.cpMax,"Console selection changed: "+context);
+            require(fixture.page()==0&&returned==0,"Console gesture navigated away: "+context);
+            require(actual_script==script,"Console narration changed: "+context);
+            require(fixture.lesson.raw_json==raw,"Console curriculum JSON changed: "+context);
+            require(focus==display,"Console focus changed: "+context);
+            require(actual_state.preferences==preferences,"Console saved preferences changed: "+context);
             if(source) {
                 SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&current));
                 require(fixture.control(0,10)==source&&fixture.text(0,10)==draft&&fixture.text(0,4).empty()&&
                     current.cpMin==source_selection.cpMin&&current.cpMax==source_selection.cpMax&&rich_edit_scale(source)==source_scale,
-                    "A console gesture changed the independent source draft, selection or compiler verdict");
+                    "Independent source changed: "+context+", source HWND="+handle(source)+
+                    ", source selection expected="+std::to_string(source_selection.cpMin)+","+std::to_string(source_selection.cpMax)+
+                    ", actual="+std::to_string(current.cpMin)+","+std::to_string(current.cpMax)+
+                    ", source_scale expected="+std::to_string(source_scale)+", actual="+std::to_string(rich_edit_scale(source))+
+                    ", draft_equal="+std::to_string(fixture.text(0,10)==draft)+", verdict="+fixture.text(0,4));
             }
         };
-        const auto wheel_round_trip=[&] {
+        unchanged("seed selection and focus before wheel");
+        const auto wheel_round_trip=[&](std::string_view phase) {
             const auto full=fixture.fullscreen();
-            control_wheel_to_scale(fixture.host,display,150);unchanged();
+            control_wheel_to_scale(fixture.host,display,150);unchanged(std::string(phase)+" / grow to 150");
             control_wheel(fixture.host,display,WHEEL_DELTA);
-            require(scale()==150&&fixture.fullscreen()==full,"Ctrl+wheel changed fullscreen or exceeded its local 150-percent limit");unchanged();
+            require(scale()==150&&fixture.fullscreen()==full,"Ctrl+wheel changed fullscreen or exceeded its local 150-percent limit");unchanged(std::string(phase)+" / positive wheel at cap");
             control_wheel(fixture.host,display,-WHEEL_DELTA);
-            require(scale()<150&&fixture.fullscreen()==full,"Ctrl+wheel did not decrease the same console in its current mode");unchanged();
-            control_wheel_to_scale(fixture.host,display,normal_scale);unchanged();
+            require(scale()<150&&fixture.fullscreen()==full,"Ctrl+wheel did not decrease the same console in its current mode");unchanged(std::string(phase)+" / negative wheel from cap");
+            control_wheel_to_scale(fixture.host,display,normal_scale);unchanged(std::string(phase)+" / restore normal local scale");
         };
         const auto toggle=[&] {
             if(output){SendMessageW(fixture.view,WM_COMMAND,MAKEWPARAM(id(0,76),0),0);pump(fixture.host);}
             else fixture.click(0,20);
         };
-        wheel_round_trip();
+        wheel_round_trip("normal");
         toggle();
-        require(fixture.fullscreen()&&scale()==normal_scale,"The existing expand control lost the local normal-console scale");unchanged();
+        require(fixture.fullscreen()&&scale()==normal_scale,"The existing expand control lost the local normal-console scale");unchanged("expand control");
         double_click();double_click();
         require(fixture.fullscreen()&&scale()==normal_scale&&edit_text(display)==text,
             "An empty-area double click zoomed or closed the fullscreen console");
         // Native double click may select text. Seed the selection to retain
         // through the independent wheel and fullscreen transitions below.
         SendMessageW(display,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
-        wheel_round_trip();
+        unchanged("seed selection after fullscreen double click");
+        wheel_round_trip("fullscreen");
         SendMessageW(display,WM_KEYDOWN,VK_ESCAPE,1);pump(fixture.host);
         RECT restored{},restored_header{};GetWindowRect(display,&restored);GetWindowRect(header,&restored_header);
         SCROLLINFO restored_scroll{sizeof(restored_scroll),SIF_POS};GetScrollInfo(pane,SB_VERT,&restored_scroll);
@@ -664,15 +716,16 @@ void console_fullscreen_zoom_escape() {
                 ", normal_header="+bounds(normal_header)+", restored_header="+bounds(restored_header)+
                 ", normal_scroll="+std::to_string(normal_scroll.nPos)+", restored_scroll="+std::to_string(restored_scroll.nPos));
         }
-        unchanged();
+        unchanged("Escape from fullscreen at normal local scale");
         // Local native zoom belongs to this HWND, not a fullscreen-only mode
         // or a saved course/global preference.
-        toggle();control_wheel_to_scale(fixture.host,display,150);toggle();
-        require(!fixture.fullscreen()&&scale()==150,"The existing close control discarded the console's local Ctrl+wheel scale");unchanged();
-        toggle();require(fixture.fullscreen()&&scale()==150,"Reopening fullscreen discarded the same console's local scale");
+        toggle();unchanged("reopen fullscreen before grow");
+        control_wheel_to_scale(fixture.host,display,150);unchanged("grow reopened fullscreen to 150");toggle();
+        require(!fixture.fullscreen()&&scale()==150,"The existing close control discarded the console's local Ctrl+wheel scale");unchanged("close control at 150");
+        toggle();require(fixture.fullscreen()&&scale()==150,"Reopening fullscreen discarded the same console's local scale");unchanged("reopen fullscreen at 150");
         fixture.escape();
-        require(!fixture.fullscreen()&&scale()==150,"A zoomed console required a second Escape or changed scale while closing");unchanged();
-        control_wheel_to_scale(fixture.host,display,normal_scale);unchanged();
+        require(!fixture.fullscreen()&&scale()==150,"A zoomed console required a second Escape or changed scale while closing");unchanged("Escape at 150");
+        control_wheel_to_scale(fixture.host,display,normal_scale);unchanged("restore local scale after Escape");
         if(source) {
             SendMessageW(source,WM_UNDO,0,0);pump(fixture.host);
             require(fixture.text(0,10)==original_source,"Console transitions destroyed the source editor's Undo history");
@@ -773,15 +826,26 @@ void console_zoom_bottom_viewport() {
             describe("The document does not exercise the intended base-scale overflow condition",initial));
         const auto raw=fixture.lesson.raw_json;const auto script=reading_script(fixture.view);
         RECT fullscreen_bounds{};GetWindowRect(display,&fullscreen_bounds);
-        const auto retained=[&] {
+        const auto retained=[&](std::string_view action) {
             CHARRANGE current{};SendMessageW(display,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&current));
+            const auto focus=GetFocus();
+            const auto context="surface="+std::to_string(surface)+", scenario="+std::to_string(scenario)+", action="+std::string(action)+
+                ", fullscreen="+std::to_string(fixture.fullscreen())+", scale="+std::to_string(scale())+
+                ", HWND expected="+std::to_string(reinterpret_cast<std::uintptr_t>(display))+
+                ", actual="+std::to_string(reinterpret_cast<std::uintptr_t>(descendant(fixture.view,id(0,editable?10:output?14:1))))+
+                ", focus expected="+std::to_string(GetDlgCtrlID(display))+", actual="+std::to_string(focus?GetDlgCtrlID(focus):-1)+
+                ", selection expected="+std::to_string(selection.cpMin)+","+std::to_string(selection.cpMax)+
+                ", actual="+std::to_string(current.cpMin)+","+std::to_string(current.cpMax)+
+                ", text_equal="+std::to_string(edit_text(display)==text)+", page="+std::to_string(fixture.page())+
+                ", raw_json_equal="+std::to_string(fixture.lesson.raw_json==raw)+", narration_equal="+std::to_string(reading_script(fixture.view)==script);
             require(fixture.control(0,editable?10:output?14:1)==display&&edit_text(display)==text&&
                 current.cpMin==selection.cpMin&&current.cpMax==selection.cpMax&&GetFocus()==display&&
                 fixture.page()==0&&fixture.lesson.raw_json==raw&&reading_script(fixture.view)==script,
-                "Bottom scrolling and zoom restoration changed the console, selection, focus, lesson or narration");
-            if(output)require(fixture.text(0,10)==original_source,"Output zoom restoration changed the independent source");
-            if(surface)require(fixture.text(0,4).empty(),"Zoom restoration fabricated a compiler verdict");
+                "Bottom scrolling and zoom restoration changed the console: "+context);
+            if(output)require(fixture.text(0,10)==original_source,"Output zoom restoration changed the independent source: "+context);
+            if(surface)require(fixture.text(0,4).empty(),"Zoom restoration fabricated a compiler verdict: "+context);
         };
+        retained("baseline before wheel");
         for(int cycle=0;cycle<2;++cycle) {
             control_wheel_to_scale(fixture.host,display,150);
             require(fixture.fullscreen()&&scale()==150,"The bottom-zoom fixture failed to enlarge its fullscreen console with Ctrl+wheel");
@@ -792,7 +856,7 @@ void console_zoom_bottom_viewport() {
             require(enlarged.offset.y>0&&enlarged.last_bottom>=enlarged.viewport.bottom-enlarged.row*2&&
                 enlarged.last_bottom<=enlarged.viewport.bottom+enlarged.row*2,
                 describe("The enlarged console did not reach its actual bottom before reducing its scale",enlarged));
-            retained();
+            retained("cycle "+std::to_string(cycle)+" / bottom at 150");
             control_wheel_to_scale(fixture.host,display,100);
             const auto restored=geometry();RECT bounds{};GetWindowRect(display,&bounds);
             require(fixture.fullscreen()&&scale()==100&&EqualRect(&bounds,&fullscreen_bounds),
@@ -805,9 +869,9 @@ void console_zoom_bottom_viewport() {
             else require(restored.offset.y>0&&restored.last_bottom>=restored.viewport.bottom-restored.row*2&&
                     restored.last_bottom<=restored.viewport.bottom+restored.row*2,
                     describe("Zoom restoration left a large blank area below the last row",restored));
-            retained();
+            retained("cycle "+std::to_string(cycle)+" / reduced to 100");
         }
-        fixture.escape();require(!fixture.fullscreen()&&scale()==100,"One Escape did not leave the fullscreen console at its retained local scale");retained();
+        fixture.escape();require(!fixture.fullscreen()&&scale()==100,"One Escape did not leave the fullscreen console at its retained local scale");retained("Escape to normal view");
         if(editable){SendMessageW(display,WM_UNDO,0,0);pump(fixture.host);
             require(edit_text(display)==original_source,"Bottom-zoom restoration damaged the original source Undo history");}
         require(state::string_value(read_lesson_state(fixture.view),"console_bottom_zoom_qa","unrelated")=="conservar",
@@ -1077,8 +1141,11 @@ void console_queued_mouse_focus_and_hit_regions() {
         const auto wheel_to=[&](int target) {
             const auto before=selection();const auto full=fixture.fullscreen();
             const auto other_scale=source&&source!=display?rich_edit_scale(source):0;
+            point_context="Ctrl+wheel from="+std::to_string(scale())+", target="+std::to_string(target)+", full="+std::to_string(full)+
+                ", selection expected="+std::to_string(before.cpMin)+","+std::to_string(before.cpMax);
             control_wheel_to_scale(fixture.host,display,target);
             const auto after=selection();
+            point_context+=", actual="+std::to_string(after.cpMin)+","+std::to_string(after.cpMax)+", observed scale="+std::to_string(scale());
             check(after.cpMin==before.cpMin&&after.cpMax==before.cpMax&&fixture.fullscreen()==full,
                 "Ctrl+wheel changed the native selection or switched fullscreen mode");
             if(source&&source!=display)check(rich_edit_scale(source)==other_scale,"Output Ctrl+wheel also zoomed the independent source");
@@ -1128,9 +1195,18 @@ void console_queued_mouse_focus_and_hit_regions() {
 }
 
 void lesson_menu_retains_import_pages_and_settings_with_hooks() {
-    console_fullscreen_zoom_escape();
-    console_zoom_bottom_viewport();
-    console_queued_mouse_focus_and_hit_regions();
+    std::vector<std::string> console_failures;
+    const auto console_case=[&](std::string_view name,const auto& run) {
+        std::cout<<"BEGIN independent console regression "<<name<<"\n";
+        try {run();std::cout<<"PASS independent console regression "<<name<<"\n";}
+        catch(const std::exception& error) {
+            console_failures.emplace_back(std::string(name)+": "+error.what());
+            std::cerr<<"FAIL independent console regression "<<console_failures.back()<<"\n";
+        }
+    };
+    console_case("console_fullscreen_zoom_escape",[]{console_fullscreen_zoom_escape();});
+    console_case("console_zoom_bottom_viewport",[]{console_zoom_bottom_viewport();});
+    console_case("console_queued_mouse_focus_and_hit_regions",[]{console_queued_mouse_focus_and_hit_regions();});
     for (const auto locale : {"es","en","fr"}) {
         Fixture fixture([locale](state::StateData& data,const curriculum::Lesson&) {
             data.preferences["native_windows"]["ui_language"] = std::string(locale);
@@ -1217,6 +1293,11 @@ void lesson_menu_retains_import_pages_and_settings_with_hooks() {
         require(options.finish_visible&&options.finish_enabled&&invoke_lesson_option(last.view,LessonOptionAction::finish),
             "The integrated Finish action did not enable after the real answer was checked");
         pump(last.host);require(finished==1,"Checking the final exercise did not preserve the real completion callback");
+    }
+    if(!console_failures.empty()) {
+        std::string failures="Independent console regressions failed ("+std::to_string(console_failures.size())+"):";
+        for(const auto& failure:console_failures)failures+="\n"+failure;
+        throw std::runtime_error(failures);
     }
     std::cout << "PASS real lesson gear requests integrated settings without a dropdown in es/en/fr; import, allowed pages, top/bottom and gated completion remain available without fabricated progress\n";
 }
@@ -2394,6 +2475,7 @@ void simulated_code_and_choice_cards() {
             "Direct wrap did not update the actual source surfaces and every course toolbar together");
     fixture.click(2,35);
     const auto script_before_fullscreen=reading_script(fixture.view);
+    require(flush_lesson_view(fixture.view),"Cannot persist the code-card fixture before its zoom baseline");
     const auto preferences_before_zoom=read_lesson_state(fixture.view).preferences;
     const auto initial_code_scale=rich_edit_scale(code),initial_editor_scale=rich_edit_scale(editor);
     const auto double_click_blank=[&] {
@@ -2447,6 +2529,7 @@ void simulated_code_and_choice_cards() {
     const auto source=fixture.text(2,10);fixture.replace(2,10,source+"// borrador que debe conservarse\n");const auto draft=fixture.text(2,10);
     const auto compiler_output=fixture.control(2,14),choice_text=fixture.control(1,21);
     const auto output_scale=rich_edit_scale(compiler_output),choice_scale=rich_edit_scale(choice_text);
+    require(flush_lesson_view(fixture.view),"Cannot persist the edited source before its zoom baseline");
     const auto draft_preferences=read_lesson_state(fixture.view).preferences;
     const CHARRANGE editor_selection{2,7};SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&editor_selection));SetFocus(editor);
     const auto editor_unchanged=[&] {
