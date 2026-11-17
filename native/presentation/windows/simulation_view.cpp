@@ -149,7 +149,8 @@ struct SimulationView::Impl {
     bool frequency_candidates_only=false;
     bool initializing=true,arranging=false,layout_valid=false;
     std::shared_ptr<bool> alive=std::make_shared<bool>(true);
-    std::string error,input_key;
+    std::string error,input_key,output_model_key;
+    std::size_t output_scenario=0;
 
     Impl(const SimulationSpec& source,std::string language,SimulationCallbacks events,
             const std::map<std::string,TextSemantics>& authored)
@@ -727,9 +728,21 @@ struct SimulationView::Impl {
         const auto previous_output=visible_text.find(output_id);
         const bool output_changed=previous_output==visible_text.end()||
             previous_output->second!=state.output;
+        // A new scenario can produce exactly the same stdout from different
+        // source data. Its scroll and text selection still belong to a new
+        // reading session and must not inherit the earlier scenario's caret.
+        const bool same_output_model=previous_output!=visible_text.end()&&
+            output_model_key==input_key&&output_scenario==scenario;
         POINT output_scroll{};
-        const bool restore_output_scroll=previous_output!=visible_text.end();
+        const bool restore_output_scroll=same_output_model;
         bool follow_output_end=false;
+        CHARRANGE output_selection{};
+        const bool preserve_selection=restore_output_scroll&&output_changed&&
+            (state.output.starts_with(previous_output->second)||
+             previous_output->second.starts_with(state.output));
+        if(preserve_selection)
+            SendMessageW(output_window,EM_EXGETSEL,0,
+                reinterpret_cast<LPARAM>(&output_selection));
         if(restore_output_scroll){
             // Even recoloring unchanged text for a theme update may reflow
             // native RichEdit; retain the learner's actual viewport.
@@ -748,7 +761,19 @@ struct SimulationView::Impl {
             }
         }
         visible_text[output_id]=state.output;
-        if(output_changed)set_edit_text(output_window,state.output);
+        if(output_changed){
+            set_edit_text(output_window,state.output);
+            if(preserve_selection){
+                // RichEdit STREAMIN recreates the document and its selection.
+                // Retain the selection only within the same calculated trace.
+                const auto length=GetWindowTextLengthW(output_window);
+                const CHARRANGE restored{
+                    std::clamp(output_selection.cpMin,0,length),
+                    std::clamp(output_selection.cpMax,0,length)};
+                SendMessageW(output_window,EM_EXSETSEL,0,
+                    reinterpret_cast<LPARAM>(&restored));
+            }
+        }
         color_plain_text(output_id);
         if(!set_rich_text_zoom(output_window,scale))
             throw std::runtime_error("RichEdit rechazó la escala de la salida.");
@@ -775,7 +800,14 @@ struct SimulationView::Impl {
             else
                 SendMessageW(output_window,EM_SETSCROLLPOS,0,
                     reinterpret_cast<LPARAM>(&output_scroll));
+        }else if(previous_output!=visible_text.end()){
+            const CHARRANGE start{0,0};
+            SendMessageW(output_window,EM_EXSETSEL,0,
+                reinterpret_cast<LPARAM>(&start));
+            SendMessageW(output_window,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
         }
+        output_model_key=input_key;
+        output_scenario=scenario;
         InvalidateRect(canvas,nullptr,FALSE);InvalidateRect(item(variables_id),nullptr,FALSE);
         InvalidateRect(frequencies,nullptr,FALSE);
     }
