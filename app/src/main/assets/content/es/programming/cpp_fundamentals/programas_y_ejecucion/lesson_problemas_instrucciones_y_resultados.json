@@ -10,27 +10,55 @@
         },
         {
           "type": "paragraph",
-          "text": "Programar consiste en expresar una solución mediante instrucciones que una computadora pueda ejecutar y en comprobar cómo se comporta esa solución. Escribir instrucciones y probarlas forman parte del trabajo: necesitamos saber tanto qué le pedimos a la computadora como qué hace cuando sigue esas instrucciones (Stroustrup, 2024).\n\nEl texto del programa que escribimos se llama código fuente. Antes de escribirlo, debemos precisar el resultado que necesitamos, la información disponible y las condiciones que se deben cumplir. Esas exigencias son los requisitos de la tarea. Después compararemos lo que produce el programa con esos requisitos; que una ejecución termine no significa, por sí solo, que haya resuelto el problema (Stroustrup, 2024).",
+          "text": "Programar consiste en expresar una solución mediante instrucciones que una computadora pueda seguir. Cuando la computadora lleva a cabo esas instrucciones, decimos que ejecuta el programa. También necesitamos comprobar qué ocurre al ejecutarlo: el resultado debe resolver la tarea que nos propusimos (Stroustrup, 2024).",
           "emphasis": [
             {
-              "text": "instrucciones que una computadora pueda ejecutar"
-            },
-            {
-              "text": "comprobar cómo se comporta esa solución"
-            },
-            {
-              "text": "requisitos de la tarea"
+              "text": "ejecuta el programa"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Imagina una oficina que necesita distinguir sus cajas mediante etiquetas. Si dos cajas son rojas, un programa puede imprimir «Caja roja» en ambas. La impresión se ha realizado, pero quien recibe las etiquetas sigue sin poder identificar cada caja por separado.\n\nEl requisito no era solamente imprimir algún texto: era obtener una identificación distinta para cada caja. Por eso debemos elegir un dato que permita distinguirlas, en lugar de suponer que un color siempre será suficiente.\n\nLa comprobación también depende del objetivo. En este caso, revisaríamos que dos cajas distintas no recibieran la misma identificación. Así separamos tres decisiones: qué necesitamos conseguir, con qué información podemos conseguirlo y qué resultado debemos examinar para comprobarlo.",
+          "text": "El texto que escribimos para expresar esas instrucciones se llama código fuente. En este curso utilizaremos el lenguaje C++, que tiene reglas para escribir las instrucciones y darles significado. Primero vamos a precisar qué queremos conseguir; en la siguiente lección empezaremos a escribir esas instrucciones.",
           "emphasis": [
             {
-              "text": "una identificación distinta para cada caja"
+              "text": "código fuente"
             }
           ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de escribir el programa, separa estas preguntas:\n\n¿Qué resultado necesitamos?\n¿Qué información tenemos para obtenerlo?\n¿Qué condiciones debe cumplir ese resultado?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las condiciones que fijan lo que debe conseguir la solución se llaman requisitos. Por ejemplo, pedir que dos cajas puedan distinguirse exige algo más que pedir que aparezca cualquier texto en una etiqueta. Un programa puede terminar su ejecución y aun así no cumplir el requisito (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "requisitos"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina una oficina con dos cajas rojas. Se necesita reconocer cada caja por separado. Si el programa imprime Caja roja para las dos, ha producido texto, pero las dos etiquetas siguen siendo iguales. El color no permite decidir cuál es cada caja.",
+          "emphasis": [
+            {
+              "text": "Se necesita reconocer cada caja por separado."
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Para distinguirlas, se podría utilizar una identificación diferente para cada una, como Caja 01 y Caja 02. Lo importante no es elegir precisamente esos textos: es que la información utilizada permita reconocer cada caja sin confundirla con la otra."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este ejemplo podemos separar el trabajo:\n\nResultado necesario: una identificación diferente para cada caja.\nInformación necesaria: un dato que distinga una caja de la otra.\nComprobación: comparar las identificaciones de las dos cajas y revisar que no sean iguales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Así, imprimir alguna etiqueta no basta para dar la tarea por resuelta. Hay que observar si la etiqueta cumple el propósito para el que se pidió."
         },
         {
           "type": "multiple_choice",
@@ -42,11 +70,19 @@
             "Qué color usar como único dato de cada etiqueta."
           ],
           "correctIndex": 1,
-          "explanation": "El color puede repetirse en cajas distintas. Antes de programar debemos establecer un dato que las distinga; imprimir una etiqueta no garantiza esa identificación."
+          "explanation": "Dos cajas diferentes pueden tener el mismo color. Si las dos reciben la etiqueta Caja roja, quien las lea no podrá saber cuál es cada caja. Por eso necesitamos un dato que permita distinguirlas. Elegir el orden de impresión no resuelve el problema si el texto de las dos etiquetas sigue siendo igual."
         },
         {
           "type": "note",
-          "text": "Este curso comienza desde cero. Aprenderás a convertir requisitos en programas C++, seguir lo que hacen sus instrucciones, construir y combinar soluciones y comprobar sus resultados. También aprenderás a detectar errores y a evitar que una operación rechazada deje datos incorrectos.\n\nEmpezaremos mostrando mensajes. Después trabajaremos con datos que cambian, decisiones, repeticiones, grupos de datos y texto. Los programas se organizarán en partes con responsabilidades definidas. Estos fundamentos preparan la programación de motores y gráficos en etapas posteriores de la ruta."
+          "text": "Este curso comienza desde cero. Aprenderás a expresar tareas en C++, leer las instrucciones que has escrito y comprobar sus resultados. Empezaremos con mensajes sencillos. Después incorporaremos datos que cambian, decisiones, repeticiones y colecciones de datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada pieza se explicará y se practicará antes de combinarla con otras. También aprenderás a localizar errores y a conservar datos correctos cuando una operación no pueda realizarse. Más adelante organizarás los programas en partes encargadas de tareas concretas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estos fundamentos preparan el estudio posterior de motores y gráficos. En esta primera lección el objetivo es reconocer el problema, la información disponible, las instrucciones y el resultado que habrá que comprobar."
         }
       ]
     },
@@ -58,39 +94,134 @@
         },
         {
           "type": "paragraph",
-          "text": "La entrada es la información que recibe un programa para realizar su tarea; la salida es el resultado que produce. Esa información puede proceder de una persona, de un archivo o de otra parte de un programa. No toda entrada tiene que escribirse con un teclado ni toda salida tiene que aparecer en una pantalla (Stroustrup, 2024).\n\nEn un conversor de longitudes, la medida original es un dato de entrada y la medida expresada en la nueva unidad es un resultado de salida. La regla de conversión indica cómo obtener una a partir de la otra. Cambiar la medida que se quiere convertir no equivale a cambiar esa regla: los datos y el procedimiento tienen funciones diferentes.",
+          "text": "La entrada es la información que recibe un programa para realizar su tarea. La salida es el resultado que produce. Esos nombres indican el papel de la información: qué recibe el programa y qué obtiene a partir de ella (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "La entrada es la información que recibe un programa"
-            },
-            {
-              "text": "la salida es el resultado que produce"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Los primeros programas que construiremos mostrarán un mensaje fijo. El texto ya estará escrito dentro del código y no pediremos al usuario que lo introduzca durante la ejecución. Un programa puede producir una salida sin leer nada del usuario, como ocurre en un primer programa que sólo muestra un saludo (Stroustrup, 2024).\n\nPara estudiar una tarea, separa la información disponible del resultado buscado. Si el resultado depende de un dato que no tenemos ni podemos deducir, todavía falta información para resolverla. En los puzzles siguientes identificarás esos papeles; no necesitas realizar el cálculo del viaje ni escribir todavía un programa.",
+          "text": "Por ejemplo, un conversor recibe una longitud de dos metros y debe expresarla en centímetros. En esa tarea, dos metros es la entrada y doscientos centímetros es la salida. Para obtenerla, el programa multiplica la cantidad de metros por cien. Esa regla de conversión forma parte del procedimiento, no de los datos que recibe.",
+          "emphasis": [
+            {
+              "text": "la entrada"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se proporciona otra longitud, cambian los datos del caso. No hace falta cambiar por ello la regla que convierte metros en centímetros. El dato que recibe una solución y las instrucciones que utiliza para tratarlo son cosas distintas."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p1u1l1_distinguir_dato_instruccion_y_resultado",
+          "prompt": "Un programa recibe el nombre Mara y debe producir una etiqueta que diga Participante: Mara. Para hacerlo, coloca el texto Participante: antes del nombre recibido. Relaciona los tres elementos con el papel que cumplen en esta tarea.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "label": "Relaciona cada elemento con su papel. Usa cada destino una sola vez.",
+              "sources": [
+                {
+                  "id": "mensaje_producido",
+                  "label": "Participante: Mara",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Participante: Mara",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "dato_recibido",
+                  "label": "El nombre Mara recibido por el programa.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "El nombre Mara recibido por el programa.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "paso_del_procedimiento",
+                  "label": "Colocar Participante: antes del nombre recibido.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Colocar Participante: antes del nombre recibido.",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "instruccion",
+                  "label": "Instrucción que indica una acción del procedimiento."
+                },
+                {
+                  "id": "entrada",
+                  "label": "Dato de entrada que recibe el programa."
+                },
+                {
+                  "id": "salida",
+                  "label": "Resultado de salida que debe producir."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "mensaje_producido": "salida",
+                  "dato_recibido": "entrada",
+                  "paso_del_procedimiento": "instruccion"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Mara es el dato que se recibe. Colocar el texto Participante: antes de ese nombre describe qué se hace con el dato. Participante: Mara es el resultado que debe producirse. Dato, instrucción y resultado no cumplen el mismo papel aunque estén relacionados.",
+            "incorrect": "Busca qué información está disponible antes de realizar la tarea, qué elemento describe una acción y qué texto debe quedar como resultado."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Una entrada puede venir de una persona, de un archivo o de otra parte de un programa. Una salida puede aparecer en pantalla, quedar guardada en un archivo o utilizarse en otra operación. Por eso entrada no significa siempre teclado, ni salida significa siempre pantalla (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los primeros programas del curso mostrarán un mensaje fijo. El texto estará escrito dentro del propio código; no se le pedirá a la persona que lo introduzca durante la ejecución. Un programa puede producir una salida sin recibir en ese momento ningún dato del usuario (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "un mensaje fijo"
-            },
-            {
-              "text": "falta información para resolverla"
             }
           ]
         },
         {
           "type": "multiple_choice",
           "id": "entrada_distancia",
-          "question": "Un programa calculará el tiempo de un viaje con distancia y velocidad constante conocidas. ¿Qué son la distancia y la velocidad para esa tarea?",
+          "question": "Un programa calculará cuánto dura un viaje. Recibe la distancia y la velocidad, que será la misma durante todo el viaje. ¿Qué son la distancia y la velocidad para esa tarea?",
           "options": [
             "El resultado que todavía hay que calcular.",
             "Las instrucciones que indican cómo calcular el tiempo.",
             "Datos de entrada."
           ],
           "correctIndex": 2,
-          "explanation": "Son los datos usados por la regla de cálculo; el tiempo es la salida solicitada."
+          "explanation": "El programa ya recibe la distancia y la velocidad; no tiene que obtenerlas como resultado de esta tarea. Utilizará esos datos para calcular cuánto dura el viaje. Por eso la distancia y la velocidad son entradas, y el tiempo calculado será la salida. Las instrucciones son las acciones que realizará con los datos; no son los datos mismos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina ahora una tarea de reparto: hay que imprimir la dirección de entrega de un paquete, pero sólo conocemos cuántos paquetes hay. Esa cantidad no dice en qué calle ni en qué casa debe entregarse el paquete. Necesitamos recibir su dirección o disponer de información que permita obtenerla. Contar los paquetes no basta para resolver esta tarea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al estudiar cada tarea, identifica primero qué información se recibe y qué resultado se solicita. En estas actividades sólo tendrás que distinguir esos papeles; todavía no se pide calcular el tiempo de un viaje ni escribir código."
         },
         {
           "type": "multiple_choice",
@@ -102,7 +233,7 @@
             "Falta información para obtener el nombre solicitado."
           ],
           "correctIndex": 2,
-          "explanation": "Un procedimiento no crea por sí solo un dato que no se le ha proporcionado ni puede deducir."
+          "explanation": "El número de personas indica una cantidad, pero no dice cómo se llama la persona cuya inscripción queremos consultar. Tampoco sirve una lista de nombres si no sabemos cuál corresponde a esa inscripción. Hace falta recibir el nombre o disponer de datos que permitan encontrar el que corresponde."
         }
       ]
     },
@@ -114,36 +245,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Para que un sistema ejecute una instrucción, debe reconocer la acción que le pedimos. Un lenguaje de programación establece un vocabulario de operaciones y reglas para expresarlas con precisión. La computadora no completa nuestras instrucciones recurriendo al sentido común de una persona (Stroustrup, 2024).\n\nUna manera de abordar una tarea es dividirla en otras más pequeñas que podamos comprender y resolver (Stroustrup, 2024). «Prepara correctamente el informe» expresa un objetivo, pero no indica cómo realizarlo. Podemos separar esa tarea en recoger los datos, calcular los resultados y mostrar el informe. Cada paso debe quedar definido con suficiente precisión para que el sistema sepa ejecutarlo.\n\nLa precisión depende también de las acciones disponibles. Si un sistema ya sabe mostrar un mensaje, podemos pedirle esa acción sin describir los mecanismos de la pantalla. Si sólo reconoce unas órdenes de movimiento fijas, debemos construir el recorrido con esas órdenes. No podemos suponer que entenderá una orden nueva porque su significado nos parezca evidente.",
+          "text": "Una computadora necesita instrucciones expresadas con las operaciones que sabe realizar. Un lenguaje de programación define cómo escribir esas operaciones y qué significado tienen. La computadora no completa una instrucción recurriendo al sentido común de una persona (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pedir Prepara correctamente el informe indica un objetivo, pero todavía no explica las acciones que deben realizarse. Podemos dividirlo en pasos: recibir los datos, obtener los resultados y presentar el informe. Después habrá que concretar cómo se hace cada paso (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La precisión necesaria depende de las acciones que el sistema ya reconoce. Si ya dispone de una acción para mostrar un mensaje, podemos utilizarla sin explicar cómo funciona la pantalla. Si sólo reconoce avanzar un paso y girar a la derecha, no podemos suponer que también acepta directamente otra orden.",
           "emphasis": [
             {
-              "text": "dividirla en otras más pequeñas"
-            },
-            {
-              "text": "las acciones disponibles"
+              "text": "las acciones que el sistema ya reconoce"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "El orden también forma parte del procedimiento. Imagina que primero se imprime un documento y después se corrige el título en el archivo. La copia que ya salió de la impresora conserva el título anterior: cambiar el archivo no cambia el papel que ya se imprimió.\n\nSi necesitamos entregar una copia con el título corregido, la corrección debe realizarse antes de imprimir esa copia. Las dos acciones pueden estar bien definidas y, aun así, no cumplir el requisito cuando se realizan en el orden equivocado. En el siguiente puzzle elegirás una secuencia que respete esa dependencia.",
-          "emphasis": [
-            {
-              "text": "El orden también forma parte del procedimiento"
-            }
-          ]
-        },
-        {
-          "type": "multiple_choice",
-          "id": "orden_revision",
-          "question": "Debes imprimir una tarjeta con el nombre corregido. ¿Qué secuencia cumple ese requisito?",
-          "options": [
-            "Corregir el nombre; imprimir la tarjeta corregida; entregar esa copia.",
-            "Imprimir la tarjeta; corregir el nombre; entregar la copia anterior.",
-            "Entregar una tarjeta vacía; elegir después el nombre."
-          ],
-          "correctIndex": 0,
-          "explanation": "La corrección debe estar disponible antes de producir la copia que se entrega."
+          "text": "En un sistema que sólo admite avanzar un paso como orden de movimiento, avanzar dos pasos requiere escribir esa orden dos veces. Otro sistema podría admitir directamente avanzar dos pasos. Para elegir las instrucciones necesitamos conocer las acciones disponibles, no sólo imaginar lo que queremos que ocurra."
         },
         {
           "type": "multiple_choice",
@@ -155,7 +274,128 @@
             "Avanzar un paso."
           ],
           "correctIndex": 2,
-          "explanation": "«Avanzar un paso» pertenece al repertorio definido para este ejercicio. «Avanzar dos pasos» y «girar a la izquierda» no están admitidas como órdenes directas. Para avanzar dos pasos aquí se ejecutan dos instrucciones «avanzar un paso». Otro sistema podría aceptar avanzar dos pasos o girar a la izquierda con una sola instrucción; esa posibilidad depende de sus órdenes disponibles."
+          "explanation": "El sistema admite directamente avanzar un paso y girar a la derecha. Avanzar un paso es una de esas órdenes completas. Para avanzar dos pasos aquí habría que dar dos órdenes de avanzar un paso, una después de la otra. Girar a la izquierda tampoco es una orden directa de este sistema. Otro sistema podría admitirla; aquí sólo se pueden usar las órdenes indicadas."
+        },
+        {
+          "type": "paragraph",
+          "text": "También importa el orden de las acciones. Imagina un archivo cuyo título todavía es provisional. Se realizan dos acciones: primero se imprime el documento y después se corrige el título en el archivo. La copia de papel ya impresa conserva el título anterior: cambiar el archivo no cambia ese papel."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si necesitamos entregar una copia con el título corregido, hay que corregir el archivo antes de imprimir la copia que se entregará. Hacer las dos acciones no basta si se realizan en un orden que deja sin cumplir el requisito.",
+          "emphasis": [
+            {
+              "text": "antes de imprimir"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Un paso puede necesitar que otro ya haya terminado. Para imprimir una tarjeta con el nombre corregido, primero debe corregirse el nombre guardado. Para entregar esa copia, primero debe imprimirse. Estas relaciones explican por qué no sirve cualquier orden de acciones."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "orden_revision",
+          "question": "Debes imprimir una tarjeta con el nombre corregido. ¿Qué secuencia cumple ese requisito?",
+          "options": [
+            "Corregir el nombre; imprimir la tarjeta corregida; entregar esa copia.",
+            "Imprimir la tarjeta; corregir el nombre; entregar la copia anterior.",
+            "Entregar una tarjeta vacía; elegir después el nombre."
+          ],
+          "correctIndex": 0,
+          "explanation": "Primero se corrige el nombre guardado. Después se imprime la tarjeta, por lo que esa copia ya contiene el nombre corregido. Finalmente se entrega esa copia. Si se imprime antes de corregir el archivo, la copia impresa conserva el nombre anterior. La corrección posterior del archivo no cambia esa copia."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p1u1l1_construir_orden_de_preparacion_y_comprobacion",
+          "prompt": "En un archivo quedó escrito Rosa, pero la etiqueta solicitada debe decir Rosa Luna. La etiqueta debe imprimirse desde el archivo corregido y su nombre debe comprobarse antes de entregarla. Construye el orden relacionando cada acción con su posición: primer paso, segundo paso, tercer paso o cuarto paso. Usa cada posición una sola vez.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "label": "Relaciona cada acción con su posición. Usa cada posición una sola vez.",
+              "sources": [
+                {
+                  "id": "entregar",
+                  "label": "Entregar la etiqueta ya comprobada.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Entregar la etiqueta ya comprobada.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "imprimir",
+                  "label": "Imprimir la etiqueta usando el archivo.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Imprimir la etiqueta usando el archivo.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "corregir",
+                  "label": "Corregir el nombre guardado en el archivo para que diga Rosa Luna.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Corregir el nombre guardado en el archivo para que diga Rosa Luna.",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "comprobar",
+                  "label": "Comparar el nombre impreso con Rosa Luna.",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Comparar el nombre impreso con Rosa Luna.",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "tercer_paso",
+                  "label": "Tercer paso."
+                },
+                {
+                  "id": "primer_paso",
+                  "label": "Primer paso."
+                },
+                {
+                  "id": "cuarto_paso",
+                  "label": "Cuarto paso."
+                },
+                {
+                  "id": "segundo_paso",
+                  "label": "Segundo paso."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "corregir": "primer_paso",
+                  "imprimir": "segundo_paso",
+                  "comprobar": "tercer_paso",
+                  "entregar": "cuarto_paso"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La corrección prepara el nombre que utilizará la impresión. Después se compara la copia ya impresa con el nombre requerido. Sólo entonces se entrega esa etiqueta comprobada. Cambiar el archivo después de imprimir no corregiría por sí solo el papel.",
+            "incorrect": "Sigue qué resultado necesita cada paso: imprimir necesita el nombre corregido; comparar necesita la etiqueta impresa; entregar necesita que esa etiqueta ya haya sido comprobada."
+          }
         }
       ]
     },
@@ -167,27 +407,117 @@
         },
         {
           "type": "paragraph",
-          "text": "Un algoritmo es un procedimiento formado por pasos que pueden ejecutarse para obtener un resultado buscado (Black, 2020). La idea central es indicar cómo conseguir el resultado, en lugar de limitarse a nombrarlo.\n\nEl procedimiento de la tarjeta puede describirse antes de escribir C++: corregir el nombre, producir una copia con ese dato y entregar esa copia. Al escribir un programa, expresamos las operaciones mediante las reglas de un lenguaje de programación, de modo que la computadora pueda ejecutarlas (Stroustrup, 2024).\n\nHay dos preguntas diferentes: ¿el procedimiento sirve para resolver la tarea?, y ¿el programa expresa correctamente ese procedimiento? Si el plan utiliza un dato insuficiente, escribirlo con cuidado no resuelve esa carencia. Si el plan es adecuado pero cambiamos el orden de sus pasos al programarlo, también podemos obtener un resultado distinto del solicitado.",
+          "text": "Un algoritmo es un procedimiento formado por pasos que pueden realizarse para obtener un resultado buscado (Black, 2020). Describe cómo conseguirlo; no se limita a nombrar el resultado deseado.",
           "emphasis": [
             {
               "text": "Un algoritmo es un procedimiento"
-            },
-            {
-              "text": "¿el procedimiento sirve para resolver la tarea?"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Probar un programa consiste en ejecutarlo en situaciones elegidas y comparar sus resultados con lo que se esperaba. Un caso de prueba fija una situación concreta y el resultado que debería producir; no se limita a observar qué sucede sin un criterio de comparación (Stroustrup, 2024).\n\nSi necesitamos el mensaje «Listo» y el programa muestra «Pendiente», tenemos una diferencia precisa que investigar. Observar que apareció alguna palabra no comprueba el requisito: hay que comparar la palabra producida con la solicitada.\n\nUn caso que funciona aporta evidencia sobre ese caso. No demuestra que funcionen todos los demás. Por eso las pruebas deben elegirse de manera sistemática, en lugar de repetir únicamente una situación que ya salió bien (Stroustrup, 2024). Más adelante ampliaremos los casos cuando los programas reciban datos y tomen decisiones.",
+          "text": "Ya hemos descrito un procedimiento para preparar una tarjeta: corregir el nombre guardado, imprimir una copia con ese nombre y entregar esa copia. Una persona puede seguir estos pasos sin conocer C++. Al programar, expresamos las operaciones que hará la computadora mediante las reglas del lenguaje (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Hay que revisar dos cuestiones por separado:\n\nEl plan: si se siguieran los pasos previstos, ¿se resolvería la tarea?\nEl programa escrito: ¿sus instrucciones realizan realmente esos pasos?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el plan intenta identificar cajas usando un color que se repite, el dato elegido sigue siendo insuficiente aunque las instrucciones estén bien escritas. Si el plan exige corregir antes de imprimir, pero el programa realiza esas acciones al revés, el resultado tampoco será el solicitado. Necesitamos un procedimiento adecuado y una expresión correcta de ese procedimiento."
+        },
+        {
+          "type": "paragraph",
+          "text": "Probar un programa consiste en ejecutarlo en una situación concreta y comparar lo que produce con lo que debería producir. Para poder hacer esa comparación, hay que fijar de antemano el resultado esperado. Observar que ocurrió algo no es la misma comprobación (Stroustrup, 2024).",
           "emphasis": [
             {
-              "text": "comparar sus resultados con lo que se esperaba"
-            },
-            {
-              "text": "No demuestra que funcionen todos los demás"
+              "text": "comparar lo que produce con lo que debería producir"
             }
           ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, necesitamos que aparezca Listo. Ejecutamos el programa y observamos Pendiente. Tenemos una diferencia concreta: el mensaje producido no es el solicitado. Que ambas palabras sean mensajes de texto no hace que cumplan el mismo requisito."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un caso de prueba reúne la situación que se va a comprobar y el resultado que se espera para ella. Después de ejecutar, se compara lo observado con ese resultado (Stroustrup, 2024). Si se exige un mensaje exacto, importa tanto elegir las palabras correctas como separarlas de la forma solicitada. Tarea lista y Tarealista no son el mismo texto: al segundo le falta el espacio entre las palabras."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p1u1l1_comparar_resultado_esperado_y_observado",
+          "prompt": "El requisito es mostrar exactamente Entrega lista, con un espacio entre las dos palabras. Cada tarjeta muestra lo observado en una ejecución diferente. Relaciona cada resultado con la comparación que corresponde.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "label": "Relaciona cada resultado con la diferencia o coincidencia que presenta. Usa cada destino una sola vez.",
+              "sources": [
+                {
+                  "id": "palabra_distinta",
+                  "label": "Entrega pendiente",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Entrega pendiente",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "sin_separacion",
+                  "label": "Entregalista",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Entregalista",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "coincidencia_exacta",
+                  "label": "Entrega lista",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Entrega lista",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "coincide",
+                  "label": "Coincide con las palabras y el espacio requeridos."
+                },
+                {
+                  "id": "falta_espacio",
+                  "label": "Une las palabras sin el espacio solicitado."
+                },
+                {
+                  "id": "cambia_palabra",
+                  "label": "Sustituye lista por otra palabra."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "palabra_distinta": "cambia_palabra",
+                  "sin_separacion": "falta_espacio",
+                  "coincidencia_exacta": "coincide"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Entrega lista coincide con el requisito. Entrega pendiente cambia una palabra. Entregalista conserva las letras de las dos palabras, pero omite el espacio pedido. Comprobar el resultado exige compararlo con lo solicitado, no limitarse a ver que apareció algún texto.",
+            "incorrect": "Lee primero el resultado requerido. Después compara cada tarjeta con él: revisa las palabras y la separación, sin cambiar el requisito para aceptar lo que apareció."
+          }
         },
         {
           "type": "multiple_choice",
@@ -199,7 +529,16 @@
             "Se ha elegido ese mensaje, aunque todavía no se haya observado el resultado."
           ],
           "correctIndex": 1,
-          "explanation": "La comprobación observa si el resultado coincide con el requisito. Aquí importa el mensaje exacto, no sólo que aparezca algún texto o que conozcamos la intención."
+          "explanation": "El resultado exigido es Caja preparada. Para comprobarlo hay que ejecutar el programa y observar si aparece ese mensaje exacto. Ver cualquier palabra no basta, porque podría ser otra. Haber decidido qué mensaje queremos tampoco comprueba que las instrucciones escritas lo produzcan."
+        },
+        {
+          "type": "paragraph",
+          "text": "Que un caso produzca el resultado esperado aporta evidencia sobre ese caso. No demuestra que todos los demás vayan a funcionar. Elegiremos otras situaciones relevantes a medida que los programas admitan datos y decisiones; repetir una ejecución que ya conocemos no sustituye examinar esos otros casos (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "No demuestra que todos los demás vayan a funcionar."
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -211,7 +550,7 @@
             "Ese caso pasó; quedan por examinar otros casos relevantes."
           ],
           "correctIndex": 2,
-          "explanation": "La evidencia de una ejecución es limitada. Elegiremos más casos conforme el programa admita decisiones y datos."
+          "explanation": "Sólo hemos observado el resultado de ese caso. Si el programa recibe otros datos, todavía no sabemos qué hará con ellos. Repetir el caso anterior vuelve a comprobarlo, pero no comprueba las situaciones que aún no hemos ejecutado. Por eso el acierto de un caso no permite dar por correctos todos los demás."
         }
       ]
     }
@@ -327,9 +666,17 @@
         "blocks": [
           "block_0000_0000",
           "block_0000_0001",
+          "p1u1l1_0000_0001_explicacion_2",
+          "p1u1l1_0000_0001_explicacion_3",
+          "p1u1l1_0000_0001_explicacion_4",
           "block_0000_0002",
+          "p1u1l1_0000_0002_explicacion_2",
+          "p1u1l1_0000_0002_explicacion_3",
+          "p1u1l1_0000_0002_explicacion_4",
           "block_0000_0003",
-          "block_0000_0004"
+          "block_0000_0004",
+          "p1u1l1_0000_0004_explicacion_2",
+          "p1u1l1_0000_0004_explicacion_3"
         ]
       },
       {
@@ -337,8 +684,14 @@
         "blocks": [
           "block_0001_0000",
           "block_0001_0001",
+          "p1u1l1_0001_0001_explicacion_2",
+          "p1u1l1_0001_0001_explicacion_3",
+          "p1u1l1_practica_datos_instruccion_salida",
+          "p1u1l1_0001_0001_explicacion_4",
           "block_0001_0002",
           "block_0001_0003",
+          "p1u1l1_0001_0002_explicacion_2",
+          "p1u1l1_0001_0002_explicacion_3",
           "block_0001_0004"
         ]
       },
@@ -347,9 +700,15 @@
         "blocks": [
           "block_0002_0000",
           "block_0002_0001",
+          "p1u1l1_0002_0001_explicacion_2",
+          "p1u1l1_0002_0001_explicacion_3",
+          "p1u1l1_0002_0001_explicacion_4",
+          "block_0002_0004",
           "block_0002_0002",
+          "p1u1l1_0002_0002_explicacion_2",
+          "p1u1l1_0002_0002_explicacion_3",
           "block_0002_0003",
-          "block_0002_0004"
+          "p1u1l1_practica_ordenar_acciones"
         ]
       },
       {
@@ -357,8 +716,15 @@
         "blocks": [
           "block_0003_0000",
           "block_0003_0001",
+          "p1u1l1_0003_0001_explicacion_2",
+          "p1u1l1_0003_0001_explicacion_3",
+          "p1u1l1_0003_0001_explicacion_4",
           "block_0003_0002",
+          "p1u1l1_0003_0002_explicacion_2",
+          "p1u1l1_0003_0002_explicacion_3",
+          "p1u1l1_practica_comparar_observado",
           "block_0003_0003",
+          "p1u1l1_0003_0002_explicacion_4",
           "block_0003_0004"
         ]
       }
@@ -680,8 +1046,333 @@
         ]
       }
     },
-    "additions": [],
-    "editorial": []
+    "additions": [
+      {
+        "id": "p1u1l1_0000_0001_explicacion_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l1_0000_0001_explicacion_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 1
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l1_0000_0001_explicacion_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 2
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l1_0000_0002_explicacion_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 3
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l1_0000_0002_explicacion_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 4
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l1_0000_0002_explicacion_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 5
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l1_0000_0004_explicacion_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 6
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l1_0000_0004_explicacion_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 7
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u1l1_0001_0001_explicacion_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 8
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l1_0001_0001_explicacion_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 9
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l1_0001_0001_explicacion_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 10
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l1_0001_0002_explicacion_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 11
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l1_0001_0002_explicacion_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 12
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l1_0002_0001_explicacion_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 13
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l1_0002_0001_explicacion_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 14
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l1_0002_0001_explicacion_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 15
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l1_0002_0002_explicacion_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 16
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l1_0002_0002_explicacion_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 17
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l1_0003_0001_explicacion_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 18
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u1l1_0003_0001_explicacion_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 19
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u1l1_0003_0001_explicacion_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 20
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u1l1_0003_0002_explicacion_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 21
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u1l1_0003_0002_explicacion_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 22
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u1l1_0003_0002_explicacion_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 23
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u1l1_practica_datos_instruccion_salida",
+        "sha256": "b3bea02d3322623a7f745ebeba05ebd8831db8dea8b030d89f85ecf4b194d586",
+        "storage": {
+          "page": 4,
+          "block": 24
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u1l1_practica_ordenar_acciones",
+        "sha256": "e78b47595bb2db0219462b6d3c95377f0bed673f11d45434329fa0a97ad31102",
+        "storage": {
+          "page": 4,
+          "block": 25
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u1l1_practica_comparar_observado",
+        "sha256": "d16dae7fafc4e2b664c9b2e619ab7423487b2b03bfc1148bf1ccd8138e0339eb",
+        "storage": {
+          "page": 4,
+          "block": 26
+        },
+        "progressPage": "page_0003"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "4860214301def49f0a387963e233ffb52e91bf8d8f2a3e1bd30d6f1abfdbc9fd",
+        "afterSha256": "695cede03fd51da3b6d8e36ffe914655c4734b4e0575dfd938843309a07dee92"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "6e22cf7713d1d99f0de774f879447e29d53924db71add832db7346274c8c1fae",
+        "afterSha256": "50e7cd073984d8ab6d0d9c5209dbf30255ef0e49c66cefedf32a8e394a749d0f"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "6801193fab2b3361317f6a4aa41ecb7da08c3f69d40c6f868097d1a1d0802e7a",
+        "afterSha256": "976dbee1ebd7b4cfcdc0885eec5955eb37398b83b29e7e047b3dba42f748f32c"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "a1a6544879bc7e40f8b491fe5fbab4d30844bb6ca9ce717cd2ada54bb5aa724c",
+        "afterSha256": "064f66145f9fb382561ca21f08659e991abfb07b6333bf0e35694b60fa2c250f"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "29bfd48a6296906ec243b00282e1ba34990d7b542c2729a3aad9152a5a4d4d0f",
+        "afterSha256": "3cbed1620a30993f541143a16c2a5a2f84914d37ff73675c6c13d5fc82a6fd1f"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "f996dcd62f224dbbae0d8a1ec19a27d9aa4aa5a184a31e5040fbb1f0d999369b",
+        "afterSha256": "8f319052044a979abc9c78623a45c06e555877b37d12c55411d880eecc2391ac"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "667f53893dd152885b1a4411c314a4e5e77ea2f6d36644129c7786640620f76e",
+        "afterSha256": "a01892317d8669bb52dd6712d8a1fe635d824337072c2521f981dcf76aec69ea"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "efdc10b0164d9bae7d898e5cac59c86665fdfe62558ea51a6c7f051166aa142b",
+        "afterSha256": "00b766e10a2dc59bbaeab90db7a67cc967c7af07dc3b2d774abe76b64e73d73f"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "e35a3cfe3307d09f684834a9ec22e27bf8c5520bb481afb44df76555d31acd19",
+        "afterSha256": "7230282a5d9b82c3ca826040fc43a1fa3bdfac53f12fadcf91eeee52788a6ed7"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "be86efccea94fa5cee956e16d809a9549ea1dc60e488b86b3e5293c09adc73b7",
+        "afterSha256": "fa534f1dcce824f8a8ca730c4b27a0f27313b4bd47600987c9cd4dfdf4a7a0fc"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "150818cb541ec7a4d2be2d94f6096cd8481887eb62dc1d78ba227300bc4b8801",
+        "afterSha256": "2a152457fb935df00464a651247b30461d4e2d532a7fe078bda6c8fa0b71a6a2"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "4d645ce7a3c2bbf65811cda5bc295f8aa6e0220b9f7e869b74444d3e9fa78dc5",
+        "afterSha256": "03e8247f3fe341e1ade1203a6930b9e328d7fba89f8694024187067d43deb1ec"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "2a9dd3c4d27c09dc1d2ae9882e1d77c3729702a88fc82e801da248f876d27cfb",
+        "afterSha256": "30215c32d6e7048a15dd883e781f540f804ac25f4f6fb45892656af31bea2f23"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "cac39a1878af0a1c176df3aaee38e5d2ac23dc6319f5d52d417201781582a4cf",
+        "afterSha256": "689306bf9498e13db78e8952fd835cc0ee9ad66197b26e12b742aea2c4db4675"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "267c96719f73656bfcc2bee561d29e64fa0dfc8d945e05abf487cd12ee70240a",
+        "afterSha256": "9e5f33dc8f993f8f0d704495a3891cf65109de49a2140c9b782aa9678d90232d"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "58e5bf8eebb760c6180e7a51e901b50e76e94c41f4396b8eb8ba445bd5354a36",
+        "afterSha256": "562ce71148769ae365697083afee3e284eac3799a245a5d3f9976e7e38dfc6da"
+      }
+    ]
   },
   "textSemantics": {
     "version": 1,
@@ -695,18 +1386,11 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "26862af2b7b348fbd52d2bf2ed29e05e4d8154df2e4dcc58bbf710539bbebc6a",
+        "sourceSha256": "fabc6991d5c5fa1b3bc4c51e4ed123e57819f15fa045195b3ec4b611b7fc47c3",
         "spans": [
           {
-            "start": 311,
-            "end": 329,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 727,
-            "end": 745,
+            "start": 300,
+            "end": 318,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -716,33 +1400,33 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "3b2458f78527e9b823f943618bebcc9d0df7a6ce4fee33a8041c60ce59ece1f0",
+        "sourceSha256": "7f0f68f0bd1b97aef7ea3260f54e4e704755e1fe3548a1be3d959cb4a070fe31",
         "spans": [
           {
-            "start": 77,
-            "end": 80,
+            "start": 24,
+            "end": 27,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 126,
-            "end": 135,
+            "start": 110,
+            "end": 119,
             "text": "Caja roja",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 564,
-            "end": 567,
+            "start": 129,
+            "end": 132,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 637,
-            "end": 641,
-            "text": "tres",
+            "start": 163,
+            "end": 166,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           }
@@ -765,8 +1449,37 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "f7b02e1229c54e37a04a651c2c73558bdaa5f275b62e104ce6ff05cfa470ec29",
-        "spans": []
+        "sourceSha256": "f6bbe5071f4e6549a87efba64ce0809b433023fe3f5c6f32ea9505de69e6f563",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 60,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 90,
+            "text": "Caja roja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 270,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -789,11 +1502,11 @@
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "4e0cdcfc4d2a2be6e4afd69f1bb8641186dfee0584c4e2e7ee408298430c9c1a",
+        "sourceSha256": "7ae2b35e470cfce9f626e87b8b25eeb035d2f5d13e6f4f5a833d81727c56e6e5",
         "spans": [
           {
-            "start": 79,
-            "end": 82,
+            "start": 64,
+            "end": 67,
             "text": "C++",
             "role": "cpp",
             "reading": "technical"
@@ -809,11 +1522,11 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "7a08b3ea111baa4856770596c6748a7e394e9a280fc49431c33093690b7707ae",
+        "sourceSha256": "a5a745e93431ff9bc8891284ebceb87764c029d238b7676fbd876d3c2733ddb0",
         "spans": [
           {
-            "start": 310,
-            "end": 328,
+            "start": 218,
+            "end": 236,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -823,11 +1536,11 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "4f0649b144d7982234e7aab60fd7e1f003123f2c95c280c5546b1190e3b857ef",
+        "sourceSha256": "cfe0c8009c1d4008639dbe32717092a55fb5b46c14e6262509d9a05b16b00437",
         "spans": [
           {
-            "start": 305,
-            "end": 323,
+            "start": 268,
+            "end": 286,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -837,13 +1550,13 @@
       {
         "block": "block_0001_0003",
         "path": "/question",
-        "sourceSha256": "cde04ce687294be0ff79f32fbdfb97e370134d8508458c0cc823a247d477eafd",
+        "sourceSha256": "7f8b6b8d7cfe68c0523bcf9f8450a83c4479567f632c2aee50319a5cd9d15e79",
         "spans": []
       },
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "45c7af66826f4ec70e3f8ba5849446c615414c98a98909b25e4e0568c605b4a7",
+        "sourceSha256": "d3d9c02f0dcf4181b31b851330e77fcaa52fae966341328238db12184830d2ec",
         "spans": []
       },
       {
@@ -873,7 +1586,7 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "763b3fac904ab18b14f6ed198edf2d5cca3fb2ddab54f90a04bc06837abef958",
+        "sourceSha256": "f2bf68e7ccb705f2bb3b30a349f3b3fef354bb707804274d0d80bc5a672261df",
         "spans": []
       },
       {
@@ -903,18 +1616,11 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "0b9f66d28982bb88b1f42a2b41eda30424c6cd9c2fa24a577b6603a879abc0c1",
+        "sourceSha256": "1ee6c6bd3d6e7395f4ea2b659400952c9ecc275109159141e43007c92232cca1",
         "spans": [
           {
-            "start": 289,
-            "end": 307,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 411,
-            "end": 429,
+            "start": 268,
+            "end": 286,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -924,11 +1630,11 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "b24d048baee3a87168e8ffd6f4c33fab6963135fbdb2854a79515f754d244c41",
+        "sourceSha256": "507bf64e9d293442438113b170958a52a885e340a840c947fc0fb0eff531d6be",
         "spans": [
           {
-            "start": 386,
-            "end": 389,
+            "start": 109,
+            "end": 112,
             "text": "dos",
             "role": "data",
             "reading": "natural"
@@ -944,7 +1650,7 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "e9e2cf0fc76cba1268d8055b6a61c2e8a4ff8bd5495bf9371d9354d95fdef57d",
+        "sourceSha256": "0bc51173dfba602403acea1694e77aff421b54272cf329db7ffee2b8239e0415",
         "spans": []
       },
       {
@@ -996,54 +1702,40 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "89a6f32b31af9a079731efe0d9fc5a3aaa486c2dffe88b83e8e763bfae73b3f4",
+        "sourceSha256": "43f0a621cd4a0a1e1dcd3aa654a07405e41fec2a74bd5ec62fd8143ab4daebcf",
         "spans": [
           {
-            "start": 9,
-            "end": 16,
+            "start": 39,
+            "end": 46,
             "text": "un paso",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 81,
+            "start": 77,
             "end": 84,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 172,
-            "end": 175,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 199,
-            "end": 202,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 226,
-            "end": 233,
             "text": "un paso",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 272,
-            "end": 275,
-            "text": "dos",
+            "start": 132,
+            "end": 141,
+            "text": "dos pasos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 309,
-            "end": 317,
-            "text": "una sola",
+            "start": 162,
+            "end": 173,
+            "text": "dos órdenes",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 192,
+            "text": "un paso",
             "role": "data",
             "reading": "natural"
           }
@@ -1107,7 +1799,7 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "90ee0215ebff305e75cb8203ae3193bac91c02d04636e8fe6b6e68c8b2bf19fa",
+        "sourceSha256": "142972896f3fa2696301aa10b3f8beb26a83b896183152570e1c5d67f8da3059",
         "spans": [
           {
             "start": 107,
@@ -1115,59 +1807,17 @@
             "text": "(Black, 2020)",
             "role": "citation",
             "reading": "natural"
-          },
-          {
-            "start": 281,
-            "end": 284,
-            "text": "C++",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 509,
-            "end": 527,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 534,
-            "end": 537,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "0d63ce7ff657690dd388e94aff20ec9a7637759bcd51ea14223783189d039ab3",
+        "sourceSha256": "0fd2709374075801d79fa2aa7c21539b256297ed4b2039d1c4d2839f9ae54b49",
         "spans": [
           {
-            "start": 265,
-            "end": 283,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 313,
-            "end": 318,
-            "text": "Listo",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 343,
-            "end": 352,
-            "text": "Pendiente",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 743,
-            "end": 761,
+            "start": 260,
+            "end": 278,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1191,8 +1841,16 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "82e7b37e870be3a29427a08c6b64bfffa3979c35cbb0e8f7e0565a1dd69db5c8",
-        "spans": []
+        "sourceSha256": "45c7ca48ce58976f15b89a7f4b12bb1ccf94dbaac7c23d62a1865d6f903834cc",
+        "spans": [
+          {
+            "start": 24,
+            "end": 38,
+            "text": "Caja preparada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -1221,7 +1879,7 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "c1d8109e7b08976679c85b0deb135ce7a99139d55fe51cc1c8764c9f7b3f59a0",
+        "sourceSha256": "480095cca2e237a6287cecb23d7906da894548aeea0e859d1fd02d92ed3d3049",
         "spans": []
       },
       {
@@ -1241,6 +1899,707 @@
         "path": "/options/2",
         "sourceSha256": "fc3c5aa73dd473530d8e596b810320304b18b3521e3140725b7ff495efeb5c2e",
         "spans": []
+      },
+      {
+        "block": "p1u1l1_0000_0001_explicacion_2",
+        "path": "/text",
+        "sourceSha256": "8cf45233508777198b7f334360e3475a31383c1c1e934e65000bc5aa83d76ef2",
+        "spans": [
+          {
+            "start": 120,
+            "end": 123,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0000_0001_explicacion_3",
+        "path": "/text",
+        "sourceSha256": "afda63452f6e85d7d21681050b94ecbf19ac29fb16697eb89ae20674be530ef9",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_0000_0001_explicacion_4",
+        "path": "/text",
+        "sourceSha256": "74e95343c4378abae602ef1774c5fe6d7589dad96d3eb4fb79e00bbb3703a4a0",
+        "spans": [
+          {
+            "start": 105,
+            "end": 108,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 298,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0000_0002_explicacion_2",
+        "path": "/text",
+        "sourceSha256": "cce204740228c0a66ff7421ff11a03238e99efea8a220e1efb9e6b65c5377d25",
+        "spans": [
+          {
+            "start": 88,
+            "end": 95,
+            "text": "Caja 01",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 105,
+            "text": "Caja 02",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0000_0002_explicacion_3",
+        "path": "/text",
+        "sourceSha256": "b6f836ca171bd4adffbe3809facee93c7908cec53c33d4fe39643464d63bbf2e",
+        "spans": [
+          {
+            "start": 227,
+            "end": 230,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0000_0002_explicacion_4",
+        "path": "/text",
+        "sourceSha256": "5a1bb51e7cbae12b8d9a242971389406b8b33cde5878102ff5f9e2e7fb42932d",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_0000_0004_explicacion_2",
+        "path": "/text",
+        "sourceSha256": "44740dff7383bf7489bc58a11c6a2d6d07fe574befbdd17ef8520d98164cf47e",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_0000_0004_explicacion_3",
+        "path": "/text",
+        "sourceSha256": "0c87e09b24f86bfc5fbae8d2909215325adf396076a8270b1f0f56a51f6cb21f",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_0001_0001_explicacion_2",
+        "path": "/text",
+        "sourceSha256": "2c6a108e2840d824afd40d112f5b899a98e8b06a4046f849483a034db520e67b",
+        "spans": [
+          {
+            "start": 49,
+            "end": 59,
+            "text": "dos metros",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 118,
+            "text": "dos metros",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 157,
+            "text": "doscientos centímetros",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 241,
+            "text": "cien",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0001_0001_explicacion_3",
+        "path": "/text",
+        "sourceSha256": "836f32c5904ab2380bea26dc8043ffe477a95eb2c6fb75deed2c428bfe20ff9d",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_0001_0001_explicacion_4",
+        "path": "/text",
+        "sourceSha256": "ac475833ddfac71e9148f2dcba75a277c2141d530edb08c9c6c2e9681fd01d08",
+        "spans": [
+          {
+            "start": 270,
+            "end": 288,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0001_0002_explicacion_2",
+        "path": "/text",
+        "sourceSha256": "6e0b54fe62c9911c3f3cdf8219dfdf9c0bab11877f987d596c517c050bd82261",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_0001_0002_explicacion_3",
+        "path": "/text",
+        "sourceSha256": "3ac8a6a6dcfaac81c3e234d864727b059e8f7f8f0d215bd269543f5ab8d9ae76",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_0002_0001_explicacion_2",
+        "path": "/text",
+        "sourceSha256": "1d569f6c54c470f173672a34345e924d90bb6022d38f42d9e61b498469e4816f",
+        "spans": [
+          {
+            "start": 263,
+            "end": 281,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0002_0001_explicacion_3",
+        "path": "/text",
+        "sourceSha256": "cd184105d1ccbea6d6fbdd256fe19f79091f2c5fa1214b43e525e3e1f17f3250",
+        "spans": [
+          {
+            "start": 212,
+            "end": 219,
+            "text": "un paso",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0002_0001_explicacion_4",
+        "path": "/text",
+        "sourceSha256": "db30b21d169e386e30fcaea7554a277c806ae05b6218ff80cdd359d4ca7c3cf7",
+        "spans": [
+          {
+            "start": 38,
+            "end": 45,
+            "text": "un paso",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 89,
+            "text": "dos pasos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 127,
+            "text": "dos veces",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 187,
+            "text": "dos pasos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0002_0002_explicacion_2",
+        "path": "/text",
+        "sourceSha256": "5e3abc556160490f8ee650b5a4f88c9892ec8c8822129f57be66ad0987ff8ee3",
+        "spans": [
+          {
+            "start": 142,
+            "end": 145,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0002_0002_explicacion_3",
+        "path": "/text",
+        "sourceSha256": "8fd1ac0f6e3014519c26c6e6c3fcd5dacde320afe89e711670dd3818fa6d2334",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_0003_0001_explicacion_2",
+        "path": "/text",
+        "sourceSha256": "62a8a4c6023055227aee51c3ff236c2026ff6a88b95f171206c2e955e140b970",
+        "spans": [
+          {
+            "start": 196,
+            "end": 199,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 299,
+            "end": 317,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0003_0001_explicacion_3",
+        "path": "/text",
+        "sourceSha256": "93de571cb616110adb38d981a3622be7e8cd9950bb745cf4bc1241f233bfcd65",
+        "spans": [
+          {
+            "start": 16,
+            "end": 19,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0003_0001_explicacion_4",
+        "path": "/text",
+        "sourceSha256": "84dee634628a8ee17c6a71497dff2be22519aa866118c2ab2a6a9e196b27e33b",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_0003_0002_explicacion_2",
+        "path": "/text",
+        "sourceSha256": "477b565b97828c3ef77577b9021f95f167a4c2910ea3984a2329ce1e854a185b",
+        "spans": [
+          {
+            "start": 38,
+            "end": 43,
+            "text": "Listo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 90,
+            "text": "Pendiente",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0003_0002_explicacion_3",
+        "path": "/text",
+        "sourceSha256": "c76234880b2a6e2458ab92c90ca8c0f5bd9b6db1c063951c2b6f175c9ea903fb",
+        "spans": [
+          {
+            "start": 162,
+            "end": 180,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 297,
+            "end": 308,
+            "text": "Tarea lista",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 321,
+            "text": "Tarealista",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_0003_0002_explicacion_4",
+        "path": "/text",
+        "sourceSha256": "f31e506b25021ed5c508c8031dc8feb6546e73f62ce690e5d9fcc87cb4306345",
+        "spans": [
+          {
+            "start": 301,
+            "end": 319,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_datos_instruccion_salida",
+        "path": "/prompt",
+        "sourceSha256": "6ea3c7c22dd7ff5a9e9fe2e08e23c6e7c6ec0b6df6558c1f2c5cde02c6b00150",
+        "spans": [
+          {
+            "start": 29,
+            "end": 33,
+            "text": "Mara",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 90,
+            "text": "Participante: Mara",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 135,
+            "text": "Participante:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_datos_instruccion_salida",
+        "path": "/feedback/correct",
+        "sourceSha256": "b7deb306fc72aca61bbe3e54696c73816cac6c543aea912a429005af81a958f2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Mara",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 61,
+            "text": "Participante:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 134,
+            "text": "Participante: Mara",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_datos_instruccion_salida",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "e0acff911302eb4b76751e868cd08883e242029f15efff4e3147c389fd25c8d5",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_datos_instruccion_salida",
+        "path": "/responses/0/label",
+        "sourceSha256": "f446ee1dd59c14c46ff60b4653616362fd217d2d16907c809d4490b37fd08c3c",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_datos_instruccion_salida",
+        "path": "/responses/0/sources/0/content/0/text",
+        "sourceSha256": "c8c8d66e55e5324edbb4f5fc47e1183205513658796c0e7dbe37c191a6c32da5",
+        "spans": [
+          {
+            "start": 0,
+            "end": 18,
+            "text": "Participante: Mara",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_datos_instruccion_salida",
+        "path": "/responses/0/sources/1/content/0/text",
+        "sourceSha256": "04be924f05007879db19d92e77c3d99d03a4aae8d10236e37106a002ec7dd9dd",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "Mara",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_datos_instruccion_salida",
+        "path": "/responses/0/sources/2/content/0/text",
+        "sourceSha256": "3d73d00eeb898c3fe5ea625b863979eaaeb414ff671fd1fd962c64b063b631ae",
+        "spans": [
+          {
+            "start": 8,
+            "end": 21,
+            "text": "Participante:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_datos_instruccion_salida",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "e23ae5758a6b2b2a1ff6e241a56f1a89e636a53c2cfe51d6ed17cbb88ee564eb",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_datos_instruccion_salida",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "63a4eb6f1c0b5dfeb78f8b3583391fa55fadb77c1323e45ef8d240258c4729f8",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_datos_instruccion_salida",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "98e741fa5c3d2b7d42241d75bd06576b84ab13980aae16bcd2d69dd3b00e589f",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_ordenar_acciones",
+        "path": "/prompt",
+        "sourceSha256": "d020221a9defa3a626600f0fdb884a4a3c8be882b269004ac2dd33c7d8e07a8c",
+        "spans": [
+          {
+            "start": 28,
+            "end": 32,
+            "text": "Rosa",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 82,
+            "text": "Rosa Luna",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_ordenar_acciones",
+        "path": "/feedback/correct",
+        "sourceSha256": "9be23e14c89fba4f35e8d8d776c1b21842bf4e8d17094fbe998d44020fefd2bc",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_ordenar_acciones",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "3ea929aeafce2ae5ed40e0054973645857e0204920f25ae5e9fbd0014053884c",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_ordenar_acciones",
+        "path": "/responses/0/label",
+        "sourceSha256": "01272337f48e47630d49d91d5fa8653bddd65dd57a500e833ba0087496d4bcc2",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_ordenar_acciones",
+        "path": "/responses/0/sources/0/content/0/text",
+        "sourceSha256": "aad285187fc53dd3c17833c63f98f1469376442478dc6997403a0e1412034792",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_ordenar_acciones",
+        "path": "/responses/0/sources/1/content/0/text",
+        "sourceSha256": "c8dcf8f1e4d49614af921b31b11f497c60ad0d4a705ae72cf93fa938d44cebd3",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_ordenar_acciones",
+        "path": "/responses/0/sources/2/content/0/text",
+        "sourceSha256": "44e0a2d37dd2c07687ebcb0c44673e256aa925aa15069c7a158bf2e7d74c205a",
+        "spans": [
+          {
+            "start": 56,
+            "end": 65,
+            "text": "Rosa Luna",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_ordenar_acciones",
+        "path": "/responses/0/sources/3/content/0/text",
+        "sourceSha256": "6b2edda60f308ed5345769cda38c4041ba117bc21a0931a65ccd68e5adad0982",
+        "spans": [
+          {
+            "start": 31,
+            "end": 40,
+            "text": "Rosa Luna",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_ordenar_acciones",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "20c980856c8aca76d2d594ac2689b38742a16594d6dfb96e3e1c660d247dc5b0",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_ordenar_acciones",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "51b33a305e69168ff2ae5e4da330b687752dc2abc59119bcb6ebbf898cac8c23",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_ordenar_acciones",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "ce98bf9d4a160dc1c4fc1d40110a6f543acb23881dc799faa41d1711bad68faf",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_ordenar_acciones",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "945c445572a9b74e8eca1096ee0fccf3206b37ba2961056ae73c2aa8a6c0c813",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_comparar_observado",
+        "path": "/prompt",
+        "sourceSha256": "87a13bf938f770d0cb36ee88396749e543f986b2c7b4c31d04054e2f59782bdc",
+        "spans": [
+          {
+            "start": 36,
+            "end": 49,
+            "text": "Entrega lista",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_comparar_observado",
+        "path": "/feedback/correct",
+        "sourceSha256": "c4c61b44f4df73c79a54ccc72940bb34924be637f97e562f5fa3fa8debd5ec2f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Entrega lista",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 58,
+            "text": "Entrega pendiente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 91,
+            "text": "Entregalista",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_comparar_observado",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "d4688f6415dcc200d07f80c4c3c15926d8f883c37882edb054e756252d746eb5",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_comparar_observado",
+        "path": "/responses/0/label",
+        "sourceSha256": "6a03de644063321e5b73d5d8b30a7c6511a6a7b9dd956917d0aa1ea18d9cfd3b",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_comparar_observado",
+        "path": "/responses/0/sources/0/content/0/text",
+        "sourceSha256": "8e03fa379bc3125391d46f460c2d2727b75b3f12994877ea95ff8a08f962b51e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "Entrega pendiente",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_comparar_observado",
+        "path": "/responses/0/sources/1/content/0/text",
+        "sourceSha256": "1b80c1acd06bc2c1fb0eeb49571633abcb500ff58aa34744fa1af23dceab8890",
+        "spans": [
+          {
+            "start": 0,
+            "end": 12,
+            "text": "Entregalista",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_comparar_observado",
+        "path": "/responses/0/sources/2/content/0/text",
+        "sourceSha256": "eaf9b74eb22e01d9c1944a33165bd3c2bbf9989f2f0aa513b549f336f51d7266",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Entrega lista",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u1l1_practica_comparar_observado",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "ff545a550b69fd5cf084b072cc4edc9b9f06991ba54b9d0f886509e1ed63c198",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_comparar_observado",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "5182fd83b4e8b5fee5be38d7ffd1cb0df8178fc5c183822e19043105fd6e0a28",
+        "spans": []
+      },
+      {
+        "block": "p1u1l1_practica_comparar_observado",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "1a6e7187d9673bd24ae6d67bb94459480be297d548700f1004187f5d2374a865",
+        "spans": [
+          {
+            "start": 10,
+            "end": 15,
+            "text": "lista",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

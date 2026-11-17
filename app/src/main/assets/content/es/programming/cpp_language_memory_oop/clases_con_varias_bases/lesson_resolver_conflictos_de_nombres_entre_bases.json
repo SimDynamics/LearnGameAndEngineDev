@@ -1,0 +1,1063 @@
+{
+  "id": "cpp_language_memory_oop__clases_con_varias_bases__resolver_conflictos_de_nombres_entre_bases",
+  "title": "Resolver conflictos de nombres entre bases",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuando las dos bases ofrecen el mismo nombre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos bases independientes pueden declarar operaciones con el mismo nombre. Enteros ofrece mostrar para un int y Textos ofrece mostrar para una std::string. Ambas reciben también el flujo donde escribir. No hay herencia entre ellas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una clase que hereda de ambas, la llamada dato.mostrar(...) necesita resolver primero qué declaraciones encuentra ese nombre. Sólo después de una búsqueda válida pueden compararse los argumentos con las funciones disponibles para elegir una sobrecarga. Las diferencias entre los parámetros no unen automáticamente los nombres procedentes de dos bases independientes (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nclass Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass SinSeleccion : public Enteros, public Textos {};\nint main() {\n    SinSeleccion dato;\n    dato.mostrar(3, std::cout);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u10l2_buscar_nombre_antes_de_elegir_sobrecarga",
+          "question": "El programa se rechaza aunque el primer argumento sea un int. ¿Qué explica el problema?",
+          "options": [
+            "La búsqueda de mostrar en las dos bases independientes resulta ambigua antes de poder elegir una sobrecarga por sus argumentos.",
+            "El compilador ya eligió Textos::mostrar porque Textos es la segunda base y sólo comprueba esa función.",
+            "Una clase sólo puede heredar mostrar de ambas bases si sus parámetros tienen exactamente los mismos tipos."
+          ],
+          "correctIndex": 0,
+          "explanation": "La derivada no ha elegido ni reunido las declaraciones de mostrar. El mismo nombre se encuentra por dos bases independientes y la búsqueda resulta ambigua. La coincidencia del argumento con int no repara ese paso anterior. No se ejecuta ninguna de las dos funciones ni se elige la segunda por su posición. El problema no prohíbe heredar funciones de parámetros distintos: falta resolver ese uso del nombre."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Calificar la llamada para elegir una base concreta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Puede indicarse la base en la propia llamada: dato.Enteros::mostrar(...) busca esa operación en Enteros; dato.Textos::mostrar(...) la busca en Textos. Los dos puntos dobles aclaran qué declaración se quiere utilizar. El objeto completo sigue siendo el mismo y la llamada utiliza su parte base correspondiente (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l2_calificar_dos_llamadas_a_bases_independientes",
+          "language": "cpp",
+          "question": "Escribe la salida de las dos llamadas calificadas.",
+          "code": "#include <iostream>\n#include <string>\n\nclass Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass SinSeleccion : public Enteros, public Textos {};\nint main() {\n    SinSeleccion dato;\n    dato.Enteros::mostrar(3, std::cout);\n    std::cout << '|';\n    dato.Textos::mostrar(std::string{\"sol\"}, std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "Entero:3|Texto:sol"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada indica Enteros y proporciona el entero tres, por lo que escribe Entero:3. La segunda indica Textos y proporciona la cadena sol, por lo que escribe Texto:sol. main coloca | entre ellas. Elegir la declaración en cada llamada no añade una función mostrar propia a SinSeleccion."
+        },
+        {
+          "type": "paragraph",
+          "text": "En los ejemplos de esta lección las funciones no son virtuales. La calificación se utiliza para resolver el nombre y expresar qué función de base debe ejecutarse. Tampoco elimina la otra función ni cambia el contenido de las clases base."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un using puede seleccionar el nombre de una sola base"
+        },
+        {
+          "type": "paragraph",
+          "text": "SoloEnteros declara using Enteros::mostrar; en su sección pública. Ahora la búsqueda de mostrar en esa derivada encuentra las declaraciones nombradas por ese using. No reúne también las de Textos sólo por tener el mismo nombre (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l2_using_de_una_base_y_calificacion_de_la_otra",
+          "language": "cpp",
+          "question": "Escribe la salida. Distingue la llamada sin calificar de la llamada que sigue nombrando Textos.",
+          "code": "#include <iostream>\n#include <string>\n\nclass Enteros {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass Textos {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass SoloEnteros : public Enteros, public Textos {\npublic:\n    using Enteros::mostrar;\n};\nint main() {\n    SoloEnteros dato;\n    dato.mostrar(4, std::cout);\n    std::cout << '|';\n    dato.Textos::mostrar(std::string{\"luz\"}, std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "Entero:4|Texto:luz"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada dato.mostrar con cuatro utiliza la declaración seleccionada por using Enteros::mostrar y escribe Entero:4. La función de Textos sigue existiendo y la llamada calificada la utiliza para escribir Texto:luz. El using no hizo desaparecer esa parte base."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si en SoloEnteros se escribiera dato.mostrar(std::string{\"luz\"}, std::cout), sin calificar la base, no se volvería automáticamente a buscar en Textos al comprobar que el texto no sirve para el parámetro int. Para ofrecer también esa sobrecarga mediante el mismo nombre hay que declararlo, por ejemplo con otro using."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reunir sobrecargas distintas de las dos bases"
+        },
+        {
+          "type": "paragraph",
+          "text": "Opciones debe ofrecer mostrar tanto para un número como para una cadena. Las bases FormatoNumero y FormatoTexto tienen esas operaciones. Dos declaraciones using pueden reunirlas en la derivada para que una búsqueda válida encuentre ambas y después se elija la que corresponda a los argumentos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa primero la declaración que nombra mostrar de FormatoNumero y después la que nombra mostrar de FormatoTexto. Cada hueco contiene el nombre calificado de la operación; using y el punto y coma ya están escritos."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u10l2_reunir_sobrecargas_de_dos_bases",
+          "question": "Completa los dos using en el orden indicado: primero el mostrar de FormatoNumero y después el mostrar de FormatoTexto, para ofrecer ambas sobrecargas mediante Opciones.",
+          "template": "class FormatoNumero {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass FormatoTexto {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass Opciones : public FormatoNumero, public FormatoTexto {\npublic:\n    using [];\n    using [];\n};\n",
+          "answers": [
+            "FormatoNumero::mostrar",
+            "FormatoTexto::mostrar"
+          ],
+          "answerAlternatives": [
+            [
+              "FormatoNumero::mostrar",
+              "::FormatoNumero::mostrar"
+            ],
+            [
+              "FormatoTexto::mostrar",
+              "::FormatoTexto::mostrar"
+            ]
+          ],
+          "explanation": "Los dos using nombran las operaciones de las dos bases: FormatoNumero::mostrar y FormatoTexto::mostrar. Sus primeros parámetros son distintos, int y const std::string&, de modo que las llamadas del ejemplo pueden elegir una sobrecarga después de encontrar correctamente el conjunto de funciones. No se heredan constructores con estas declaraciones: se nombran funciones ordinarias."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Primero encontrar ambas funciones, después elegir por los argumentos"
+        },
+        {
+          "type": "paragraph",
+          "text": "La implementación completa de Opciones conserva los dos using. Ahora sigue las llamadas de main: cada una utiliza mostrar sin calificar la base, pero proporciona una clase de dato distinta como primer argumento."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l2_dos_using_forman_sobrecargas_utilizables",
+          "language": "cpp",
+          "question": "Escribe la salida del programa completo con los dos using.",
+          "code": "#include <iostream>\n#include <string>\n\nclass FormatoNumero {\npublic:\n    void mostrar(int numero, std::ostream& salida) const {\n        salida << \"Entero:\" << numero;\n    }\n};\nclass FormatoTexto {\npublic:\n    void mostrar(const std::string& texto, std::ostream& salida) const {\n        salida << \"Texto:\" << texto;\n    }\n};\nclass Opciones : public FormatoNumero, public FormatoTexto {\npublic:\n    using FormatoNumero::mostrar;\n    using FormatoTexto::mostrar;\n};\nint main() {\n    Opciones dato;\n    dato.mostrar(8, std::cout);\n    std::cout << '|';\n    dato.mostrar(std::string{\"nube\"}, std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "Entero:8|Texto:nube"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Con el entero ocho se selecciona la operación de FormatoNumero y se escribe Entero:8. Con la cadena nube se selecciona la de FormatoTexto y se escribe Texto:nube. Los using resolvieron qué declaraciones se ofrecen con ese nombre; los argumentos permiten después elegir entre esas firmas distintas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos firmas coincidentes todavía pueden dejar una llamada ambigua"
+        },
+        {
+          "type": "paragraph",
+          "text": "Inicio y Final conservan cada una su propio int y ofrecen int valor() const. ConIguales declara dos using para ofrecer las dos funciones. La declaración de la clase es válida, pero eso no garantiza que toda llamada a valor tenga una elección única (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara este rechazo con el primero. El programa sí declara ahora los dos using e intenta llamar a valor sin calificar la base. Analiza qué ha cambiado en la búsqueda y qué dificultad conserva esa llamada."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nclass Inicio {\npublic:\n    explicit Inicio(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass Final {\npublic:\n    explicit Final(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass ConIguales : public Inicio, public Final {\npublic:\n    ConIguales(int inicio, int final) : Inicio{inicio}, Final{final} {}\n    using Inicio::valor;\n    using Final::valor;\n};\nint main() {\n    ConIguales dato{4, 9};\n    std::cout << dato.valor();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u10l2_dos_using_no_eligen_entre_firmas_iguales",
+          "question": "¿Qué explica el rechazo de dato.valor() en ConIguales?",
+          "options": [
+            "Los using sólo nombran constructores y por eso la búsqueda no encuentra ninguna función valor.",
+            "Las dos funciones se ofrecen con firmas coincidentes y la llamada no determina una opción única.",
+            "Es inválido declarar dos using de funciones en cualquier clase, aunque las firmas fueran distintas."
+          ],
+          "correctIndex": 1,
+          "explanation": "El ejemplo anterior ya reunió correctamente firmas distintas mediante dos using. En ConIguales las dos funciones valor no reciben argumentos y son const; dato.valor() es compatible con ambas y no hay una opción mejor. Los using sí nombran estas funciones ordinarias, no constructores. No gana automáticamente la primera base. Se puede elegir una base expresamente o escribir una operación propia que establezca el significado de la consulta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La calificación sigue siendo útil con firmas coincidentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "La clase ConIguales del siguiente programa conserva los mismos dos using. Lo que cambia es la forma de las llamadas: cada una nombra una base concreta. No hace falta modificar los datos ni eliminar una base para seleccionar la consulta."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l2_calificar_consultas_con_firmas_iguales",
+          "language": "cpp",
+          "question": "Escribe los dos valores obtenidos al seleccionar las bases.",
+          "code": "#include <iostream>\n#include <string>\n\nclass Inicio {\npublic:\n    explicit Inicio(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass Final {\npublic:\n    explicit Final(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass ConIguales : public Inicio, public Final {\npublic:\n    ConIguales(int inicio, int final) : Inicio{inicio}, Final{final} {}\n    using Inicio::valor;\n    using Final::valor;\n};\nint main() {\n    ConIguales dato{4, 9};\n    std::cout << dato.Inicio::valor() << '|' << dato.Final::valor();\n    return 0;\n}\n",
+          "answers": [
+            "4|9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "dato.Inicio::valor() consulta el cuatro de la parte Inicio. dato.Final::valor() consulta el nueve de la parte Final. La presencia de ambos using no impide hacer estas llamadas calificadas y no reúne los dos int en un solo dato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una función propia puede definir qué significa la consulta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Preferida declara su propio valor(). La búsqueda del nombre en esa clase encuentra esta función propia y ya no necesita elegir entre las dos funciones base para esa llamada. Su cuerpo decide expresamente utilizar Final::valor(); otro_valor utiliza Inicio::valor(). Éste es el contrato elegido para esta clase, no una prioridad que imponga el orden de las bases (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l2_funcion_propia_que_elige_una_operacion_base",
+          "language": "cpp",
+          "question": "Escribe las consultas mediante la derivada y mediante las dos vistas de base.",
+          "code": "#include <iostream>\n#include <string>\n\nclass Inicio {\npublic:\n    explicit Inicio(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass Final {\npublic:\n    explicit Final(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprivate:\n    int valor_;\n};\nclass Preferida : public Inicio, public Final {\npublic:\n    Preferida(int inicio, int final) : Inicio{inicio}, Final{final} {}\n    int valor() const { return Final::valor(); }\n    int otro_valor() const { return Inicio::valor(); }\n};\nint main() {\n    Preferida dato{4, 9};\n    const Inicio& inicio = dato;\n    const Final& final = dato;\n    std::cout << dato.valor() << '|' << dato.otro_valor()\n              << '|' << inicio.valor() << '|' << final.valor();\n    return 0;\n}\n",
+          "answers": [
+            "9|4|4|9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La consulta propia dato.valor() ejecuta el cuerpo de Preferida y devuelve el nueve de Final. otro_valor devuelve el cuatro de Inicio. Las referencias inicio y final tienen tipos de base y sus funciones ordinarias consultan respectivamente cuatro y nueve. La función propia no borró ni reemplazó esas dos funciones base."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas funciones de base no son virtuales: definir un valor propio resuelve el uso del nombre desde Preferida, pero no crea una sobrescritura virtual. Una llamada por Inicio& o Final& sigue utilizando su función ordinaria correspondiente. La coincidencia del nombre no convierte por sí sola esa relación en polimorfismo virtual (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Así quedan separadas tres decisiones: calificar una llamada para elegir su base, ofrecer declaraciones mediante using para formar las sobrecargas deseadas, o escribir una función propia con el comportamiento que exige la clase. Elegir una no significa que se hayan eliminado las otras partes del objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una consulta a partir de las dos bases"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entradas guarda una cantidad recibida. Salidas guarda una cantidad utilizada. Cada clase ofrece valor() para consultar su propia cantidad y una función con nombre distinto para sustituirla. Ninguna de esas funciones es virtual."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Entradas {\npublic:\n    explicit Entradas(int inicial) : entradas_{inicial} {}\n    int valor() const { return entradas_; }\n    void fijar_entradas(int nuevo) { entradas_ = nuevo; }\nprivate:\n    int entradas_;\n};\n\nclass Salidas {\npublic:\n    explicit Salidas(int inicial) : salidas_{inicial} {}\n    int valor() const { return salidas_; }\n    void fijar_salidas(int nuevo) { salidas_ = nuevo; }\nprivate:\n    int salidas_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Balance reúne las dos partes. Su consulta valor() debe devolver la cantidad recibida menos la utilizada. Por ejemplo, con doce entradas y cinco salidas debe devolver siete. Un resultado negativo también es válido: con dos entradas y seis salidas debe devolver menos cuatro."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta práctica utiliza cantidades entre menos mil y mil. Su diferencia queda entre menos dos mil y dos mil y cabe en int. El constructor conserva las cantidades recibidas; no comprueba ese límite. Respetarlo es una condición de estos ejemplos y de sus variaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa las dos llamadas del cuerpo. La primera debe elegir valor() de Entradas sobre este objeto; la segunda debe elegir valor() de Salidas sobre este mismo objeto. Conserva la resta y el resto de la clase. No crees otros objetos ni llames de nuevo al valor() de Balance."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u10l2_construir_balance_con_llamadas_calificadas",
+          "question": "Completa las dos llamadas calificadas para calcular entradas menos salidas utilizando las partes base del Balance actual.",
+          "template": "class Balance : public Entradas, public Salidas {\npublic:\n    Balance(int entradas, int salidas)\n        : Entradas{entradas}, Salidas{salidas} {}\n\n    int valor() const {\n        return [] - [];\n    }\n};\n",
+          "answers": [
+            "Entradas::valor()",
+            "Salidas::valor()"
+          ],
+          "answerAlternatives": [
+            [
+              "Entradas::valor()",
+              "this->Entradas::valor()",
+              "::Entradas::valor()",
+              "(*this).Entradas::valor()"
+            ],
+            [
+              "Salidas::valor()",
+              "this->Salidas::valor()",
+              "::Salidas::valor()",
+              "(*this).Salidas::valor()"
+            ]
+          ],
+          "explanation": "Entradas::valor() consulta la cantidad recibida y Salidas::valor() consulta la utilizada. Las llamadas utilizan las dos partes base del objeto Balance actual. La resta obtiene la diferencia. valor() sin calificar dentro de este cuerpo encontraría la propia función Balance::valor(); llamarla ahí repetiría la misma llamada en lugar de consultar las bases. También se admiten las formas calificadas equivalentes con this->, con (*this). o con :: al inicio del nombre de la clase."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La función propia da significado a la consulta de Balance"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Balance : public Entradas, public Salidas {\npublic:\n    Balance(int entradas, int salidas)\n        : Entradas{entradas}, Salidas{salidas} {}\n\n    int valor() const {\n        return Entradas::valor() - Salidas::valor();\n    }\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al buscar valor mediante un Balance, se encuentra primero la función que declara Balance. Su cuerpo elige expresamente las dos funciones de las bases y resta sus resultados. No toma automáticamente la primera base ni suma las cantidades. Cada calificación indica qué dato se quiere consultar (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entradas::valor y Salidas::valor siguen existiendo. Como no son virtuales, Balance::valor no las sobrescribe. La función de Balance oculta esos nombres para la búsqueda habitual a través de Balance; una llamada mediante una referencia Entradas sigue consultando Entradas::valor (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos referencias del siguiente programa se obtienen desde el mismo dato. Cada una consulta su parte base. Después se sustituye únicamente la cantidad de Entradas por dos; las tres consultas vuelven a utilizar ese objeto que sigue vivo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l2_consulta_propia_y_vistas_base",
+          "language": "cpp",
+          "question": "Escribe las dos líneas completas. En cada línea se consulta primero Entradas, después Salidas y al final Balance.",
+          "code": "#include <iostream>\n\nclass Entradas {\npublic:\n    explicit Entradas(int inicial) : entradas_{inicial} {}\n    int valor() const { return entradas_; }\n    void fijar_entradas(int nuevo) { entradas_ = nuevo; }\nprivate:\n    int entradas_;\n};\n\nclass Salidas {\npublic:\n    explicit Salidas(int inicial) : salidas_{inicial} {}\n    int valor() const { return salidas_; }\n    void fijar_salidas(int nuevo) { salidas_ = nuevo; }\nprivate:\n    int salidas_;\n};\nclass Balance : public Entradas, public Salidas {\npublic:\n    Balance(int entradas, int salidas)\n        : Entradas{entradas}, Salidas{salidas} {}\n\n    int valor() const {\n        return Entradas::valor() - Salidas::valor();\n    }\n};\nint main() {\n    Balance dato{9, 3};\n    const Entradas& entradas = dato;\n    const Salidas& salidas = dato;\n    std::cout << entradas.valor() << '|' << salidas.valor()\n              << '|' << dato.valor() << '\\n';\n    dato.fijar_entradas(2);\n    std::cout << entradas.valor() << '|' << salidas.valor()\n              << '|' << dato.valor();\n    return 0;\n}\n",
+          "answers": [
+            "9|3|6\n2|3|-1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Primero las bases guardan nueve y tres; Balance resta y devuelve seis. Después fijar_entradas sustituye nueve por dos. La vista Entradas observa dos, la vista Salidas conserva tres y Balance calcula dos menos tres, que da menos uno. No hay llamada virtual: cada referencia base utiliza la función no virtual de su propio tipo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar el objeto conserva las dos cantidades, no una vista compartida"
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia completa de Balance copia sus partes Entradas y Salidas. original y copia quedan como objetos distintos. El programa modifica las salidas de original y las entradas de copia. Las llamadas calificadas finales permiten observar por separado los datos que no se modificaron."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l2_copia_completa_y_balance_independiente",
+          "language": "cpp",
+          "question": "Escribe la salida completa después de las dos modificaciones.",
+          "code": "#include <iostream>\n\nclass Entradas {\npublic:\n    explicit Entradas(int inicial) : entradas_{inicial} {}\n    int valor() const { return entradas_; }\n    void fijar_entradas(int nuevo) { entradas_ = nuevo; }\nprivate:\n    int entradas_;\n};\n\nclass Salidas {\npublic:\n    explicit Salidas(int inicial) : salidas_{inicial} {}\n    int valor() const { return salidas_; }\n    void fijar_salidas(int nuevo) { salidas_ = nuevo; }\nprivate:\n    int salidas_;\n};\nclass Balance : public Entradas, public Salidas {\npublic:\n    Balance(int entradas, int salidas)\n        : Entradas{entradas}, Salidas{salidas} {}\n\n    int valor() const {\n        return Entradas::valor() - Salidas::valor();\n    }\n};\nint main() {\n    Balance original{5, 2};\n    Balance copia{original};\n    original.fijar_salidas(7);\n    copia.fijar_entradas(8);\n    std::cout << original.valor() << '|' << copia.valor() << '|'\n              << original.Entradas::valor() << '|'\n              << copia.Salidas::valor();\n    return 0;\n}\n",
+          "answers": [
+            "-2|6|5|2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los dos objetos comienzan con cinco entradas y dos salidas. original pasa a tener siete salidas: cinco menos siete da menos dos. copia pasa a tener ocho entradas y conserva dos salidas: ocho menos dos da seis. Las entradas de original siguen siendo cinco y las salidas de copia siguen siendo dos. Las consultas no comparten los datos de las copias."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir una operación propia de una sobrescritura"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se conservan las clases Entradas y Salidas de la práctica, con sus funciones valor no virtuales. Se necesita que dato.valor() calcule entradas menos salidas y que una referencia const Entradas& siga consultando sólo las entradas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u10l2_operacion_propia_sin_inventar_sobrescritura",
+          "question": "¿Qué cambio en Balance cumple ese objetivo sin modificar las bases?",
+          "options": [
+            "Añadir las dos declaraciones using de valor y eliminar el cuerpo propio: la llamada restará por tener ambas bases.",
+            "Conservar int valor() const con las dos llamadas calificadas y la resta, sin añadir override.",
+            "Conservar ese cuerpo y añadir override: una función con el mismo nombre siempre sobrescribe las dos bases."
+          ],
+          "correctIndex": 1,
+          "explanation": "El cuerpo propio define la resta y la búsqueda mediante Balance encuentra esa función. Las funciones de las bases no son virtuales, por lo que override sería rechazado. Las dos declaraciones using con firmas iguales no calculan una resta: una llamada sin calificar seguiría sin poder elegir entre esas dos funciones. Las referencias Entradas conservan su consulta no virtual de entradas."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "86f1af60d5120f75af8f2852941e7c80a40df87da7aed2eda642fcb4dab1e27b"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "8afcdad1f1b3486f9518ae7cb50a69a6cd1d1b2e68281431fcdd048fdb6c60b6"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "53e38cb1b1213d2d8361cc96db8e46796c9507e401d4096061a78f8ec2c27b97"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "39d2159799e3b53c4f7945775710b4b451a1792ce0e5f2924f85015fe73d6c12"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "3d00d0441e5746a74d77063d92ef8b7548fa4d8e576ebb97ce45fa5b354d8bfe"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "89eafae4f08ca4bc0c97b786be788be1e7eaa03ed26fea97fdf580ecca413746"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "8ee74ef76798f246d95e6dbf2ebd580b788504e0537d6ac04613b6c9ad6998b7"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "bafa727ffa095c31ebde26014cb91d27eb253c3c46a836d0e2e0d56dfa3fdd97"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "871b8c6bf5a450f6be2fc90829b8d68347bea091263843da86ed81a0527da4dc"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "96b9a659f49006c59c7b799bd6f15e0ac530e10c239b7c5a711028f64d511607"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "f365a07059c88b60c3be38fb87c94c54741bf65a9a434a88dbba25ef6e7f01e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "e2e93f3dd5e6b6e3670ff9c3017dc3627302e0c6827a4bc538b695561a49eebf"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "c5481bb98c47093e30767b0bc3950aa164346de55fa90645a4065020199ebf0b"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "5560c2ff827e5f8d1f4623c2c09a72d4111783ab0463496aca55d95946755a31"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "7cada310f957badd3feba7db20bdf54f365843e1ff567fd948a4a5653a665e37"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "0acebf1232b4817aa20d81cc6556aa8ac96f402406b572db7f54b0801df02eab"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "7945d2da50e48cad73163b37ce1c5aca7affb79163ec83dbfc6b9c71bfbc660c"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "53cf06ae39991b6e8c1c978a67a94ded4324a76cefc65f9a18e4454919fd4381",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "86f1af60d5120f75af8f2852941e7c80a40df87da7aed2eda642fcb4dab1e27b"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "8afcdad1f1b3486f9518ae7cb50a69a6cd1d1b2e68281431fcdd048fdb6c60b6"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "53e38cb1b1213d2d8361cc96db8e46796c9507e401d4096061a78f8ec2c27b97"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "39d2159799e3b53c4f7945775710b4b451a1792ce0e5f2924f85015fe73d6c12"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "3d00d0441e5746a74d77063d92ef8b7548fa4d8e576ebb97ce45fa5b354d8bfe"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "89eafae4f08ca4bc0c97b786be788be1e7eaa03ed26fea97fdf580ecca413746"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "8ee74ef76798f246d95e6dbf2ebd580b788504e0537d6ac04613b6c9ad6998b7"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "bafa727ffa095c31ebde26014cb91d27eb253c3c46a836d0e2e0d56dfa3fdd97"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "871b8c6bf5a450f6be2fc90829b8d68347bea091263843da86ed81a0527da4dc"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "96b9a659f49006c59c7b799bd6f15e0ac530e10c239b7c5a711028f64d511607"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "f365a07059c88b60c3be38fb87c94c54741bf65a9a434a88dbba25ef6e7f01e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "e2e93f3dd5e6b6e3670ff9c3017dc3627302e0c6827a4bc538b695561a49eebf"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "c5481bb98c47093e30767b0bc3950aa164346de55fa90645a4065020199ebf0b"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "5560c2ff827e5f8d1f4623c2c09a72d4111783ab0463496aca55d95946755a31"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "7cada310f957badd3feba7db20bdf54f365843e1ff567fd948a4a5653a665e37"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "0acebf1232b4817aa20d81cc6556aa8ac96f402406b572db7f54b0801df02eab"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "7945d2da50e48cad73163b37ce1c5aca7affb79163ec83dbfc6b9c71bfbc660c"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
