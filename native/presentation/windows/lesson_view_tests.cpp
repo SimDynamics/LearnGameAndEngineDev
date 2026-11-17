@@ -5625,7 +5625,9 @@ int main(int argc,char* argv[]) {
                 native_bounds.right-native_bounds.left,native_bounds.bottom-native_bounds.top,GetParent(source_control),
                 reinterpret_cast<HMENU>(49999),GetModuleHandleW(nullptr),nullptr);
             require(native_edit!=nullptr,"Cannot create a real native-only drag baseline");
-            set_rich_text(native_edit,preferences.text(3,10),{},true);SendMessageW(native_edit,EM_SETZOOM,150,100);
+            set_rich_text(native_edit,preferences.text(3,10),{},true);
+            require(set_rich_text_zoom(native_edit,150),
+                "Native-only drag reference rejected the requested 150-percent zoom");
             RECT native_format{};SendMessageW(source_control,EM_GETRECT,0,reinterpret_cast<LPARAM>(&native_format));
             SendMessageW(native_edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&native_format));
             SetFocus(native_edit);pump(preferences.host);
