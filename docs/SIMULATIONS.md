@@ -215,7 +215,12 @@ fracciones hasta una muesca completa. La rueda sin Ctrl conserva el
 desplazamiento ordinario, reinicia esa acumulación y no cambia el zoom.
 Un cambio confirmado de escala general del lector o de DPI también
 descarta una fracción pendiente del editor: la siguiente muesca empieza
-una sesión nueva y no provoca un incremento inesperado.
+una sesión nueva y no provoca un incremento inesperado. Al mover la ventana
+a otro monitor, el rebase de fuentes para su DPI **conserva el zoom local**
+del editor de datos; el texto del lector sigue usando su escala global.
+En cambio, cuando el estudiante cambia explícitamente la escala general
+del lector, ambos controles adoptan ese nuevo porcentaje. Esta diferencia
+está protegida por una prueba nativa sin cambiar físicamente de monitor.
 Estos gestos no aplican datos ni alteran las variables, el recorrido o las
 escalas de los demás paneles. RichEdit acepta el zoom mediante una fracción
 cuyo numerador y denominador son como máximo 64. El simulador reduce las
