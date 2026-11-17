@@ -616,6 +616,28 @@ herramientas, incluso cuando la construcción o CTest falla.
 No modifica perfiles reales ni ejecuta GitHub Actions. No se debe atribuir
 una aprobación Windows a la mera publicación del script.
 
+Los cambios de zoom que comparten el simulador, el lector y las actividades
+de matemáticas, completar código y ordenar fragmentos también necesitan
+una comprobación transversal. En el checkout nativo `Codex` de Windows:
+
+```powershell
+& '.\scripts\windows\Test-TextZoom.ps1' -Preset windows-x64-debug
+```
+
+Este segundo comando compila el objetivo `lgaed_text_zoom_qa_targets`,
+sin incluir el ejecutable de la aplicación como dependencia directa. Exige
+exactamente seis pruebas CTest: `native.rich_text`, `native.cpp_fill_view`,
+`native.order_code_view`, `native.math_puzzle_view`,
+`native.simulation_view` y `native.simulation_lesson`. Se ejecutan de
+forma secuencial, con límite de tiempo, y escriben registros
+`text-zoom-qa.stdout.log` y `text-zoom-qa.stderr.log` en
+`out/build/<preset>/logs/`. El comando comprueba Windows local, el checkout
+autorizado, la rama `Codex` y la ausencia de CI; conserva el entorno del
+proceso original. Permite `-Fresh` en caso de caché CMake trasladada. No
+sustituye a `Test-Simulation.ps1`, pues el primero comprueba los controles de
+texto y el segundo incluye el núcleo matemático y la autoría. Ningún comando
+se considera acreditado antes de ejecutarse en el PC Windows.
+
 La prueba `native.simulation_lesson` incluye casos de integración del
 **lector Windows real** con datos `[]`, `[""]`, `["", "patio", "patio"]`
 y `["", " "]`. Verifica que el cargador completo y el de progreso
