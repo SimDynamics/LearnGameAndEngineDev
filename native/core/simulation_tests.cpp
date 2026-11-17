@@ -383,8 +383,11 @@ void parsed_trace_reuse() {
         "Reused trace failed to distinguish the empty label from a space");
     rejected([&]{(void)simulation_parse_input_trace(spec,"[\"\",]",format);},
         "Parsed trace accepted a malformed text list");
-    rejected([&]{(void)simulation_parse_input_trace(spec,"[\"a\", \"a\"]",SimulationInputFormat::lines);},
-        "Parsed trace reinterpreted ordinary lines as a JSON array");
+    const auto bracketed=simulation_parse_input_trace(
+        spec,R"(["a", "a"])",SimulationInputFormat::lines);
+    check(bracketed.original==words({R"(["a", "a"])"})&&
+        bracketed.frames.back().output==R"(["a", "a"]:1)" "\n",
+        "Ordinary text lines were interpreted as a JSON list instead of a literal");
     check(spec==authored_text,"Parsed text input modified authored data or scenarios");
 }
 
