@@ -2435,6 +2435,80 @@ void static_simulation_text_is_not_restreamed(HWND host) {
 }
 
 
+void step_navigation_rolls_back_native_presentation_failure(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    // After four members of the middle group, the next frame adds its
+    // completed frequency to stdout. A late RichEdit zoom failure must
+    // recover the earlier output and *all* of that earlier step's state.
+    check(view.go_to_step(6),"Cannot prepare the middle-group decision boundary");
+    const auto earlier=view.step_index();
+    const auto old_count=view.step_count();
+    const auto old_output=text(view,output_id);
+    const auto old_variables=text(view,variables_id);
+    const auto old_progress=text(view,progress_label_id);
+    const auto old_array=name(GetDlgItem(view.window(),array_id));
+    const auto old_regions=view.reading_regions();
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(output&&old_output=="-8:1\n",
+        "The fixture does not expose the expected uncommitted group result");
+    const CHARRANGE selected{0,4};
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    int rejected=0;
+    const auto reject_once=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT {
+        auto& failures=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&failures++==0)return FALSE;
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53494e56;
+    check(SetWindowSubclass(output,reject_once,hook_id,
+        reinterpret_cast<DWORD_PTR>(&rejected))!=FALSE,
+        "Cannot inject the late native rejection when advancing one step");
+    struct Unhook {
+        HWND child;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(child))RemoveWindowSubclass(child,callback,id);}
+    } guard{output,reject_once,hook_id};
+    click(view,next_id);
+    CHARRANGE actual{};
+    SendMessageW(output,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&actual));
+    const auto diagnostic=text(view,error_id);
+    check(rejected>=1&&
+        diagnostic.find("No se pudo cambiar el paso.")!=std::string::npos&&
+        diagnostic.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+        view.step_index()==earlier&&view.step_count()==old_count&&
+        text(view,output_id)==old_output&&
+        text(view,variables_id)==old_variables&&
+        text(view,progress_label_id)==old_progress&&
+        name(GetDlgItem(view.window(),array_id))==old_array&&
+        actual.cpMin==selected.cpMin&&actual.cpMax==selected.cpMax&&
+        spec==authored,
+        "A rejected native step advanced a model or displaced the current reading");
+    const auto restored_regions=view.reading_regions();
+    for(const auto& previous:old_regions){
+        const auto current=std::ranges::find_if(restored_regions,[&](const auto& region){
+            return region.target==previous.target;
+        });
+        check(current!=restored_regions.end()&&
+            current->key==previous.key&&current->source_text==previous.source_text,
+            "A rejected step silently modified a model narration region");
+    }
+    check(std::ranges::any_of(restored_regions,[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==diagnostic;
+    }),"The step-navigation error was missing from accessible narration");
+
+    // The same button may be used immediately after the one-shot failure.
+    // Successful replay clears the transient native notice and publishes
+    // only the newly completed group's actual stdout.
+    click(view,next_id);
+    check(view.step_index()==earlier+1&&
+        text(view,output_id)=="-8:1\n3:4\n"&&
+        text(view,error_id).empty()&&spec==authored,
+        "A valid retry retained a rejected navigation notice or wrong model");
+}
+
 void applying_valid_data_is_atomic_after_native_failure(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     spec.scenarios.clear();
@@ -4423,6 +4497,7 @@ int main(int argc,char** argv)try {
     run("original_order_reading_session",[&]{original_order_reading_session(host.value);});
     run("static_simulation_text_is_not_restreamed",[&]{static_simulation_text_is_not_restreamed(host.value);});
     run("editable_data",[&]{editable_data(host.value,captures);});
+    run("step_navigation_rolls_back_native_presentation_failure",[&]{step_navigation_rolls_back_native_presentation_failure(host.value);});
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
     run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
     run("scenario_change_keeps_origin_error_when_editor_rollback_fails",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value);});

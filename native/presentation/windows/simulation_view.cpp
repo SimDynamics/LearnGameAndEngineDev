@@ -164,6 +164,9 @@ struct SimulationView::Impl {
     bool initializing=true,arranging=false,layout_valid=false;
     std::shared_ptr<bool> alive=std::make_shared<bool>(true);
     std::string error,input_key,output_model_key,original_order_model_key;
+    // A temporary native navigation warning must not erase an unrelated
+    // invalid-input diagnosis that existed before a failed step.
+    std::string navigation_error,previous_navigation_error;
     // Reapplying even identical values begins a new reading session.
     // Content identity remains stable for narration, but native caret/scroll
     // must not be borrowed from the previous application.
@@ -617,6 +620,23 @@ struct SimulationView::Impl {
         if(accessibility)(void)accessibility->SetHwndPropStr(target,static_cast<DWORD>(OBJID_CLIENT),CHILDID_SELF,
             PROPID_ACC_NAME,wide(name).c_str());
     }
+    // Failures in native navigation can originate in the array and histogram
+    // child window procedures, not only the parent's WM_COMMAND handler.
+    // Report them without retrying the RichEdit formatting that just failed.
+    void report_native_error(std::string_view prefix,std::string_view detail) noexcept {
+        try {
+            error=std::string(prefix)+std::string(detail);
+            if(const auto field=item(error_id)){
+                SetWindowTextW(field,wide(error).c_str());
+                ShowWindow(field,SW_SHOWNOACTIVATE);
+                visible_text[error_id]=error;
+                accessible(field,error);
+                NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,field,OBJID_CLIENT,CHILDID_SELF);
+            }
+        }catch(...){
+            OutputDebugStringW(L"No se pudo publicar un aviso de error del simulador.\n");
+        }
+    }
     void rebuild_groups() {
         for(const auto child:group_buttons){controls.erase(GetDlgCtrlID(child));if(IsWindow(child))DestroyWindow(child);}group_buttons.clear();
         if(spec.view!=SimulationViewMode::groups)return;
@@ -1041,38 +1061,76 @@ struct SimulationView::Impl {
             if(reveal_decision)reveal_current_histogram_decision();
             return true;
         }
-        const auto old_indices=frequency_indices();
-        const auto old_visible=old_indices.size();
-        bool followed_last_bar=false;
-        if(old_visible&&frequencies){
-            // When every old bar fitted, a newly completed group should also
-            // be revealed. Once scrolling is possible, follow only if the
-            // learner was at the bottom; an earlier group being studied must
-            // not be displaced by future decisions.
-            RECT viewport{};
-            GetClientRect(frequencies,&viewport);
-            if(viewport.bottom>0&&frequency_total_height<=viewport.bottom)
-                followed_last_bar=true;
-            else {
-                SCROLLINFO previous{sizeof(previous),SIF_RANGE|SIF_PAGE|SIF_POS};
-                if(GetScrollInfo(frequencies,SB_VERT,&previous)&&previous.nPage>0){
-                    const auto last=std::max(previous.nMin,previous.nMax-
-                        std::max(0,static_cast<int>(previous.nPage)-1));
-                    followed_last_bar=previous.nPos>=last;
+        const auto old_position=position;
+        const auto old_scroll=frequency_scroll;
+        const auto old_height=frequency_total_height;
+        const auto old_fraction=frequency_wheel_remainder;
+        const auto old_pressed=pressed_frequency_group;
+        const auto old_output=capture_output_reading_anchor();
+        const auto old_order=capture_output_reading_anchor(original_order_id);
+        const auto old_editor=capture_output_reading_anchor(input_id);
+        const auto old_chart=capture_histogram_anchor();
+        const auto old_error=error;
+        try {
+            const auto old_indices=frequency_indices();
+            const auto old_visible=old_indices.size();
+            bool followed_last_bar=false;
+            if(old_visible&&frequencies){
+                // A new group should only pull the chart when the previous
+                // completed groups fitted or the learner was already at its end.
+                RECT viewport{};
+                GetClientRect(frequencies,&viewport);
+                if(viewport.bottom>0&&frequency_total_height<=viewport.bottom)
+                    followed_last_bar=true;
+                else {
+                    SCROLLINFO previous{sizeof(previous),SIF_RANGE|SIF_PAGE|SIF_POS};
+                    if(GetScrollInfo(frequencies,SB_VERT,&previous)&&previous.nPage>0){
+                        const auto last=std::max(previous.nMin,previous.nMax-
+                            std::max(0,static_cast<int>(previous.nPage)-1));
+                        followed_last_bar=previous.nPos>=last;
+                    }
                 }
             }
+            if(!navigation_error.empty()&&error==navigation_error)
+                error=previous_navigation_error;
+            position=next;
+            update();
+            const auto indices=frequency_indices();
+            if(indices!=old_indices)frequency_wheel_remainder=0;
+            if(followed_last_bar&&indices.size()>old_visible&&
+                    !indices.empty()&&indices.back()+1==completed_groups()&&
+                    frequency_total_height)
+                scroll_frequencies(frequency_total_height);
+            if(reveal_decision)reveal_current_histogram_decision();
+            publish();
+            navigation_error.clear();previous_navigation_error.clear();
+            return true;
+        }catch(const std::exception& failure){
+            // RichEdit may have already streamed the next step's output.
+            // Do not commit a half-presented frame or let its exception cross
+            // an array/histogram Win32 window procedure.
+            position=old_position;error=old_error;
+            frequency_scroll=old_scroll;frequency_total_height=old_height;
+            frequency_wheel_remainder=old_fraction;
+            pressed_frequency_group=old_pressed;
+            try{
+                update();
+                restore_output_reading_anchor(old_output);
+                restore_output_reading_anchor(old_order,original_order_id);
+                restore_output_reading_anchor(old_editor,input_id);
+                restore_histogram_anchor(old_chart);
+            }catch(...){
+                OutputDebugStringW(L"No se pudo reconstruir la vista anterior tras fallar un paso.\n");
+            }
+            if(navigation_error.empty()||old_error!=navigation_error)
+                previous_navigation_error=old_error;
+            report_native_error("No se pudo cambiar el paso. ",failure.what());
+            navigation_error=error;
+            try{publish();}catch(...){
+                OutputDebugStringW(L"No se pudo notificar el fallo de navegación.\n");
+            }
+            return false;
         }
-        position=next;update();
-        const auto indices=frequency_indices();
-        // Fractional wheel movement belongs to the previous arrangement.
-        // Reset only when the set/order of visible cards actually changes.
-        if(indices!=old_indices)frequency_wheel_remainder=0;
-        if(followed_last_bar&&indices.size()>old_visible&&
-                !indices.empty()&&indices.back()+1==completed_groups()&&
-                frequency_total_height)
-            scroll_frequencies(frequency_total_height);
-        if(reveal_decision)reveal_current_histogram_decision();
-        publish();return true;
     }
     const std::vector<SimulationValue>& original_data()const{return scenario?spec.scenarios.at(scenario-1).values:spec.values;}
     // Recovery uses the historical text-stream route first. If a native
@@ -2069,22 +2127,7 @@ struct SimulationView::Impl {
             if(message==WM_ERASEBKGND)return 1;
             if(message==WM_MOUSEWHEEL)return SendMessageW(GetParent(item),message,wp,lp);
         }catch(const std::exception& failure){
-            self->error=std::string("No se pudo actualizar la simulación. ")+failure.what();
-            if(const auto field=self->item(error_id)){
-                // An emergency Win32 error cannot rely on set_label/update:
-                // the same RichEdit operation may be failing. Nonetheless
-                // its visible text and spoken region must describe the same
-                // diagnostic, not the earlier successful model state.
-                SetWindowTextW(field,wide(self->error).c_str());
-                ShowWindow(field,SW_SHOWNOACTIVATE);
-                try {
-                    self->visible_text[error_id]=self->error;
-                    self->accessible(field,self->error);
-                    NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,field,OBJID_CLIENT,CHILDID_SELF);
-                }catch(...){
-                    OutputDebugStringW(L"No se pudo registrar la lectura del error nativo.\n");
-                }
-            }
+            self->report_native_error("No se pudo actualizar la simulación. ",failure.what());
             return 0;
         }
         if(message==WM_NCDESTROY){self->host=nullptr;SetWindowLongPtrW(item,GWLP_USERDATA,0);}

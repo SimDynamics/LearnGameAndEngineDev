@@ -408,6 +408,16 @@ solamente los grupos que ya terminaron. `done` conserva el resultado final.
 Un array vacío produce únicamente `empty`, sin accesos a elementos ni líneas
 de salida.
 
+Avanzar, retroceder o saltar a un paso tampoco admite una presentación
+parcial. Si RichEdit rechaza la actualización después de seleccionar otro
+estado, el simulador recupera el paso, la salida, las variables, las barras
+y los puntos de lectura anteriores. Un aviso accesible explica el fallo,
+sin propagar la excepción fuera de los controles Win32. El intento siguiente
+puede avanzar normalmente y retira ese aviso transitorio; si había un
+diagnóstico distinto del editor, vuelve a mostrarlo. La regresión nativa
+`step_navigation_rolls_back_native_presentation_failure` verifica esos
+efectos sin modificar el conjunto de datos aplicado. Requiere Windows.
+
 Cuando la salida de muchos grupos necesita una barra de desplazamiento,
 contar otro elemento sin terminar su grupo **no reemplaza el texto ni
 reinicia la posición de lectura**. Si se añade una nueva línea y el
