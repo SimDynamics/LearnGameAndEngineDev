@@ -219,7 +219,11 @@ Números, booleanos, objetos y listas anidadas no son valores de texto válidos.
 Cambiar el selector convierte el borrador válido al otro formato sin aplicarlo
 al recorrido. Si la conversión perdería un dato —por ejemplo, una cadena vacía
 al pasar a líneas— o el borrador no es válido, se conserva el texto y el formato
-anterior y se muestra el motivo. **Aplicar datos** inicia el recorrido con la
+anterior y se muestra el motivo. El cambio de formato también es transaccional:
+se comprueba que RichEdit haya escrito el contenido convertido y que la vista
+acepte su presentación antes de confirmarlo. Un rechazo silencioso de escritura
+o un fallo tardío de presentación restablecen formato, borrador, selección,
+posición de lectura y ayuda anteriores sin modificar la traza aplicada. **Aplicar datos** inicia el recorrido con la
 entrada revisada. Al abrir una simulación, seleccionar un escenario o
 restablecer sus datos, la presencia de una cadena vacía elige **Lista entre
 comillas** para que el dato pueda editarse sin ambigüedad.

@@ -1075,6 +1075,30 @@ struct SimulationView::Impl {
         publish();return true;
     }
     const std::vector<SimulationValue>& original_data()const{return scenario?spec.scenarios.at(scenario-1).values:spec.values;}
+    // Recovery uses the historical text-stream route first. If a native
+    // control rejects it or silently retains different bytes, recover through
+    // literal RichEdit replacement without interpreting RTF-like user input.
+    // Error reporting always keeps the original exception, not a rollback
+    // failure from this best-effort native operation.
+    bool restore_input_document(std::string_view previous) noexcept {
+        const auto editor=item(input_id);
+        try{
+            set_edit_text(editor,previous);
+            if(edit_text(editor)==previous)return true;
+        }catch(...){}
+        try{
+            if(!editor||!IsWindow(editor))throw std::runtime_error("Editor no disponible.");
+            auto native=wide(previous);
+            std::replace(native.begin(),native.end(),L'\n',L'\r');
+            const CHARRANGE all{0,-1};
+            SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&all));
+            SendMessageW(editor,EM_REPLACESEL,FALSE,reinterpret_cast<LPARAM>(native.c_str()));
+            if(edit_text(editor)==previous)return true;
+            if(SetWindowTextW(editor,native.c_str())&&edit_text(editor)==previous)return true;
+        }catch(...){}
+        OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\n");
+        return false;
+    }
     void replace_trace(SimulationTrace candidate,bool replace_editor) {
         // Only fully validated traces reach this commit point. In particular,
         // parsed editor input already had its expansion checked by the core.
@@ -1156,46 +1180,9 @@ struct SimulationView::Impl {
             frequency_candidates_only=previous_filter;
             pressed_frequency_group=previous_pressed;
             input_format=previous_format;
-            // The input editor may also reject a rollback stream. Do not let
-            // that second native failure mask the originating one or prevent
-            // reconstruction of the previously applied model and reading UI.
-            if(replacement){
-                try{
-                    set_edit_text(item(input_id),previous_editor);
-                    // A rollback stream that silently writes nothing is as
-                    // incomplete as one that reports dwError. Try the separate
-                    // literal replacement route in either case.
-                    if(edit_text(item(input_id))!=previous_editor)
-                        throw std::runtime_error("RichEdit no restauró los datos anteriores.");
-                }
-                catch(...){
-                    // EM_STREAMIN can itself fail while rolling back a
-                    // scenario. Use an independent plain-text replacement
-                    // instead of leaving new editor text beside the old
-                    // model. Retain the first failure for the user.
-                    try{
-                        const auto editor=item(input_id);
-                        auto previous_native=wide(previous_editor);
-                        std::replace(previous_native.begin(),previous_native.end(),L'\n',L'\r');
-                        if(!editor)throw std::runtime_error("El editor de simulación no está disponible.");
-                        // EM_REPLACESEL inserts literal text, even if its first
-                        // characters resemble an RTF header. Replace all text
-                        // without using the failed streaming operation.
-                        CHARRANGE all{0,-1};
-                        SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&all));
-                        SendMessageW(editor,EM_REPLACESEL,FALSE,
-                            reinterpret_cast<LPARAM>(previous_native.c_str()));
-                        // Retain a second native whole-document route if the
-                        // selection replacement itself was refused.
-                        if(edit_text(editor)!=previous_editor&&
-                                (!SetWindowTextW(editor,previous_native.c_str())||
-                                    edit_text(editor)!=previous_editor))
-                            OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\n");
-                    }catch(...){
-                        OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\n");
-                    }
-                }
-            }
+            // A second native failure cannot mask the first or interrupt
+            // recovery of the old trace, controls and reading positions.
+            if(replacement)(void)restore_input_document(previous_editor);
             try {
                 rebuild_groups();rebuild_steps();update();
                 restore_output_reading_anchor(output_anchor);
@@ -1225,17 +1212,39 @@ struct SimulationView::Impl {
     }
     void change_input_format(SimulationInputFormat requested) {
         if(requested==input_format)return;
-        input_wheel_delta=0;
-        // Converting a pending edit never applies it or moves the walkthrough.
-        // A format that cannot represent every value leaves the edit intact.
+        // A format change edits only a pending draft. The applied simulation
+        // trace, traversal step and previous reading sessions never change.
+        const auto editor=item(input_id);
+        const auto previous_format=input_format;
+        const auto previous_wheel=input_wheel_delta;
+        const auto reading=capture_output_reading_anchor(input_id);
+        std::optional<std::string> previous_text;
         try {
-            const auto values=simulation_parse_input(spec,edit_text(item(input_id)),input_format);
+            previous_text=edit_text(editor);
+            const auto values=simulation_parse_input(spec,*previous_text,previous_format);
             const auto converted=simulation_input_text(values,requested);
-            set_edit_text(item(input_id),converted);input_format=requested;error.clear();
+            set_edit_text(editor,converted);
+            // EM_STREAMIN is allowed to report zero dwError even when the
+            // control has not accepted the requested document.
+            if(edit_text(editor)!=converted)
+                throw std::runtime_error("RichEdit no conservó el formato solicitado.");
+            input_format=requested;input_wheel_delta=0;error.clear();
+            update();publish();
         }catch(const std::exception& failure){
-            error=std::string("No se cambió el formato; se conservaron los datos escritos. ")+failure.what();
+            const auto reason=std::string(failure.what());
+            input_format=previous_format;input_wheel_delta=previous_wheel;
+            if(previous_text){
+                bool unchanged=false;
+                try{unchanged=edit_text(editor)==*previous_text;}catch(...){}
+                // Avoid a needless stream when a rejected conversion never
+                // changed the document, its Undo history or text selection.
+                if(!unchanged)(void)restore_input_document(*previous_text);
+            }
+            error="No se cambió el formato; se conservaron los datos escritos. "+reason;
+            update();
+            restore_output_reading_anchor(reading,input_id);
+            publish();
         }
-        update();publish();
     }
     int measure(std::string_view text,int available,HFONT selected=nullptr)const {
         if(text.empty())return 0;const auto dc=GetDC(host);const auto previous=SelectObject(dc,selected?selected:font);

@@ -2931,6 +2931,112 @@ void text_and_independent_views(HWND host,const std::filesystem::path& captures)
         "Repeated zoom altered another simulation's data or scale");
     if(!captures.empty())capture(first.window(),captures/"text-restored-zoom-150.bmp");
 }
+void input_format_conversion_rejects_native_failures(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.text_values=true;
+    spec.values={std::string("patio"),std::string("patio")};
+    spec.scenarios.clear();
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the applied text trace for input-format failures");
+    const auto step=view.step_index(),steps=view.step_count();
+    const auto output_before=text(view,output_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto format=GetDlgItem(view.window(),input_format_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(editor&&format&&output&&SendMessageW(format,CB_GETCURSEL,0,0)==0,
+        "Missing native controls for editable text format conversion");
+    const auto select=[&](int index){
+        check(SendMessageW(format,CB_SETCURSEL,index,0)!=CB_ERR,
+            "Cannot select the requested editable input format");
+        SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(input_format_id,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(format));pump();
+    };
+    const auto current_error_is_accessible=[&]{
+        const auto diagnostic=text(view,error_id);
+        check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==GetDlgItem(view.window(),error_id)&&
+                region.source_text==diagnostic;
+        }),"Input-format rejection did not expose the visible error to narration");
+    };
+
+    set_edit_text(editor,"sol\nluna");
+    const CHARRANGE selection{1,3};
+    SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    int stream_attempts=0;
+    const auto skip_once=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& count=*reinterpret_cast<int*>(raw);
+        if(message==EM_STREAMIN&&++count==1)return 0;
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR input_hook_id=0x53494653;
+    check(SetWindowSubclass(editor,skip_once,input_hook_id,
+        reinterpret_cast<DWORD_PTR>(&stream_attempts))!=FALSE,
+        "Cannot inject a silent conversion stream rejection");
+    struct Unhook {
+        HWND window;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+    } input_guard{editor,skip_once,input_hook_id};
+    select(1);
+    CHARRANGE returned{};
+    SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&returned));
+    check(stream_attempts==1&&SendMessageW(format,CB_GETCURSEL,0,0)==0&&
+        text(view,input_id)=="sol\nluna"&&
+        returned.cpMin==selection.cpMin&&returned.cpMax==selection.cpMax&&
+        text(view,error_id).find("RichEdit no conservó el formato solicitado.")!=std::string::npos&&
+        text(view,output_id)==output_before&&view.step_index()==step&&
+        view.step_count()==steps&&spec==authored,
+        "Silent conversion wrote or committed an unconfirmed format");
+    current_error_is_accessible();
+
+    // Retrying a valid conversion changes only the pending draft, never the
+    // already calculated trace. The native input format reflects the switch.
+    select(1);
+    check(stream_attempts==2&&SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+        text(view,input_id)=="[\"sol\", \"luna\"]"&&
+        text(view,error_id).empty()&&view.step_index()==step&&
+        text(view,output_id)==output_before&&spec==authored,
+        "Valid conversion could not follow a silently rejected attempt");
+
+    // This time the editor accepts the new text, but RichEdit rejects a
+    // later output zoom while the UI is being updated. Format and draft must
+    // both roll back before showing the failure and enabling another retry.
+    const auto original_json=text(view,input_id);
+    const CHARRANGE json_selection{2,5};
+    SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&json_selection));
+    int remaining=1;
+    const auto fail_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& count=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&count>0){--count;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR output_hook_id=0x5349465a;
+    check(SetWindowSubclass(output,fail_zoom,output_hook_id,
+        reinterpret_cast<DWORD_PTR>(&remaining))!=FALSE,
+        "Cannot inject late failure when presenting a format change");
+    Unhook output_guard{output,fail_zoom,output_hook_id};
+    select(0);
+    SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&returned));
+    check(remaining==0&&SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+        text(view,input_id)==original_json&&
+        returned.cpMin==json_selection.cpMin&&returned.cpMax==json_selection.cpMax&&
+        text(view,error_id).find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+        text(view,output_id)==output_before&&view.step_index()==step&&
+        view.step_count()==steps&&spec==authored,
+        "Late native conversion failure discarded the previous draft or input format");
+    current_error_is_accessible();
+
+    select(0);
+    check(SendMessageW(format,CB_GETCURSEL,0,0)==0&&
+        text(view,input_id)=="sol\nluna"&&text(view,error_id).empty()&&
+        view.step_index()==step&&text(view,output_id)==output_before&&
+        spec==authored,
+        "Input-format conversion did not recover after a late native failure");
+}
+
 void empty_text_values(HWND host,const std::filesystem::path& captures) {
     const std::string empty_label="\"\" (cadena vacía)",space_label="\" \" (1 espacio)";
     const auto select=[](SimulationView& view,int id,int index) {
@@ -4140,6 +4246,7 @@ int main(int argc,char** argv)try {
     run("scenario_change_rejects_silent_editor_stream",[&]{scenario_change_rejects_silent_editor_stream(host.value);});
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
+    run("input_format_conversion_rejects_native_failures",[&]{input_format_conversion_rejects_native_failures(host.value);});
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});
     run("interactive_simulation_feedback_narration_ids",[&]{interactive_simulation_feedback_narration_ids(host.value);});
     run("editable_input_keyboard_focus",[&]{editable_input_keyboard_focus(host.value);});
