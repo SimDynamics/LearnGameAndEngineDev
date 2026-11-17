@@ -482,6 +482,15 @@ LRESULT CALLBACK scroll_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UI
     if(native_scroll&&LOWORD(wp)==SB_THUMBTRACK)
         SetPropW(window,scroll_tracking_property,reinterpret_cast<HANDLE>(tracking|axis));
     const auto result=DefSubclassProc(window,message,wp,lp);
+    if(message==WM_MOUSEWHEEL&&(LOWORD(wp)&MK_CONTROL)&&rich_edit(window)){
+        // Keep RichEdit's existing per-control Ctrl+wheel gesture, including
+        // its native increments, caret and scrolling. It has the same upper
+        // limit in a normal code card and after fullscreen reparenting.
+        int numerator=0,denominator=0;
+        SendMessageW(window,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+        if(denominator>0&&static_cast<long long>(numerator)*100>static_cast<long long>(denominator)*150)
+            SendMessageW(window,EM_SETZOOM,150,100);
+    }
     if((native_scroll&&(LOWORD(wp)==SB_THUMBPOSITION||LOWORD(wp)==SB_ENDSCROLL))||message==WM_CAPTURECHANGED||message==WM_CANCELMODE){
         const auto active=reinterpret_cast<ULONG_PTR>(GetPropW(window,scroll_tracking_property));
         const auto remaining=native_scroll?active&~axis:0;

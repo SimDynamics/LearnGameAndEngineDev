@@ -361,7 +361,6 @@ struct LessonView {
     std::optional<std::size_t> fullscreen_block;
     std::optional<int> fullscreen_lesson_scroll;
     bool fullscreen_output = false;
-    std::map<HWND,int> zoomed;
     std::jthread worker;
     std::mutex result_mutex;
     std::optional<windows::CppRunResult> completed;
@@ -744,39 +743,6 @@ struct LessonView {
         GESTURECONFIG pan{GID_PAN,GC_PAN | GC_PAN_WITH_SINGLE_FINGER_VERTICALLY | GC_PAN_WITH_SINGLE_FINGER_HORIZONTALLY,
             GC_PAN_WITH_GUTTER | GC_PAN_WITH_INERTIA};
         SetGestureConfig(item,0,1,&pan,sizeof(pan));
-    }
-    bool restore_fullscreen_zoom() {
-        if(!fullscreen_block)return false;
-        const auto& vm=controls[*fullscreen_block];
-        const auto item=fullscreen_output?vm.console:vm.source?vm.source:vm.simulated_code;
-        const auto found=zoomed.find(item);
-        if(found==zoomed.end())return false;
-        SendMessageW(item,EM_SETZOOM,found->second,100);zoomed.erase(found);
-        return true;
-    }
-    bool double_click_zoom(HWND item,POINT point) {
-        if(choice_labels.contains(item))return true;
-        const auto display=std::ranges::find_if(controls,[&](const auto& vm){return vm.simulated_code==item||vm.console==item||vm.source==item;});
-        if(display==controls.end()||!IsWindowEnabled(item))return false;
-        const auto gutter=windows::code_gutter_snapshot(item);
-        if((gutter.active&&point.x>=0&&point.x<gutter.width)||hits_text(item,point))return false;
-        end_drag();
-        // The gesture belongs to this console, including readonly output.
-        // Keep its focus and native selection across fullscreen reparenting.
-        SetFocus(item);
-        const auto focused=capture_console_focus();
-        const auto index=static_cast<std::size_t>(display-controls.begin());
-        const bool output=display->console==item;
-        if(fullscreen_block!=index||fullscreen_output!=output){
-            toggle_fullscreen(index,output);return true;
-        }
-        // Repeated empty-area double clicks keep the enlarged console open.
-        // Esc restores its previous scale before leaving full screen.
-        if(zoomed.contains(item))return true;
-        int numerator=0,denominator=0;SendMessageW(item,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
-        const int previous=denominator?MulDiv(numerator,100,denominator):100;
-        zoomed[item]=previous;SendMessageW(item,EM_SETZOOM,std::min(previous*2,6400),100);
-        reflow();restore_console_focus(focused,true);return true;
     }
     HWND find_item(int id) const {
         if(const auto found=GetDlgItem(pane,id))return found;
@@ -1517,7 +1483,6 @@ struct LessonView {
     void destroy_control(HWND item) {
         icon_focus.erase(item);
         wrap_modes.erase(item);
-        zoomed.erase(item);
         icon_buttons.erase(item);
         if (accessibility) {
             const MSAAPROPID property = PROPID_ACC_NAME;
@@ -2061,7 +2026,6 @@ struct LessonView {
         auto focused=capture_console_focus();
         if(!focused.editor)for(const auto& [icon,snapshot]:icon_focus)if(snapshot.editor){focused=snapshot;break;}
         end_drag();
-        restore_fullscreen_zoom();
         restore_fullscreen_palette();
         restore_fullscreen_header();
         if (fullscreen_block == index && fullscreen_output == output) {
@@ -4636,7 +4600,6 @@ struct LessonView {
     bool navigate_back(){
         if(import_open){close_import();return true;}
         if(fullscreen_block){
-            if(restore_fullscreen_zoom()){reflow();return true;}
             toggle_fullscreen(*fullscreen_block,fullscreen_output);return true;
         }
         const auto root=GetAncestor(window,GA_ROOT),keyboard=math_keyboard_window(root);
@@ -4823,13 +4786,28 @@ LRESULT CALLBACK quiz_answer_proc(HWND item,UINT message,WPARAM wparam,LPARAM lp
 }
 LRESULT CALLBACK gesture_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
     auto* view = reinterpret_cast<LessonView*>(value);
+    if(message==WM_MOUSEWHEEL&&(GET_KEYSTATE_WPARAM(wparam)&MK_CONTROL)&&
+        std::ranges::any_of(view->controls,[item](const auto& vm){return vm.simulated_code==item||vm.source==item||vm.console==item;})){
+        const auto scale=[&]{int numerator=0,denominator=0;
+            SendMessageW(item,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            return denominator>0?std::pair{numerator,denominator}:std::pair{1,1};};
+        const auto before=scale();const auto focused=view->capture_console_focus();
+        const auto result=DefSubclassProc(item,message,wparam,lparam);
+        const auto after=scale();
+        if(static_cast<long long>(before.first)*after.second!=static_cast<long long>(after.first)*before.second){
+            // Normal readonly code grows with its real text height. Fullscreen
+            // code retains its viewport and updates genuine native overflow.
+            view->reflow();view->restore_console_focus(focused);
+        }
+        return result;
+    }
     if(message==WM_SETFOCUS&&GetWindowTextLengthW(item)==0&&std::ranges::any_of(view->controls,[item](const auto& block){return block.answer==item;})){
         // An empty answer can enter the viewport with the same outer size
         // used by its offscreen provisional layout. Give TextServices the
         // current client before its first native caret is created.
         RECT client{};GetClientRect(item,&client);SendMessageW(item,WM_SIZE,SIZE_RESTORED,MAKELPARAM(client.right,client.bottom));
     }
-    if(message==WM_LBUTTONDBLCLK&&view->double_click_zoom(item,{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}))return 0;
+    if(message==WM_LBUTTONDBLCLK&&view->choice_labels.contains(item))return 0;
     if(message==WM_KEYDOWN&&wparam==VK_ESCAPE&&navigate_lesson_back(view->window))return 0;
     if (message == WM_CONTEXTMENU) for (std::size_t index = 0; index < view->controls.size(); ++index) {
         if(view->controls[index].simulated_code==item){view->simulated_menu(index);return 0;}
