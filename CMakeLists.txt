@@ -257,6 +257,47 @@ function(lgaed_add_order_editorial_authoring_tests)
     set_tests_properties(native.ordinary_explanation_authoring PROPERTIES TIMEOUT 120)
 endfunction()
 
+# Keep the selective History contract available in both local Windows QA
+# profiles. Fixtures come from a pinned complete publication and authenticated
+# authoring operations, and are written only inside the build directory.
+function(lgaed_add_selective_recovery_tests)
+    add_executable(lgaed_cpp_history_training_tests
+        native/platform/windows/cpp_history_training_tests.cpp)
+    target_link_libraries(lgaed_cpp_history_training_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.cpp_history_training COMMAND lgaed_cpp_history_training_tests)
+    set_tests_properties(native.cpp_history_training PROPERTIES TIMEOUT 40)
+
+    add_test(NAME native.p2_u3_workflow_authoring COMMAND ${_lgaed_state_fixture_python}
+        -m unittest discover -s "${CMAKE_SOURCE_DIR}/scripts/curriculum"
+        -p test_p2_u3_workflow_declaration.py)
+    set_tests_properties(native.p2_u3_workflow_authoring PROPERTIES TIMEOUT 120)
+
+    set(_selective_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u3-selective")
+    set(_selective_fixtures
+        "${_selective_fixture_dir}/u3-selective.before.json"
+        "${_selective_fixture_dir}/u3-selective.after.json"
+        "${_selective_fixture_dir}/u3-selective.reordered.json"
+        "${_selective_fixture_dir}/manifest.json")
+    add_custom_command(OUTPUT ${_selective_fixtures}
+        COMMAND ${_lgaed_state_fixture_python}
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/selective_recovery_fixture_source.py"
+            --output-dir "${_selective_fixture_dir}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/selective_recovery_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
+        COMMENT "Authenticating the U3 selective-recovery lesson and individual-case proposal"
+        VERBATIM)
+    add_custom_target(lgaed_selective_recovery_fixtures DEPENDS ${_selective_fixtures})
+    add_dependencies(lgaed_cpp_project_view_tests lgaed_selective_recovery_fixtures)
+    add_test(NAME native.cpp_project_u3_selective_individual
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-selective-individual "${_selective_fixture_dir}/u3-selective.after.json")
+    set_tests_properties(native.cpp_project_u3_selective_individual
+        PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+endfunction()
+
 # Shared by the complete application test configuration and the focused real
 # math-worker QA. Fixtures are pinned Git publications plus an in-memory
 # authoring proposal; this never rewrites the curricular lesson.
@@ -651,6 +692,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
     # creating an app profile or evaluating learner completion.
     add_executable(lgaed_cpp_project_view_tests native/presentation/windows/cpp_project_view_tests.cpp)
     target_link_libraries(lgaed_cpp_project_view_tests PRIVATE lgaed_curricular_windows)
+    lgaed_add_selective_recovery_tests()
     add_test(NAME native.cpp_project_internal_dialogs
         COMMAND lgaed_cpp_project_view_tests "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history" --internal-dialogs)
     set_tests_properties(native.cpp_project_internal_dialogs PROPERTIES TIMEOUT 90)
@@ -1990,6 +2032,7 @@ if(BUILD_TESTING)
     set_tests_properties(native.cpp_project_history PROPERTIES TIMEOUT 40)
     add_executable(lgaed_cpp_project_view_tests native/presentation/windows/cpp_project_view_tests.cpp)
     target_link_libraries(lgaed_cpp_project_view_tests PRIVATE lgaed_presentation_windows)
+    lgaed_add_selective_recovery_tests()
     add_executable(lgaed_cmake_curricular_targets_tests native/presentation/windows/cmake_curricular_targets_tests.cpp)
     target_link_libraries(lgaed_cmake_curricular_targets_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_cmake_curricular_targets_tests lgaed_cpp_tool_host)

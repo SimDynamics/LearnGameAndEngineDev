@@ -1,6 +1,7 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/bibliography_revision.hpp"
 #include "core/code_format_compat.hpp"
+#include "core/cmake_selective_recovery.hpp"
 #include "core/named_rule_battery_check.hpp"
 #include "core/named_rule_constant_variation_check.hpp"
 #include "platform/windows/winrt_apartment.hpp"
@@ -3772,10 +3773,34 @@ void read_compiler_workflow_checks(const JsonObject& root,Lesson& lesson) {
             "Selective History belongs to the original Spanish U3 lesson");
     auto& owner=lesson.pages[10].blocks[3];
     require(owner.stable_id=="block_0010_0003"&&owner.type==BlockType::cpp_compiler&&
-            owner.output_check&&owner.output_check->cases.size()==1&&
+            owner.output_check&&
             owner.cmake&&owner.cmake->target=="comprobar_cajas"&&
             owner.cmake->build_type=="Debug"&&owner.project_files.size()==6,
             "Declared U3 History owner has an incompatible CMake objective");
+    const auto objective=selective_recovery::goal(*owner.output_check);
+    require(objective.has_value(),
+            "Selective History requires its original report or seven individual cases");
+    if(objective->individual) {
+        // resolve_addresses has authenticated the complete client journal.
+        // Case-only revisions or a later permutation may keep this epoch, but
+        // the aggregate client and its old receipts cannot grant this goal.
+        const bool reviewed_client=!owner.compiler_client_epoch.empty()&&
+            std::ranges::any_of(owner.compiler_case_revisions,[&](const auto& revision) {
+                if(revision.id!=owner.stable_id||!revision.client_revision||
+                    revision.client_revision->cmake_recipe||revision.preserves_root_output_check||
+                    revision.client_revision->path!="pruebas/cajas_casos.cpp"||
+                    revision.record_sha256!=owner.compiler_client_epoch||
+                    revision.revised_client_epoch!=owner.compiler_client_epoch||
+                    revision.previous_client_epoch==owner.compiler_client_epoch)return false;
+                // The client transition itself must already describe the
+                // individual calls; a later case-only rewrite cannot turn a
+                // restored aggregate checker into the reviewed client.
+                const auto client_goal=selective_recovery::goal(revision.revised_output_check);
+                return client_goal&&client_goal->individual;
+            });
+        require(reviewed_client,
+                "Individual History cases require their authenticated checker-client revision");
+    }
     owner.compiler_workflow_check=CompilerWorkflowCheck::cmake_selective_recovery_v1;
 }
 

@@ -1001,10 +1001,97 @@ las baterías pedagógicas conservan sus contratos separados. Sin `client`,
 las huellas y la conducta de las publicaciones anteriores permanecen iguales.
 Los objetivos adicionales de estructura CMake, reglas nombradas, ejecución o
 Historial conservan sus validadores y condiciones. Admitir un modo de fuente
-no autoriza a cambiar esos objetivos. Por ejemplo, `cmakeSelectiveRecoveryV1`
-mantiene su contrato revisado de un caso: la desagregación en varios casos de
-ese propietario sigue requiriendo una adaptación específica compatible con
-su secuencia de recuperación.
+no autoriza a cambiar esos objetivos.
+
+**Historial CMake y ensayos individuales.** `cmakeSelectiveRecoveryV1`
+conserva íntegra su declaración `compilerWorkflowChecks`, con `activity`
+`block_0010_0003` y el mismo `kind`. Sigue limitado al editor de
+Programación 2, U3L2, en la lección española
+`programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador`.
+Conserva las trece páginas, la identidad del editor, sus seis archivos y el
+objetivo CMake `comprobar_cajas` en `Debug`.
+
+El contrato admite dos formas cerradas. La forma histórica mantiene el caso
+con entrada vacía y su salida completa: las comparaciones de 0, 4, 8, 20, 1, 5
+y 17 en ese orden, seguidas de `Bateria: OK`, con sus saltos de línea.
+La forma individual conserva las siete comparaciones, cada una en un caso
+independiente. El primero debe ser `1\n`; los seis restantes pueden
+reordenarse sin convertirse en obligatorios.
+
+| Entrada exacta | Resultado esperado de `cajas_para` | Uso |
+| --- | --- | --- |
+| `1\n` | 1 | Primer caso obligatorio |
+| `0\n` | 0 | Ensayo opcional |
+| `4\n` | 1 | Ensayo opcional |
+| `8\n` | 2 | Ensayo opcional |
+| `20\n` | 5 | Ensayo opcional |
+| `5\n` | 2 | Ensayo opcional |
+| `17\n` | 5 | Ensayo opcional |
+
+Cada entrada contiene sólo el entero indicado y un salto LF; no admite
+espacios adicionales, otro dato, otro formato de número ni comparación por
+tokens. Cada salida contiene exactamente una comparación, el resumen y un
+salto LF al final. Por ejemplo, el primer caso declara:
+
+```json
+{
+  "standardInput": "1\n",
+  "outputs": ["piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n"],
+  "exitCode": 0
+}
+```
+
+Los otros casos usan su cantidad y resultado en esa misma estructura.
+`target` puede omitirse o declarar `comprobar_cajas`.
+`exitCode` debe ser cero, también cuando se omite y se aplica ese valor
+por defecto. Se exige stderr vacío: `standardErrorExact` puede omitirse
+o ser `""`, y no se admite `standardError: "nonBlank"`.
+Se conservan las explicaciones, retroalimentaciones y marcas explícitas de
+cada caso mediante los mecanismos de autoría existentes.
+
+Para pasar al modo individual, Work prepara el cliente que lee una cantidad
+y realiza una sola comparación, y usa `revise_compiler_client_cases`
+con `path: "pruebas/cajas_casos.cpp"`, la fuente completa, los siete casos
+y su `case_semantics` explícita. La API archiva el bloque anterior completo,
+autentica la fuente y crea su época. No basta sustituir sólo `cases`.
+La revisión que origina la época actual debe corresponder a ese comprobador
+y declarar ya el contrato individual. Una revisión de otro cliente o de una
+receta no reutiliza una época anterior del comprobador; tampoco se puede
+volver al cliente agregado y añadir después los casos individuales sin una
+nueva revisión de cliente. Las permutas de los seis ensayos opcionales, las
+revisiones compatibles de sus guías y el formato admitido conservan la época.
+
+La secuencia de Historial permanece completa: registrar la versión correcta,
+introducir `return piezas / 4;`, compilar y observar el fallo del primer
+caso, comparar la fuente y la receta, restaurar sólo la fuente conservando el
+comentario independiente de la receta, y volver a compilar y ejecutar el
+primer caso correctamente.
+
+Si la compilación y la ejecución se realizan por separado, se selecciona o
+carga el primer caso `1\n` antes de construir y se conserva esa entrada al
+ejecutar y al reconstruir después de la restauración. Si entre la construcción
+y la ejecución sólo se cambia la entrada, se vuelve a cargar `1\n` y se
+construye otra vez, o se usa la acción que combina compilar y ejecutar. Esa
+nueva construcción actualiza la revisión de la fase y permite continuar en
+el mismo proyecto, con sus mismos archivos y configuración. Se conservan el
+código, el comentario independiente y las comparaciones ya realizadas.
+Ejecutar por separado sigue exigiendo la revisión exacta de la última
+construcción; el flujo combinado realiza ambas operaciones con el primer caso.
+
+Para `1\n`, la versión defectuosa devuelve
+0 cajas, informa `FALLO`, escribe `Bateria: FALLO` y termina con
+código 1; la recuperada informa 1 caja, `OK` y termina con código 0.
+Ejecutar un ensayo opcional no sustituye esos pasos ni completa el objetivo.
+Las evidencias deben corresponder al programa, revisión, compilación, entrada
+y época vigentes; una salida escrita o un recibo del agregado no acredita la
+secuencia nueva. Los logros y borradores anteriores permanecen conservados.
+
+`selective_recovery_fixture_source.py` prepara para las pruebas Windows
+la publicación completa de U3L2 fijada en `fa84e85`, su revisión individual
+y la permuta de los seis opcionales. Comparte el mismo cliente y los mismos
+casos con las pruebas de autoría y las comprobaciones nativas. Estos fixtures
+no modifican los JSON curriculares y su generación no acredita una ejecución
+de la aplicación.
 
 Las pruebas comparten una sección `clientCases` del generador de fixtures,
 separada de los escenarios que conservan el mismo programa. El piloto toma

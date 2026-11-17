@@ -1337,12 +1337,108 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
     }catch(...){cleanup();throw;}
 }
 
+void verify_individual_u3_publication(const std::filesystem::path& revised_path,
+        const curriculum::Lesson& revised){
+    // Keep the complete byte-pinned publication; revise only its checker client.
+    const auto original=windows::load_lesson(revised_path.parent_path()/"u3-selective.before.json");
+    const auto reordered=windows::load_lesson(revised_path.parent_path()/"u3-selective.reordered.json");
+    require(state::sha256(original.raw_json)==
+        "ae4b2c73b61a922a5836e4b025ad2c150efe81c4008867a733e0e4c20cab1115"&&
+        original.raw_json.size()==235865&&original.pages.size()==13,
+        "The individual History QA replaced its complete pinned U3 predecessor");
+    const auto& before=original.pages.at(10).blocks.at(3);
+    const auto& after=revised.pages.at(10).blocks.at(3);
+    const auto& optional_order=reordered.pages.at(10).blocks.at(3);
+    require(before.stable_id=="block_0010_0003"&&after.stable_id==before.stable_id&&
+        before.output_check&&before.output_check->cases.size()==1&&
+        after.output_check&&after.output_check->cases.size()==7&&
+        after.output_check->cases.front().standard_input=="1\n"&&
+        after.output_check->cases.front().outputs==std::vector<std::string>{
+            "piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n"}&&
+        before.project_files.size()==6&&after.project_files.size()==6&&
+        before.cmake==after.cmake&&before.initial_code==after.initial_code&&
+        before.source_files==after.source_files,
+        "The individual fixture changed the reviewed target, project or required first output");
+    require(!after.compiler_client_epoch.empty()&&
+        after.compiler_client_epoch!=before.compiler_client_epoch&&
+        after.compiler_workflow_check==curriculum::CompilerWorkflowCheck::cmake_selective_recovery_v1&&
+        before.compiler_workflow_check==after.compiler_workflow_check&&
+        curriculum::exercise_key(original,before)==curriculum::exercise_key(revised,after)&&
+        curriculum::reference_objective_frame(original,before)!=
+            curriculum::reference_objective_frame(revised,after),
+        "Revising the checker lost its separate epoch, original identity or History requirement");
+    bool client_changed=false;
+    for(std::size_t index=0;index<before.project_files.size();++index){
+        const auto& prior=before.project_files[index];
+        const auto& current=after.project_files[index];
+        require(prior.first==current.first,"The individual client reordered the six original files");
+        if(prior.first=="pruebas/cajas_casos.cpp"){
+            const auto marker=prior.second.find("\nint main() {");
+            require(marker!=std::string::npos&&
+                current.second.substr(0,marker)==prior.second.substr(0,marker)&&
+                current.second!=prior.second,
+                "The independently reviewed client replaced the checker function or its diagnostics");
+            client_changed=true;
+        }else require(prior.second==current.second,
+            "Separating cases changed a protected CMake, library, header or application source");
+    }
+    require(client_changed&&!after.compiler_case_revisions.empty(),
+        "The fixture omitted its changed checker and authenticated case revision");
+    bool authenticated=false;
+    for(const auto& revision:after.compiler_case_revisions)
+        if(revision.client_revision&&revision.client_revision->path=="pruebas/cajas_casos.cpp"&&
+           !revision.client_revision->cmake_recipe&&
+           revision.record_sha256==after.compiler_client_epoch&&
+           revision.revised_client_epoch==after.compiler_client_epoch&&
+           revision.previous_client_epoch==before.compiler_client_epoch)
+            authenticated=true;
+    require(authenticated,"The seven cases have no current authenticated checker-client epoch");
+    const auto metadata=windows::parse_lesson_progress_metadata(revised.raw_json,"es");
+    const auto& summary=metadata.pages.at(10).blocks.at(3);
+    require(summary.compiler_client_epoch==after.compiler_client_epoch&&
+        summary.compiler_workflow_check==after.compiler_workflow_check&&
+        windows::compiler_selective_history_required(metadata,summary),
+        "The progress reader omitted the individual client's authenticated History gate");
+    require(optional_order.output_check&&optional_order.output_check->cases.size()==7&&
+        optional_order.output_check->cases.front().standard_input=="1\n"&&
+        optional_order.output_check->cases[1].standard_input=="17\n"&&
+        optional_order.compiler_client_epoch==after.compiler_client_epoch&&
+        optional_order.compiler_workflow_check==after.compiler_workflow_check&&
+        windows::compiler_selective_history_required(reordered,optional_order),
+        "The full reader rejected a permutation confined to optional examples");
+
+    using namespace winrt::Windows::Data::Json;
+    for(const bool wrong_path:{false,true}){
+        auto forged=JsonObject::Parse(wide(revised.raw_json));
+        auto journal=forged.GetNamedObject(L"stateLayout").GetNamedArray(L"compilerCaseRevisions");
+        bool changed=false;
+        for(const auto& value:journal){
+            auto revision=value.GetObject();
+            if(revision.GetNamedString(L"id")!=L"block_0010_0003"||!revision.HasKey(L"client"))continue;
+            if(wrong_path)revision.GetNamedObject(L"client").SetNamedValue(
+                L"path",JsonValue::CreateStringValue(L"componente/src/cajas.cpp"));
+            else revision.Remove(L"client");
+            changed=true;
+        }
+        require(changed,"The negative fixture found no client provenance to alter");
+        const auto source=winrt::to_string(forged.Stringify());
+        bool full_rejected=false,summary_rejected=false;
+        try{(void)windows::parse_lesson_json(source,"es");}
+        catch(const std::exception&){full_rejected=true;}
+        try{(void)windows::parse_lesson_progress_metadata(source,"es");}
+        catch(const std::exception&){summary_rejected=true;}
+        require(full_rejected&&summary_rejected,
+            "A missing or wrongly bound client review passed a native History reader");
+    }
+}
+
 void integrated_selective_history_lesson(HWND host,const std::filesystem::path& authored_lesson,
-        bool declared_workflow=false){
-    // Both variants load the genuine 13-page lesson and exercise History
+        bool declared_workflow=false,bool individual=false){
+    // Each variant loads the genuine 13-page lesson and exercises History
     // through its published editor. The historical variant removes only the
     // new root declaration in memory, never the actual student lesson.
     auto published=windows::load_lesson(authored_lesson);
+    if(individual)verify_individual_u3_publication(authored_lesson,published);
     if(!declared_workflow){
         // Reuse the exact historical grading route without rewriting the
         // published asset, so the two CI cases cover both compatibility eras.
@@ -1357,11 +1453,18 @@ void integrated_selective_history_lesson(HWND host,const std::filesystem::path& 
     const auto owner=published.pages[10].blocks[3];
     require(owner.stable_id=="block_0010_0003"&&owner.project_files.size()==6
         &&owner.cmake&&owner.cmake->target=="comprobar_cajas"
-        &&owner.output_check&&owner.output_check->cases.size()==1,
+        &&owner.output_check&&owner.output_check->cases.size()==(individual?7u:1u),
         "The real recovery editor or its checked CMake target was replaced");
     auto focused=published;
     focused.pages={published.pages[10]};
     focused.pages[0].blocks={owner};
+    if(individual){
+        curriculum::Page following;following.stable_id="qa_after_selective_recovery";
+        curriculum::Block text;text.type=curriculum::BlockType::paragraph;
+        text.text="El primer caso y la recuperación selectiva permiten continuar.";
+        following.blocks.push_back(std::move(text));
+        focused.pages.push_back(std::move(following));
+    }
     focused.state_layout={};focused.reference_after.clear();
     focused.activity_after.clear();focused.retired_blocks.clear();
     focused.text_semantics.clear();focused.raw_json.clear();
@@ -1400,12 +1503,19 @@ void integrated_selective_history_lesson(HWND host,const std::filesystem::path& 
             pump();
             require(edit_text(source)==content,"The native source editor did not adopt the changed bytes");
         };
-        // This initial program already produces seven correct cases. It MUST
-        // NOT unlock the U3 history task without recording and comparing.
+        if(individual){
+            const auto input=child(view,1015);
+            require(input!=nullptr,"The individual checker has no real standard-input editor");
+            set_edit_text(input,"1\n");pump();
+            require(edit_text(input)=="1\n","The required input lost its exact final newline");
+            require(!navigate_lesson_view(view,1)&&lesson_page_state(view).index==0,
+                "A fresh individual History editor skipped the required sequence");
+        }
+        // Correct stdout alone cannot unlock either form of the History task.
         click(view,1011);
         await([&]{return IsWindowEnabled(run);},"Initial stdout-only CMake run did not finish");
         require(!windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
-            "A seven-case stdout match granted selective-history completion");
+            "A correct stdout match granted selective-history completion");
         const auto initial_feedback=edit_text(feedback_item);
         if(initial_feedback.find("falta acreditar la secuencia")==std::string::npos) {
             const auto initial_status=edit_text(child(view,1034));
@@ -1417,7 +1527,7 @@ void integrated_selective_history_lesson(HWND host,const std::filesystem::path& 
             isolated.execution_completed=true;
             isolated.exit_code=0;
             isolated.executable=owner.cmake->target;
-            isolated.standard_input="";
+            isolated.standard_input=owner.output_check->cases.front().standard_input;
             isolated.standard_output=initial_console;
             const auto isolated_verdict=windows::evaluate_cpp_output_check(
                 *owner.output_check,isolated,isolated.source_revision);
@@ -1433,6 +1543,8 @@ void integrated_selective_history_lesson(HWND host,const std::filesystem::path& 
         }
         require(initial_feedback.find("falta acreditar la secuencia")!=std::string::npos,
             "The real reader did not explain why stdout alone is insufficient");
+        if(individual)require(!navigate_lesson_view(view,1)&&lesson_page_state(view).index==0,
+            "A correct first-case output bypassed the separate History page gate");
 
         {ModalScenario modal(host,ModalScenario::Kind::record);click(project,302);modal.verified();}
         // Both edits must occur in the very same existing project editor.
@@ -1458,10 +1570,26 @@ void integrated_selective_history_lesson(HWND host,const std::filesystem::path& 
         require(IsWindowEnabled(build),"CMake could not build the modified project");
         click(config,406);
         await([&]{return IsWindowEnabled(configure);},"Defective U3 CMake Build did not finish");
+        if(individual){
+            // Zero passes even with piezas / 4. It cannot replace the first
+            // case's actual failure, and changing stdin must not reset History.
+            const auto input=child(view,1015);
+            set_edit_text(input,"0\n");pump();
+            click(view,1011);
+            await([&]{return IsWindowEnabled(run);},"Optional defective-source case did not finish");
+            require(edit_text(child(view,1014))==
+                "piezas=0 esperado=0 obtenido=0 OK\nBateria: OK\n"&&
+                !windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
+                "An optional passing case hid the required first-case defect");
+            set_edit_text(input,"1\n");pump();
+        }
         click(view,1011);
         await([&]{return IsWindowEnabled(run);},"Defective U3 CMake checked run did not finish");
         require(!windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
             "A failing intentional execution granted a completed U3 objective");
+        if(individual)require(edit_text(child(view,1014))==
+            "piezas=1 esperado=1 obtenido=0 FALLO\nBateria: FALLO\n",
+            "The required individual run did not expose the original integer-division defect");
         // These are genuine comparison dialogs. The root comment and altered
         // formula must both appear in independent diffs of ONE revision.
         {ModalScenario modal(host,ModalScenario::Kind::compare,"CMakeLists.txt",
@@ -1492,6 +1620,32 @@ void integrated_selective_history_lesson(HWND host,const std::filesystem::path& 
             "The actual recorded/compared/restored/build/checked U3 reader sequence earned no completion");
         require(windows::compiler_puzzle_case_count(completed,focused,owner)==1,
             "The final authenticated U3 run has no current program-case receipt");
+        if(individual){
+            require(edit_text(child(view,1014))==
+                "piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n",
+                "The repaired first case did not produce its complete exact success diagnostic");
+            const auto status=edit_text(child(view,1034));
+            require(status.find("Comprobación obligatoria: 1 de 1.")!=std::string::npos&&
+                status.find("Pruebas opcionales comprobadas: 0 de 6.")!=std::string::npos,
+                "The History UI still presents the six optional examples as requirements");
+            require(navigate_lesson_view(view,1)&&lesson_page_state(view).index==1&&
+                navigate_lesson_view(view,0)&&lesson_page_state(view).index==0,
+                "First-case recovery could not advance without executing the optional cases");
+            const auto optional_input=child(view,1015),optional_run=child(view,1011);
+            require(optional_input&&optional_run,"The completed individual checker did not reopen");
+            set_edit_text(optional_input,"0\n");pump();
+            click(view,1011);
+            await([&]{return IsWindowEnabled(optional_run);},"Optional case after recovery did not finish");
+            const auto extra=read_lesson_state(view);
+            require(windows::compiler_puzzle_completed(extra,focused,owner)&&
+                windows::compiler_puzzle_case_count(extra,focused,owner)==2&&
+                edit_text(child(view,1014))=="piezas=0 esperado=0 obtenido=0 OK\nBateria: OK\n",
+                "An optional check discarded the completed individual History objective");
+            for(const auto& [key,value]:completed.preferences.at("native_windows"))
+                if(key.ends_with("history-sequence/v1"))
+                    require(extra.preferences.at("native_windows").at(key)==value,
+                        "An optional execution replaced the previously earned History seal");
+        }
         require(flush_lesson_view(view),"The correct U3 completion was not persisted");
         cleanup();
         view=create_lesson_view(host,environment,focused);
@@ -1499,6 +1653,9 @@ void integrated_selective_history_lesson(HWND host,const std::filesystem::path& 
         MoveWindow(view,0,0,1000,760,TRUE);pump();
         require(windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
             "Reopening the real lesson discarded its new history-completion receipt");
+        if(individual)require(windows::compiler_puzzle_case_count(read_lesson_state(view),focused,owner)==2&&
+            navigate_lesson_view(view,1)&&navigate_lesson_view(view,0),
+            "Reopening lost individual or optional evidence or required the other five cases");
         click(view,1012);pump();
         require(!windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
             "Explicit Reiniciar código failed to revoke the independent U3 completion");
@@ -1515,6 +1672,7 @@ int main(int argc,char** argv){
     const bool internal_only=argc==3&&std::string_view(argv[2])=="--internal-dialogs";
     const bool u3_selective=argc==4&&std::string_view(argv[2])=="--u3-selective";
     const bool u3_selective_declared=argc==4&&std::string_view(argv[2])=="--u3-selective-declared";
+    const bool u3_selective_individual=argc==4&&std::string_view(argv[2])=="--u3-selective-individual";
     const bool u3_gates=argc==4&&std::string_view(argv[2])=="--u3-gates";
     const bool u2_exact_eof=argc==4&&std::string_view(argv[2])=="--u2-exact-eof";
     const bool u3_declaration=argc==4&&std::string_view(argv[2])=="--u3-declaration";
@@ -1526,7 +1684,7 @@ int main(int argc,char** argv){
     const bool u3_cmake_structure=argc==4&&std::string_view(argv[2])=="--u3-cmake-structure";
     const bool other_cases=argc==3&&std::string_view(argv[2])=="--other-cases";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_gates||u3_declaration||u3_prerequisites||u3_first_cmake||u3_first_cmake_repair||u3_real_history_gate||u3_entire_original||u3_cmake_structure||u2_exact_eof||other_cases,
+    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_selective_individual||u3_gates||u3_declaration||u3_prerequisites||u3_first_cmake||u3_first_cmake_repair||u3_real_history_gate||u3_entire_original||u3_cmake_structure||u2_exact_eof||other_cases,
         "Provide isolated QA output, optionally --internal-dialogs, --other-cases, --u3-selective or --u3-gates <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
@@ -1657,11 +1815,13 @@ int main(int argc,char** argv){
         else if(u3_cmake_structure)verify_genuine_u3_first_cmake_project(host,std::filesystem::path(argv[3]),true,true,false,true);
         else if(u3_selective)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]));
         else if(u3_selective_declared)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]),true);
+        else if(u3_selective_individual)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]),true,true);
         else if(!internal_only)integrated_lesson(host);
         cleanup_own_qa(std::filesystem::absolute(argv[1]),history_root,"cpp-project-view-");
         DestroyWindow(host);host=nullptr;FreeLibrary(rich);rich=nullptr;
         if(internal_only)std::cout<<"PASS internal project create/history/record/diff/restore pages, one enabled root/client bounds, preserved source/cursor/tab/Undo and CMake controls; no compilation\n";
         else if(u3_selective_declared)std::cout<<"PASS declared Win32 U3 History: original editor, record, failure, compare, recover, success and reopen\n";
+        else if(u3_selective_individual)std::cout<<"PASS pinned U3 individual client: authenticated publication, real first-case failure, both diffs, selective restoration, first-only navigation, optional receipt and reopen\n";
         else if(u3_selective)std::cout<<"PASS actual Win32 U3 owner focused lesson: no stdout shortcut; record, build, failed checked run, two UI diffs, selective file restore, rebuild, completed checked run, persistent reopen and reset\n";
         else if(u3_entire_original)std::cout<<"PASS all original U3 thirteen pages: authentic CMake phases, History actions, fresh execution seals, final quizzes and persisted reopening\n";
         else if(u3_cmake_structure)std::cout<<"PASS Win32 U3 structural CMake: three original owners, matching-stdout flat projects rejected, real child repairs accepted, first case sufficient and exact drafts retained after reopen\n";

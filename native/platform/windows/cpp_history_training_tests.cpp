@@ -1,5 +1,7 @@
 #include "platform/windows/cpp_history_training.hpp"
 #include "platform/windows/compiler_completion.hpp"
+#include "core/cmake_selective_recovery.hpp"
+#include <algorithm>
 #include <array>
 #include <iostream>
 #include <stdexcept>
@@ -12,6 +14,7 @@ using namespace lgaed::windows;
 using Stage=CmakeSelectiveRecoveryTrace::Stage;
 
 void check(bool ok,const char* issue){if(!ok)throw std::runtime_error(issue);}
+std::string output(bool fail);
 curriculum::Block published(){
     curriculum::Block block;
     block.type=curriculum::BlockType::cpp_compiler;
@@ -24,6 +27,10 @@ curriculum::Block published(){
         {"app/consulta.cpp","int main() { return 0; }\n"},
         {"pruebas/cajas_casos.cpp","int main() { return 0; }\n"}
     };
+    curriculum::OutputCase goal;goal.outputs={output(false)};
+    goal.executable="comprobar_cajas";
+    block.output_check=curriculum::OutputCheck{};
+    block.output_check->cases.push_back(std::move(goal));
     return block;
 }
 constexpr std::string_view source_path="componente/src/cajas.cpp";
@@ -201,10 +208,6 @@ void history_receipt_preserves_old_stdout_and_requires_new_actions(){
     auto block=published();
     block.stable_id="block_0010_0003";
     block.address.page=10;block.address.block=3;
-    curriculum::OutputCase goal;goal.standard_input="";
-    goal.outputs={output(false)};goal.executable="comprobar_cajas";
-    block.output_check=curriculum::OutputCheck{};
-    block.output_check->cases.push_back(goal);
     curriculum::Lesson lesson;lesson.locale="es";
     lesson.id="programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador";
     state::StateData stored;
@@ -407,6 +410,341 @@ void first_output_case_unlocks_without_discarding_optional_evidence(){
         compiler_puzzle_completed(earned,lesson,block),
         "Another state mutation revoked independent first-case achievements");
 }
+
+constexpr std::string_view individual_success=
+    "piezas=1 esperado=1 obtenido=1 OK\nBateria: OK\n";
+constexpr std::string_view individual_failure=
+    "piezas=1 esperado=1 obtenido=0 FALLO\nBateria: FALLO\n";
+
+curriculum::Block individual_published(){
+    auto block=published();
+    block.output_check->cases.clear();
+    // Independent literal oracles; the runtime helper does not author these.
+    constexpr std::array<std::pair<std::string_view,std::string_view>,7> cases{{
+        {"1\n",individual_success},
+        {"0\n","piezas=0 esperado=0 obtenido=0 OK\nBateria: OK\n"},
+        {"4\n","piezas=4 esperado=1 obtenido=1 OK\nBateria: OK\n"},
+        {"8\n","piezas=8 esperado=2 obtenido=2 OK\nBateria: OK\n"},
+        {"20\n","piezas=20 esperado=5 obtenido=5 OK\nBateria: OK\n"},
+        {"5\n","piezas=5 esperado=2 obtenido=2 OK\nBateria: OK\n"},
+        {"17\n","piezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"}
+    }};
+    for(const auto& [input,expected]:cases){
+        curriculum::OutputCase goal;goal.standard_input=input;
+        goal.outputs={std::string(expected)};
+        block.output_check->cases.push_back(std::move(goal));
+    }
+    // This is a model fixture, not an executed compiler. Actual published
+    // client provenance and compilation are covered by the pinned Win32 QA.
+    block.project_files.back().second="// Model of the separately revised stdin checker.\nint main() { return 0; }\n";
+    block.compiler_client_epoch=std::string(64,'e');
+    return block;
+}
+CppRunRequest individual_request(curriculum::CppProjectFiles files,CppRunRequest::Action action,
+        std::uint64_t id,std::uint64_t revision){
+    auto captured=request(std::move(files),action,id,revision);
+    captured.stdin_utf8="1\n";
+    return captured;
+}
+CppRunResult individual_result(const CppRunRequest& captured,bool failed){
+    auto observed=result(captured,failed);
+    if(captured.action==CppRunRequest::Action::execute||
+            captured.action==CppRunRequest::Action::compile_run)
+        observed.execution.stdout_bytes=failed?individual_failure:individual_success;
+    return observed;
+}
+void individual_goal_contract_is_closed(){
+    const auto original=published();
+    const auto aggregate=curriculum::selective_recovery::goal(*original.output_check);
+    check(aggregate&&!aggregate->individual&&aggregate->standard_input.empty()&&
+        aggregate->broken_output==output(true)&&aggregate->restored_output==output(false),
+        "The independent contract no longer accepts the historical aggregate");
+    const auto p=individual_published();
+    const auto current=curriculum::selective_recovery::goal(*p.output_check);
+    check(current&&current->individual&&current->standard_input=="1\n"&&
+        current->broken_output==individual_failure&&current->restored_output==individual_success,
+        "The new goal does not require exactly the first individual failure and success");
+    auto reordered=*p.output_check;
+    std::reverse(reordered.cases.begin()+1,reordered.cases.end());
+    check(curriculum::selective_recovery::goal(reordered).has_value(),
+        "Permuting only optional cases changed the required History goal");
+    auto bad=reordered;std::swap(bad.cases[0],bad.cases[1]);
+    check(!curriculum::selective_recovery::goal(bad),"An optional input became the required History case");
+    bad=*p.output_check;bad.cases.pop_back();
+    check(!curriculum::selective_recovery::goal(bad),"An individual contract omitted a reviewed example");
+    bad=*p.output_check;bad.cases.back()=bad.cases[1];
+    check(!curriculum::selective_recovery::goal(bad),"Duplicate inputs hid a missing independent case");
+    for(const auto input:{"","1","01\n","1 \n","1\r\n"}){
+        bad=*p.output_check;bad.cases[0].standard_input=input;
+        check(!curriculum::selective_recovery::goal(bad),"A noncanonical required input was accepted");
+    }
+    bad=*p.output_check;bad.cases[0].outputs[0].pop_back();
+    check(!curriculum::selective_recovery::goal(bad),"The required exact final newline became optional");
+    bad=*p.output_check;bad.cases[0].outputs.push_back(output(false));
+    check(!curriculum::selective_recovery::goal(bad),"An aggregate output could substitute for one case");
+    bad=*p.output_check;bad.cases[0].exit_code=1;
+    check(!curriculum::selective_recovery::goal(bad),"An individual success accepted a failing process");
+    bad=*p.output_check;bad.cases[0].executable="consultar_cajas";
+    check(!curriculum::selective_recovery::goal(bad),"The application replaced the independent checker");
+    bad=*p.output_check;bad.cases[0].standard_error_exact="Error\n";
+    check(!curriculum::selective_recovery::goal(bad),"The exact clean stderr contract changed");
+    bad=*p.output_check;
+    for(auto& item:bad.cases){item.executable="comprobar_cajas";item.standard_error_exact="";}
+    check(curriculum::selective_recovery::goal(bad).has_value(),
+        "Explicit checker aliases and empty stderr were rejected despite equivalent requirements");
+    auto missing=p;missing.output_check.reset();
+    bool rejected=false;
+    try{CmakeSelectiveRecoveryTrace invalid(missing);}
+    catch(const std::invalid_argument&){rejected=true;}
+    check(rejected,"A History trace without an authored output objective was accepted");
+}
+void individual_sequence_needs_the_first_case_and_every_action(){
+    const auto p=individual_published();
+    const auto bad=broken(p.project_files),good=restored(bad,p.project_files);
+    for(const bool combined:{false,true}){
+        CmakeSelectiveRecoveryTrace trace(p);
+        check(trace.individual_case(),"The individual trace selected the historical aggregate mode");
+        const auto initial=individual_request(p.project_files,CppRunRequest::Action::compile_run,1,1);
+        check(!trace.run(initial,individual_result(initial,false)),
+            "A correct individual output without recording the baseline gave History credit");
+        check(trace.record(registered(p.project_files)),"The individual baseline could not be registered");
+        auto build=individual_request(bad,CppRunRequest::Action::build,2,2);
+        if(!combined)check(trace.run(build,individual_result(build,true)),
+            "The real separate build could not begin the individual sequence");
+        const auto failing=individual_request(bad,combined?CppRunRequest::Action::compile_run:
+            CppRunRequest::Action::execute,3,2);
+        const auto before_failure=trace.stage();
+        for(std::size_t index=1;index<p.output_check->cases.size();++index){
+            auto optional=failing;optional.stdin_utf8=p.output_check->cases[index].standard_input;
+            auto observed=individual_result(optional,false);
+            observed.execution.stdout_bytes=p.output_check->cases[index].outputs.front();
+            check(!trace.run(optional,observed)&&trace.stage()==before_failure,
+                "An optional passing case advanced the required failure sequence");
+        }
+        auto optional_failed=failing;optional_failed.stdin_utf8="5\n";
+        auto failed_five=individual_result(optional_failed,true);
+        failed_five.execution.stdout_bytes="piezas=5 esperado=2 obtenido=1 FALLO\nBateria: FALLO\n";
+        check(!trace.run(optional_failed,failed_five)&&trace.stage()==before_failure,
+            "An optional failing case replaced the first required failure");
+        auto mismatch=individual_result(failing,true);mismatch.execution.exit_code=0;
+        check(!trace.run(failing,mismatch),"The individual failure accepted a zero exit");
+        mismatch=individual_result(failing,true);mismatch.execution.stdout_bytes=output(true);
+        check(!trace.run(failing,mismatch),"The previous aggregate replaced a fresh individual failure");
+        mismatch=individual_result(failing,true);mismatch.execution.stderr_bytes="Error\n";
+        check(!trace.run(failing,mismatch),"An unrelated stderr diagnostic replaced the intended defect");
+        mismatch=individual_result(failing,true);++mismatch.request_id;
+        check(!trace.run(failing,mismatch),"Another request's failure was attached to this run");
+        check(trace.run(failing,individual_result(failing,true))&&trace.stage()==Stage::failed_executed,
+            "The first actual individual failure did not advance its build/run sequence");
+        check(!trace.restore(recovery(p.project_files,bad)),
+            "The individual objective omitted its two required comparisons");
+        check(trace.compare(compared(p.project_files,bad,std::string(source_path)))&&
+              !trace.restore(recovery(p.project_files,bad))&&
+              trace.compare(compared(p.project_files,bad,std::string(root_path))),
+            "Both independent diffs were not required before source restoration");
+        auto all_files=recovery(p.project_files,bad);all_files.preserved_other_files=0;
+        check(!trace.restore(all_files),"Whole-project restoration counted as selective recovery");
+        check(trace.restore(recovery(p.project_files,bad)),"The selective source recovery was lost");
+        const auto final=individual_request(good,combined?CppRunRequest::Action::compile_run:
+            CppRunRequest::Action::execute,5,3);
+        if(!combined){
+            check(!trace.run(final,individual_result(final,false)),
+                "A first-case success before rebuilding the restored source gave credit");
+            auto rebuild=individual_request(good,CppRunRequest::Action::build,4,3);
+            auto pristine=rebuild;pristine.project_files=p.project_files;
+            check(!trace.run(pristine,individual_result(pristine,false)),
+                "Restoring the root comment away was accepted in the individual mode");
+            check(trace.run(rebuild,individual_result(rebuild,false)),
+                "The individual recovery could not rebuild its preserved root");
+        }else{
+            auto pristine=final;pristine.project_files=p.project_files;
+            check(!trace.run(pristine,individual_result(pristine,false)),
+                "A combined run removed the independent root comment");
+        }
+        const auto before_final=trace.stage();
+        for(std::size_t index=1;index<p.output_check->cases.size();++index){
+            auto optional=final;optional.stdin_utf8=p.output_check->cases[index].standard_input;
+            auto observed=individual_result(optional,false);
+            observed.execution.stdout_bytes=p.output_check->cases[index].outputs.front();
+            check(!trace.run(optional,observed)&&trace.stage()==before_final,
+                "Optional success completed the History goal before the required first case");
+        }
+        mismatch=individual_result(final,false);mismatch.execution.stdout_bytes=output(false);
+        check(!trace.run(final,mismatch),"An old aggregate success completed the individual objective");
+        mismatch=individual_result(final,false);mismatch.execution.stdout_bytes.pop_back();
+        check(!trace.run(final,mismatch),"Missing final newline completed the exact individual goal");
+        check(trace.run(final,individual_result(final,false))&&trace.complete()&&trace.completed_by(final),
+            "The complete first-case recovery sequence failed without optional executions");
+        auto replay=final;replay.stdin_utf8="0\n";
+        check(!trace.completed_by(replay),"Changing only stdin reused a first-case History seal");
+        auto optional=individual_result(replay,false);
+        optional.execution.stdout_bytes=p.output_check->cases[1].outputs.front();
+        check(!trace.run(replay,optional)&&trace.complete()&&trace.completed_by(final),
+            "An optional run erased the completed first-case trace");
+        check(value(good,root_path)==value(bad,root_path),
+            "The test failed to retain the independent root comment");
+    }
+}
+void individual_rebuild_after_optional_input_keeps_fresh_action_evidence(){
+    const auto p=individual_published();
+    const auto bad=broken(p.project_files),good=restored(bad,p.project_files);
+    for(const bool combined:{false,true}){
+        CmakeSelectiveRecoveryTrace trace(p);
+        check(trace.record(registered(p.project_files)),"The input-revision baseline could not be recorded");
+        const auto first_build=individual_request(bad,CppRunRequest::Action::build,301,2);
+        check(trace.run(first_build,individual_result(first_build,true)),
+            "The failing-source build was not observed before changing only stdin");
+        auto optional=individual_request(bad,CppRunRequest::Action::compile_run,302,3);
+        optional.stdin_utf8="0\n";
+        auto zero=individual_result(optional,false);
+        zero.execution.stdout_bytes="piezas=0 esperado=0 obtenido=0 OK\nBateria: OK\n";
+        check(!trace.run(optional,zero)&&trace.stage()==Stage::failed_built,
+            "An optional input advanced or erased the captured failing-source build");
+        auto stale_execute=individual_request(bad,CppRunRequest::Action::execute,303,4);
+        check(!trace.run(stale_execute,individual_result(stale_execute,true)),
+            "An Execute-only action borrowed a build captured before the input revision");
+        const auto failed=individual_request(bad,combined?CppRunRequest::Action::compile_run:
+            CppRunRequest::Action::build,304,4);
+        auto foreign=failed;foreign.project_key="qa/another-project";
+        check(!trace.run(foreign,individual_result(foreign,true)),
+            "A fresh build switched projects while retaining another project's History");
+        auto stale=failed;stale.revision=1;
+        check(!trace.run(stale,individual_result(stale,true)),
+            "A new build refreshed its evidence with an older editor revision");
+        auto wrong_fingerprint=individual_result(failed,true);
+        wrong_fingerprint.project_fingerprint=std::string(64,'f');
+        check(!trace.run(failed,wrong_fingerprint),
+            "A changed build fingerprint reused the previous failing-source snapshot");
+        check(trace.run(failed,individual_result(failed,true))&&
+            trace.stage()==(combined?Stage::failed_executed:Stage::failed_built),
+            "A genuine fresh build could not return to the required input");
+        if(!combined){
+            check(!trace.complete()&&!trace.compare(compared(p.project_files,bad,std::string(root_path))),
+                "A build-only refresh invented the required failed execution");
+            const auto executed=individual_request(bad,CppRunRequest::Action::execute,305,4);
+            check(trace.run(executed,individual_result(executed,true))&&
+                trace.stage()==Stage::failed_executed,
+                "An Execute matching the refreshed failing build was rejected");
+        }
+        check(trace.compare(compared(p.project_files,bad,std::string(root_path)))&&
+            trace.compare(compared(p.project_files,bad,std::string(source_path)))&&
+            trace.restore(recovery(p.project_files,bad)),
+            "Changing stdin removed the requirement for both diffs and one-file restoration");
+        const auto restored_build=individual_request(good,CppRunRequest::Action::build,306,5);
+        check(trace.run(restored_build,individual_result(restored_build,false)),
+            "The recovered source did not retain its independent build evidence");
+        optional=individual_request(good,CppRunRequest::Action::compile_run,307,6);
+        optional.stdin_utf8="0\n";
+        zero=individual_result(optional,false);
+        zero.execution.stdout_bytes="piezas=0 esperado=0 obtenido=0 OK\nBateria: OK\n";
+        check(!trace.run(optional,zero)&&trace.stage()==Stage::restored_built,
+            "An optional input completed or erased the recovered-source build");
+        stale_execute=individual_request(good,CppRunRequest::Action::execute,308,7);
+        check(!trace.run(stale_execute,individual_result(stale_execute,false)),
+            "The recovered source accepted Execute without a build for its current revision");
+        auto final=individual_request(good,combined?CppRunRequest::Action::compile_run:
+            CppRunRequest::Action::build,309,7);
+        foreign=final;foreign.projects_directory=L"C:\\LGAED-QA\\another-project";
+        check(!trace.run(foreign,individual_result(foreign,false)),
+            "A recovered rebuild reused History from a different project directory");
+        stale=final;stale.revision=4;
+        check(!trace.run(stale,individual_result(stale,false)),
+            "An obsolete source revision completed the recovered build");
+        wrong_fingerprint=individual_result(final,false);
+        wrong_fingerprint.project_fingerprint=std::string(64,'f');
+        check(!trace.run(final,wrong_fingerprint),
+            "A different recovered-build fingerprint replaced the saved snapshot");
+        check(trace.run(final,individual_result(final,false))&&
+            trace.stage()==(combined?Stage::verified:Stage::restored_built),
+            "A fresh rebuilt first case could not follow optional input exploration");
+        if(!combined){
+            check(!trace.complete()&&!trace.completed_by(final),
+                "A build-only refresh completed History without a fresh successful execution");
+            final.action=CppRunRequest::Action::execute;final.request_id=310;
+            check(trace.run(final,individual_result(final,false)),
+                "An Execute matching the refreshed restored build was rejected");
+        }
+        check(trace.complete()&&trace.completed_by(final),
+            "The refreshed first-case execution did not seal its complete action sequence");
+    }
+}
+void individual_receipts_preserve_the_aggregate_and_optional_history(){
+    curriculum::Lesson lesson;lesson.locale="es";
+    lesson.id="programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador";
+    auto legacy=published(),current=individual_published();
+    for(auto* block:{&legacy,&current}){
+        block->stable_id="block_0010_0003";block->address.page=10;block->address.block=3;
+        block->compiler_workflow_check=curriculum::CompilerWorkflowCheck::cmake_selective_recovery_v1;
+    }
+    state::StateData stored;
+    const auto capture=[](const CppRunRequest& run,const std::string& stdout_bytes){
+        curriculum::FreshExecution execution;execution.source_revision=run.revision;
+        execution.compilation_succeeded=true;execution.execution_succeeded=true;
+        execution.execution_completed=true;execution.exit_code=0;
+        execution.executable="comprobar_cajas";execution.standard_input=run.stdin_utf8;
+        execution.standard_output=stdout_bytes;
+        return execution;
+    };
+    const auto complete=[&](const curriculum::Block& block,std::uint64_t start){
+        const bool single=!block.output_check->cases.front().standard_input.empty();
+        const auto bad=broken(block.project_files),good=restored(bad,block.project_files);
+        CmakeSelectiveRecoveryTrace trace(block);
+        auto failed=request(bad,CppRunRequest::Action::compile_run,start,2);
+        auto final=request(good,CppRunRequest::Action::compile_run,start+1,3);
+        failed.stdin_utf8=final.stdin_utf8=block.output_check->cases.front().standard_input;
+        check(trace.record(registered(block.project_files))&&
+            trace.run(failed,single?individual_result(failed,true):result(failed,true))&&
+            trace.compare(compared(block.project_files,bad,std::string(root_path)))&&
+            trace.compare(compared(block.project_files,bad,std::string(source_path)))&&
+            trace.restore(recovery(block.project_files,bad))&&
+            trace.run(final,single?individual_result(final,false):result(final,false)),
+            "The model receipt omitted a real required action in its own source epoch");
+        const auto execution=capture(final,block.output_check->cases.front().outputs.front());
+        check(record_compiler_puzzle_case(stored,lesson,block,final,execution,"Correcto")&&
+            record_compiler_selective_history_completion(stored,lesson,block,final,execution,trace),
+            "The complete model chain failed to seal its own authored History goal");
+        return final;
+    };
+    (void)complete(legacy,100);
+    const auto historical=stored.preferences["native_windows"];
+    check(compiler_puzzle_completed(stored,lesson,legacy)&&
+        !compiler_puzzle_completed(stored,lesson,current)&&
+        compiler_puzzle_case_count(stored,lesson,current)==0,
+        "The aggregate History seal certified the revised individual client");
+    auto initial=individual_request(current.project_files,CppRunRequest::Action::compile_run,200,1);
+    const auto execution=capture(initial,std::string(individual_success));
+    auto stdout_only=stored;
+    check(record_compiler_puzzle_case(stdout_only,lesson,current,initial,execution,"Primero correcto")&&
+        !compiler_puzzle_completed(stdout_only,lesson,current)&&
+        compiler_puzzle_case_count(stdout_only,lesson,current)==0,
+        "Correct first-case stdout bypassed the revised client's independent History requirement");
+    auto final=complete(current,201);
+    check(compiler_puzzle_completed(stored,lesson,current)&&
+        compiler_puzzle_case_count(stored,lesson,current)==1,
+        "Optional cases became mandatory for the revised History objective");
+    const auto earned=stored.preferences["native_windows"];
+    auto optional=final;optional.request_id=203;optional.stdin_utf8="0\n";
+    const auto extra=capture(optional,current.output_check->cases[1].outputs.front());
+    check(record_compiler_puzzle_case(stored,lesson,current,optional,extra,"Opcional correcto")&&
+        compiler_puzzle_completed(stored,lesson,current)&&
+        compiler_puzzle_case_count(stored,lesson,current)==2,
+        "An optional case discarded or replaced the completed first-only achievement");
+    for(const auto& [key,value]:historical)
+        check(stored.preferences["native_windows"].contains(key)&&
+            stored.preferences["native_windows"].at(key)==value,
+            "Revising the client or recording optional output rewrote historical aggregate evidence");
+    for(const auto& [key,value]:earned)
+        if(key.ends_with("history-sequence/v1"))
+            check(stored.preferences["native_windows"].at(key)==value,
+                "Optional output replaced an independent historical or current History seal");
+    const auto reopened=state::decode_state(state::encode_state(stored));
+    check(compiler_puzzle_completed(reopened,lesson,legacy)&&
+        compiler_puzzle_completed(reopened,lesson,current)&&
+        compiler_puzzle_case_count(reopened,lesson,current)==2,
+        "State serialization lost a historical goal, first-case seal or optional receipt");
+    validate_compiler_puzzle_state(reopened,lesson,current);
+}
+
 void counterexamples(){
     const auto p=published();
     const auto base=registered(p.project_files);
@@ -457,6 +795,10 @@ int main(){
         inline_cmake_comment_is_valid_but_new_commands_are_not();
         history_receipt_preserves_old_stdout_and_requires_new_actions();
         first_output_case_unlocks_without_discarding_optional_evidence();counterexamples();
+        individual_goal_contract_is_closed();
+        individual_sequence_needs_the_first_case_and_every_action();
+        individual_rebuild_after_optional_input_keeps_fresh_action_evidence();
+        individual_receipts_preserve_the_aggregate_and_optional_history();
         std::cout<<"PASS CMake selective-history action chain: baseline, failed build/run, both diffs, one-file restore, rebuilt fresh success and negative cases; no credit stored\n";
         return 0;
     }catch(const std::exception& exc){

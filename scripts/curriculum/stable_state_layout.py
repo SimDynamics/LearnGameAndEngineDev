@@ -3038,6 +3038,42 @@ def _validate_crt_output_variants(document: dict) -> None:
                             "A historical reviewed CRT spelling must retain its current archived or active contract")
 
 
+def _compiler_selective_recovery_case_mode(owner: dict) -> str:
+    """Keep the U3 History oracle closed in aggregate and individual modes."""
+    _validate_compiler_case_payload(owner)
+    config = owner["outputCheck"]
+    require(config.get("inputComparison", "exact") == "exact",
+            "U3 History requires exact input comparison")
+    cases = config["cases"]
+    require(len(cases) in (1, 7),
+            "U3 History requires its original aggregate or all seven individual cases")
+    for case in cases:
+        require(case.get("target") in (None, "comprobar_cajas")
+                and case.get("exitCode", 0) == 0
+                and "standardError" not in case
+                and case.get("standardErrorExact", "") == "",
+                "U3 History requires comprobar_cajas, return zero and empty stderr")
+    reviewed = ((0, 0), (4, 1), (8, 2), (20, 5), (1, 1), (5, 2), (17, 5))
+
+    def diagnostic(pieces: int, expected: int) -> str:
+        return f"piezas={pieces} esperado={expected} obtenido={expected} OK\n"
+
+    if len(cases) == 1:
+        aggregate = "".join(diagnostic(*pair) for pair in reviewed) + "Bateria: OK\n"
+        require(cases[0]["standardInput"] == "" and cases[0]["outputs"] == [aggregate],
+                "U3 History must preserve its exact historical aggregate")
+        return "aggregate"
+    expected_outputs = {
+        f"{pieces}\n": [diagnostic(pieces, expected) + "Bateria: OK\n"]
+        for pieces, expected in reviewed
+    }
+    require(cases[0]["standardInput"] == "1\n"
+            and {case["standardInput"] for case in cases} == set(expected_outputs)
+            and all(case["outputs"] == expected_outputs[case["standardInput"]] for case in cases),
+            "U3 History requires case 1 first and all seven exact independent comparisons")
+    return "individual"
+
+
 def _validate_compiler_workflow_checks(document: dict) -> None:
     """Bind U3 History to its existing editor without changing any saved response."""
     if "compilerWorkflowChecks" not in document:
@@ -3067,10 +3103,20 @@ def _validate_compiler_workflow_checks(document: dict) -> None:
             and len(owner["projectFiles"]) == 6
             and type(cmake) is dict
             and cmake.get("target") == "comprobar_cajas"
-            and cmake.get("buildType") == "Debug"
-            and type(owner.get("outputCheck")) is dict
-            and len(owner["outputCheck"].get("cases", [])) == 1,
+            and cmake.get("buildType") == "Debug",
             "U3 History owner no longer has its reviewed CMake objective")
+    if _compiler_selective_recovery_case_mode(owner) == "individual":
+        # State validation has already authenticated this complete journal.
+        # Case-only changes and formatting keep the last source epoch; an
+        # older checker revision cannot authorize a later unrelated source.
+        sources = [record for _, record in _compiler_case_events(document, item["activity"])
+                   if "client" in record or "recipe" in record]
+        require(sources and "client" in sources[-1]
+                and sources[-1]["client"]["path"] == "pruebas/cajas_casos.cpp",
+                "Individual U3 History cases require their current authenticated checker epoch")
+        require(_compiler_selective_recovery_case_mode(
+                    _compiler_case_revision_after(sources[-1])) == "individual",
+                "An aggregate checker epoch cannot acquire individual cases without a new client")
 
 
 

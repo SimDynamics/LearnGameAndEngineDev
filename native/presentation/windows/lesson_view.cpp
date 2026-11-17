@@ -4421,14 +4421,22 @@ struct LessonView {
                             "Enregistrez d'abord la révision initiale des six fichiers dans l'historique.");
                         break;
                     case Stage::recorded:
-                        text+="\n"+ui("Modifica la fórmula de cajas.cpp y añade un comentario a CMakeLists.txt; construye el proyecto defectuoso.",
-                            "Change the formula in cajas.cpp, add a comment to CMakeLists.txt, then build the defective project.",
-                            "Modifiez la formule dans cajas.cpp, ajoutez un commentaire à CMakeLists.txt, puis construisez le projet défectueux.");
+                        text+="\n"+(vm.selective_recovery->individual_case()
+                            ?ui("Introduce 1 seguido de un salto de línea en Entrada. Modifica la fórmula de cajas.cpp y añade un comentario a CMakeLists.txt; después construye el proyecto defectuoso.",
+                                "Enter 1 followed by a line break in Input. Change the formula in cajas.cpp, add a comment to CMakeLists.txt, then build the defective project.",
+                                "Saisissez 1 suivi d'un saut de ligne dans Entrée. Modifiez la formule dans cajas.cpp, ajoutez un commentaire à CMakeLists.txt, puis construisez le projet défectueux.")
+                            :ui("Modifica la fórmula de cajas.cpp y añade un comentario a CMakeLists.txt; construye el proyecto defectuoso.",
+                                "Change the formula in cajas.cpp, add a comment to CMakeLists.txt, then build the defective project.",
+                                "Modifiez la formule dans cajas.cpp, ajoutez un commentaire à CMakeLists.txt, puis construisez le projet défectueux."));
                         break;
                     case Stage::failed_built:
-                        text+="\n"+ui("Ejecuta el objetivo defectuoso para comprobar los tres fallos y el código de salida 1.",
-                            "Run the defective target to observe three failures and exit code 1.",
-                            "Exécutez la cible défectueuse pour observer les trois échecs et le code de sortie 1.");
+                        text+="\n"+(vm.selective_recovery->individual_case()
+                            ?ui("Ejecuta el primer caso, con entrada 1: debe mostrar obtenido=0, FALLO y terminar con código de salida 1.",
+                                "Run the first case with input 1: it must report obtenido=0, FALLO and exit code 1.",
+                                "Exécutez le premier cas avec l'entrée 1 : il doit afficher obtenido=0, FALLO et terminer avec le code 1.")
+                            :ui("Ejecuta el objetivo defectuoso para comprobar los tres fallos y el código de salida 1.",
+                                "Run the defective target to observe three failures and exit code 1.",
+                                "Exécutez la cible défectueuse pour observer les trois échecs et le code de sortie 1."));
                         break;
                     case Stage::failed_executed:
                     case Stage::compared_one:
@@ -4442,14 +4450,22 @@ struct LessonView {
                             "Restaurez seulement componente/src/cajas.cpp depuis cette révision, en conservant le commentaire de la racine.");
                         break;
                     case Stage::source_restored:
-                        text+="\n"+ui("Construye de nuevo el objetivo con la fuente recuperada.",
-                            "Build the target again with the restored source.",
-                            "Reconstruisez la cible avec le fichier source restauré.");
+                        text+="\n"+(vm.selective_recovery->individual_case()
+                            ?ui("Conserva en Entrada el primer caso: 1 seguido de un salto de línea. Construye de nuevo el objetivo con la fuente recuperada.",
+                                "Keep the first case in Input: 1 followed by a line break. Build the target again with the restored source.",
+                                "Conservez le premier cas dans Entrée : 1 suivi d'un saut de ligne. Reconstruisez la cible avec le fichier source restauré.")
+                            :ui("Construye de nuevo el objetivo con la fuente recuperada.",
+                                "Build the target again with the restored source.",
+                                "Reconstruisez la cible avec le fichier source restauré."));
                         break;
                     case Stage::restored_built:
-                        text+="\n"+ui("Ejecuta de nuevo el objetivo reconstruido y comprueba las siete coincidencias.",
-                            "Run the rebuilt target and verify all seven matches.",
-                            "Exécutez la cible reconstruite et vérifiez les sept correspondances.");
+                        text+="\n"+(vm.selective_recovery->individual_case()
+                            ?ui("Ejecuta de nuevo el primer caso, con entrada 1: debe mostrar obtenido=1, OK y terminar con código de salida 0. Los otros seis casos son opcionales.",
+                                "Run the first case again with input 1: it must report obtenido=1, OK and exit code 0. The other six cases are optional.",
+                                "Exécutez à nouveau le premier cas avec l'entrée 1 : il doit afficher obtenido=1, OK et terminer avec le code 0. Les six autres cas sont facultatifs.")
+                            :ui("Ejecuta de nuevo el objetivo reconstruido y comprueba las siete coincidencias.",
+                                "Run the rebuilt target and verify all seven matches.",
+                                "Exécutez la cible reconstruite et vérifiez les sept correspondances."));
                         break;
                     case Stage::verified:
                         text+="\n"+ui("Revisa que la ejecución final pertenezca a este mismo proyecto y objetivo.",

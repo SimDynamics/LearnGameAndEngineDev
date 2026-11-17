@@ -1,9 +1,9 @@
 #pragma once
 #include "core/lesson.hpp"
+#include "core/cmake_selective_recovery.hpp"
 #include "platform/windows/cpp_project_history.hpp"
 #include "platform/windows/cpp_runner.hpp"
 #include "platform/windows/state_store.hpp"
-#include <array>
 #include <cstdint>
 #include <map>
 #include <optional>
@@ -29,6 +29,12 @@ public:
         if (!published.cmake || published.project_files.size()!=6 ||
             config_.target!="comprobar_cajas" || config_.build_type!="Debug")
             throw std::invalid_argument("The U3 CMake recovery trace needs its exact published project");
+        const auto goal=published.output_check
+            ? curriculum::selective_recovery::goal(*published.output_check)
+            : std::optional<curriculum::selective_recovery::Goal>{};
+        if(!goal)
+            throw std::invalid_argument("The CMake recovery trace needs its reviewed output contract");
+        goal_=*goal;
         for (const auto& [path, content] : initial_) {
             if (!original_.emplace(path,content).second)
                 throw std::invalid_argument("The recorded CMake baseline has repeated paths");
@@ -44,6 +50,7 @@ public:
         failed_source_=std::move(original_source);
     }
 
+    [[nodiscard]] bool individual_case() const noexcept { return goal_.individual; }
     [[nodiscard]] Stage stage() const noexcept { return stage_; }
     [[nodiscard]] bool complete() const noexcept { return stage_==Stage::verified; }
     [[nodiscard]] bool completed_by(const CppRunRequest& request) const {
@@ -54,6 +61,7 @@ public:
             request.project_key==project_key_ &&
             request.projects_directory==projects_directory_ &&
             request.cmake==std::optional<curriculum::CmakeConfig>{config_} &&
+            request.stdin_utf8==goal_.standard_input &&
             curriculum::cpp_project_frame(request.project_files,request.source_files,request.cmake)
                 ==verified_project_frame_;
     }
@@ -126,6 +134,18 @@ public:
                 request.projects_directory!=projects_directory_ ||
                 request.revision<=failed_revision_)return false;
 
+        // Selecting an optional input changes the editor revision without
+        // changing these six files. A new build may refresh that revision,
+        // but only inside the same captured project and phase fingerprint.
+        if(stage_==Stage::failed_built&&
+            (request.project_key!=project_key_||
+             request.projects_directory!=projects_directory_||
+             request.revision<failed_revision_||
+             result.project_fingerprint!=failed_fingerprint_))return false;
+        if(stage_==Stage::restored_built&&
+            (request.revision<restored_revision_||
+             result.project_fingerprint!=restored_fingerprint_))return false;
+
         const auto built_now=[&]{
             return result.compilation.succeeded() &&
                 result.target_type=="EXECUTABLE" && !result.artifact.empty();
@@ -137,16 +157,18 @@ public:
                 result.execution.exit_code==std::optional<std::uint32_t>{
                     wanted==Mode::broken?1u:0u} &&
                 result.execution.stderr_bytes.empty() &&
-                crlf_to_lf(result.execution.stdout_bytes)==oracle(wanted);
+                crlf_to_lf(result.execution.stdout_bytes)==
+                    (wanted==Mode::broken?goal_.broken_output:goal_.restored_output);
         };
         // The actual checked CMake editor has a COMBINED "Compile, run and
         // check" button. It is a real build followed by a real execution,
         // so both transitions can belong to the SAME captured request.
         const bool combined=request.action==CppRunRequest::Action::compile_run;
-        if (stage_==Stage::recorded || stage_==Stage::source_restored) {
+        if (stage_==Stage::recorded || stage_==Stage::source_restored ||
+            request.action==CppRunRequest::Action::build || combined) {
             if (request.action!=CppRunRequest::Action::build&&!combined)return false;
             if (!built_now()||(combined&&!completed_now()))return false;
-            if (stage_==Stage::recorded) {
+            if (wanted==Mode::broken) {
                 project_key_=request.project_key;projects_directory_=request.projects_directory;
                 failed_root_=std::move(current_root);
                 failed_revision_=request.revision;
@@ -167,10 +189,10 @@ public:
             }
             return true;
         }
-        // Explicit Build followed by either Execute or the app's combined
-        // checked action remains valid. Neither a build-only result nor a
-        // replay of the old run can complete the learner's restoration.
-        if (request.action!=CppRunRequest::Action::execute&&!combined ||
+        // Execute alone still belongs to the exact last build revision.
+        // A fresh Build or combined action above can refresh that revision;
+        // a build-only result or old execution never completes restoration.
+        if (request.action!=CppRunRequest::Action::execute ||
             !completed_now() ||
             result.project_fingerprint!=(wanted==Mode::broken?failed_fingerprint_:restored_fingerprint_))
             return false;
@@ -210,20 +232,6 @@ private:
             }
             result.push_back(text[i]);
         }
-        return result;
-    }
-    static std::string oracle(Mode mode) {
-        constexpr std::array<std::pair<int,int>,7> cases{{
-            {0,0},{4,1},{8,2},{20,5},{1,1},{5,2},{17,5}}};
-        std::string result;
-        bool all=true;
-        for(const auto [pieces,expected]:cases) {
-            const int actual=mode==Mode::broken?pieces/4:(pieces+3)/4;
-            const bool correct=actual==expected;all&=correct;
-            result+="piezas="+std::to_string(pieces)+" esperado="+std::to_string(expected)
-                +" obtenido="+std::to_string(actual)+(correct?" OK\n":" FALLO\n");
-        }
-        result+=all?"Bateria: OK\n":"Bateria: FALLO\n";
         return result;
     }
     static bool only_added_cmake_comments(std::string_view baseline,std::string_view revised) {
@@ -290,7 +298,7 @@ private:
         return request.cmake && *request.cmake==config_ &&
             request.backend==CppRunRequest::Backend::native_msvc &&
             request.source_files.empty() && !request.diagnostic &&
-            request.stdin_utf8.empty() && !request.project_key.empty() &&
+            request.stdin_utf8==goal_.standard_input && !request.project_key.empty() &&
             request.request_id!=0 &&
             request.request_id==result.request_id &&
             request.revision==result.revision &&
@@ -302,6 +310,7 @@ private:
     }
     curriculum::CppProjectFiles initial_;
     curriculum::CmakeConfig config_;
+    curriculum::selective_recovery::Goal goal_;
     std::map<std::string,std::string> original_;
     Stage stage_=Stage::unrecorded;
     std::string revision_id_,failed_source_,failed_root_;
