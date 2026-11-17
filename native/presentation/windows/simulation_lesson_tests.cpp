@@ -12,6 +12,7 @@
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Data.Json.h>
 #include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -212,6 +213,33 @@ int main(int argc,char** argv)try {
     Window host{CreateWindowExW(WS_EX_NOACTIVATE,L"STATIC",L"Isolated simulation lesson QA",
         WS_OVERLAPPEDWINDOW,0,0,1000,800,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr)};
     check(host.value,"Cannot create a native lesson host");
+    // The actual native reader, its console captions and the simulation all
+    // share this RichEdit zoom helper. Verify Win32 accepts the fractions;
+    // neither zooming nor approximating 101% may rewrite student text.
+    {
+        Window zoom_field{CreateWindowExW(0,MSFTEDIT_CLASS,L"",
+            WS_CHILD|WS_VISIBLE|ES_MULTILINE,0,0,320,120,host.value,
+            nullptr,GetModuleHandleW(nullptr),nullptr)};
+        check(zoom_field.value,"Cannot create native RichEdit zoom test");
+        constexpr std::string_view sample="borrador conservado\nsegunda línea";
+        set_edit_text(zoom_field.value,sample);
+        for(const int requested:{25,50,100,101,110,125,150}){
+            check(set_rich_text_zoom(zoom_field.value,requested),
+                "The shared zoom helper was rejected by native RichEdit");
+            int numerator=0,denominator=0;
+            check(SendMessageW(zoom_field.value,EM_GETZOOM,
+                reinterpret_cast<WPARAM>(&numerator),
+                reinterpret_cast<LPARAM>(&denominator))!=FALSE&&
+                numerator>=1&&numerator<=64&&denominator>=1&&denominator<=64,
+                "The shared zoom helper produced an invalid native fraction");
+            check(std::abs(MulDiv(numerator,100,denominator)-requested)<=1,
+                "RichEdit accepted the zoom but rendered a different percentage");
+            check(edit_text(zoom_field.value)==sample,
+                "Applying native zoom changed the student's original text");
+        }
+        check(!set_rich_text_zoom(nullptr,150),
+            "The shared zoom helper accepted a nonexistent native window");
+    }
     const auto environment=resolve_windows_environment({ProfileId::Codex,
         L"simulation-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
     initialize_profile_directories(environment.paths);
