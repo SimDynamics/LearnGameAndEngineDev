@@ -495,6 +495,12 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             token(std::to_string(item.value));token(std::to_string(item.lower));
             token(std::to_string(item.upper));token(std::to_string(item.initial));
         }
+        // Case identity belongs to this authenticated objective. A receipt
+        // for the same tuples with different numbers must remain historical.
+        token("open-battery-case-numbers-v1");
+        token(std::to_string(spec.original_case_numbers.size()));
+        for(const int number:spec.original_case_numbers)
+            token(std::to_string(number));
     }
     if(activity.boolean_battery_probe) {
         const auto& spec=*activity.boolean_battery_probe;

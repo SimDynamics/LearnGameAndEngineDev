@@ -2692,7 +2692,8 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             evidence.original_project_fingerprint==frame&&
             curriculum::open_battery_probe_spec_valid(*request.open_battery_probe)&&
             curriculum::open_battery_verify(
-                request.open_battery_probe->original_cases,evidence.runs,frame).accepted;
+                request.open_battery_probe->original_cases,
+                request.open_battery_probe->original_case_numbers,evidence.runs,frame).accepted;
     }
     if(request.named_rule_probe&&result.named_rule_probe) {
         const auto independent=request.cmake?
@@ -2923,6 +2924,9 @@ void complete_open_battery_probe(const CppRunRequest& request,CppRunResult& resu
     const auto test=std::ranges::find(request.project_files,spec.test_path,
         &curriculum::CppProjectFiles::value_type::first);
     if(lib==request.project_files.end()||test==request.project_files.end())return;
+    const auto comparison=curriculum::open_battery_instrumented_comparison(
+        test->second,spec.comparison_name);
+    if(!comparison)return;
     CppOpenBatteryEvidence evidence;
     evidence.original_project_fingerprint=fingerprint(request);
     const auto run=[&](curriculum::OpenBatteryMutation mutation,
@@ -2943,15 +2947,17 @@ void complete_open_battery_probe(const CppRunRequest& request,CppRunResult& resu
         private_request.cmake_graph_check.reset();
         private_request.capture_cmake_graph=false;
         private_request.stdin_utf8.clear();
-        private_request.project_key+="/open-battery-private-v2/"+std::to_string(index);
+        private_request.project_key+="/open-battery-private-v3/"+std::to_string(index);
         private_request.request_id=~(request.request_id+index);
-        for(auto& item:private_request.project_files)
-            if(item.first==spec.library_path) { item.second=*source;break; }
+        for(auto& item:private_request.project_files) {
+            if(item.first==spec.library_path)item.second=*source;
+            else if(item.first==spec.test_path)item.second=*comparison;
+        }
         const auto observed=run_cpp(private_request,stop);
         if(!observed.error_utf8.empty()||stop.stop_requested())return false;
-        const auto calls=curriculum::open_battery_parse_calls(
+        auto trace=curriculum::open_battery_parse_trace(
             observed.execution.stderr_bytes);
-        if(!calls)return false;
+        if(!trace)return false;
         curriculum::OpenBatteryRun phase;
         phase.program_frame=evidence.original_project_fingerprint;
         phase.mutation=mutation;
@@ -2964,22 +2970,20 @@ void complete_open_battery_probe(const CppRunRequest& request,CppRunResult& resu
             *observed.execution.exit_code<=255;
         if(phase.executed)
             phase.exit_code=static_cast<int>(*observed.execution.exit_code);
-        phase.calls=*calls;
+        phase.calls=std::move(trace->calls);
+        phase.case_numbers=std::move(trace->case_numbers);
         phase.stdout_bytes=observed.execution.stdout_bytes;
-        phase.stderr_bytes=curriculum::open_battery_student_stderr(
-            observed.execution.stderr_bytes);
+        phase.stderr_bytes=std::move(trace->visible);
         evidence.runs.push_back(std::move(phase));
         return evidence.runs.back().compiled&&evidence.runs.back().executed;
     };
     if(!run(curriculum::OpenBatteryMutation::baseline,{},0))return;
-    std::optional<curriculum::OpenBatteryCall> added;
-    for(const auto& call:evidence.runs.front().calls)
-        if(std::ranges::find(spec.original_cases,call)==spec.original_cases.end()){
-            if(added)return; // two unrelated calls are not one new case
-            added=call;
-        }
-    if(!added)return;
-    const auto plan=curriculum::open_battery_mutation_plan(spec.original_cases,*added);
+    const auto baseline=curriculum::open_battery_verify_baseline(
+        spec.original_cases,spec.original_case_numbers,evidence.runs.front(),
+        evidence.original_project_fingerprint);
+    if(!baseline.accepted||!baseline.added)return;
+    const auto plan=curriculum::open_battery_mutation_plan(
+        spec.original_cases,*baseline.added);
     if(!plan)return;
     // The clean baseline above is phase zero. Preserve separate builds
     // and executions for both observations of every historical case.

@@ -4469,8 +4469,11 @@ def _validate_compiler_open_battery_checks(document: dict) -> None:
         matches = list(re.finditer(pattern, by_name[names[1]]))
         require(len(matches) == len(original),
                 "Original CMake case count does not match its real test source")
-        seen_calls, seen_labels = set(), set()
-        for item, match in zip(original, matches):
+        # Declaration order is independent of the real driver's order.
+        # Match the immutable calls by their full tuple; their case numbers
+        # remain owned by the authenticated historical driver.
+        seen_calls = set()
+        for item in original:
             require(type(item) is dict and set(item) == {
                 "value", "lower", "upper", "initial"} and
                 all(type(item[name]) is int and signed_min <= item[name] <= signed_max
@@ -4479,14 +4482,18 @@ def _validate_compiler_open_battery_checks(document: dict) -> None:
             call = (item["value"], item["lower"], item["upper"], item["initial"])
             require(call not in seen_calls, "Duplicate original CMake battery input")
             seen_calls.add(call)
+        seen_labels, matched_calls = set(), set()
+        for match in matches:
             label, value, lower, upper, initial, accepted, adjusted = match.groups()
             require(int(label) not in seen_labels and
                     all(signed_min <= int(x) <= signed_max
                         for x in (label, value, lower, upper, initial, adjusted)),
                     "Invalid original CMake battery case number or signed integer")
             seen_labels.add(int(label))
-            require(call == tuple(map(int, (value, lower, upper, initial))),
-                    "Original case was changed or mapped to another input")
+            call = tuple(map(int, (value, lower, upper, initial)))
+            require(call in seen_calls and call not in matched_calls,
+                    "Original case was changed, duplicated or mapped to another input")
+            matched_calls.add(call)
             valid = all(-20 <= x <= 20 for x in (call[0], call[1], call[2]))
             valid = valid and call[1] <= call[2]
             expected = (call[1] - call[0] if call[0] < call[1]

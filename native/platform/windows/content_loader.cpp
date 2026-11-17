@@ -4969,9 +4969,12 @@ void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
                 authored_int(original.GetNamedValue(L"initial"))
             });
         }
-        require(open_battery_probe_spec_valid(check)&&
+        // The case-number map is derived below from the authenticated driver.
+        // Validate the only name interpolated into a regex before that pass;
+        // the complete spec is checked once all tuple/number pairs are known.
+        require(open_battery_identifier(check.comparison_name)&&
                 owner->cmake->target==check.test_target,
-            "Open CMake battery has invalid paths, names or duplicate cases");
+            "Open CMake battery has an invalid comparison name or target");
         const auto source=[&](std::string_view name)->const std::string* {
             const auto it=std::ranges::find(owner->project_files,name,
                 &CppProjectFiles::value_type::first);
@@ -4985,22 +4988,18 @@ void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
         require(open_battery_mutated_library(*library,check.function_name,
                 OpenBatteryMutation::baseline).has_value(),
             "The shared C++ function cannot be instrumented independently");
-        const auto escaped=std::regex_replace(
-            check.test_path,std::regex(R"(\.)"),R"(\.)");
-        const std::regex target(
-            R"(\badd_executable\s*\(\s*)"+check.test_target+
-            R"(\s+)"+escaped+R"(\s*\))");
-        require(std::regex_search(*cmake,target)&&
-                cmake->find("add_library(")!=cmake->npos,
-            "Open CMake battery must use its original test executable and library");
+        require(open_battery_instrumented_comparison(
+                *driver,check.comparison_name).has_value(),
+            "The original open battery comparator cannot be instrumented independently");
         const std::regex call(R"(\b)"+check.comparison_name+
             R"(\s*\(\s*(\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(true|false)\s*,\s*(-?\d+)\s*\))");
-        std::vector<OpenBatteryCall> authored;
+        std::vector<std::pair<OpenBatteryCall,int>> authored;
         std::set<int> labels;
         for(std::sregex_iterator found(driver->begin(),driver->end(),call),end;
                 found!=end;++found) {
             const auto& m=*found;
-            require(labels.insert(source_int(m[1].str())).second,
+            const auto number=source_int(m[1].str());
+            require(labels.insert(number).second,
                 "Original open battery repeats its case label");
             const OpenBatteryCall original{
                 source_int(m[2].str()),source_int(m[3].str()),
@@ -5010,10 +5009,33 @@ void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
             require((m[6].str()=="true")==expected.first&&
                     source_int(m[7].str())==expected.second,
                 "Original open battery expected answer contradicts the contract");
-            authored.push_back(original);
+            require(std::ranges::none_of(authored,[&](const auto& previous) {
+                    return previous.first==original;
+                }),"Original open battery repeats an input tuple");
+            authored.emplace_back(original,number);
         }
-        require(authored==check.original_cases,
-            "Open CMake battery root cases differ from actual historical comparisons");
+        require(authored.size()==check.original_cases.size(),
+            "Open CMake battery root case count differs from historical comparisons");
+        for(const auto& original:check.original_cases) {
+            const auto found=std::ranges::find_if(authored,[&](const auto& previous) {
+                return previous.first==original;
+            });
+            require(found!=authored.end(),
+                "Open CMake battery root cases differ from actual historical comparisons");
+            // JSON order is not the historical case number. Keep the original
+            // association even when authoring lists the same tuples differently.
+            check.original_case_numbers.push_back(found->second);
+        }
+        require(open_battery_probe_spec_valid(check),
+            "Open CMake battery has invalid paths, names, cases or case numbers");
+        const auto escaped=std::regex_replace(
+            check.test_path,std::regex(R"(\.)"),R"(\.)");
+        const std::regex target(
+            R"(\badd_executable\s*\(\s*)"+check.test_target+
+            R"(\s+)"+escaped+R"(\s*\))");
+        require(std::regex_search(*cmake,target)&&
+                cmake->find("add_library(")!=cmake->npos,
+            "Open CMake battery must use its original test executable and library");
         OutputCheck runtime;
         runtime.open_battery_check=true;
         runtime.input_comparison=TextComparison::exact;

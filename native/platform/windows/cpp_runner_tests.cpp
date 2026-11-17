@@ -1420,6 +1420,8 @@ int main(int count, char**) {
                      reference_objective_frame(original,before)==
                          reference_objective_frame(loaded,owner)))&&
                 owner.open_battery_probe->original_cases.size()==11&&
+                owner.open_battery_probe->original_case_numbers==
+                    std::vector<int>({1,2,3,4,5,6,7,8,9,10,11})&&
                 owner.open_battery_probe->comparison_name=="comprobar"&&
                 owner.stable_id==before.stable_id&&
                 owner.stable_id==progress.stable_id&&
@@ -1443,6 +1445,15 @@ int main(int count, char**) {
         valid.open_battery_probe=owner.open_battery_probe;
         require(windows::compiler_runtime_request_allowed(owner,valid),
                 "The authentic authored CMake project was not recognized");
+        auto renumbered=valid;
+        renumbered.open_battery_probe->original_case_numbers.front()=37;
+        require(!windows::compiler_runtime_request_allowed(owner,renumbered),
+                "A request replaced an authenticated historical case number");
+        auto renumbered_owner=owner;
+        renumbered_owner.open_battery_probe->original_case_numbers.front()=37;
+        require(reference_objective_frame(loaded,renumbered_owner)!=
+                    reference_objective_frame(loaded,owner),
+                "Historical case numbers were omitted from the objective identity");
         auto old_input=valid;old_input.stdin_utf8=*owner.standard_input;
         require(!windows::compiler_runtime_request_allowed(owner,old_input),
                 "The historical client batch was accepted as checker input");
@@ -1475,54 +1486,64 @@ int main(int count, char**) {
             return std::to_string(value.size())+":"+std::string(value);
         };
         const auto current_frame=reference_objective_frame(loaded,owner);
-        auto legacy_frame=current_frame;
-        const auto version=legacy_frame.find(open_battery_objective_version);
-        require(version!=std::string::npos,"Missing v2 objective identity");
-        constexpr std::string_view legacy_version=
-            "open-cmake-battery-independent-mutations-v1";
-        require(legacy_version.size()==open_battery_objective_version.size(),
-                "Historical length-prefixed objective fixture changed");
-        legacy_frame.replace(version,open_battery_objective_version.size(),legacy_version);
+        std::string number_identity=pack("open-battery-case-numbers-v1")+
+            pack(std::to_string(owner.open_battery_probe->original_case_numbers.size()));
+        for(const int number:owner.open_battery_probe->original_case_numbers)
+            number_identity+=pack(std::to_string(number));
+        const auto legacy_frame=[&](std::string frame,std::string_view version) {
+            const auto numbers=frame.find(number_identity);
+            require(numbers!=std::string::npos&&
+                    frame.find(number_identity,numbers+number_identity.size())==std::string::npos,
+                    "Missing or repeated numbered objective identity");
+            frame.erase(numbers,number_identity.size());
+            const auto current=frame.find(open_battery_objective_version);
+            require(current!=std::string::npos&&
+                    version.size()==open_battery_objective_version.size(),
+                    "Historical length-prefixed objective fixture changed");
+            frame.replace(current,open_battery_objective_version.size(),version);
+            return frame;
+        };
         const auto prefix="compiler-puzzle/v1/"+loaded.locale+"/"+loaded.id+"/"+
             exercise_key(loaded,owner)+"/";
-        const auto old_key=prefix+state::sha256(legacy_frame)+"/";
         const auto new_key=prefix+state::sha256(current_frame)+"/";
         const auto program=windows::compiler_program_frame(valid);
         const auto& first=owner.output_check->cases.front();
-        const auto old_proof=state::sha256("compiler-case-v1/"+pack(old_key)+
-            pack(program)+pack("0")+pack(first.standard_input)+
-            pack(first.executable.value_or("")));
-        auto& old=recorded.preferences["native_windows"];
-        old[old_key+"program"]=program;
-        old[old_key+"cases"]=std::vector<std::string>{old_proof};
-        old[old_key+"completed"]=state::sha256("compiler-complete-v1/"+
-            pack(old_key)+pack(program)+pack(old_proof));
-        old[old_key+"feedback"]=std::string("Historical v1 result");
-        // The action/input correction keeps v2 but changes its first input.
-        // An authentic former v2 seal stays historical; it cannot satisfy the
-        // corrected empty-input case or be overwritten by its new receipt.
+        const auto keep_historical=[&](std::string_view frame,
+                std::string_view input,std::string feedback) {
+            const auto key=prefix+state::sha256(frame)+"/";
+            const auto proof=state::sha256("compiler-case-v1/"+pack(key)+
+                pack(program)+pack("0")+pack(input)+pack(first.executable.value_or("")));
+            auto& old=recorded.preferences["native_windows"];
+            old[key+"program"]=program;
+            old[key+"cases"]=std::vector<std::string>{proof};
+            old[key+"completed"]=state::sha256("compiler-complete-v1/"+
+                pack(key)+pack(program)+pack(proof));
+            old[key+"feedback"]=std::move(feedback);
+            require(key!=new_key,"A historical receipt shares the numbered goal identity");
+            return key;
+        };
+        const auto v1_key=keep_historical(legacy_frame(current_frame,
+            "open-cmake-battery-independent-mutations-v1"),first.standard_input,
+            "Historical v1 acceptance-only result");
+        const auto v2_key=keep_historical(legacy_frame(current_frame,
+            "open-cmake-battery-independent-mutations-v2"),first.standard_input,
+            "Historical v2 unnumbered result");
+        // Preserve the former prepared-input v2 receipt as well. None of
+        // these authentic old identities contained per-comparison numbers.
         auto prior_input_owner=owner;
         prior_input_owner.output_check->cases.front().standard_input=*before.standard_input;
-        const auto prior_input_frame=reference_objective_frame(loaded,prior_input_owner);
-        const auto prior_input_key=prefix+state::sha256(prior_input_frame)+"/";
-        const auto& prior_case=prior_input_owner.output_check->cases.front();
-        const auto prior_input_proof=state::sha256("compiler-case-v1/"+
-            pack(prior_input_key)+pack(program)+pack("0")+pack(prior_case.standard_input)+
-            pack(prior_case.executable.value_or("")));
-        old[prior_input_key+"program"]=program;
-        old[prior_input_key+"cases"]=std::vector<std::string>{prior_input_proof};
-        old[prior_input_key+"completed"]=state::sha256("compiler-complete-v1/"+
-            pack(prior_input_key)+pack(program)+pack(prior_input_proof));
-        old[prior_input_key+"feedback"]=std::string("Historical v2 prepared client input");
-        require(prior_input_key!=old_key&&prior_input_key!=new_key&&
-                windows::compiler_puzzle_completed(recorded,loaded,prior_input_owner),
-                "The former v2 input fixture did not retain a distinct valid receipt");
+        const auto prior_input_key=keep_historical(legacy_frame(
+            reference_objective_frame(loaded,prior_input_owner),
+            "open-cmake-battery-independent-mutations-v2"),*before.standard_input,
+            "Historical v2 prepared client input");
+        require(v1_key!=v2_key&&prior_input_key!=v1_key&&prior_input_key!=v2_key,
+                "The old objective fixtures did not retain distinct receipt identities");
         const auto historical=recorded;
-        require(old_key!=new_key&&
-                !windows::compiler_puzzle_completed(recorded,loaded,owner)&&
+        require(!windows::compiler_puzzle_completed(recorded,loaded,owner)&&
+                !windows::compiler_puzzle_completed(recorded,loaded,prior_input_owner)&&
                 !windows::compiler_puzzle_completed(
                     state::decode(state::encode(recorded)),saved,progress),
-                "An old acceptance-only receipt acquired destination credit");
+                "An old unnumbered receipt acquired case-identity credit");
         auto missing_proof=observed;
         missing_proof.open_battery_probe_correct=false;
         const auto untouched=recorded;
@@ -1537,17 +1558,17 @@ int main(int count, char**) {
         for(const auto& [key,value]:historical.preferences.at("native_windows")) {
             const auto retained=state::find(recorded,"native_windows",key);
             require(retained&&*retained==value,
-                    "A v2 achievement changed the historical receipt");
+                    "A numbered achievement changed a historical receipt");
         }
         const auto reopened_state=state::decode(state::encode(recorded));
         require(windows::compiler_puzzle_completed(
                     reopened_state,saved,progress)&&
-                windows::compiler_puzzle_completed(reopened_state,loaded,prior_input_owner),
+                !windows::compiler_puzzle_completed(reopened_state,loaded,prior_input_owner),
                 "The independent battery achievement was lost on historical progress reopening");
         for(const auto& [key,value]:historical.preferences.at("native_windows")) {
             const auto retained=state::find(reopened_state,"native_windows",key);
             require(retained&&*retained==value,
-                    "Reopening changed a prior v1 or former-input v2 receipt");
+                    "Reopening changed a prior v1 or v2 receipt");
         }
         windows::validate_compiler_puzzle_state(reopened_state,saved,progress);
         auto tampered=reopened_state;
@@ -1608,17 +1629,18 @@ bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {
 )cpp"},
             {"pruebas/casos.cpp",R"cpp(#include "control/ajuste.h"
 #include <iostream>
-bool comprobar(int valor,int inferior,int superior,int inicial,
+bool comprobar(int numero,int valor,int inferior,int superior,int inicial,
                bool acepta,int ajuste) {
+    (void)numero;
     int resultado=inicial;
     const bool actual=intentar_ajuste(valor,inferior,superior,resultado);
     return actual==acepta&&resultado==ajuste;
 }
 int main() {
     int fallos=0;
-    if(!comprobar(2,3,7,77,true,1))++fallos;
-    if(!comprobar(0,7,3,77,false,77))++fallos;
-    if(!comprobar(3,3,7,59,true,0))++fallos;
+    if(!comprobar(1,2,3,7,77,true,1))++fallos;
+    if(!comprobar(2,0,7,3,77,false,77))++fallos;
+    if(!comprobar(3,3,3,7,59,true,0))++fallos;
     std::cout<<"Fallos="<<fallos<<'\n';
     return fallos?1:0;
 }
@@ -1627,7 +1649,7 @@ int main() {
         value.open_battery_probe=OpenBatteryProbeSpec{
             "src/ajuste.cpp","pruebas/casos.cpp",
             "intentar_ajuste","comprobar","comprobar_ajustes",
-            {{2,3,7,77},{0,7,3,77}}
+            {{2,3,7,77},{0,7,3,77}},{1,2}
         };
         const auto submitted=value.project_files;
         const auto positive=run_cpp(value);
@@ -1658,7 +1680,7 @@ int main() {
         auto missing=value;
         for(auto& [name,source]:missing.project_files)
             if(name=="pruebas/casos.cpp") {
-                const auto before="    if(!comprobar(3,3,7,59,true,0))++fallos;\n";
+                const auto before="    if(!comprobar(3,3,3,7,59,true,0))++fallos;\n";
                 const auto at=source.find(before);
                 require(at!=std::string::npos,
                         "The owned test fixture lost its additional case");

@@ -289,7 +289,8 @@ void preserved_public_project(const CppRunRequest& request,const CppRunResult& r
         "Private streams replaced the public execution logs");
 }
 void checked_battery(const CppRunRequest& request,const CppRunResult& result,
-        const FreshExecution& capture,const Block& block,OpenBatteryCall added,bool accepted) {
+        const FreshExecution& capture,const Block& block,OpenBatteryCall added,bool accepted,
+        int added_case_number=12) {
     public_success(request,result);
     require(result.open_battery_evidence.has_value(),"Missing actual independent CMake phases");
     const auto& evidence=*result.open_battery_evidence;
@@ -299,13 +300,15 @@ void checked_battery(const CppRunRequest& request,const CppRunResult& result,
         "The real eleven-case extension did not execute all 25 independent phases");
     auto calls=spec.original_cases;
     calls.push_back(added);
+    auto case_numbers=spec.original_case_numbers;
+    case_numbers.push_back(added_case_number);
     for(std::size_t i=0;i<plan->size();++i) {
         const auto& observed=evidence.runs[i];
         require(observed.compiled&&observed.executed&&
                 observed.program_frame==evidence.original_project_fingerprint&&
                 observed.mutation==(*plan)[i].mutation&&observed.target==(*plan)[i].target&&
-                observed.calls==calls,
-            "A real phase omitted an original/new call or used another mutation");
+                observed.calls==calls&&observed.case_numbers==case_numbers,
+            "A real phase omitted a call, changed its number or used another mutation");
         if(accepted)require(observed.exit_code==(i==0?0:1),
             "A passing checker failed to report an independently introduced defect");
     }
@@ -970,6 +973,8 @@ int main(int argc,char** argv) {
         require(published_block.open_battery_probe&&published_restored.open_battery_probe&&
                 published_block.open_battery_probe==published_restored.open_battery_probe&&
                 published_block.open_battery_probe->original_cases.size()==11&&
+                published_block.open_battery_probe->original_case_numbers==
+                    std::vector<int>({1,2,3,4,5,6,7,8,9,10,11})&&
                 published_block.output_check&&published_restored.output_check&&
                 published_block.output_check->open_battery_check&&published_restored.output_check->open_battery_check&&
                 published_block.output_check->cases.size()==1&&published_restored.output_check->cases.size()==1&&
@@ -981,7 +986,31 @@ int main(int argc,char** argv) {
                     std::optional<std::string>{published_block.open_battery_probe->test_target}&&
                 published_restored.output_check->cases.front().executable==
                     published_block.output_check->cases.front().executable,
-            "Full/progress loading did not require the instructed empty checker input");
+            "Full/progress loading did not require the original numbers and empty checker input");
+        {
+            // The declaration lists tuples; historical numbers belong to the
+            // authenticated comparator calls, not their JSON array positions.
+            auto reordered=JsonObject::Parse(winrt::to_hstring(reviewed));
+            for(const auto& value:reordered.GetNamedArray(L"compilerOpenBatteryChecks")) {
+                const auto entry=value.GetObject();
+                if(entry.GetNamedString(L"activity")!=winrt::to_hstring(activity))continue;
+                const auto cases=entry.GetNamedArray(L"originalCases");
+                JsonArray reversed;
+                for(auto i=cases.Size();i>0;--i)reversed.Append(cases.GetAt(i-1));
+                entry.Insert(L"originalCases",reversed);
+            }
+            const auto source=winrt::to_string(reordered.Stringify());
+            const auto full=parse_lesson_json(source,"es");
+            const auto compact=parse_lesson_progress_metadata(source,"es");
+            for(const auto* model:{&full,&compact}) {
+                const auto& mapped=owner(*model);
+                require(mapped.open_battery_probe&&
+                        mapped.open_battery_probe->original_case_numbers==
+                            std::vector<int>({11,10,9,8,7,6,5,4,3,2,1})&&
+                        mapped.project_files==published_block.project_files,
+                    "Reordering declared tuples detached their historical case numbers");
+            }
+        }
         require(published_block.project_files==before.project_files&&
                 published_restored.project_files==before.project_files&&
                 published_block.initial_code==before.initial_code&&published_restored.initial_code==before.initial_code&&
@@ -1250,19 +1279,47 @@ int main(int argc,char** argv) {
 
         constexpr OpenBatteryCall second_added{0,-3,-4,-29};
         const auto second_source=extended_driver(block,
-            "    if (!comprobar(12, 0, -3, -4, -29, false, -29)) { ++fallos; }\n");
+            "    for (int numero = 3 * 7 + 16; numero < 38; ++numero) {\n"
+            "        if (!comprobar(numero, 0, -3, -4, -29, false, -29)) { ++fallos; }\n"
+            "    }\n");
         auto second=request(second_source,CppRunRequest::Action::compile_run);
         require(compiler_runtime_request_allowed(block,second),
             "The existing compile_run API was rejected");
         const auto second_result=run_cpp(second);
         const auto second_capture=capture_cpp_execution(second,second_result);
-        checked_battery(second,second_result,second_capture,block,second_added,true);
+        checked_battery(second,second_result,second_capture,block,second_added,true,37);
         auto second_data=seed;
         require(record_compiler_puzzle_case(second_data,lesson,block,second,second_capture,"second extension")&&
                 compiler_program_frame(first)!=compiler_program_frame(second)&&second_data!=earned,
             "A different valid ternary case did not earn its own source-bound receipt");
         completion(second_data,progress,true);
-        std::cout << "PASS independent rejected-input extension through the existing compile_run API\n";
+        std::cout << "PASS independent rejected-input extension with computed case 37 in an equivalent loop\n";
+
+        const auto reject_number_change=[&](std::string source,std::string_view description) {
+            auto candidate=request(source,CppRunRequest::Action::compile_run);
+            require(compiler_runtime_request_allowed(block,candidate),
+                "Case-number QA must reach the actual independent runtime probe");
+            const auto result=run_cpp(candidate);
+            public_success(candidate,result);
+            const auto capture=capture_cpp_execution(candidate,result);
+            require(!result.open_battery_evidence&&!capture.open_battery_probe_correct&&
+                    result.execution.stdout_bytes.find("Fallos=0")!=std::string::npos&&
+                    evaluate_cpp_output_check(*block.output_check,capture,candidate.revision).verdict==
+                        OutputVerdict::incorrect&&
+                    !record_compiler_puzzle_case(data,lesson,block,candidate,capture,description)&&
+                    data==earned,
+                "A reused or renamed case number earned credit or erased earlier success");
+            preserved_public_project(candidate,result);
+        };
+        auto reused_number=first_source;
+        replace_once(reused_number,"comprobar(12, 3, 3, 7, 59, true, 0)",
+            "comprobar(11, 3, 3, 7, 59, true, 0)");
+        reject_number_change(std::move(reused_number),"new case reusing historical number 11");
+        auto renamed_history=first_source;
+        replace_once(renamed_history,"comprobar(1, 2, 3, 7, 77, true, 1)",
+            "comprobar(99, 2, 3, 7, 77, true, 1)");
+        reject_number_change(std::move(renamed_history),"historical case renamed to 99");
+        std::cout << "PASS real duplicate and renamed case numbers fail after the private baseline\n";
 
         auto fixed_source=first_source;
         replace_once(fixed_source,"return fallos == 0 ? 0 : 1;","return 0;");

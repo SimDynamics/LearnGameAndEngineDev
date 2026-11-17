@@ -544,13 +544,52 @@ En el propietario `block_0006_0011` de U3L10, el contrato tiene esta forma:
 ```
 
 La declaración debe corresponder a las comparaciones del archivo original.
+El cargador obtiene del archivo fuente autenticado el número de cada comparación
+y lo asocia a su tupla `(value, lower, upper, initial)`. Los números históricos
+deben ser enteros representables y distintos. No se añade un campo JSON de
+numeración: el orden de `originalCases` puede elegirse al declarar el objetivo
+y no determina los números. Una declaración ya publicada permanece inmutable,
+al igual que los archivos originales y sus identidades.
+
 En el programa presentado se conservan la biblioteca, la cabecera, el cliente
 y CMake; sólo puede cambiar el archivo de pruebas. La ejecución debe contener
-las once llamadas originales y exactamente una terna nueva. Las mutaciones
-independientes alteran por separado la aceptación y el destino de cada llamada,
-incluida la añadida: el comprobador debe detectar cada defecto, comunicarlo y
-continuar con las demás llamadas. El inicial sin ampliar sigue sin acreditar
-el objetivo aunque termine con `Fallos=0`.
+las once llamadas originales, cada una con su número histórico, y exactamente
+una terna nueva con su destino inicial. La comparación añadida necesita un
+número propio, distinto de todos los anteriores. Puede ser cualquier `int`
+representable que cumpla esa condición: no se exige 12, una secuencia
+consecutiva ni un literal concreto.
+
+El comparador declarado necesita una única definición global con la firma
+`bool(int, int, int, int, int, bool, int)`. Sus parámetros son, en ese orden:
+número de caso, valor, inferior, superior, destino inicial, aceptación esperada
+y ajuste esperado. Los nombres de los parámetros son libres. Se admiten
+prototipos previos, comentarios y saltos de línea, `const` por valor,
+`static`, `inline` y `noexcept`. El cargador comprueba que el comparador
+histórico puede instrumentarse antes de activar el objetivo; esta comprobación
+no constituye un analizador de todas las formas posibles de C++.
+
+El comprobador puede organizar las llamadas en ciclos, tablas o funciones
+auxiliares y calcular sus números y argumentos. La comprobación se basa en
+los valores ejecutados, no en buscar llamadas literales en el fuente del
+alumno. Cada ejecución del comparador debe contener exactamente una llamada
+al componente, con el mismo número al entrar y salir. La instrumentación
+privada asocia esos límites a la tupla realmente recibida por el componente;
+un rótulo impreso no reemplaza esa observación. Se rechazan los números repetidos,
+intercambiados entre llamadas históricas o cambiados entre variantes, así como
+las llamadas fuera de una comparación completa.
+
+Las mutaciones independientes alteran por separado la aceptación y el destino
+de cada llamada, incluida la añadida: el comprobador debe detectar cada
+defecto, comunicarlo y continuar con las demás llamadas. Conserva en todas las
+variantes las asociaciones entre números y tuplas. El inicial sin ampliar
+sigue sin acreditar el objetivo aunque termine con `Fallos=0`, y cambiar sólo
+una etiqueta tampoco crea una prueba nueva.
+
+Esta acreditación usa
+`open-cmake-battery-independent-mutations-v3`. Los recibos v1 y v2 conservan
+su identidad y alcance anteriores; no acreditan automáticamente la asociación
+de números exigida por v3. Los borradores y los archivos del estudiante no se
+renumeran ni se reescriben al incorporar el objetivo.
 
 ### Entrada y acciones de ejecución
 

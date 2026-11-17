@@ -504,6 +504,24 @@ endfunction()
 # The same open-program checks run in the focused Windows gate and the full
 # application build. Fixtures extend the original lesson only in isolated QA.
 function(lgaed_add_open_battery_runtime_test)
+    add_executable(lgaed_open_battery_check_tests
+        native/core/open_battery_check_tests.cpp)
+    target_link_libraries(lgaed_open_battery_check_tests
+        PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.open_battery COMMAND lgaed_open_battery_check_tests)
+    add_test(NAME native.open_battery_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_open_battery_contract.py)
+    set_tests_properties(native.open_battery native.open_battery_authoring
+        PROPERTIES TIMEOUT 30)
+    if(NOT TARGET lgaed_cpp_runner_tests)
+        add_executable(lgaed_cpp_runner_tests
+            native/platform/windows/cpp_runner_tests.cpp)
+        target_link_libraries(lgaed_cpp_runner_tests
+            PRIVATE lgaed_platform_windows lgaed_host_options)
+    endif()
+    add_test(NAME native.open_battery_runner COMMAND lgaed_cpp_runner_tests --open-battery
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json")
+    set_tests_properties(native.open_battery_runner PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
     add_executable(lgaed_open_battery_runtime_tests
         native/platform/windows/open_battery_runtime_tests.cpp)
     target_link_libraries(lgaed_open_battery_runtime_tests
@@ -2014,8 +2032,10 @@ if(BUILD_TESTING)
         "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/final-before.json" "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/final-after.json")
     set_tests_properties(native.u12_append_hypothesis_final_contract PROPERTIES TIMEOUT 60)
     add_test(NAME native.lesson_contract COMMAND lgaed_lesson_tests)
-    add_executable(lgaed_cpp_runner_tests native/platform/windows/cpp_runner_tests.cpp)
-    target_link_libraries(lgaed_cpp_runner_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    if(NOT TARGET lgaed_cpp_runner_tests)
+        add_executable(lgaed_cpp_runner_tests native/platform/windows/cpp_runner_tests.cpp)
+        target_link_libraries(lgaed_cpp_runner_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    endif()
     add_test(NAME native.cpp_runner COMMAND lgaed_cpp_runner_tests)
     set_tests_properties(native.cpp_runner PROPERTIES TIMEOUT 180)
     add_executable(lgaed_cpp_project_tests native/core/cpp_project_tests.cpp)

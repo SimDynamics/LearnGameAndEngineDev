@@ -72,12 +72,60 @@ class OpenBatteryRootContractTest(unittest.TestCase):
             self.assertEqual(before.get(name), after.get(name))
         self.assertNotIn("compilerOpenBatteryChecks", before)
         self.assertEqual(len(after["compilerOpenBatteryChecks"][0]["originalCases"]), 11)
+        self.assertEqual(before, {key: value for key, value in after.items()
+                                  if key != "compilerOpenBatteryChecks"})
+        driver = next(entry["initialCode"] for entry in state._blocks(after)[OWNER]["projectFiles"]
+                      if entry["path"] == "pruebas/casos.cpp")
+        for number, (value, lower, upper, initial) in enumerate(CASES, start=1):
+            self.assertIn(f"comprobar({number}, {value}, {lower}, {upper}, {initial},",
+                          driver)
+
+    def test_original_case_declaration_order_does_not_renumber_historical_calls(self):
+        before = published()
+        historical = state._blocks(before)[OWNER]
+        for order in (list(reversed(CASES)), list(CASES[4:] + CASES[:4])):
+            candidate = authorized(before)
+            candidate["compilerOpenBatteryChecks"][0]["originalCases"] = [
+                dict(value=value, lower=lower, upper=upper, initial=initial)
+                for value, lower, upper, initial in order
+            ]
+            with self.subTest(order=order):
+                self.assertEqual(state.validate(before), state.validate(candidate))
+                state.validate_transition(before, candidate)
+                self.assertEqual(historical, state._blocks(candidate)[OWNER])
+                self.assertEqual(before["stateLayout"], candidate["stateLayout"])
+                self.assertEqual(before, {key: value for key, value in candidate.items()
+                                          if key != "compilerOpenBatteryChecks"})
+
+    def test_duplicate_historical_case_numbers_are_rejected(self):
+        candidate = authorized(published())
+        driver = next(entry for entry in state._blocks(candidate)[OWNER]["projectFiles"]
+                      if entry["path"] == "pruebas/casos.cpp")
+        original = "comprobar(2, 5, 3, 7, -8, true, 0)"
+        self.assertEqual(driver["initialCode"].count(original), 1)
+        driver["initialCode"] = driver["initialCode"].replace(
+            original, "comprobar(1, 5, 3, 7, -8, true, 0)")
+        # Isolate this root-contract check: unchanged tuples must not hide a
+        # duplicated number, even before the historical source proof is checked.
+        with self.assertRaises(state.LayoutError):
+            state._validate_compiler_open_battery_checks(candidate)
+
+    def test_adding_the_goal_cannot_renumber_the_published_driver(self):
+        before = published()
+        candidate = authorized(before)
+        driver = next(entry for entry in state._blocks(candidate)[OWNER]["projectFiles"]
+                      if entry["path"] == "pruebas/casos.cpp")
+        original = "comprobar(1, 2, 3, 7, 77, true, 1)"
+        self.assertEqual(driver["initialCode"].count(original), 1)
+        driver["initialCode"] = driver["initialCode"].replace(
+            original, "comprobar(101, 2, 3, 7, 77, true, 1)")
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(before, candidate)
 
     def test_bad_original_calls_and_forged_semantics_are_rejected(self):
         before = published()
         for label, change in (
             ("missing", lambda r: r["originalCases"].pop()),
-            ("swapped", lambda r: r["originalCases"].reverse()),
             ("duplicate", lambda r: r["originalCases"].append(deepcopy(r["originalCases"][0]))),
             ("false_value", lambda r: r["originalCases"][1].update(value=6)),
             ("new_target", lambda r: r.update(target="consultar_ajustes")),
@@ -86,6 +134,7 @@ class OpenBatteryRootContractTest(unittest.TestCase):
             ("bad_comparison", lambda r: r.update(comparison="comprobar;exit(0)")),
             ("escape", lambda r: r.update(test="../private.cpp")),
             ("unknown_field", lambda r: r.update(required=False)),
+            ("invented_numbers", lambda r: r.update(originalCaseNumbers=list(range(1, 12)))),
         ):
             candidate = authorized(before)
             change(candidate["compilerOpenBatteryChecks"][0])
@@ -103,6 +152,11 @@ class OpenBatteryRootContractTest(unittest.TestCase):
         changed["compilerOpenBatteryChecks"][0]["originalCases"][0]["initial"] = 0
         with self.assertRaises(state.LayoutError):
             state.validate(changed)
+        reordered = deepcopy(accepted)
+        reordered["compilerOpenBatteryChecks"][0]["originalCases"].reverse()
+        state.validate(reordered)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(accepted, reordered)
         repeated = deepcopy(accepted)
         repeated["compilerOpenBatteryChecks"].append(
             deepcopy(repeated["compilerOpenBatteryChecks"][0]))
