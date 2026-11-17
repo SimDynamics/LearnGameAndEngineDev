@@ -766,10 +766,10 @@ struct SimulationView::Impl {
             if(preserve_selection){
                 // RichEdit STREAMIN recreates the document and its selection.
                 // Retain the selection only within the same calculated trace.
-                const auto length=GetWindowTextLengthW(output_window);
+                const LONG length=static_cast<LONG>(GetWindowTextLengthW(output_window));
                 const CHARRANGE restored{
-                    std::clamp(output_selection.cpMin,0,length),
-                    std::clamp(output_selection.cpMax,0,length)};
+                    std::clamp(output_selection.cpMin,LONG{0},length),
+                    std::clamp(output_selection.cpMax,LONG{0},length)};
                 SendMessageW(output_window,EM_EXSETSEL,0,
                     reinterpret_cast<LPARAM>(&restored));
             }
