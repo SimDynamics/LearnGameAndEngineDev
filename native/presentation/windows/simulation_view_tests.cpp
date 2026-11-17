@@ -2946,6 +2946,39 @@ void wheel_edges_resume_reader(HWND host) {
         check(scroll(item).nPos==last,
             "A wheel movement past the edge corrupted the scrollbar position");
     }
+    // Very small high-resolution deltas must accumulate to real scroll
+    // pixels, not disappear at each individual integer division.
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    probe.parent_messages=0;
+    const auto pixels_per_notch=MulDiv(75,
+        static_cast<int>(GetDpiForWindow(chart)),96);
+    for(int i=0;i<8;++i)wheel(chart,-1);
+    const auto expected=8*pixels_per_notch/WHEEL_DELTA;
+    check(expected>0&&scroll(chart).nPos==expected&&
+        probe.parent_messages==0,
+        "Small native trackpad wheel movements were discarded or forwarded prematurely");
+
+    // A scrollbar navigation is a new wheel session. The remainder left
+    // by the preceding eight events must never affect its first pixels.
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    wheel(chart,-1);
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    for(int i=0;i<8;++i)wheel(chart,-1);
+    check(scroll(chart).nPos==expected,
+        "The histogram retained a fractional wheel delta after native scrollbar navigation");
+
+    // Returning to the top and scrolling past its edge also discards a
+    // pending fraction, while preserving the lesson's delegated wheel.
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    wheel(chart,-1);
+    SendMessageW(chart,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    probe.parent_messages=0;
+    wheel(chart,1);
+    check(probe.parent_messages==1,
+        "The first-line wheel gesture was not delegated to the lesson");
+    for(int i=0;i<8;++i)wheel(chart,-1);
+    check(scroll(chart).nPos==expected,
+        "A wheel gesture past the histogram edge leaked its fraction into the next scroll");
 }
 
 void accumulated_output_scroll_follows_new_groups(HWND host) {
