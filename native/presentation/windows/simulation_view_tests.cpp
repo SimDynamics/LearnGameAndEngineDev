@@ -2250,11 +2250,15 @@ void scale_limits_and_local_control_wheel(HWND host) {
     control_wheel(host,input,WHEEL_DELTA/2);
     check(rich_edit_scale(input)==150,
         "Two high-resolution half-notches did not produce one zoom step");
+    control_wheel(host,input,-WHEEL_DELTA);
+    check(rich_edit_scale(input)==140,
+        "Ctrl+wheel failed to resume below the maximum after reaching it");
     control_wheel(host,input,WHEEL_DELTA/2);
     SendMessageW(input,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(WHEEL_DELTA)),0);
     control_wheel(host,input,WHEEL_DELTA/2);
-    check(rich_edit_scale(input)==150,
+    check(rich_edit_scale(input)==140,
         "Ordinary scrolling improperly changed zoom or carried a stale Ctrl+wheel fraction");
+    SendMessageW(input,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(WHEEL_DELTA)),0);
     for(int step=0;step<20;++step)control_wheel(host,input,-WHEEL_DELTA);
     check(rich_edit_scale(input)==50,
         "Ctrl+wheel passed below the simulation data editor's minimum scale");
