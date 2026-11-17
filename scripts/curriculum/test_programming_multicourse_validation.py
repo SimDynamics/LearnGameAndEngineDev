@@ -305,6 +305,20 @@ class StructuralCourseFixtures(unittest.TestCase):
                 self.save()
                 self.assertIn(expected, self.run_course(reject=True))
 
+    def test_future_course_rejects_undeclared_index_fields(self):
+        # An extra field must not become an implicit authoring extension merely
+        # because all IDs, titles and sequential numbers are otherwise valid.
+        for level, collection in (("course", "units"), ("unit", "lessons")):
+            with self.subTest(index=level):
+                self.select_course("future_programming_2040")
+                document = getattr(self, level)
+                document[collection][0]["unreviewedMetadata"] = "ignored before"
+                self.save()
+                output = self.run_course(reject=True)
+                self.assertIn("campos no admitidos", output)
+                self.assertIn(self.course_id, output)
+                self.assertNotIn("Traceback", output)
+
     def test_new_course_rejects_a_valid_lesson_indexed_from_another_folder(self):
         self.select_course("cpp_language_memory_oop")
         other = deepcopy(self.lesson)
