@@ -338,10 +338,16 @@ contar otro elemento sin terminar su grupo **no reemplaza el texto ni
 reinicia la posición de lectura**. Si se añade una nueva línea y el
 estudiante estaba leyendo el final, la salida se desplaza hasta mostrarla.
 Si había vuelto manualmente a una línea anterior para compararla, el
-simulador conserva esa posición aunque lleguen nuevas líneas. Cambiar el
-zoom o actualizar colores tampoco debe devolverlo involuntariamente
-al principio. La regresión nativa
-`accumulated_output_scroll_follows_new_groups` comprueba estos casos
+simulador conserva esa posición aunque lleguen nuevas líneas y mantiene
+su selección de texto dentro de la misma traza. Cambiar el zoom o
+actualizar colores tampoco debe devolverlo involuntariamente al principio.
+En cambio, seleccionar otro escenario o aplicar datos diferentes inicia
+una sesión de lectura independiente: la selección y el desplazamiento
+de la salida vuelven al inicio, **aunque los dos conjuntos de datos
+produzcan exactamente el mismo texto de salida**. No se reutiliza una
+posición de lectura perteneciente a los valores anteriores.
+Las regresiones nativas `accumulated_output_scroll_follows_new_groups`
+y `output_scenario_reading_isolated` comprueban estas condiciones
 sin cambiar el contrato de salida ni los datos originales.
 
 ### Barras de frecuencia calculadas
