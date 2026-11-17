@@ -132,7 +132,8 @@ struct CppFillView::Impl {
             reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)),GetModuleHandleW(nullptr),nullptr);
         if(!item)throw std::runtime_error("Cannot create a code hole control");
         reader_theme::apply(item,reader_theme::Surface::card);SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
-        if(_wcsicmp(type,MSFTEDIT_CLASS)==0)SendMessageW(item,EM_SETZOOM,text_scale,100);
+        if(_wcsicmp(type,MSFTEDIT_CLASS)==0&&!set_rich_text_zoom(item,text_scale))
+            throw std::runtime_error("RichEdit rechazó la escala del ejercicio de código.");
         return item;
     }
     void set_token_text(HWND item,std::string_view text,COLORREF ink=RGB(216,216,216)){
@@ -522,15 +523,38 @@ void CppFillView::set_enabled(bool value){impl_->release();impl_->enabled=value;
 void CppFillView::set_wrap(bool value){if(impl_->wrap==value)return;impl_->wrap=value;RECT bounds{};GetClientRect(impl_->host,&bounds);impl_->layout(bounds.right);}
 void CppFillView::scroll_horizontal_to(int offset){impl_->horizontal=offset;RECT bounds{};GetClientRect(impl_->host,&bounds);impl_->layout(bounds.right);}
 void CppFillView::set_text_scale(int percentage){
-    percentage=std::clamp(percentage,75,150);if(impl_->text_scale==percentage)return;impl_->text_scale=percentage;
+    percentage=std::clamp(percentage,75,150);if(impl_->text_scale==percentage)return;
     const auto next=CreateFontW(-MulDiv(18*percentage,static_cast<int>(GetDpiForWindow(impl_->host)),96*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
         CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,FIXED_PITCH|FF_MODERN,reader_theme::code_font_face());
     if(!next)throw std::runtime_error("Cannot scale code-hole text");
-    struct Scale{int percentage;HFONT font;};Scale scale{percentage,next};
-    const auto children=[](HWND item,LPARAM data)->BOOL{const auto& scale=*reinterpret_cast<Scale*>(data);wchar_t name[32]{};GetClassNameW(item,name,32);
-        if(_wcsnicmp(name,L"RichEdit",8)==0)SendMessageW(item,EM_SETZOOM,scale.percentage,100);else SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(scale.font),FALSE);return TRUE;};
-    EnumChildWindows(impl_->host,children,reinterpret_cast<LPARAM>(&scale));
-    if(impl_->floating)EnumChildWindows(impl_->palette,children,reinterpret_cast<LPARAM>(&scale));
+    // EnumChildWindows callbacks must not throw through the native frame.
+    // First validate RichEdit zoom; only then install the new shared font.
+    struct Scale{int percentage;HFONT font;bool accepted=true,update_font=false;};
+    Scale scale{percentage,next};
+    const auto children=[](HWND item,LPARAM data)->BOOL{
+        auto& state=*reinterpret_cast<Scale*>(data);
+        wchar_t name[32]{};GetClassNameW(item,name,32);
+        const bool rich=_wcsnicmp(name,L"RichEdit",8)==0;
+        if(rich&&!state.update_font&&!set_rich_text_zoom(item,state.percentage)){
+            state.accepted=false;return FALSE;
+        }
+        if(!rich&&state.update_font)
+            SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(state.font),FALSE);
+        return TRUE;
+    };
+    const auto visit=[&]{
+        EnumChildWindows(impl_->host,children,reinterpret_cast<LPARAM>(&scale));
+        if(scale.accepted&&impl_->floating)
+            EnumChildWindows(impl_->palette,children,reinterpret_cast<LPARAM>(&scale));
+    };
+    visit();
+    if(!scale.accepted){
+        scale.percentage=impl_->text_scale;scale.accepted=true;
+        visit();DeleteObject(next);
+        throw std::runtime_error("RichEdit rechazó la escala del ejercicio de código.");
+    }
+    scale.update_font=true;visit();
+    impl_->text_scale=percentage;
     if(impl_->font)DeleteObject(impl_->font);impl_->font=next;RECT bounds{};GetClientRect(impl_->host,&bounds);impl_->layout(bounds.right);
 }
 HWND CppFillView::palette_window()const{return impl_->palette;}
