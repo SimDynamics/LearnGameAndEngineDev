@@ -29,7 +29,8 @@ constexpr int title_id=100,description_id=101,scenario_label_id=102,scenario_id=
     input_label_id=114,input_id=115,apply_id=116,restore_id=117,error_id=118,
     groups_label_id=119,input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
     previous_decision_id=124,next_decision_id=125,result_comparison_id=126,
-    frequencies_id=127,frequencies_label_id=128,frequency_filter_id=129,group_first_id=200;
+    frequencies_id=127,frequencies_label_id=128,frequency_filter_id=129,
+    progress_label_id=130,progress_id=131,group_first_id=200;
 bool passive_message(UINT message) {
     return message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||
         message==WM_MOUSEMOVE||message==WM_CAPTURECHANGED||message==WM_CANCELMODE||message==WM_NCDESTROY;
@@ -299,6 +300,9 @@ struct SimulationView::Impl {
         register_class(view_class,procedure);register_class(array_class,array_procedure);
         register_class(statistics_class,statistics_procedure);
         register_class(frequency_class,frequencies_procedure);
+        INITCOMMONCONTROLSEX common{sizeof(common),ICC_PROGRESS_CLASS};
+        if(!InitCommonControlsEx(&common))
+            throw std::runtime_error("No se pudo preparar el progreso del recorrido.");
         rich=LoadLibraryW(L"Msftedit.dll");if(!rich)throw std::runtime_error("RichEdit no está disponible.");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,view_class,L"Simulación interactiva",WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN,
             0,0,1,1,parent,nullptr,GetModuleHandleW(nullptr),this);
@@ -307,7 +311,8 @@ struct SimulationView::Impl {
         (void)CoCreateInstance(CLSID_AccPropServices,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(accessibility.GetAddressOf()));
         for(const auto id:{title_id,description_id,scenario_label_id,array_label_id,original_order_id,
                 step_id,explanation_id,transition_id,output_label_id,result_comparison_id,
-                input_label_id,error_id,groups_label_id,frequencies_label_id})label(id);
+                input_label_id,error_id,groups_label_id,frequencies_label_id,
+                progress_label_id})label(id);
         const auto selector=create(L"COMBOBOX",scenario_id,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL);
         SendMessageW(selector,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
         SendMessageW(selector,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(L"Datos originales"));
@@ -316,6 +321,8 @@ struct SimulationView::Impl {
         const auto step_selector=create(L"COMBOBOX",step_selector_id,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL);
         SendMessageW(step_selector,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
         accessible(step_selector,"Ir a un paso calculado de la simulación");
+        const auto progress=create(PROGRESS_CLASSW,progress_id,PBS_SMOOTH);
+        accessible(progress,"Progreso de posiciones recorridas en el array ordenado");
         canvas=CreateWindowExW(0,array_class,L"",WS_CHILD|WS_VISIBLE,0,0,1,1,host,
             reinterpret_cast<HMENU>(static_cast<INT_PTR>(array_id)),GetModuleHandleW(nullptr),this);
         if(!canvas)throw std::runtime_error("No se pudo mostrar el array.");controls.emplace(array_id,canvas);
@@ -560,6 +567,24 @@ struct SimulationView::Impl {
         else if(spec.view==SimulationViewMode::summary)status="Resumen de los grupos";
         set_label(step_id,status);set_label(explanation_id,state.explanation);
         set_label(transition_id,transition_text());
+        // end is an exclusive boundary. In walkthrough, it also equals the
+        // number of elements already observed across completed/partial runs.
+        // It is not the frequency of the current group and never reads data[end].
+        const bool show_progress=spec.view==SimulationViewMode::walkthrough&&
+            !trace.ordered.empty();
+        const auto progress_text=show_progress?
+            "Elementos recorridos: "+std::to_string(state.end)+" de "+
+                std::to_string(trace.ordered.size()):std::string{};
+        set_label(progress_label_id,progress_text);
+        SendMessageW(item(progress_id),PBM_SETRANGE32,0,
+            static_cast<LPARAM>(trace.ordered.size()));
+        SendMessageW(item(progress_id),PBM_SETPOS,
+            static_cast<WPARAM>(show_progress?state.end:0),0);
+        accessible(item(progress_id),progress_text.empty()?
+            "No hay elementos para recorrer":progress_text);
+        if(show_progress)
+            NotifyWinEvent(EVENT_OBJECT_VALUECHANGE,item(progress_id),
+                OBJID_CLIENT,CHILDID_SELF);
         if(stepping())SendMessageW(item(step_selector_id),CB_SETCURSEL,static_cast<WPARAM>(position),0);
         statistics.clear();
         if(spec.view==SimulationViewMode::candidates){
@@ -789,6 +814,11 @@ struct SimulationView::Impl {
         text_row(original_order_id);
         canvas_height=array_layout(available);place(array_id,margin,top,available,canvas_height,true);top+=canvas_height+px(12);
         text_row(step_id);
+        const bool show_progress=spec.view==SimulationViewMode::walkthrough&&
+            !trace.ordered.empty();
+        text_row(progress_label_id,show_progress);
+        place(progress_id,margin,top,available,sp(18),show_progress);
+        if(show_progress)top+=sp(18)+px(8);
         place(step_selector_id,margin,top,available,sp(240),stepping());
         if(stepping())top+=sp(38)+px(8);
         text_row(explanation_id);text_row(transition_id);
@@ -1048,7 +1078,8 @@ struct SimulationView::Impl {
         add(array_label_id,prefix+"array-label");
         add(original_order_id,"state/"+std::to_string(scenario)+"/"+input_key+"/original-order");
         result.push_back({prefix+"array",array_text(),canvas,true});
-        add(step_id,prefix+"step");add(explanation_id,prefix+"explanation");
+        add(step_id,prefix+"step");add(progress_label_id,prefix+"progress");
+        add(explanation_id,prefix+"explanation");
         add(transition_id,prefix+"transition");add(variables_id,prefix+"variables");
         if(completed_groups()){
             // The same model step has two different narrations. Their archive

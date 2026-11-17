@@ -265,6 +265,30 @@ incluye `start` y termina **antes** de `end`. Su frecuencia es `end - start`.
 `end` puede valer el tamaño del array; eso describe el límite posterior al
 último elemento y no autoriza leer `datos[end]`.
 
+### Progreso de elementos recorridos
+
+En la vista **walkthrough**, un control de progreso nativo de Windows
+representa cuántas **posiciones del array ordenado** se han recorrido:
+`end` de `size`. La barra empieza en cero, avanza únicamente cuando
+`start` o `advance` cuenta un elemento nuevo, y retrocede si se
+elige un estado anterior. La fase de decisión mantiene ese progreso
+porque comparar frecuencias no supone leer otro dato.
+
+Esta cantidad **no es** la frecuencia del grupo actual. Por ejemplo,
+si hay seis elementos, al contar la sexta casilla el progreso muestra
+**6 de 6**, pero la decisión final del último grupo todavía puede estar
+pendiente. Cuando llega `done`, el control conserva 6 de 6 sin fingir
+una séptima lectura. El progreso comunica el límite exclusivo ya
+alcanzado, no un acceso a `datos[6]`.
+
+El indicador presenta también el recuento mediante texto y una identidad
+de narración asociada al paso; no exige distinguir colores ni admite
+edición por parte del estudiante. El total y el avance se recalculan
+al cambiar de escenario, aplicar datos o restablecerlos. La entrada
+inválida conserva el progreso del último recorrido correcto. En un
+array vacío y en las otras cuatro vistas no se muestra una barra
+que sugiera pasos inexistentes.
+
 Cada recorrido no vacío comienza con `initial`, sin grupo observado. La fase
 `start` cuenta el primer elemento del grupo. Cada `advance` incorpora otro
 elemento igual. Al terminar el grupo, el modelo produce exactamente una

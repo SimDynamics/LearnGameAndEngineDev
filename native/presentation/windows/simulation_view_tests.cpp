@@ -24,7 +24,8 @@ constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variab
     output_id=110,previous_id=111,next_id=112,reset_id=113,input_id=115,apply_id=116,restore_id=117,error_id=118,
     input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
     previous_decision_id=124,next_decision_id=125,result_comparison_id=126,
-    frequencies_id=127,frequencies_label_id=128,frequency_filter_id=129,group_first_id=200;
+    frequencies_id=127,frequencies_label_id=128,frequency_filter_id=129,
+    progress_label_id=130,progress_id=131,group_first_id=200;
 std::filesystem::path failure_captures;
 void capture(HWND window,const std::filesystem::path& path);
 void fitted_text(SimulationView& view);
@@ -1086,6 +1087,123 @@ std::vector<COLORREF> counted_cell_footer_pixels(SimulationView& view,std::size_
     check(!pixels.empty(),"The counted-cell footer was clipped to an empty rectangle");
     return pixels;
 }
+void walkthrough_processed_progress(HWND host,const std::filesystem::path& captures) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,850);
+    const auto progress=GetDlgItem(view.window(),progress_id);
+    const auto label=GetDlgItem(view.window(),progress_label_id);
+    check(progress&&label&&control_shown(progress)&&control_shown(label),
+        "The walkthrough lacks its native processed-element progress");
+    wchar_t klass[96]{};GetClassNameW(progress,klass,96);
+    check(std::wstring_view(klass)==PROGRESS_CLASSW,
+        "The processed-element display is not a native Windows progress control");
+    const auto progress_value=[&]{
+        return SendMessageW(progress,PBM_GETPOS,0,0);
+    };
+    const auto progress_reading=[&](const SimulationView& current){
+        for(const auto& region:current.reading_regions())
+            if(region.key.find("/progress")!=std::string::npos)return region.source_text;
+        return std::string{};
+    };
+    const auto check_stage=[&](std::size_t index,int expected,std::string_view caption){
+        check(view.go_to_step(index),"Cannot reach a computed progress frame");
+        check(progress_value()==expected&&text(view,progress_label_id)==caption&&
+            progress_reading(view)==caption,
+            "The progress bar, native label and current narration disagree");
+    };
+    check(SendMessageW(progress,PBM_GETRANGE,FALSE,0)==6&&
+        !(GetWindowLongPtrW(progress,GWL_STYLE)&WS_TABSTOP),
+        "A progress bar has an incorrect range or consumes a keyboard tab stop");
+    check_stage(0,0,"Elementos recorridos: 0 de 6");
+    check_stage(1,1,"Elementos recorridos: 1 de 6");
+    check_stage(2,1,"Elementos recorridos: 1 de 6");
+    check_stage(4,3,"Elementos recorridos: 3 de 6");
+    check_stage(7,5,"Elementos recorridos: 5 de 6");
+    check_stage(8,6,"Elementos recorridos: 6 de 6");
+    check(text(view,output_id)=="-8:1\n3:4\n"&&
+        text(view,progress_label_id)=="Elementos recorridos: 6 de 6",
+        "Reading the last element accidentally completed the final group decision");
+    check_stage(9,6,"Elementos recorridos: 6 de 6");
+    check_stage(view.step_count()-1,6,"Elementos recorridos: 6 de 6");
+    check_stage(3,2,"Elementos recorridos: 2 de 6");
+    check_stage(0,0,"Elementos recorridos: 0 de 6");
+    if(!captures.empty())capture(view.window(),captures/"processed-progress-initial.bmp");
+
+    view.set_text_scale(150);resize(view,340);
+    bounds(view,"processed progress at 150 percent");
+    check(control_shown(progress)&&progress_value()==0&&
+        text(view,progress_label_id)=="Elementos recorridos: 0 de 6",
+        "Narrow zoom clipped or reset the native progress values");
+    click_array_cell(view,4);
+    check(view.step_index()==6&&progress_value()==5&&
+        text(view,progress_label_id)=="Elementos recorridos: 5 de 6",
+        "Selecting a rendered cell did not update progress to its exclusive end");
+    if(!captures.empty())capture(view.window(),captures/"processed-progress-zoom-150.bmp");
+
+    const auto scenario=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(scenario,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(SendMessageW(progress,PBM_GETRANGE,FALSE,0)==4&&
+        progress_value()==0&&text(view,progress_label_id)=="Elementos recorridos: 0 de 4",
+        "Changing scenario retained the previous array's progress range");
+    check_stage(3,2,"Elementos recorridos: 2 de 4");
+    check_stage(6,4,"Elementos recorridos: 4 de 4");
+    const auto good=text(view,progress_label_id);
+    set_edit_text(GetDlgItem(view.window(),input_id),"2147483648");
+    click(view,apply_id);
+    check(!text(view,error_id).empty()&&progress_value()==4&&
+        text(view,progress_label_id)==good,
+        "A rejected edit corrupted the last valid processed-element progress");
+    set_edit_text(GetDlgItem(view.window(),input_id),"5\n5");
+    click(view,apply_id);
+    check(view.step_index()==0&&
+        SendMessageW(progress,PBM_GETRANGE,FALSE,0)==2&&progress_value()==0,
+        "Applying new valid values retained the old progress range or position");
+    check_stage(view.step_count()-1,2,"Elementos recorridos: 2 de 2");
+    click(view,restore_id);
+    check(view.step_index()==0&&
+        SendMessageW(progress,PBM_GETRANGE,FALSE,0)==4&&progress_value()==0,
+        "Restoring current scenario did not reset the native progress");
+
+    SendMessageW(scenario,CB_SETCURSEL,2,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(view.step_count()==1&&!control_shown(progress)&&
+        !control_shown(label)&&progress_reading(view).empty()&&
+        progress_value()==0,
+        "An empty scenario exposed a misleading progress indicator");
+    SendMessageW(scenario,CB_SETCURSEL,0,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(view.step_index()==0&&control_shown(progress)&&
+        SendMessageW(progress,PBM_GETRANGE,FALSE,0)==6&&progress_value()==0,
+        "Restoring original authored input did not recover its progress range");
+    check(spec==authored,"Visual progress modified the authored simulation contract");
+
+    for(const auto mode:{SimulationViewMode::array,SimulationViewMode::groups,
+                         SimulationViewMode::candidates,SimulationViewMode::summary}) {
+        auto other_spec=fixture(mode);
+        SimulationView other(host,other_spec,"es");resize(other,840);
+        check(!control_shown(GetDlgItem(other.window(),progress_id))&&
+            !control_shown(GetDlgItem(other.window(),progress_label_id))&&
+            progress_reading(other).empty(),
+            "A non-walkthrough view invented a processed-element progress");
+    }
+
+    auto text_spec=fixture(SimulationViewMode::walkthrough);
+    text_spec.text_values=true;text_spec.scenarios.clear();
+    text_spec.values={std::string(""),std::string(" "),std::string(" ")};
+    SimulationView text_view(host,text_spec,"es");resize(text_view,820);
+    check(text_view.go_to_step(1)&&
+        SendMessageW(GetDlgItem(text_view.window(),progress_id),PBM_GETPOS,0,0)==1&&
+        text(text_view,progress_label_id)=="Elementos recorridos: 1 de 3",
+        "Counting an empty text value changed the total element count");
+    check(text_view.go_to_step(3)&&
+        text(text_view,progress_label_id)=="Elementos recorridos: 2 de 3",
+        "Counting a space-only value skipped an array position");
+}
 void counted_cell_emphasis(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -1787,6 +1905,7 @@ int main(int argc,char** argv)try {
     run("completed_scenario_comparison",[&]{completed_scenario_comparison(host.value);});
     run("decision_navigation",[&]{decision_navigation(host.value);});
     run("navigation",[&]{navigation(host.value,captures);});
+    run("walkthrough_processed_progress",[&]{walkthrough_processed_progress(host.value,captures);});
     run("counted_cell_emphasis",[&]{counted_cell_emphasis(host.value,captures);});
     run("walkthrough_cell_selection",[&]{walkthrough_cell_selection(host.value);});
     run("original_order_comparison",[&]{original_order_comparison(host.value);});
