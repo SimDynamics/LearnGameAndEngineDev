@@ -164,6 +164,17 @@ vacíos. En listas largas, el panel tiene un límite de altura, desplazamiento
 nativo y acceso por teclado. Los valores de texto conservan comillas y
 aclaraciones para distinguir cadenas vacías y espacios.
 
+El panel **entrada aplicada antes de ordenar** es una lectura independiente de
+la salida calculada. Al avanzar o retroceder en el mismo recorrido, no se vuelve
+a escribir su texto: conserva la selección y el punto donde el estudiante estaba
+leyendo. También conserva su ubicación cuando cambia el zoom, el DPI o el ancho
+disponible, incluyendo un intento de zoom rechazado. Al elegir otro escenario o
+aplicar datos distintos inicia una lectura nueva, **aunque el texto de origen
+coincida exactamente**; en ese caso la selección y el desplazamiento se
+reinician. Un borrador inválido no sustituye la entrada aplicada ni pierde la
+lectura anterior. La regresión Win32 `original_order_reading_session` comprueba
+estos límites con una lista de 64 valores; requiere ejecución local en Windows.
+
 En cada casilla de la **copia ordenada** aparece también su **índice de origen**
 cuando la ordenación ha cambiado las posiciones. Por ejemplo, la entrada
 `[7, 3, 7, 2]` produce la copia `[2, 3, 7, 7]`: los índices de origen de
