@@ -202,6 +202,36 @@ comienza por una letra o guion bajo y continúa con letras, dígitos, guiones
 bajos o guiones. Sus valores cumplen las mismas reglas que el array inicial.
 Seleccionar un escenario proporciona otra entrada al mismo modelo.
 
+### Comparar los resultados de dos entradas
+
+Cuando el estudiante selecciona un escenario o aplica datos diferentes a los
+de `values`, el simulador puede comparar sus **resultados finales** con los
+datos originales del bloque. El panel «Comparación de resultados» muestra
+dos valores para cada propiedad, con la dirección
+**datos iniciales → datos aplicados**: cantidad de elementos, cantidad de
+grupos, frecuencia máxima y todos los candidatos. Si un resultado conserva
+el mismo valor, muestra «sin cambio» en lugar de fingir una modificación.
+
+Esta comparación utiliza exclusivamente el modelo ya calculado. El resultado
+de referencia se conserva aunque se editen los datos, se elija un escenario o
+se restablezca la entrada. Los borradores no aplicados o rechazados no
+modifican la comparación; sus mensajes de error permanecen independientes.
+Los textos, incluidas las cadenas vacías y los espacios significativos,
+se muestran entre comillas, sin confundir «ninguno» con una cadena vacía.
+
+Para evitar revelar resultados del recorrido, el panel sólo aparece al
+alcanzar `done` en **walkthrough** o después de seleccionar el **último grupo**
+en `groups` o `candidates`. Un array vacío es un estado final en sí mismo.
+La vista `summary` presenta el resultado final directamente y puede mostrar
+la comparación desde que se aplican los nuevos datos. La vista `array`
+no presenta resultados finales ni activa esta comparación.
+
+El panel desaparece al regresar a un paso anterior, así como al restablecer
+exactamente los valores originales. Su texto sólo participa en la narración
+cuando es visible y tiene una identidad de lectura asociada a los datos
+vigentes, no a los estados futuros. No califica la exploración, no cambia
+la entrada ni añade propiedades nuevas al JSON curricular.
+
 ### Presentación de los textos
 
 Las celdas, los grupos y los candidatos muestran los textos entre comillas,

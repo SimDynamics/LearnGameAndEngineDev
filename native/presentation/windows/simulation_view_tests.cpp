@@ -23,11 +23,17 @@ using namespace lgaed::presentation;
 constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_id=110,previous_id=111,next_id=112,reset_id=113,input_id=115,apply_id=116,restore_id=117,error_id=118,
     input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
-    previous_decision_id=124,next_decision_id=125,group_first_id=200;
+    previous_decision_id=124,next_decision_id=125,result_comparison_id=126,group_first_id=200;
 std::filesystem::path failure_captures;
 void capture(HWND window,const std::filesystem::path& path);
 void fitted_text(SimulationView& view);
 void check(bool value,const char* reason){if(!value)throw std::runtime_error(reason);}
+// The QA host is deliberately hidden. IsWindowVisible follows ancestors,
+// so it reports false even when a child has the WS_VISIBLE style applied.
+// Check the child's own style and keep the hidden-host assertion intact.
+bool control_shown(HWND child) {
+    return child&&(GetWindowLongPtrW(child,GWL_STYLE)&WS_VISIBLE)!=0;
+}
 void pump(HWND dialog=nullptr){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE))
     if(message.message!=WM_QUIT&&(!dialog||!IsDialogMessageW(dialog,&message))){TranslateMessage(&message);DispatchMessageW(&message);}}
 struct Window {HWND value=nullptr;~Window(){if(IsWindow(value))DestroyWindow(value);}};
@@ -318,7 +324,7 @@ void calculated_step_changes(HWND host) {
     const auto trace=build_simulation_trace(spec);
     SimulationView view(host,spec,"es");resize(view,820);
     const auto delta=GetDlgItem(view.window(),transition_id);
-    check(delta&&!IsWindowVisible(delta)&&text(view,transition_id).empty(),
+    check(delta&&!control_shown(delta)&&text(view,transition_id).empty(),
         "An initial frame fabricated a previous state");
     const auto delta_key=[&](const SimulationView& current){
         for(const auto& region:current.reading_regions())
@@ -328,7 +334,7 @@ void calculated_step_changes(HWND host) {
     check(delta_key(view).empty(),"The reader exposed a delta before the first observation");
     check(view.go_to_step(1),"The first counted frame is missing");
     const auto first=text(view,transition_id);
-    check(IsWindowVisible(delta)&&first.find("Cambios desde el estado anterior:")!=std::string::npos&&
+    check(control_shown(delta)&&first.find("Cambios desde el estado anterior:")!=std::string::npos&&
         first.find("grupo: 0 → 1")!=std::string::npos&&
         first.find("fin: 0 → 1")!=std::string::npos&&
         first.find("frecuencia: 0 → 1")!=std::string::npos&&
@@ -378,7 +384,7 @@ void calculated_step_changes(HWND host) {
     check(text(view,transition_id).find("frecuencia: 1 → 0")!=std::string::npos&&
         text(view,transition_id).find("Salida:")==std::string::npos,
         "The final frame invented another emitted line");
-    check(view.go_to_step(0)&&!IsWindowVisible(delta)&&delta_key(view).empty(),
+    check(view.go_to_step(0)&&!control_shown(delta)&&delta_key(view).empty(),
         "Reset leaked a completed transition to the initial frame");
     check(spec==authored,"Navigating transitions modified the authored lesson");
     set_edit_text(GetDlgItem(view.window(),input_id),"2147483648");
@@ -390,7 +396,7 @@ void calculated_step_changes(HWND host) {
     check(view.go_to_step(2)&&text(view,transition_id).find("mayores: ninguno → 1")!=std::string::npos,
         "The transition still uses the old data after applying a new valid array");
     click(view,restore_id);
-    check(view.step_index()==0&&!IsWindowVisible(delta)&&
+    check(view.step_index()==0&&!control_shown(delta)&&
         view.go_to_step(2)&&text(view,transition_id)==maximum,
         "Restoration did not reconstruct the original verified transition");
 
@@ -407,7 +413,7 @@ void calculated_step_changes(HWND host) {
     SendMessageW(scenario,CB_SETCURSEL,2,0);
     SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
         reinterpret_cast<LPARAM>(scenario));pump();
-    check(view.step_count()==1&&text(view,transition_id).empty()&&!IsWindowVisible(delta)&&
+    check(view.step_count()==1&&text(view,transition_id).empty()&&!control_shown(delta)&&
         delta_key(view).empty(),"An empty scenario retained a previous data transition");
 
     for(const auto mode:{SimulationViewMode::groups,SimulationViewMode::candidates}) {
@@ -430,7 +436,7 @@ void calculated_step_changes(HWND host) {
     for(const auto mode:{SimulationViewMode::array,SimulationViewMode::summary}) {
         auto static_spec=fixture(mode);
         SimulationView still(host,static_spec,"es");resize(still,820);
-        check(!IsWindowVisible(GetDlgItem(still.window(),transition_id))&&
+        check(!control_shown(GetDlgItem(still.window(),transition_id))&&
             text(still,transition_id).empty(),
             "A static simulation fabricated an intermediate transition");
     }
@@ -467,6 +473,138 @@ void calculated_step_changes(HWND host) {
     check(narrow.go_to_step(2)&&
         !text(narrow,transition_id).empty(),"Long changed-variable labels were clipped or hidden");
 }
+void completed_scenario_comparison(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,850);
+    const auto comparison=GetDlgItem(view.window(),result_comparison_id);
+    const auto reading_key=[&](const SimulationView& current) {
+        for(const auto& region:current.reading_regions())
+            if(region.key.find("/result-comparison")!=std::string::npos)return region.key;
+        return std::string{};
+    };
+    check(comparison&&!control_shown(comparison)&&
+        text(view,result_comparison_id).empty()&&reading_key(view).empty(),
+        "Authored input must not compare itself with itself");
+
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(selector,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(view.step_count()==8&&view.step_index()==0&&!control_shown(comparison)&&
+        text(view,result_comparison_id).empty()&&reading_key(view).empty(),
+        "Selecting a scenario exposed future final results before its walkthrough");
+    check(view.go_to_step(6)&&text(view,output_id)=="4:2\n9:2\n"&&
+        text(view,result_comparison_id).empty()&&!control_shown(comparison),
+        "A final group decision revealed the scenario comparison before Done");
+    check(view.go_to_step(7),"Cannot reach the completed scenario");
+    const auto tie=text(view,result_comparison_id);
+    check(control_shown(comparison)&&
+        tie.find("Comparación de resultados: datos iniciales → datos aplicados")!=std::string::npos&&
+        tie.find("Cantidad de datos: 6 → 4")!=std::string::npos&&
+        tie.find("Cantidad de grupos: 3 → 2")!=std::string::npos&&
+        tie.find("máxima: 4 → 2")!=std::string::npos&&
+        tie.find("mayores: 3 → 4, 9")!=std::string::npos&&
+        !reading_key(view).empty()&&spec==authored,
+        "The complete scenario comparison changed authored data or final statistics");
+    const auto tie_key=reading_key(view);
+    check(view.go_to_step(0)&&text(view,result_comparison_id).empty()&&
+        !control_shown(comparison)&&reading_key(view).empty(),
+        "Going backwards leaked a final comparison into the first step");
+    check(view.go_to_step(7)&&reading_key(view)==tie_key&&
+        text(view,result_comparison_id)==tie,
+        "Returning to the final step did not recover the deterministic comparison");
+
+    set_edit_text(GetDlgItem(view.window(),input_id),"2147483648");
+    click(view,apply_id);
+    check(!text(view,error_id).empty()&&text(view,result_comparison_id)==tie,
+        "Rejected input replaced the applied comparison with an invalid draft");
+
+    set_edit_text(GetDlgItem(view.window(),input_id),"7\n7\n7");
+    click(view,apply_id);
+    check(view.step_index()==0&&!control_shown(comparison)&&
+        reading_key(view).empty(),"A newly applied array displayed its result too early");
+    check(view.go_to_step(view.step_count()-1),"Cannot complete an edited scenario");
+    const auto edited=text(view,result_comparison_id);
+    check(edited.find("Cantidad de datos: 6 → 3")!=std::string::npos&&
+        edited.find("Cantidad de grupos: 3 → 1")!=std::string::npos&&
+        edited.find("máxima: 4 → 3")!=std::string::npos&&
+        edited.find("mayores: 3 → 7")!=std::string::npos&&
+        reading_key(view)!=tie_key,
+        "Applying edited values retained the previous scenario result");
+
+    click(view,restore_id);
+    check(view.step_index()==0&&!control_shown(comparison)&&
+        text(view,result_comparison_id).empty()&&reading_key(view).empty(),
+        "Restoring a scenario kept the old comparison");
+    SendMessageW(selector,CB_SETCURSEL,0,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(view.go_to_step(view.step_count()-1)&&!control_shown(comparison)&&
+        spec==authored,"Returning to authored values displayed a redundant comparison");
+
+    SendMessageW(selector,CB_SETCURSEL,2,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    const auto empty=text(view,result_comparison_id);
+    check(view.step_count()==1&&control_shown(comparison)&&
+        empty.find("Cantidad de datos: 6 → 0")!=std::string::npos&&
+        empty.find("Cantidad de grupos: 3 → 0")!=std::string::npos&&
+        empty.find("máxima: 4 → 0")!=std::string::npos&&
+        empty.find("mayores: 3 → ninguno")!=std::string::npos,
+        "An empty scenario failed to explain its terminal outcome");
+
+    for(const auto mode:{SimulationViewMode::groups,SimulationViewMode::candidates}) {
+        auto other_spec=fixture(mode);
+        SimulationView other(host,other_spec,"es");resize(other,850);
+        const auto scenario=GetDlgItem(other.window(),scenario_id);
+        SendMessageW(scenario,CB_SETCURSEL,1,0);
+        SendMessageW(other.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(scenario));pump();
+        check(!control_shown(GetDlgItem(other.window(),result_comparison_id))&&
+            other.step_count()==2,
+            "A group-level view revealed a future scenario outcome");
+        check(other.go_to_step(1)&&
+            text(other,result_comparison_id).find("mayores: 3 → 4, 9")!=std::string::npos,
+            "The last completed group did not reveal its scenario comparison");
+    }
+    {
+        auto summary=fixture(SimulationViewMode::summary);
+        SimulationView view_summary(host,summary,"es");resize(view_summary,850);
+        set_edit_text(GetDlgItem(view_summary.window(),input_id),"3\n3\n3\n3\n10\n-8");
+        click(view_summary,apply_id);
+        const auto equivalent=text(view_summary,result_comparison_id);
+        check(control_shown(GetDlgItem(view_summary.window(),result_comparison_id))&&
+            equivalent.find("Cantidad de datos: 6 → 6 (sin cambio)")!=std::string::npos&&
+            equivalent.find("Cantidad de grupos: 3 → 3 (sin cambio)")!=std::string::npos&&
+            equivalent.find("máxima: 4 → 4 (sin cambio)")!=std::string::npos&&
+            equivalent.find("mayores: 3 → 3 (sin cambio)")!=std::string::npos,
+            "A reordered input with the same result should explain what stayed equal");
+    }
+    {
+        auto strings=fixture(SimulationViewMode::summary);
+        strings.scenarios.clear();strings.text_values=true;
+        strings.values={std::string(""),std::string(" "),std::string(" ")};
+        SimulationView view_strings(host,strings,"es");resize(view_strings,850);
+        set_edit_text(GetDlgItem(view_strings.window(),input_id),"[\"\", \"\"]");
+        click(view_strings,apply_id);
+        const auto comparison_text=text(view_strings,result_comparison_id);
+        check(comparison_text.find("máxima: 2 → 2 (sin cambio)")!=std::string::npos&&
+            comparison_text.find("mayores: \" \" (1 espacio) → \"\" (cadena vacía)")!=std::string::npos,
+            "Comparison confused an empty text candidate with a significant space");
+    }
+    {
+        auto static_spec=fixture(SimulationViewMode::array);
+        SimulationView static_view(host,static_spec,"es");resize(static_view,850);
+        const auto scenario=GetDlgItem(static_view.window(),scenario_id);
+        SendMessageW(scenario,CB_SETCURSEL,1,0);
+        SendMessageW(static_view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(scenario));pump();
+        check(!control_shown(GetDlgItem(static_view.window(),result_comparison_id))&&
+            text(static_view,result_comparison_id).empty(),
+            "An array-only view disclosed final candidates without a terminal step");
+    }
+}
 void decision_navigation(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -480,7 +618,7 @@ void decision_navigation(HWND host) {
     resize(view,850);
     const auto previous=GetDlgItem(view.window(),previous_decision_id);
     const auto next=GetDlgItem(view.window(),next_decision_id);
-    check(previous&&next&&IsWindowVisible(previous)&&IsWindowVisible(next)&&
+    check(previous&&next&&control_shown(previous)&&control_shown(next)&&
         !IsWindowEnabled(previous)&&IsWindowEnabled(next),
         "Walkthrough decision controls are absent or have wrong initial bounds");
     const auto pick=[&](std::size_t index,std::string_view output) {
@@ -546,15 +684,15 @@ void decision_navigation(HWND host) {
     SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
         reinterpret_cast<LPARAM>(selector));pump();
     check(view.step_count()==1&&view.step_index()==0&&
-        !IsWindowVisible(previous)&&!IsWindowVisible(next)&&
+        !control_shown(previous)&&!control_shown(next)&&
         !IsWindowEnabled(previous)&&!IsWindowEnabled(next),
         "An empty array exposed nonexistent decision navigation");
     for(const auto mode:{SimulationViewMode::array,SimulationViewMode::groups,
                          SimulationViewMode::candidates,SimulationViewMode::summary}) {
         auto different=fixture(mode);
         SimulationView other(host,different,"es");resize(other,850);
-        check(!IsWindowVisible(GetDlgItem(other.window(),previous_decision_id))&&
-            !IsWindowVisible(GetDlgItem(other.window(),next_decision_id)),
+        check(!control_shown(GetDlgItem(other.window(),previous_decision_id))&&
+            !control_shown(GetDlgItem(other.window(),next_decision_id)),
             "Decision shortcuts appeared outside a step-by-step walkthrough");
     }
 }
@@ -682,7 +820,7 @@ void original_order_comparison(HWND host) {
     const auto authored=spec;
     SimulationView view(host,spec,"es");resize(view,820);
     const auto preview=GetDlgItem(view.window(),original_order_id);
-    check(preview&&IsWindowVisible(preview),"Sorting did not expose the source input");
+    check(preview&&control_shown(preview),"Sorting did not expose the source input");
     const auto initial=text(view,original_order_id);
     check(initial.find("Entrada aplicada antes de ordenar")!=std::string::npos&&
         initial.find("índice 0: 10")!=std::string::npos&&
@@ -708,7 +846,7 @@ void original_order_comparison(HWND host) {
     resize(view,360);bounds(view,"narrow source order");
     set_edit_text(GetDlgItem(view.window(),input_id),"1\n2\n3");
     click(view,apply_id);resize(view,360);
-    check(!IsWindowVisible(preview)&&text(view,original_order_id).empty()&&
+    check(!control_shown(preview)&&text(view,original_order_id).empty()&&
         reading_key(view).empty()&&
         name(GetDlgItem(view.window(),array_id)).find("índice 0: 1")!=std::string::npos&&
         name(GetDlgItem(view.window(),array_id)).find("origen índice")==std::string::npos,
@@ -716,7 +854,7 @@ void original_order_comparison(HWND host) {
     set_edit_text(GetDlgItem(view.window(),input_id),"3\n1\n3");
     click(view,apply_id);resize(view,820);
     const auto edited=text(view,original_order_id);
-    check(IsWindowVisible(preview)&&edited.find("índice 0: 3")!=std::string::npos&&
+    check(control_shown(preview)&&edited.find("índice 0: 3")!=std::string::npos&&
         edited.find("índice 1: 1")!=std::string::npos&&
         name(GetDlgItem(view.window(),array_id)).find("índice 0: 1 (origen índice 1)")!=std::string::npos&&
         name(GetDlgItem(view.window(),array_id)).find("índice 1: 3 (origen índice 0)")!=std::string::npos&&
@@ -741,7 +879,7 @@ void original_order_comparison(HWND host) {
     SendMessageW(scenario,CB_SETCURSEL,2,0);
     SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
         reinterpret_cast<LPARAM>(scenario));pump();
-    check(!IsWindowVisible(preview)&&reading_key(view).empty()&&
+    check(!control_shown(preview)&&reading_key(view).empty()&&
         view.step_count()==1&&
         name(GetDlgItem(view.window(),array_id)).find("origen índice")==std::string::npos,
         "Empty data retained an obsolete source comparison or cell mapping");
@@ -750,7 +888,7 @@ void original_order_comparison(HWND host) {
     strings.text_values=true;strings.editable=false;strings.scenarios.clear();
     strings.values={std::string(" "),std::string(""),std::string("patio")};
     SimulationView text_view(host,strings,"es");resize(text_view,650);
-    check(IsWindowVisible(GetDlgItem(text_view.window(),original_order_id))&&
+    check(control_shown(GetDlgItem(text_view.window(),original_order_id))&&
         text(text_view,original_order_id).find("índice 0: \" \" (1 espacio)")!=std::string::npos&&
         text(text_view,original_order_id).find("índice 1: \"\" (cadena vacía)")!=std::string::npos&&
         name(GetDlgItem(text_view.window(),array_id)).find("índice 0: \"\" (cadena vacía) (origen índice 1)")!=std::string::npos&&
@@ -760,7 +898,7 @@ void original_order_comparison(HWND host) {
     auto no_sort=fixture(SimulationViewMode::array);no_sort.sort=false;
     no_sort.values=numbers({-8,3,3,10});no_sort.scenarios.clear();
     SimulationView unchanged(host,no_sort,"es");resize(unchanged,650);
-    check(!IsWindowVisible(GetDlgItem(unchanged.window(),original_order_id))&&
+    check(!control_shown(GetDlgItem(unchanged.window(),original_order_id))&&
         text(unchanged,original_order_id).empty()&&
         name(GetDlgItem(unchanged.window(),array_id)).find("origen índice")==std::string::npos,
         "Unsorted mode fabricated an ordering comparison or source mapping");
@@ -769,7 +907,7 @@ void original_order_comparison(HWND host) {
     many.values.clear();for(std::int64_t value=63;value>=0;--value)many.values.emplace_back(value);
     SimulationView long_view(host,many,"es");resize(long_view,360);bounds(long_view,"long original comparison");
     const auto long_preview=GetDlgItem(long_view.window(),original_order_id);
-    check(IsWindowVisible(long_preview)&&
+    check(control_shown(long_preview)&&
         (GetWindowLongPtrW(long_preview,GWL_STYLE)&WS_TABSTOP)!=0&&
         text(long_view,original_order_id).find("índice 63: 0")!=std::string::npos&&
         name(GetDlgItem(long_view.window(),array_id)).find("índice 0: 0 (origen índice 63)")!=std::string::npos&&
@@ -1213,6 +1351,7 @@ int main(int argc,char** argv)try {
         pump(host.value);
     };
     run("calculated_step_changes",[&]{calculated_step_changes(host.value);});
+    run("completed_scenario_comparison",[&]{completed_scenario_comparison(host.value);});
     run("decision_navigation",[&]{decision_navigation(host.value);});
     run("navigation",[&]{navigation(host.value,captures);});
     run("walkthrough_cell_selection",[&]{walkthrough_cell_selection(host.value);});

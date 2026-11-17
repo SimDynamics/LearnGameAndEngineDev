@@ -27,7 +27,7 @@ constexpr int title_id=100,description_id=101,scenario_label_id=102,scenario_id=
     output_label_id=109,output_id=110,previous_id=111,next_id=112,reset_id=113,
     input_label_id=114,input_id=115,apply_id=116,restore_id=117,error_id=118,
     groups_label_id=119,input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
-    previous_decision_id=124,next_decision_id=125,group_first_id=200;
+    previous_decision_id=124,next_decision_id=125,result_comparison_id=126,group_first_id=200;
 bool passive_message(UINT message) {
     return message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||
         message==WM_MOUSEMOVE||message==WM_CAPTURECHANGED||message==WM_CANCELMODE||message==WM_NCDESTROY;
@@ -103,6 +103,8 @@ std::string window_text(HWND window) {
 struct SimulationView::Impl {
     SimulationSpec spec;
     SimulationTrace trace;
+    std::size_t authored_group_count=0,authored_maximum=0;
+    std::vector<SimulationValue> authored_leaders;
     std::vector<std::size_t> source_positions;
     std::string locale;
     SimulationCallbacks callbacks;
@@ -135,7 +137,13 @@ struct SimulationView::Impl {
             const std::map<std::string,TextSemantics>& authored)
         :spec(source),trace(build_simulation_trace(spec)),
          source_positions(stable_source_positions(trace)),locale(std::move(language)),
-         callbacks(std::move(events)),semantics(authored),input_key(data_identity(trace.original)) {}
+         callbacks(std::move(events)),semantics(authored),input_key(data_identity(trace.original)) {
+        // Cache only the authored final statistics, not a second 8 MiB trace.
+        // Student data, scenarios and invalid drafts never rewrite this base.
+        authored_group_count=trace.groups.size();
+        authored_maximum=trace.frames.back().maximum;
+        authored_leaders=trace.frames.back().leaders;
+    }
     ~Impl() {
         *alive=false;
         if(host&&IsWindow(host))DestroyWindow(host);
@@ -187,7 +195,7 @@ struct SimulationView::Impl {
         return child;
     }
     HWND label(int id) {
-        const bool scrolling=id==output_id||id==explanation_id||id==original_order_id||id==transition_id;
+        const bool scrolling=id==output_id||id==explanation_id||id==original_order_id||id==transition_id||id==result_comparison_id;
         const auto child=create(MSFTEDIT_CLASS,id,ES_READONLY|ES_MULTILINE|(scrolling?ES_AUTOVSCROLL|WS_VSCROLL:0));
         SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(base_font),FALSE);
         SendMessageW(child,EM_SETTARGETDEVICE,0,0);
@@ -242,7 +250,8 @@ struct SimulationView::Impl {
         reader_theme::apply(host,reader_theme::Surface::card);fonts();
         (void)CoCreateInstance(CLSID_AccPropServices,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(accessibility.GetAddressOf()));
         for(const auto id:{title_id,description_id,scenario_label_id,array_label_id,original_order_id,
-                step_id,explanation_id,transition_id,output_label_id,input_label_id,error_id,groups_label_id})label(id);
+                step_id,explanation_id,transition_id,output_label_id,result_comparison_id,
+                input_label_id,error_id,groups_label_id})label(id);
         const auto selector=create(L"COMBOBOX",scenario_id,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL);
         SendMessageW(selector,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
         SendMessageW(selector,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(L"Datos originales"));
@@ -351,9 +360,37 @@ struct SimulationView::Impl {
             text+=". "+spec.labels.start+" = "+std::to_string(state.begin)+"; "+spec.labels.end+" = "+std::to_string(state.end)+" (límite exclusivo).";}
         return text;
     }
-    std::string leader_text(const SimulationFrame& state)const {
-        if(state.leaders.empty())return "ninguno";
-        std::string result;for(const auto& value:state.leaders){if(!result.empty())result+=", ";result+=simulation_value_display_text(value);}return result;
+    std::string values_text(const std::vector<SimulationValue>& values)const {
+        if(values.empty())return "ninguno";
+        std::string result;
+        for(std::size_t i=0;i<values.size();++i){
+            if(i)result+=", ";
+            result+=simulation_value_display_text(values[i]);
+        }
+        return result;
+    }
+    std::string leader_text(const SimulationFrame& state)const{return values_text(state.leaders);}
+    // Show comparisons only after the active model reaches its final state.
+    // Before that, even a scenario with known authored data cannot reveal
+    // a future winner or number of groups to the learner.
+    std::string result_comparison_text()const {
+        if(spec.view==SimulationViewMode::array||trace.original==spec.values)return {};
+        const bool completed=spec.view==SimulationViewMode::summary||
+            (spec.view==SimulationViewMode::walkthrough&&position+1==count())||
+            ((spec.view==SimulationViewMode::groups||spec.view==SimulationViewMode::candidates)&&
+                (trace.groups.empty()||position+1==count()));
+        if(!completed)return {};
+        const auto& current=trace.frames.back();
+        std::string result="Comparación de resultados: datos iniciales → datos aplicados";
+        const auto add=[&](std::string_view name,std::string left,std::string right){
+            result+='\n';result+=name;result+=": "+left+" → "+right;
+            if(left==right)result+=" (sin cambio)";
+        };
+        add("Cantidad de datos",std::to_string(spec.values.size()),std::to_string(trace.original.size()));
+        add("Cantidad de grupos",std::to_string(authored_group_count),std::to_string(trace.groups.size()));
+        add(spec.labels.maximum,std::to_string(authored_maximum),std::to_string(current.maximum));
+        add(spec.labels.leaders,values_text(authored_leaders),values_text(current.leaders));
+        return result;
     }
     // A phase transition is derived only from validated, already-calculated
     // frames. Direct jumps still compare adjacent *model* states instead of
@@ -450,6 +487,7 @@ struct SimulationView::Impl {
         std::string variables;for(const auto& statistic:statistics){if(!variables.empty())variables+='\n';variables+=statistic.label+": "+statistic.value;}
         visible_text[variables_id]=variables;SetWindowTextW(item(variables_id),wide(variables).c_str());accessible(item(variables_id),variables);
         NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,item(variables_id),OBJID_CLIENT,CHILDID_SELF);
+        set_label(result_comparison_id,result_comparison_text());
         set_label(output_label_id,spec.labels.output+(state.output.empty()?" (vacía)":""));
         visible_text[output_id]=state.output;set_edit_text(item(output_id),state.output);color_plain_text(output_id);
         SendMessageW(item(output_id),EM_SETZOOM,scale,100);color_plain_text(input_id);
@@ -591,8 +629,8 @@ struct SimulationView::Impl {
         const auto text_row=[&](int id,bool shown=true,int minimum=0){const auto found=visible_text.find(id);const auto text=found==visible_text.end()?std::string_view{}:std::string_view(found->second);
             shown=shown&&(!text.empty()||minimum>0);
             int full_height=std::max(minimum,measure(text,available,id==title_id?heading_font:font));
-            const bool scrolling=id==output_id||id==explanation_id||id==original_order_id||id==transition_id;
-            const auto limit=scrolling?sp(id==original_order_id?180:id==transition_id?220:id==output_id?240:400):std::numeric_limits<int>::max();
+            const bool scrolling=id==output_id||id==explanation_id||id==original_order_id||id==transition_id||id==result_comparison_id;
+            const auto limit=scrolling?sp(id==original_order_id?180:id==transition_id?220:id==result_comparison_id?230:id==output_id?240:400):std::numeric_limits<int>::max();
             int h=std::min(full_height,limit);
             if(shown&&move){bool settled=false;
                 // REQRESIZE already supplies the requested control size. Adding
@@ -642,6 +680,7 @@ struct SimulationView::Impl {
         const auto stats_height=statistics_layout(available);place(variables_id,margin,top,available,stats_height,stats);if(stats)top+=stats_height+px(8);
         const bool output=spec.view==SimulationViewMode::walkthrough||spec.view==SimulationViewMode::candidates||spec.view==SimulationViewMode::summary;
         text_row(output_label_id,output);text_row(output_id,output,sp(34));
+        text_row(result_comparison_id);
         const auto buttons=[&](std::initializer_list<int> ids,bool shown){
             if(!shown){for(const auto id:ids)place(id,0,0,1,1,false);return;}
             const int gap=px(8),n=static_cast<int>(ids.size());
@@ -768,7 +807,9 @@ struct SimulationView::Impl {
         result.push_back({prefix+"array",array_text(),canvas,true});
         add(step_id,prefix+"step");add(explanation_id,prefix+"explanation");
         add(transition_id,prefix+"transition");add(variables_id,prefix+"variables");
-        add(output_label_id,prefix+"output-label");add(output_id,prefix+"output");add(input_label_id,"input-label");add(error_id,prefix+"error");
+        add(output_label_id,prefix+"output-label");add(output_id,prefix+"output");
+        add(result_comparison_id,"state/"+std::to_string(scenario)+"/"+input_key+"/result-comparison");
+        add(input_label_id,"input-label");add(error_id,prefix+"error");
         return result;
     }
     LRESULT command(WPARAM command,LPARAM) {
