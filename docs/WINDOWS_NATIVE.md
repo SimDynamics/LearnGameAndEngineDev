@@ -737,6 +737,18 @@ y TAB del editor comparten la misma operación; deshacer/rehacer conserva la
 identidad de las unidades. La entrada estándar es texto literal, sin asistencia
 de código ni inserción automática de sangrías.
 
+### Zoom del código y pantalla completa
+
+En los editores C++ y CMake, los fragmentos de código y las consolas, **Ctrl +
+rueda del ratón** conserva el zoom nativo de ese control. La rueda aumenta o
+reduce su texto tanto dentro de la página como en pantalla completa, con un
+máximo del **150 %**. La escala es local: las preferencias globales y del curso
+conservan sus valores.
+
+El botón **Pantalla completa** amplía el área disponible y **Esc** vuelve a la
+página. El doble clic conserva la selección normal de texto; no cambia la
+escala ni abre la vista ampliada.
+
 ## Importar un estado Android exportado
 
 En un perfil Windows vacío, «Importar estado Android…» permite seleccionar

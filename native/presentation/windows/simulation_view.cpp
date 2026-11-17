@@ -630,7 +630,7 @@ SimulationView::SimulationView(HWND parent,const curriculum::SimulationSpec& spe
 SimulationView::~SimulationView()=default;
 HWND SimulationView::window()const{return impl_->host;}
 int SimulationView::height_for_width(int width){return impl_->measured_height(width);}
-void SimulationView::set_text_scale(int percentage){percentage=std::clamp(percentage,25,400);if(percentage==impl_->scale)return;
+void SimulationView::set_text_scale(int percentage){percentage=std::clamp(percentage,25,150);if(percentage==impl_->scale)return;
     impl_->scale=percentage;impl_->fonts(false);impl_->update();}
 std::size_t SimulationView::step_index()const{return impl_->position;}
 std::size_t SimulationView::step_count()const{return impl_->count();}
