@@ -2434,6 +2434,71 @@ void static_simulation_text_is_not_restreamed(HWND host) {
     }
 }
 
+
+void applying_valid_data_is_atomic_after_native_failure(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.scenarios.clear();
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the last successfully applied simulation frame");
+    const auto previous_step=view.step_index();
+    const auto previous_count=view.step_count();
+    const auto previous_output=text(view,output_id);
+    const auto previous_array=name(GetDlgItem(view.window(),array_id));
+    const auto prior_identity=view.reading_regions()[2].key;
+    const auto output=GetDlgItem(view.window(),output_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(output&&editor&&previous_output.find("10:1\n")!=std::string::npos,
+        "Missing the original output or editable source for atomic Apply");
+    CHARRANGE selection{0,4};
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+
+    // Force one genuine late native failure, after the candidate trace has
+    // already been staged. A second EM_SETZOOM must work for rollback.
+    int failures_left=1;
+    const auto reject_once=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR data)->LRESULT {
+        auto& remaining=*reinterpret_cast<int*>(data);
+        if(message==EM_SETZOOM&&remaining>0){--remaining;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR reject_id=0x53494150;
+    check(SetWindowSubclass(output,reject_once,reject_id,
+        reinterpret_cast<DWORD_PTR>(&failures_left))!=FALSE,
+        "Cannot inject a single failing output RichEdit zoom");
+    struct Unhook {
+        HWND window;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+    } guard{output,reject_once,reject_id};
+
+    set_edit_text(editor,"1\n2\n3");
+    click(view,apply_id);
+    CHARRANGE retained{};
+    SendMessageW(output,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&retained));
+    check(failures_left==0&&
+        text(view,error_id).find("No se aplicaron los datos.")!=std::string::npos&&
+        text(view,input_id)=="1\n2\n3"&&
+        view.step_index()==previous_step&&view.step_count()==previous_count&&
+        text(view,output_id)==previous_output&&
+        name(GetDlgItem(view.window(),array_id))==previous_array&&
+        view.reading_regions()[2].key==prior_identity&&
+        retained.cpMin==selection.cpMin&&retained.cpMax==selection.cpMax&&
+        spec==authored,
+        "A rejected Win32 presentation left the candidate model partly applied");
+
+    // The learner can correct/retry immediately; a successful second Apply
+    // starts a new session rather than remaining stuck in the failed model.
+    click(view,apply_id);
+    check(text(view,error_id).empty()&&view.step_index()==0&&
+        view.step_count()!=previous_count&&
+        view.reading_regions()[2].key!=prior_identity,
+        "A valid retry could not leave the rolled-back model");
+    check(view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="1:1\n2:1\n3:1\n"&&spec==authored,
+        "The retried Apply did not compute the newly submitted input");
+}
+
 void editable_data(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);SimulationView view(host,spec,"es");resize(view,820);
     check(view.go_to_step(view.step_count()-1),"Cannot prepare an edited data test");
@@ -3806,6 +3871,7 @@ int main(int argc,char** argv)try {
     run("original_order_reading_session",[&]{original_order_reading_session(host.value);});
     run("static_simulation_text_is_not_restreamed",[&]{static_simulation_text_is_not_restreamed(host.value);});
     run("editable_data",[&]{editable_data(host.value,captures);});
+    run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});
