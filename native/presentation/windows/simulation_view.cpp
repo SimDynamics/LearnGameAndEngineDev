@@ -1094,6 +1094,8 @@ struct SimulationView::Impl {
         const auto output_anchor=capture_output_reading_anchor();
         const auto original_anchor=capture_output_reading_anchor(original_order_id);
         const auto chart_anchor=capture_histogram_anchor();
+        const auto editor_anchor=replacement?capture_output_reading_anchor(input_id):
+            std::optional<OutputReadingAnchor>{};
         const auto previous_editor=replacement?edit_text(item(input_id)):std::string{};
         const auto previous_position=position,previous_revision=applied_revision;
         const auto previous_output_revision=output_reading_revision;
@@ -1123,7 +1125,15 @@ struct SimulationView::Impl {
             pressed_frequency_group.reset();
             ++applied_revision;
             input_key=std::move(identity);position=0;error.clear();
-            if(replacement){input_format=next_format;set_edit_text(item(input_id),*replacement);}
+            if(replacement){
+                input_format=next_format;
+                set_edit_text(item(input_id),*replacement);
+                // RichEdit may return without reporting a stream error even if
+                // the document was not replaced. Never commit a trace that
+                // differs from the input shown to the learner.
+                if(edit_text(item(input_id))!=*replacement)
+                    throw std::runtime_error("RichEdit no conservó los datos del escenario.");
+            }
             rebuild_groups();rebuild_steps();update();publish();
         }catch(...){
             // Restore the real applied trace and active reading session before
@@ -1183,6 +1193,7 @@ struct SimulationView::Impl {
                 rebuild_groups();rebuild_steps();update();
                 restore_output_reading_anchor(output_anchor);
                 restore_output_reading_anchor(original_anchor,original_order_id);
+                restore_output_reading_anchor(editor_anchor,input_id);
                 restore_histogram_anchor(chart_anchor);
             }catch(...){
                 // Preserve the originating error if the native control remains

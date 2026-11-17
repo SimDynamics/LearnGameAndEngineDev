@@ -238,8 +238,12 @@ reponer literalmente el texto previo por `EM_REPLACESEL` sobre todo el
 documento, sin volver a utilizar `EM_STREAMIN`; si el control rechaza también
 esa escritura, se intenta `WM_SETTEXT` y se coteja la lectura resultante.
 Los textos que parezcan encabezados RTF siguen siendo datos literales.
-La vista debe recuperar el modelo aplicado anterior y el error original
-debe seguir visible y disponible para narración.
+Antes de aceptar un escenario se compara el contenido real del editor con el
+texto previsto: un flujo que termina sin error, pero no escribe esos datos,
+también se rechaza. Ante un rollback, se restauran además la selección y la
+posición de lectura del borrador en el editor. La vista debe recuperar el
+modelo aplicado anterior y el error original debe seguir visible y disponible
+para narración.
 Se restaura la traza por movimiento, sin duplicar una segunda copia de
 hasta 8 MiB. Las regresiones `applying_valid_data_is_atomic_after_native_failure`
 y `scenario_change_is_atomic_after_native_failure` provocan una única

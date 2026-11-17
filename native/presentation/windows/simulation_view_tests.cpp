@@ -2663,6 +2663,91 @@ void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host) {
         "A retry did not recover after the previous two native rejections");
 }
 
+
+void scenario_change_rejects_silent_editor_stream(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare an applied trace before a silent editor failure");
+    const auto old_step=view.step_index();
+    const auto old_count=view.step_count();
+    const auto old_output=text(view,output_id);
+    const auto old_array=name(GetDlgItem(view.window(),array_id));
+    const auto old_reading=view.reading_regions()[2].key;
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(selector&&editor,"Cannot inspect scenario and text editor");
+
+    // Keep an unsubmitted, scrollable draft independent from the applied
+    // trace. A rejected scenario must not displace its selection or reading.
+    std::string draft;
+    for(int i=0;i<64;++i)draft+="linea_"+std::to_string(i)+"\n";
+    draft+="árbol";
+    set_edit_text(editor,draft);
+    const CHARRANGE selected{10,17};
+    SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    SendMessageW(editor,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    const auto original_reading=scroll_state(editor);
+    check(original_reading.has_range&&original_reading.first>0&&
+        original_reading.selection.cpMin==selected.cpMin&&
+        original_reading.selection.cpMax==selected.cpMax,
+        "Cannot prepare a selected, scrolled draft before a scenario failure");
+
+    int editor_streams=0;
+    const auto skip_first=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& seen=*reinterpret_cast<int*>(raw);
+        if(message==EM_STREAMIN&&++seen==1){
+            // Simulate a control that reports no dwError but does not write.
+            // A naive caller would regard the stale document as accepted.
+            return 0;
+        }
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x5349534e;
+    check(SetWindowSubclass(editor,skip_first,hook_id,
+        reinterpret_cast<DWORD_PTR>(&editor_streams))!=FALSE,
+        "Cannot inject a silent native text-stream rejection");
+    struct Unhook {
+        HWND window;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+    } guard{editor,skip_first,hook_id};
+
+    check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "Cannot select the alternative scenario");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    const auto after=scroll_state(editor);
+    const auto diagnostic=text(view,error_id);
+    check(editor_streams==2&&
+        diagnostic.find("RichEdit no conservó los datos del escenario.")!=std::string::npos&&
+        SendMessageW(selector,CB_GETCURSEL,0,0)==0&&
+        view.step_index()==old_step&&view.step_count()==old_count&&
+        text(view,output_id)==old_output&&
+        name(GetDlgItem(view.window(),array_id))==old_array&&
+        view.reading_regions()[2].key==old_reading&&
+        text(view,input_id)==draft&&
+        after.selection.cpMin==selected.cpMin&&
+        after.selection.cpMax==selected.cpMax&&after.first>0&&
+        spec==authored,
+        "Silent editor rejection committed another model or lost draft reading");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==diagnostic;
+    }),"The silent editor rejection did not publish an accessible error");
+
+    // No permanent fault was installed: the next selection must work.
+    check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "Cannot retry the scenario after silent rejection");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(SendMessageW(selector,CB_GETCURSEL,0,0)==1&&
+        view.step_index()==0&&view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="4:2\n9:2\n"&&spec==authored,
+        "The scenario did not succeed after a silent native editor rejection");
+}
+
 void editable_data(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);SimulationView view(host,spec,"es");resize(view,820);
     check(view.go_to_step(view.step_count()-1),"Cannot prepare an edited data test");
@@ -4038,6 +4123,7 @@ int main(int argc,char** argv)try {
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
     run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
     run("scenario_change_keeps_origin_error_when_editor_rollback_fails",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value);});
+    run("scenario_change_rejects_silent_editor_stream",[&]{scenario_change_rejects_silent_editor_stream(host.value);});
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});
