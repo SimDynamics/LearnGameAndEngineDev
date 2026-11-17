@@ -463,8 +463,15 @@ su identidad estable; desplazarse dentro del gráfico no crea otra
 respuesta ni otro paso de narración.
 
 La disposición se adapta al ancho y al zoom de texto y acepta hasta los
-64 grupos permitidos por el modelo. Para evitar que una lección tenga un
-gráfico de miles de píxeles de altura, el área visible de las barras se
+64 grupos permitidos por el modelo. Al cambiar la escala, el DPI o el ancho,
+el desplazamiento se reconstruye tomando como referencia el **primer grupo
+visible**, no la coordenada de píxeles de la distribución anterior. Si el
+estudiante estaba viendo el final, conserva la última fila. Esta lectura
+es independiente de los datos, candidatos y decisiones computadas. La
+regresión Win32 `histogram_reflow_retains_visible_group` comprueba cambios
+de zoom, DPI y cantidad de columnas con una lista de 64 grupos; requiere
+ejecución nativa en Windows para acreditarse. Para evitar que una lección
+tenga un gráfico de miles de píxeles de altura, el área visible de las barras se
 limita a 440 unidades de presentación escaladas. Si hay más filas, se
 activa una barra de desplazamiento interna. El estudiante puede usar la
 rueda del ratón sobre el gráfico, desplazar su barra o alcanzarlo con
