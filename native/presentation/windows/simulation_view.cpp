@@ -1002,8 +1002,31 @@ struct SimulationView::Impl {
         if(initializing)return;const auto life=alive;const auto layout=callbacks.layout_changed,changed=callbacks.changed;
         if(layout)layout();if(*life&&changed)changed();
     }
-    bool go(std::size_t next) {
-        if(next>=count())return false;if(next==position)return true;
+    // A direct step/decision selection should reveal its actual completed
+    // group, even after the learner has scrolled to an unrelated histogram
+    // row. Sequential Next/Previous keeps manual scrolling independent.
+    void reveal_current_histogram_decision() {
+        if(!frequencies||!frequency_total_height||
+                !(GetWindowLongPtrW(frequencies,GWL_STYLE)&WS_VISIBLE))return;
+        const auto decision=current_decision_group();
+        if(!decision)return;
+        const auto indices=frequency_indices();
+        const auto found=std::ranges::find(indices,*decision);
+        if(found==indices.end())return; // The candidate filter hid this bar.
+        RECT viewport{};GetClientRect(frequencies,&viewport);
+        if(viewport.right<=0||viewport.bottom<=0)return;
+        const auto slot=static_cast<std::size_t>(found-indices.begin());
+        const auto card=frequency_card_rect(slot,indices.size(),viewport.right);
+        if(card.top<0)scroll_frequencies(frequency_scroll+card.top);
+        else if(card.bottom>viewport.bottom)
+            scroll_frequencies(frequency_scroll+card.bottom-viewport.bottom);
+    }
+    bool go(std::size_t next,bool reveal_decision=false) {
+        if(next>=count())return false;
+        if(next==position){
+            if(reveal_decision)reveal_current_histogram_decision();
+            return true;
+        }
         const auto old_indices=frequency_indices();
         const auto old_visible=old_indices.size();
         bool followed_last_bar=false;
@@ -1034,6 +1057,7 @@ struct SimulationView::Impl {
                 !indices.empty()&&indices.back()+1==completed_groups()&&
                 frequency_total_height)
             scroll_frequencies(frequency_total_height);
+        if(reveal_decision)reveal_current_histogram_decision();
         publish();return true;
     }
     const std::vector<SimulationValue>& original_data()const{return scenario?spec.scenarios.at(scenario-1).values:spec.values;}
@@ -1573,7 +1597,7 @@ struct SimulationView::Impl {
             return 0;}
         if(id==step_selector_id&&event==CBN_SELCHANGE&&stepping()){
             const auto selected=SendMessageW(item(step_selector_id),CB_GETCURSEL,0,0);
-            if(selected>=0&&static_cast<std::size_t>(selected)<count())go(static_cast<std::size_t>(selected));
+            if(selected>=0&&static_cast<std::size_t>(selected)<count())go(static_cast<std::size_t>(selected),true);
             return 0;
         }
         if(id==input_format_id&&event==CBN_SELCHANGE&&spec.editable&&spec.text_values){
@@ -1590,8 +1614,8 @@ struct SimulationView::Impl {
             frequency_wheel_remainder=0;
             frequency_scroll=0;pressed_frequency_group.reset();update();publish();
         }
-        else if(id==previous_decision_id){if(const auto target=previous_decision())go(*target);}
-        else if(id==next_decision_id){if(const auto target=next_decision())go(*target);}
+        else if(id==previous_decision_id){if(const auto target=previous_decision())go(*target,true);}
+        else if(id==next_decision_id){if(const auto target=next_decision())go(*target,true);}
         else if(id==apply_id&&spec.editable)apply_input();
         else if(id==restore_id&&spec.editable)replace_data(original_data(),true);
         else if(id>=group_first_id&&static_cast<std::size_t>(id-group_first_id)<group_buttons.size())go(id-group_first_id);
