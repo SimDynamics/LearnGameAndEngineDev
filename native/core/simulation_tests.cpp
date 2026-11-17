@@ -375,6 +375,29 @@ void exhaustive_small_arrays() {
             for(const auto value:ordered)expected_values.emplace_back(value);
             verify(trace.original==spec.values&&trace.ordered==expected_values,
                 "Original data or ordered copy changed");
+            // An explicitly preordered lesson must produce the same group
+            // decisions without sorting or rewriting any authored element.
+            auto preordered=spec;
+            preordered.sort=false;
+            preordered.values=expected_values;
+            const auto direct=build_simulation_trace(preordered);
+            verify(direct.original==expected_values&&direct.ordered==expected_values&&
+                direct.groups==trace.groups&&direct.frames==trace.frames&&
+                direct.candidate_frames==trace.candidate_frames,
+                "sort=false changed a validated ordered input or its decisions");
+            if(spec.values!=expected_values){
+                auto unsorted_spec=spec;
+                unsorted_spec.sort=false;
+                rejected([&]{(void)build_simulation_trace(unsorted_spec);},
+                    "sort=false silently accepted unsorted authored data");
+                std::string unsorted_lines;
+                for(const auto& item:spec.values){
+                    if(!unsorted_lines.empty())unsorted_lines+='\n';
+                    unsorted_lines+=simulation_value_text(item);
+                }
+                rejected([&]{(void)simulation_parse_input_trace(preordered,unsorted_lines);},
+                    "sort=false silently accepted an unsorted editor draft");
+            }
             if(ordered.empty()){
                 verify(trace.groups.empty()&&trace.candidate_frames.empty()&&
                     trace.frames.size()==1&&
