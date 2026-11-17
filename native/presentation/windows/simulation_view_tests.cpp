@@ -2566,6 +2566,90 @@ void scenario_change_is_atomic_after_native_failure(HWND host) {
         "A valid scenario retry retained the rejected model or old output");
 }
 
+
+void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the original trace for double native failure");
+    const auto old_step=view.step_index();
+    const auto old_count=view.step_count();
+    const auto old_output=text(view,output_id);
+    const auto old_array=name(GetDlgItem(view.window(),array_id));
+    const auto old_reading=view.reading_regions()[2].key;
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(selector&&output&&editor,"Missing scenario, output or input editor");
+
+    // The candidate is first streamed successfully into the editor. A later
+    // output zoom rejects the whole scenario transaction. Then its second,
+    // rollback-only editor stream fails too: this must not replace the original
+    // diagnostic or prevent recovery of the previously applied trace.
+    struct Rejections {int editor_streams=0,editor_failure=0,zoom_failure=0;} errors;
+    const auto reject_editor=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& state=*reinterpret_cast<Rejections*>(raw);
+        if(message==EM_STREAMIN&&++state.editor_streams==2){
+            auto* stream=reinterpret_cast<EDITSTREAM*>(lp);
+            if(stream)stream->dwError=ERROR_WRITE_FAULT;
+            ++state.editor_failure;
+            return 0;
+        }
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    const auto reject_output=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& state=*reinterpret_cast<Rejections*>(raw);
+        if(message==EM_SETZOOM&&state.zoom_failure==0){
+            ++state.zoom_failure;return FALSE;
+        }
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR editor_hook=0x53495245,output_hook=0x5349524f;
+    check(SetWindowSubclass(editor,reject_editor,editor_hook,
+        reinterpret_cast<DWORD_PTR>(&errors))!=FALSE,
+        "Cannot intercept native scenario editor streams");
+    struct Unhook {
+        HWND editor,output;SUBCLASSPROC editor_proc,output_proc;
+        ~Unhook(){if(IsWindow(editor))RemoveWindowSubclass(editor,editor_proc,editor_hook);
+            if(IsWindow(output))RemoveWindowSubclass(output,output_proc,output_hook);}
+        static constexpr UINT_PTR editor_hook=0x53495245,output_hook=0x5349524f;
+    } guard{editor,output,reject_editor,reject_output};
+    check(SetWindowSubclass(output,reject_output,output_hook,
+        reinterpret_cast<DWORD_PTR>(&errors))!=FALSE,
+        "Cannot intercept the subsequent output zoom");
+
+    check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "The replacement scenario is missing");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    const auto diagnostic=text(view,error_id);
+    check(errors.editor_streams>=2&&errors.editor_failure==1&&errors.zoom_failure==1&&
+        diagnostic.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+        SendMessageW(selector,CB_GETCURSEL,0,0)==0&&
+        view.step_index()==old_step&&view.step_count()==old_count&&
+        text(view,output_id)==old_output&&
+        name(GetDlgItem(view.window(),array_id))==old_array&&
+        view.reading_regions()[2].key==old_reading&&spec==authored,
+        "Rollback editor failure masked the original Win32 error or lost applied model");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==diagnostic;
+    }),"The originating error was not available to the narrator");
+
+    // A later native retry works once the rejected operations are gone.
+    check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "Cannot reselect the scenario after dual native failures");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(SendMessageW(selector,CB_GETCURSEL,0,0)==1&&
+        view.step_index()==0&&view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="4:2\\n9:2\\n"&&spec==authored,
+        "A retry did not recover after the previous two native rejections");
+}
+
 void editable_data(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::walkthrough);SimulationView view(host,spec,"es");resize(view,820);
     check(view.go_to_step(view.step_count()-1),"Cannot prepare an edited data test");
@@ -3940,6 +4024,7 @@ int main(int argc,char** argv)try {
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
     run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
+    run("scenario_change_keeps_origin_error_when_editor_rollback_fails",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value);});
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});

@@ -1146,7 +1146,15 @@ struct SimulationView::Impl {
             frequency_candidates_only=previous_filter;
             pressed_frequency_group=previous_pressed;
             input_format=previous_format;
-            if(replacement)set_edit_text(item(input_id),previous_editor);
+            // The input editor may also reject a rollback stream. Do not let
+            // that second native failure mask the originating one or prevent
+            // reconstruction of the previously applied model and reading UI.
+            if(replacement){
+                try{set_edit_text(item(input_id),previous_editor);}
+                catch(...){
+                    OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\\n");
+                }
+            }
             try {
                 rebuild_groups();rebuild_steps();update();
                 restore_output_reading_anchor(output_anchor);
