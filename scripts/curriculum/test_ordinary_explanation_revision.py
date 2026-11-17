@@ -137,7 +137,9 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
         # Pin the exact previous publication. Work may legitimately add
         # /explanation to the current lesson later; that must not break this
         # regression or cause it to test an already edited source as baseline.
-        commit = "c6d6c0b5edc17cb5ff7fc875e3051e97589f43a5"
+        # Use the shared historical main/Codex ancestor so both Windows
+        # checkouts retain this fixture even after Work updates the lesson.
+        commit = "5607e7e503a3240314b82bbd8d829166e8c117de"
         expected_blob = "3d2017f3c1d9feb842fb687f13e5569d6dbc7304"
         repository = Path(__file__).resolve().parents[2]
         actual_blob = subprocess.check_output(
