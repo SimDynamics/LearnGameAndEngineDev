@@ -2634,6 +2634,19 @@ void accumulated_output_scroll_follows_new_groups(HWND host) {
     resize(view,800);
     const auto output=GetDlgItem(view.window(),output_id);
     check(output,"The accumulated output RichEdit is missing");
+    int stream_rewrites=0;
+    const auto stream_probe=[](HWND edit,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT {
+        if(message==EM_STREAMIN)++*reinterpret_cast<int*>(raw);
+        return DefSubclassProc(edit,message,wp,lp);
+    };
+    check(SetWindowSubclass(output,stream_probe,39,
+        reinterpret_cast<DWORD_PTR>(&stream_rewrites))!=FALSE,
+        "Cannot observe the real output document streaming");
+    struct StreamProbeGuard {
+        HWND window;SUBCLASSPROC proc;
+        ~StreamProbeGuard(){if(IsWindow(window))RemoveWindowSubclass(window,proc,39);}
+    } probe_guard{output,stream_probe};
 
     // Each distinct value contributes a start frame and a decision. At
     // decision 20 there are already 21 lines, overflowing the bounded
@@ -2656,6 +2669,8 @@ void accumulated_output_scroll_follows_new_groups(HWND host) {
     const auto unchanged=text(view,output_id);
     check(view.go_to_step(43)&&text(view,output_id)==unchanged,
         "Counting the next element changed output before deciding its group");
+    check(stream_rewrites==0,
+        "Counting without a new completed group unnecessarily streamed stdout");
     const auto still_bottom=scroll_state(output);
     check(still_bottom.position.y==bottom.position.y,
         "An unchanged output was rewritten or lost its existing scroll");
@@ -2664,6 +2679,8 @@ void accumulated_output_scroll_follows_new_groups(HWND host) {
     // group should be brought into view without changing the raw stdout.
     check(view.go_to_step(44)&&text(view,output_id).ends_with("21:1\n"),
         "The next completed group did not append its expected result");
+    check(stream_rewrites==1,
+        "Appending a completed group did not stream stdout exactly once");
     const auto extended=scroll_state(output);
     check(extended.position.y>=bottom.position.y&&
         extended.vertical.nPos>=extended.vertical.nMax-
@@ -2679,6 +2696,8 @@ void accumulated_output_scroll_follows_new_groups(HWND host) {
     check(view.go_to_step(45)&&view.go_to_step(46)&&
         text(view,output_id).ends_with("22:1\n"),
         "The next completed output group was lost");
+    check(stream_rewrites==2,
+        "A count/decision pair streamed more output than its one new result");
     const auto retained=scroll_state(output);
     check(retained.first==0&&retained.position.y==top.position.y,
         "Appending output stole the learner's manually selected earlier lines");
