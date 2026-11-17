@@ -1871,13 +1871,14 @@ def _validate_cpp_fundamentals(base_commit):
                                        relative, origin_p, origin_b, block, current,
                                        previous_document=old, current_document=delivered))
                         require(allowed, relative, f"código legacy previo modificado p{pn+1} b{bn+1}")
-                    else:
-                        # Check every published exercise, including choices whose
-                        # question/explanation did not change. Earlier validated
-                        # stateLayout projections return an authenticated choice
-                        # revision to its historical answer contract, while
-                        # changed options/correctIndex without authorization
-                        # must never bypass the original-response guard.
+                    elif current != block:
+                        # The complete state-layout transition and original
+                        # owner have already been verified. An identical
+                        # historical payload needs no expensive per-exercise
+                        # revalidation; changed choices still reach the same
+                        # guard even if question/explanation are unchanged.
+                        # Do not use question-only equality as a shortcut:
+                        # options, correctIndex, guides and IDs are protected.
                         require(preserves_previous_exercise(relative, origin_p, origin_b, block, current,
                                     previous_document=old, current_document=delivered), relative,
                                 f"{previous_exercise_difference(block, current)} p{pn+1} b{bn+1}")
