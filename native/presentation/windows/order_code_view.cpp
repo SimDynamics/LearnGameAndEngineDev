@@ -315,7 +315,14 @@ void OrderCodeView::set_completed(bool value){
     InvalidateRect(impl_->host,nullptr,FALSE);
 }
 void OrderCodeView::set_enabled(bool value){impl_->enabled=value;if(!value)impl_->release();}
-void OrderCodeView::set_text_scale(int value){impl_->percentage=std::clamp(value,25,400);for(const auto row:impl_->rows)SendMessageW(row,EM_SETZOOM,impl_->percentage,100);impl_->layout(impl_->width);}
+void OrderCodeView::set_text_scale(int value){
+    const int requested=std::clamp(value,25,400);
+    for(const auto row:impl_->rows)
+        if(!set_rich_text_zoom(row,requested))
+            throw std::runtime_error("RichEdit rechazó la escala de una tarjeta de orden.");
+    impl_->percentage=requested;
+    impl_->layout(impl_->width);
+}
 void OrderCodeView::set_wrap(bool value){impl_->wrap=value;for(const auto row:impl_->rows)SendMessageW(row,EM_SETTARGETDEVICE,0,value?0:1);impl_->layout(impl_->width);}
 void OrderCodeView::restart_tap_sequence(){impl_->next_tap=0;}
 void OrderCodeView::reset(){
