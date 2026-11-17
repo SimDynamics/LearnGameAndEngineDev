@@ -328,7 +328,7 @@ struct SimulationView::Impl {
         reader_theme::apply(host,reader_theme::Surface::card);fonts();
         (void)CoCreateInstance(CLSID_AccPropServices,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(accessibility.GetAddressOf()));
         for(const auto id:{title_id,description_id,scenario_label_id,array_label_id,original_order_id,
-                step_id,explanation_id,transition_id,output_label_id,result_comparison_id,
+                step_id,explanation_id,transition_id,output_label_id,output_id,result_comparison_id,
                 input_label_id,error_id,groups_label_id,frequencies_label_id,
                 progress_label_id})label(id);
         const auto selector=create(L"COMBOBOX",scenario_id,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL);
