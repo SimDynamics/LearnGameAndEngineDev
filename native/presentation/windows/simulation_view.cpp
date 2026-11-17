@@ -149,8 +149,9 @@ struct SimulationView::Impl {
     bool frequency_candidates_only=false;
     bool initializing=true,arranging=false,layout_valid=false;
     std::shared_ptr<bool> alive=std::make_shared<bool>(true);
-    std::string error,input_key,output_model_key;
-    std::size_t output_scenario=0;
+    std::string error,input_key,output_model_key,original_order_model_key;
+    std::size_t output_scenario=0,original_order_scenario=0;
+    COLORREF original_order_ink=CLR_INVALID;
 
     Impl(const SimulationSpec& source,std::string language,SimulationCallbacks events,
             const std::map<std::string,TextSemantics>& authored)
@@ -722,7 +723,25 @@ struct SimulationView::Impl {
         const auto original=original_order_text();
         set_label(array_label_id,spec.labels.array+(original.empty()?"":" · copia ordenada")+
             " · "+std::to_string(trace.ordered.size())+" elementos");
-        set_label(original_order_id,original);
+        // This source comparison remains the same across all steps of one
+        // trace. Streaming it again on every Next/Previous loses the student's
+        // native RichEdit selection and the line they were examining.
+        const auto original_window=item(original_order_id);
+        const auto previous_original=visible_text.find(original_order_id);
+        const bool same_original_session=previous_original!=visible_text.end()&&
+            original_order_model_key==input_key&&original_order_scenario==scenario;
+        const auto current_ink=reader_theme::foreground(original_window);
+        const bool original_unchanged=same_original_session&&
+            previous_original->second==original&&original_order_ink==current_ink;
+        CHARRANGE original_selection{};
+        POINT original_scroll{};
+        if(same_original_session&&!original_unchanged){
+            SendMessageW(original_window,EM_EXGETSEL,0,
+                reinterpret_cast<LPARAM>(&original_selection));
+            SendMessageW(original_window,EM_GETSCROLLPOS,0,
+                reinterpret_cast<LPARAM>(&original_scroll));
+        }
+        if(!original_unchanged)set_label(original_order_id,original);
         set_label(groups_label_id,"Selecciona un grupo");
         set_label(frequencies_label_id,std::string(frequency_candidates_only?
             "Frecuencias de candidatos":"Frecuencias de grupos terminados")+
@@ -851,6 +870,28 @@ struct SimulationView::Impl {
         const auto description=array_text();SetWindowTextW(canvas,wide(description).c_str());accessible(canvas,description);
         NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,canvas,OBJID_CLIENT,CHILDID_SELF);
         if(!initializing)arrange(width,true);
+        if(same_original_session&&!original_unchanged){
+            // A palette change needs fresh formatting, but must not become a
+            // new reading session for unchanged applied data.
+            const LONG length=static_cast<LONG>(GetWindowTextLengthW(original_window));
+            const CHARRANGE restored{
+                std::clamp(original_selection.cpMin,LONG{0},length),
+                std::clamp(original_selection.cpMax,LONG{0},length)};
+            SendMessageW(original_window,EM_EXSETSEL,0,
+                reinterpret_cast<LPARAM>(&restored));
+            SendMessageW(original_window,EM_SETSCROLLPOS,0,
+                reinterpret_cast<LPARAM>(&original_scroll));
+        }else if(!same_original_session&&previous_original!=visible_text.end()){
+            // Two scenarios may carry the same values and display identical
+            // source text, yet their reading sessions are independent.
+            const CHARRANGE start{0,0};
+            SendMessageW(original_window,EM_EXSETSEL,0,
+                reinterpret_cast<LPARAM>(&start));
+            SendMessageW(original_window,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+        }
+        original_order_model_key=input_key;
+        original_order_scenario=scenario;
+        original_order_ink=current_ink;
         if(restore_output_scroll){
             if(follow_output_end)
                 SendMessageW(output_window,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
