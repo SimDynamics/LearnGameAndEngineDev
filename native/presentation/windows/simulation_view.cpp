@@ -188,6 +188,22 @@ struct SimulationView::Impl {
                 trace.candidate_frames.begin());
         return 0;
     }
+    // Distinguish the group examined in the current decision from the
+    // candidates that reach the maximum. These are independent facts:
+    // a losing group can be current without being a candidate.
+    std::optional<std::size_t> current_decision_group()const {
+        if(spec.view==SimulationViewMode::candidates){
+            if(trace.candidate_frames.empty())return std::nullopt;
+            return position;
+        }
+        if(spec.view!=SimulationViewMode::walkthrough)return std::nullopt;
+        const auto& state=frame();
+        if(state.phase!=SimulationPhase::new_maximum&&
+           state.phase!=SimulationPhase::tie&&
+           state.phase!=SimulationPhase::below_maximum)return std::nullopt;
+        if(state.group==0||state.group>trace.groups.size())return std::nullopt;
+        return state.group-1;
+    }
     std::vector<std::size_t> frequency_indices()const {
         std::vector<std::size_t> indices;
         const auto available=completed_groups();
@@ -222,6 +238,8 @@ struct SimulationView::Impl {
             result+=". Grupo "+std::to_string(i+1)+": "+simulation_value_display_text(group.value)+
                 ", "+spec.labels.frequency+" "+std::to_string(group.end-group.begin);
             if(candidate)result+=", candidato al máximo actual";
+            if(current_decision_group()==i)
+                result+=", grupo de la decisión actual";
         }
         return result;
     }
@@ -1050,9 +1068,11 @@ struct SimulationView::Impl {
             const auto& group=trace.groups[group_index];
             const auto count=group.end-group.begin;
             const bool leader=std::ranges::find(frame().leaders,group.value)!=frame().leaders.end();
+            const bool current=current_decision_group()==group_index;
             const auto card_brush=CreateSolidBrush(colors.field);
-            const auto border=CreatePen(PS_SOLID,leader?std::max(1,px(2)):1,
-                leader?colors.accent:colors.outline);
+            const auto border=CreatePen(PS_SOLID,
+                current?std::max(2,sp(3)):leader?std::max(1,px(2)):1,
+                current?colors.text:leader?colors.accent:colors.outline);
             const auto old_brush=SelectObject(dc,card_brush),old_pen=SelectObject(dc,border);
             RoundRect(dc,card.left,card.top,card.right,card.bottom,px(10),px(10));
             SelectObject(dc,old_pen);SelectObject(dc,old_brush);
@@ -1062,7 +1082,8 @@ struct SimulationView::Impl {
             caption.top+=sp(5);caption.bottom=caption.top+sp(20);
             auto old_font=SelectObject(dc,index_font);
             SetTextColor(dc,colors.text);
-            const auto headline=wide(std::string(leader?"★ ":"")+"Grupo "+std::to_string(group_index+1));
+            const auto headline=wide(std::string(current?"Actual · ":"")+
+                (leader?"★ ":"")+"Grupo "+std::to_string(group_index+1));
             DrawTextW(dc,headline.c_str(),-1,&caption,DT_CENTER|DT_SINGLELINE|DT_END_ELLIPSIS|DT_NOPREFIX);
             const int baseline=top+sp(87);
             const int maximum_height=sp(56);

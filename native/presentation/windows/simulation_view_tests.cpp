@@ -338,6 +338,128 @@ void group_colors_are_visible(HWND canvas) {
     SelectObject(dc,old);DeleteObject(bitmap);DeleteDC(dc);ReleaseDC(canvas,screen);
     check(first!=CLR_INVALID&&first!=second&&second==third,"Array mode did not visibly distinguish equal-value groups by color");
 }
+// Native WM_PRINT inspection: distinguish the border and "Actual" heading
+// from an otherwise identical final histogram, without a desktop capture.
+std::vector<COLORREF> frequency_header_pixels(SimulationView& view,std::size_t group) {
+    const auto bounds=view.frequency_card_bounds_in_canvas(group);
+    check(bounds.has_value(),"The histogram group to inspect is not visible");
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    RECT client{};GetClientRect(chart,&client);
+    const auto screen=GetDC(chart);
+    check(screen!=nullptr,"Cannot inspect histogram native paint surface");
+    const auto dc=CreateCompatibleDC(screen);
+    const auto bitmap=CreateCompatibleBitmap(screen,
+        std::max<LONG>(1,client.right),std::max<LONG>(1,client.bottom));
+    check(dc&&bitmap,"Cannot allocate histogram paint capture");
+    const auto previous=SelectObject(dc,bitmap);
+    SendMessageW(chart,WM_PRINT,reinterpret_cast<WPARAM>(dc),
+        PRF_CLIENT|PRF_ERASEBKGND);
+    std::vector<COLORREF> pixels;
+    const auto right=std::min<LONG>(bounds->right-2,bounds->left+160);
+    const auto bottom=std::min<LONG>(bounds->bottom-2,bounds->top+36);
+    for(LONG y=bounds->top+2;y<bottom;y+=2)
+        for(LONG x=bounds->left+2;x<right;x+=2)
+            pixels.push_back(GetPixel(dc,x,y));
+    SelectObject(dc,previous);DeleteObject(bitmap);
+    DeleteDC(dc);ReleaseDC(chart,screen);
+    check(!pixels.empty(),"The histogram header paint is empty");
+    return pixels;
+}
+void current_frequency_decision(HWND host,const std::filesystem::path& captures) {
+    const auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,850);
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    const auto current_count=[&](const SimulationView& target)->std::string{
+        for(const auto& region:target.reading_regions())
+            if(region.key.find("/frequencies/")!=std::string::npos)
+                return region.source_text;
+        return {};
+    };
+    check(current_count(view).empty(),
+        "The initial frame fabricated a current histogram decision");
+    check(view.go_to_step(2),"Cannot inspect the first completed decision");
+    const auto first=name(chart);
+    check(first.find("Grupo 1: -8, frecuencia 1, candidato al máximo actual, grupo de la decisión actual")!=std::string::npos&&
+        current_count(view)==first,
+        "The first group is not identified as both the current decision and a candidate");
+    check(view.go_to_step(3)&&
+        name(chart).find("grupo de la decisión actual")==std::string::npos&&
+        name(chart).find("Grupo 1: -8, frecuencia 1")!=std::string::npos,
+        "Starting a new group reused the previous group decision marker");
+    check(view.go_to_step(7),"Cannot inspect the second decision");
+    const auto winning=name(chart);
+    check(winning.find("Grupo 1: -8, frecuencia 1, grupo de la decisión actual")==std::string::npos&&
+        winning.find("Grupo 2: 3, frecuencia 4, candidato al máximo actual, grupo de la decisión actual")!=std::string::npos,
+        "The winner of the second comparison was not marked as current");
+    check(view.go_to_step(8)&&
+        name(chart).find("grupo de la decisión actual")==std::string::npos,
+        "Counting another element incorrectly marked a completed decision");
+
+    check(view.go_to_step(9),"Cannot inspect the losing group decision");
+    const auto losing=name(chart);
+    check(losing.find("Grupo 2: 3, frecuencia 4, candidato al máximo actual")!=std::string::npos&&
+        losing.find("Grupo 3: 10, frecuencia 1, grupo de la decisión actual")!=std::string::npos&&
+        losing.find("Grupo 3: 10, frecuencia 1, candidato al máximo actual")==std::string::npos,
+        "The currently examined losing group was confused with the winning candidate");
+    const auto painted_current=frequency_header_pixels(view,2);
+    if(!captures.empty())capture(view.window(),captures/"frequencies-current-loser.bmp");
+    check(view.go_to_step(view.step_count()-1),"Cannot inspect the completed walkthrough");
+    const auto done=name(chart);
+    check(done.find("Grupo 3: 10, frecuencia 1")!=std::string::npos&&
+        done.find("grupo de la decisión actual")==std::string::npos,
+        "Done retained the marker of an already completed group comparison");
+    const auto painted_done=frequency_header_pixels(view,2);
+    check(painted_current!=painted_done,
+        "The current group marker was not rendered in the native histogram header");
+    check(view.go_to_step(9)&&name(chart)==losing,
+        "Returning to the same decision did not restore the current group marker");
+
+    click(view,frequency_filter_id);
+    check(name(chart).find("Grupo 3:")==std::string::npos&&
+        name(chart).find("grupo de la decisión actual")==std::string::npos,
+        "The filtered candidate-only chart showed a losing current group");
+    click(view,frequency_filter_id);
+    check(name(chart)==losing,
+        "Showing all groups did not restore the current losing decision");
+    click_frequency_card(view,1);
+    check(view.step_index()==7&&
+        name(chart).find("Grupo 2: 3, frecuencia 4, candidato al máximo actual, grupo de la decisión actual")!=std::string::npos,
+        "Clicking a completed group did not move the current decision marker");
+
+    view.set_text_scale(150);resize(view,340);
+    bounds(view,"current histogram decision at 150 percent");
+    check(name(chart).find("grupo de la decisión actual")!=std::string::npos,
+        "The readable current decision was lost during zoom/reflow");
+
+    const auto scenario=GetDlgItem(view.window(),scenario_id);
+    SendMessageW(scenario,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(current_count(view).empty(),"A new scenario leaked the old current group");
+    check(view.go_to_step(6),"Cannot inspect the equality decision");
+    const auto tie=name(chart);
+    check(tie.find("Grupo 1: 4, frecuencia 2, candidato al máximo actual")!=std::string::npos&&
+        tie.find("Grupo 1: 4, frecuencia 2, candidato al máximo actual, grupo de la decisión actual")==std::string::npos&&
+        tie.find("Grupo 2: 9, frecuencia 2, candidato al máximo actual, grupo de la decisión actual")!=std::string::npos,
+        "A tie did not distinguish the current equal-frequency group from earlier candidates");
+
+    auto candidates=fixture(SimulationViewMode::candidates);
+    SimulationView examined(host,candidates,"es");resize(examined,820);
+    const auto by_group=GetDlgItem(examined.window(),frequencies_id);
+    check(name(by_group).find("Grupo 1: -8, frecuencia 1, candidato al máximo actual, grupo de la decisión actual")!=std::string::npos,
+        "Candidates view did not mark its initially examined group");
+    check(examined.go_to_step(1)&&
+        name(by_group).find("Grupo 2: 3, frecuencia 4, candidato al máximo actual, grupo de la decisión actual")!=std::string::npos,
+        "Candidates view failed to distinguish the selected group from older observations");
+
+    auto summary=fixture(SimulationViewMode::summary);
+    SimulationView final(host,summary,"es");resize(final,820);
+    check(name(GetDlgItem(final.window(),frequencies_id)).find(
+        "grupo de la decisión actual")==std::string::npos,
+        "A static summary invented a current per-group decision");
+    check(spec==authored,"Marking the current group modified authored data");
+}
 void histogram_card_navigation(HWND host) {
     const auto input=fixture(SimulationViewMode::walkthrough);
     const auto authored=input;
@@ -507,8 +629,12 @@ void progressive_frequency_bars(HWND host,const std::filesystem::path& captures)
     wchar_t type[96]{};GetClassNameW(bars,type,96);
     check(std::wstring_view(type)==L"LearnGameAndEngineDev.SimulationFrequencies",
         "Frequency bars are not drawn by their native Win32 control");
-    check(view.go_to_step(5)&&name(bars)==first,
-        "The model exposed the second group's frequency while still counting");
+    check(view.go_to_step(5)&&
+        name(bars).find("Frecuencias de 1 grupo terminado")!=std::string::npos&&
+        name(bars).find("Grupo 1: -8, frecuencia 1")!=std::string::npos&&
+        name(bars).find("Grupo 2:")==std::string::npos&&
+        name(bars).find("grupo de la decisión actual")==std::string::npos,
+        "Counting the next group exposed its frequency or kept a stale decision marker");
     check(view.go_to_step(7),"Could not complete the second group");
     const auto second=name(bars);
     check(text(view,frequencies_label_id).find("escala máxima visible 4")!=std::string::npos,
@@ -518,8 +644,12 @@ void progressive_frequency_bars(HWND host,const std::filesystem::path& captures)
         second.find("Grupo 2: 3, frecuencia 4, candidato al máximo actual")!=std::string::npos&&
         second.find("Grupo 3:")==std::string::npos,
         "The second group's bars did not update after its maximum decision");
-    check(view.go_to_step(8)&&name(bars)==second,
-        "Starting the last group revealed its future frequency prematurely");
+    check(view.go_to_step(8)&&
+        name(bars).find("Frecuencias de 2 grupos terminados")!=std::string::npos&&
+        name(bars).find("Grupo 2: 3, frecuencia 4")!=std::string::npos&&
+        name(bars).find("Grupo 3:")==std::string::npos&&
+        name(bars).find("grupo de la decisión actual")==std::string::npos,
+        "Starting the last group revealed its future frequency or a stale decision marker");
     check(view.go_to_step(9),"Could not complete the final group");
     const auto third=name(bars);
     check(third.find("Frecuencias de 3 grupos terminados")!=std::string::npos&&
@@ -534,8 +664,12 @@ void progressive_frequency_bars(HWND host,const std::filesystem::path& captures)
     if(!captures.empty())capture(view.window(),captures/"frequencies-narrow-150.bmp");
     check(view.go_to_step(0)&&!control_shown(bars)&&shown_group_count(view).empty(),
         "Returning to initial step retained future histogram bars");
-    check(view.go_to_step(view.step_count()-1)&&name(bars)==third&&spec==authored,
-        "Terminal walkthrough lost completed group bars or changed authored data");
+    check(view.go_to_step(view.step_count()-1)&&
+        name(bars).find("Frecuencias de 3 grupos terminados")!=std::string::npos&&
+        name(bars).find("Grupo 3: 10, frecuencia 1")!=std::string::npos&&
+        name(bars).find("grupo de la decisión actual")==std::string::npos&&
+        spec==authored,
+        "Terminal walkthrough lost completed groups or retained a fictitious current decision");
 
     const auto scenario=GetDlgItem(view.window(),scenario_id);
     SendMessageW(scenario,CB_SETCURSEL,1,0);
@@ -2053,6 +2187,7 @@ int main(int argc,char** argv)try {
         catch(...){++failures;std::cerr<<"FAIL simulation scenario "<<label<<": unknown native failure\n";}
         pump(host.value);
     };
+    run("current_frequency_decision",[&]{current_frequency_decision(host.value,captures);});
     run("histogram_card_navigation",[&]{histogram_card_navigation(host.value);});
     run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
     run("candidate_frequency_filter",[&]{candidate_frequency_filter(host.value);});

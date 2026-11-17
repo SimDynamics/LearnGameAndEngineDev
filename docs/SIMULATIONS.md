@@ -315,6 +315,22 @@ destacados también mediante una estrella. El lector puede acceder al
 nombre completo de cada grupo, su valor y frecuencia, incluso cuando un
 texto largo se acorta visualmente dentro de una tarjeta.
 
+La tarjeta correspondiente al **grupo cuya decisión se examina ahora**
+se distingue con un borde reforzado y la palabra **«Actual»** en su
+cabecera. La descripción accesible lo expresa como «grupo de la decisión
+actual». Esta marca es distinta de la estrella de **candidato al máximo**:
+una decisión `belowMaximum` puede tener como grupo actual uno que perdió
+la comparación y no es candidato. En un empate, ambos grupos pueden
+mantener la estrella, pero sólo el grupo que se compara en ese paso
+recibe la marca «Actual».
+
+La marca aparece únicamente al examinar una decisión de un grupo terminado
+en `walkthrough`, o el grupo seleccionado en `candidates`. En los pasos
+de recuento `start` y `advance`, en `done` y en `summary` no se inventa
+ningún grupo «Actual». Si está activo el filtro **Sólo candidatos** y el
+grupo actual no es candidato, su barra queda fuera de ese filtro;
+la vista conserva las variables y explicaciones calculadas del paso.
+
 En **walkthrough**, una barra sólo aparece **después de que termina la
 decisión de ese grupo**: contar el primer dato o avanzar dentro del grupo
 no muestra todavía su frecuencia total. En **candidates** se muestran los
