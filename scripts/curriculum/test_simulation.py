@@ -500,8 +500,11 @@ class SimulationIntegrationTest(unittest.TestCase):
         self.assertEqual(before["pages"][2]["blocks"][0],
                          added["pages"][2]["blocks"][0])
         self.assertNotIn("new_text_example",
-                         {block["id"] for page in before["stateLayout"]["current"]
-                          for block in page["blocks"] if isinstance(block, dict)})
+                         {identity for page in before["stateLayout"]["current"]
+                          for identity in page["blocks"]})
+        self.assertIn("new_text_example",
+                      {identity for page in added["stateLayout"]["current"]
+                       for identity in page["blocks"]})
 
     def test_complete_contract_cannot_change_as_an_editorial_revision(self):
         raw = lesson()
