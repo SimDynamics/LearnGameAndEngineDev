@@ -2613,10 +2613,10 @@ void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host) {
         "Cannot intercept native scenario editor streams");
     struct Unhook {
         HWND editor,output;SUBCLASSPROC editor_proc,output_proc;
-        ~Unhook(){if(IsWindow(editor))RemoveWindowSubclass(editor,editor_proc,editor_hook);
-            if(IsWindow(output))RemoveWindowSubclass(output,output_proc,output_hook);}
-        static constexpr UINT_PTR editor_hook=0x53495245,output_hook=0x5349524f;
-    } guard{editor,output,reject_editor,reject_output};
+        UINT_PTR editor_id,output_id;
+        ~Unhook(){if(IsWindow(editor))RemoveWindowSubclass(editor,editor_proc,editor_id);
+            if(IsWindow(output))RemoveWindowSubclass(output,output_proc,output_id);}
+    } guard{editor,output,reject_editor,reject_output,editor_hook,output_hook};
     check(SetWindowSubclass(output,reject_output,output_hook,
         reinterpret_cast<DWORD_PTR>(&errors))!=FALSE,
         "Cannot intercept the subsequent output zoom");
@@ -2646,7 +2646,7 @@ void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host) {
         reinterpret_cast<LPARAM>(selector));pump();
     check(SendMessageW(selector,CB_GETCURSEL,0,0)==1&&
         view.step_index()==0&&view.go_to_step(view.step_count()-1)&&
-        text(view,output_id)=="4:2\\n9:2\\n"&&spec==authored,
+        text(view,output_id)=="4:2\n9:2\n"&&spec==authored,
         "A retry did not recover after the previous two native rejections");
 }
 

@@ -1152,7 +1152,7 @@ struct SimulationView::Impl {
             if(replacement){
                 try{set_edit_text(item(input_id),previous_editor);}
                 catch(...){
-                    OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\\n");
+                    OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\n");
                 }
             }
             try {
