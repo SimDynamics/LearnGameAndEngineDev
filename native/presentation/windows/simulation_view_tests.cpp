@@ -2836,6 +2836,71 @@ void output_applied_data_reading_isolated(HWND host) {
         "A rejected input discarded the valid output reading session");
 }
 
+
+void output_zoom_preserves_reading_anchor(HWND host) {
+    auto spec=fixture(SimulationViewMode::summary);
+    spec.scenarios.clear();
+    spec.values.clear();
+    for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
+    const auto original=spec;
+    SimulationView view(host,spec,"es");
+    resize(view,800);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(output,"No RichEdit output for the scale-reading regression");
+    const auto stdout_before=text(view,output_id);
+    const auto source_before=name(GetDlgItem(view.window(),array_id));
+    const auto first_character=[&] {
+        const auto first=SendMessageW(output,EM_GETFIRSTVISIBLELINE,0,0);
+        return SendMessageW(output,EM_LINEINDEX,static_cast<WPARAM>(first),0);
+    };
+    const auto initial=scroll_state(output);
+    check(initial.has_range&&initial.vertical.nPage>0&&
+        initial.vertical.nMax-initial.vertical.nMin+1>
+            static_cast<int>(initial.vertical.nPage),
+        "Output must overflow before its reading position can be tested");
+    const CHARRANGE selected{0,3};
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    SendMessageW(output,EM_LINESCROLL,0,12);
+    const auto before=scroll_state(output);
+    const auto character=first_character();
+    check(before.first>0&&before.position.y>0&&character>0&&
+        before.selection.cpMin==selected.cpMin&&
+        before.selection.cpMax==selected.cpMax,
+        "Cannot establish an earlier text selection with a separately scrolled viewport");
+    const auto remains_anchored=[&](const char* reason){
+        const auto current=scroll_state(output);
+        check(first_character()==character&&
+            current.selection.cpMin==selected.cpMin&&
+            current.selection.cpMax==selected.cpMax&&
+            text(view,output_id)==stdout_before&&
+            name(GetDlgItem(view.window(),array_id))==source_before&&
+            spec==original,reason);
+    };
+    // RichEdit changes its physical text coordinates at each scale.
+    // Preserve the uppermost readable character, not the previous pixel y.
+    view.set_text_scale(150);resize(view,800);
+    remains_anchored("Reader zoom displaced stdout's visible line or selection");
+    SendMessageW(view.window(),WM_DPICHANGED_AFTERPARENT,0,0);
+    pump(host);resize(view,800);
+    remains_anchored("A native DPI font rebase lost stdout's reading anchor");
+    view.set_text_scale(100);resize(view,800);
+    remains_anchored("Returning to the original reader scale lost the output anchor");
+
+    // The student already at the end should remain at the end, rather than
+    // being pinned to a stale top-line character after a new scale.
+    SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
+    const auto bottom=scroll_state(output);
+    check(bottom.position.y>0,"Cannot pin the current output to its final line");
+    view.set_text_scale(140);resize(view,800);
+    const auto after=scroll_state(output);
+    check(after.vertical.nPage>0&&
+        after.vertical.nPos>=after.vertical.nMax-
+            std::max(0,static_cast<int>(after.vertical.nPage)-1)&&
+        text(view,output_id)==stdout_before&&spec==original,
+        "Reader zoom left the last output line hidden or altered the trace");
+}
+
 void scrollable_text_keyboard(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::summary);spec.values.clear();
     for(std::int64_t value=0;value<64;++value)spec.values.emplace_back(value);
@@ -2950,6 +3015,7 @@ int main(int argc,char** argv)try {
     run("accumulated_output_scroll_follows_new_groups",[&]{accumulated_output_scroll_follows_new_groups(host.value);});
     run("output_scenario_reading_isolated",[&]{output_scenario_reading_isolated(host.value);});
     run("output_applied_data_reading_isolated",[&]{output_applied_data_reading_isolated(host.value);});
+    run("output_zoom_preserves_reading_anchor",[&]{output_zoom_preserves_reading_anchor(host.value);});
     run("scrollable_text_keyboard",[&]{scrollable_text_keyboard(host.value,captures);});
     check(!IsWindowVisible(host.value)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=host.value,"Simulation QA activated the desktop");
     if(failures){std::cerr<<"FAIL native simulation view: "<<failures<<" independent scenario(s) failed\n";return 1;}
