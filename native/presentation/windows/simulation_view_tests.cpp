@@ -24,6 +24,7 @@ constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variab
     group_first_id=200;
 std::filesystem::path failure_captures;
 void capture(HWND window,const std::filesystem::path& path);
+void fitted_text(SimulationView& view);
 void check(bool value,const char* reason){if(!value)throw std::runtime_error(reason);}
 void pump(HWND dialog=nullptr){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE))
     if(message.message!=WM_QUIT&&(!dialog||!IsDialogMessageW(dialog,&message))){TranslateMessage(&message);DispatchMessageW(&message);}}
@@ -49,7 +50,11 @@ SimulationSpec fixture(SimulationViewMode mode) {
 }
 void resize(SimulationView& view,int width) {
     const auto height=view.height_for_width(width);check(height>0,"The responsive view has no height");
+    check(view.height_for_width(width)==height,"Repeated measurement changed the simulation height");
     MoveWindow(view.window(),0,0,width,height,FALSE);pump();
+    check(view.height_for_width(width)==height,"Applying the measured size changed the simulation height");
+    RECT client{};GetClientRect(view.window(),&client);check(client.bottom-client.top==height,"The native host did not retain its measured height");
+    fitted_text(view);
 }
 void click(SimulationView& view,int id) {
     const auto button=GetDlgItem(view.window(),id);check(button&&IsWindowEnabled(button),"A required simulation button is absent or disabled");
@@ -101,6 +106,27 @@ void plain_ink(HWND window) {
     SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&before));
     check((format.dwMask&CFM_COLOR)&&!(format.dwEffects&CFE_AUTOCOLOR)&&format.crTextColor==reader_theme::foreground(window),
         "Existing plain input/output text retained unreadable ink");
+}
+struct HeightRequest {HWND target=nullptr;int required=-1;};
+LRESULT CALLBACK height_request_probe(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
+    auto* probe=reinterpret_cast<HeightRequest*>(raw);
+    if(message==WM_NOTIFY&&lp){const auto* header=reinterpret_cast<NMHDR*>(lp);
+        if(header->hwndFrom==probe->target&&header->code==EN_REQUESTRESIZE){const auto* request=reinterpret_cast<REQRESIZE*>(lp);
+            probe->required=static_cast<int>(request->rc.bottom-request->rc.top);}}
+    return DefSubclassProc(window,message,wp,lp);
+}
+void fitted_text(SimulationView& view) {
+    for(auto child=GetWindow(view.window(),GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT)){
+        const auto style=GetWindowLongPtrW(child,GWL_STYLE);wchar_t type[48]{};GetClassNameW(child,type,48);
+        if(!(style&WS_VISIBLE)||std::wstring_view(type)!=MSFTEDIT_CLASS||GetDlgCtrlID(child)==input_id)continue;
+        HeightRequest probe{child};constexpr UINT_PTR probe_id=0x53494d48;
+        check(SetWindowSubclass(view.window(),height_request_probe,probe_id,reinterpret_cast<DWORD_PTR>(&probe)),"Cannot inspect native text height");
+        SendMessageW(child,EM_REQUESTRESIZE,0,0);RemoveWindowSubclass(view.window(),height_request_probe,probe_id);
+        check(probe.required>=0,"The visible RichEdit did not provide its native required height");
+        const bool bounded=(GetDlgCtrlID(child)==explanation_id||GetDlgCtrlID(child)==output_id)&&(style&WS_TABSTOP);
+        if(!bounded&&probe.required>window_height(child))throw std::runtime_error("RichEdit "+std::to_string(GetDlgCtrlID(child))+
+            " needs "+std::to_string(probe.required)+" pixels but has "+std::to_string(window_height(child))+"; text would be clipped");
+    }
 }
 void capture(HWND window,const std::filesystem::path& path) {
     RECT area{};GetClientRect(window,&area);const int width=area.right,height=area.bottom;
@@ -246,9 +272,31 @@ void text_and_independent_views(HWND host,const std::filesystem::path& captures)
     set_edit_text(GetDlgItem(first.window(),input_id)," sitio \n sitio \nsol");click(first,apply_id);
     check(text(first,output_id)==" sitio :2\nsol:1\n"&&text(second,output_id)=="faro:1\npatio:2\nsol:2\n",
         "Editing text lost meaningful spaces or modified another view");
-    set_edit_text(GetDlgItem(first.window(),input_id),std::string(120,'x')+"\n😀");click(first,apply_id);
+    const auto long_input=std::string(120,'x')+"\n😀";
+    set_edit_text(GetDlgItem(first.window(),input_id),long_input);click(first,apply_id);
+    const auto long_trace=build_simulation_trace(spec,simulation_parse_input(spec,long_input));
+    check(text(first,explanation_id)==long_trace.frames.back().explanation&&text(first,explanation_id).find("😀")!=std::string::npos,
+        "The native explanation lost the literal Unicode surrogate pair");
     first.set_text_scale(150);resize(first,340);bounds(first,"narrow long edited text");
     if(!captures.empty())capture(first.window(),captures/"text-narrow-long-value.bmp");
+    const auto narrow=first.height_for_width(340);resize(first,800);
+    check(first.height_for_width(800)<narrow,"Widening long text retained the previous narrow height");
+    resize(first,340);check(first.height_for_width(340)==narrow,"Returning to the same narrow layout changed its height");
+    first.set_text_scale(100);resize(first,340);check(first.height_for_width(340)<narrow,"Reducing text scale retained the enlarged layout");
+    first.set_text_scale(150);resize(first,340);check(first.height_for_width(340)==narrow,"Restoring text scale changed the measured long-text height");
+}
+void parent_width_changes(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);int layouts=0,changes=0;
+    SimulationView view(host,spec,"es",{[&]{++changes;},[&]{++layouts;}});resize(view,800);
+    const auto wide_height=view.height_for_width(800);
+    MoveWindow(view.window(),0,0,340,wide_height,FALSE);pump();
+    check(layouts==1&&changes==0,"A physical width change did not request layout only");
+    const auto narrow_height=view.height_for_width(340);check(narrow_height>wide_height,"The changed width did not compute its new required height");
+    resize(view,340);bounds(view,"parent width change");
+    check(layouts==1&&changes==0,"Applying the requested height reentered parent reflow or changed narration");
+    set_edit_text(GetDlgItem(view.window(),input_id),"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12");click(view,apply_id);
+    check(view.height_for_width(340)>narrow_height,"Edited data reused a stale layout cache");
+    resize(view,340);bounds(view,"edited data at fixed width");
 }
 void long_labels_and_literal_values(HWND host,const std::filesystem::path& captures) {
     auto spec=fixture(SimulationViewMode::groups);spec.scenarios.clear();spec.text_values=true;spec.editable=false;
@@ -315,7 +363,7 @@ int main(int argc,char** argv)try {
     const auto captures=argc==2?std::filesystem::path(wide(argv[1])):std::filesystem::path{};
     failure_captures=captures;
     navigation(host.value,captures);editable_data(host.value,captures);modes(host.value,captures);text_and_independent_views(host.value,captures);
-    long_labels_and_literal_values(host.value,captures);scrollable_text_keyboard(host.value);
+    parent_width_changes(host.value);long_labels_and_literal_values(host.value,captures);scrollable_text_keyboard(host.value);
     check(!IsWindowVisible(host.value)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=host.value,"Simulation QA activated the desktop");
     std::cout<<"PASS native simulation view: actual buttons, keyboard, exact replay, editable/scenario data, groups, candidates, summary, current narration and responsive controls\n";
     return 0;

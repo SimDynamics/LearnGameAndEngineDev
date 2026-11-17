@@ -101,7 +101,7 @@ struct SimulationView::Impl {
     std::map<int,int> requested_heights;
     std::size_t position=0,scenario=0;
     int width=1,height=1,scale=100,canvas_height=1;
-    bool initializing=true,arranging=false;
+    bool initializing=true,arranging=false,layout_valid=false;
     std::shared_ptr<bool> alive=std::make_shared<bool>(true);
     std::string error,input_key;
 
@@ -171,6 +171,7 @@ struct SimulationView::Impl {
         SendMessageW(item(id),EM_SETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&format));
     }
     void fonts() {
+        layout_valid=false;requested_heights.clear();
         const auto make=[&](int logical,bool scaled,const wchar_t* face,int weight=FW_NORMAL){
             const auto result=CreateFontW(-(scaled?sp(logical):px(logical)),0,0,0,weight,FALSE,FALSE,FALSE,
                 DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,face);
@@ -251,6 +252,7 @@ struct SimulationView::Impl {
         std::string result;for(const auto& value:state.leaders){if(!result.empty())result+=", ";result+=simulation_value_text(value);}return result;
     }
     void update() {
+        layout_valid=false;requested_heights.clear();
         const auto& state=frame();
         set_label(title_id,spec.title,RichTextRole::heading,semantic("/title"));
         set_label(description_id,spec.description,RichTextRole::body,semantic("/description"));
@@ -373,17 +375,31 @@ struct SimulationView::Impl {
     int arrange(int requested,bool move) {
         if(arranging||!host)return height;arranging=true;
         struct Guard{bool& value;~Guard(){value=false;}} guard{arranging};
+        layout_valid=false;
         width=std::max(1,requested);const auto margin=std::min(px(16),std::max(0,(width-1)/4));
         const auto available=std::max(1,width-2*margin);int top=px(16);
         const auto place=[&](int id,int x,int y,int w,int h,bool shown){const auto child=item(id);if(!child)return;
             if(move){ShowWindow(child,shown?SW_SHOWNOACTIVATE:SW_HIDE);if(shown)MoveWindow(child,x,y,std::max(1,w),std::max(1,h),TRUE);}};
         const auto text_row=[&](int id,bool shown=true,int minimum=0){const auto found=visible_text.find(id);const auto text=found==visible_text.end()?std::string_view{}:std::string_view(found->second);
-            shown=shown&&(!text.empty()||minimum>0);int h=std::max(minimum,measure(text,available,id==title_id?heading_font:font));
-            if(shown&&move){place(id,margin,top,available,h,true);SendMessageW(item(id),EM_REQUESTRESIZE,0,0);
-                if(const auto native=requested_heights.find(id);native!=requested_heights.end())h=std::max(h,native->second+px(4));}
-            if(id==output_id||id==explanation_id){const auto full_height=h;h=std::min(h,sp(id==output_id?240:400));
-                if(move){const auto child=item(id);const auto style=GetWindowLongPtrW(child,GWL_STYLE);
-                    SetWindowLongPtrW(child,GWL_STYLE,shown&&full_height>h?style|WS_TABSTOP:style&~WS_TABSTOP);}}
+            shown=shown&&(!text.empty()||minimum>0);
+            int full_height=std::max(minimum,measure(text,available,id==title_id?heading_font:font));
+            const bool scrolling=id==output_id||id==explanation_id;
+            const auto limit=scrolling?sp(id==output_id?240:400):std::numeric_limits<int>::max();
+            int h=std::min(full_height,limit);
+            if(shown&&move){bool settled=false;
+                // REQRESIZE already supplies the requested control size. Adding
+                // padding to that result makes repeated layouts grow. Recheck
+                // the applied height because scrollbars can change text width.
+                for(int pass=0;pass<4;++pass){place(id,margin,top,available,h,true);requested_heights.erase(id);
+                    SendMessageW(item(id),EM_REQUESTRESIZE,0,0);
+                    if(const auto native=requested_heights.find(id);native!=requested_heights.end())full_height=std::max(full_height,native->second);
+                    const auto next=std::min(full_height,limit);
+                    if(next<=h){settled=true;break;}h=next;
+                }
+                if(!settled)throw std::runtime_error("No se pudo ajustar la altura del texto de la simulación.");
+            }
+            if(scrolling&&move){const auto child=item(id);const auto style=GetWindowLongPtrW(child,GWL_STYLE);
+                SetWindowLongPtrW(child,GWL_STYLE,shown&&full_height>h?style|WS_TABSTOP:style&~WS_TABSTOP);}
             place(id,margin,top,available,h,shown);if(shown)top+=h+px(8);};
         text_row(title_id);text_row(description_id);
         text_row(scenario_label_id,!spec.scenarios.empty());
@@ -427,7 +443,11 @@ struct SimulationView::Impl {
         text_row(input_label_id,spec.editable);
         place(input_id,margin,top,available,sp(116),spec.editable);if(spec.editable)top+=sp(116)+px(8);
         buttons({apply_id,restore_id},spec.editable);text_row(error_id,!error.empty());
-        height=top+px(8);return height;
+        height=top+px(8);layout_valid=move;return height;
+    }
+    int measured_height(int requested) {
+        requested=std::max(1,requested);
+        return layout_valid&&requested==width?height:arrange(requested,true);
     }
     bool selected(std::size_t index)const {
         if(spec.view==SimulationViewMode::array)return true;
@@ -580,7 +600,14 @@ struct SimulationView::Impl {
                 if(notification->code==EN_REQUESTRESIZE){const auto* request=reinterpret_cast<REQRESIZE*>(lp);
                     self->requested_heights[GetDlgCtrlID(notification->hwndFrom)]=static_cast<int>(request->rc.bottom-request->rc.top);return 0;}}
             if(message==WM_DRAWITEM&&lp&&reader_theme::draw_button(*reinterpret_cast<DRAWITEMSTRUCT*>(lp)))return TRUE;
-            if(message==WM_SIZE&&!self->initializing){RECT area{};GetClientRect(item,&area);self->arrange(area.right-area.left,true);return 0;}
+            if(message==WM_SIZE&&!self->initializing&&!self->arranging){RECT area{};GetClientRect(item,&area);
+                const auto requested=std::max(1,static_cast<int>(area.right-area.left));
+                if(!self->layout_valid||requested!=self->width){const auto required=self->arrange(requested,true);
+                    // A parent's normal placement uses the already measured
+                    // width. Only an independent width change needs reflow.
+                    const auto callback=self->callbacks.layout_changed;
+                    if(callback&&required!=area.bottom-area.top)callback();}
+                return 0;}
             if(message==WM_DPICHANGED_AFTERPARENT&&!self->initializing){self->fonts();self->update();self->publish();return 0;}
             if(message==WM_PAINT){PAINTSTRUCT paint{};const auto dc=BeginPaint(item,&paint);self->paint(dc);EndPaint(item,&paint);return 0;}
             if(message==WM_PRINTCLIENT){self->paint(reinterpret_cast<HDC>(wp));return 0;}
@@ -598,7 +625,7 @@ SimulationView::SimulationView(HWND parent,const curriculum::SimulationSpec& spe
     :impl_(std::make_unique<Impl>(spec,std::move(locale),std::move(callbacks),semantics)){impl_->initialize(parent);}
 SimulationView::~SimulationView()=default;
 HWND SimulationView::window()const{return impl_->host;}
-int SimulationView::height_for_width(int width){return impl_->arrange(width,true);}
+int SimulationView::height_for_width(int width){return impl_->measured_height(width);}
 void SimulationView::set_text_scale(int percentage){percentage=std::clamp(percentage,25,400);if(percentage==impl_->scale)return;
     impl_->scale=percentage;impl_->fonts();impl_->update();}
 std::size_t SimulationView::step_index()const{return impl_->position;}

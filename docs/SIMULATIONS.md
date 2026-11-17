@@ -39,7 +39,7 @@ El contenido tiene esta estructura:
     "labels": {
       "array": "Datos",
       "start": "inicio",
-      "end": "fin exclusivo",
+      "end": "fin",
       "frequency": "frecuencia",
       "maximum": "máximo",
       "leaders": "valores con el máximo",
