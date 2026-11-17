@@ -2272,6 +2272,57 @@ void scale_limits_and_local_control_wheel(HWND host) {
         first.step_index()==original_step&&name(GetDlgItem(first.window(),array_id))==original_array,
         "Ctrl+wheel changed simulation data, replay position or another view");
 }
+void input_wheel_session_boundaries(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    SimulationView view(host,spec,"es");
+    resize(view,820);
+    const auto input=GetDlgItem(view.window(),input_id);
+    const auto apply=GetDlgItem(view.window(),apply_id);
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    check(input&&apply&&selector,"Missing editor controls for fractional wheel checks");
+    const auto initial_text=edit_text(input);
+    const auto initial_step=view.step_index();
+    const auto initial_array=name(GetDlgItem(view.window(),array_id));
+    SetFocus(input);
+    check(GetFocus()==input,"Cannot focus the data editor before wheel test");
+    control_wheel(host,input,WHEEL_DELTA/2);
+    check(rich_edit_scale(input)==100,"Half a wheel notch changed the initial zoom");
+    SetFocus(apply);
+    check(GetFocus()==apply,"Could not leave the data editor with a partial wheel delta");
+    SetFocus(input);
+    check(GetFocus()==input,"Could not restore focus to the data editor");
+    control_wheel(host,input,WHEEL_DELTA/2);
+    check(rich_edit_scale(input)==100,"A partial delta survived a real focus change");
+    control_wheel(host,input,WHEEL_DELTA/2);
+    check(rich_edit_scale(input)==110,"A fresh pair of high-resolution deltas was discarded");
+
+    // Applying a new array must not carry half of an old gesture to its new editor.
+    control_wheel(host,input,WHEEL_DELTA/2);
+    set_edit_text(input,"4\n4\n2");
+    click(view,apply_id);
+    check(view.step_index()==0&&text(view,error_id).empty()&&
+        rich_edit_scale(input)==110,"Applying valid data lost the editor zoom or model reset");
+    control_wheel(host,input,WHEEL_DELTA/2);
+    check(rich_edit_scale(input)==110,"Applying new data retained an earlier half-notch");
+    control_wheel(host,input,WHEEL_DELTA/2);
+    check(rich_edit_scale(input)==120,"The updated editor stopped accepting complete wheel notches");
+
+    control_wheel(host,input,WHEEL_DELTA/2);
+    SendMessageW(selector,CB_SETCURSEL,1,0);
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(view.step_index()==0&&rich_edit_scale(input)==120&&
+        edit_text(input)=="9\n4\n9\n4",
+        "Selecting another scenario did not preserve zoom and replace the edit data");
+    control_wheel(host,input,WHEEL_DELTA/2);
+    check(rich_edit_scale(input)==120,"Scenario selection reused a previous wheel fraction");
+    control_wheel(host,input,WHEEL_DELTA/2);
+    check(rich_edit_scale(input)==130,"A new scenario cannot accumulate a fresh wheel notch");
+    check(initial_text=="10\n3\n-8\n3\n3\n3"&&initial_step==0&&
+        initial_array.find("índice")!=std::string::npos,
+        "A wheel gesture altered the initial simulation fixture");
+    SetFocus(nullptr);
+}
 void parent_width_changes(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);int layouts=0,changes=0;
     SimulationView view(host,spec,"es",{[&]{++changes;},[&]{++layouts;}});resize(view,800);
@@ -2410,6 +2461,7 @@ int main(int argc,char** argv)try {
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});
     run("editable_input_keyboard_focus",[&]{editable_input_keyboard_focus(host.value);});
     run("scale_limits_and_local_control_wheel",[&]{scale_limits_and_local_control_wheel(host.value);});
+    run("input_wheel_session_boundaries",[&]{input_wheel_session_boundaries(host.value);});
     run("parent_width_changes",[&]{parent_width_changes(host.value);});
     run("long_labels_and_literal_values",[&]{long_labels_and_literal_values(host.value,captures);});
     run("scrollable_text_keyboard",[&]{scrollable_text_keyboard(host.value,captures);});
