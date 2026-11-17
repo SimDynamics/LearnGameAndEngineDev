@@ -134,7 +134,20 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
         """
         relative = ("app/src/main/assets/content/es/programming/cpp_fundamentals/"
                     "programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json")
-        published = layout.load(Path(__file__).resolve().parents[2] / relative)
+        # Pin the exact previous publication. Work may legitimately add
+        # /explanation to the current lesson later; that must not break this
+        # regression or cause it to test an already edited source as baseline.
+        commit = "c6d6c0b5edc17cb5ff7fc875e3051e97589f43a5"
+        expected_blob = "3d2017f3c1d9feb842fb687f13e5569d6dbc7304"
+        repository = Path(__file__).resolve().parents[2]
+        actual_blob = subprocess.check_output(
+            ["git", "rev-parse", f"{commit}:{relative}"], cwd=repository,
+            text=True, encoding="utf-8").strip()
+        self.assertEqual(expected_blob, actual_blob)
+        raw = subprocess.check_output(
+            ["git", "show", f"{commit}:{relative}", "--"], cwd=repository)
+        published = layout.parse_json(raw.decode("utf-8-sig"))
+        layout.validate(published)
         stable_id = "block_0004_0001"
         current_positions = published["stateLayout"]["current"]
         matches = [(p, b) for p, page in enumerate(current_positions)
