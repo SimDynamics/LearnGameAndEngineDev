@@ -223,6 +223,17 @@ entrada revisada. Al abrir una simulación, seleccionar un escenario o
 restablecer sus datos, la presencia de una cadena vacía elige **Lista entre
 comillas** para que el dato pueda editarse sin ambigüedad.
 
+El lector conserva una identidad de narración distinta para la ayuda del
+formato **Lista entre comillas**, sin perder la identidad histórica del
+formato por líneas. Así, cambiar el selector no reutiliza un audio de ayuda
+incompatible. Los mensajes de error de intentos diferentes en el mismo paso
+también tienen identidades separadas cuando cambia el diagnóstico visible:
+se calcula una clave opaca y estable a partir del **mensaje**, sin incluir
+el borrador introducido. Repetir el mismo error conserva su identidad;
+corregir los datos lo retira del recorrido de lectura. La regresión nativa
+`interactive_simulation_feedback_narration_ids` comprueba ambas rutas;
+su ejecución debe acreditarse en Windows.
+
 En el editor nativo de datos, **Tab** pasa al siguiente control y
 **Mayús+Tab** vuelve al anterior; no se añade un tabulador al borrador por
 navegar. **Ctrl+rueda** ajusta sólo el zoom de ese campo en pasos de
