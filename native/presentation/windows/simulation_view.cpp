@@ -1043,11 +1043,14 @@ struct SimulationView::Impl {
     // A changed/layout observer is external code. A failure in it does not
     // invalidate an already updated frame; it must not trigger a model rollback.
     // Do not hide a newer native error created by a reentrant notification.
-    void report_navigation_notification_failure(std::string_view message) noexcept {
+    void report_committed_notification_failure(
+            std::string_view context,std::string_view message) noexcept {
+        // A reentrant navigation may already have produced a newer native
+        // error. An outer callback cannot replace that later diagnosis.
         if(!navigation_error.empty())return;
         try{
             previous_navigation_error=error;
-            report_native_error("No se pudo notificar el cambio de paso. ",message);
+            report_native_error(context,message);
             navigation_error=error;
         }catch(...){
             OutputDebugStringW(L"No se pudo registrar el fallo del observador de simulación.\n");
@@ -1158,9 +1161,11 @@ struct SimulationView::Impl {
         const auto life=alive;
         try{publish();}
         catch(const std::exception& failure){
-            if(*life)report_navigation_notification_failure(failure.what());
+            if(*life)report_committed_notification_failure(
+                "No se pudo notificar el cambio de paso. ",failure.what());
         }catch(...){
-            if(*life)report_navigation_notification_failure("Excepción no identificada del observador.");
+            if(*life)report_committed_notification_failure(
+                "No se pudo notificar el cambio de paso. ","Excepción no identificada del observador.");
         }
         return true;
     }
@@ -1231,6 +1236,8 @@ struct SimulationView::Impl {
         const auto previous_format=input_format;
         auto previous_identity=std::move(input_key);
         auto previous_error=std::move(error);
+        auto previous_navigation=std::move(navigation_error);
+        auto previous_navigation_previous=std::move(previous_navigation_error);
         auto previous_output_key=std::move(output_model_key);
         auto previous_original_key=std::move(original_order_model_key);
         auto previous_trace=std::move(trace);
@@ -1244,6 +1251,9 @@ struct SimulationView::Impl {
             pressed_frequency_group.reset();
             ++applied_revision;
             input_key=std::move(identity);position=0;error.clear();
+            // An accepted data set begins a new model/reading session.
+            // Historical step-navigation errors no longer describe it.
+            navigation_error.clear();previous_navigation_error.clear();
             if(replacement){
                 input_format=next_format;
                 set_edit_text(item(input_id),*replacement);
@@ -1253,13 +1263,15 @@ struct SimulationView::Impl {
                 if(edit_text(item(input_id))!=*replacement)
                     throw std::runtime_error("RichEdit no conservó los datos del escenario.");
             }
-            rebuild_groups();rebuild_steps();update();publish();
+            rebuild_groups();rebuild_steps();update();
         }catch(...){
             // Restore the real applied trace and active reading session before
             // the caller reports failure. Invalid drafts never replace this.
             const auto failure=std::current_exception();
             trace=std::move(previous_trace);source_positions=std::move(previous_positions);
             input_key=std::move(previous_identity);error=std::move(previous_error);
+            navigation_error=std::move(previous_navigation);
+            previous_navigation_error=std::move(previous_navigation_previous);
             output_model_key=std::move(previous_output_key);
             original_order_model_key=std::move(previous_original_key);
             position=previous_position;applied_revision=previous_revision;
@@ -1301,6 +1313,19 @@ struct SimulationView::Impl {
                 }
             }
             std::rethrow_exception(failure);
+        }
+        // The new trace is now committed. Notifications may reenter this view,
+        // select another step or even destroy it. A thrown observer exception
+        // must not roll back the trace or make Apply claim it was rejected.
+        const auto life=alive;
+        try{publish();}
+        catch(const std::exception& failure){
+            if(*life)report_committed_notification_failure(
+                "Datos aplicados; falló la notificación del cambio. ",failure.what());
+        }catch(...){
+            if(*life)report_committed_notification_failure(
+                "Datos aplicados; falló la notificación del cambio. ",
+                "Excepción no identificada del observador.");
         }
     }
     void replace_data(std::vector<SimulationValue> values,bool replace_editor) {

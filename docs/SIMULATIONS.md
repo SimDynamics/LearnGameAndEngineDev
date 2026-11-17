@@ -233,7 +233,14 @@ restablecer sus datos, la presencia de una cadena vacía elige **Lista entre
 comillas** para que el dato pueda editarse sin ambigüedad.
 
 **Aplicar datos** y cambiar de escenario son operaciones de reemplazo
-completo, no cambios parciales de la traza. Si el modelo calcula una entrada
+completo, no cambios parciales de la traza. La notificación a observadores
+ocurre después de confirmar el nuevo modelo y la vista Win32. Si un
+observador falla o navega de forma anidada antes de lanzar una excepción,
+el simulador no deshace datos ya aplicados ni el último paso confirmado.
+El aviso accesible identifica un fallo de notificación sin afirmar que
+**Aplicar datos** haya sido rechazado. Las regresiones
+`applied_data_survive_observer_exception` y
+`scenario_observer_reentry_keeps_committed_data` requieren ejecución Windows. Si el modelo calcula una entrada
 válida, pero un control Win32 rechaza su presentación posterior, se recuperan
 los datos anteriormente aplicados, el paso, el selector, las barras, la salida
 y la posición de lectura. El borrador enviado se conserva para corregirlo

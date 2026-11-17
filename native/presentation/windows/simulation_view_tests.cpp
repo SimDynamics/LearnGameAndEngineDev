@@ -2733,6 +2733,95 @@ void navigation_retry_preserves_previous_invalid_draft(HWND host) {
     }),"The original draft feedback lost its accessible reading after retry");
 }
 
+void applied_data_survive_observer_exception(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.scenarios.clear();
+    const auto authored=spec;
+    bool throw_on_commit=false;
+    int notifications=0;
+    SimulationCallbacks callbacks{};
+    callbacks.changed=[&]{
+        ++notifications;
+        if(!throw_on_commit)return;
+        throw_on_commit=false;
+        throw std::runtime_error("Fallo QA posterior a Aplicar");
+    };
+    SimulationView view(host,spec,"es",callbacks);resize(view,820);
+    const auto previous_frames=view.step_count();
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(editor,"Missing native editor for Apply observer-failure test");
+
+    set_edit_text(editor,"1\n2\n3");
+    throw_on_commit=true;
+    click(view,apply_id);
+    const auto warning=text(view,error_id);
+    check(notifications>0&&view.step_index()==0&&
+        view.step_count()!=previous_frames&&text(view,input_id)=="1\n2\n3"&&
+        warning.find("Datos aplicados; falló la notificación del cambio.")!=std::string::npos&&
+        warning.find("Fallo QA posterior a Aplicar")!=std::string::npos&&
+        warning.find("No se aplicaron los datos.")==std::string::npos&&
+        spec==authored,
+        "A throwing Apply observer reverted the committed trace or reported false rejection");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==warning;
+    }),"An Apply observer warning was not available to the narrator");
+    check(view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="1:1\n2:1\n3:1\n"&&
+        text(view,error_id).empty()&&spec==authored,
+        "A committed Apply could not continue after a notification failure");
+}
+
+void scenario_observer_reentry_keeps_committed_data(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    bool enter_on_scenario=false,nested_ok=false;
+    int notifications=0;
+    SimulationView* current=nullptr;
+    SimulationCallbacks callbacks{};
+    callbacks.changed=[&]{
+        ++notifications;
+        if(!enter_on_scenario)return;
+        enter_on_scenario=false;
+        nested_ok=current->go_to_step(current->step_count()-1);
+        throw std::runtime_error("Fallo QA después del paso anidado");
+    };
+    SimulationView view(host,spec,"es",callbacks);current=&view;
+    resize(view,820);
+    const auto scenario=GetDlgItem(view.window(),scenario_id);
+    check(scenario&&SendMessageW(scenario,CB_GETCURSEL,0,0)==0,
+        "Missing authored scenario selector");
+    enter_on_scenario=true;
+    check(SendMessageW(scenario,CB_SETCURSEL,1,0)!=CB_ERR,
+        "Cannot select alternate scenario");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+
+    const auto warning=text(view,error_id);
+    check(nested_ok&&notifications>=2&&
+        SendMessageW(scenario,CB_GETCURSEL,0,0)==1&&
+        view.step_index()==view.step_count()-1&&
+        text(view,output_id)=="4:2\n9:2\n"&&
+        warning.find("Datos aplicados; falló la notificación del cambio.")!=std::string::npos&&
+        warning.find("Fallo QA después del paso anidado")!=std::string::npos&&
+        spec==authored,
+        "An outer scenario callback replaced a committed nested step or prior trace");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==warning;
+    }),"The scenario observer failure was absent from accessible narration");
+
+    // A valid next scenario does not reuse that transient error or the
+    // previous scenario's reading session.
+    check(SendMessageW(scenario,CB_SETCURSEL,0,0)!=CB_ERR,
+        "Cannot restore the original authored scenario");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(SendMessageW(scenario,CB_GETCURSEL,0,0)==0&&
+        view.step_index()==0&&text(view,error_id).empty()&&spec==authored,
+        "A scenario observer failure left stale model or error state");
+}
+
 void applying_valid_data_is_atomic_after_native_failure(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     spec.scenarios.clear();
@@ -4726,6 +4815,8 @@ int main(int argc,char** argv)try {
     run("navigation_callback_failure_keeps_committed_steps",[&]{navigation_callback_failure_keeps_committed_steps(host.value);});
     run("reentrant_success_survives_outer_observer_exception",[&]{reentrant_success_survives_outer_observer_exception(host.value);});
     run("navigation_retry_preserves_previous_invalid_draft",[&]{navigation_retry_preserves_previous_invalid_draft(host.value);});
+    run("applied_data_survive_observer_exception",[&]{applied_data_survive_observer_exception(host.value);});
+    run("scenario_observer_reentry_keeps_committed_data",[&]{scenario_observer_reentry_keeps_committed_data(host.value);});
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
     run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
     run("scenario_change_keeps_origin_error_when_editor_rollback_fails",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value);});
