@@ -373,6 +373,10 @@ struct SimulationView::Impl {
         font=fresh[0];if(rebase)base_font=fresh[1];
         heading_font=fresh[2];index_font=fresh[3];value_font=fresh[4];
         scale=target;
+        // A partial high-resolution Ctrl+wheel gesture belongs to the
+        // previous editor scale. Do not combine it with a new reader-scale
+        // transaction or DPI rebase; only committed changes reset the delta.
+        input_wheel_delta=0;
         for(const auto& [id,child]:controls){
             wchar_t type[48]{};GetClassNameW(child,type,48);
             if(std::wstring_view(type)!=MSFTEDIT_CLASS)
