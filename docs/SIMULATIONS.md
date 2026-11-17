@@ -414,7 +414,13 @@ inicio; cambiar únicamente de paso conserva el desplazamiento mientras
 el grupo sigue visible. La descripción accesible contiene todos los grupos
 que ya están terminados, incluidos los que quedan fuera del área gráfica
 visible; nunca incluye resultados futuros. Un gráfico corto no añade
-un tabulador innecesario. La representación no califica ejercicios ni
+un tabulador innecesario. Los paneles RichEdit de lectura, incluidos
+explicaciones y salidas largas con desplazamiento propio, **no amplían
+su texto por separado al recibir Ctrl+rueda**: entregan ese gesto al
+contenedor del lector para mantener una escala y una distribución
+coherentes. Su desplazamiento con la rueda sin Ctrl permanece disponible.
+Esto se comprueba en `native.simulation_view`, con texto corto y largo.
+La representación no califica ejercicios ni
 modifica el progreso o los datos del estudiante.
 
 ### Qué cambió en el paso
