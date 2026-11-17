@@ -2448,6 +2448,7 @@ void step_navigation_rolls_back_native_presentation_failure(HWND host) {
     const auto old_output=text(view,output_id);
     const auto old_variables=text(view,variables_id);
     const auto old_progress=text(view,progress_label_id);
+    const auto old_height=view.height_for_width(820);
     const auto old_array=name(GetDlgItem(view.window(),array_id));
     const auto old_regions=view.reading_regions();
     const auto output=GetDlgItem(view.window(),output_id);
@@ -2498,6 +2499,19 @@ void step_navigation_rolls_back_native_presentation_failure(HWND host) {
         return region.target==GetDlgItem(view.window(),error_id)&&
             region.source_text==diagnostic;
     }),"The step-navigation error was missing from accessible narration");
+    // Native error display must invalidate a previously cached, error-free
+    // height. After reflow the new diagnosis is inside the actual host.
+    const auto warning_height=view.height_for_width(820);
+    check(warning_height>old_height,
+        "The native error text did not invalidate the previous lesson height");
+    resize(view,820);
+    const auto warning=GetDlgItem(view.window(),error_id);
+    RECT error_bounds{},host_bounds{};
+    GetWindowRect(warning,&error_bounds);
+    GetWindowRect(view.window(),&host_bounds);
+    check(IsWindowVisible(warning)&&error_bounds.bottom<=host_bounds.bottom&&
+        error_bounds.top>=host_bounds.top&&error_bounds.bottom>error_bounds.top,
+        "The visible native navigation diagnosis was not fitted into the lesson");
 
     // The same button may be used immediately after the one-shot failure.
     // Successful replay clears the transient native notice and publishes

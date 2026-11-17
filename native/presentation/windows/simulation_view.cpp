@@ -630,6 +630,10 @@ struct SimulationView::Impl {
                 SetWindowTextW(field,wide(error).c_str());
                 ShowWindow(field,SW_SHOWNOACTIVATE);
                 visible_text[error_id]=error;
+                // A direct Win32 warning bypasses set_label/update. The
+                // preceding measured height omitted this new visible row.
+                layout_valid=false;
+                requested_heights.erase(error_id);
                 accessible(field,error);
                 NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,field,OBJID_CLIENT,CHILDID_SELF);
             }
