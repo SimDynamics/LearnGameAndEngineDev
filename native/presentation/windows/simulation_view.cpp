@@ -15,6 +15,7 @@
 #include <limits>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace lgaed::presentation {
 namespace {
@@ -308,25 +309,74 @@ struct SimulationView::Impl {
         SendMessageW(item(id),EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&format));
         SendMessageW(item(id),EM_SETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&format));
     }
-    void fonts(bool rebase=true) {
-        layout_valid=false;requested_heights.clear();
+    void fonts(bool rebase=true,int requested=-1) {
+        const int target=requested<0?scale:requested;
+        // Stage fonts and RichEdit zoom before committing a new reader scale.
+        // A late control can reject EM_SETZOOM after earlier controls accepted
+        // it; no partial scale, lost HFONT or overwritten editor-local zoom
+        // may escape that failure.
+        std::array<HFONT,5> fresh{};
+        const auto discard=[&] {for(const auto handle:fresh)if(handle)DeleteObject(handle);};
         const auto make=[&](int logical,bool scaled,const wchar_t* face,int weight=FW_NORMAL){
-            const auto result=CreateFontW(-(scaled?sp(logical):px(logical)),0,0,0,weight,FALSE,FALSE,FALSE,
+            const auto pixels=scaled?std::max(1,MulDiv(px(logical),target,100)):px(logical);
+            const auto created=CreateFontW(-pixels,0,0,0,weight,FALSE,FALSE,FALSE,
                 DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,face);
-            if(!result)throw std::runtime_error("No se pudo preparar la tipografía de la simulación.");return result;};
-        const auto next=make(18,true,L"Roboto"),base=rebase?make(18,false,L"Roboto"):base_font,
-            heading=make(23,true,L"Roboto",FW_BOLD),index=make(13,true,L"Roboto"),value=make(30,true,L"Roboto",FW_BOLD);
-        const std::array old{font,rebase?base_font:nullptr,heading_font,index_font,value_font};
-        font=next;base_font=base;heading_font=heading;index_font=index;value_font=value;
-        for(const auto& [id,child]:controls){wchar_t type[48]{};GetClassNameW(child,type,48);
-            if(std::wstring_view(type)==MSFTEDIT_CLASS){
-                // RichEdit retains character formatting. A zoom-only change
-                // must not replace that base with WM_SETFONT at the old zoom.
-                if(rebase){SendMessageW(child,EM_SETZOOM,1,1);SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(base_font),FALSE);}
-                if(!set_rich_text_zoom(child,scale))
+            if(!created)throw std::runtime_error("No se pudo preparar la tipografía de la simulación.");
+            return created;
+        };
+        try {
+            fresh[0]=make(18,true,L"Roboto");
+            if(rebase)fresh[1]=make(18,false,L"Roboto");
+            fresh[2]=make(23,true,L"Roboto",FW_BOLD);
+            fresh[3]=make(13,true,L"Roboto");
+            fresh[4]=make(30,true,L"Roboto",FW_BOLD);
+        }catch(...){discard();throw;}
+        const HFONT selected_base=rebase?fresh[1]:base_font;
+        struct PreviousZoom {HWND child;int numerator,denominator;};
+        std::vector<PreviousZoom> prior;
+        try {
+            prior.reserve(controls.size());
+            for(const auto& [id,child]:controls) {
+                wchar_t type[48]{};GetClassNameW(child,type,48);
+                if(std::wstring_view(type)!=MSFTEDIT_CLASS)continue;
+                int numerator=0,denominator=0;
+                SendMessageW(child,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),
+                    reinterpret_cast<LPARAM>(&denominator));
+                prior.push_back({child,numerator,denominator});
+                // Changing the base font is appropriate only after a DPI
+                // rebase, not after ordinary reader Ctrl+wheel zoom.
+                if(rebase){
+                    SendMessageW(child,EM_SETZOOM,1,1);
+                    SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(selected_base),FALSE);
+                }
+                if(!set_rich_text_zoom(child,target))
                     throw std::runtime_error("RichEdit rechazó la escala de la simulación.");
-            }else SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);}
-        for(const auto value:old)if(value)DeleteObject(value);
+            }
+        }catch(...){
+            // Restore the *actual* ratio of each control. The editable input
+            // may have a local Ctrl+wheel scale different from reader scale.
+            for(const auto& previous:prior)if(IsWindow(previous.child)){
+                if(rebase){
+                    SendMessageW(previous.child,EM_SETZOOM,1,1);
+                    SendMessageW(previous.child,WM_SETFONT,reinterpret_cast<WPARAM>(base_font),FALSE);
+                }
+                SendMessageW(previous.child,EM_SETZOOM,
+                    previous.numerator,previous.denominator);
+            }
+            discard();
+            throw;
+        }
+        const std::array old{font,rebase?base_font:nullptr,heading_font,index_font,value_font};
+        font=fresh[0];if(rebase)base_font=fresh[1];
+        heading_font=fresh[2];index_font=fresh[3];value_font=fresh[4];
+        scale=target;
+        for(const auto& [id,child]:controls){
+            wchar_t type[48]{};GetClassNameW(child,type,48);
+            if(std::wstring_view(type)!=MSFTEDIT_CLASS)
+                SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
+        }
+        for(const auto handle:old)if(handle)DeleteObject(handle);
+        layout_valid=false;requested_heights.clear();
     }
     void initialize(HWND parent) {
         register_class(view_class,procedure);register_class(array_class,array_procedure);
@@ -1494,7 +1544,7 @@ SimulationView::~SimulationView()=default;
 HWND SimulationView::window()const{return impl_->host;}
 int SimulationView::height_for_width(int width){return impl_->measured_height(width);}
 void SimulationView::set_text_scale(int percentage){percentage=std::clamp(percentage,25,150);if(percentage==impl_->scale)return;
-    impl_->scale=percentage;impl_->fonts(false);impl_->update();}
+    impl_->fonts(false,percentage);impl_->update();}
 std::size_t SimulationView::step_index()const{return impl_->position;}
 std::size_t SimulationView::step_count()const{return impl_->count();}
 bool SimulationView::go_to_step(std::size_t index){return impl_->go(index);}
