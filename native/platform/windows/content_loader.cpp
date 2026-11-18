@@ -1084,8 +1084,16 @@ void require_physical_course_edition_asset(
         // Keep the same spelling for this metadata check: otherwise an
         // ordinary installed course can be rejected past MAX_PATH.
         const auto flags = GetFileAttributesW(state::native_io_path(current).c_str());
-        require(flags != INVALID_FILE_ATTRIBUTES,
-            "A course-edition resource or directory is unavailable");
+        if (flags == INVALID_FILE_ATTRIBUTES) {
+            const auto reason = GetLastError();
+            // Report only the failing path component, not a full user/QA
+            // directory. This distinguishes a missing file from a malformed
+            // root spelling without exposing a personal profile path.
+            throw std::runtime_error(
+                "A course-edition resource or directory is unavailable (Win32 " +
+                std::to_string(reason) + ", component " +
+                utf8(winrt::hstring(current.filename().wstring())) + ")");
+        }
         require((flags & FILE_ATTRIBUTE_REPARSE_POINT) == 0,
             "A course-edition resource cannot use a symbolic link or junction");
         require(((flags & FILE_ATTRIBUTE_DIRECTORY) != 0) == directory,
