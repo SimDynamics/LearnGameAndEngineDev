@@ -164,6 +164,12 @@ int main(int argc,char** argv)try {
         "Exploration unexpectedly became a graded compiler activity");
     const auto trace=curriculum::build_simulation_trace(*block.simulation);
     check(trace.frames.size()>2&&!trace.groups.empty(),"The authored example has no real computed traversal");
+    check(trace.source_indices==std::vector<std::size_t>{2,6,1,4,7,0,3,8,5} &&
+          trace.frames[1].explanation.find("casilla 0 de la copia ordenada, que procede del índice original 2")!=std::string::npos &&
+          trace.frames[2].explanation.find("casilla 1, procedente del índice original 6")!=std::string::npos &&
+          trace.frames[3].phase==curriculum::SimulationPhase::new_maximum &&
+          trace.frames[3].explanation.find("casilla") == std::string::npos,
+        "The documented numeric example lost the calculated counted/origin indices");
     invalid_contracts(source);
     empty_text_contracts(source);
 
@@ -219,6 +225,12 @@ int main(int argc,char** argv)try {
             final.maximum==expected.maximum&&
             final.output==expected.output&&leaders==expected.leaders,
             "The real text example's groups, empty/space candidates or stdout changed");
+        if(std::string_view(expected.scenario)=="desorden_y_repeticiones")
+            check(computed.source_indices==std::vector<std::size_t>{3,1,0,2} &&
+                computed.frames[1].explanation.find("casilla 0 de la copia ordenada, procedente del índice original 3")!=std::string::npos &&
+                computed.frames[6].explanation.find("casilla 3, procedente del índice original 2")!=std::string::npos &&
+                computed.frames[6].phase==curriculum::SimulationPhase::advance,
+                "The documented text scenario confused repeated labels or empty-string origin indices");
     }
 
     // Stable publications keep integer JSON tokens exactly, as required by
