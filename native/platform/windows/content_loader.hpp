@@ -14,6 +14,12 @@ namespace lgaed::windows {
 [[nodiscard]] std::optional<curriculum::CourseEdition> parse_course_edition_metadata(
     std::string_view utf8, std::string_view expected_locale = "es");
 
+// Shared Win32 path contract for newly authored course editions.
+// Rejects aliases in an asset or any component from the content root to it.
+// Legacy course paths keep their existing loader and translation behavior.
+void validate_course_edition_physical_path(
+    const std::filesystem::path& content_root, const std::filesystem::path& resource);
+
 // Windows' complete JSON parser; malformed or unsupported contracts throw.
 [[nodiscard]] curriculum::Lesson load_lesson(
     const std::filesystem::path& path, std::string_view expected_locale = "es");
