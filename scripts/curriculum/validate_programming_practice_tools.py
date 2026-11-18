@@ -198,6 +198,11 @@ def validate(contract, root: Path, base_commit: str | None, *,
               if _safe_file(contract, course_path, content, course_id) else None)
     if course is None:
         return result
+    # Future course indexes use the native catalog's documented public
+    # fields. A legitimate course edition may carry its authenticated
+    # descriptor, but unknown metadata must not be silently ignored.
+    require(set(course) <= {"id", "title", "developmentContent", "units", "courseEdition"},
+            course_path, f"[{course_id}] índice de curso con campos no admitidos")
     require(course.get("id") == course_id, course_path, f"[{course_id}] ID de curso distinto del loader")
     require(_text(course.get("title")), course_path, f"[{course_id}] título de curso vacío o no textual")
     if "developmentContent" in course:
@@ -250,6 +255,8 @@ def validate(contract, root: Path, base_commit: str | None, *,
         unit = _document(contract, path, course_id)
         if unit is None:
             continue
+        require(set(unit) <= {"courseId", "unitId", "title", "lessons", "courseEdition"},
+                path, f"[{course_id}] índice de unidad con campos no admitidos")
         expected = course_id + "__" + path.parent.name
         identity = unit.get("unitId")
         require(path.name == f"unit_{path.parent.name}.json", path,
