@@ -201,10 +201,11 @@ struct HiddenView {
     const QaMathPrerequisite& math;
     std::atomic<unsigned> math_restores{0};
     HWND host=nullptr,view=nullptr;
-    HiddenView(Lesson model,const state::StateData& state,const QaMathPrerequisite& prerequisite)
+    HiddenView(Lesson model,const state::StateData& state,const QaMathPrerequisite& prerequisite,
+               std::wstring_view variant)
         :env(resolve_windows_environment({ProfileId::Codex,
             L"general-choice-reading-"+std::to_wstring(GetCurrentProcessId())+
-                L"-"+std::to_wstring(GetTickCount64()),false})),
+                L"-"+std::to_wstring(GetTickCount64())+L"-"+std::wstring(variant),false})),
          lesson(std::move(model)),math(prerequisite) {
         require(!std::filesystem::exists(env.paths.root),
             "The general-choice QA profile must not exist already");
@@ -257,7 +258,7 @@ struct HiddenView {
         DestroyWindow(view);view=nullptr;open();
     }
 };
-void check_reading(HiddenView& view) {
+void check_reading(HiddenView& view,bool originally_marked) {
     constexpr std::string_view earlier=
         "La operación incumple su precondición aunque conserve una cantidad válida.";
     constexpr std::string_view newer=
@@ -277,14 +278,16 @@ void check_reading(HiddenView& view) {
             marked->second.spans.front().role==SemanticRole::prose,
         "The active reviewed choice lost its reselected new UTF-16 highlight");
     require(choice.choice_revision&&choice.choice_revision->general_option_index==0&&
-            choice.choice_revision->original_option_text_semantics,
-        "The revised choice lost its distinct historic semantic descriptor");
-    const auto& old_marks=*choice.choice_revision->original_option_text_semantics;
-    require(old_marks.source==earlier&&old_marks.spans.size()==1&&
-            old_marks.spans.front().text=="precondición"&&
-            old_marks.spans.front().role==SemanticRole::data&&
-            old_marks.spans!=marked->second.spans,
-        "The original speech selection was overwritten with the revised prose");
+            static_cast<bool>(choice.choice_revision->original_option_text_semantics)==originally_marked,
+        "The revised choice confused existing historical marks with no prior descriptor");
+    const auto& old_marks=choice.choice_revision->original_option_text_semantics;
+    if(originally_marked) {
+        require(old_marks&&old_marks->source==earlier&&old_marks->spans.size()==1&&
+                old_marks->spans.front().text=="precondición"&&
+                old_marks->spans.front().role==SemanticRole::data&&
+                old_marks->spans!=marked->second.spans,
+            "The original speech selection was overwritten with the revised prose");
+    }
     const auto actual=lesson_reading_regions(view.view);
     const auto selected=std::ranges::find_if(actual,[&](const auto& region){
         return region.block_index==2&&!region.feedback&&region.source_text==newer;
@@ -302,11 +305,16 @@ void check_reading(HiddenView& view) {
         for(const auto& region:archive.regions) {
             if(region.block_index!=2||region.feedback||
                region.source_text!=earlier)continue;
-            require(region.key==selected->key&&region.text_semantics&&
-                    region.text_semantics->source==earlier&&
-                    region.text_semantics->spans==old_marks.spans&&
-                    region.text_semantics->spans!=marked->second.spans,
-                "The historical option reused current UTF-16 spans instead of its genuine old marks");
+            require(region.key==selected->key&&
+                    static_cast<bool>(region.text_semantics)==originally_marked,
+                "The historical option invented marks or lost an existing descriptor");
+            if(originally_marked) {
+                require(region.text_semantics&&old_marks&&
+                        region.text_semantics->source==earlier&&
+                        region.text_semantics->spans==old_marks->spans&&
+                        region.text_semantics->spans!=marked->second.spans,
+                    "The historic choice reused current UTF-16 spans instead of the archived old marks");
+            }
             require(std::ranges::find(archive.revised_regions,region.key)!=
                     archive.revised_regions.end(),
                 "The revised wording did not identify its changed audio segment");
@@ -324,38 +332,43 @@ int main(int argc,char** argv) {
     InitCommonControlsEx(&controls);
     int outcome=0;
     try {
-        require(argc==2,"Expected the generated, highlighted U9 choice fixture");
-        auto lesson=windows::load_lesson(std::filesystem::path(argv[1]),"es");
-        state::StateData qa;
-        state::prepare_lesson_state(qa,lesson);
-        const QaMathPrerequisite math(lesson);
-        seed_prefix(qa,lesson,math);
-        // The selected answer predates the editorial correction. Its exact
-        // legacy storage key and opaque attempt metadata must remain owned
-        // by this same activity after the revised words appear.
-        const auto& choice=lesson.pages.at(7).blocks.at(2);
-        state::Response previous;
-        previous.selected=0;
-        previous.correct=true;
-        previous.raw_json=R"({"incorrectAttempts":3,"opaque":{"cursor":11}})";
-        const auto key=exercise_key(lesson,choice);
-        state::put_response(qa,key,previous);
-        require(state::response_storage_key(lesson,choice)==key,
-            "A wording-only change moved the historic choice response");
-        const auto original_receipt=state::string_value(qa,"learning_progress",key);
-        state::save_current_page(qa,lesson,7);
-        HiddenView view(std::move(lesson),qa,math);
-        check_reading(view);
-        view.reopen();
-        check_reading(view);
-        const auto reopened=read_lesson_state(view.view);
-        require(state::string_value(reopened,"learning_progress",key)==original_receipt,
-            "Reopening the reviewed reading changed a successful historical response");
-        std::cout<<"PASS general choice reading: differing original/current UTF-16 semantic spans, "
-            "authenticated reading archives and original success across reopening; "
-            "isolated prerequisite models: five compilers and one math activity\n";
+        require(argc==3,
+            "Expected marked-history and unmarked-history native U9 reading fixtures");
+        for(int variant=1;variant<=2;++variant) {
+            const bool originally_marked=variant==1;
+            // Both files were authored from the same pinned U9 source before
+            // CTest. Each edition is reopened inside its own isolated QA
+            // profile; no result/voice cache from the previous case is shared.
+            auto lesson=windows::load_lesson(std::filesystem::path(argv[variant]),"es");
+            state::StateData qa;
+            state::prepare_lesson_state(qa,lesson);
+            const QaMathPrerequisite math(lesson);
+            seed_prefix(qa,lesson,math);
+            const auto& choice=lesson.pages.at(7).blocks.at(2);
+            state::Response previous;
+            previous.selected=0;
+            previous.correct=true;
+            previous.raw_json=R"({"incorrectAttempts":3,"opaque":{"cursor":11}})";
+            const auto key=exercise_key(lesson,choice);
+            state::put_response(qa,key,previous);
+            require(state::response_storage_key(lesson,choice)==key,
+                "A wording-only change moved the historic choice response");
+            const auto original_receipt=state::string_value(qa,"learning_progress",key);
+            state::save_current_page(qa,lesson,7);
+            HiddenView view(std::move(lesson),qa,math,std::to_wstring(variant));
+            check_reading(view,originally_marked);
+            view.reopen();
+            check_reading(view,originally_marked);
+            const auto reopened=read_lesson_state(view.view);
+            require(state::string_value(reopened,"learning_progress",key)==original_receipt,
+                "Reopening the revised reader changed a successful historical response");
+        }
+        std::cout<<"PASS general choice reading: marked and unmarked original options, "
+            "distinct revised UTF-16 semantic spans, genuine reading archives "
+            "and original success across reopening; isolated prerequisite models "
+            "per QA profile: five compilers and one math activity\\n";
     } catch(const std::exception& error) {
-        std::cerr<<"FAIL general choice reading: "<<error.what()<<'\n';
+        std::cerr<<"FAIL general choice reading: "<<error.what()<<'\\n';
         outcome=1;
     }
     OleUninitialize();
