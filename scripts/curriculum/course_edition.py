@@ -375,14 +375,21 @@ def check_repository(repository, commit, *, documents=None):
 
 def prepare_from_repository(source, base_ref, *, locale=None):
     """Prepare one new asset only after checking its explicit indexed edition."""
-    source = Path(source).resolve()
-    result = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=source.parent,
+    # Keep the original requested path until every ancestor has been checked.
+    # Resolving it first would hide a symlink/junction and could prepare a
+    # different physical lesson than the one Work selected.
+    requested = Path(source).absolute()
+    result = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=requested.parent,
                             capture_output=True, text=True, encoding="utf-8")
     require(result.returncode == 0, "Prepare requires the existing project checkout")
     repository = Path(result.stdout.strip()).resolve()
+    try:
+        relative = requested.relative_to(repository).as_posix()
+    except ValueError as exc:
+        raise CourseEditionError("Authoring source is outside the project checkout") from exc
+    source = _edition_file(repository, relative, "authoring lesson")
     state = _state_module()
     commit = state.resolve_base_commit(repository, base_ref)
-    relative = source.relative_to(repository).as_posix()
     parts = PurePosixPath(relative).relative_to(CONTENT_DIRECTORY).parts
     require(len(parts) == 5 and parts[0] in LOCALES and parts[-1].startswith("lesson_")
             and parts[-1].endswith(".json"), "Prepare requires an edition lesson asset")
@@ -390,7 +397,7 @@ def prepare_from_repository(source, base_ref, *, locale=None):
     previous_paths = _paths_at(repository, commit)
     require(relative not in previous_paths, "A published edition source must use ordinary authenticated revisions")
     course_relative = f"{CONTENT_DIRECTORY}/{parts[0]}/{parts[1]}/{parts[2]}/course_{parts[2]}.json"
-    course = _load(repository / course_relative)
+    course = _load(_edition_file(repository, course_relative, "authoring course index"))
     value = descriptor(course)
     require(value is not None, "The course index must declare courseEdition before preparation")
     document = _load(source)
@@ -408,7 +415,8 @@ def prepare_from_repository(source, base_ref, *, locale=None):
     require(parts[3] == unit_folder and parts[4] == f"lesson_{slug}.json",
             "The authoring lesson identity does not match its new resource path")
     require(unit_id in _entries(course, "units"), "The authoring unit must be active in the edition index")
-    unit_path = source.parent / f"unit_{unit_folder}.json"
+    unit_relative = (PurePosixPath(relative).parent / f"unit_{unit_folder}.json").as_posix()
+    unit_path = _edition_file(repository, unit_relative, "authoring unit index")
     unit = _load(unit_path)
     require(unit.get("courseId") == value["courseId"] and unit.get("unitId") == unit_id
             and descriptor(unit) == value and prepared["id"] in _entries(unit, "lessons"),
