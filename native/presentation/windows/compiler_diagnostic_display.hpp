@@ -118,7 +118,23 @@ inline std::optional<std::size_t> root_length(std::wstring_view path, const std:
         while (!root.empty() && separator(root.back())) root.pop_back();
         if (root.empty() || root.size() > static_cast<std::size_t>((std::numeric_limits<int>::max)())) continue;
         std::replace(root.begin(), root.end(), L'/', L'\\');
-        roots.push_back(std::move(root));
+        // Tools and Windows file APIs can report the same owned directory
+        // with or without the extended-length namespace. Keep both spellings
+        // so long paths are compacted without changing the retained raw text.
+        // Other device namespaces do not identify an ordinary drive/UNC root.
+        const bool extended_drive = root.starts_with(L"\\\\?\\") && root.size() >= 6 &&
+            ((root[4] >= L'A' && root[4] <= L'Z') || (root[4] >= L'a' && root[4] <= L'z')) &&
+            root[5] == L':' && (root.size() == 6 || separator(root[6]));
+        if (extended_drive) root.erase(0, 4);
+        else if (root.size() > 8 && CompareStringOrdinal(root.data(), 8, L"\\\\?\\UNC\\", 8, TRUE) == CSTR_EQUAL)
+            root = L"\\\\" + root.substr(8);
+        roots.push_back(root);
+        const bool drive = root.size() >= 2 &&
+            ((root[0] >= L'A' && root[0] <= L'Z') || (root[0] >= L'a' && root[0] <= L'z')) &&
+            root[1] == L':' && (root.size() == 2 || separator(root[2]));
+        if (drive) roots.push_back(L"\\\\?\\" + root);
+        else if (root.starts_with(L"\\\\") && root.size() > 2 && root[2] != L'?' && root[2] != L'.')
+            roots.push_back(L"\\\\?\\UNC\\" + root.substr(2));
     }
     // A project source root must win over its enclosing generated/run folder.
     std::sort(roots.begin(), roots.end(), [](const auto& left, const auto& right) {

@@ -5200,7 +5200,7 @@ int main(int argc,char* argv[]) {
         if(lesson_menu_only){lesson_menu_retains_import_pages_and_settings_with_hooks();return 0;}
         if(inline_feedback_only){current_inline_feedback_uses_authored_controls_and_restores_each_attempt();return 0;}
         if(navigation_geometry_only){completed_compilers_keep_navigation_after_active_content();return 0;}
-        if(scroll_repaint_only){simulated_code_and_choice_cards();Fixture fixture;fixture.viewport_layout();fixture.scroll_repaint();return 0;}
+        if(scroll_repaint_only){console_fullscreen_zoom_escape();console_zoom_bottom_viewport();simulated_code_and_choice_cards();Fixture fixture;fixture.viewport_layout();fixture.scroll_repaint();return 0;}
         if(scroll_motion_only){pure_scroll_motion_keeps_native_document(false);pure_scroll_motion_keeps_native_document(true);return 0;}
         if(compiler_scroll_only){compiler_pointer_scroll_ownership();return 0;}
         if(u12_file_roundtrip_only){current_u12_file_roundtrip_view();return 0;}

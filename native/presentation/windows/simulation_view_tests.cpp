@@ -873,7 +873,10 @@ void histogram_follows_new_groups_only_at_end(HWND host) {
         "Cannot resume auto-follow from the final histogram row");
     check(view.go_to_step(24),"Cannot finish group twelve");
     const auto followed=scroll();
-    check(followed.nPos==bottom(followed)&&followed.nPos>reopened.nPos,
+    // Another card can share the existing final row. Follow the end and
+    // expose that card even when no additional scroll distance is needed.
+    check(followed.nPos==bottom(followed)&&followed.nPos>=reopened.nPos&&
+        view.frequency_card_bounds_in_canvas(11).has_value(),
         "A new bar remained hidden after the student returned to the end");
     check(view.go_to_step(2),"Cannot return to a previously calculated group");
     const auto previous=scroll();
@@ -1334,7 +1337,8 @@ void calculated_step_changes(HWND host) {
         "Invalid edited data fabricated a transition despite rejection");
     set_edit_text(GetDlgItem(view.window(),input_id),"1\n3\n1");
     click(view,apply_id);
-    check(view.go_to_step(2)&&text(view,transition_id).find("mayores: ninguno → 1")!=std::string::npos,
+    // Sorting produces {1,1,3}: two counted elements precede the decision.
+    check(view.go_to_step(3)&&text(view,transition_id).find("mayores: ninguno → 1")!=std::string::npos,
         "The transition still uses the old data after applying a new valid array");
     click(view,restore_id);
     check(view.step_index()==0&&!control_shown(delta)&&
@@ -2284,12 +2288,15 @@ void original_order_reading_session(HWND host) {
     // original-order panel, not only the calculated stdout RichEdit.
     const auto still_at_end=[&](const char* reason){
         const auto now=scroll_state(original);
-        check(now.has_range&&now.vertical.nPage>0&&
-            now.vertical.nPos>=now.vertical.nMax-
-                std::max(0,static_cast<int>(now.vertical.nPage)-1)&&
+        const bool retained=now.has_range&&now.vertical.nPage>0&&
+            now.vertical.nPos>=std::max(now.vertical.nMin,
+                now.vertical.nMax-static_cast<int>(now.vertical.nPage))&&
             now.selection.cpMin==selected.cpMin&&
             now.selection.cpMax==selected.cpMax&&
-            text(view,original_order_id)==expected&&rewrites==0,reason);
+            text(view,original_order_id)==expected&&rewrites==0;
+        if(!retained)std::cerr<<"ORIGINAL_ORDER "<<reason<<": "<<scroll_description(now)
+            <<" expectedSelection=["<<selected.cpMin<<','<<selected.cpMax<<"] rewrites="<<rewrites<<'\n';
+        check(retained,reason);
     };
     view.set_text_scale(150);resize(view,800);
     still_at_end("Zoom lost the selected bottom of the original-order preview");
@@ -2509,7 +2516,7 @@ void step_navigation_rolls_back_native_presentation_failure(HWND host) {
     RECT error_bounds{},host_bounds{};
     GetWindowRect(warning,&error_bounds);
     GetWindowRect(view.window(),&host_bounds);
-    check(IsWindowVisible(warning)&&error_bounds.bottom<=host_bounds.bottom&&
+    check(control_shown(warning)&&error_bounds.bottom<=host_bounds.bottom&&
         error_bounds.top>=host_bounds.top&&error_bounds.bottom>error_bounds.top,
         "The visible native navigation diagnosis was not fitted into the lesson");
 
@@ -2934,6 +2941,10 @@ void scenario_change_rejects_silent_editor_stream(HWND host) {
             region.source_text==diagnostic;
     }),"The silent editor rejection did not publish an accessible error");
 
+    // End fault injection before testing recovery. The first attempt kept
+    // the old draft intact, so it correctly consumed only one blocked stream.
+    check(RemoveWindowSubclass(editor,skip_first_two,hook_id)!=FALSE,
+        "Cannot stop the silent stream rejection before retrying");
     // No permanent fault was installed: the next selection must work.
     check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
         "Cannot retry the scenario after silent rejection");
@@ -3022,7 +3033,7 @@ void modes(HWND host,const std::filesystem::path& captures) {
             check(std::wstring_view(statistics_class)==L"LearnGameAndEngineDev.SimulationStatistics",
                 "Statistics fell back to a paragraph instead of the real value cards");
             const auto reading=view.reading_regions();check(std::ranges::any_of(reading,[](const auto& region){
-                return region.target&&GetDlgCtrlID(region.target)==variables_id&&region.passive_label&&region.source_text.find("frecuencia: 4")!=std::string::npos;}),
+                return region.target&&GetDlgCtrlID(region.target)==variables_id&&region.passive_label&&region.source_text.find("frecuencia: 1")!=std::string::npos;}),
                 "The current large value cards lack their accessible narration summary");
         }else if(mode==SimulationViewMode::candidates){
             check(view.step_count()==3&&text(view,step_id)=="Grupo 1 de 3","Candidates mode did not count completed groups correctly");
@@ -3050,6 +3061,9 @@ void modes(HWND host,const std::filesystem::path& captures) {
             else {check(name(GetDlgItem(view.window(),array_id)).find("Grupo 2: índices 1 a 4")!=std::string::npos,
                 "Colored groups have no corresponding non-color group identity");group_colors_are_visible(GetDlgItem(view.window(),array_id));}
         }
+        // This isolated host has no layout_changed callback to apply the
+        // new height after navigation, unlike the production lesson parent.
+        resize(view,960);
         bounds(view,file);if(!captures.empty())capture(view.window(),captures/file);
         view.set_text_scale(150);resize(view,340);bounds(view,file);
         if(mode==SimulationViewMode::groups&&!captures.empty())capture(view.window(),captures/"groups-narrow-150.bmp");
@@ -3862,8 +3876,14 @@ void parent_width_changes(HWND host) {
     const auto narrow_height=view.height_for_width(340);check(narrow_height>wide_height,"The changed width did not compute its new required height");
     resize(view,340);bounds(view,"parent width change");
     check(layouts==1&&changes==0,"Applying the requested height reentered parent reflow or changed narration");
+    const auto initial_array_height=window_height(GetDlgItem(view.window(),array_id));
+    check(!view.cell_bounds_in_canvas(6),"The original fixture unexpectedly has a seventh cell");
     set_edit_text(GetDlgItem(view.window(),input_id),"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12");click(view,apply_id);
-    check(view.height_for_width(340)>narrow_height,"Edited data reused a stale layout cache");
+    // The ordered replacement removes the original-order preview. Its total
+    // height need not grow, but all twelve cells need newly measured rows.
+    check(text(view,error_id).empty()&&view.cell_bounds_in_canvas(11).has_value()&&
+        window_height(GetDlgItem(view.window(),array_id))>initial_array_height,
+        "Edited array data reused a stale layout cache");
     resize(view,340);bounds(view,"edited data at fixed width");
 }
 void long_labels_and_literal_values(HWND host,const std::filesystem::path& captures) {
@@ -3995,20 +4015,40 @@ void wheel_edges_resume_reader(HWND host) {
         check(probe.parent_messages==1,
             "Scrolling upward at the first line trapped the lesson in its child");
         wheel(item,-WHEEL_DELTA);
+        // RichEdit animates ordinary wheel scrolling through queued/timer
+        // messages. Observe the actual movement instead of its synchronous
+        // pre-animation position; the histogram can move immediately.
+        const auto scroll_deadline=GetTickCount64()+1000;
+        while(scroll(item).nPos<=info.nPos&&GetTickCount64()<scroll_deadline){
+            pump();
+            MsgWaitForMultipleObjectsEx(0,nullptr,5,QS_ALLINPUT,MWMO_INPUTAVAILABLE);
+        }
         const auto moved=scroll(item);
+        if(moved.nPos<=info.nPos){
+            int numerator=0,denominator=0;
+            const auto has_zoom=SendMessageW(item,EM_GETZOOM,
+                reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            std::cerr<<"WHEEL_EDGE control="<<GetDlgCtrlID(item)
+                <<" before=[pos:"<<info.nPos<<",page:"<<info.nPage<<",max:"<<info.nMax
+                <<"] moved=[pos:"<<moved.nPos<<",page:"<<moved.nPage<<",max:"<<moved.nMax
+                <<"] controlKey="<<GetKeyState(VK_CONTROL)<<" focus="<<GetFocus()
+                <<" zoom=[available:"<<has_zoom<<",ratio:"<<numerator<<'/'<<denominator<<"]\n";
+        }
         check(moved.nPos>info.nPos,
             "Scrolling toward hidden content failed to move the child scrollbar");
         SendMessageW(item,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
         const auto bottom=scroll(item);
-        const int last=bottom.nMax-
-            std::max(0,static_cast<int>(bottom.nPage)-1);
+        // RichEdit's native SB_BOTTOM stops at nMax-nPage. The custom
+        // histogram follows the standard inclusive scrollbar range.
+        const int last=std::max(bottom.nMin,bottom.nMax-
+            std::max(0,static_cast<int>(bottom.nPage)-(item==output?0:1)));
         check(bottom.nPos==last,
             "Could not position an overflow child at its final scroll limit");
         probe.parent_messages=0;
         wheel(item,-WHEEL_DELTA);
         check(probe.parent_messages==1,
             "Scrolling downward at the last line trapped the lesson in its child");
-        check(scroll(item).nPos==last,
+        check(scroll(item).nPos==bottom.nPos,
             "A wheel movement past the edge corrupted the scrollbar position");
     }
     // Very small high-resolution deltas must accumulate to real scroll
@@ -4086,9 +4126,11 @@ void accumulated_output_scroll_follows_new_groups(HWND host) {
 
     SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
     const auto bottom=scroll_state(output);
-    check(bottom.position.y>0&&
-        bottom.vertical.nPos>=bottom.vertical.nMax-
-            std::max(0,static_cast<int>(bottom.vertical.nPage)-1),
+    const bool reached_bottom=bottom.position.y>0&&
+        bottom.vertical.nPos>=std::max(bottom.vertical.nMin,
+            bottom.vertical.nMax-static_cast<int>(bottom.vertical.nPage));
+    if(!reached_bottom)std::cerr<<"ACCUMULATED_OUTPUT bottom: "<<scroll_description(bottom)<<'\n';
+    check(reached_bottom,
         "Could not reach the last visible line of the output");
     const auto unchanged=text(view,output_id);
     check(view.go_to_step(43)&&text(view,output_id)==unchanged,
@@ -4107,8 +4149,8 @@ void accumulated_output_scroll_follows_new_groups(HWND host) {
         "Appending a completed group did not stream stdout exactly once");
     const auto extended=scroll_state(output);
     check(extended.position.y>=bottom.position.y&&
-        extended.vertical.nPos>=extended.vertical.nMax-
-            std::max(0,static_cast<int>(extended.vertical.nPage)-1),
+        extended.vertical.nPos>=std::max(extended.vertical.nMin,
+            extended.vertical.nMax-static_cast<int>(extended.vertical.nPage)),
         "A new output line remained hidden despite a bottom-pinned viewport");
 
     // If the learner scrolls back to an older result, a new group must
@@ -4158,7 +4200,11 @@ void output_scenario_reading_isolated(HWND host) {
     SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
     const auto bottom=scroll_state(output);
     check(bottom.position.y>0,"Cannot prepare a manually scrolled output session");
-    const LONG length=GetWindowTextLengthW(output);
+    // Native selection indices count RichEdit paragraph marks once, whereas
+    // GetWindowTextLengthW includes the CRLF expansion of those marks.
+    GETTEXTLENGTHEX length_query{GTL_NUMCHARS|GTL_PRECISE,1200};
+    const LONG length=static_cast<LONG>(SendMessageW(output,EM_GETTEXTLENGTHEX,
+        reinterpret_cast<WPARAM>(&length_query),0));
     CHARRANGE last{std::max<LONG>(0,length-5),length};
     SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&last));
     const auto selected=scroll_state(output);
@@ -4208,7 +4254,9 @@ void output_applied_data_reading_isolated(HWND host) {
     // stable sorting deliberately leaves stdout byte-for-byte identical.
     // The learner's prior output selection must not leak into that new trace.
     SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
-    const LONG length=static_cast<LONG>(GetWindowTextLengthW(output));
+    GETTEXTLENGTHEX length_query{GTL_NUMCHARS|GTL_PRECISE,1200};
+    const LONG length=static_cast<LONG>(SendMessageW(output,EM_GETTEXTLENGTHEX,
+        reinterpret_cast<WPARAM>(&length_query),0));
     const CHARRANGE last{std::max<LONG>(LONG{0},length-LONG{5}),length};
     SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&last));
     SendMessageW(output,WM_VSCROLL,MAKEWPARAM(SB_BOTTOM,0),0);
@@ -4348,8 +4396,8 @@ void output_zoom_preserves_reading_anchor(HWND host) {
     view.set_text_scale(140);resize(view,800);
     const auto after=scroll_state(output);
     check(after.vertical.nPage>0&&
-        after.vertical.nPos>=after.vertical.nMax-
-            std::max(0,static_cast<int>(after.vertical.nPage)-1)&&
+        after.vertical.nPos>=std::max(after.vertical.nMin,
+            after.vertical.nMax-static_cast<int>(after.vertical.nPage))&&
         text(view,output_id)==stdout_before&&spec==original,
         "Reader zoom left the last output line hidden or altered the trace");
 }

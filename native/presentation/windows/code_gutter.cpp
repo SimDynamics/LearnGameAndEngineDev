@@ -13,6 +13,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace lgaed::windows {
 namespace {
@@ -370,10 +371,18 @@ struct CodeGutter::Impl {
             message==EM_SETSCROLLPOS||message==EM_LINESCROLL||message==EM_SCROLLCARET||message==WM_KEYDOWN||message==WM_CHAR||
             message==WM_LBUTTONDOWN||message==WM_LBUTTONDBLCLK||message==WM_LBUTTONUP||(message==WM_MOUSEMOVE&&(wp&MK_LBUTTON))||message==EM_EXSETSEL||message==EM_SETSEL;
         POINT before{};if(may_scroll)SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before));
+        const bool native_zoom=message==WM_MOUSEWHEEL&&(LOWORD(wp)&MK_CONTROL);
+        const auto zoom_fraction=[&]{int numerator=0,denominator=0;
+            SendMessageW(window,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            return numerator>0&&denominator>0?std::pair{numerator,denominator}:std::pair{1,1};};
+        const auto before_zoom=native_zoom?zoom_fraction():std::pair{1,1};
         const auto result=DefSubclassProc(window,message,wp,lp);
         DWORD_PTR attached=0;
         if(!GetWindowSubclass(window,subclass,subclass_id,&attached)||attached!=data)return result;
         try{
+            const auto after_zoom=native_zoom?zoom_fraction():before_zoom;
+            const bool wheel_zoom_changed=static_cast<long long>(before_zoom.first)*after_zoom.second!=
+                static_cast<long long>(after_zoom.first)*before_zoom.second;
             bool reveal_selection=false;
             if(selection_message&&client_was_pressed){CHARRANGE selected{};SendMessageW(window,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
                 const bool changed=selected.cpMin!=previous_selection.cpMin||selected.cpMax!=previous_selection.cpMax;
@@ -382,7 +391,10 @@ struct CodeGutter::Impl {
             }
             if(message==WM_LBUTTONUP){self.client_pointer=false;self.native_selection=false;}
             if(message==WM_PRINTCLIENT)self.paint(reinterpret_cast<HDC>(wp));
-            else if(message==WM_SETFONT||message==EM_SETZOOM||message==WM_DPICHANGED_AFTERPARENT||
+            // RichEdit's native Ctrl+wheel changes its scale internally,
+            // without delivering EM_SETZOOM through our subclass. Refresh the
+            // fixed number font/margin from that committed ratio as well.
+            else if(message==WM_SETFONT||message==EM_SETZOOM||wheel_zoom_changed||message==WM_DPICHANGED_AFTERPARENT||
                 (message==EM_SETCHARFORMAT&&lp&&(wp==SCF_DEFAULT||wp==SCF_ALL)&&
                     (reinterpret_cast<const CHARFORMAT2W*>(lp)->dwMask&(CFM_SIZE|CFM_FACE|CFM_CHARSET|CFM_BOLD|CFM_ITALIC))))self.refresh(false,true);
             else if(message==WM_SETTEXT||message==EM_SETTEXTEX||message==EM_STREAMIN||message==EM_REPLACESEL||message==WM_CHAR||message==WM_PASTE||message==WM_CUT||message==WM_CLEAR||message==WM_UNDO||message==EM_UNDO||message==EM_REDO)self.refresh(true,false);

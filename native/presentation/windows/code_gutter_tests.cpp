@@ -11,6 +11,7 @@
 #include <dwmapi.h>
 #include <wrl/client.h>
 #include <algorithm>
+#include <array>
 #include <functional>
 #include <fstream>
 #include <iostream>
@@ -49,6 +50,34 @@ struct Raster{
     ~Raster(){if(dc&&previous)SelectObject(dc,previous);if(bitmap)DeleteObject(bitmap);if(dc)DeleteDC(dc);}
 };
 void pump(){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE))if(message.message!=WM_QUIT){TranslateMessage(&message);DispatchMessageW(&message);}}
+void native_wheel_zoom_refreshes_gutter(){
+    Fixture field(source(130));
+    const CHARRANGE selection{5,18};SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    const auto before=field.editor->document();
+    std::array<BYTE,256> previous{};check(GetKeyboardState(previous.data())!=FALSE,"Cannot preserve the QA keyboard state");
+    struct RestoreKeys{std::array<BYTE,256>& keys;~RestoreKeys(){SetKeyboardState(keys.data());}} restore{previous};
+    auto keys=previous;
+    for(const auto key:{VK_CONTROL,VK_LCONTROL,VK_RCONTROL,VK_SHIFT,VK_LSHIFT,VK_RSHIFT,VK_MENU,VK_LMENU,VK_RMENU})keys[key]=0;
+    keys[VK_CONTROL]=keys[VK_LCONTROL]=0x80;
+    check(SetKeyboardState(keys.data())!=FALSE,"Cannot set the isolated QA Ctrl modifier");
+    const auto initial=code_gutter_snapshot(field.edit);
+    for(int i=0;i<5;++i)SendMessageW(field.edit,WM_MOUSEWHEEL,MAKEWPARAM(MK_CONTROL,WHEEL_DELTA),0);
+    int numerator=0,denominator=0;
+    SendMessageW(field.edit,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+    check(denominator>0&&numerator>denominator,"The real RichEdit Ctrl+wheel did not enlarge the text");
+    const auto wheel=code_gutter_snapshot(field.edit);
+    // Sending the identical scale explicitly must not repair stale metrics:
+    // native Ctrl+wheel already committed this zoom before returning.
+    check(SendMessageW(field.edit,EM_SETZOOM,numerator,denominator)!=0,"Cannot restate the observed native zoom");
+    const auto explicit_zoom=code_gutter_snapshot(field.edit);
+    check(wheel.width>initial.width&&wheel.width==explicit_zoom.width,
+        "Native Ctrl+wheel left the line-number font or width at the previous zoom");
+    check(wheel.logical_lines==130&&explicit_zoom.logical_lines==130,"Native wheel zoom changed paragraph identities");
+    const auto after=field.editor->document();
+    check(before.text==after.text&&before.indentation_starts==after.indentation_starts&&
+        before.selection_start==after.selection_start&&before.selection_end==after.selection_end,
+        "Native wheel zoom changed source, indentation or selection");
+}
 struct ClientPixels{
     int width=0,height=0;std::vector<DWORD> values;
     void save(const char* path)const{std::ofstream output(path,std::ios::binary);output<<"P6\n"<<width<<' '<<height<<"\n255\n";
@@ -397,11 +426,14 @@ void aligned(HWND target,const CodeGutterSnapshot& gutter){
         check(line.number>previous,"Wrapped display lines created duplicate paragraph numbers");previous=line.number;}
 }
 }
-int main(int argc,char** argv){const bool scroll_only=argc==2&&std::string_view(argv[1])=="--scroll-paint";if(argc>1&&!scroll_only)return 2;
+int main(int argc,char** argv){const bool scroll_only=argc==2&&std::string_view(argv[1])=="--scroll-paint";
+    const bool wheel_zoom_only=argc==2&&std::string_view(argv[1])=="--wheel-zoom";if(argc>1&&!scroll_only&&!wheel_zoom_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     presentation::reader_theme::prepare_fonts();
     INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);int passed=0,failed=0;
     const auto test=[&](const char* name,const std::function<void()>& action){try{action();++passed;std::cout<<"PASS "<<name<<'\n';}catch(const std::exception& error){++failed;std::cerr<<"FAIL "<<name<<": "<<error.what()<<'\n';}};
+    if(wheel_zoom_only){test("Native Ctrl+wheel updates line-number metrics before another zoom command",native_wheel_zoom_refreshes_gutter);
+        FreeLibrary(rich);std::cout<<passed<<" passed, "<<failed<<" failed\n";return failed?1:0;}
     test("TOM/UIA source replacement refreshes logical numbers without touching Undo",native_tom_edit_refreshes_numbers);
     test("The fixed gutter is never separately erased before its composed frame",erase_does_not_expose_uncomposed_gutter);
     test("Editable gutter never covers native source after the real text origin",[]{source_origin_is_not_masked(false);});
@@ -477,6 +509,7 @@ int main(int argc,char** argv){const bool scroll_only=argc==2&&std::string_view(
         const auto edited=field.editor->document();check(edited.text!=before.text,"Real editor insertion did not execute");
         {Raster pixels(field.edit);}field.editor->undo();check(field.editor->document().text==original,"Gutter formatting polluted undo or normalized the original source");
         field.editor->redo();check(field.editor->document().text==edited.text,"Gutter painting damaged redo");});
+    test("Native Ctrl+wheel updates line-number metrics before another zoom command",native_wheel_zoom_refreshes_gutter);
     test("Native text zoom scales gutter metrics without changing paragraph identities",[]{Fixture field(source(130));
         const auto before=field.editor->document();SendMessageW(field.edit,EM_SETZOOM,75,100);const auto reduced=code_gutter_snapshot(field.edit);
         SendMessageW(field.edit,EM_SETZOOM,150,100);const auto large=code_gutter_snapshot(field.edit);

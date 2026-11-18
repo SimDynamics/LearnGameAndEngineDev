@@ -35,13 +35,22 @@ constexpr int title_id=100,description_id=101,scenario_label_id=102,scenario_id=
     progress_label_id=130,progress_id=131,group_first_id=200;
 // A child with a real scrollbar consumes a wheel gesture only while it can
 // move in that direction. At either edge the lesson must continue scrolling.
+int vertical_scroll_end(HWND child,const SCROLLINFO& range) {
+    wchar_t kind[32]{};
+    GetClassNameW(child,kind,32);
+    // RichEdit's SB_BOTTOM stops one pixel before the inclusive Win32
+    // scrollbar limit. That pixel cannot be scrolled into view. Requiring
+    // it traps the wheel and loses bottom-pinned reading after reflow.
+    const bool rich_edit=std::wstring_view(kind)==MSFTEDIT_CLASS;
+    return std::max(range.nMin,range.nMax-
+        std::max(0,static_cast<int>(range.nPage)-1)-(rich_edit?1:0));
+}
 bool can_scroll_with_wheel(HWND child,int delta) {
     if(delta==0)return false;
     SCROLLINFO range{sizeof(range),SIF_RANGE|SIF_PAGE|SIF_POS};
     if(!GetScrollInfo(child,SB_VERT,&range)||range.nPage==0||
         range.nMax-range.nMin+1<=static_cast<int>(range.nPage))return false;
-    const int last=std::max(range.nMin,range.nMax-
-        std::max(0,static_cast<int>(range.nPage)-1));
+    const int last=vertical_scroll_end(child,range);
     return delta>0?range.nPos>range.nMin:range.nPos<last;
 }
 bool passive_message(UINT message) {
@@ -214,8 +223,7 @@ struct SimulationView::Impl {
         SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE|SIF_POS};
         if(GetScrollInfo(output,SB_VERT,&scroll)&&scroll.nPage>0&&
                 scroll.nMax-scroll.nMin+1>static_cast<int>(scroll.nPage))
-            anchor.at_end=scroll.nPos>=std::max(scroll.nMin,
-                scroll.nMax-std::max(0,static_cast<int>(scroll.nPage)-1));
+            anchor.at_end=scroll.nPos>=vertical_scroll_end(output,scroll);
         return anchor;
     }
     void restore_output_reading_anchor(const std::optional<OutputReadingAnchor>& saved,int target_id=output_id)const {
@@ -447,7 +455,8 @@ struct SimulationView::Impl {
                 palette.text,palette.muted,palette.accent,palette.card,
                 palette.field,reader_theme::foreground(item(id)),
                 reader_theme::background(item(id)),palette.high_contrast};
-            const auto previous=visible_text.find(id),cached=static_text_stamps.find(id);
+            const auto previous=visible_text.find(id);
+            const auto cached=static_text_stamps.find(id);
             if(previous!=visible_text.end()&&previous->second==text&&
                     cached!=static_text_stamps.end()&&cached->second==*stamp)return;
         }
@@ -953,8 +962,7 @@ struct SimulationView::Impl {
                 SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE|SIF_POS};
                 const bool at_end=GetScrollInfo(output_window,SB_VERT,&scroll)&&
                     scroll.nPage>0&&
-                    scroll.nPos>=std::max(scroll.nMin,
-                        scroll.nMax-std::max(0,static_cast<int>(scroll.nPage)-1));
+                    scroll.nPos>=vertical_scroll_end(output_window,scroll);
                 // Follow a new line only when the learner was already at the
                 // bottom. Otherwise preserve their earlier reading position.
                 follow_output_end=at_end&&state.output.size()>previous_output->second.size()&&

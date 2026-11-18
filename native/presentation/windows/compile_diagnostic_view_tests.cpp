@@ -115,6 +115,8 @@ void compact_diagnostic_path_cases(){
         std::filesystem::path(L"C:\\QA\\cmake\\p"),
         std::filesystem::path(L"C:\\QA\\cmake"),
         std::filesystem::path(L"\\\\servidor\\curso\\proyecto"),
+        std::filesystem::path(L"\\\\?\\D:\\curso\\proyecto"),
+        std::filesystem::path(L"\\\\?\\UNC\\otro_servidor\\curso\\proyecto"),
         std::filesystem::path{}};
     const auto expect=[&](std::wstring_view original,std::wstring_view expected,std::string_view label){
         const auto actual=compact_compiler_diagnostic_paths(original,roots);
@@ -147,6 +149,22 @@ void compact_diagnostic_path_cases(){
         L"CMakeFiles\\app.dir\\src\\main.cpp.obj : error LNK2019: símbolo ausente\n","CMake build-relative linker artifact lost its folders");
     expect(L"\\\\servidor\\curso\\proyecto\\src\\entrada.cpp(2,3): error C2065: dato\n",
         L"src\\entrada.cpp(2,3): error C2065: dato\n","UNC source roots failed");
+    expect(L"\\\\?\\C:\\QA\\Código & (espacio)\\run-1\\candidate\\project\\src\\main.cpp(7,12): error C2065: dato\r\n",
+        L"src\\main.cpp(7,12): error C2065: dato\r\n","An extended drive path did not use the most specific owned root");
+    expect(L"\\\\?\\uNc\\servidor\\curso\\proyecto\\src\\entrada.cpp:2:3: error: dato\n",
+        L"src\\entrada.cpp:2:3: error: dato\n","An extended UNC location was not recognized");
+    expect(L"D:/curso/proyecto/src/main.cpp(2): error C2065: dato\n",
+        L"src/main.cpp(2): error C2065: dato\n","An extended owned drive root did not match an ordinary diagnostic location");
+    expect(L"\\\\otro_servidor\\curso\\proyecto\\main.cpp(2): error C2065: dato\n",
+        L"main.cpp(2): error C2065: dato\n","An extended owned UNC root did not match an ordinary diagnostic location");
+    std::wstring long_root=L"C:\\QA";
+    for(int i=0;i<12;++i)long_root+=L"\\carpeta_de_diagnosticos_largos";
+    const std::array long_roots{std::filesystem::path(long_root)};
+    const auto long_diagnostic=L"\\\\?\\"+long_root+L"\\src\\main.cpp(3,8): error C2065: dato\r\n";
+    const auto long_original=long_diagnostic;
+    check(long_root.size()>MAX_PATH&&
+        compact_compiler_diagnostic_paths(long_diagnostic,long_roots)==L"src\\main.cpp(3,8): error C2065: dato\r\n"&&
+        long_diagnostic==long_original,"A location longer than MAX_PATH was not compacted without changing raw evidence");
     const std::wstring unchanged=
         L"C:/QA/cmake_extra/p/main.cpp:1:2: error: different folder\r\n"
         L"D:/externo/include/main.hpp(5,7): note: archivo externo\r\n"
@@ -155,6 +173,9 @@ void compact_diagnostic_path_cases(){
         L"    |                 ^~~~~~~~~~~~~~~~~~~~~\r\n"
         L"  const char* p = \"C:/QA/cmake/p/main.cpp(1,2): texto\";\r\n"
         L"-- Build files have been written to: C:/QA/cmake\r\n"
+        L"\\\\?\\C:\\QA\\cmake_extra\\main.cpp(1): error C2065: different folder\r\n"
+        L"\\\\.\\C:\\QA\\cmake\\main.cpp(1): error C2065: different namespace\r\n"
+        L"  const char* p = \"\\\\?\\C:\\QA\\cmake\\main.cpp(1): literal\";\r\n"
         L"C:/QA/cmake/p/main.cpp: no son coordenadas\r\n";
     expect(unchanged,unchanged,"Unknown roots, source excerpts, carets, literal messages or directory boundaries changed");
     expect(L"C:/QA/cmake/p/carpeta(2,3)/main.cpp(4,5): error C2065: dato",

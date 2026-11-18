@@ -263,6 +263,25 @@ function(lgaed_add_simulation_tests)
     set_tests_properties(native.simulation_view native.simulation_lesson PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
 endfunction()
 
+# Keep reader gesture and diagnostic checks independent of the graphics app.
+function(lgaed_add_reader_interaction_tests)
+    # These modes exercise the production curricular controls in hidden Win32
+    # hosts. They do not need the application, SMO shaders or audio synthesis.
+    add_executable(lgaed_code_gutter_wheel_tests native/presentation/windows/code_gutter_tests.cpp)
+    target_link_libraries(lgaed_code_gutter_wheel_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.code_gutter_wheel COMMAND lgaed_code_gutter_wheel_tests --wheel-zoom)
+    add_executable(lgaed_lesson_scroll_tests native/presentation/windows/lesson_view_tests.cpp)
+    target_link_libraries(lgaed_lesson_scroll_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.reader_interaction COMMAND lgaed_lesson_scroll_tests --scroll-repaint)
+    add_executable(lgaed_diagnostic_path_tests native/presentation/windows/compile_diagnostic_view_tests.cpp)
+    target_link_libraries(lgaed_diagnostic_path_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.diagnostic_paths COMMAND lgaed_diagnostic_path_tests --diagnostic-paths)
+    set_tests_properties(native.code_gutter_wheel native.reader_interaction native.diagnostic_paths
+        PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    add_custom_target(lgaed_reader_interaction_qa_targets DEPENDS
+        lgaed_code_gutter_wheel_tests lgaed_lesson_scroll_tests lgaed_diagnostic_path_tests)
+endfunction()
+
 # Keep these authoring checks available in both local Windows QA profiles.
 # They use disposable documents and never rewrite published lesson assets.
 function(lgaed_add_order_editorial_authoring_tests)
@@ -621,6 +640,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_curricular_reader_test_targets()
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     lgaed_add_simulation_tests()
+    lgaed_add_reader_interaction_tests()
     lgaed_add_order_editorial_authoring_tests()
     include(cmake/StateImportTests.cmake)
     lgaed_add_catalog_history_fixtures()
@@ -941,6 +961,7 @@ option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
 if(BUILD_TESTING)
     lgaed_add_named_rule_source_tests()
     lgaed_add_simulation_tests()
+    lgaed_add_reader_interaction_tests()
     lgaed_add_order_editorial_authoring_tests()
     lgaed_add_cpp_expression_repair_tests()
     lgaed_add_rejection_diagnostic_facts_tests()
