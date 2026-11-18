@@ -998,8 +998,15 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                      (at>=statement+3&&
                       (id(t[at-2],"const")||id(t[at-2],"constexpr"))&&
                       (id(t[at-3],"int")||id(t[at-3],"auto"))));
+                const bool value_cast=at>statement&&
+                    (id(t[at-1],"int")||id(t[at-1],"long")||
+                     id(t[at-1],"short")||id(t[at-1],"bool")||
+                     id(t[at-1],"char")||id(t[at-1],"float")||
+                     id(t[at-1],"double")||id(t[at-1],"unsigned")||
+                     id(t[at-1],"signed"));
                 const bool call=at>statement&&!local_initializer&&
-                    ((t[at-1].starts_with("id:")&&!unevaluated(at-1))||
+                    ((t[at-1].starts_with("id:")&&!unevaluated(at-1)&&
+                      !value_cast)||
                      op(t[at-1],")")||op(t[at-1],"]"));
                 parentheses.push_back(call);
                 if(call)++active_calls;
