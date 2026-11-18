@@ -21,7 +21,7 @@
 namespace {
 using namespace lgaed::curriculum;
 using namespace lgaed::presentation;
-constexpr int scenario_id=103,array_id=105,step_id=106,explanation_id=107,variables_id=108,
+constexpr int scenario_id=103,array_label_id=104,array_id=105,step_id=106,explanation_id=107,variables_id=108,
     output_id=110,previous_id=111,next_id=112,reset_id=113,input_label_id=114,input_id=115,apply_id=116,restore_id=117,error_id=118,
     input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
     previous_decision_id=124,next_decision_id=125,result_comparison_id=126,
@@ -1861,7 +1861,7 @@ void neighboring_values_explain_group_boundaries(HWND host) {
     check(view.step_index()==0&&current().empty()&&reading().empty(),
         "The initial frame invented a previous-element comparison");
     check(view.go_to_step(1)&&
-        current().find("Dato contado: índice 0 = -8")!=std::string::npos&&
+        current().find("Dato contado: índice 0 = -8 (origen índice 2)")!=std::string::npos&&
         current().find("Primera posición: el índice 0 no tiene un elemento anterior.")!=std::string::npos&&
         current().find("Relación con el anterior:")==std::string::npos,
         "The first element tried to read the preceding index -1");
@@ -1871,13 +1871,15 @@ void neighboring_values_explain_group_boundaries(HWND host) {
 
     check(view.go_to_step(3),"Missing the first element of the second group");
     const auto boundary=current();
-    check(boundary.find("Relación con el anterior: índice 0 = -8; índice 1 = 3. Son diferentes: comienza un grupo nuevo.")!=std::string::npos&&
+    check(boundary.find("Dato contado: índice 1 = 3 (origen índice 1)")!=std::string::npos&&
+        boundary.find("Relación con el anterior: índice 0 = -8; índice 1 = 3. Son diferentes: comienza un grupo nuevo.")!=std::string::npos&&
         boundary.find("índice 2 =")==std::string::npos&&
         reading()==boundary,
         "The second group did not explain the distinct previous observed value");
     check(view.go_to_step(4),"Missing the repeated value");
     const auto equal=current();
-    check(equal.find("Relación con el anterior: índice 1 = 3; índice 2 = 3. Son iguales: continúa el grupo.")!=std::string::npos&&
+    check(equal.find("Dato contado: índice 2 = 3 (origen índice 3)")!=std::string::npos&&
+        equal.find("Relación con el anterior: índice 1 = 3; índice 2 = 3. Son iguales: continúa el grupo.")!=std::string::npos&&
         equal.find("índice 3 =")==std::string::npos,
         "Repeated neighbors did not explain why the group continues");
     check(view.go_to_step(6)&&
@@ -1904,6 +1906,7 @@ void neighboring_values_explain_group_boundaries(HWND host) {
     check(view.step_index()==0&&current().empty(),
         "A scenario change retained a previous neighboring comparison");
     check(view.go_to_step(4)&&
+        current().find("Dato contado: índice 2 = 9 (origen índice 0)")!=std::string::npos&&
         current().find("Relación con el anterior: índice 1 = 4; índice 2 = 9. Son diferentes: comienza un grupo nuevo.")!=std::string::npos,
         "The tie scenario used old array values for the group boundary");
 
@@ -1912,6 +1915,7 @@ void neighboring_values_explain_group_boundaries(HWND host) {
     check(view.step_index()==0&&current().empty(),
         "Applying new data kept the previous comparison visible");
     check(view.go_to_step(2)&&
+        current().find("origen índice")==std::string::npos&&
         current().find("Relación con el anterior: índice 0 = 1; índice 1 = 1. Son iguales: continúa el grupo.")!=std::string::npos,
         "Newly applied equal values did not recalculate the comparison");
     check(view.go_to_step(4)&&
@@ -1925,6 +1929,7 @@ void neighboring_values_explain_group_boundaries(HWND host) {
     click(view,restore_id);
     check(view.step_index()==0&&current().empty()&&
         view.go_to_step(4)&&
+        current().find("Dato contado: índice 2 = 9 (origen índice 0)")!=std::string::npos&&
         current().find("Relación con el anterior: índice 1 = 4; índice 2 = 9.")!=std::string::npos,
         "Restoring a scenario did not recover its own neighbor values");
 
@@ -1946,6 +1951,30 @@ void neighboring_values_explain_group_boundaries(HWND host) {
         text(words,transition_id).find(
             "Relación con el anterior: índice 1 = \" \" (1 espacio); índice 2 = \" \" (1 espacio). Son iguales: continúa el grupo.")!=std::string::npos,
         "Two space-only text values were incorrectly treated as distinct");
+
+    // Text values keep the same calculated source-index narration, including
+    // an empty first sorted value and two equal labels from distinct origins.
+    auto shifted=fixture(SimulationViewMode::walkthrough);
+    shifted.text_values=true;shifted.scenarios.clear();
+    shifted.values={std::string("patio"),std::string(""),std::string("patio")};
+    SimulationView reordered_words(host,shifted,"es");resize(reordered_words,820);
+    check(reordered_words.go_to_step(1)&&
+        text(reordered_words,transition_id).find(
+            "Dato contado: índice 0 = \"\" (cadena vacía) (origen índice 1)")!=std::string::npos,
+        "A reordered empty label lost its source index in the dynamic explanation");
+    check(reordered_words.go_to_step(3)&&
+        text(reordered_words,transition_id).find(
+            "Dato contado: índice 1 = \"patio\" (origen índice 0)")!=std::string::npos&&
+        reordered_words.go_to_step(4)&&
+        text(reordered_words,transition_id).find(
+            "Dato contado: índice 2 = \"patio\" (origen índice 2)")!=std::string::npos,
+        "Repeated text values reported an earlier duplicate as their source");
+    const auto spoken_transition=text(reordered_words,transition_id);
+    const auto regions=reordered_words.reading_regions();
+    check(std::ranges::any_of(regions,[&](const auto& region){
+        return region.key.find("/transition")!=std::string::npos&&
+            region.source_text==spoken_transition;
+    }), "The accessible narration disagreed with the source-index explanation");
 
     auto unchanged=fixture(SimulationViewMode::walkthrough);
     unchanged.scenarios.clear();unchanged.sort=false;
