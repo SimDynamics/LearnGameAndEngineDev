@@ -533,6 +533,13 @@ instrucciones ni se acredita el ejercicio.
 Nunca se puede pulsar para llegar a un grupo todavía no terminado.
 El clic requiere pulsar y soltar sobre la misma tarjeta, sin arrastrar
 ni usar teclas modificadoras; tampoco se navega por doble clic.
+Los gestos que delega el simulador al lector de la lección se protegen
+en todos sus controles Win32: si falla el observador de un gesto, no se
+acepta por accidente el clic de la celda o la barra y la excepción no
+escapa del procedimiento nativo. El aviso es accesible y no sustituye
+un diagnóstico de datos inválidos que ya estuviera pendiente. La
+regresión `passive_gesture_exceptions_are_isolated` comprueba celdas,
+barras, variables y textos de lectura, además del siguiente clic válido.
 Los espacios entre tarjetas y las áreas ocultas tras el desplazamiento
 no son destinos. El puntero indica cuándo una tarjeta es seleccionable.
 El selector de pasos, los botones de decisión y las casillas del array

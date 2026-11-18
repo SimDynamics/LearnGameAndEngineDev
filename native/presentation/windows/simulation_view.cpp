@@ -1059,6 +1059,30 @@ struct SimulationView::Impl {
             OutputDebugStringW(L"No se pudo registrar el fallo del observador de simulación.\n");
         }
     }
+    // Reader gestures run inside child Win32 window procedures. Never let
+    // an external callback exception cross that ABI boundary or accidentally
+    // turn a failed drag/pan into a click that navigates the simulation.
+    struct PassiveGestureDispatch {
+        std::optional<LRESULT> handled;
+        bool failed=false,owner_gone=false;
+    };
+    PassiveGestureDispatch dispatch_passive_gesture(
+            HWND child,UINT message,WPARAM wp,LPARAM lp) noexcept {
+        if(!callbacks.passive_gesture||!passive_message(message))return {};
+        const auto life=alive;
+        try{
+            const auto handled=callbacks.passive_gesture(child,message,wp,lp);
+            return {handled,false,!*life};
+        }catch(const std::exception& failure){
+            if(*life&&message!=WM_NCDESTROY)report_committed_notification_failure(
+                "No se pudo procesar el gesto de la simulación. ",failure.what());
+        }catch(...){
+            if(*life&&message!=WM_NCDESTROY)report_committed_notification_failure(
+                "No se pudo procesar el gesto de la simulación. ",
+                "Excepción no identificada del lector.");
+        }
+        return {{},true,!*life};
+    }
     // A direct step/decision selection should reveal its actual completed
     // group, even after the learner has scrolled to an unrelated histogram
     // row. Sequential Next/Previous keeps manual scrolling independent.
@@ -2065,8 +2089,9 @@ struct SimulationView::Impl {
             const auto flags=DefSubclassProc(item,message,wp,lp);
             if(key&&key->message==WM_KEYDOWN&&key->wParam==VK_TAB)return flags&~(DLGC_WANTTAB|DLGC_WANTALLKEYS);
             return flags;}
-        if(self->callbacks.passive_gesture&&passive_message(message)){
-            const auto handled=self->callbacks.passive_gesture(item,message,wp,lp);if(handled&&message!=WM_NCDESTROY)return *handled;}
+        const auto gesture=self->dispatch_passive_gesture(item,message,wp,lp);
+        if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY)return 0;
+        if(gesture.handled&&message!=WM_NCDESTROY)return *gesture.handled;
         if(message==WM_MOUSEWHEEL){
             // The parent's reader owns Ctrl+wheel. Ordinary wheel moves
             // scrollable read-only text only until its actual upper/lower
@@ -2119,13 +2144,12 @@ struct SimulationView::Impl {
                 std::abs(point.y-self->pressed_at.y)<=self->px(8))clicked_target=self->pressed_target;
             self->pressed_target.reset();
         }
-        std::optional<LRESULT> handled;
-        if(self->callbacks.passive_gesture&&passive_message(message))
-            handled=self->callbacks.passive_gesture(item,message,wp,lp);
+        const auto gesture=self->dispatch_passive_gesture(item,message,wp,lp);
+        if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY)return 0;
         if(clicked_target&&*clicked_target<self->count()){
             self->go(*clicked_target);return 0;
         }
-        if(handled&&message!=WM_NCDESTROY)return *handled;
+        if(gesture.handled&&message!=WM_NCDESTROY)return *gesture.handled;
         if(message==WM_SETCURSOR&&LOWORD(lp)==HTCLIENT){
             POINT point{};
             if(GetCursorPos(&point)&&ScreenToClient(item,&point)&&self->target_at(point)){
@@ -2176,16 +2200,15 @@ struct SimulationView::Impl {
                 clicked_group=self->pressed_frequency_group;
             self->pressed_frequency_group.reset();
         }
-        std::optional<LRESULT> handled;
-        if(self->callbacks.passive_gesture&&passive_message(message))
-            handled=self->callbacks.passive_gesture(item,message,wp,lp);
+        const auto gesture=self->dispatch_passive_gesture(item,message,wp,lp);
+        if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY)return 0;
         if(clicked_group){
             const auto destination=self->spec.view==SimulationViewMode::walkthrough?
                 self->trace.candidate_frames.at(*clicked_group):*clicked_group;
             self->go(destination);
             return 0;
         }
-        if(handled&&message!=WM_NCDESTROY)return *handled;
+        if(gesture.handled&&message!=WM_NCDESTROY)return *gesture.handled;
         if(message==WM_SETCURSOR&&LOWORD(lp)==HTCLIENT){
             POINT point{};
             if(GetCursorPos(&point)&&ScreenToClient(item,&point)&&
@@ -2254,8 +2277,9 @@ struct SimulationView::Impl {
         auto* self=reinterpret_cast<Impl*>(GetWindowLongPtrW(item,GWLP_USERDATA));
         if(message==WM_NCCREATE){self=static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(item,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
         if(!self)return DefWindowProcW(item,message,wp,lp);
-        if(self->callbacks.passive_gesture&&passive_message(message)){
-            const auto handled=self->callbacks.passive_gesture(item,message,wp,lp);if(handled&&message!=WM_NCDESTROY)return *handled;}
+        const auto gesture=self->dispatch_passive_gesture(item,message,wp,lp);
+        if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY)return 0;
+        if(gesture.handled&&message!=WM_NCDESTROY)return *gesture.handled;
         if(message==WM_PAINT){PAINTSTRUCT paint{};const auto dc=BeginPaint(item,&paint);self->paint_statistics(item,dc);EndPaint(item,&paint);return 0;}
         if(message==WM_PRINTCLIENT){self->paint_statistics(item,reinterpret_cast<HDC>(wp));return 0;}
         if(message==WM_ERASEBKGND)return 1;

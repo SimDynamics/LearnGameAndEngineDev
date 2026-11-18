@@ -502,6 +502,63 @@ void current_frequency_decision(HWND host,const std::filesystem::path& captures)
         "A static summary invented a current per-group decision");
     check(spec==authored,"Marking the current group modified authored data");
 }
+void passive_gesture_exceptions_are_isolated(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    HWND fail_target=nullptr;
+    int exceptions=0;
+    SimulationCallbacks callback{};
+    callback.passive_gesture=[&](HWND target,UINT message,WPARAM,LPARAM)
+            ->std::optional<LRESULT>{
+        if(target==fail_target&&message==WM_LBUTTONUP){
+            ++exceptions;
+            throw std::runtime_error("Fallo QA del gesto del lector");
+        }
+        return std::nullopt;
+    };
+    SimulationView view(host,spec,"es",callback);resize(view,850);
+    check(view.go_to_step(7),"Cannot prepare two visible calculated groups");
+    const auto old_step=view.step_index();
+    const auto old_output=text(view,output_id);
+    const auto old_count=view.step_count();
+    const auto old_array=name(GetDlgItem(view.window(),array_id));
+    const std::array<int,4> targets{array_id,frequencies_id,variables_id,explanation_id};
+    for(std::size_t index=0;index<targets.size();++index){
+        fail_target=GetDlgItem(view.window(),targets[index]);
+        check(fail_target,"Missing passive-gesture Win32 child control");
+        if(targets[index]==array_id)click_array_cell(view,0);
+        else if(targets[index]==frequencies_id)click_frequency_card(view,0);
+        else {
+            SendMessageW(fail_target,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(5,5));
+            SendMessageW(fail_target,WM_LBUTTONUP,0,MAKELPARAM(5,5));
+            pump();
+        }
+        const auto warning=text(view,error_id);
+        check(exceptions==static_cast<int>(index+1)&&
+            warning.find("No se pudo procesar el gesto de la simulación.")!=std::string::npos&&
+            warning.find("Fallo QA del gesto del lector")!=std::string::npos&&
+            view.step_index()==old_step&&view.step_count()==old_count&&
+            text(view,output_id)==old_output&&
+            name(GetDlgItem(view.window(),array_id))==old_array&&
+            spec==authored,
+            "A throwing passive reader gesture navigated or corrupted the native simulation");
+        check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==GetDlgItem(view.window(),error_id)&&
+                region.source_text==warning;
+        }),"The passive-gesture failure was not present in the accessible narration");
+
+        // A fresh interaction clears only the transient native warning.
+        // The following test must start on the same applied model and frame.
+        check(view.go_to_step(8)&&text(view,error_id).empty()&&
+            view.go_to_step(old_step)&&text(view,output_id)==old_output,
+            "A failed reader gesture prevented subsequent native navigation");
+    }
+    fail_target=nullptr;
+    click_array_cell(view,0);
+    check(view.step_index()==1&&text(view,error_id).empty()&&spec==authored,
+        "A later real array-cell click failed after a throwing passive gesture");
+}
+
 void histogram_card_navigation(HWND host) {
     const auto input=fixture(SimulationViewMode::walkthrough);
     const auto authored=input;
@@ -5172,6 +5229,7 @@ int main(int argc,char** argv)try {
     };
     run("native_text_control_contract",[&]{native_text_control_contract(host.value);});
     run("current_frequency_decision",[&]{current_frequency_decision(host.value,captures);});
+    run("passive_gesture_exceptions_are_isolated",[&]{passive_gesture_exceptions_are_isolated(host.value);});
     run("histogram_card_navigation",[&]{histogram_card_navigation(host.value);});
     run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
     run("histogram_follows_new_groups_only_at_end",[&]{histogram_follows_new_groups_only_at_end(host.value);});
