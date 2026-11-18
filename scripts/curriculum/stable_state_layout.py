@@ -1063,12 +1063,15 @@ def _require_formatted_question_authorship(previous: dict, current: dict,
             "A combined source/question revision repainted an unchanged public field")
 
 
-def _general_choice_semantic_projection(document: dict) -> dict | None:
-    """Restore the exact published option marks, not merely the old text SHA.
+def _general_choice_semantic_projection(
+        document: dict, *, identities: set[str] | None = None,
+        preserve_unrelated_fields: bool = False) -> dict | None:
+    """Restore exact previous option marks, never the revised UTF-16 offsets.
 
-    The legacy five-field archive retains its unchanged-span contract. A new
-    explicitly authored revision also archives its full new descriptor, so
-    reselecting spans after a wording change never grants old listening credit.
+    With identities omitted, recover the original publication as before.
+    A transition to a particular preceding edition rewinds only revisions
+    introduced by that transition; marks authored for other current fields
+    must remain intact for the curricular comparison.
     """
     overlay = deepcopy(document.get(text_semantics.ROOT_FIELD))
     if overlay is None:
@@ -1079,6 +1082,8 @@ def _general_choice_semantic_projection(document: dict) -> dict | None:
         if "optionIndex" not in item:
             continue
         identity, index = item["id"], item["optionIndex"]
+        if identities is not None and identity not in identities:
+            continue
         marker = _choice_semantic_entry(shadow, identity, index)
         archived = item["semanticBefore"]
         if "semanticAfter" in item:
@@ -1102,10 +1107,12 @@ def _general_choice_semantic_projection(document: dict) -> dict | None:
             marker.clear()
             marker.update(deepcopy(archived))
     if introduced_root:
-        # A later lesson revision may have added unrelated descriptors, but
-        # the original publication had no semantic root at all. Restore its
-        # exact absence, not an invented partial historical overlay.
-        return None
+        # For the absolute historical publication there was no semantic root.
+        # When aligning only a later transition, preserve descriptors added
+        # for OTHER current fields; they are not being projected backward.
+        if not preserve_unrelated_fields or (
+                not overlay["fields"] and not overlay.get("rootFields", [])):
+            return None
     return overlay
 
 
@@ -6374,6 +6381,19 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
               if identity in new_math_ids else block for identity, block in blocks.items()}
     page_by_id = {record["id"]: page for page, record in zip(current["pages"], current["stateLayout"]["current"])}
     result = deepcopy(current)
+    new_choices = _choice_revisions(current).keys() - old_choices.keys()
+    new_general_choices = {item["id"] for item in current["stateLayout"].get("choiceRevisions", [])
+                           if item["id"] in new_choices and "optionIndex" in item}
+    if new_general_choices:
+        # The source block above has been restored to the prior wording.
+        # Its descriptor must follow that SAME prior wording. A later option
+        # with newly moved marks cannot leak its text hash or old reading.
+        overlay = _general_choice_semantic_projection(
+            current, identities=new_general_choices, preserve_unrelated_fields=True)
+        if overlay is None:
+            result.pop(text_semantics.ROOT_FIELD, None)
+        else:
+            result[text_semantics.ROOT_FIELD] = overlay
     if new_math_ids and text_semantics.ROOT_FIELD in result:
         overlay = _math_prompt_semantic_projection(
             current, result[text_semantics.ROOT_FIELD], identities=new_math_ids)
