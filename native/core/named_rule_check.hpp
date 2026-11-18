@@ -1376,7 +1376,57 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             if(found==aliases.rend())aliases.push_back({local,count,nesting,zero});
             else {found->count=count;found->zero=zero;}
             i=last;
+            continue;
         }
+        // Compound updates and increments mutate a result without a plain
+        // '=' token. Ignoring them would allow (result ^= result) followed
+        // by a hard-coded reconstruction to inherit the original named-rule
+        // uses, even when every independent output probe still passes.
+        if(i+1<bounds.close&&t[i].starts_with("id:")) {
+            const auto found=std::find_if(aliases.rbegin(),aliases.rend(),
+                [&](const Alias& alias){return id(t[i],alias.name);});
+            if(found!=aliases.rend()) {
+                if(op(t[i+1],"++")||op(t[i+1],"--"))return 0;
+                const bool compound=op(t[i+1],"+=")||op(t[i+1],"-=")||
+                    op(t[i+1],"*=")||op(t[i+1],"/=")||
+                    op(t[i+1],"%=")||op(t[i+1],"^=")||
+                    op(t[i+1],"&=")||op(t[i+1],"|=")||
+                    op(t[i+1],"<<=")||op(t[i+1],">>=");
+                if(compound) {
+                    auto last=i+2;
+                    while(last<bounds.close&&!op(t[last],";"))++last;
+                    if(last>=bounds.close||unsafe_alias_call(i+2,last))
+                        return 0;
+                    const bool rhs_zero=zero_expression(i+2,last);
+                    // Adding/subtracting/or-ing/xor-ing zero is neutral for
+                    // the integer result and preserves its earlier evidence.
+                    const bool neutral=rhs_zero&&
+                        (op(t[i+1],"+=")||op(t[i+1],"-=")||
+                         op(t[i+1],"|=")||op(t[i+1],"^="));
+                    if(neutral) {
+                        i=last;
+                        continue;
+                    }
+                    // A zero-initialized result can be accumulated with +=
+                    // as an equivalent spelling of a direct assignment.
+                    if(op(t[i+1],"+=")&&found->zero) {
+                        found->count=uses(i+2,last);
+                        found->zero=rhs_zero;
+                        i=last;
+                        continue;
+                    }
+                    // Other compound operations require control/data flow
+                    // beyond this conservative source proof. Runtime probes
+                    // remain necessary but cannot restore canceled evidence.
+                    return 0;
+                }
+            }
+        }
+        if(i+1<bounds.close&&(op(t[i],"++")||op(t[i],"--"))&&
+           t[i+1].starts_with("id:")&&
+           std::ranges::any_of(aliases,[&](const Alias& alias){
+               return id(t[i+1],alias.name);
+           }))return 0;
     }
     // A conditional-only return does not prove that every input path uses the rule.
     return 0;
