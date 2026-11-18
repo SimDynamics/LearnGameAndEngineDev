@@ -259,8 +259,16 @@ El contrato de simulación se conserva como una copia privada, de modo que
 ningún cambio externo a la especificación modifica la sesión abierta. Las
 funciones de validación independientes siguen comprobando todo el contrato
 para quienes no utilizan esa sesión. La prueba `validated_simulation_session`
-compara ambos caminos con los mismos datos, límites y rechazos; todavía
-requiere ejecución nativa Windows para confirmar sus resultados.
+compara ambos caminos con los mismos datos, límites y rechazos.
+La regresión `exhaustive_cached_session_replay` añade 705 entradas
+calculadas: 364 arrays de enteros de hasta cinco elementos y 341 arrays
+de textos de hasta cuatro. Contrasta grupo, índices originales, fases,
+frecuencias, máximos, explicaciones, salida y comportamiento del editor
+frente a las funciones estrictas; comprueba asimismo que rechazar un
+array desordenado no dañe el siguiente intento válido. No implica
+que 705 simulaciones se hayan ejecutado en la app ni constituye una medición
+de rapidez. Ambas pruebas requieren ejecución nativa Windows antes de
+acreditar sus resultados.
 
 **Aplicar datos** y cambiar de escenario son operaciones de reemplazo
 completo, no cambios parciales de la traza. La notificación a observadores
