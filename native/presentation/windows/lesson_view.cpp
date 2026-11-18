@@ -1154,15 +1154,27 @@ struct LessonView {
                                 archived.revised_regions.push_back(region.key);
                             region.source_text=original.options[option];
                             if(generic){
-                                const auto path="/options/"+std::to_string(option);
-                                const auto annotated=current.text_semantics.find(path);
-                                if(annotated==current.text_semantics.end())
-                                    region.text_semantics.reset();
-                                else{
-                                    auto historic=annotated->second;
-                                    historic.source=region.source_text;
-                                    curriculum::validate_text_semantics(historic);
-                                    region.text_semantics=std::move(historic);
+                                if(revision.general_option_index&&
+                                   *revision.general_option_index==option){
+                                    // The old semantic selection was validated
+                                    // against the original option at load time.
+                                    // New authoring can move or replace spans;
+                                    // rebinding current offsets to historic
+                                    // speech would announce the wrong words.
+                                    region.text_semantics=revision.original_option_text_semantics;
+                                }else{
+                                    // All OTHER options keep their exact published
+                                    // wording and original source selections.
+                                    const auto path="/options/"+std::to_string(option);
+                                    const auto annotated=current.text_semantics.find(path);
+                                    if(annotated==current.text_semantics.end())
+                                        region.text_semantics.reset();
+                                    else{
+                                        auto historic=annotated->second;
+                                        historic.source=region.source_text;
+                                        curriculum::validate_text_semantics(historic);
+                                        region.text_semantics=std::move(historic);
+                                    }
                                 }
                             }
                         }
