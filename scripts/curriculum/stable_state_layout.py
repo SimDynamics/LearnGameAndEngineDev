@@ -1040,18 +1040,35 @@ def _choice_semantic_entry(document: dict, identity: str, option_index: int) -> 
 
 def _require_formatted_question_authorship(previous: dict, current: dict,
                                            identity: str, before: dict, after: dict) -> None:
-    """Bind a new question to its exact text owner, not a source-format waiver.
+    """Require exact authored semantics for prose changed with source formatting.
 
-    This guard only runs for a previously published, source-formatted owner.
-    An authored question may accompany a lexical edit, but unrelated option,
-    feedback and explanation marks must retain their published provenance.
-    The independent text_semantics validator checks updated UTF-16 spans.
+    Previously this protected only a revised /question. A new or modified
+    /explanation also needs an explicit marker, including an empty span array
+    for ordinary unmarked prose. The code/answer and other public descriptors
+    remain owned by the original publication. Compiler feedback is checked by
+    its separate, immutable diagnostic objective.
     """
-    if before.get("question") == after.get("question"):
+    changed_question = before.get("question") != after.get("question")
+    changed_explanation = (before.get("type") in ORDINARY_EDITORIAL_TYPES
+                           and before.get("explanation") != after.get("explanation"))
+    if not changed_question and not changed_explanation:
         return
-    require(type(before.get("question")) is str and bool(before["question"].strip())
-            and type(after.get("question")) is str and bool(after["question"].strip()),
-            "A formatted question revision requires two complete nonblank questions")
+    paths = set()
+    if changed_question:
+        require(type(before.get("question")) is str and bool(before["question"].strip())
+                and type(after.get("question")) is str and bool(after["question"].strip()),
+                "A formatted question revision requires two complete nonblank questions")
+        paths.add("/question")
+    if changed_explanation:
+        # Newly added optional explanation is allowed, but neither removing
+        # an existing one nor replacing it with whitespace is an editorial
+        # correction. The same rule applies to a previously published guide.
+        require(type(after.get("explanation")) is str and bool(after["explanation"].strip())
+                and ("explanation" not in before
+                     or (type(before["explanation"]) is str
+                         and bool(before["explanation"].strip()))),
+                "A formatted explanation revision requires complete authored prose")
+        paths.add("/explanation")
 
     def markers(document: dict) -> dict:
         return {entry["path"]: entry for entry in
@@ -1059,18 +1076,15 @@ def _require_formatted_question_authorship(previous: dict, current: dict,
                 if type(entry) is dict and entry.get("block") == identity}
 
     old, revised = markers(previous), markers(current)
-    require("/question" in revised,
-            "A combined source/question revision requires explicit authored question semantics")
-    allowed = {"/question"}
-    if before.get("explanation") != after.get("explanation"):
-        allowed.add("/explanation")
+    require(paths <= revised.keys(),
+            "A combined source/prose revision requires explicit authored text semantics")
     feedback = before.get("reviewFeedback") != after.get("reviewFeedback")
     require(all(old.get(path) == revised.get(path)
                 for path in (old.keys() | revised.keys())
-                if path not in allowed
+                if path not in paths
                 and not (feedback and (path == "/reviewFeedback"
                                        or path.startswith("/reviewFeedback/")))),
-            "A combined source/question revision repainted an unchanged public field")
+            "A combined source/prose revision repainted an unchanged public field")
 
 
 def _general_choice_semantic_projection(
