@@ -174,6 +174,12 @@ estructura**. En un archivo real debe contener el bloque anterior completo,
 incluidas todas las opciones, la pregunta, la explicación y las guías. No
 se permite sustituir ese archivo por un resumen.
 
+La opción revisada debe ser distinta de la original y contener texto
+significativo. Se rechazan tanto `""` como cadenas formadas únicamente por
+espacios Unicode, incluidos el espacio sin separación (U+00A0), NEL
+(U+0085) y el espacio eme (U+2003). El generador y ambos cargadores Windows
+aplican el mismo requisito, sin alterar las opciones históricas.
+
 La propiedad `semanticBefore` archiva el descriptor completo del
 campo `textSemantics` que existía antes de la corrección, con el SHA-256
 real del texto y todos sus segmentos de resaltado. Cuando el campo no
