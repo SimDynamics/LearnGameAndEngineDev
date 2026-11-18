@@ -242,6 +242,44 @@ class CourseEditionAuthoringTest(unittest.TestCase):
                         edition.check_repository(root, "0" * 40)
                 self.assertTrue(original.exists(), "The rejection must preserve the indexed content")
 
+    def test_alias_guards_are_covered_without_os_symlink_privileges(self):
+        # Windows runners may lack permission to create real symlinks. Simulate
+        # only the filesystem identity check while retaining ordinary JSON
+        # files, so both indexed resource guards are still exercised.
+        prior = current_documents()
+        current = {**deepcopy(prior), **current_documents(descriptor())}
+        before = encoded(prior)
+        unit_relative = next(path for path in current
+                             if "/edition_es_1__" in path and "/unit_" in path)
+        lesson_relative = next(path for path in current
+                               if "/edition_es_1__" in path and "/lesson_" in path)
+        with tempfile.TemporaryDirectory(prefix="edition-alias-guard-qa-",
+                                         dir=Path.cwd()) as temporary:
+            root = Path(temporary)
+            for relative, raw in encoded(current).items():
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(raw)
+            real_is_symlink = Path.is_symlink
+            for kind, alias in (
+                    ("unit-file", root / unit_relative),
+                    ("lesson-file", root / lesson_relative),
+                    ("unit-folder", (root / unit_relative).parent)):
+                def flagged(path):
+                    return path == alias or real_is_symlink(path)
+                with self.subTest(kind=kind), \
+                        mock.patch.object(Path, "is_symlink", autospec=True,
+                                          side_effect=flagged), \
+                        mock.patch.object(edition, "_paths_at", return_value=set(before)), \
+                        mock.patch.object(edition, "_git_bytes",
+                                          side_effect=lambda _, __, name: before[name]):
+                    with self.assertRaisesRegex(edition.CourseEditionError, "symbolic alias"):
+                        edition.check_repository(root, "0" * 40)
+            self.assertEqual(encoded(current), {
+                path.relative_to(root).as_posix(): path.read_bytes()
+                for path in root.rglob("*.json")
+            }, "A rejected alias must not rewrite course or student assets")
+
     def test_generation_does_not_weaken_answer_transitions(self):
         before = edition.prepare_edition_lesson(lesson_source(descriptor()), descriptor())
         after = deepcopy(before)
