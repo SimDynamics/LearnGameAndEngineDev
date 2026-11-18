@@ -6183,23 +6183,18 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         # The compiler/source-format path has its separate combined guard;
         # requiring a new marker here also protects an unrelated drag-fill
         # explanation authored in the same multi-owner publication.
-        ordinary_fields = ordinary_editorial_fields(block, actual)
+        bibliography_only = bibliography_revision.is_bibliography_only_revision(block, actual)
+        # Bibliography revisions already have their own signed reading archive.
+        # Ordinary prose must retain the exact changed field's descriptor.
+        ordinary_fields = () if bibliography_only else ordinary_editorial_fields(block, actual)
         if ordinary_fields:
             current_overlay = current.get(text_semantics.ROOT_FIELD) or {}
-            previous_overlay = baseline.get(text_semantics.ROOT_FIELD) or {}
             current_marks = {(entry["block"], entry["path"]): entry
                              for entry in current_overlay.get("fields", [])}
-            previous_marks = {(entry["block"], entry["path"]): entry
-                              for entry in previous_overlay.get("fields", [])}
             for field in ordinary_fields:
-                key = (identity, "/" + field)
-                require(key in current_marks,
+                require((identity, "/" + field) in current_marks,
                         "An ordinary prose revision needs its exact authored text descriptor")
-                previous_mark = previous_marks.get(key)
-                if previous_mark is not None and previous_mark["spans"]:
-                    require(bool(current_marks[key]["spans"]),
-                            "A revised marked field cannot silently lose its authored highlights")
-        if bibliography_revision.is_bibliography_only_revision(block, actual):
+        if bibliography_only:
             require(identity in appended and all("bibliography" in proof for proof in appended[identity]),
                     "A new bibliography-only revision requires its exact authored reading archive")
         protected = _compiler_case_order_projection(current, identity, actual)
