@@ -89,18 +89,19 @@ std::string normalized_rich_edit_lines(std::string_view text) {
 // inventing a new authored value. A nonempty result means sorting moved data.
 std::vector<std::size_t> stable_source_positions(const SimulationTrace& trace) {
     if(trace.original==trace.ordered)return {};
+    // The core now owns this stable permutation for both authored explanation
+    // placeholders and visual source-index labels. Do not independently
+    // reconstruct it in the view or duplicate-valued cells may disagree.
+    if(trace.source_indices.size()!=trace.ordered.size())
+        throw std::logic_error("La copia ordenada perdió la procedencia de un elemento.");
     std::vector<bool> used(trace.original.size(),false);
-    std::vector<std::size_t> positions;
-    positions.reserve(trace.ordered.size());
-    for(const auto& value:trace.ordered){
-        bool found=false;
-        for(std::size_t index=0;index<trace.original.size();++index){
-            if(used[index]||trace.original[index]!=value)continue;
-            used[index]=true;positions.push_back(index);found=true;break;
-        }
-        if(!found)throw std::logic_error("La copia ordenada perdió la procedencia de un elemento.");
+    for(std::size_t at=0;at<trace.source_indices.size();++at){
+        const auto index=trace.source_indices[at];
+        if(index>=trace.original.size()||used[index]||trace.original[index]!=trace.ordered[at])
+            throw std::logic_error("La procedencia de la copia ordenada no es una permutación estable.");
+        used[index]=true;
     }
-    return positions;
+    return trace.source_indices;
 }
 void register_class(const wchar_t* name,WNDPROC procedure) {
     WNDCLASSEXW existing{sizeof(existing)};const auto module=GetModuleHandleW(nullptr);
