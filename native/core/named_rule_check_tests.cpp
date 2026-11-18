@@ -777,6 +777,31 @@ void capacity() {
             return (piezas + 3) / 4 + (capacidad - (capacidad * 2));
         })cpp",rules,true,
         "A non-neutral subtraction keeps its two real uses for the independent runtime probe");
+    // C++ evaluates multiplication, division and remainder before subtraction.
+    // An immediate "capacity - capacity" token pair is not a cancellation
+    // when its right-hand operand is still part of one of those operations.
+    for(const auto* arithmetic:{
+            "capacidad - capacidad * 2",
+            "capacidad - capacidad / 2",
+            "capacidad - capacidad % 3"}) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(arithmetic)+"); }",
+            rules,true,"Higher-precedence right operand must retain both productive rule uses");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int diferencia = capacidad - capacidad * 2;
+            return (piezas + 3) / 4 + diferencia;
+        })cpp",rules,true,
+        "An alias must carry both genuinely dependent uses of the constant");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 + (capacidad - capacidad * 0);
+        })cpp",rules,false,
+        "A zero product leaves only one productive use, below minUses two");
+
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
