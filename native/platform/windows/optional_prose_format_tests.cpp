@@ -96,6 +96,8 @@ int main(int argc, char** argv) {
                 state::string_value(migrated, "learning_progress",
                     curriculum::exercise_key(after, current)) == snapshot,
             "Adding explanation/spacing erased a valid historical answer or its attempts");
+        require(progress == reopened,
+            "Reopening the first isolated QA receipt modified prior student state");
         // The actual U1L4 gap is a drag_fill_code puzzle, not a prediction.
         // Adding its explanation must preserve every physical hole, choice,
         // answer index and the old saved response under the same owner.
@@ -140,16 +142,16 @@ int main(int argc, char** argv) {
         state::prepare_lesson_state(drag_migrated, after);
         state::validate_lesson_state(drag_migrated, after);
         const auto drag_receipt = state::get_response(drag_migrated, after, new_drag);
+        const auto other_receipt = state::get_response(drag_migrated, after, current);
         require(drag_receipt && drag_receipt->correct &&
                 drag_receipt->order == std::vector<std::int64_t>{0, 1, 2} &&
                 curriculum::exercise_key(before, old_drag) ==
                     curriculum::exercise_key(after, new_drag) &&
                 state::string_value(drag_migrated, "learning_progress",
                     curriculum::exercise_key(after, new_drag)) == drag_snapshot &&
-                state::get_response(drag_migrated, after, current)->answer == "A",
+                other_receipt && other_receipt->correct && other_receipt->answer == "A",
             "Optional drag-fill prose lost an old answer, attempts or another puzzle receipt");
-        require(progress == reopened &&
-                drag_reopened == progress,
+        require(drag_reopened == progress,
             "Reopening an isolated QA receipt modified its prior student state");
 
         for (const auto filename : {
