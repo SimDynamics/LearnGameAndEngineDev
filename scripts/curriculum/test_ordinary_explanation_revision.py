@@ -720,11 +720,22 @@ class OrdinaryExplanationMainTest(unittest.TestCase):
         wording = ("La función main inicia la ejecución; el operador << "
                    "envía Revision lista a std::cout y el punto y coma "
                    "termina la instrucción.")
+        spans = sorted([
+            layout.text_semantics.select(wording, "main", "cpp", reading="technical"),
+            layout.text_semantics.select(wording, "<<", "cpp", reading="technical"),
+            layout.text_semantics.select(wording, "Revision lista", "output", reading="natural"),
+            layout.text_semantics.select(wording, "std::cout", "cpp", reading="technical"),
+        ], key=lambda item: item["start"])
         authored = layout.revise_ordinary_editorial(before, stable_id, {
-            "explanation": {"text": wording, "spans": []},
+            "explanation": {"text": wording, "spans": spans},
         })
         self.assertEqual(dict(old, explanation=wording),
                          layout._blocks(authored)[stable_id])
+        marker = next(field for field in authored["textSemantics"]["fields"]
+                      if (field["block"], field["path"]) == (stable_id, "/explanation"))
+        self.assertEqual(spans, marker["spans"])
+        self.assertEqual(layout.text_semantics.make_field(
+            authored, stable_id, "/explanation", spans), marker)
 
         with tempfile.TemporaryDirectory(prefix="lgaed-u1l4-edition-qa-") as directory:
             root = Path(directory)
@@ -789,7 +800,14 @@ class OrdinaryExplanationMainTest(unittest.TestCase):
             changed["correctOrder"] = [1, 0, 2]
             forged["stateLayout"]["editorial"][-1]["afterSha256"] = (
                 layout.fingerprint(changed))
-            for candidate, expected_status in ((authored, 0), (forged, 1)):
+            forged_semantics = deepcopy(authored)
+            changed_marker = next(field for field in forged_semantics["textSemantics"]["fields"]
+                                  if (field["block"], field["path"]) == (stable_id, "/explanation"))
+            changed_marker["sourceSha256"] = "0" * 64
+            # A correct answer and editorial proof are insufficient when the
+            # new technical/output markers no longer describe the actual text.
+            for candidate, expected_status in ((authored, 0), (forged, 1),
+                                               (forged_semantics, 1)):
                 (root / spanish_path).write_text(
                     json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
                 output = io.StringIO()
