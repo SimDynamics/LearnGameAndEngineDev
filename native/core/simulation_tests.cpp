@@ -223,6 +223,63 @@ void processed_remaining_counts() {
         "Empty or repeated text values changed processed counts or raw output");
 }
 
+void previous_maximum_decision_explanations() {
+    auto spec = example();
+    // Five groups cover new maximum, equal maximum, another increase,
+    // below maximum and a final tie, preserving the original source.
+    spec.values = integers({7, 1, 7, 3, 3, 2, 5});
+    spec.explanations.initial = "Inicio: {previousMaximum}.";
+    spec.explanations.start = "Contar: {previousMaximum}.";
+    spec.explanations.advance = "Continuar: {previousMaximum}.";
+    spec.explanations.new_maximum = "Antes {previousMaximum}; ahora {maximum}; frecuencia {frequency}.";
+    spec.explanations.tie = "Empate {frequency} con {previousMaximum}; máximo {maximum}.";
+    spec.explanations.below_maximum = "Menor {frequency} que {previousMaximum}; sigue {maximum}.";
+    spec.explanations.done = "Fin: {previousMaximum}.";
+    spec.explanations.empty = "Vacío: {previousMaximum}.";
+    spec.output_template = "{value}:{frequency}/{previousMaximum}";
+    const auto original = spec;
+    const auto trace = build_simulation_trace(spec);
+    check(trace.ordered == integers({1, 2, 3, 3, 5, 7, 7}) &&
+        trace.candidate_frames == std::vector<std::size_t>{2, 4, 7, 9, 12} &&
+        trace.frames.size() == 14,
+        "The previous-maximum fixture lost a real count or decision");
+    check(trace.frames[0].explanation == "Inicio: ." &&
+        trace.frames[1].explanation == "Contar: ." &&
+        trace.frames[6].explanation == "Continuar: ." &&
+        trace.frames[13].explanation == "Fin: .",
+        "An unmade decision invented a previous maximum");
+    check(trace.frames[2].phase == SimulationPhase::new_maximum &&
+        trace.frames[2].explanation == "Antes 0; ahora 1; frecuencia 1." &&
+        trace.frames[4].phase == SimulationPhase::tie &&
+        trace.frames[4].explanation == "Empate 1 con 1; máximo 1." &&
+        trace.frames[7].phase == SimulationPhase::new_maximum &&
+        trace.frames[7].explanation == "Antes 1; ahora 2; frecuencia 2." &&
+        trace.frames[9].phase == SimulationPhase::below_maximum &&
+        trace.frames[9].explanation == "Menor 1 que 2; sigue 2." &&
+        trace.frames[12].phase == SimulationPhase::tie &&
+        trace.frames[12].explanation == "Empate 2 con 2; máximo 2.",
+        "The decision compared against its own updated maximum, not the previous maximum");
+    const std::string expected_output = "1:1/0\n2:1/1\n3:2/1\n5:1/2\n7:2/2\n";
+    check(trace.frames.back().output == expected_output &&
+        trace.frames[7].output == "1:1/0\n2:1/1\n3:2/1\n" &&
+        spec == original,
+        "Previous-maximum output changed a frequency, leader or the original data");
+    const auto empty = build_simulation_trace(spec, integers({}));
+    check(empty.frames.size() == 1 &&
+        empty.frames[0].explanation == "Vacío: ." &&
+        empty.frames[0].output.empty(),
+        "An empty collection invented a group decision or previous maximum");
+
+    spec.text_values = true;
+    spec.values = words({"patio", "", "patio"});
+    const auto labels = build_simulation_trace(spec);
+    check(labels.source_indices == std::vector<std::size_t>{1, 0, 2} &&
+        labels.frames[2].explanation == "Antes 0; ahora 1; frecuencia 1." &&
+        labels.frames[5].explanation == "Antes 1; ahora 2; frecuencia 2." &&
+        labels.frames.back().output == ":1/0\npatio:2/1\n",
+        "Empty labels or stable text order changed the actual previous maximum");
+}
+
 void boundary_states() {
     auto spec = example();
     const auto empty = build_simulation_trace(spec);
@@ -806,6 +863,7 @@ int main() {
         ties_and_text();
         counted_source_positions_and_templates();
         processed_remaining_counts();
+        previous_maximum_decision_explanations();
         boundary_states();
         replay_inputs_and_accessibility();
         empty_text_values_and_labels();
