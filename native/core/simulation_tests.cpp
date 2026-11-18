@@ -144,6 +144,10 @@ void counted_source_positions_and_templates() {
             text.frames[3].explanation == "Contado 1, origen 0, valor \"patio\"." &&
             text.frames[4].explanation == "Avanza 2, origen 2, frecuencia 2.",
         "Empty text or repeated UTF-8 labels lost their original positions");
+    const auto typed = simulation_parse_input_trace(spec,
+        R"(["patio", "", "patio"])", SimulationInputFormat::json);
+    check(typed == text && typed.original == spec.values,
+        "An edited text list produced different provenance or narration than the authored values");
 
     spec.sort = false;
     spec.values = words({"", "", "patio"});
