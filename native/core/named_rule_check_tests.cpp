@@ -1452,6 +1452,7 @@ void conditional_assignment_branches() {
             if (piezas > 0) {
                 int resultado = 3;
                 resultado = 4;
+                (void)resultado;
             }
             return resultado;
         })cpp",rules,true,
