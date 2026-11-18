@@ -164,7 +164,7 @@ int main(int argc,char** argv) {
         // The Python authoring helper refuses whitespace-only replacements.
         // Both Windows loaders must reject the same Unicode cases at the
         // option contract, not merely as an unrelated stale semantic hash.
-        for(const wchar_t* blank : {L"\u00a0",L"\u0085",L"\u2003",L"\u202f",L"\u3000",L"\u00a0\t\\u2003"}) {
+        for(const wchar_t* blank : {L"\u00a0",L"\u0085",L"\u2003",L"\u202f",L"\u3000",L"\u00a0\t\u2003"}) {
             auto candidate=JsonObject::Parse(winrt::to_hstring(reviewed_file));
             candidate.GetNamedObject(L"stateLayout").GetNamedArray(L"choiceRevisions")
                 .GetObjectAt(0).Insert(L"replacement",JsonValue::CreateStringValue(blank));
