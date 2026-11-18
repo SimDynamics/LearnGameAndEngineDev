@@ -455,6 +455,17 @@ solamente los grupos que ya terminaron. `done` conserva el resultado final.
 Un array vacío produce únicamente `empty`, sin accesos a elementos ni líneas
 de salida.
 
+Dos pasos pueden compartir exactamente la misma explicación calculada aunque
+hayan cambiado el límite, la frecuencia o la fase. Si la explicación y su
+formato siguen iguales, la vista conserva el documento RichEdit, su selección
+y el punto donde se estaba leyendo, sin retransmitir el mismo texto al pasar
+de `start` a `advance`. Una explicación diferente sí actualiza el documento.
+Los cambios reales de zoom, DPI y apariencia invalidan la presentación
+anterior sin atribuir esa lectura al contenido nuevo. La regresión Win32
+`repeated_step_explanation_preserves_native_reading` comprueba la
+continuidad de lectura, la actualización de un texto distinto y el redibujado
+por cambio de escala o DPI; requiere ejecución local en Windows.
+
 Avanzar, retroceder o saltar a un paso tampoco admite una presentación
 parcial. Si RichEdit rechaza la actualización después de seleccionar otro
 estado, el simulador recupera el paso, la salida, las variables, las barras
