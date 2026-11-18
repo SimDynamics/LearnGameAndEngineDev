@@ -305,6 +305,26 @@ class StructuralCourseFixtures(unittest.TestCase):
                 self.save()
                 self.assertIn(expected, self.run_course(reject=True))
 
+    def test_order_cards_are_nonblank_in_programming1_and_future_courses(self):
+        # A blank separator is a presentation-only orderVisualSeparators entry,
+        # not a fragment that the learner has to place in correctOrder. The
+        # native loader rejects even a whitespace-only card.
+        for course_id in ("cpp_fundamentals", "cpp_language_memory_oop",
+                          "future_programming_2040"):
+            for bad in ("", " \t", "\n"):
+                with self.subTest(course=course_id, fragment=repr(bad)):
+                    self.select_course(course_id)
+                    self.complete_lesson()
+                    order = self.lesson["pages"][0]["blocks"][2]
+                    self.assertEqual(order["type"], "order_code")
+                    self.assertIn(f"Curso {course_id}:", self.run_course())
+                    order["fragments"][0] = bad
+                    self.save()
+                    output = self.run_course(reject=True)
+                    self.assertIn("fragments", output)
+                    self.assertIn("no vac", output)
+                    self.assertNotIn("Traceback", output)
+
     def test_future_course_rejects_undeclared_index_fields(self):
         # An extra field must not become an implicit authoring extension merely
         # because all IDs, titles and sequential numbers are otherwise valid.
