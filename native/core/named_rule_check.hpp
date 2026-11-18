@@ -1239,6 +1239,31 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             if(nesting)return 0;
             return include_prior(result_uses);
         }
+        // A reference/pointer to the result also allows later writes
+        // through a different name; such an escape cannot be credited by
+        // the simple lexical dependency proof.
+        if(id(t[i],"int")||id(t[i],"auto")) {
+            auto modifier=i+1;
+            if(modifier<bounds.close&&
+               (id(t[modifier],"const")||id(t[modifier],"constexpr")))
+                ++modifier;
+            if(modifier+2<bounds.close&&
+               (op(t[modifier],"&")||op(t[modifier],"&&")||
+                op(t[modifier],"*"))&&
+               t[modifier+1].starts_with("id:")&&
+               op(t[modifier+2],"=")) {
+                auto end=modifier+3;
+                while(end<bounds.close&&!op(t[end],";"))++end;
+                if(end>=bounds.close)return 0;
+                for(auto at=modifier+3;at<end;++at) {
+                    if(!t[at].starts_with("id:"))continue;
+                    const auto found=std::find_if(aliases.rbegin(),aliases.rend(),
+                        [&](const Alias& alias){return id(t[at],alias.name);});
+                    if(found!=aliases.rend()&&
+                       (nesting==0||found->depth<nesting))return 0;
+                }
+            }
+        }
         // The earlier guarded-if check cannot cover a straight-line call.
         // A passed result alias may be replaced without an assignment in
         // this function (for example, swap(result, hardcoded)).
@@ -1277,6 +1302,10 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                     named_rule_shadows.push_back(nesting);
                 }
             }else {
+                // An initializer that forwards the result to a function
+                // can have side effects even when the intermediate is never
+                // returned. Do not silently discard that mutation.
+                if(unsafe_alias_call(initializer+1,last))return 0;
                 const auto count=uses(initializer+1,last);
                 const auto zero=zero_expression(
                     op(t[initializer],"=")?initializer+1:initializer,last);
@@ -1316,6 +1345,7 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             auto last=i+2;
             while(last<bounds.close&&!op(t[last],";"))++last;
             if(local==name)return 0;
+            if(unsafe_alias_call(i+2,last))return 0;
             const auto count=uses(i+2,last);
             const auto zero=zero_expression(i+2,last);
             // Assignments target the nearest in-scope declaration.
