@@ -750,8 +750,14 @@ las líneas, columnas, mensajes y fragmentos de origen, y no modifica los
 datos crudos de ejecución. También trata los errores técnicos
 `CppRunResult.error_utf8` al presentarlos, sin convertirlos en una salida
 ficticia del programa. Las rutas externas y los textos que no sean ubicaciones
-reconocidas quedan intactos. Esta adaptación es solo de presentación; la
-verificación de sus canales corresponde a las pruebas nativas Windows.
+reconocidas quedan intactos. Las trazas de inclusión de MSVC
+`/showIncludes`, que carecen de números de línea, se reconocen por sus
+prefijos documentados en inglés (`Note: including file:`) o español
+(`Nota: inclusión del archivo:`) y por una raíz propia conocida.
+Se conserva su sangría de cabeceras anidadas, sin alterar rutas externas
+ni textos fuente que sólo contienen esas palabras. Esta adaptación es
+solo de presentación; la verificación de sus canales corresponde a las
+pruebas nativas Windows.
 
 Los editores original y de modificación de la página 5 guardan borradores
 independientes, incluidos espacios, saltos y procedencia de la sangría. TAB físico
