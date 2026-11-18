@@ -55,8 +55,18 @@ try {
     $regex = '^native[.](ordinary_explanation_authoring|course_edition_authoring|course_edition)$'
 
     # Fail closed if a test was renamed, omitted or an unintended test matched.
-    $json = & $ctest --preset $Preset --show-only=json-v1 -R $regex
-    if ($LASTEXITCODE -ne 0) {
+    # CTest resolves presets relative to the caller's working directory.
+    # The script can be launched from any folder; use this checkout only for
+    # discovery and restore the caller's location even on enumeration failure.
+    Push-Location -LiteralPath $repositoryRoot
+    try {
+        $json = & $ctest --preset $Preset --show-only=json-v1 -R $regex
+        $enumerationExitCode = $LASTEXITCODE
+    }
+    finally {
+        Pop-Location
+    }
+    if ($enumerationExitCode -ne 0) {
         throw 'Could not enumerate the focused Windows curricular edition tests.'
     }
     $parsed = ($json -join [Environment]::NewLine) | ConvertFrom-Json
