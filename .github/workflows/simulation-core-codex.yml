@@ -1,0 +1,77 @@
+name: Codex portable array simulation model (GCC, Clang and MSVC)
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/simulation-core-codex.yml
+      - native/core/simulation.hpp
+      - native/core/simulation.cpp
+      - native/core/simulation_tests.cpp
+      - scripts/curriculum/simulation.py
+      - scripts/curriculum/test_simulation.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  authoring-contracts:
+    name: Authoring and parser contracts (Python)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Read exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate source, scenarios and input contracts
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_simulation.py -v
+
+  portable-model:
+    name: Portable C++ simulation (${{ matrix.compiler }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - name: Read exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build model and exhaustive replay regressions
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          "$CXX" --version
+          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/simulation.cpp native/core/simulation_tests.cpp \
+            -o "${RUNNER_TEMP}/lgaed_simulation_model_tests"
+      - name: Execute model, UTF-8, empty-text, overflow and session checks
+        run: "${RUNNER_TEMP}/lgaed_simulation_model_tests"
+
+  portable-model-msvc:
+    # These portable C++ assertions run on Windows, but do NOT replace
+    # the separately pinned MSVC 14.51/SDK 28000 full Win32 GUI tests.
+    name: Portable C++ simulation (Windows MSVC)
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Read exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Activate Visual C++ on disposable runner
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Build portable model without GUI or pinned native dependencies
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive-
+          /Zc:__cplusplus /utf-8 /I native
+          native\core\simulation.cpp native\core\simulation_tests.cpp
+          /Fe:"%RUNNER_TEMP%\lgaed_simulation_model_tests.exe"
+      - name: Execute the exact portable model regressions on Windows
+        shell: cmd
+        run: '"%RUNNER_TEMP%\lgaed_simulation_model_tests.exe"'
