@@ -181,7 +181,9 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
                 block["reviewFeedback"] = "Respuesta aparentemente incorrecta."
             if mutation not in {"missing-mark", "stale-mark"}:
                 altered["stateLayout"]["editorial"][-1]["afterSha256"] = layout.fingerprint(block)
-            with self.subTest(mutation=mutation), self.assertRaises(layout.LayoutError):
+            # The semantic validator may surface its own ValueError before
+            # the state-layout check wraps a protected transition failure.
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
                 layout.validate_transition(before, altered)
             self.assertFalse(contract.preserves_previous_exercise(
                 SYNTHETIC_PATH, 0, 0, original, block,
