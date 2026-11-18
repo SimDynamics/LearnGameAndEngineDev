@@ -456,8 +456,18 @@ void physical_edition_long_paths(const Fixture& fixture) {
     const auto missing_target = missing.parent_path() / "lesson_inexistente.json";
     require(!fs::exists(state::native_io_path(missing_target), ignored),
         "The missing long-path QA target unexpectedly exists");
-    rejects([&] { windows::validate_course_edition_physical_path(content, missing_target); },
-        "The long-path guard accepted a missing edition resource");
+    bool missing_rejected = false;
+    try { windows::validate_course_edition_physical_path(content, missing_target); }
+    catch (const std::exception& failure) {
+        const std::string_view reason(failure.what());
+        missing_rejected =
+            reason.find("A course-edition resource or directory is unavailable") != reason.npos &&
+            reason.find("Win32 ") != reason.npos &&
+            reason.find("component lesson_inexistente.json") != reason.npos &&
+            reason.find(folder.filename().string()) == reason.npos;
+    }
+    require(missing_rejected,
+        "The long-path guard accepted a missing resource or disclosed the full QA path");
 }
 
 void physical_edition_catalog_alias_rejected(const Fixture& fixture) {
