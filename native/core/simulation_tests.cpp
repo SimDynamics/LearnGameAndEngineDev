@@ -185,6 +185,10 @@ void empty_text_values_and_labels() {
     auto trace = build_simulation_trace(spec);
     check(trace.groups.empty() && trace.frames.size() == 1 && trace.frames.front().maximum == 0 &&
         trace.frames.front().leaders.empty(), "An empty text collection fabricated a group or candidate");
+    const auto no_candidate = simulation_frame_text(spec, trace, trace.frames.front());
+    check(no_candidate.find("Máxima: 0\\nMayores: ninguno\\n") != std::string::npos &&
+        no_candidate.ends_with("Salida:\\n"),
+        "An empty collection must have no candidate, not an empty-string winner");
     spec.values = words({""});
     trace = build_simulation_trace(spec);
     check(trace.groups == std::vector<SimulationGroup>{{0, 1, std::string{}}} &&
