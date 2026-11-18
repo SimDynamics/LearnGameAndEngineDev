@@ -1093,11 +1093,14 @@ void require_physical_course_edition_asset(
     };
     // Checking only 'content' and its descendants misses a reparse point
     // in e.g. the checkout, installation or QA profile above that folder.
-    // Each path component must be physical, including its ancestors.
-    for (auto ancestor = root; !ancestor.empty();) {
+    // Walk real directory components, but stop before the volume's root
+    // spelling. On extended Windows paths, walking parent_path() past that
+    // point can produce a root-name-only path (e.g. \\?\C:) which is not
+    // itself a directory accepted by GetFileAttributesW.
+    for (auto ancestor = root; ancestor.has_relative_path();) {
         physical(ancestor, true);
         const auto parent = ancestor.parent_path();
-        if (parent == ancestor) break;
+        if (parent.empty() || parent == ancestor) break;
         ancestor = parent;
     }
     auto current = root;
