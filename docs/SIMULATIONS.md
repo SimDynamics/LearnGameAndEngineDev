@@ -814,6 +814,20 @@ esa misma procedencia, sin introducir información futura.
 No presenta `end` como un acceso válido, ni afirma que la decisión final
 de un grupo haya leído otro elemento.
 
+Cada paso que cuenta un elemento también explica la **frecuencia actual
+del grupo** mediante los límites de su intervalo: `fin - inicio`.
+Por ejemplo, si el grupo comienza en el índice 1 y el límite exclusivo
+`fin` vale 3, se han contado las posiciones 1 y 2; el panel muestra
+**«Recuento de este grupo: fin exclusivo 3 - inicio 1 = 2 elementos
+contados.»**. Para un único dato utiliza «1 elemento contado». No
+confunde esa cantidad parcial con la longitud completa del array ni
+consulta `datos[fin]`. Un paso inicial, una decisión sobre un grupo
+terminado o el paso final no inventan un recuento adicional. Esta
+explicación calculada aparece también en la región narrable. La
+regresión Win32 `calculated_step_changes` comprueba el singular, plural,
+la edición, las cadenas vacías, los escenarios y la ausencia de
+lecturas futuras; su ejecución nativa sigue pendiente.
+
 Además, muestra la **relación con el elemento anterior**. Para el índice
 cero indica que todavía no existe un elemento previo. En los demás
 índices ya contados presenta los dos índices y sus valores: si coinciden,
