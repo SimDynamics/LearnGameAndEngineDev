@@ -101,8 +101,14 @@ class OptionalOrderSeparatorsTest(unittest.TestCase):
                 for field in ("id", "title", "pages", "stateLayout", "textSemantics",
                               "referenceAfter", "activityAfter", "compilerPuzzlesRequired"):
                     self.assertEqual(baseline.get(field), actual.get(field))
-                old_block = baseline["pages"][page]["blocks"][index]
-                new_block = actual["pages"][page]["blocks"][index]
+                # A later published lesson may add or rearrange content
+                # before the original order puzzle. Coordinates in CASES
+                # identify historical slots; the current owner is its stable
+                # ID, not the old positional page/block pair.
+                old_block = layout._blocks(baseline)[identity]
+                new_block = layout._blocks(actual)[identity]
+                self.assertEqual(old_block["type"], "order_code")
+                self.assertEqual(new_block["type"], "order_code")
                 self.assertEqual(old_block["fragments"], new_block["fragments"])
                 self.assertEqual(old_block["correctOrder"], new_block["correctOrder"])
                 self.assertEqual(layout.state_fingerprint(old_block),
