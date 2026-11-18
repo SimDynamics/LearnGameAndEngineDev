@@ -1531,6 +1531,94 @@ void conditional_assignment_branches() {
             return resultado;
         })cpp",rules,false,
         "A live else branch must not be treated as unconditional harmless code");
+    verify(R"cpp(
+        #include <utility>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            int sustituto = (piezas + 3) / 4;
+            if (piezas > 0) {
+                std::swap(resultado, sustituto);
+            }
+            return resultado;
+        })cpp",rules,false,
+        "A call can replace the result without a visible assignment operator");
+    verify(R"cpp(
+        void reemplazar(int& destino, int valor) { destino = valor; }
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0)
+                reemplazar(resultado, (piezas + 3) / 4);
+            return resultado;
+        })cpp",rules,false,
+        "A user-defined function can mutate a returned alias by reference");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                int& referencia = resultado;
+                referencia = (piezas + 3) / 4;
+            }
+            return resultado;
+        })cpp",rules,false,
+        "A new reference name can overwrite the real result invisibly");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                int* puntero = &resultado;
+                *puntero = (piezas + 3) / 4;
+            }
+            return resultado;
+        })cpp",rules,false,
+        "A pointer to the result is not an inert use");
+    verify(R"cpp(
+        #include <iostream>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                std::cin >> resultado;
+            }
+            return resultado;
+        })cpp",rules,false,
+        "Input extraction can modify the result without a C++ assignment");
+    verify(R"cpp(
+        #include <iostream>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                std::cout << resultado;
+            }
+            return resultado;
+        })cpp",rules,true,
+        "Output insertion that only observes the result stays harmless to source evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                const int vista = (resultado);
+                (void)vista;
+            }
+            return resultado;
+        })cpp",rules,true,
+        "Parenthesized observation of a named result is not a mutable call");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                int resultado = (piezas + 3) / 4;
+                std::swap(resultado, piezas);
+            }
+            return resultado;
+        })cpp",rules,true,
+        "A mutable call affecting a shadow must not erase its outer counterpart");
 }
 
 void separate_rules() {
