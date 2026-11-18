@@ -1067,8 +1067,11 @@ void require_physical_course_edition_asset(
     // The publication gate checks physical files from the repository root.
     // At runtime the content root is the trustworthy boundary we can derive
     // from an authored lesson. Never follow a link/junction below that root.
-    const auto root = content_root.lexically_normal();
-    const auto relative = resource.lexically_normal().lexically_relative(root);
+    // Normalize the full requested paths without resolving filesystem
+    // aliases. An alias above 'content' must not disappear via canonical().
+    const auto root = std::filesystem::absolute(content_root).lexically_normal();
+    const auto target = std::filesystem::absolute(resource).lexically_normal();
+    const auto relative = target.lexically_relative(root);
     require(!relative.empty() && !relative.is_absolute() &&
             relative != std::filesystem::path(L"."),
         "A course-edition resource must be inside its content directory");
@@ -1088,7 +1091,15 @@ void require_physical_course_edition_asset(
         require(((flags & FILE_ATTRIBUTE_DIRECTORY) != 0) == directory,
             "A course-edition resource has an unexpected file type");
     };
-    physical(root, true);
+    // Checking only 'content' and its descendants misses a reparse point
+    // in e.g. the checkout, installation or QA profile above that folder.
+    // Each path component must be physical, including its ancestors.
+    for (auto ancestor = root; !ancestor.empty();) {
+        physical(ancestor, true);
+        const auto parent = ancestor.parent_path();
+        if (parent == ancestor) break;
+        ancestor = parent;
+    }
     auto current = root;
     auto iterator = relative.begin();
     for (; iterator != relative.end(); ++iterator) {
