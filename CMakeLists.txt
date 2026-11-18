@@ -717,6 +717,10 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_course_edition_tests()
     lgaed_add_general_choice_editorial_tests()
     lgaed_add_optional_prose_format_tests()
+    # Local Windows authoring QA compiles only two focused native readers.
+    # Their fixture-producing dependencies are retained by the executables.
+    add_custom_target(lgaed_curriculum_edition_qa
+        DEPENDS lgaed_course_edition_tests lgaed_optional_prose_format_tests)
     lgaed_add_boolean_battery_tests()
     lgaed_add_reduction_tests()
     lgaed_add_integer_battery_tests()
@@ -2078,6 +2082,10 @@ if(BUILD_TESTING)
     set_tests_properties(native.tools_view PROPERTIES TIMEOUT 90)
     lgaed_add_catalog_test()
     lgaed_add_course_edition_tests()
+    # The standard Windows desktop preset uses the same narrow QA target as
+    # ReaderBuild; it must not compile the entire UI or launch the student app.
+    add_custom_target(lgaed_curriculum_edition_qa
+        DEPENDS lgaed_course_edition_tests lgaed_optional_prose_format_tests)
     add_executable(lgaed_catalog_view_tests native/presentation/windows/catalog_view_tests.cpp)
     target_link_libraries(lgaed_catalog_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.catalog_view COMMAND lgaed_catalog_view_tests)
