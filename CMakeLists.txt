@@ -493,8 +493,9 @@ function(lgaed_add_general_choice_editorial_tests)
         "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/general-choice-editorial/u9-reviewed-marked.json")
     set(LGAED_GENERAL_CHOICE_EDITORIAL_QA_UNMARKED_PREVIOUS
         "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/general-choice-editorial/u9-reviewed-new-mark-from-unmarked.json")
-    # All three snapshots share one authenticated historical source. An
-    # editorial correction in the live lesson must not rewrite its QA origin.
+    # Three snapshots use the same pinned published U9 source. The fourth
+    # deliberately removes one prior semantic marker in an isolated QA copy
+    # before authoring a new one; no live curricular asset is rewritten.
     add_custom_command(
         OUTPUT "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL}"
             "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}"
