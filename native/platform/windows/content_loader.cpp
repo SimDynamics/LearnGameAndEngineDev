@@ -425,7 +425,7 @@ void require_formatted_question_semantics(const JsonObject& root,
     const auto nonblank=[](std::string_view value) {
         const auto utf16=key(value);
         return std::ranges::any_of(std::wstring_view(utf16.c_str(),utf16.size()),
-            [](wchar_t c){return !narration_space(c);});
+            [](wchar_t c){return c!=0x85&&!narration_space(c);});
     };
     if(changed_question)
         require(nonblank(text(original,"question"))&&
