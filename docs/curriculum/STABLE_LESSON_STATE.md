@@ -375,9 +375,13 @@ ordinario anterior. La nueva `native.optional_prose_format` genera una
 lección sintética con una predicción de salida y un `drag_fill_code` como
 el de U1L4. Contrasta el formato físico del código, las dos explicaciones
 añadidas con su marcado explícito y la conservación independiente de ambas
-respuestas, sus intentos y sus identidades. En ambos cargadores Windows
-rechaza ocho variantes con marcas ausentes o adulteradas, respuestas cambiadas
-o tokens sustituidos. Se incluye en ReaderBuild y en la construcción completa de
+respuestas y sus identidades. La regresión usa los `slots` JSON que realmente
+guarda `CppFillView`, no `Response.order` (reservado a `order_code`).
+También protege la evaluación de las tres fichas, los distractores, los
+intentos incorrectos revisados, sus metadatos y los logros previos sin
+conceder aciertos nuevos. En ambos cargadores Windows rechaza ocho variantes
+con marcas ausentes o adulteradas, respuestas cambiadas o tokens sustituidos.
+Se incluye en ReaderBuild y en la construcción completa de
 pruebas mediante CTest, sin cambiar recursos curriculares de Work. Estas
 regresiones están **preparadas, no ejecutadas en el PC Windows autorizado**;
 su ejecución allí sigue siendo necesaria para acreditar el resultado.
