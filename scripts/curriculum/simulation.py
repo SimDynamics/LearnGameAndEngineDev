@@ -57,8 +57,8 @@ def _integer(value, minimum, maximum):
             and (type(value) is int or (math.isfinite(value) and value.is_integer())))
 
 
-def validate_template(value, field, maximum):
-    """Accept literal text and named substitutions only, without brace escapes."""
+def validate_template(value, field, maximum, *, counting_explanation=True):
+    """Accept only substitutions meaningful in this phase of the simulation."""
     _text(value, field, maximum)
     position = 0
     while position < len(value):
@@ -66,6 +66,9 @@ def validate_template(value, field, maximum):
             end = value.find("}", position + 1)
             _require(end >= 0 and value[position + 1:end] in TEMPLATE_FIELDS,
                      f"{field} contiene una sustitución no admitida o llaves incompletas")
+            _require(counting_explanation or value[position + 1:end] not in {
+                "countedIndex", "originIndex"},
+                f"{field} no puede usar un índice de elemento recién contado")
             position = end + 1
         else:
             _require(value[position] != "}", f"{field} contiene una llave de cierre sin apertura")
@@ -197,7 +200,8 @@ def validate_contract(block):
              "simulation.explanations requiere exactamente las ocho fases declaradas")
     for name, value in explanations.items():
         validate_template(value, f"simulation.explanations.{name}", 2000)
-    validate_template(spec["outputTemplate"], "simulation.outputTemplate", 256)
+    validate_template(spec["outputTemplate"], "simulation.outputTemplate", 256,
+                      counting_explanation=False)
     _values(spec["values"], spec, "simulation.values")
     scenarios = spec.get("scenarios", [])
     _require(type(scenarios) is list and len(scenarios) <= MAX_SCENARIOS,
