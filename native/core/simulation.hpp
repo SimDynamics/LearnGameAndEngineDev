@@ -110,6 +110,12 @@ void validate_simulation_spec(const SimulationSpec& spec);
 // portable model tests and the Windows dynamic narration panel.
 [[nodiscard]] std::vector<std::string> simulation_count_observation_changes(
     const SimulationTrace& trace, const SimulationFrame& frame);
+// Compare a completed group's frequency against the maximum from BEFORE
+// its decision, not the updated maximum stored in the decision frame.
+// Nondecision phases return no comparison.
+[[nodiscard]] std::string simulation_group_decision_comparison(
+    const SimulationSpec& spec, const SimulationFrame& before,
+    const SimulationFrame& decision);
 [[nodiscard]] std::string simulation_frame_text(const SimulationSpec& spec,
     const SimulationTrace& trace, const SimulationFrame& frame);
 // Lines retain their historical literal meaning and optional final LF/CRLF.
