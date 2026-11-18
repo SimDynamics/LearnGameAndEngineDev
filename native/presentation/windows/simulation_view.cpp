@@ -1039,7 +1039,19 @@ struct SimulationView::Impl {
                 std::string("Datos editables: un texto por línea; los espacios se conservan. Un campo vacío no contiene elementos. Para introducir una cadena vacía, elige Lista entre comillas.");
         set_label(input_label_id,input_help);accessible(item(input_id),input_help);
         SendMessageW(item(input_format_id),CB_SETCURSEL,input_format==SimulationInputFormat::json?1:0,0);
+        // A successfully rendered warning must have the same native
+        // accessible name as the text and reading region. On a valid retry,
+        // clear that name so an earlier error cannot be announced again.
+        const auto previous_error=visible_text.find(error_id);
+        const bool error_changed=previous_error==visible_text.end()||
+            previous_error->second!=error;
         set_label(error_id,error);
+        if(error_changed){
+            if(const auto warning=item(error_id)){
+                accessible(warning,error);
+                NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,warning,OBJID_CLIENT,CHILDID_SELF);
+            }
+        }
         EnableWindow(item(previous_id),stepping()&&position>0);
         EnableWindow(item(next_id),stepping()&&position+1<count());
         EnableWindow(item(reset_id),stepping()&&position>0);
