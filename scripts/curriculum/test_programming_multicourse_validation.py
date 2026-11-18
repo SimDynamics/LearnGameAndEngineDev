@@ -350,6 +350,35 @@ class StructuralCourseFixtures(unittest.TestCase):
                 self.assertIn(self.course_id, output)
                 self.assertNotIn("Traceback", output)
 
+    def test_future_course_rejects_unknown_root_index_metadata(self):
+        # Index roots are native reader contracts too. Unknown fields must
+        # not be silently ignored just because every entry is well formed.
+        for level in ("course", "unit"):
+            with self.subTest(index=level):
+                self.select_course("future_programming_2040")
+                getattr(self, level)["unreviewedMetadata"] = {
+                    "mayGrantCredit": True
+                }
+                self.save()
+                output = self.run_course(reject=True)
+                self.assertIn("índice de " + ("curso" if level == "course" else "unidad"), output)
+                self.assertIn("campos no admitidos", output)
+                self.assertIn(self.course_id, output)
+                self.assertNotIn("Traceback", output)
+
+    def test_future_course_allows_documented_optional_root_fields(self):
+        # The publication gate authenticates the edition descriptor itself;
+        # the structural index still needs to admit its declared envelope.
+        self.select_course("future_programming_2040")
+        self.course["developmentContent"] = False
+        edition = {"version": 1, "courseId": self.course_id,
+                   "locale": "es", "id": "qa", "generation": 1}
+        self.course["courseEdition"] = deepcopy(edition)
+        self.unit["courseEdition"] = deepcopy(edition)
+        self.save()
+        output = self.run_course()
+        self.assertIn(f"Curso {self.course_id}:", output)
+
     def test_new_course_rejects_a_valid_lesson_indexed_from_another_folder(self):
         self.select_course("cpp_language_memory_oop")
         other = deepcopy(self.lesson)
