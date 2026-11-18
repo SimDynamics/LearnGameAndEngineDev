@@ -475,6 +475,38 @@ function(lgaed_add_course_edition_tests)
     set_tests_properties(native.course_edition_authoring PROPERTIES TIMEOUT 30)
 endfunction()
 
+# Real Windows loader QA for a newly authored optional explanation combined
+# with physical C++ spacing. Fixtures are synthetic and live only under the
+# preset build tree. Register the same test in ReaderBuild and full Windows QA.
+function(lgaed_add_optional_prose_format_tests)
+    set(_optional_prose_source
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/optional_prose_format_fixture_source.py")
+    set(_optional_prose_dir
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/optional-prose-format")
+    add_custom_command(
+        OUTPUT "${_optional_prose_dir}/optional-prose.after.json"
+        COMMAND "${Python3_EXECUTABLE}" -B "${_optional_prose_source}"
+            --output-dir "${_optional_prose_dir}"
+        DEPENDS "${_optional_prose_source}"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        COMMENT "Authenticating optional prose and lexical C++ format QA"
+        VERBATIM)
+    add_custom_target(lgaed_optional_prose_format_fixtures
+        DEPENDS "${_optional_prose_dir}/optional-prose.after.json")
+    add_executable(lgaed_optional_prose_format_tests
+        native/platform/windows/optional_prose_format_tests.cpp)
+    target_link_libraries(lgaed_optional_prose_format_tests PRIVATE
+        lgaed_curricular_windows)
+    add_dependencies(lgaed_optional_prose_format_tests
+        lgaed_optional_prose_format_fixtures)
+    add_test(NAME native.optional_prose_format
+        COMMAND lgaed_optional_prose_format_tests "${_optional_prose_dir}")
+    set_tests_properties(native.optional_prose_format
+        PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+endfunction()
+
 # Reuse the same authenticated U9 option revision in the full build and
 # ReaderBuild. The real hidden lesson view does not require audio synthesis.
 function(lgaed_add_general_choice_editorial_tests)
@@ -672,6 +704,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_catalog_test()
     lgaed_add_course_edition_tests()
     lgaed_add_general_choice_editorial_tests()
+    lgaed_add_optional_prose_format_tests()
     lgaed_add_boolean_battery_tests()
     lgaed_add_reduction_tests()
     lgaed_add_integer_battery_tests()
@@ -1636,6 +1669,7 @@ if(BUILD_TESTING)
     add_test(NAME native.u11_consult_choice_revision_view COMMAND lgaed_choice_revision_view_tests --u11-consult)
     set_tests_properties(native.u11_consult_choice_revision_view PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     lgaed_add_general_choice_editorial_tests()
+    lgaed_add_optional_prose_format_tests()
     lgaed_add_boolean_battery_tests()
     lgaed_add_reduction_tests()
     lgaed_add_integer_battery_tests()
