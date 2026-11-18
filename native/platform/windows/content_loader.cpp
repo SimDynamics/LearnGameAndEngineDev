@@ -53,6 +53,14 @@ bool narration_space(wchar_t value) {
         value == 0xa0 || value == 0x1680 || (value >= 0x2000 && value <= 0x200a) ||
         value == 0x2028 || value == 0x2029 || value == 0x202f || value == 0x205f || value == 0x3000;
 }
+bool authored_nonblank(std::string_view source) {
+    // Python's curricular str.strip() additionally treats NEL U+0085 as
+    // whitespace. Keep all authenticated public-prose paths consistent with
+    // the authoring validator, without changing legacy narration trimming.
+    const auto text=key(source);
+    return std::ranges::any_of(std::wstring_view(text.c_str(),text.size()),
+        [](wchar_t c){return c!=0x85&&!narration_space(c);});
+}
 std::optional<std::string> narration_tag(const winrt::hstring& authored) {
     std::wstring_view tag(authored.c_str(), authored.size());
     while (!tag.empty() && narration_space(tag.front())) tag.remove_prefix(1);
@@ -420,21 +428,16 @@ void require_formatted_question_semantics(const JsonObject& root,
         (old_explanation&&text(original,"explanation")!=text(current,"explanation")));
     if(!changed_question&&!changed_explanation)return;
 
-    // Match the Unicode-aware nonblank contract used for other public
-    // authored metadata, including newly added optional explanations.
-    const auto nonblank=[](std::string_view value) {
-        const auto utf16=key(value);
-        return std::ranges::any_of(std::wstring_view(utf16.c_str(),utf16.size()),
-            [](wchar_t c){return c!=0x85&&!narration_space(c);});
-    };
+    // The same Unicode-aware authored-text rule applies to questions and
+    // newly added explanations, including NEL and other space characters.
     if(changed_question)
-        require(nonblank(text(original,"question"))&&
-                nonblank(text(current,"question")),
+        require(authored_nonblank(text(original,"question"))&&
+                authored_nonblank(text(current,"question")),
             "Combined source/question revision needs nonblank public wording");
     if(changed_explanation)
         require(new_explanation&&(!old_explanation||
-                    nonblank(text(original,"explanation")))&&
-                nonblank(text(current,"explanation")),
+                    authored_nonblank(text(original,"explanation")))&&
+                authored_nonblank(text(current,"explanation")),
             "Combined source/explanation revision needs nonblank authored prose");
 
     require(root.HasKey(L"textSemantics"),
@@ -515,14 +518,8 @@ JsonObject general_choice_projection(const JsonObject& current,
     const auto position=integer(revision.GetNamedValue(L"optionIndex"),
         static_cast<std::size_t>(earlier.Size()-1));
     const auto replacement=text(revision,"replacement");
-    // The Python authoring contract rejects Unicode whitespace-only edits.
-    // Narrow ASCII trimming would accept NBSP, em spaces and NEL in Windows.
-    const auto authored=key(replacement);
-    const std::wstring_view letters(authored.c_str(),authored.size());
-    const bool meaningful=std::ranges::any_of(letters,[](wchar_t character) {
-        return character!=0x85&&!narration_space(character);
-    });
-    require(meaningful&&
+    // A choice correction is another authored public-text surface.
+    require(authored_nonblank(replacement)&&
             replacement!=utf8(earlier.GetStringAt(static_cast<unsigned>(position))),
         "A general choice review must revise one nonblank option");
     if(fingerprint(current)==fingerprint(original)) {
@@ -3370,6 +3367,16 @@ void read_text_semantics(const JsonObject& root,Lesson& lesson) {
         auto inventory=public_fields.find(owner);if(inventory==public_fields.end())inventory=public_fields.emplace(owner,
             SemanticPublicFields(JsonObject::Parse(key(at->second->raw_json))).fields).first;
         const auto selected=inventory->second.find(path);require(selected!=inventory->second.end(),"Text semantic path is not a supported public string");
+        // Exercise questions and explanations are never valid as authored
+        // blank passages. This also covers an explanation newly added to a
+        // published drag-fill puzzle WITHOUT a source-format archive.
+        const auto type=at->second->type;
+        const bool ordinary=type==BlockType::multiple_choice||type==BlockType::fill_code||
+            type==BlockType::output_prediction||type==BlockType::order_code||
+            type==BlockType::drag_fill_code||type==BlockType::inline_fill_code;
+        if(ordinary&&(path=="/question"||path=="/explanation"))
+            require(authored_nonblank(selected->second),
+                "Authored ordinary public prose cannot be blank");
         require(at->second->text_semantics.emplace(path,descriptor_for(field,selected->second)).second,"Duplicate text semantic field");
     }
     for(const auto& [identity,inventory]:public_fields){const auto& block=*owners.at(identity);const auto raw=JsonObject::Parse(key(block.raw_json));
