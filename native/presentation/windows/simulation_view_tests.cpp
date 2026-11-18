@@ -3577,7 +3577,7 @@ void scenario_change_is_atomic_after_native_failure(HWND host) {
         spec==authored,
         "A rejected native scenario switch left the previous model or selector inconsistent");
     const auto diagnostic=text(view,error_id);
-    check(diagnostic.find("No se pudo actualizar la simulación.")!=std::string::npos&&
+    check(diagnostic.find("No se pudo cambiar el escenario.")!=std::string::npos&&
         std::ranges::any_of(view.reading_regions(),[&](const auto& region){
             return region.target==GetDlgItem(view.window(),error_id)&&
                 region.source_text==diagnostic;
@@ -3592,6 +3592,75 @@ void scenario_change_is_atomic_after_native_failure(HWND host) {
         "A valid scenario retry retained the rejected model or old output");
 }
 
+
+void scenario_rejection_survives_repeated_native_presentation_failure(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare an applied scenario for repeated native presentation failure");
+    const auto old_step=view.step_index(),old_count=view.step_count();
+    const auto old_output=text(view,output_id);
+    const auto old_input=text(view,input_id);
+    const auto old_array=name(GetDlgItem(view.window(),array_id));
+    const auto old_reading=view.reading_regions()[2].key;
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    const auto warning_control=GetDlgItem(view.window(),error_id);
+    check(selector&&output&&warning_control&&
+        SendMessageW(selector,CB_GETCURSEL,0,0)==0,
+        "Missing scenario selector, output or warning control");
+
+    // Reject the candidate's presentation, then both redraw attempts after
+    // restoring the old trace. The original failure must remain accessible
+    // even when the normal RichEdit error update cannot complete.
+    int failures_left=3;
+    const auto reject_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT {
+        auto& pending=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&pending>0){--pending;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53495346;
+    check(SetWindowSubclass(output,reject_zoom,hook_id,
+        reinterpret_cast<DWORD_PTR>(&failures_left))!=FALSE,
+        "Cannot inject consecutive native scenario presentation failures");
+    struct Unhook {
+        HWND child;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(child))RemoveWindowSubclass(child,callback,id);}
+    } guard{output,reject_zoom,hook_id};
+
+    check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "Cannot select the alternate authored scenario");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    const auto warning=text(view,error_id);
+    check(failures_left==0&&
+        SendMessageW(selector,CB_GETCURSEL,0,0)==0&&
+        warning.find("No se pudo cambiar el escenario.")!=std::string::npos&&
+        warning.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+        warning.find("No se pudo actualizar la simulación.")==std::string::npos&&
+        text(view,input_id)==old_input&&text(view,output_id)==old_output&&
+        name(GetDlgItem(view.window(),array_id))==old_array&&
+        view.step_index()==old_step&&view.step_count()==old_count&&
+        view.reading_regions()[2].key==old_reading&&
+        control_shown(warning_control)&&spec==authored,
+        "Repeated scenario presentation failures masked the source error or changed the applied state");
+    check(name(warning_control)==warning&&
+        std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==warning_control&&region.source_text==warning;
+        }),"Repeated scenario presentation failures lost accessible diagnostic narration");
+
+    // Exhausted faults must not poison a later, legitimate selection.
+    check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "Cannot retry the authored scenario after native failures");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(SendMessageW(selector,CB_GETCURSEL,0,0)==1&&
+        view.step_index()==0&&view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="4:2\n9:2\n"&&spec==authored,
+        "A valid scenario retry failed after repeated native presentation rejections");
+}
 
 void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host,bool silent_rollback=false) {
     auto spec=fixture(SimulationViewMode::walkthrough);
@@ -5664,6 +5733,7 @@ int main(int argc,char** argv)try {
     run("scenario_observer_reentry_keeps_committed_data",[&]{scenario_observer_reentry_keeps_committed_data(host.value);});
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
     run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
+    run("scenario_rejection_survives_repeated_native_presentation_failure",[&]{scenario_rejection_survives_repeated_native_presentation_failure(host.value);});
     run("scenario_change_keeps_origin_error_when_editor_rollback_fails",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value);});
     run("scenario_change_keeps_origin_error_when_rollback_is_silent",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value,true);});
     run("scenario_change_reports_unrecoverable_draft",[&]{scenario_change_reports_unrecoverable_draft(host.value);});
