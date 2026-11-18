@@ -73,6 +73,9 @@ $qaSuiteConfig = switch ($Suite) {
             Targets = @(
                 'lgaed_lesson_reader_tests',
                 'lgaed_lesson_view_tests',
+                'lgaed_code_gutter_wheel_tests',
+                'lgaed_lesson_scroll_tests',
+                'lgaed_diagnostic_path_tests',
                 'lgaed_simulation_tests',
                 'lgaed_simulation_view_tests',
                 'lgaed_simulation_lesson_tests',
@@ -86,12 +89,15 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_code_editor_tests',
                 'lgaed_code_format_compat_tests',
                 'lgaed_cpp_expression_repair_tests',
+                'lgaed_rejection_diagnostic_facts_tests',
                 'lgaed_named_rule_check_tests',
                 'lgaed_named_rule_runtime_tests',
                 'lgaed_cpp_cmake_runner_tests',
                 'lgaed_u3_runtime_semantics_tests',
                 'lgaed_premium_windows_tests',
                 'lgaed_compiler_first_case_view_tests',
+                'lgaed_cpp_history_training_tests',
+                'lgaed_course_edition_tests',
                 'lgaed_semantic_retirement_view_tests',
                 'lgaed_compiler_case_order_view_tests',
                 'lgaed_catalog_tests',
@@ -418,9 +424,74 @@ if ($Suite -eq 'ReaderBuild') {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the focused reader and catalog test registration.' }
     $qaUiListing = ($qaUiListingText -join "`n") | ConvertFrom-Json
     $qaUiNames = @($qaUiListing.tests | ForEach-Object { $_.name })
-    $qaUiExpected = @('native.simulation_model', 'native.simulation_view', 'native.simulation_lesson', 'native.simulation_authoring', 'native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_u3_cmake_structure', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_editor_viewport', 'native.code_editor', 'native.code_format_compat', 'native.cpp_expression_repair', 'native.named_rule_source', 'native.named_rule_runtime', 'native.cpp_cmake_graph', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles', 'native.semantic_retirement_view', 'native.compiler_case_order_view', 'native.compiler_case_revision_view', 'native.catalog', 'native.general_choice_editorial_authoring', 'native.general_choice_editorial', 'native.general_choice_editorial_reader', 'native.boolean_battery', 'native.boolean_battery_runtime', 'native.reduction', 'native.reduction_runtime', 'native.integer_battery', 'native.integer_battery_runtime', 'native.open_battery_runtime', 'native.rich_text_hit_geometry', 'native.lesson_menu', 'native.lesson_scroll_render')
+    # Keep this exact list synchronized with every add_test registered by
+    # LGAED_READER_BUILD_QA_ONLY. New isolated tests cannot silently bypass
+    # the build, and obsolete names cannot masquerade as passing regressions.
+    $qaUiExpected = @(
+        'native.simulation_model',
+        'native.simulation_view',
+        'native.simulation_lesson',
+        'native.simulation_authoring',
+        'native.code_gutter_wheel',
+        'native.reader_interaction',
+        'native.diagnostic_paths',
+        'native.order_equivalence_authoring',
+        'native.ordinary_explanation_authoring',
+        'native.cpp_project_internal_dialogs',
+        'native.cpp_history_training',
+        'native.p2_u3_workflow_authoring',
+        'native.cpp_project_u3_selective_individual',
+        'native.cpp_project_u3_selective_lesson',
+        'native.cpp_project_u3_original_gates',
+        'native.cpp_project_u2_exact_eof',
+        'native.cpp_project_u3_declaration',
+        'native.cpp_project_u3_declared_selective',
+        'native.cpp_project_u3_original_prerequisites',
+        'native.cpp_project_u3_first_cmake',
+        'native.cpp_project_u3_first_cmake_repair',
+        'native.cpp_project_u3_real_history_gate',
+        'native.cpp_project_u3_entire_original',
+        'native.cpp_project_u3_cmake_structure',
+        'native.cpp_project_other_cpp_multicase',
+        'native.order_spacing_contract',
+        'native.order_code_whitespace_view',
+        'native.code_editor_viewport',
+        'native.code_editor',
+        'native.code_format_compat',
+        'native.cpp_expression_repair',
+        'native.rejection_diagnostic_facts',
+        'native.named_rule_source',
+        'native.named_rule_runtime',
+        'native.cpp_cmake_graph',
+        'native.u3_runtime_semantics',
+        'native.premium_windows',
+        'native.compiler_puzzles',
+        'native.semantic_retirement_view',
+        'native.compiler_case_order_view',
+        'native.compiler_case_revision_view',
+        'native.catalog',
+        'native.course_edition',
+        'native.course_edition_authoring',
+        'native.general_choice_editorial_authoring',
+        'native.general_choice_editorial',
+        'native.general_choice_editorial_reader',
+        'native.boolean_battery',
+        'native.boolean_battery_runtime',
+        'native.reduction',
+        'native.reduction_runtime',
+        'native.integer_battery',
+        'native.integer_battery_runtime',
+        'native.open_battery_runtime',
+        'native.rich_text_hit_geometry',
+        'native.lesson_menu',
+        'native.lesson_scroll_render'
+    )
+    $qaUiMissing = @($qaUiExpected | Where-Object { $_ -notin $qaUiNames })
+    $qaUiUnexpected = @($qaUiNames | Where-Object { $_ -notin $qaUiExpected })
     if ($qaUiNames.Count -ne $qaUiExpected.Count -or
-        (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
+        $qaUiMissing.Count -gt 0 -or $qaUiUnexpected.Count -gt 0) {
+        Write-Host ("ReaderBuild missing CTest registrations: " + ($qaUiMissing -join ', '))
+        Write-Host ("ReaderBuild unexpected CTest registrations: " + ($qaUiUnexpected -join ', '))
         throw 'ReaderBuild must register independent native glyph hit geometry, console fullscreen/zoom, menu/scroll, Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery, stateful reduction, integer CMake battery and original open-battery execution regressions.'
     }
     # Obtain CMake structure, U3 semantics and named-rule variation
