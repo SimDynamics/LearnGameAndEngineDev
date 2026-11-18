@@ -18,7 +18,8 @@ using namespace lgaed;
 void require(bool result, std::string_view message) {
     if (!result) throw std::runtime_error(std::string(message));
 }
-void rejected(const std::filesystem::path& file) {
+void rejected(const std::filesystem::path& file,
+              std::string_view expected_reason = {}) {
     // The read-only course-progress loader must reject the same forged
     // semantics and answer changes as the full visible lesson loader.
     for (const bool progress : {false, true}) {
@@ -26,7 +27,12 @@ void rejected(const std::filesystem::path& file) {
         try {
             if (progress) (void)windows::load_lesson_progress_metadata(file, "es");
             else (void)windows::load_lesson(file, "es");
-        } catch (const std::exception&) { failed = true; }
+        } catch (const std::exception& error) {
+            failed = true;
+            require(expected_reason.empty() ||
+                    std::string_view(error.what()).find(expected_reason) != std::string_view::npos,
+                "The Windows loader rejected blank Unicode prose for an unrelated reason");
+        }
         require(failed, "The Windows loader accepted an unproved source/prose revision");
     }
 }
@@ -207,8 +213,12 @@ int main(int argc, char** argv) {
                 "optional-prose.changed-drag-answer.json",
                 "optional-prose.changed-drag-template.json"})
             rejected(dir / filename);
+        rejected(dir / "optional-prose.blank-nel-explanation.json",
+            "Combined source/explanation revision needs nonblank authored prose");
+        rejected(dir / "optional-prose.blank-nel-question.json",
+            "Combined source/question revision needs nonblank public wording");
         std::cout << "PASS optional C++ format/prose and drag-fill: both historical answers, "
-            "two authored semantic markers, native progress and eight forged revisions rejected\n";
+            "two authored semantic markers, native progress and ten forged revisions rejected\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "FAIL optional C++ format/prose: " << error.what() << '\n';
