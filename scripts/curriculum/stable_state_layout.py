@@ -6187,8 +6187,12 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         # This precise gap concerns a newly introduced optional explanation.
         # Existing prose edits have their own curricular checks; requiring
         # their markers here would change the established rejection paths.
-        ordinary_fields = ordinary_editorial_fields(block, actual)
-        if not bibliography_only and "explanation" not in block and "explanation" in ordinary_fields:
+        new_optional = (not bibliography_only and
+                        block.get("type") in ORDINARY_EDITORIAL_TYPES and
+                        "explanation" not in block and "explanation" in actual)
+        if new_optional:
+            require(type(actual["explanation"]) is str and bool(actual["explanation"].strip()),
+                    "An optional explanation must contain nonblank authored prose")
             current_overlay = current.get(text_semantics.ROOT_FIELD) or {}
             current_marks = {(entry["block"], entry["path"]): entry
                              for entry in current_overlay.get("fields", [])}
