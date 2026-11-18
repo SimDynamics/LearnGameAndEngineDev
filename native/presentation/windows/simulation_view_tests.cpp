@@ -1718,6 +1718,15 @@ void calculated_step_changes(HWND host) {
         "The first count lost the value and index actually observed");
     const auto first_key=delta_key(view);
     check(!first_key.empty(),"The current-step changes are missing from narration");
+    const spoken=[&]{
+        for(const auto& region:view.reading_regions())
+            if(region.key.find("/transition")!=std::string::npos)return region.source_text;
+        return std::string{};
+    };
+    check(first.find(
+        "Recuento de este grupo: fin exclusivo 1 - inicio 0 = 1 elemento contado.")!=std::string::npos&&
+        first.find("índice 1 =") == std::string::npos&&spoken()==first,
+        "The first observation did not justify the exclusive bound, or narration diverged");
     check(view.go_to_step(2),"Cannot inspect a completed group decision");
     const auto maximum=text(view,transition_id);
     check(maximum.find("máxima: 0 → 1")!=std::string::npos&&
@@ -1725,6 +1734,8 @@ void calculated_step_changes(HWND host) {
         maximum.find("Salida: +1 línea")!=std::string::npos&&
         maximum.find("10:1")==std::string::npos&&delta_key(view)!=first_key,
         "A decision delta omitted the new maximum or exposed future output");
+    check(maximum.find("Recuento de este grupo:")==std::string::npos,
+        "A group decision pretended to count another element");
     check(maximum.find("Comparación: frecuencia 1 > máxima anterior 0. Nuevo máximo: reemplaza candidatos.")!=std::string::npos&&
         maximum.find("Dato contado:")==std::string::npos,
         "The first decision used a future maximum or incorrectly counted a new element");
@@ -1738,6 +1749,10 @@ void calculated_step_changes(HWND host) {
     check(progress.find("Dato contado: índice 2 = 3")!=std::string::npos&&
         progress.find("Comparación:")==std::string::npos,
         "Jumping to a count used another frame's observed element");
+    check(progress.find(
+        "Recuento de este grupo: fin exclusivo 3 - inicio 1 = 2 elementos contados.")!=std::string::npos&&
+        spoken()==progress,
+        "A repeated value used the overall array length instead of the current group's range");
     check(view.go_to_step(7),"Cannot inspect a later maximum");
     const auto new_max=text(view,transition_id);
     check(new_max.find("máxima: 1 → 4")!=std::string::npos&&
@@ -1747,6 +1762,8 @@ void calculated_step_changes(HWND host) {
         "A later decision changed candidates or accumulated output incorrectly");
     check(new_max.find("Comparación: frecuencia 4 > máxima anterior 1. Nuevo máximo: reemplaza candidatos.")!=std::string::npos,
         "The larger group did not explain its verified strict comparison");
+    check(new_max.find("Recuento de este grupo:")==std::string::npos,
+        "A new-maximum decision counted an element twice");
     check(view.go_to_step(9),"Cannot inspect the losing group");
     const auto below=text(view,transition_id);
     check(below.find("Comparación: frecuencia 1 < máxima anterior 4. No supera el máximo: conserva los candidatos.")!=std::string::npos&&
@@ -1757,6 +1774,8 @@ void calculated_step_changes(HWND host) {
     check(text(view,transition_id).find("frecuencia: 1 → 0")!=std::string::npos&&
         text(view,transition_id).find("Salida:")==std::string::npos,
         "The final frame invented another emitted line");
+    check(text(view,transition_id).find("Recuento de este grupo:")==std::string::npos,
+        "The terminal frame invented another counted element");
     check(view.go_to_step(0)&&!control_shown(delta)&&delta_key(view).empty(),
         "Reset leaked a completed transition to the initial frame");
     check(spec==authored,"Navigating transitions modified the authored lesson");
@@ -1764,11 +1783,15 @@ void calculated_step_changes(HWND host) {
     click(view,apply_id);
     check(!text(view,error_id).empty()&&text(view,transition_id).empty(),
         "Invalid edited data fabricated a transition despite rejection");
+    check(spoken().empty(),"A rejected draft narrated a nonexistent group count");
     set_edit_text(GetDlgItem(view.window(),input_id),"1\n3\n1");
     click(view,apply_id);
     // Sorting produces {1,1,3}: two counted elements precede the decision.
     check(view.go_to_step(3)&&text(view,transition_id).find("mayores: ninguno → 1")!=std::string::npos,
         "The transition still uses the old data after applying a new valid array");
+    check(view.go_to_step(2)&&text(view,transition_id).find(
+        "Recuento de este grupo: fin exclusivo 2 - inicio 0 = 2 elementos contados.")!=std::string::npos,
+        "The edited trace did not recalculate its count from the exclusive bound");
     click(view,restore_id);
     check(view.step_index()==0&&!control_shown(delta)&&
         view.go_to_step(2)&&text(view,transition_id)==maximum,
@@ -1789,6 +1812,7 @@ void calculated_step_changes(HWND host) {
         reinterpret_cast<LPARAM>(scenario));pump();
     check(view.step_count()==1&&text(view,transition_id).empty()&&!control_shown(delta)&&
         delta_key(view).empty(),"An empty scenario retained a previous data transition");
+    check(spoken().empty(),"An empty array invented a narrated frequency computation");
 
     for(const auto mode:{SimulationViewMode::groups,SimulationViewMode::candidates}) {
         auto derived=fixture(mode);derived.editable=false;
@@ -1806,6 +1830,8 @@ void calculated_step_changes(HWND host) {
             next.find("máxima: 1 → 4")!=std::string::npos&&
             next.find("Salida: +1 línea")!=std::string::npos,
             "Group navigation does not compare adjacent completed groups");
+        check(next.find("Recuento de este grupo:")==std::string::npos,
+            "A completed-group-only view invented an intermediate element read");
     }
     for(const auto mode:{SimulationViewMode::array,SimulationViewMode::summary}) {
         auto static_spec=fixture(mode);
@@ -1821,6 +1847,9 @@ void calculated_step_changes(HWND host) {
     check(quoted.go_to_step(1)&&
         text(quoted,transition_id).find("Dato contado: índice 0 = \"\" (cadena vacía)")!=std::string::npos,
         "An empty text value was confused with no observed element");
+    check(text(quoted,transition_id).find(
+        "Recuento de este grupo: fin exclusivo 1 - inicio 0 = 1 elemento contado.")!=std::string::npos,
+        "The empty text element did not count as one real element");
     check(quoted.go_to_step(2)&&
         text(quoted,transition_id).find("mayores: ninguno → \"\" (cadena vacía)")!=std::string::npos,
         "An empty text candidate was confused with no candidate");
@@ -1830,6 +1859,9 @@ void calculated_step_changes(HWND host) {
     check(quoted.go_to_step(5)&&
         text(quoted,transition_id).find("mayores: \"\" (cadena vacía) → \" \" (1 espacio)")!=std::string::npos,
         "Significant spaces were discarded from a candidate change");
+    check(quoted.go_to_step(4)&&text(quoted,transition_id).find(
+        "Recuento de este grupo: fin exclusivo 3 - inicio 1 = 2 elementos contados.")!=std::string::npos,
+        "Two identical space-only text values did not count as two");
 
     auto multiline=fixture(SimulationViewMode::walkthrough);
     multiline.scenarios.clear();multiline.output_template="Valor {value}\nFrecuencia {frequency}";
