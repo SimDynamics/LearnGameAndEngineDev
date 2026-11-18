@@ -80,6 +80,16 @@ inline std::optional<std::size_t> path_end(std::wstring_view line, std::size_t b
     }
     return std::nullopt;
 }
+inline std::optional<std::size_t> msvc_include_begin(std::wstring_view line) {
+    // MSVC /showIncludes has no line:column suffix, unlike source
+    // diagnostics. Recognize only the documented compiler prefix and only
+    // when it begins the line. The owned-root check still applies.
+    // Keep leading spaces and the nested-include indentation untouched.
+    auto begin = skip_spaces(line, 0);
+    constexpr std::wstring_view prefix = L"Note: including file:";
+    if (!line.substr(begin).starts_with(prefix)) return std::nullopt;
+    return skip_spaces(line, begin + prefix.size());
+}
 inline std::size_t path_begin(std::wstring_view line) {
     auto begin = skip_spaces(line, 0);
     const auto body = line.substr(begin);
@@ -146,11 +156,15 @@ inline std::optional<std::size_t> root_length(std::wstring_view path, const std:
         const auto newline = text.find(L'\n', begin);
         const auto end = newline == text.npos ? text.size() : newline;
         const auto line = text.substr(begin, end - begin); // Keep an original CR.
-        const auto first = path_begin(line);
+        const auto include_begin = msvc_include_begin(line);
+        const auto first = include_begin.value_or(path_begin(line));
         const auto root = root_length(line.substr(first), roots);
-        // Most compiler output is message text or a source excerpt. Do not
-        // scan it for coordinates unless its location begins in an owned root.
-        const auto last = root ? path_end(line, first) : std::nullopt;
+        // /showIncludes reports only an absolute include path, without
+        // coordinates. Other compiler/CMake diagnostics still need a real
+        // location suffix. Both paths require the same trusted owned root;
+        // literal source lines and external headers remain unchanged.
+        const auto last = root ? (include_begin ? std::optional<std::size_t>{line.size()}
+                                               : path_end(line, first)) : std::nullopt;
         if (root && last && *last > first + *root + 1) {
             result.append(line.substr(0, first));
             result.append(line.substr(first + *root + 1, *last - first - *root - 1));
