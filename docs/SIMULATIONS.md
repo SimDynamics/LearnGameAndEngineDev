@@ -221,7 +221,13 @@ al recorrido. Si la conversión perdería un dato —por ejemplo, una cadena vac
 al pasar a líneas— o el borrador no es válido, se conserva el texto y el formato
 anterior y se muestra el motivo. El cambio de formato también es transaccional:
 se comprueba que RichEdit haya escrito el contenido convertido y que la vista
-acepte su presentación antes de confirmarlo. Un rechazo silencioso de escritura
+acepte su presentación antes de confirmarlo. Las notificaciones a observadores
+se realizan después: si el formato ya se convirtió y un observador falla, se
+conservan los datos, la selección de formato y cualquier paso anidado válido.
+Si la entrada era inválida, su diagnóstico conserva prioridad aunque también
+falle la notificación. La regresión Win32
+`input_format_callback_failure_keeps_converted_draft` cubre ambos casos.
+Un rechazo silencioso de escritura
 o un fallo tardío de presentación restablecen formato, borrador, selección,
 posición de lectura y ayuda anteriores sin modificar la traza aplicada.
 Si incluso la restauración nativa falla, el motor no afirma que el borrador
@@ -233,8 +239,31 @@ restablecer sus datos, la presencia de una cadena vacía elige **Lista entre
 comillas** para que el dato pueda editarse sin ambigüedad.
 
 **Aplicar datos** y cambiar de escenario son operaciones de reemplazo
-completo, no cambios parciales de la traza. Si el modelo calcula una entrada
-válida, pero un control Win32 rechaza su presentación posterior, se recuperan
+completo, no cambios parciales de la traza. La notificación a observadores
+ocurre después de confirmar el nuevo modelo y la vista Win32. Si un
+observador falla o navega de forma anidada antes de lanzar una excepción,
+el simulador no deshace datos ya aplicados ni el último paso confirmado.
+El aviso accesible identifica un fallo de notificación sin afirmar que
+**Aplicar datos** haya sido rechazado. Si durante esa notificación se genera
+otro diagnóstico, por ejemplo al intentar aplicar un borrador inválido,
+el aviso del observador exterior no lo sustituye. Incluso cuando
+**Aplicar datos** rechaza directamente un borrador, una excepción del
+observador que recibe el diagnóstico no debe ocultar la validación, cambiar
+la traza anterior ni impedir corregir la entrada. La regresión Win32
+`rejected_apply_observer_cannot_hide_input_diagnostic` cubre este caso.
+Si el diagnóstico surge por datos inválidos y RichEdit rechaza mostrarlo,
+se conserva la causa inicial (por ejemplo, un entero fuera de intervalo)
+mediante un aviso Win32 directo. El texto visible y la narración deben
+coincidir; el fallo de presentación sólo se añade como contexto y no
+convierte el rechazo en una ejecución válida. La regresión Windows
+`rejected_apply_preserves_diagnostic_when_richedit_rejects_feedback`
+reproduce ambos errores seguidos y comprueba el reintento con datos corregidos. También se conserva un
+diagnóstico previo del editor al navegar por la simulación. Las regresiones
+`reentrant_invalid_input_outweighs_observer_failure`,
+`applied_data_survive_observer_exception` y
+`scenario_observer_reentry_keeps_committed_data` requieren ejecución Windows.
+
+Si el modelo calcula una entrada válida, pero un control Win32 rechaza su presentación posterior, se recuperan
 los datos anteriormente aplicados, el paso, el selector, las barras, la salida
 y la posición de lectura. El borrador enviado se conserva para corregirlo
 o reintentar, y no se informa de que los datos quedaron aplicados. Si el fallo
@@ -412,8 +441,22 @@ Avanzar, retroceder o saltar a un paso tampoco admite una presentación
 parcial. Si RichEdit rechaza la actualización después de seleccionar otro
 estado, el simulador recupera el paso, la salida, las variables, las barras
 y los puntos de lectura anteriores. Un aviso accesible explica el fallo,
-sin propagar la excepción fuera de los controles Win32. El intento siguiente
-puede avanzar normalmente y retira ese aviso transitorio; si había un
+sin propagar la excepción fuera de los controles Win32. La limpieza de un
+aviso transitorio ocurre antes de notificar a los observadores del modelo:
+si un observador inicia otro paso que falla, la notificación exterior no
+puede borrar el error del intento interior. La regresión Win32
+`reentrant_navigation_keeps_newer_native_error` comprueba esa reentrada.
+La notificación de cambio se realiza fuera de la transacción del paso:
+si un observador externo lanza una excepción, el paso ya calculado no
+retrocede. El aviso accesible distingue el fallo de notificación de un
+error de presentación, y no sustituye un error posterior procedente de
+una navegación anidada. Las pruebas
+`navigation_callback_failure_keeps_committed_steps` y
+`reentrant_success_survives_outer_observer_exception` cubren ambos casos.
+La regresión `navigation_retry_preserves_previous_invalid_draft` verifica
+además que un fallo temporal de navegación no borre el diagnóstico anterior
+de datos editados inválidos cuando el siguiente paso sí se complete.
+El intento siguiente puede avanzar normalmente y retira ese aviso transitorio; si había un
 diagnóstico distinto del editor, vuelve a mostrarlo. La regresión nativa
 `step_navigation_rolls_back_native_presentation_failure` verifica esos
 efectos sin modificar el conjunto de datos aplicado. Requiere Windows.
@@ -490,6 +533,35 @@ instrucciones ni se acredita el ejercicio.
 Nunca se puede pulsar para llegar a un grupo todavía no terminado.
 El clic requiere pulsar y soltar sobre la misma tarjeta, sin arrastrar
 ni usar teclas modificadoras; tampoco se navega por doble clic.
+Los gestos que delega el simulador al lector de la lección se protegen
+en todos sus controles Win32: si falla el observador de un gesto, no se
+acepta por accidente el clic de la celda o la barra y la excepción no
+escapa del procedimiento nativo. El aviso es accesible y no sustituye
+un diagnóstico de datos inválidos que ya estuviera pendiente. La
+regresión `passive_gesture_exceptions_are_isolated` comprueba celdas,
+barras, variables y textos de lectura, además del siguiente clic válido.
+El rechazo de un gesto al presionar o al mover el ratón cancela también
+su pulsación pendiente: soltar el botón después no elige accidentalmente
+una celda ni una barra. La regresión
+`cancelled_passive_gesture_cannot_finish_click` verifica las dos superficies,
+los dos momentos de fallo y que el siguiente clic completo funcione.
+Cuando una devolución del lector aplica otros datos o selecciona otro paso,
+se descarta igualmente el destino del clic original: un evento de ratón
+antiguo no puede imponer una selección sobre una operación más reciente.
+La protección cubre tanto la reentrada durante un único mensaje como
+los cambios independientes que ocurran **entre presionar y soltar**.
+Cada pulsación recuerda la época de interacción en que empezó y no se
+acepta si el simulador ya cambió de estado, aunque el mismo índice o
+tarjeta vuelva a existir después. Una época interna también evita
+reutilizar destinos tras una actualización fallida. Las regresiones Win32
+`reentrant_reader_gesture_does_not_override_newer_selection` e
+`intervening_interaction_cancels_pending_mouse_press` comprueban
+navegación anidada, pasos intermedios, Aplicar datos y clics posteriores.
+La reorganización visual también cancela las pulsaciones en ambas superficies:
+si cambia el ancho de la ventana o la escala y después se suelta el ratón,
+no se selecciona una tarjeta antigua, aunque el ancho vuelva al inicial.
+La regresión Win32 `layout_reflow_cancels_pending_histogram_and_array_click`
+comprueba los dos controles y que sigan admitiendo clics nuevos.
 Los espacios entre tarjetas y las áreas ocultas tras el desplazamiento
 no son destinos. El puntero indica cuándo una tarjeta es seleccionable.
 El selector de pasos, los botones de decisión y las casillas del array
@@ -513,6 +585,15 @@ Las barras utilizan como escala vertical la mayor frecuencia entre los
 relativa cuando un grupo posterior alcanza un máximo mayor: no cambió la
 frecuencia original, cambió la escala de comparación conocida hasta entonces.
 La escala se identifica en el título del diagrama.
+
+Cambiar entre **Todos los grupos** y **Sólo candidatos** también constituye
+una operación completa de presentación. Si RichEdit rechaza un cambio
+tardío, el filtro, el rótulo, el desplazamiento y la identidad de narración
+recuperan el modo anterior; no se altera el paso ni la traza aplicada.
+Si el observador falla después de un cambio válido, el filtro queda activo
+y se muestra un aviso de notificación separado del error de presentación.
+La regresión Win32 `candidate_filter_rejects_native_and_observer_failures`
+comprueba el rechazo, la recuperación y los reintentos.
 
 Cuando existen grupos terminados con frecuencia inferior al máximo actual,
 el botón **Mostrar solo candidatos** permite filtrar el diagrama para

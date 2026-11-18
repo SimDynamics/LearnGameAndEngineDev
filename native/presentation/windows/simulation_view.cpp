@@ -142,6 +142,9 @@ struct SimulationView::Impl {
     std::vector<HWND> group_buttons;
     std::vector<RECT> cell_rects;
     std::optional<std::size_t> pressed_target,pressed_frequency_group;
+    // Record the interaction at mouse-down, not only the gesture callback's
+    // message. An intervening keyboard/button action can supersede a press.
+    std::uint64_t pressed_target_epoch=0,pressed_frequency_epoch=0;
     POINT pressed_at{},frequency_pressed_at{};
     struct Marker {RECT bounds;std::string text;POINT tip;};
     std::vector<Marker> markers;
@@ -163,6 +166,8 @@ struct SimulationView::Impl {
     std::size_t fonts_revision=0;
     std::map<int,int> requested_heights;
     std::size_t position=0,scenario=0;
+    // A reentrant reader action supersedes the target of an older mouse gesture.
+    std::uint64_t interaction_epoch=0;
     SimulationInputFormat input_format=SimulationInputFormat::lines;
     int width=1,height=1,scale=100,canvas_height=1;
     int frequency_scroll=0,frequency_total_height=0;
@@ -1048,6 +1053,49 @@ struct SimulationView::Impl {
         if(initializing)return;const auto life=alive;const auto layout=callbacks.layout_changed,changed=callbacks.changed;
         if(layout)layout();if(*life&&changed)changed();
     }
+    // A changed/layout observer is external code. A failure in it does not
+    // invalidate an already updated frame; it must not trigger a model rollback.
+    // Do not hide a newer native error created by a reentrant notification.
+    void report_committed_notification_failure(
+            std::string_view context,std::string_view message) noexcept {
+        // A nested editor action can publish a newer invalid-data diagnosis
+        // without using navigation_error. Nor should an observer failure
+        // mask a preexisting rejected draft. Preserve ANY visible diagnosis;
+        // only publish the callback warning when no earlier or newer error
+        // currently needs the learner's attention.
+        if(!navigation_error.empty()||!error.empty())return;
+        try{
+            previous_navigation_error=error;
+            report_native_error(context,message);
+            navigation_error=error;
+        }catch(...){
+            OutputDebugStringW(L"No se pudo registrar el fallo del observador de simulación.\n");
+        }
+    }
+    // Reader gestures run inside child Win32 window procedures. Never let
+    // an external callback exception cross that ABI boundary or accidentally
+    // turn a failed drag/pan into a click that navigates the simulation.
+    struct PassiveGestureDispatch {
+        std::optional<LRESULT> handled;
+        bool failed=false,owner_gone=false;
+    };
+    PassiveGestureDispatch dispatch_passive_gesture(
+            HWND child,UINT message,WPARAM wp,LPARAM lp) noexcept {
+        if(!callbacks.passive_gesture||!passive_message(message))return {};
+        const auto life=alive;
+        try{
+            const auto handled=callbacks.passive_gesture(child,message,wp,lp);
+            return {handled,false,!*life};
+        }catch(const std::exception& failure){
+            if(*life&&message!=WM_NCDESTROY)report_committed_notification_failure(
+                "No se pudo procesar el gesto de la simulación. ",failure.what());
+        }catch(...){
+            if(*life&&message!=WM_NCDESTROY)report_committed_notification_failure(
+                "No se pudo procesar el gesto de la simulación. ",
+                "Excepción no identificada del lector.");
+        }
+        return {{},true,!*life};
+    }
     // A direct step/decision selection should reveal its actual completed
     // group, even after the learner has scrolled to an unrelated histogram
     // row. Sequential Next/Previous keeps manual scrolling independent.
@@ -1069,6 +1117,7 @@ struct SimulationView::Impl {
     }
     bool go(std::size_t next,bool reveal_decision=false) {
         if(next>=count())return false;
+        ++interaction_epoch;
         if(next==position){
             if(reveal_decision)reveal_current_histogram_decision();
             return true;
@@ -1114,9 +1163,13 @@ struct SimulationView::Impl {
                     frequency_total_height)
                 scroll_frequencies(frequency_total_height);
             if(reveal_decision)reveal_current_histogram_decision();
-            publish();
+            // publish() invokes arbitrary client callbacks, which may
+            // reenter go() and register a NEW navigation failure. Clear only
+            // this successful attempt's transient notice BEFORE publishing;
+            // otherwise the outer frame would erase the nested failure.
+            // A callback may also destroy the view: never access members
+            // after publish returns.
             navigation_error.clear();previous_navigation_error.clear();
-            return true;
         }catch(const std::exception& failure){
             // RichEdit may have already streamed the next step's output.
             // Do not commit a half-presented frame or let its exception cross
@@ -1143,6 +1196,19 @@ struct SimulationView::Impl {
             }
             return false;
         }
+        // Native presentation has committed. A later observer exception
+        // must not roll back this step (or a successful nested step). Both
+        // changed and layout_changed callbacks can run arbitrary client code.
+        const auto life=alive;
+        try{publish();}
+        catch(const std::exception& failure){
+            if(*life)report_committed_notification_failure(
+                "No se pudo notificar el cambio de paso. ",failure.what());
+        }catch(...){
+            if(*life)report_committed_notification_failure(
+                "No se pudo notificar el cambio de paso. ","Excepción no identificada del observador.");
+        }
+        return true;
     }
     const std::vector<SimulationValue>& original_data()const{return scenario?spec.scenarios.at(scenario-1).values:spec.values;}
     // Recovery uses the historical text-stream route first. If a native
@@ -1174,7 +1240,70 @@ struct SimulationView::Impl {
         OutputDebugStringW(L"No se pudo restaurar el texto del editor tras un fallo nativo.\n");
         return false;
     }
+    void toggle_frequency_filter() {
+        if(!completed_groups())return;
+        ++interaction_epoch;
+        const auto old_mode=frequency_candidates_only;
+        const auto old_scroll=frequency_scroll,old_height=frequency_total_height;
+        const auto old_wheel=frequency_wheel_remainder;
+        const auto old_pressed=pressed_frequency_group;
+        const auto old_error=error,old_navigation=navigation_error;
+        const auto old_previous_navigation=previous_navigation_error;
+        const auto output_anchor=capture_output_reading_anchor();
+        const auto source_anchor=capture_output_reading_anchor(original_order_id);
+        const auto chart_anchor=capture_histogram_anchor();
+        try {
+            frequency_candidates_only=!old_mode;
+            frequency_wheel_remainder=0;frequency_scroll=0;
+            pressed_frequency_group.reset();
+            // A successful independent filter change dismisses only the
+            // previous transient native warning, not an invalid edit.
+            if(!navigation_error.empty()&&error==navigation_error)
+                error=previous_navigation_error;
+            navigation_error.clear();previous_navigation_error.clear();
+            update();
+        }catch(const std::exception& failure){
+            // The filter belongs to this reading session, not to the core
+            // trace. A late RichEdit/layout error cannot leave mixed modes.
+            const auto reason=std::string(failure.what());
+            frequency_candidates_only=old_mode;
+            frequency_scroll=old_scroll;frequency_total_height=old_height;
+            frequency_wheel_remainder=old_wheel;
+            pressed_frequency_group=old_pressed;
+            error=old_error;navigation_error=old_navigation;
+            previous_navigation_error=old_previous_navigation;
+            try {
+                update();
+                restore_output_reading_anchor(output_anchor);
+                restore_output_reading_anchor(source_anchor,original_order_id);
+                restore_histogram_anchor(chart_anchor);
+            }catch(...){
+                OutputDebugStringW(L"No se pudo reconstruir el filtro anterior de frecuencias.\n");
+            }
+            previous_navigation_error=old_navigation.empty()||old_error!=old_navigation?
+                old_error:old_previous_navigation;
+            report_native_error("No se pudo cambiar el filtro de frecuencias. ",reason);
+            navigation_error=error;
+            try{publish();}catch(...){
+                OutputDebugStringW(L"No se pudo notificar el fallo del filtro de frecuencias.\n");
+            }
+            return;
+        }
+        // The filter and its accessible narration are committed. Client
+        // callbacks can reenter or throw, but must never revert this choice.
+        const auto life=alive;
+        try{publish();}
+        catch(const std::exception& failure){
+            if(*life)report_committed_notification_failure(
+                "Filtro actualizado; falló la notificación del cambio. ",failure.what());
+        }catch(...){
+            if(*life)report_committed_notification_failure(
+                "Filtro actualizado; falló la notificación del cambio. ",
+                "Excepción no identificada del observador.");
+        }
+    }
     void replace_trace(SimulationTrace candidate,bool replace_editor) {
+        ++interaction_epoch;
         // Only fully validated traces reach this commit point. In particular,
         // parsed editor input already had its expansion checked by the core.
         auto next_source_positions=stable_source_positions(candidate);
@@ -1211,6 +1340,8 @@ struct SimulationView::Impl {
         const auto previous_format=input_format;
         auto previous_identity=std::move(input_key);
         auto previous_error=std::move(error);
+        auto previous_navigation=std::move(navigation_error);
+        auto previous_navigation_previous=std::move(previous_navigation_error);
         auto previous_output_key=std::move(output_model_key);
         auto previous_original_key=std::move(original_order_model_key);
         auto previous_trace=std::move(trace);
@@ -1224,6 +1355,9 @@ struct SimulationView::Impl {
             pressed_frequency_group.reset();
             ++applied_revision;
             input_key=std::move(identity);position=0;error.clear();
+            // An accepted data set begins a new model/reading session.
+            // Historical step-navigation errors no longer describe it.
+            navigation_error.clear();previous_navigation_error.clear();
             if(replacement){
                 input_format=next_format;
                 set_edit_text(item(input_id),*replacement);
@@ -1233,13 +1367,15 @@ struct SimulationView::Impl {
                 if(edit_text(item(input_id))!=*replacement)
                     throw std::runtime_error("RichEdit no conservó los datos del escenario.");
             }
-            rebuild_groups();rebuild_steps();update();publish();
+            rebuild_groups();rebuild_steps();update();
         }catch(...){
             // Restore the real applied trace and active reading session before
             // the caller reports failure. Invalid drafts never replace this.
             const auto failure=std::current_exception();
             trace=std::move(previous_trace);source_positions=std::move(previous_positions);
             input_key=std::move(previous_identity);error=std::move(previous_error);
+            navigation_error=std::move(previous_navigation);
+            previous_navigation_error=std::move(previous_navigation_previous);
             output_model_key=std::move(previous_output_key);
             original_order_model_key=std::move(previous_original_key);
             position=previous_position;applied_revision=previous_revision;
@@ -1282,27 +1418,65 @@ struct SimulationView::Impl {
             }
             std::rethrow_exception(failure);
         }
+        // The new trace is now committed. Notifications may reenter this view,
+        // select another step or even destroy it. A thrown observer exception
+        // must not roll back the trace or make Apply claim it was rejected.
+        const auto life=alive;
+        try{publish();}
+        catch(const std::exception& failure){
+            if(*life)report_committed_notification_failure(
+                "Datos aplicados; falló la notificación del cambio. ",failure.what());
+        }catch(...){
+            if(*life)report_committed_notification_failure(
+                "Datos aplicados; falló la notificación del cambio. ",
+                "Excepción no identificada del observador.");
+        }
     }
     void replace_data(std::vector<SimulationValue> values,bool replace_editor) {
         replace_trace(build_simulation_trace(spec,std::move(values)),replace_editor);
     }
     void apply_input() {
+        // A rejected draft also supersedes an in-flight mouse gesture.
+        ++interaction_epoch;
         try {
             // Parsing already builds and validates every frame. Reuse it,
             // rather than computing all authored scenarios and the edit twice.
             auto candidate=simulation_parse_input_trace(spec,edit_text(item(input_id)),input_format);
             replace_trace(std::move(candidate),false);
         }catch(const std::exception& failure){
-            error=std::string("No se aplicaron los datos. ")+failure.what();update();publish();
+            // Parsing or native presentation rejected the candidate. Keep the
+            // originating diagnostic even when a second RichEdit operation
+            // refuses to render its feedback. In particular, the parent
+            // WndProc must not replace it with a generic update failure.
+            const auto diagnostic=std::string("No se aplicaron los datos. ")+failure.what();
+            error=diagnostic;
+            try{
+                update();
+            }catch(const std::exception& presentation){
+                report_native_error("",diagnostic+
+                    " No se pudo presentar el aviso con RichEdit: "+presentation.what());
+            }catch(...){
+                report_native_error("",diagnostic+
+                    " No se pudo presentar el aviso con los controles de Windows.");
+            }
+            // A rejected input cannot become applied merely because a
+            // listener throws while hearing the error notification.
+            try{publish();}
+            catch(...){
+                OutputDebugStringW(L"Falló una notificación tras rechazar los datos de simulación.\n");
+            }
         }
     }
     void change_input_format(SimulationInputFormat requested) {
         if(requested==input_format)return;
+        ++interaction_epoch;
         // A format change edits only a pending draft. The applied simulation
         // trace, traversal step and previous reading sessions never change.
         const auto editor=item(input_id);
         const auto previous_format=input_format;
         const auto previous_wheel=input_wheel_delta;
+        const auto previous_navigation=navigation_error;
+        const auto previous_navigation_previous=previous_navigation_error;
         const auto reading=capture_output_reading_anchor(input_id);
         std::optional<std::string> previous_text;
         try {
@@ -1315,10 +1489,16 @@ struct SimulationView::Impl {
             if(edit_text(editor)!=converted)
                 throw std::runtime_error("RichEdit no conservó el formato solicitado.");
             input_format=requested;input_wheel_delta=0;error.clear();
-            update();publish();
+            // The changed help and native selector must be presented before
+            // a format conversion can be committed. Observer callbacks are
+            // deliberately excluded from this rollback boundary.
+            navigation_error.clear();previous_navigation_error.clear();
+            update();
         }catch(const std::exception& failure){
             const auto reason=std::string(failure.what());
             input_format=previous_format;input_wheel_delta=previous_wheel;
+            navigation_error=previous_navigation;
+            previous_navigation_error=previous_navigation_previous;
             bool restored=previous_text.has_value();
             if(previous_text){
                 bool unchanged=false;
@@ -1339,7 +1519,25 @@ struct SimulationView::Impl {
                 error="No se cambió el formato; se conservaron los datos escritos. "+reason;
             update();
             restore_output_reading_anchor(reading,input_id);
-            publish();
+            // Even a throwing observer must not overwrite the meaningful
+            // conversion error which the learner needs to correct.
+            try{publish();}catch(...){
+                OutputDebugStringW(L"Falló una notificación tras rechazar el cambio de formato.\n");
+            }
+            return;
+        }
+        // At this point the converted draft and help are already committed.
+        // A listener can navigate again or throw, but neither action may
+        // roll back the accepted input format.
+        const auto life=alive;
+        try{publish();}
+        catch(const std::exception& failure){
+            if(*life)report_committed_notification_failure(
+                "Formato convertido; falló la notificación del cambio. ",failure.what());
+        }catch(...){
+            if(*life)report_committed_notification_failure(
+                "Formato convertido; falló la notificación del cambio. ",
+                "Excepción no identificada del observador.");
         }
     }
     int measure(std::string_view text,int available,HFONT selected=nullptr)const {
@@ -1350,7 +1548,7 @@ struct SimulationView::Impl {
         return std::max(sp(22),static_cast<int>(box.bottom-box.top))+sp(8);
     }
     int array_layout(int available) {
-        pressed_target.reset();cell_rects.clear();markers.clear();limit_text.clear();limit_bounds={};
+        cell_rects.clear();markers.clear();limit_text.clear();limit_bounds={};
         const bool pointer=spec.view==SimulationViewMode::groups||stepping();
         const auto& state=frame();
         const auto marker_text=[&](std::size_t index){std::string result;
@@ -1476,6 +1674,12 @@ struct SimulationView::Impl {
     int arrange(int requested,bool move) {
         if(arranging||!host)return height;arranging=true;
         struct Guard{bool& value;~Guard(){value=false;}} guard{arranging};
+        // Reflow invalidates hit-test geometry for BOTH interactive canvases.
+        // The array already cancelled a pending press in array_layout(), but
+        // the histogram kept its old group until the next mouse-up. Cancel
+        // both before controls are moved or their scrollbars are recomputed.
+        pressed_target.reset();
+        pressed_frequency_group.reset();
         layout_valid=false;
         width=std::max(1,requested);const auto margin=std::min(px(16),std::max(0,(width-1)/4));
         const auto available=std::max(1,width-2*margin);int top=px(16);
@@ -1864,11 +2068,7 @@ struct SimulationView::Impl {
         if(id==previous_id){if(position)go(position-1);}
         else if(id==next_id)go(position+1);
         else if(id==reset_id)go(0);
-        else if(id==frequency_filter_id&&completed_groups()){
-            frequency_candidates_only=!frequency_candidates_only;
-            frequency_wheel_remainder=0;
-            frequency_scroll=0;pressed_frequency_group.reset();update();publish();
-        }
+        else if(id==frequency_filter_id&&completed_groups())toggle_frequency_filter();
         else if(id==previous_decision_id){if(const auto target=previous_decision())go(*target,true);}
         else if(id==next_decision_id){if(const auto target=next_decision())go(*target,true);}
         else if(id==apply_id&&spec.editable)apply_input();
@@ -1914,8 +2114,9 @@ struct SimulationView::Impl {
             const auto flags=DefSubclassProc(item,message,wp,lp);
             if(key&&key->message==WM_KEYDOWN&&key->wParam==VK_TAB)return flags&~(DLGC_WANTTAB|DLGC_WANTALLKEYS);
             return flags;}
-        if(self->callbacks.passive_gesture&&passive_message(message)){
-            const auto handled=self->callbacks.passive_gesture(item,message,wp,lp);if(handled&&message!=WM_NCDESTROY)return *handled;}
+        const auto gesture=self->dispatch_passive_gesture(item,message,wp,lp);
+        if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY)return 0;
+        if(gesture.handled&&message!=WM_NCDESTROY)return *gesture.handled;
         if(message==WM_MOUSEWHEEL){
             // The parent's reader owns Ctrl+wheel. Ordinary wheel moves
             // scrollable read-only text only until its actual upper/lower
@@ -1953,6 +2154,7 @@ struct SimulationView::Impl {
             if(!(wp&(MK_SHIFT|MK_CONTROL|MK_RBUTTON|MK_MBUTTON))){
                 self->pressed_at={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
                 self->pressed_target=self->target_at(self->pressed_at);
+                self->pressed_target_epoch=self->interaction_epoch;
             }
         }else if(message==WM_MOUSEMOVE&&self->pressed_target){
             if(!(wp&MK_LBUTTON)||std::abs(GET_X_LPARAM(lp)-self->pressed_at.x)>self->px(8)||
@@ -1962,19 +2164,33 @@ struct SimulationView::Impl {
         std::optional<std::size_t> clicked_target;
         if(message==WM_LBUTTONUP){
             const POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
-            if(self->pressed_target&&!(wp&(MK_SHIFT|MK_CONTROL))&&
+            if(self->pressed_target&&
+                self->pressed_target_epoch==self->interaction_epoch&&
+                !(wp&(MK_SHIFT|MK_CONTROL))&&
                 self->target_at(point)==self->pressed_target&&
                 std::abs(point.x-self->pressed_at.x)<=self->px(8)&&
                 std::abs(point.y-self->pressed_at.y)<=self->px(8))clicked_target=self->pressed_target;
             self->pressed_target.reset();
         }
-        std::optional<LRESULT> handled;
-        if(self->callbacks.passive_gesture&&passive_message(message))
-            handled=self->callbacks.passive_gesture(item,message,wp,lp);
+        const auto press_epoch=self->interaction_epoch;
+        const auto gesture=self->dispatch_passive_gesture(item,message,wp,lp);
+        if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY){
+            // The callback can fail on DOWN or MOVE. Without cancelling
+            // the pending press, a later successful UP on the same cell
+            // would navigate despite the failed gesture.
+            if(!gesture.owner_gone)self->pressed_target.reset();
+            return 0;
+        }
+        if(message!=WM_NCDESTROY&&press_epoch!=self->interaction_epoch){
+            // A reentrant reader action superseded this mouse press.
+            // Its older cell target must not override the newer decision.
+            self->pressed_target.reset();
+            return 0;
+        }
         if(clicked_target&&*clicked_target<self->count()){
             self->go(*clicked_target);return 0;
         }
-        if(handled&&message!=WM_NCDESTROY)return *handled;
+        if(gesture.handled&&message!=WM_NCDESTROY)return *gesture.handled;
         if(message==WM_SETCURSOR&&LOWORD(lp)==HTCLIENT){
             POINT point{};
             if(GetCursorPos(&point)&&ScreenToClient(item,&point)&&self->target_at(point)){
@@ -2006,6 +2222,7 @@ struct SimulationView::Impl {
             if(!(wp&(MK_SHIFT|MK_CONTROL|MK_RBUTTON|MK_MBUTTON))){
                 self->frequency_pressed_at={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
                 self->pressed_frequency_group=self->frequency_target_at(self->frequency_pressed_at);
+                self->pressed_frequency_epoch=self->interaction_epoch;
             }
         }else if(message==WM_MOUSEMOVE&&self->pressed_frequency_group){
             if(!(wp&MK_LBUTTON)||
@@ -2018,23 +2235,35 @@ struct SimulationView::Impl {
         std::optional<std::size_t> clicked_group;
         if(message==WM_LBUTTONUP){
             const POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
-            if(self->pressed_frequency_group&&!(wp&(MK_SHIFT|MK_CONTROL))&&
+            if(self->pressed_frequency_group&&
+                    self->pressed_frequency_epoch==self->interaction_epoch&&
+                    !(wp&(MK_SHIFT|MK_CONTROL))&&
                     self->frequency_target_at(point)==self->pressed_frequency_group&&
                     std::abs(point.x-self->frequency_pressed_at.x)<=self->px(8)&&
                     std::abs(point.y-self->frequency_pressed_at.y)<=self->px(8))
                 clicked_group=self->pressed_frequency_group;
             self->pressed_frequency_group.reset();
         }
-        std::optional<LRESULT> handled;
-        if(self->callbacks.passive_gesture&&passive_message(message))
-            handled=self->callbacks.passive_gesture(item,message,wp,lp);
+        const auto press_epoch=self->interaction_epoch;
+        const auto gesture=self->dispatch_passive_gesture(item,message,wp,lp);
+        if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY){
+            // Reject the complete press sequence, not just this message.
+            // A later UP cannot select a card from a failed DOWN or MOVE.
+            if(!gesture.owner_gone)self->pressed_frequency_group.reset();
+            return 0;
+        }
+        if(message!=WM_NCDESTROY&&press_epoch!=self->interaction_epoch){
+            // The group's prior card index belongs to an older interaction.
+            self->pressed_frequency_group.reset();
+            return 0;
+        }
         if(clicked_group){
             const auto destination=self->spec.view==SimulationViewMode::walkthrough?
                 self->trace.candidate_frames.at(*clicked_group):*clicked_group;
             self->go(destination);
             return 0;
         }
-        if(handled&&message!=WM_NCDESTROY)return *handled;
+        if(gesture.handled&&message!=WM_NCDESTROY)return *gesture.handled;
         if(message==WM_SETCURSOR&&LOWORD(lp)==HTCLIENT){
             POINT point{};
             if(GetCursorPos(&point)&&ScreenToClient(item,&point)&&
@@ -2103,8 +2332,9 @@ struct SimulationView::Impl {
         auto* self=reinterpret_cast<Impl*>(GetWindowLongPtrW(item,GWLP_USERDATA));
         if(message==WM_NCCREATE){self=static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(item,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
         if(!self)return DefWindowProcW(item,message,wp,lp);
-        if(self->callbacks.passive_gesture&&passive_message(message)){
-            const auto handled=self->callbacks.passive_gesture(item,message,wp,lp);if(handled&&message!=WM_NCDESTROY)return *handled;}
+        const auto gesture=self->dispatch_passive_gesture(item,message,wp,lp);
+        if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY)return 0;
+        if(gesture.handled&&message!=WM_NCDESTROY)return *gesture.handled;
         if(message==WM_PAINT){PAINTSTRUCT paint{};const auto dc=BeginPaint(item,&paint);self->paint_statistics(item,dc);EndPaint(item,&paint);return 0;}
         if(message==WM_PRINTCLIENT){self->paint_statistics(item,reinterpret_cast<HDC>(wp));return 0;}
         if(message==WM_ERASEBKGND)return 1;

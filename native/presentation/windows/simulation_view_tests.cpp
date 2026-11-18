@@ -502,6 +502,337 @@ void current_frequency_decision(HWND host,const std::filesystem::path& captures)
         "A static summary invented a current per-group decision");
     check(spec==authored,"Marking the current group modified authored data");
 }
+void layout_reflow_cancels_pending_histogram_and_array_click(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,850);
+    check(view.go_to_step(7),"Cannot prepare a completed-group view for interrupted reflow");
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    const auto canvas=GetDlgItem(view.window(),array_id);
+    check(chart&&canvas,"Missing interactive simulation surfaces");
+    const auto output_before=text(view,output_id);
+    const auto array_before=name(canvas);
+    const auto reading_before=view.reading_regions()[2].key;
+    const auto initial_count=view.step_count();
+    const auto center=[](RECT box) {
+        const POINT pt{(box.left+box.right)/2,(box.top+box.bottom)/2};
+        check(PtInRect(&box,pt),"No clickable interior for reflow test");
+        return pt;
+    };
+    const auto press=[](HWND window,POINT pt){
+        SendMessageW(window,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(pt.x,pt.y));
+    };
+    const auto release=[](HWND window,POINT pt){
+        SendMessageW(window,WM_LBUTTONUP,0,MAKELPARAM(pt.x,pt.y));
+    };
+    const auto assert_untouched=[&](const char* why){
+        check(view.step_index()==7&&view.step_count()==initial_count&&
+            text(view,output_id)==output_before&&name(canvas)==array_before&&
+            view.reading_regions()[2].key==reading_before&&
+            text(view,error_id).empty()&&spec==authored,why);
+    };
+
+    // The original screen coordinates become valid again after restoring
+    // the same width. Without cancelling the chart press on the intervening
+    // reflow, a later mouse-up wrongly navigates to that old group.
+    const auto first_card=view.frequency_card_bounds_in_canvas(0);
+    check(first_card.has_value(),"Missing visible completed chart card");
+    const auto chart_point=center(*first_card);
+    press(chart,chart_point);
+    resize(view,340);
+    resize(view,850);
+    release(chart,chart_point);pump();
+    assert_untouched("A chart mouse-up completed a press from before responsive reflow");
+
+    // Source cells must obey the identical rule, including when a font
+    // scale change triggers a redraw at the original host width.
+    const auto first_cell=view.cell_bounds_in_canvas(0);
+    check(first_cell.has_value(),"Missing clickable array cell");
+    const auto cell_point=center(*first_cell);
+    press(canvas,cell_point);
+    view.set_text_scale(140);resize(view,850);
+    view.set_text_scale(100);resize(view,850);
+    release(canvas,cell_point);pump();
+    assert_untouched("An array mouse-up completed a press from before a font reflow");
+
+    // Explicit new presses remain valid. The cancellation must not disable
+    // the chart or array navigation of the calculated trace.
+    click_frequency_card(view,0);
+    check(view.step_index()==2&&text(view,output_id)=="-8:1\n",
+        "Cancelling the old chart press blocked a new complete chart click");
+    check(view.go_to_step(7),"Cannot return to the original frame for the array click");
+    click_array_cell(view,0);
+    check(view.step_index()==1&&text(view,output_id).empty()&&
+        text(view,error_id).empty()&&spec==authored,
+        "Cancelling an old array press blocked a new complete array click");
+}
+
+void intervening_interaction_cancels_pending_mouse_press(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,850);
+    check(view.go_to_step(7),"Cannot prepare the histogram before an interrupted press");
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    const auto array=GetDlgItem(view.window(),array_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(chart&&array&&editor,"Missing native chart, array, or editor");
+    const auto center=[](RECT box) {
+        const POINT pt{(box.left+box.right)/2,(box.top+box.bottom)/2};
+        check(PtInRect(&box,pt),"The target has no clickable interior");
+        return pt;
+    };
+    const auto press=[](HWND control,POINT pt) {
+        SendMessageW(control,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(pt.x,pt.y));
+    };
+    const auto release=[](HWND control,POINT pt) {
+        SendMessageW(control,WM_LBUTTONUP,0,MAKELPARAM(pt.x,pt.y));
+    };
+
+    // Unlike a reentrant callback on UP, a keyboard, button or direct host
+    // action can intervene BETWEEN messages. Merely checking the epoch
+    // around the UP callback would not detect this superseded chart press.
+    const auto card=view.frequency_card_bounds_in_canvas(0);
+    check(card.has_value(),"The first completed frequency card is missing");
+    const auto chart_point=center(*card);
+    press(chart,chart_point);
+    check(view.go_to_step(8)&&
+        text(view,output_id)=="-8:1\n3:4\n",
+        "Cannot advance the model while the old chart press is pending");
+    release(chart,chart_point);pump();
+    check(view.step_index()==8&&
+        text(view,output_id)=="-8:1\n3:4\n"&&
+        text(view,error_id).empty()&&spec==authored,
+        "Mouse-up selected a stale chart card after an intervening model step");
+
+    // A new Apply resets the trace. The old array cell existed in both
+    // traces, but that does not authorize a click on the newly applied data.
+    check(view.go_to_step(7),"Cannot restore the original trace for an array press");
+    const auto cell=view.cell_bounds_in_canvas(0);
+    check(cell.has_value(),"The first array cell is missing");
+    const auto array_point=center(*cell);
+    press(array,array_point);
+    set_edit_text(editor,"1\n2\n3");
+    click(view,apply_id);
+    check(view.step_index()==0&&view.step_count()==8&&
+        text(view,output_id).empty()&&text(view,error_id).empty(),
+        "An independent Apply did not commit before the pending mouse-up");
+    release(array,array_point);pump();
+    check(view.step_index()==0&&view.step_count()==8&&
+        text(view,output_id).empty()&&text(view,input_id)=="1\n2\n3"&&
+        text(view,error_id).empty()&&spec==authored,
+        "Mouse-up selected an old array-cell target in the newly applied trace");
+
+    // Ordinary complete presses must still navigate in both native surfaces.
+    click_array_cell(view,0);
+    check(view.step_index()==1&&text(view,output_id).empty(),
+        "A legitimate cell click was lost after the cancelled array press");
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the new trace for a legitimate histogram click");
+    click_frequency_card(view,0);
+    check(view.step_index()==2&&text(view,output_id)=="1:1\n"&&
+        text(view,error_id).empty()&&spec==authored,
+        "A legitimate histogram click was lost after the cancelled card press");
+}
+
+void reentrant_reader_gesture_does_not_override_newer_selection(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    enum class ReaderAction {none,navigate,apply};
+    ReaderAction action=ReaderAction::none;
+    HWND target=nullptr;
+    SimulationView* active=nullptr;
+    bool nested_succeeded=false;
+    int callbacks_fired=0;
+    SimulationCallbacks callbacks{};
+    callbacks.passive_gesture=[&](HWND child,UINT message,WPARAM,LPARAM)
+            ->std::optional<LRESULT>{
+        if(child!=target||message!=WM_LBUTTONUP)return std::nullopt;
+        const auto selected=action;
+        action=ReaderAction::none;target=nullptr;
+        ++callbacks_fired;
+        if(selected==ReaderAction::navigate){
+            nested_succeeded=active->go_to_step(8);
+        }else if(selected==ReaderAction::apply){
+            const auto editor=GetDlgItem(active->window(),input_id);
+            const auto apply=GetDlgItem(active->window(),apply_id);
+            check(editor&&apply,"The reentrant Apply controls are unavailable");
+            set_edit_text(editor,"1\n2\n3");
+            SendMessageW(active->window(),WM_COMMAND,
+                MAKEWPARAM(apply_id,BN_CLICKED),reinterpret_cast<LPARAM>(apply));
+            nested_succeeded=active->step_index()==0&&active->step_count()==8;
+        }
+        return std::nullopt;
+    };
+    SimulationView view(host,spec,"es",callbacks);active=&view;resize(view,850);
+    check(view.go_to_step(7),"Cannot show the first two completed groups");
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    const auto canvas=GetDlgItem(view.window(),array_id);
+    check(chart&&canvas,"The native click surfaces are unavailable");
+
+    // A callback navigates during mouse-up. The previous card target cannot
+    // displace the decision that was just accepted by that callback.
+    action=ReaderAction::navigate;target=chart;
+    click_frequency_card(view,0);
+    check(callbacks_fired==1&&nested_succeeded&&view.step_index()==8&&
+        text(view,output_id)=="-8:1\n3:4\n"&&
+        text(view,error_id).empty()&&spec==authored,
+        "A stale histogram click overwrote a newer reader decision");
+
+    // An independent callback applies a new trace while an old array cell
+    // is being released. Both traces contain index zero; that does not
+    // authorize selecting step one of the newly applied trace.
+    check(view.go_to_step(7),"Cannot restore the group-comparison step");
+    action=ReaderAction::apply;target=canvas;nested_succeeded=false;
+    click_array_cell(view,0);
+    check(callbacks_fired==2&&nested_succeeded&&
+        view.step_index()==0&&view.step_count()==8&&
+        text(view,input_id)=="1\n2\n3"&&text(view,output_id).empty()&&
+        text(view,error_id).empty()&&spec==authored,
+        "An old array click overwrote a newly applied simulation trace");
+
+    click_array_cell(view,0);
+    check(view.step_index()==1&&text(view,error_id).empty()&&
+        text(view,output_id).empty()&&spec==authored,
+        "Rejecting superseded clicks blocked a later valid cell click");
+}
+
+void cancelled_passive_gesture_cannot_finish_click(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    HWND reject_target=nullptr;
+    UINT reject_message=0;
+    int rejections=0;
+    SimulationCallbacks listener{};
+    listener.passive_gesture=[&](HWND child,UINT message,WPARAM,LPARAM)
+            ->std::optional<LRESULT>{
+        if(child==reject_target&&message==reject_message){
+            // The failure is one-shot: the matching mouse-up succeeds.
+            // A stale pressed target would incorrectly turn it into a click.
+            reject_target=nullptr;
+            ++rejections;
+            throw std::runtime_error("Gesto cancelado al presionar o mover");
+        }
+        return std::nullopt;
+    };
+    SimulationView view(host,spec,"es",listener);resize(view,850);
+    check(view.go_to_step(7),"Cannot prepare selectable array and frequency cells");
+    const auto old_output=text(view,output_id);
+    const auto old_count=view.step_count();
+    const auto old_reading=view.reading_regions()[2].key;
+    const auto canvas=GetDlgItem(view.window(),array_id);
+    const auto frequencies=GetDlgItem(view.window(),frequencies_id);
+    check(canvas&&frequencies,"Missing array or histogram Win32 surface");
+
+    const auto press=[&](HWND control,RECT bounds,UINT failing_message,int expected){
+        const POINT point{(bounds.left+bounds.right)/2,(bounds.top+bounds.bottom)/2};
+        check(PtInRect(&bounds,point),"The target has no clickable center");
+        reject_target=control;reject_message=failing_message;
+        SendMessageW(control,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(point.x,point.y));
+        if(failing_message==WM_MOUSEMOVE){
+            // Move one pixel, below the drag-cancel threshold. Only the
+            // observer failure should cancel this otherwise valid press.
+            SendMessageW(control,WM_MOUSEMOVE,MK_LBUTTON,
+                MAKELPARAM(point.x+1,point.y+1));
+        }
+        SendMessageW(control,WM_LBUTTONUP,0,MAKELPARAM(point.x,point.y));
+        pump();
+        const auto warning=text(view,error_id);
+        check(rejections==expected&&reject_target==nullptr&&
+            view.step_index()==7&&view.step_count()==old_count&&
+            text(view,output_id)==old_output&&
+            view.reading_regions()[2].key==old_reading&&
+            warning.find("No se pudo procesar el gesto de la simulación.")!=std::string::npos&&
+            warning.find("Gesto cancelado al presionar o mover")!=std::string::npos&&
+            spec==authored,
+            "A successful mouse-up completed a gesture whose press or move had failed");
+        check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==GetDlgItem(view.window(),error_id)&&
+                region.source_text==warning;
+        }),"The interrupted gesture was missing from accessible narration");
+        // A normal new step clears the temporary gesture error without
+        // changing the learner's pending input or the authored specification.
+        check(view.go_to_step(8)&&text(view,error_id).empty()&&
+            view.go_to_step(7)&&text(view,output_id)==old_output,
+            "An interrupted gesture poisoned later navigation");
+    };
+
+    for(const auto failing_message:{WM_LBUTTONDOWN,WM_MOUSEMOVE}){
+        const auto cell=view.cell_bounds_in_canvas(0);
+        const auto card=view.frequency_card_bounds_in_canvas(0);
+        check(cell.has_value()&&card.has_value(),
+            "Cannot locate previously computed clickable cell and chart card");
+        press(canvas,*cell,failing_message,rejections+1);
+        press(frequencies,*card,failing_message,rejections+1);
+    }
+
+    // A fresh, complete click must still navigate on each surface.
+    click_array_cell(view,0);
+    check(view.step_index()==1&&text(view,error_id).empty()&&spec==authored,
+        "A cancelled array press blocked a later valid cell click");
+    check(view.go_to_step(7),"Cannot return to the completed-group frame");
+    click_frequency_card(view,0);
+    check(view.step_index()==2&&text(view,output_id)=="-8:1\n"&&
+        text(view,error_id).empty()&&spec==authored,
+        "A cancelled histogram press blocked a later valid card click");
+}
+
+void passive_gesture_exceptions_are_isolated(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    HWND fail_target=nullptr;
+    int exceptions=0;
+    SimulationCallbacks callback{};
+    callback.passive_gesture=[&](HWND target,UINT message,WPARAM,LPARAM)
+            ->std::optional<LRESULT>{
+        if(target==fail_target&&message==WM_LBUTTONUP){
+            ++exceptions;
+            throw std::runtime_error("Fallo QA del gesto del lector");
+        }
+        return std::nullopt;
+    };
+    SimulationView view(host,spec,"es",callback);resize(view,850);
+    check(view.go_to_step(7),"Cannot prepare two visible calculated groups");
+    const auto old_step=view.step_index();
+    const auto old_output=text(view,output_id);
+    const auto old_count=view.step_count();
+    const auto old_array=name(GetDlgItem(view.window(),array_id));
+    const std::array<int,4> targets{array_id,frequencies_id,variables_id,explanation_id};
+    for(std::size_t index=0;index<targets.size();++index){
+        fail_target=GetDlgItem(view.window(),targets[index]);
+        check(fail_target,"Missing passive-gesture Win32 child control");
+        if(targets[index]==array_id)click_array_cell(view,0);
+        else if(targets[index]==frequencies_id)click_frequency_card(view,0);
+        else {
+            SendMessageW(fail_target,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(5,5));
+            SendMessageW(fail_target,WM_LBUTTONUP,0,MAKELPARAM(5,5));
+            pump();
+        }
+        const auto warning=text(view,error_id);
+        check(exceptions==static_cast<int>(index+1)&&
+            warning.find("No se pudo procesar el gesto de la simulación.")!=std::string::npos&&
+            warning.find("Fallo QA del gesto del lector")!=std::string::npos&&
+            view.step_index()==old_step&&view.step_count()==old_count&&
+            text(view,output_id)==old_output&&
+            name(GetDlgItem(view.window(),array_id))==old_array&&
+            spec==authored,
+            "A throwing passive reader gesture navigated or corrupted the native simulation");
+        check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==GetDlgItem(view.window(),error_id)&&
+                region.source_text==warning;
+        }),"The passive-gesture failure was not present in the accessible narration");
+
+        // A fresh interaction clears only the transient native warning.
+        // The following test must start on the same applied model and frame.
+        check(view.go_to_step(8)&&text(view,error_id).empty()&&
+            view.go_to_step(old_step)&&text(view,output_id)==old_output,
+            "A failed reader gesture prevented subsequent native navigation");
+    }
+    fail_target=nullptr;
+    click_array_cell(view,0);
+    check(view.step_index()==1&&text(view,error_id).empty()&&spec==authored,
+        "A later real array-cell click failed after a throwing passive gesture");
+}
+
 void histogram_card_navigation(HWND host) {
     const auto input=fixture(SimulationViewMode::walkthrough);
     const auto authored=input;
@@ -1121,6 +1452,104 @@ void explicit_decision_jumps_reveal_histogram_bar(HWND host) {
         !filtered.frequency_card_bounds_in_canvas(40).has_value()&&
         name(GetDlgItem(filtered.window(),frequencies_id)).find("Grupo 41:")==std::string::npos,
         "Direct navigation leaked a losing bar through the active candidate filter");
+}
+
+void candidate_filter_rejects_native_and_observer_failures(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    bool throw_on_notify=false;
+    int notifications=0;
+    SimulationCallbacks callbacks{};
+    callbacks.changed=[&]{
+        ++notifications;
+        if(throw_on_notify){
+            throw_on_notify=false;
+            throw std::runtime_error("Fallo QA de aviso del filtro");
+        }
+    };
+    SimulationView view(host,spec,"es",callbacks);resize(view,850);
+    check(view.go_to_step(7),"Cannot prepare two completed frequency bars");
+    const auto filter=GetDlgItem(view.window(),frequency_filter_id);
+    const auto bars=GetDlgItem(view.window(),frequencies_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(filter&&bars&&output&&control_shown(filter),
+        "The computed candidate-frequency filter is not available");
+    const auto all_name=name(bars),initial_output=text(view,output_id);
+    const auto key=[&]{
+        for(const auto& region:view.reading_regions())
+            if(region.key.find("/frequencies/")!=std::string::npos)return region.key;
+        return std::string{};
+    };
+    const auto all_key=key();
+    check(all_key.find("/frequencies/all")!=std::string::npos&&
+        native_text(filter)=="Mostrar solo candidatos",
+        "The initial group-comparison mode has an invalid identity");
+    const CHARRANGE selected{0,4};
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    int failures_left=1;
+    const auto reject_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& remaining=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&remaining>0){--remaining;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x5349464c;
+    check(SetWindowSubclass(output,reject_zoom,hook_id,
+        reinterpret_cast<DWORD_PTR>(&failures_left))!=FALSE,
+        "Cannot intercept a late native frequency-filter zoom");
+    struct Unhook {
+        HWND child;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(child))RemoveWindowSubclass(child,callback,id);}
+    } guard{output,reject_zoom,hook_id};
+    click(view,frequency_filter_id);
+    const auto failure=text(view,error_id);
+    CHARRANGE retained{};
+    SendMessageW(output,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&retained));
+    check(failures_left==0&&view.step_index()==7&&
+        text(view,output_id)==initial_output&&name(bars)==all_name&&
+        key()==all_key&&native_text(filter)=="Mostrar solo candidatos"&&
+        retained.cpMin==selected.cpMin&&retained.cpMax==selected.cpMax&&
+        failure.find("No se pudo cambiar el filtro de frecuencias.")!=std::string::npos&&
+        failure.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+        spec==authored,
+        "A rejected frequency-filter presentation changed the mode or its reading");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==failure;
+    }),"The filter's native error was not available to narration");
+
+    click(view,frequency_filter_id);
+    const auto candidates_key=key();
+    check(view.step_index()==7&&text(view,error_id).empty()&&
+        candidates_key.find("/frequencies/candidates")!=std::string::npos&&
+        native_text(filter)=="Mostrar todos los grupos"&&
+        name(bars).find("Frecuencias de 1 grupo candidato entre 2 grupos terminados")!=std::string::npos&&
+        text(view,output_id)==initial_output&&spec==authored,
+        "The filter did not recover after a late native rejection");
+
+    // A callback failure happens after the filter and accessible view have
+    // committed. It must not be reported as a rejected filter operation.
+    throw_on_notify=true;
+    click(view,frequency_filter_id);
+    const auto notice=text(view,error_id);
+    check(!throw_on_notify&&notifications>=3&&view.step_index()==7&&
+        key()==all_key&&name(bars)==all_name&&
+        native_text(filter)=="Mostrar solo candidatos"&&
+        text(view,output_id)==initial_output&&
+        notice.find("Filtro actualizado; falló la notificación del cambio.")!=std::string::npos&&
+        notice.find("Fallo QA de aviso del filtro")!=std::string::npos&&
+        notice.find("No se pudo cambiar el filtro de frecuencias.")==std::string::npos&&
+        spec==authored,
+        "A throwing observer rolled back an already accepted frequency filter");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==notice;
+    }),"The committed filter notification warning was not narratable");
+
+    click(view,frequency_filter_id);
+    check(text(view,error_id).empty()&&key()==candidates_key&&
+        native_text(filter)=="Mostrar todos los grupos"&&spec==authored,
+        "The valid filter retry retained the callback warning or wrong mode");
 }
 
 void candidate_frequency_filter(HWND host) {
@@ -2463,16 +2892,16 @@ void step_navigation_rolls_back_native_presentation_failure(HWND host) {
         "The fixture does not expose the expected uncommitted group result");
     const CHARRANGE selected{0,4};
     SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
-    int rejected=0;
+    int failures_left=1;
     const auto reject_once=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
             UINT_PTR,DWORD_PTR raw)->LRESULT {
-        auto& failures=*reinterpret_cast<int*>(raw);
-        if(message==EM_SETZOOM&&failures++==0)return FALSE;
+        auto& remaining=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&remaining>0){--remaining;return FALSE;}
         return DefSubclassProc(child,message,wp,lp);
     };
     constexpr UINT_PTR hook_id=0x53494e56;
     check(SetWindowSubclass(output,reject_once,hook_id,
-        reinterpret_cast<DWORD_PTR>(&rejected))!=FALSE,
+        reinterpret_cast<DWORD_PTR>(&failures_left))!=FALSE,
         "Cannot inject the late native rejection when advancing one step");
     struct Unhook {
         HWND child;SUBCLASSPROC callback;UINT_PTR id;
@@ -2482,7 +2911,7 @@ void step_navigation_rolls_back_native_presentation_failure(HWND host) {
     CHARRANGE actual{};
     SendMessageW(output,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&actual));
     const auto diagnostic=text(view,error_id);
-    check(rejected>=1&&
+    check(failures_left==0&&
         diagnostic.find("No se pudo cambiar el paso.")!=std::string::npos&&
         diagnostic.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
         view.step_index()==earlier&&view.step_count()==old_count&&
@@ -2528,6 +2957,508 @@ void step_navigation_rolls_back_native_presentation_failure(HWND host) {
         text(view,output_id)=="-8:1\n3:4\n"&&
         text(view,error_id).empty()&&spec==authored,
         "A valid retry retained a rejected navigation notice or wrong model");
+
+    // A canvas cell invokes go() from a child WndProc, not the parent's
+    // WM_COMMAND exception boundary. The native failure must remain local:
+    // no exception is allowed to cross the operating-system callback.
+    const auto completed_step=view.step_index();
+    const auto completed_stdout=text(view,output_id);
+    const auto completed_variables=text(view,variables_id);
+    failures_left=1;
+    click_array_cell(view,0);
+    check(failures_left==0&&view.step_index()==completed_step&&
+        text(view,output_id)==completed_stdout&&
+        text(view,variables_id)==completed_variables&&
+        text(view,error_id).find("No se pudo cambiar el paso.")!=std::string::npos,
+        "An array-cell navigation error escaped Win32 or partially advanced the model");
+    click_array_cell(view,0);
+    check(view.step_index()==1&&text(view,output_id).empty()&&
+        text(view,error_id).empty()&&spec==authored,
+        "The array-cell retry failed after the first native presentation rejection");
+}
+
+void reentrant_navigation_keeps_newer_native_error(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    struct NativeFault {bool armed=false;int rejected=0;} fault;
+    bool nest_next_notification=false;
+    bool nested_accepted=true;
+    int notifications=0;
+    SimulationView* active=nullptr;
+    SimulationCallbacks callbacks{};
+    callbacks.changed=[&] {
+        ++notifications;
+        if(!nest_next_notification)return;
+        nest_next_notification=false;
+        // The outer navigation to step 1 was successful. While publishing
+        // that result, the listener requests step 2. Its native output zoom
+        // fails, so only the inner attempt must keep an outstanding warning.
+        fault.armed=true;
+        nested_accepted=active->go_to_step(2);
+        // The outer callback itself also throws. It must never override
+        // the newer failure originating inside the nested navigation.
+        throw std::runtime_error("Excepción tardía del observador exterior");
+    };
+    SimulationView view(host,spec,"es",callbacks);
+    active=&view;
+    resize(view,820);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(output,"Missing Win32 RichEdit for reentrant navigation");
+    const auto reject_armed=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR context)->LRESULT{
+        auto& state=*reinterpret_cast<NativeFault*>(context);
+        if(message==EM_SETZOOM&&state.armed){
+            state.armed=false;++state.rejected;return FALSE;
+        }
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x5349524e;
+    check(SetWindowSubclass(output,reject_armed,hook_id,
+        reinterpret_cast<DWORD_PTR>(&fault))!=FALSE,
+        "Cannot inject an inner RichEdit failure in the changed callback");
+    struct Unhook {
+        HWND window;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+    } guard{output,reject_armed,hook_id};
+
+    nest_next_notification=true;
+    check(view.go_to_step(1),
+        "The outer navigation must succeed even when its listener later fails");
+    const auto warning=text(view,error_id);
+    check(!nested_accepted&&fault.rejected==1&&notifications>=2&&
+        view.step_index()==1&&view.step_count()>2&&
+        text(view,output_id).empty()&&
+        warning.find("No se pudo cambiar el paso.")!=std::string::npos&&
+        warning.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+        spec==authored,
+        "The reentrant native rejection displaced the last committed step");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==warning;
+    }),"The nested failure was omitted from the accessible reading region");
+
+    // The outer publish has already returned. It must NOT have cleared the
+    // inner go()'s transient-error bookkeeping. A later valid retry removes
+    // only that transient notice and accepts the next calculation.
+    check(view.go_to_step(2)&&view.step_index()==2&&
+        text(view,output_id)=="-8:1\n"&&text(view,error_id).empty()&&
+        spec==authored,
+        "Outer publish discarded the inner failure identity before retry");
+}
+
+void navigation_callback_failure_keeps_committed_steps(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    bool throw_next=false;
+    int notifications=0;
+    SimulationCallbacks listeners{};
+    listeners.changed=[&] {
+        ++notifications;
+        if(throw_next){
+            throw_next=false;
+            throw std::runtime_error("Excepción de prueba del observador");
+        }
+    };
+    SimulationView view(host,spec,"es",listeners);resize(view,820);
+    throw_next=true;
+    check(view.go_to_step(2),"A valid model navigation must not fail due to its observer");
+    const auto warning=text(view,error_id);
+    check(notifications>=1&&view.step_index()==2&&
+        text(view,output_id)=="-8:1\n"&&
+        warning.find("No se pudo notificar el cambio de paso.")!=std::string::npos&&
+        warning.find("Excepción de prueba del observador")!=std::string::npos&&
+        spec==authored,
+        "Observer failure rolled back an already committed simulation frame");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==warning;
+    }),"The committed-step observer failure was not accessible to narration");
+    check(view.go_to_step(3)&&view.step_index()==3&&
+        text(view,output_id)=="-8:1\n"&&text(view,error_id).empty()&&
+        spec==authored,
+        "After an observer exception, normal navigation could not clear the warning");
+}
+
+void reentrant_success_survives_outer_observer_exception(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    bool reenter=false,nested_ok=false;
+    int notifications=0;
+    SimulationView* instance=nullptr;
+    SimulationCallbacks listeners{};
+    listeners.changed=[&]{
+        ++notifications;
+        if(!reenter)return;
+        reenter=false;
+        nested_ok=instance->go_to_step(2);
+        throw std::runtime_error("Fallo posterior a la navegación anidada");
+    };
+    SimulationView view(host,spec,"es",listeners);instance=&view;
+    resize(view,820);
+    reenter=true;
+    check(view.go_to_step(1),
+        "The outer navigation should commit despite its observer exception");
+    const auto warning=text(view,error_id);
+    check(nested_ok&&notifications>=2&&view.step_index()==2&&
+        text(view,output_id)=="-8:1\n"&&
+        warning.find("No se pudo notificar el cambio de paso.")!=std::string::npos&&
+        warning.find("Fallo posterior a la navegación anidada")!=std::string::npos&&
+        spec==authored,
+        "An outer observer exception overwrote an already committed inner step");
+    check(view.go_to_step(3)&&view.step_index()==3&&
+        text(view,error_id).empty()&&spec==authored,
+        "A valid retry did not clear the outer observer's transient warning");
+}
+
+void navigation_retry_preserves_previous_invalid_draft(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(6),
+        "Cannot prepare a simulation frame before rejecting a pending draft");
+    const auto previous_output=text(view,output_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(editor&&output,"Missing native editor and output");
+    set_edit_text(editor,"2147483648");
+    click(view,apply_id);
+    const auto prior_error=text(view,error_id);
+    check(!prior_error.empty()&&
+        prior_error.find("No se aplicaron los datos.")!=std::string::npos&&
+        view.step_index()==6&&text(view,output_id)==previous_output,
+        "An invalid pending editor draft was accepted or the applied trace changed");
+
+    int remaining=1;
+    const auto reject_once=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& count=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&count>0){--count;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53494e49;
+    check(SetWindowSubclass(output,reject_once,hook_id,
+        reinterpret_cast<DWORD_PTR>(&remaining))!=FALSE,
+        "Cannot install native fault for an invalid draft");
+    struct Unhook {
+        HWND window;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+    } guard{output,reject_once,hook_id};
+    click(view,next_id);
+    const auto temporary_error=text(view,error_id);
+    check(remaining==0&&view.step_index()==6&&
+        temporary_error.find("No se pudo cambiar el paso.")!=std::string::npos&&
+        text(view,input_id)=="2147483648"&&
+        text(view,output_id)==previous_output,
+        "A transient native error erased the rejected draft or advanced the state");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==temporary_error;
+    }),"The transient navigation error was not available to the narrator");
+
+    // A successful Next clears only the native incident. The original
+    // invalid-data diagnosis still belongs to the pending editor draft,
+    // even though the applied simulation advances by one frame.
+    click(view,next_id);
+    check(view.step_index()==7&&text(view,error_id)==prior_error&&
+        text(view,input_id)=="2147483648"&&
+        text(view,output_id)=="-8:1\n3:4\n"&&spec==authored,
+        "A successful retry discarded the previously rejected input feedback");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==prior_error;
+    }),"The original draft feedback lost its accessible reading after retry");
+}
+
+void rejected_apply_preserves_diagnostic_when_richedit_rejects_feedback(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.scenarios.clear();
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the applied trace for a rejected-input warning failure");
+    const auto old_step=view.step_index(),old_count=view.step_count();
+    const auto old_output=text(view,output_id);
+    const auto old_array=name(GetDlgItem(view.window(),array_id));
+    const auto old_identity=view.reading_regions()[2].key;
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(editor&&output,"Missing input/output RichEdit controls");
+    set_edit_text(editor,"2147483648");
+    const CHARRANGE selection{1,4};
+    SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    int failures_left=1;
+    const auto reject_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& remaining=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&remaining>0){--remaining;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53494144;
+    check(SetWindowSubclass(output,reject_zoom,hook_id,
+        reinterpret_cast<DWORD_PTR>(&failures_left))!=FALSE,
+        "Cannot reject late RichEdit presentation for an invalid Apply");
+    struct Unhook {
+        HWND window;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+    } guard{output,reject_zoom,hook_id};
+    click(view,apply_id);
+    const auto warning=text(view,error_id);
+    CHARRANGE after{};
+    SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+    check(failures_left==0&&
+        warning.find("No se aplicaron los datos.")!=std::string::npos&&
+        warning.find("El entero está fuera del intervalo de 32 bits con signo.")!=std::string::npos&&
+        warning.find("No se pudo presentar el aviso con RichEdit: ")!=std::string::npos&&
+        warning.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+        warning.find("No se pudo actualizar la simulación.")==std::string::npos&&
+        view.step_index()==old_step&&view.step_count()==old_count&&
+        text(view,input_id)=="2147483648"&&
+        text(view,output_id)==old_output&&
+        name(GetDlgItem(view.window(),array_id))==old_array&&
+        view.reading_regions()[2].key==old_identity&&
+        after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&
+        control_shown(GetDlgItem(view.window(),error_id))&&spec==authored,
+        "A RichEdit feedback rejection hid the original invalid input or changed the applied trace");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==warning;
+    }),"The preserved invalid-input explanation was missing from accessible narration");
+
+    // Correcting the draft must continue to use the original valid trace
+    // as predecessor. The one-shot native fault may not block later Apply.
+    set_edit_text(editor,"1\n2\n3");
+    click(view,apply_id);
+    check(text(view,error_id).empty()&&view.step_index()==0&&
+        view.step_count()!=old_count&&
+        view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="1:1\n2:1\n3:1\n"&&spec==authored,
+        "RichEdit warning fallback prevented correcting and applying valid data");
+}
+
+void rejected_apply_observer_cannot_hide_input_diagnostic(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.scenarios.clear();
+    // Only the test's local copy is edited. The model given to the view
+    // remains immutable throughout the rejection and retry.
+    const auto reviewed=spec;
+    bool throw_on_rejection=false;
+    int notifications=0;
+    SimulationCallbacks callbacks{};
+    SimulationView* active=nullptr;
+    callbacks.changed=[&]{
+        ++notifications;
+        if(!throw_on_rejection)return;
+        throw_on_rejection=false;
+        check(text(*active,error_id).find("No se aplicaron los datos.")!=std::string::npos,
+            "Invalid-data feedback was not rendered before observer notification");
+        throw std::runtime_error("Fallo QA al notificar rechazo de datos");
+    };
+    SimulationView view(host,spec,"es",callbacks);active=&view;resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the previously applied trace for an invalid Apply");
+    const auto prior_position=view.step_index();
+    const auto prior_count=view.step_count();
+    const auto prior_output=text(view,output_id);
+    const auto prior_array=name(GetDlgItem(view.window(),array_id));
+    const auto prior_reading=view.reading_regions()[2].key;
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(editor,"Missing native simulation editor");
+    set_edit_text(editor,"2147483648");
+    const CHARRANGE selected{1,4};
+    SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    throw_on_rejection=true;
+    click(view,apply_id);
+    const auto diagnostic=text(view,error_id);
+    CHARRANGE retained{};
+    SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&retained));
+    check(!throw_on_rejection&&notifications>=1&&
+        diagnostic.find("No se aplicaron los datos.")!=std::string::npos&&
+        diagnostic.find("No se pudo actualizar la simulación.")==std::string::npos&&
+        diagnostic.find("Fallo QA al notificar rechazo de datos")==std::string::npos&&
+        view.step_index()==prior_position&&view.step_count()==prior_count&&
+        text(view,input_id)=="2147483648"&&
+        text(view,output_id)==prior_output&&
+        name(GetDlgItem(view.window(),array_id))==prior_array&&
+        view.reading_regions()[2].key==prior_reading&&
+        retained.cpMin==selected.cpMin&&retained.cpMax==selected.cpMax&&
+        spec==reviewed,
+        "A throwing observer hid rejected-input feedback or changed the applied trace");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==diagnostic;
+    }),"The original invalid-Apply diagnostic was not accessible to narration");
+
+    set_edit_text(editor,"1\n2\n3");
+    click(view,apply_id);
+    check(text(view,error_id).empty()&&view.step_index()==0&&
+        view.step_count()!=prior_count&&
+        view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="1:1\n2:1\n3:1\n"&&spec==reviewed,
+        "A later valid Apply failed after an observer exception on invalid data");
+}
+
+void reentrant_invalid_input_outweighs_observer_failure(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.scenarios.clear();
+    const auto authored=spec;
+    bool inject_invalid_on_commit=false;
+    bool throw_after_step=false;
+    bool nested_rejected=false;
+    int notifications=0;
+    SimulationView* current=nullptr;
+    SimulationCallbacks callbacks{};
+    callbacks.changed=[&]{
+        ++notifications;
+        if(inject_invalid_on_commit){
+            inject_invalid_on_commit=false;
+            // The outer Apply has already committed. A listener then edits
+            // the pending draft and rejects its own input from the SAME real
+            // Win32 command path, before throwing an unrelated exception.
+            const auto editor=GetDlgItem(current->window(),input_id);
+            const auto apply=GetDlgItem(current->window(),apply_id);
+            check(editor&&apply,"Missing editor during nested invalid-data test");
+            set_edit_text(editor,"2147483648");
+            SendMessageW(current->window(),WM_COMMAND,
+                MAKEWPARAM(apply_id,BN_CLICKED),reinterpret_cast<LPARAM>(apply));
+            nested_rejected=text(*current,error_id).find("No se aplicaron los datos.")!=std::string::npos;
+            throw std::runtime_error("Error exterior tras rechazar el borrador");
+        }
+        if(throw_after_step){
+            throw_after_step=false;
+            throw std::runtime_error("Error exterior con borrador inválido previo");
+        }
+    };
+    SimulationView view(host,spec,"es",callbacks);current=&view;resize(view,820);
+    const auto original_count=view.step_count();
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(editor,"Cannot locate the input editor for nested-invalid regression");
+    set_edit_text(editor,"1\n2\n3");
+    inject_invalid_on_commit=true;
+    click(view,apply_id);
+    const auto rejected=text(view,error_id);
+    check(nested_rejected&&notifications>=2&&view.step_index()==0&&
+        view.step_count()!=original_count&&text(view,input_id)=="2147483648"&&
+        rejected.find("No se aplicaron los datos.")!=std::string::npos&&
+        rejected.find("Datos aplicados; falló la notificación")==std::string::npos&&
+        rejected.find("Error exterior tras rechazar el borrador")==std::string::npos&&
+        spec==authored,
+        "The outer Apply observer hid the nested invalid-data error");
+    const auto error_is_accessible=[&](const std::string& expected) {
+        return std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==GetDlgItem(view.window(),error_id)&&
+                region.source_text==expected;
+        });
+    };
+    check(error_is_accessible(rejected),
+        "Nested input rejection did not retain its accessible reading");
+
+    // An exception from a later step observer must not displace the
+    // pending invalid-draft feedback that was already displayed.
+    throw_after_step=true;
+    check(view.go_to_step(view.step_count()-1)&&
+        view.step_index()==view.step_count()-1&&
+        text(view,output_id)=="1:1\n2:1\n3:1\n"&&
+        text(view,input_id)=="2147483648"&&
+        text(view,error_id)==rejected&&error_is_accessible(rejected)&&
+        spec==authored,
+        "A step observer replaced the active invalid-draft diagnosis");
+
+    // Reentering correct data clears only the relevant error and starts a
+    // fresh session. The old observer failures never turn into achievements.
+    set_edit_text(editor,"1\n2\n3");
+    click(view,apply_id);
+    check(view.step_index()==0&&text(view,error_id).empty()&&
+        text(view,input_id)=="1\n2\n3"&&spec==authored,
+        "Corrected input could not clear its original validation warning");
+}
+
+void applied_data_survive_observer_exception(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.scenarios.clear();
+    const auto authored=spec;
+    bool throw_on_commit=false;
+    int notifications=0;
+    SimulationCallbacks callbacks{};
+    callbacks.changed=[&]{
+        ++notifications;
+        if(!throw_on_commit)return;
+        throw_on_commit=false;
+        throw std::runtime_error("Fallo QA posterior a Aplicar");
+    };
+    SimulationView view(host,spec,"es",callbacks);resize(view,820);
+    const auto previous_frames=view.step_count();
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(editor,"Missing native editor for Apply observer-failure test");
+
+    set_edit_text(editor,"1\n2\n3");
+    throw_on_commit=true;
+    click(view,apply_id);
+    const auto warning=text(view,error_id);
+    check(notifications>0&&view.step_index()==0&&
+        view.step_count()!=previous_frames&&text(view,input_id)=="1\n2\n3"&&
+        warning.find("Datos aplicados; falló la notificación del cambio.")!=std::string::npos&&
+        warning.find("Fallo QA posterior a Aplicar")!=std::string::npos&&
+        warning.find("No se aplicaron los datos.")==std::string::npos&&
+        spec==authored,
+        "A throwing Apply observer reverted the committed trace or reported false rejection");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==warning;
+    }),"An Apply observer warning was not available to the narrator");
+    check(view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="1:1\n2:1\n3:1\n"&&
+        text(view,error_id).empty()&&spec==authored,
+        "A committed Apply could not continue after a notification failure");
+}
+
+void scenario_observer_reentry_keeps_committed_data(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    bool enter_on_scenario=false,nested_ok=false;
+    int notifications=0;
+    SimulationView* current=nullptr;
+    SimulationCallbacks callbacks{};
+    callbacks.changed=[&]{
+        ++notifications;
+        if(!enter_on_scenario)return;
+        enter_on_scenario=false;
+        nested_ok=current->go_to_step(current->step_count()-1);
+        throw std::runtime_error("Fallo QA después del paso anidado");
+    };
+    SimulationView view(host,spec,"es",callbacks);current=&view;
+    resize(view,820);
+    const auto scenario=GetDlgItem(view.window(),scenario_id);
+    check(scenario&&SendMessageW(scenario,CB_GETCURSEL,0,0)==0,
+        "Missing authored scenario selector");
+    enter_on_scenario=true;
+    check(SendMessageW(scenario,CB_SETCURSEL,1,0)!=CB_ERR,
+        "Cannot select alternate scenario");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+
+    const auto warning=text(view,error_id);
+    check(nested_ok&&notifications>=2&&
+        SendMessageW(scenario,CB_GETCURSEL,0,0)==1&&
+        view.step_index()==view.step_count()-1&&
+        text(view,output_id)=="4:2\n9:2\n"&&
+        warning.find("Datos aplicados; falló la notificación del cambio.")!=std::string::npos&&
+        warning.find("Fallo QA después del paso anidado")!=std::string::npos&&
+        spec==authored,
+        "An outer scenario callback replaced a committed nested step or prior trace");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==warning;
+    }),"The scenario observer failure was absent from accessible narration");
+
+    // A valid next scenario does not reuse that transient error or the
+    // previous scenario's reading session.
+    check(SendMessageW(scenario,CB_SETCURSEL,0,0)!=CB_ERR,
+        "Cannot restore the original authored scenario");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(scenario));pump();
+    check(SendMessageW(scenario,CB_GETCURSEL,0,0)==0&&
+        view.step_index()==0&&text(view,error_id).empty()&&spec==authored,
+        "A scenario observer failure left stale model or error state");
 }
 
 void applying_valid_data_is_atomic_after_native_failure(HWND host) {
@@ -3233,6 +4164,86 @@ void input_format_conversion_rejects_native_failures(HWND host) {
         view.step_index()==step&&text(view,output_id)==output_before&&
         spec==authored,
         "Input-format conversion did not recover after a late native failure");
+}
+
+void input_format_callback_failure_keeps_converted_draft(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.text_values=true;
+    spec.values={std::string("patio"),std::string("patio")};
+    spec.scenarios.clear();
+    const auto authored=spec;
+    bool nested_conversion=false,throw_on_rejected=false,nested_ok=false;
+    int notifications=0;
+    SimulationView* current=nullptr;
+    SimulationCallbacks callbacks{};
+    callbacks.changed=[&]{
+        ++notifications;
+        if(nested_conversion){
+            nested_conversion=false;
+            nested_ok=current->go_to_step(0);
+            throw std::runtime_error("Fallo QA tras convertir la lista");
+        }
+        if(throw_on_rejected){
+            throw_on_rejected=false;
+            throw std::runtime_error("Fallo QA tras rechazo del formato");
+        }
+    };
+    SimulationView view(host,spec,"es",callbacks);current=&view;
+    resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the applied text trace before a format notification error");
+    const auto previous_count=view.step_count();
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto format=GetDlgItem(view.window(),input_format_id);
+    check(editor&&format,"Missing editable input controls");
+    const auto select=[&](int index){
+        check(SendMessageW(format,CB_SETCURSEL,index,0)!=CB_ERR,
+            "Cannot choose the requested text format");
+        SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(input_format_id,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(format));pump();
+    };
+    set_edit_text(editor,"sol\nluna");
+    nested_conversion=true;
+    select(1);
+    const auto warning=text(view,error_id);
+    check(nested_ok&&notifications>=2&&
+        SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+        text(view,input_id)=="[\"sol\", \"luna\"]"&&
+        view.step_index()==0&&view.step_count()==previous_count&&
+        text(view,output_id).empty()&&
+        warning.find("Formato convertido; falló la notificación del cambio.")!=std::string::npos&&
+        warning.find("Fallo QA tras convertir la lista")!=std::string::npos&&
+        warning.find("No se cambió el formato")==std::string::npos&&
+        spec==authored,
+        "A conversion observer exception discarded the accepted format or a nested step");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==warning;
+    }),"An accepted conversion's observer warning was absent from narration");
+
+    // Now reject an actually malformed JSON draft, and throw from its
+    // error-notification observer. The rejection is still the reason to
+    // display, rather than a false native presentation failure.
+    const std::string malformed="[\"sol\",]";
+    set_edit_text(editor,malformed);
+    throw_on_rejected=true;
+    select(0);
+    const auto rejected=text(view,error_id);
+    check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+        text(view,input_id)==malformed&&
+        rejected.find("No se cambió el formato; se conservaron los datos escritos.")!=std::string::npos&&
+        rejected.find("No se pudo actualizar la simulación.")==std::string::npos&&
+        view.step_index()==0&&view.step_count()==previous_count&&spec==authored,
+        "A rejected format's observer exception hid the invalid-input diagnosis");
+
+    set_edit_text(editor,"[\"sol\", \"luna\"]");
+    select(0);
+    check(SendMessageW(format,CB_GETCURSEL,0,0)==0&&
+        text(view,input_id)=="sol\nluna"&&text(view,error_id).empty()&&
+        view.step_index()==0&&view.step_count()==previous_count&&
+        view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="patio:2\n"&&spec==authored,
+        "A valid format retry changed the already-applied trace or retained stale warnings");
 }
 
 void input_format_conversion_reports_unrecoverable_draft(HWND host) {
@@ -4540,12 +5551,18 @@ int main(int argc,char** argv)try {
     };
     run("native_text_control_contract",[&]{native_text_control_contract(host.value);});
     run("current_frequency_decision",[&]{current_frequency_decision(host.value,captures);});
+    run("layout_reflow_cancels_pending_histogram_and_array_click",[&]{layout_reflow_cancels_pending_histogram_and_array_click(host.value);});
+    run("intervening_interaction_cancels_pending_mouse_press",[&]{intervening_interaction_cancels_pending_mouse_press(host.value);});
+    run("reentrant_reader_gesture_does_not_override_newer_selection",[&]{reentrant_reader_gesture_does_not_override_newer_selection(host.value);});
+    run("cancelled_passive_gesture_cannot_finish_click",[&]{cancelled_passive_gesture_cannot_finish_click(host.value);});
+    run("passive_gesture_exceptions_are_isolated",[&]{passive_gesture_exceptions_are_isolated(host.value);});
     run("histogram_card_navigation",[&]{histogram_card_navigation(host.value);});
     run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
     run("histogram_follows_new_groups_only_at_end",[&]{histogram_follows_new_groups_only_at_end(host.value);});
     run("histogram_reflow_retains_visible_group",[&]{histogram_reflow_retains_visible_group(host.value);});
     run("histogram_first_overflow_does_not_jump_to_last_group",[&]{histogram_first_overflow_does_not_jump_to_last_group(host.value);});
     run("explicit_decision_jumps_reveal_histogram_bar",[&]{explicit_decision_jumps_reveal_histogram_bar(host.value);});
+    run("candidate_filter_rejects_native_and_observer_failures",[&]{candidate_filter_rejects_native_and_observer_failures(host.value);});
     run("candidate_frequency_filter",[&]{candidate_frequency_filter(host.value);});
     run("neighboring_values_explain_group_boundaries",[&]{neighboring_values_explain_group_boundaries(host.value);});
     run("calculated_step_changes",[&]{calculated_step_changes(host.value);});
@@ -4560,6 +5577,15 @@ int main(int argc,char** argv)try {
     run("static_simulation_text_is_not_restreamed",[&]{static_simulation_text_is_not_restreamed(host.value);});
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("step_navigation_rolls_back_native_presentation_failure",[&]{step_navigation_rolls_back_native_presentation_failure(host.value);});
+    run("reentrant_navigation_keeps_newer_native_error",[&]{reentrant_navigation_keeps_newer_native_error(host.value);});
+    run("navigation_callback_failure_keeps_committed_steps",[&]{navigation_callback_failure_keeps_committed_steps(host.value);});
+    run("reentrant_success_survives_outer_observer_exception",[&]{reentrant_success_survives_outer_observer_exception(host.value);});
+    run("navigation_retry_preserves_previous_invalid_draft",[&]{navigation_retry_preserves_previous_invalid_draft(host.value);});
+    run("rejected_apply_preserves_diagnostic_when_richedit_rejects_feedback",[&]{rejected_apply_preserves_diagnostic_when_richedit_rejects_feedback(host.value);});
+    run("rejected_apply_observer_cannot_hide_input_diagnostic",[&]{rejected_apply_observer_cannot_hide_input_diagnostic(host.value);});
+    run("reentrant_invalid_input_outweighs_observer_failure",[&]{reentrant_invalid_input_outweighs_observer_failure(host.value);});
+    run("applied_data_survive_observer_exception",[&]{applied_data_survive_observer_exception(host.value);});
+    run("scenario_observer_reentry_keeps_committed_data",[&]{scenario_observer_reentry_keeps_committed_data(host.value);});
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
     run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
     run("scenario_change_keeps_origin_error_when_editor_rollback_fails",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value);});
@@ -4569,6 +5595,7 @@ int main(int argc,char** argv)try {
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
     run("input_format_conversion_rejects_native_failures",[&]{input_format_conversion_rejects_native_failures(host.value);});
+    run("input_format_callback_failure_keeps_converted_draft",[&]{input_format_callback_failure_keeps_converted_draft(host.value);});
     run("input_format_conversion_reports_unrecoverable_draft",[&]{input_format_conversion_reports_unrecoverable_draft(host.value);});
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});
     run("interactive_simulation_feedback_narration_ids",[&]{interactive_simulation_feedback_narration_ids(host.value);});
