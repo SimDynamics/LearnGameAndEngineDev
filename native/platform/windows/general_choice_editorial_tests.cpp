@@ -210,6 +210,35 @@ int main(int argc,char** argv) {
         require(state::response_storage_key(explicitly_marked,marked)==legacy&&
                 marked_receipt&&marked_receipt->correct&&marked_receipt->selected==0,
             "An explicitly revised text marker erased a valid historical answer");
+        // A previously unmarked option may acquire a new technical/prose
+        // descriptor. Its old reading must remain unmarked, while its proven
+        // correct answer and visible new selection survive both loaders.
+        auto unmarked_root=JsonObject::Parse(winrt::to_hstring(explicit_bytes));
+        const auto unmarked_revision=unmarked_root.GetNamedObject(L"stateLayout")
+            .GetNamedArray(L"choiceRevisions").GetObjectAt(0);
+        unmarked_revision.Insert(L"semanticBefore",JsonValue::CreateNullValue());
+        const auto unmarked_bytes=winrt::to_string(unmarked_root.Stringify());
+        const auto unmarked_lesson=parse_lesson_json(unmarked_bytes,"es");
+        const auto unmarked_progress=parse_lesson_progress_metadata(unmarked_bytes,"es");
+        const auto& unmarked_block=unmarked_lesson.pages[position->page].blocks[position->block];
+        const auto& unmarked_meta=unmarked_progress.pages[position->page].blocks[position->block];
+        require(unmarked_block.choice_revision&&
+                unmarked_block.choice_revision->general_option_index==0&&
+                !unmarked_block.choice_revision->original_option_text_semantics&&
+                unmarked_block.text_semantics==marked.text_semantics&&
+                unmarked_meta.text_semantics==marked.text_semantics&&
+                unmarked_meta.choice_revision&&
+                !unmarked_meta.choice_revision->original_option_text_semantics,
+            "An originally unmarked option wrongly inherited the new author's historical spans");
+        auto unmarked_state=imported;
+        state::prepare_lesson_state(unmarked_state,unmarked_lesson);
+        const auto unmarked_receipt=state::get_response(
+            unmarked_state,unmarked_lesson,unmarked_block);
+        require(state::response_storage_key(unmarked_lesson,unmarked_block)==legacy&&
+                unmarked_receipt&&unmarked_receipt->correct&&
+                unmarked_receipt->selected==0,
+            "Adding semantic marks to an unmarked option invalidated old response credit");
+
         rejected_change(explicit_bytes,[](JsonObject root) {
             root.GetNamedObject(L"stateLayout").GetNamedArray(L"choiceRevisions")
                 .GetObjectAt(0).GetNamedObject(L"semanticAfter")
