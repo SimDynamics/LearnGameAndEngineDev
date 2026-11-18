@@ -261,10 +261,21 @@ struct SimulationView::Impl {
             // unlike the older EM_LINEFROMCHAR 64K compatibility limit.
             const auto target=SendMessageW(output,EM_EXLINEFROMCHAR,0,
                 static_cast<LPARAM>(std::min(saved->first_character,length)));
-            const auto current=SendMessageW(output,EM_GETFIRSTVISIBLELINE,0,0);
-            if(target>=0&&current>=0&&target!=current)
-                SendMessageW(output,EM_LINESCROLL,0,
-                    static_cast<LPARAM>(target-current));
+            if(target>=0){
+                // RichEdit's pixel rounding after a font/zoom reflow can
+                // leave the first line one row PAST the requested line even
+                // after a successful EM_LINESCROLL (confirmed by Windows QA).
+                // Read back the actual first visible line and correct a
+                // remaining offset. Never scroll indefinitely at a boundary
+                // where the native control refuses further movement.
+                for(int attempt=0;attempt<4;++attempt){
+                    const auto current=SendMessageW(output,EM_GETFIRSTVISIBLELINE,0,0);
+                    if(current<0||(current<=target&&target-current<=1))break;
+                    SendMessageW(output,EM_LINESCROLL,0,
+                        static_cast<LPARAM>(target-current));
+                    if(SendMessageW(output,EM_GETFIRSTVISIBLELINE,0,0)==current)break;
+                }
+            }
         }
     }
     // Histogram cards are laid out in rows, so a pixel scroll offset does
