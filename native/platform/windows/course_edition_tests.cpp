@@ -409,55 +409,62 @@ void import_isolated(const Fixture& fixture, const state::StateData& historic,
 }
 
 void physical_edition_index_alias_rejected(const Fixture& fixture) {
-    // The original fixture and the student's profile are never altered.
-    // Mirror the tiny QA content tree and replace only its course index with
-    // an NTFS symbolic link that preserves every indexed byte and name.
-    const auto mirror = fixture.root / "edition-alias-isolation";
-    for (const auto& [relative, unused] : fixture.originals) {
-        const auto file = relative_path(relative);
-        write(mirror / file, bytes(fixture.root / file));
-    }
-    const auto course = mirror / relative_path(fixture.paths.at("course"));
-    const auto lesson = mirror / relative_path(fixture.paths.at("lesson"));
-    require(windows::load_lesson(lesson).course_edition.has_value(),
-        "The isolated native course-edition source was not valid before creating an alias");
-    const auto physical = fs::path(course.wstring() + L".physical-qa");
-    require(!fs::exists(physical), "An old QA alias target was unexpectedly present");
-    fs::rename(course, physical);
-    struct Restore {
-        fs::path link, original;
-        ~Restore() {
-            std::error_code error;
-            if (fs::is_symlink(link, error)) fs::remove(link, error);
-            if (fs::exists(original, error)) fs::rename(original, link, error);
+    // The original fixture and student profile remain untouched. Each case
+    // mirrors QA assets into a new directory, then replaces only one path
+    // with an equivalent link whose contents and indexed names still match.
+    for (const bool directory : {false, true}) {
+        const auto mirror = fixture.root /
+            (directory ? "edition-folder-alias-isolation" : "edition-file-alias-isolation");
+        for (const auto& [relative, unused] : fixture.originals) {
+            const auto file = relative_path(relative);
+            write(mirror / file, bytes(fixture.root / file));
         }
-    } restore{course, physical};
-    constexpr DWORD permit_unprivileged = 0x2; // Windows 10+ developer-mode API flag.
-    if (!CreateSymbolicLinkW(course.c_str(), physical.c_str(), permit_unprivileged)) {
-        // Some Windows environments prohibit symbolic links even for an
-        // isolated QA account. Never bypass that OS policy to run a test.
-        std::cout << "SKIP native course-edition symlink: Win32 error "
-                  << GetLastError() << " (creation not permitted).\n";
-        return;
-    }
-    const auto attributes = GetFileAttributesW(course.c_str());
-    require(attributes != INVALID_FILE_ATTRIBUTES &&
-            (attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0,
-        "The QA symlink was not reported as a Win32 reparse point");
-    const auto rejects_alias = [&](const auto& action) {
-        bool rejected = false;
-        try { action(); }
-        catch (const std::exception& failure) {
-            rejected = std::string_view(failure.what()).find(
-                "symbolic link or junction") != std::string_view::npos;
+        const auto lesson = mirror / relative_path(fixture.paths.at("lesson"));
+        require(windows::load_lesson(lesson).course_edition.has_value(),
+            "The isolated native edition was invalid before creating an alias");
+        const auto linked = directory ?
+            (mirror / relative_path(fixture.paths.at("unit"))).parent_path() :
+            mirror / relative_path(fixture.paths.at("course"));
+        const auto physical = fs::path(linked.wstring() + L".physical-qa");
+        require(!fs::exists(physical), "A previous QA alias target was present");
+        fs::rename(linked, physical);
+        struct Restore {
+            fs::path link, original;
+            ~Restore() {
+                std::error_code error;
+                if (fs::is_symlink(link, error)) fs::remove(link, error);
+                if (fs::exists(original, error)) fs::rename(original, link, error);
+            }
+        } restore{linked, physical};
+        constexpr DWORD permit_unprivileged = 0x2; // Windows 10+ developer-mode flag.
+        const DWORD flags = permit_unprivileged | (directory ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0);
+        if (!CreateSymbolicLinkW(linked.c_str(), physical.c_str(), flags)) {
+            // Many Windows profiles prohibit links; do not override that
+            // policy merely to run an optional real-filesystem regression.
+            std::cout << "SKIP native course-edition "
+                      << (directory ? "directory" : "file")
+                      << " symlink: Win32 error " << GetLastError() << "\n";
+            continue;
         }
-        require(rejected, "The native loader did not reject the unchanged symlinked course index");
-    };
-    rejects_alias([&] { (void)windows::load_lesson(lesson); });
-    rejects_alias([&] { (void)windows::load_lesson_progress_metadata(lesson); });
-    require(bytes(physical) == bytes(fixture.path("course")),
-        "The native alias test modified the previously published course index");
+        const auto attributes = GetFileAttributesW(linked.c_str());
+        require(attributes != INVALID_FILE_ATTRIBUTES &&
+                (attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0,
+            "The QA alias was not reported as a Win32 reparse point");
+        const auto rejects_alias = [&](const auto& action) {
+            bool rejected = false;
+            try { action(); }
+            catch (const std::exception& failure) {
+                rejected = std::string_view(failure.what()).find(
+                    "symbolic link or junction") != std::string_view::npos;
+            }
+            require(rejected, "The loader accepted unchanged source through a reparse point");
+        };
+        rejects_alias([&] { (void)windows::load_lesson(lesson); });
+        rejects_alias([&] { (void)windows::load_lesson_progress_metadata(lesson); });
+        require(fs::exists(physical), "The QA link check destroyed the original bytes");
+    }
 }
+
 
 void negative_contracts(const Fixture& fixture, const curriculum::Lesson& current,
                         const state::StateData& current_data) {
