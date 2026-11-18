@@ -55,9 +55,9 @@ void public_text(std::string_view text, std::size_t limit, std::string_view fiel
         std::string("Texto de simulación inválido o demasiado largo: ") + std::string(field));
 }
 
-constexpr std::array<std::string_view, 11> placeholders{
+constexpr std::array<std::string_view, 13> placeholders{
     "value", "start", "end", "frequency", "maximum", "leaders", "size", "group", "groups",
-    "countedIndex", "originIndex"
+    "countedIndex", "originIndex", "processedCount", "remainingCount"
 };
 
 void validate_template(std::string_view text, std::size_t limit, std::string_view field,
@@ -197,6 +197,10 @@ std::string_view explanation_template(const SimulationSpec& spec, SimulationPhas
 }
 
 std::string expanded(std::string_view source, const SimulationTrace& trace, const SimulationFrame& frame, bool display) {
+    // The end of the half-open observed range is also the number of items
+    // processed in the ordered copy. It remains valid at a completed-group
+    // decision, at the initial frame, and after all items have been visited.
+    require(frame.end <= trace.ordered.size(), "La fase de simulación supera el tamaño del array.");
     const bool has_value = frame.phase == SimulationPhase::start || frame.phase == SimulationPhase::advance ||
         frame.phase == SimulationPhase::new_maximum || frame.phase == SimulationPhase::tie ||
         frame.phase == SimulationPhase::below_maximum;
@@ -211,12 +215,13 @@ std::string expanded(std::string_view source, const SimulationTrace& trace, cons
     const std::string counted = just_counted ? std::to_string(frame.end - 1) : std::string{};
     const std::string origin = just_counted ?
         std::to_string(trace.source_indices.at(frame.end - 1)) : std::string{};
-    const std::array<std::string, 11> replacements{
+    const std::array<std::string, 13> replacements{
         has_value ? (display ? simulation_value_display_text(trace.groups.at(frame.group - 1).value)
                             : simulation_value_text(trace.groups.at(frame.group - 1).value)) : std::string{},
         std::to_string(frame.begin), std::to_string(frame.end), std::to_string(frame.frequency),
         std::to_string(frame.maximum), joined_values(frame.leaders, display), std::to_string(trace.ordered.size()),
-        std::to_string(frame.group), std::to_string(trace.groups.size()), counted, origin
+        std::to_string(frame.group), std::to_string(trace.groups.size()), counted, origin,
+        std::to_string(frame.end), std::to_string(trace.ordered.size() - frame.end)
     };
     std::string result;
     for (std::size_t at = 0; at < source.size();) {
