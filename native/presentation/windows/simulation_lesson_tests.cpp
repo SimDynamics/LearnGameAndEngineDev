@@ -188,6 +188,21 @@ int main(int argc,char** argv)try {
           trace.frames[3].phase==curriculum::SimulationPhase::new_maximum &&
           trace.frames[3].explanation.find("casilla") == std::string::npos,
         "The documented numeric example lost the calculated counted/origin indices");
+    // Work can also use the previous maximum in outputTemplate, which is
+    // evaluated BEFORE storing the decision frame. Both native loader paths
+    // must retain that same prior maximum, not accidentally print the new one.
+    auto comparison_root=JsonObject::Parse(winrt::to_hstring(source));
+    simulation_block(comparison_root).GetNamedObject(L"simulation").Insert(
+        L"outputTemplate",JsonValue::CreateStringValue(
+            L"{value}:{frequency}/{previousMaximum}"));
+    const auto comparison_source=winrt::to_string(comparison_root.Stringify());
+    const auto full_comparison=windows::parse_lesson_json(comparison_source,"es");
+    const auto progress_comparison=windows::parse_lesson_progress_metadata(comparison_source,"es");
+    const auto& compared=*full_comparison.pages.at(0).blocks.at(1).simulation;
+    check(progress_comparison.pages.at(0).blocks.at(1).simulation==compared &&
+        curriculum::build_simulation_trace(compared).frames.back().output==
+            "2:2/0\n3:3/2\n7:3/3\n9:1/3\n",
+        "A group output borrowed the new maximum or differed between native loaders");
     invalid_contracts(source);
     empty_text_contracts(source);
 
