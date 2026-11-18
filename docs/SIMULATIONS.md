@@ -852,6 +852,20 @@ texto, sin anticipar el siguiente elemento. La regresión Win32
 etiquetas vacías y repetidas, escenarios, datos editados y lectura
 accesible; su ejecución nativa en Windows sigue pendiente.
 
+Las observaciones de recuento descritas arriba proceden ahora de una
+única función portable, `simulation_count_observation_changes`, en
+`native/core/simulation.cpp`. La vista Windows consume esas líneas
+calculadas sin repetir las reglas de índices y vecinos. La batería de
+`native/core/simulation_tests.cpp` comprueba el texto completo y su
+orden, límites exclusivos, posiciones originales estables, singular y
+plural, igualdad y diferencia, cadena vacía, espacios significativos,
+entradas ya ordenadas y trazas inválidas. La ejecución
+`44355364985` pasó sus cuatro tareas Python, GCC, Clang y MSVC
+portable. Esto **sí verifica el cálculo narrable del núcleo**, pero
+**no acredita aún** la presentación RichEdit ni los gestos y la
+narración nativos de `native.simulation_view` con el toolchain Windows
+exigido por el proyecto.
+
 Al terminar cada grupo, el panel
 también muestra la comparación efectiva entre su frecuencia y el
 **máximo anterior a la decisión**: `>` reemplaza candidatos, `=` agrega
