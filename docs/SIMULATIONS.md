@@ -245,6 +245,23 @@ visible y se vuelva a introducir lo necesario antes de aplicarlo.
 restablecer sus datos, la presencia de una cadena vacía elige **Lista entre
 comillas** para que el dato pueda editarse sin ambigüedad.
 
+La vista Windows conserva una **sesión de modelo validado** independiente de
+las sesiones de lectura. Al abrir el bloque valida una vez su contrato
+completo, sus datos iniciales y todos los escenarios, y transfiere la traza
+inicial ya calculada, sin duplicar esa memoria. Al elegir un escenario,
+restablecer o aplicar datos, sólo valida y calcula la entrada seleccionada:
+no reconstruye otra vez las ocho posibles trazas de escenarios que no han
+cambiado. La conversión de formatos valida el borrador y su traza completa
+antes de permitir el cambio, incluido el límite de 8 MiB. Una entrada
+inválida, un texto mal formado o una ordenación incorrecta con
+`sort: false` siguen rechazándose y no sustituyen el modelo aplicado.
+El contrato de simulación se conserva como una copia privada, de modo que
+ningún cambio externo a la especificación modifica la sesión abierta. Las
+funciones de validación independientes siguen comprobando todo el contrato
+para quienes no utilizan esa sesión. La prueba `validated_simulation_session`
+compara ambos caminos con los mismos datos, límites y rechazos; todavía
+requiere ejecución nativa Windows para confirmar sus resultados.
+
 **Aplicar datos** y cambiar de escenario son operaciones de reemplazo
 completo, no cambios parciales de la traza. La notificación a observadores
 ocurre después de confirmar el nuevo modelo y la vista Win32. Si un
