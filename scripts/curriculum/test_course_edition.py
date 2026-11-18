@@ -19,6 +19,9 @@ SPEC.loader.exec_module(edition)
 state = edition._state_module()
 CONTENT = edition.CONTENT_DIRECTORY
 COURSE = "qa_edition"
+# Both the low-level JSON loader and the indexed edition guard reject links.
+# Their wording may differ, but neither permits a symbolic resource.
+SYMLINK_REJECTION = r"symbolic (?:alias|links)"
 
 
 def descriptor(generation=1, *, course=COURSE, locale="es"):
@@ -238,7 +241,7 @@ class CourseEditionAuthoringTest(unittest.TestCase):
                     self.skipTest(f"OS cannot create symbolic links: {exc}")
                 with mock.patch.object(edition, "_paths_at", return_value=set(before)), \
                         mock.patch.object(edition, "_git_bytes", side_effect=lambda _, __, path: before[path]):
-                    with self.assertRaisesRegex(edition.CourseEditionError, "symbolic alias"):
+                    with self.assertRaisesRegex(edition.CourseEditionError, SYMLINK_REJECTION):
                         edition.check_repository(root, "0" * 40)
                 self.assertTrue(original.exists(), "The rejection must preserve the indexed content")
 
@@ -278,7 +281,7 @@ class CourseEditionAuthoringTest(unittest.TestCase):
                         mock.patch.object(edition, "_paths_at", return_value=set(before)), \
                         mock.patch.object(edition, "_git_bytes",
                                           side_effect=lambda _, __, name: before[name]):
-                    with self.assertRaisesRegex(edition.CourseEditionError, "symbolic alias"):
+                    with self.assertRaisesRegex(edition.CourseEditionError, SYMLINK_REJECTION):
                         if kind in ("course-index", "course-folder",
                                     "locale-folder", "content-folder"):
                             # Avoid dependence on pathlib.glob traversing a
