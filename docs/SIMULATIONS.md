@@ -548,10 +548,15 @@ los dos momentos de fallo y que el siguiente clic completo funcione.
 Cuando una devolución del lector aplica otros datos o selecciona otro paso,
 se descarta igualmente el destino del clic original: un evento de ratón
 antiguo no puede imponer una selección sobre una operación más reciente.
-Una época interna de interacción también evita reutilizar destinos tras
-una actualización fallida. La regresión Win32
-`reentrant_reader_gesture_does_not_override_newer_selection` comprueba
-la navegación anidada, la aplicación de datos y un clic posterior correcto.
+La protección cubre tanto la reentrada durante un único mensaje como
+los cambios independientes que ocurran **entre presionar y soltar**.
+Cada pulsación recuerda la época de interacción en que empezó y no se
+acepta si el simulador ya cambió de estado, aunque el mismo índice o
+tarjeta vuelva a existir después. Una época interna también evita
+reutilizar destinos tras una actualización fallida. Las regresiones Win32
+`reentrant_reader_gesture_does_not_override_newer_selection` e
+`intervening_interaction_cancels_pending_mouse_press` comprueban
+navegación anidada, pasos intermedios, Aplicar datos y clics posteriores.
 Los espacios entre tarjetas y las áreas ocultas tras el desplazamiento
 no son destinos. El puntero indica cuándo una tarjeta es seleccionable.
 El selector de pasos, los botones de decisión y las casillas del array

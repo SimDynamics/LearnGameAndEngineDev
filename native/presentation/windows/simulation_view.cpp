@@ -133,6 +133,9 @@ struct SimulationView::Impl {
     std::vector<HWND> group_buttons;
     std::vector<RECT> cell_rects;
     std::optional<std::size_t> pressed_target,pressed_frequency_group;
+    // Record the interaction at mouse-down, not only the gesture callback's
+    // message. An intervening keyboard/button action can supersede a press.
+    std::uint64_t pressed_target_epoch=0,pressed_frequency_epoch=0;
     POINT pressed_at{},frequency_pressed_at{};
     struct Marker {RECT bounds;std::string text;POINT tip;};
     std::vector<Marker> markers;
@@ -2137,6 +2140,7 @@ struct SimulationView::Impl {
             if(!(wp&(MK_SHIFT|MK_CONTROL|MK_RBUTTON|MK_MBUTTON))){
                 self->pressed_at={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
                 self->pressed_target=self->target_at(self->pressed_at);
+                self->pressed_target_epoch=self->interaction_epoch;
             }
         }else if(message==WM_MOUSEMOVE&&self->pressed_target){
             if(!(wp&MK_LBUTTON)||std::abs(GET_X_LPARAM(lp)-self->pressed_at.x)>self->px(8)||
@@ -2146,7 +2150,9 @@ struct SimulationView::Impl {
         std::optional<std::size_t> clicked_target;
         if(message==WM_LBUTTONUP){
             const POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
-            if(self->pressed_target&&!(wp&(MK_SHIFT|MK_CONTROL))&&
+            if(self->pressed_target&&
+                self->pressed_target_epoch==self->interaction_epoch&&
+                !(wp&(MK_SHIFT|MK_CONTROL))&&
                 self->target_at(point)==self->pressed_target&&
                 std::abs(point.x-self->pressed_at.x)<=self->px(8)&&
                 std::abs(point.y-self->pressed_at.y)<=self->px(8))clicked_target=self->pressed_target;
@@ -2202,6 +2208,7 @@ struct SimulationView::Impl {
             if(!(wp&(MK_SHIFT|MK_CONTROL|MK_RBUTTON|MK_MBUTTON))){
                 self->frequency_pressed_at={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
                 self->pressed_frequency_group=self->frequency_target_at(self->frequency_pressed_at);
+                self->pressed_frequency_epoch=self->interaction_epoch;
             }
         }else if(message==WM_MOUSEMOVE&&self->pressed_frequency_group){
             if(!(wp&MK_LBUTTON)||
@@ -2214,7 +2221,9 @@ struct SimulationView::Impl {
         std::optional<std::size_t> clicked_group;
         if(message==WM_LBUTTONUP){
             const POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
-            if(self->pressed_frequency_group&&!(wp&(MK_SHIFT|MK_CONTROL))&&
+            if(self->pressed_frequency_group&&
+                    self->pressed_frequency_epoch==self->interaction_epoch&&
+                    !(wp&(MK_SHIFT|MK_CONTROL))&&
                     self->frequency_target_at(point)==self->pressed_frequency_group&&
                     std::abs(point.x-self->frequency_pressed_at.x)<=self->px(8)&&
                     std::abs(point.y-self->frequency_pressed_at.y)<=self->px(8))

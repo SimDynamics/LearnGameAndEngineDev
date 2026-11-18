@@ -502,6 +502,73 @@ void current_frequency_decision(HWND host,const std::filesystem::path& captures)
         "A static summary invented a current per-group decision");
     check(spec==authored,"Marking the current group modified authored data");
 }
+void intervening_interaction_cancels_pending_mouse_press(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,850);
+    check(view.go_to_step(7),"Cannot prepare the histogram before an interrupted press");
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    const auto array=GetDlgItem(view.window(),array_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(chart&&array&&editor,"Missing native chart, array, or editor");
+    const auto center=[](RECT box) {
+        const POINT pt{(box.left+box.right)/2,(box.top+box.bottom)/2};
+        check(PtInRect(&box,pt),"The target has no clickable interior");
+        return pt;
+    };
+    const auto press=[](HWND control,POINT pt) {
+        SendMessageW(control,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(pt.x,pt.y));
+    };
+    const auto release=[](HWND control,POINT pt) {
+        SendMessageW(control,WM_LBUTTONUP,0,MAKELPARAM(pt.x,pt.y));
+    };
+
+    // Unlike a reentrant callback on UP, a keyboard, button or direct host
+    // action can intervene BETWEEN messages. Merely checking the epoch
+    // around the UP callback would not detect this superseded chart press.
+    const auto card=view.frequency_card_bounds_in_canvas(0);
+    check(card.has_value(),"The first completed frequency card is missing");
+    const auto chart_point=center(*card);
+    press(chart,chart_point);
+    check(view.go_to_step(8)&&
+        text(view,output_id)=="-8:1\n3:4\n",
+        "Cannot advance the model while the old chart press is pending");
+    release(chart,chart_point);pump();
+    check(view.step_index()==8&&
+        text(view,output_id)=="-8:1\n3:4\n"&&
+        text(view,error_id).empty()&&spec==authored,
+        "Mouse-up selected a stale chart card after an intervening model step");
+
+    // A new Apply resets the trace. The old array cell existed in both
+    // traces, but that does not authorize a click on the newly applied data.
+    check(view.go_to_step(7),"Cannot restore the original trace for an array press");
+    const auto cell=view.cell_bounds_in_canvas(0);
+    check(cell.has_value(),"The first array cell is missing");
+    const auto array_point=center(*cell);
+    press(array,array_point);
+    set_edit_text(editor,"1\n2\n3");
+    click(view,apply_id);
+    check(view.step_index()==0&&view.step_count()==8&&
+        text(view,output_id).empty()&&text(view,error_id).empty(),
+        "An independent Apply did not commit before the pending mouse-up");
+    release(array,array_point);pump();
+    check(view.step_index()==0&&view.step_count()==8&&
+        text(view,output_id).empty()&&text(view,input_id)=="1\n2\n3"&&
+        text(view,error_id).empty()&&spec==authored,
+        "Mouse-up selected an old array-cell target in the newly applied trace");
+
+    // Ordinary complete presses must still navigate in both native surfaces.
+    click_array_cell(view,0);
+    check(view.step_index()==1&&text(view,output_id).empty(),
+        "A legitimate cell click was lost after the cancelled array press");
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the new trace for a legitimate histogram click");
+    click_frequency_card(view,0);
+    check(view.step_index()==2&&text(view,output_id)=="1:1\n"&&
+        text(view,error_id).empty()&&spec==authored,
+        "A legitimate histogram click was lost after the cancelled card press");
+}
+
 void reentrant_reader_gesture_does_not_override_newer_selection(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -5371,6 +5438,7 @@ int main(int argc,char** argv)try {
     };
     run("native_text_control_contract",[&]{native_text_control_contract(host.value);});
     run("current_frequency_decision",[&]{current_frequency_decision(host.value,captures);});
+    run("intervening_interaction_cancels_pending_mouse_press",[&]{intervening_interaction_cancels_pending_mouse_press(host.value);});
     run("reentrant_reader_gesture_does_not_override_newer_selection",[&]{reentrant_reader_gesture_does_not_override_newer_selection(host.value);});
     run("cancelled_passive_gesture_cannot_finish_click",[&]{cancelled_passive_gesture_cannot_finish_click(host.value);});
     run("passive_gesture_exceptions_are_isolated",[&]{passive_gesture_exceptions_are_isolated(host.value);});
