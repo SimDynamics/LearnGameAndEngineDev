@@ -1778,8 +1778,9 @@ def _validate_cpp_fundamentals(base_commit):
                     require(isinstance(answers, list) and bool(answers) and all(isinstance(a, str) and a.strip() for a in answers), where, "respuesta vacía o no textual")
                     validate_answer_contract(block, where)
                 if kind == "order_code":
-                    # Windows rejects blank fragments: visual separators are
-                    # separately authored, never a physical graded card.
+                    # Authoring rule: blank visual separators are declared
+                    # separately, not as a graded physical code card.
+                    # The native parser retains broader legacy compatibility.
                     fragments = block["fragments"]
                     require(isinstance(fragments, list) and bool(fragments)
                             and all(isinstance(fragment, str) and fragment.strip()
