@@ -927,19 +927,61 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         while(at<bounds.close&&!op(t[at],";"))++at;
         return at<bounds.close?std::optional<std::size_t>(at):std::nullopt;
     };
-    // A conditional block with an extra statement is not a proven atomic
-    // assignment. Do not silently credit it by scanning the assignment as
-    // though it ran on every path.
-    const auto writes_existing_alias=[&](std::size_t statement) {
+    // When a branch is unrelated to the returned value, skip it rather
+    // than treating its statements (or the other arm of an else) as
+    // unconditional writes. A variable declared inside a branch may shadow
+    // an outer result without modifying it. Follow lexical block lifetimes
+    // and reject any write to an actual outer alias, early return, or nested
+    // control flow that this small source proof cannot establish.
+    const auto harmless_branch=[&](std::size_t statement)
+            ->std::optional<std::size_t> {
         const auto last=statement_end(statement);
-        if(!last)return true;
-        for(auto at=statement;at+1<=*last;++at) {
-            if(!t[at].starts_with("id:")||!op(t[at+1],"="))continue;
-            if(std::ranges::any_of(aliases,[&](const Alias& alias){
-                return id(t[at],alias.name);
-            }))return true;
+        if(!last)return {};
+        struct Shadow { std::string name; std::size_t depth; };
+        std::vector<Shadow> shadows;
+        std::size_t depth=0;
+        const auto assignment=[&](std::string_view token) {
+            return op(token,"=")||op(token,"+=")||op(token,"-=")||
+                op(token,"*=")||op(token,"/=")||op(token,"%=")||
+                op(token,"&=")||op(token,"|=")||op(token,"^=")||
+                op(token,"<<=")||op(token,">>=")||
+                op(token,"++")||op(token,"--");
+        };
+        for(auto at=statement;at<=*last;++at) {
+            if(op(t[at],"{")){++depth;continue;}
+            if(op(t[at],"}")) {
+                std::erase_if(shadows,[&](const Shadow& shadow){
+                    return shadow.depth==depth;
+                });
+                if(depth)--depth;
+                continue;
+            }
+            if(id(t[at],"return")||id(t[at],"co_return")||
+               id(t[at],"throw")||id(t[at],"if")||
+               id(t[at],"for")||id(t[at],"while")||
+               id(t[at],"switch")||id(t[at],"goto")||
+               id(t[at],"try")||id(t[at],"break")||
+               id(t[at],"continue"))return {};
+            if((id(t[at],"int")||id(t[at],"auto"))&&
+               at+1<=*last) {
+                auto declared_at=at+1;
+                if(id(t[declared_at],"const")||
+                   id(t[declared_at],"constexpr"))++declared_at;
+                if(declared_at<=*last&&
+                   t[declared_at].starts_with("id:"))
+                    shadows.push_back({t[declared_at].substr(3),depth});
+            }
+            if(!t[at].starts_with("id:"))continue;
+            const auto known=std::ranges::any_of(aliases,
+                [&](const Alias& alias){return id(t[at],alias.name);});
+            const auto shadowed=std::ranges::any_of(shadows,
+                [&](const Shadow& shadow){return id(t[at],shadow.name);});
+            if(!known||shadowed)continue;
+            if((at+1<=*last&&assignment(t[at+1]))||
+               (at>statement&&(op(t[at-1],"++")||
+                               op(t[at-1],"--"))))return {};
         }
-        return false;
+        return last;
     };
     for(auto i=bounds.open+1;i<bounds.close;++i) {
         if(op(t[i],"{")){++nesting;continue;}
@@ -1022,11 +1064,20 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                             i=end;
                             continue;
                         }
-                        // An unrecognized certain branch with a live alias
-                        // assignment cannot be credited through its dead else.
-                        if(const auto end=statement_end(statement);
-                           end&&*end+1<bounds.close&&id(t[*end+1],"else"))
-                            return 0;
+                        // A certain, harmless branch may be skipped; any
+                        // else is dead, even if it contains unrelated code.
+                        // Unrecognized writes or nested returns fail closed.
+                        if(const auto end=harmless_branch(statement)) {
+                            auto last=*end;
+                            if(last+1<bounds.close&&id(t[last+1],"else")) {
+                                const auto skipped=statement_end(last+2);
+                                if(!skipped)return 0;
+                                last=*skipped;
+                            }
+                            i=last;
+                            continue;
+                        }
+                        return 0;
                     }else if(const auto branch=direct_return(statement)) {
                         const auto first_return=
                             id(t[statement],"return")?statement:statement+1;
@@ -1090,7 +1141,19 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                             }
                             continue;
                         }
-                        if(writes_existing_alias(statement))return 0;
+                        // Unknown branches must not lend lexical uses
+                        // to the returned result. Skip only fully harmless
+                        // paths, including the complete else arm if present.
+                        const auto first_end=harmless_branch(statement);
+                        if(!first_end)return 0;
+                        auto last=*first_end;
+                        if(last+1<bounds.close&&id(t[last+1],"else")) {
+                            const auto other=harmless_branch(last+2);
+                            if(!other)return 0;
+                            last=*other;
+                        }
+                        i=last;
+                        continue;
                     }
                 }
             }
