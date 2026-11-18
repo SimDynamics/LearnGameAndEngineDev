@@ -393,7 +393,15 @@ class RepositoryGateTest(unittest.TestCase):
     def test_direct_upgrade_from_legacy_tree_needs_no_intermediate_release(self):
         self.adopt()
         report = m.check_repository(self.root, self.base)
-        self.assertEqual(report, {'base_commit': self.base, 'mapped_lessons': 3, 'families': 1})
+        self.assertEqual(report, {
+            'base_commit': self.base,
+            'mapped_lessons': 3,
+            'families': 1,
+            # Even a legacy-only fixture reports edition discovery explicitly.
+            # The absence of an edition must not be mistaken for a reset.
+            'course_edition_boundaries': [],
+            'active_edition_resources': [],
+        })
         for path in self.files.values():
             self.assertEqual(m.validate(m.load(path))[0, 0], (2, 0))
 
