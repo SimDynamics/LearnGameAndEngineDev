@@ -1199,6 +1199,90 @@ void capacity() {
             return (piezas + capacidad - 1) / capacidad;
         })cpp",rules,true,"Comments and literals are not build-location evidence");
 }
+void conditional_assignment_branches() {
+    const std::array rules{NamedRuleRequirement{"cajas_para",4,
+        {"capacidad","plaza","cupo"},2}};
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            if (piezas == 0) {
+                resultado = 0;
+            } else {
+                resultado = (piezas + capacidad - 1) / capacidad;
+            }
+            return resultado;
+        })cpp",rules,true,
+        "A zero-domain guard and an assigned named result are equivalent");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int plazas_por_caja{4};
+            int resultado{0};
+            if (piezas > 0)
+                resultado = (piezas + plazas_por_caja - 1) / plazas_por_caja;
+            else
+                resultado = 0;
+            return resultado;
+        })cpp",rules,true,
+        "Unbraced if/else assignment retains the named rule");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            if (piezas % 2 == 0) {
+                resultado = (piezas + capacidad - 1) / capacidad;
+            } else {
+                resultado = (piezas - 1) / capacidad + 1;
+            }
+            return resultado;
+        })cpp",rules,true,
+        "Distinct yet equivalent branches may both depend on capacity");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            if (piezas > 10) {
+                resultado = (piezas + 3) / 4;
+            } else {
+                resultado = (piezas + capacidad - 1) / capacidad;
+            }
+            return resultado;
+        })cpp",rules,false,
+        "A hardcoded branch cannot borrow named uses from the other branch");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            if (piezas > 10)
+                resultado = (piezas + capacidad - 1) / capacidad;
+            else
+                resultado = 1;
+            return resultado;
+        })cpp",rules,false,
+        "Only a zero guard may omit named calculation in a branch");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            if (piezas < 0) resultado = 0;
+            else resultado = 0;
+            return resultado;
+        })cpp",rules,false,
+        "Two literal guards do not establish a named result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            if (piezas > 10)
+                resultado = (piezas + capacidad - 1) / capacidad;
+            else
+                resultado = (piezas + 3) / 4;
+            resultado = (piezas + 3) / 4;
+            return resultado;
+        })cpp",rules,false,
+        "A later hardcoded overwrite removes branch-assignment evidence");
+}
+
 void separate_rules() {
     const std::array rules{
         NamedRuleRequirement{"cajas_para",6,{"capacidad","plaza","cupo"},2},
@@ -1985,7 +2069,7 @@ void constant_variation_source_identity() {
 
 int main() {
     try {
-        capacity();separate_rules();price_and_minimum();
+        capacity();conditional_assignment_branches();separate_rules();price_and_minimum();
         comment_only_header_changes();independently_generated_probe();
         real_battery_contract_and_sources();real_battery_traces_and_verdicts();
         constant_variation_contract();constant_variation_source_identity();
