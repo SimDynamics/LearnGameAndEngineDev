@@ -2835,8 +2835,28 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require_math_prompt_semantics(root,id,block,math_marked_prompts.contains(id));
             }
             if(const auto prior=source_format_originals.find(id);
-                    prior!=source_format_originals.end())
+                    prior!=source_format_originals.end()) {
                 require_formatted_question_semantics(root,id,prior->second,block);
+            } else if(block.HasKey(L"explanation")) {
+                // An ordinary activity can receive its first explanation
+                // without a source-format archive (e.g. U1L4 drag-fill).
+                // When the authenticated editorial edge proves that adding
+                // this field was the exact change, require its own authored
+                // semantic marker. Editorial hashes alone do not grant new
+                // readable text ownership.
+                const auto type=text(block,"type");
+                const bool ordinary=type=="multiple_choice"||type=="fill_code"||
+                    type=="output_prediction"||type=="order_code"||
+                    type=="drag_fill_code"||type=="inline_fill_code";
+                if(ordinary) {
+                    auto preceding=JsonObject::Parse(block.Stringify());
+                    preceding.Remove(L"explanation");
+                    const auto revisions=editorial_edges.find(id);
+                    if(revisions!=editorial_edges.end() &&
+                            revisions->second.contains({fingerprint(preceding),fingerprint(block)}))
+                        require_formatted_question_semantics(root,id,preceding,block);
+                }
+            }
             const auto general=general_choice_revisions.find(id);
             const auto normalized_choice=general!=general_choice_revisions.end()?
                 general_choice_projection(projected,general->second):projected;
