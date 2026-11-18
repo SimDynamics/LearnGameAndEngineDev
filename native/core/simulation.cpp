@@ -459,7 +459,10 @@ std::string simulation_frame_text(const SimulationSpec& spec,
     result += spec.labels.end + ": " + std::to_string(frame.end) + '\n';
     result += spec.labels.frequency + ": " + std::to_string(frame.frequency) + '\n';
     result += spec.labels.maximum + ": " + std::to_string(frame.maximum) + '\n';
-    result += spec.labels.leaders + ": " + joined_values(frame.leaders, true) + '\n';
+    // A missing candidate is not the same as an empty-string candidate.
+    // Match the visible Windows panel without changing calculated raw output.
+    result += spec.labels.leaders + ": " +
+        (frame.leaders.empty() ? std::string("ninguno") : joined_values(frame.leaders, true)) + '\n';
     result += spec.labels.output + ":\n" + frame.output;
     return result;
 }
