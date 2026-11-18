@@ -515,7 +515,7 @@ JsonObject general_choice_projection(const JsonObject& current,
 // Authenticate the previous public-text marker, not only the option bytes.
 // The root overlay is outside statePayload; without this archive, a choice
 // could silently alter old narration offsets while preserving its answer.
-void validate_general_choice_semantic_archive(
+std::optional<TextSemantics> validate_general_choice_semantic_archive(
         const JsonObject& root,const JsonObject& revision) {
     require(revision.HasKey(L"semanticBefore"),
         "A general choice revision must archive its previous semantic marker");
@@ -549,16 +549,16 @@ void validate_general_choice_semantic_archive(
             semantics.spans.push_back(std::move(part));
         }
         validate_text_semantics(semantics);
-        return semantics.spans.size();
+        return semantics;
     };
     const auto archived_value=revision.GetNamedValue(L"semanticBefore");
     std::optional<JsonObject> archived;
-    std::size_t old_spans=0;
+    std::optional<TextSemantics> previous_semantic;
     if(archived_value.ValueType()!=JsonValueType::Null) {
         require(archived_value.ValueType()==JsonValueType::Object,
             "The previous semantic marker must be an object or null");
         archived=archived_value.GetObject();
-        old_spans=check_marker(*archived,
+        previous_semantic=check_marker(*archived,
             utf8(options.GetStringAt(static_cast<unsigned>(at))));
     }
 
@@ -582,8 +582,8 @@ void validate_general_choice_semantic_archive(
         require(revision.GetNamedValue(L"semanticAfter").ValueType()==JsonValueType::Object,
             "An explicit choice descriptor must be an object");
         const auto authored=revision.GetNamedObject(L"semanticAfter");
-        const auto authored_spans=check_marker(authored,text(revision,"replacement"));
-        require(!old_spans||authored_spans,
+        const auto authored_semantic=check_marker(authored,text(revision,"replacement"));
+        require(!previous_semantic||previous_semantic->spans.empty()||!authored_semantic.spans.empty(),
             "A marked choice cannot silently lose all its highlights");
         require(active&&fingerprint(*active)==fingerprint(authored),
             "The active choice semantic marker differs from its authenticated revision");
@@ -600,6 +600,7 @@ void validate_general_choice_semantic_archive(
                 "A general choice revision altered a historic semantic span");
         }
     }
+    return previous_semantic;
 }
 
 struct ReviewedChoice {
@@ -2316,12 +2317,13 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 "Unknown, inactive or repeated choice revision identity");
             const auto* reviewed=reviewed_choice_owner(lesson_id,id);
             const auto snapshot=item.GetNamedObject(L"block");
+            std::optional<TextSemantics> previous_option_semantic;
             if(item.HasKey(L"optionIndex")) {
                 if(item.HasKey(L"semanticAfter"))
                     allowed_keys(item,{"id","block","optionIndex","replacement","semanticBefore",
                         "semanticAfter","semanticRootBefore"},true);
                 else allowed_keys(item,{"id","block","optionIndex","replacement","semanticBefore"},true);
-                validate_general_choice_semantic_archive(root,item);
+                previous_option_semantic=validate_general_choice_semantic_archive(root,item);
                 require(!reviewed&&text(snapshot,"type")=="multiple_choice"&&
                         state_fingerprint(snapshot)==result.signatures.at(id),
                     "General choice archive must belong to an original unchanged answer");
@@ -2341,9 +2343,11 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             ChoiceRevision record;record.id=id;
             record.raw_json=utf8(snapshot.Stringify());
             record.sha256=fingerprint(snapshot);
-            if(item.HasKey(L"optionIndex"))
+            if(item.HasKey(L"optionIndex")) {
                 record.general_option_index=integer(item.GetNamedValue(L"optionIndex"),
                     static_cast<std::size_t>(array(snapshot,"options").Size()-1));
+                record.original_option_text_semantics=std::move(previous_option_semantic);
+            }
             result.choice_revisions.push_back(std::move(record));
         }
     }
