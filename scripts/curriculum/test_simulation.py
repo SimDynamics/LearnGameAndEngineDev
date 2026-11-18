@@ -67,6 +67,46 @@ def lesson(include_simulation=True):
 
 
 class SimulationContractTest(unittest.TestCase):
+    def test_native_state_layout_fixture_tracks_the_exact_documented_example(self):
+        """Pin the native synthetic lesson to its actual current source.
+
+        The test does not rewrite a published student's state or relax the
+        immutable stateLayout contract. It reproduces the Win32 QA input
+        verbatim, then requires every provenance digest to agree.
+        """
+        example = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+        fixture_path = (Path(__file__).resolve().parents[2] /
+                        "native/presentation/windows/fixtures/simulation_state_layout.json")
+        fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+        raw = {
+            "id": "qa_simulation_lesson",
+            "title": "Simulación nativa",
+            "pages": [
+                {"blocks": [
+                    {"type": "paragraph",
+                     "text": "Este párrafo conserva su propia lectura y su pausa."},
+                    example]},
+                {"blocks": [
+                    {"type": "paragraph",
+                     "text": "Página posterior sin ejercicio artificial."}]},
+            ],
+        }
+        generated = state.prepare_v2(raw, "es", {"es": raw})
+        self.assertEqual(fixture, generated["stateLayout"],
+                         "Native QA provenance is stale against the current authored example")
+        native_qa = deepcopy(raw)
+        native_qa["stateLayout"] = deepcopy(fixture)
+        state.validate(native_qa)
+        self.assertEqual(fixture["family"]["es"]["origin"], fixture["origin"])
+        # Regression: a future change of numeric input or explanation must
+        # fail when paired with the pinned, unchanged native QA map.
+        modified = deepcopy(native_qa)
+        modified["pages"][0]["blocks"][1]["simulation"]["values"][0] = 8
+        with self.assertRaises(state.LayoutError):
+            state.validate(modified)
+        self.assertEqual(json.loads(fixture_path.read_text(encoding="utf-8")),
+                         fixture, "QA validation unexpectedly rewrote its source fixture")
+
     def test_documented_example_and_each_view_are_supported(self):
         example = json.loads(EXAMPLE.read_text(encoding="utf-8"))
         simulation.validate_contract(example)
