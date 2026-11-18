@@ -5155,6 +5155,9 @@ void late_reader_zoom_update_failure_restores_native_scale(HWND host) {
     control_wheel(host,editor,2*WHEEL_DELTA);
     check(rich_edit_scale(editor)==120&&rich_edit_scale(title)==100,
         "Cannot prepare the editor's independent Ctrl+wheel zoom");
+    control_wheel(host,editor,WHEEL_DELTA/2);
+    check(rich_edit_scale(editor)==120,
+        "A partial Ctrl+wheel notch changed the local zoom before the failed scale");
 
     const CHARRANGE chosen_input{1,3};
     const CHARRANGE chosen_output{0,3};
@@ -5213,6 +5216,11 @@ void late_reader_zoom_update_failure_restores_native_scale(HWND host) {
             "A different RichEdit kept the rejected reader zoom after recovery");
     }
 
+    // The rejected reader zoom is not a new editor zoom session. Resume
+    // the half-notch that existed before it without losing that gesture.
+    control_wheel(host,editor,WHEEL_DELTA/2);
+    check(rich_edit_scale(editor)==130,
+        "A failed reader zoom discarded the pending editor wheel fraction");
     // Once the one-shot fault has cleared, normal reader zoom must still
     // override the editor's local zoom and then return cleanly to 100%.
     view.set_text_scale(110);resize(view,820);
