@@ -737,7 +737,7 @@ void individual_receipts_preserve_the_aggregate_and_optional_history(){
         if(key.ends_with("history-sequence/v1"))
             check(stored.preferences["native_windows"].at(key)==value,
                 "Optional output replaced an independent historical or current History seal");
-    const auto reopened=state::decode_state(state::encode_state(stored));
+    const auto reopened=state::decode(state::encode(stored));
     check(compiler_puzzle_completed(reopened,lesson,legacy)&&
         compiler_puzzle_completed(reopened,lesson,current)&&
         compiler_puzzle_case_count(reopened,lesson,current)==2,
