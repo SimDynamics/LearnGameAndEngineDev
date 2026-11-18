@@ -4232,6 +4232,13 @@ void applying_valid_data_is_atomic_after_native_failure(HWND host) {
         retained.cpMin==selection.cpMin&&retained.cpMax==selection.cpMax&&
         spec==authored,
         "A rejected Win32 presentation left the candidate model partly applied");
+    const auto diagnostic=text(view,error_id);
+    const auto warning=GetDlgItem(view.window(),error_id);
+    check(warning&&diagnostic.find("No se aplicaron los datos.")!=std::string::npos&&
+        name(warning)==diagnostic&&
+        std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==warning&&region.source_text==diagnostic;
+        }),"A rejected Apply did not synchronize visible and accessible diagnostic text");
 
     // The learner can correct/retry immediately; a successful second Apply
     // starts a new session rather than remaining stuck in the failed model.
@@ -4240,6 +4247,10 @@ void applying_valid_data_is_atomic_after_native_failure(HWND host) {
         view.step_count()!=previous_count&&
         view.reading_regions()[2].key!=prior_identity,
         "A valid retry could not leave the rolled-back model");
+    check(name(warning).empty()&&
+        std::ranges::none_of(view.reading_regions(),[&](const auto& region){
+            return region.target==warning;
+        }),"A successful Apply left the earlier rejection in accessible narration");
     check(view.go_to_step(view.step_count()-1)&&
         text(view,output_id)=="1:1\n2:1\n3:1\n"&&spec==authored,
         "The retried Apply did not compute the newly submitted input");
