@@ -4166,6 +4166,82 @@ void input_format_conversion_rejects_native_failures(HWND host) {
         "Input-format conversion did not recover after a late native failure");
 }
 
+void input_format_rejection_survives_repeated_richedit_failure(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.text_values=true;
+    spec.values={std::string("patio"),std::string("patio")};
+    spec.scenarios.clear();
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare a completed text trace for repeated RichEdit failures");
+    const auto old_step=view.step_index(),old_count=view.step_count();
+    const auto old_output=text(view,output_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto format=GetDlgItem(view.window(),input_format_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    const auto warning_control=GetDlgItem(view.window(),error_id);
+    check(editor&&format&&output&&warning_control,
+        "Missing native controls for repeated format-warning failures");
+    set_edit_text(editor,"sol\nluna");
+    const CHARRANGE selection{1,3};
+    SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+
+    // First fault rejects the new format's presentation. The second rejects
+    // even the rollback's attempt to redraw the warning with RichEdit.
+    int zoom_rejections=2;
+    const auto reject_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& remaining=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&remaining>0){--remaining;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53494657;
+    check(SetWindowSubclass(output,reject_zoom,hook_id,
+        reinterpret_cast<DWORD_PTR>(&zoom_rejections))!=FALSE,
+        "Cannot inject two consecutive RichEdit zoom rejections");
+    struct Unhook {
+        HWND child;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(child))RemoveWindowSubclass(child,callback,id);}
+    } guard{output,reject_zoom,hook_id};
+    const auto select=[&]{
+        check(SendMessageW(format,CB_SETCURSEL,1,0)!=CB_ERR,
+            "Cannot request the JSON format");
+        SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(input_format_id,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(format));pump();
+    };
+    select();
+    const auto warning=text(view,error_id);
+    CHARRANGE returned{};
+    SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&returned));
+    check(zoom_rejections==0&&
+        SendMessageW(format,CB_GETCURSEL,0,0)==0&&
+        text(view,input_id)=="sol\nluna"&&
+        warning.find("No se cambió el formato;")!=std::string::npos&&
+        warning.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+        warning.find("No se pudo presentar el aviso con RichEdit:")!=std::string::npos&&
+        warning.find("No se pudo actualizar la simulación.")==std::string::npos&&
+        returned.cpMin==selection.cpMin&&returned.cpMax==selection.cpMax&&
+        text(view,output_id)==old_output&&
+        view.step_index()==old_step&&view.step_count()==old_count&&
+        control_shown(warning_control)&&spec==authored,
+        "Repeated RichEdit failures hid the conversion error or committed an unconfirmed format");
+    check(name(warning_control)==warning&&
+        std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==warning_control&&region.source_text==warning;
+        }),"The direct Win32 fallback did not update the accessible warning and narration");
+
+    // The fault injection is exhausted. A normal retry must convert the
+    // same pending draft without changing the applied model or its step.
+    select();
+    check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+        text(view,input_id)=="[\"sol\", \"luna\"]"&&
+        text(view,error_id).empty()&&
+        view.step_index()==old_step&&view.step_count()==old_count&&
+        text(view,output_id)==old_output&&spec==authored,
+        "A repeated warning failure prevented a later valid format conversion");
+}
+
 void input_format_callback_failure_keeps_converted_draft(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     spec.text_values=true;
@@ -5595,6 +5671,7 @@ int main(int argc,char** argv)try {
     run("modes",[&]{modes(host.value,captures);});
     run("text_and_independent_views",[&]{text_and_independent_views(host.value,captures);});
     run("input_format_conversion_rejects_native_failures",[&]{input_format_conversion_rejects_native_failures(host.value);});
+    run("input_format_rejection_survives_repeated_richedit_failure",[&]{input_format_rejection_survives_repeated_richedit_failure(host.value);});
     run("input_format_callback_failure_keeps_converted_draft",[&]{input_format_callback_failure_keeps_converted_draft(host.value);});
     run("input_format_conversion_reports_unrecoverable_draft",[&]{input_format_conversion_reports_unrecoverable_draft(host.value);});
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});
