@@ -159,6 +159,28 @@ class RetiredStateLayoutTest(unittest.TestCase):
                 self.assertEqual(len(old_history) + 1, len(history))
                 old_count = len(previous["stateLayout"].get("retired", []))
                 removing = [item["id"] for item in published["stateLayout"]["retired"][old_count:]]
+                historical = history[-1]
+                if (historical["pages"] != previous["pages"] or
+                        historical["current"] != previous["stateLayout"]["current"]):
+                    # This historical batch followed a real intermediate
+                    # publication that added pages or exercises. Replaying
+                    # it directly against the much older fixture would
+                    # manufacture a transition that was never published, and
+                    # its modern referenceAfter links can name new owners.
+                    # Authenticate the complete current snapshot with
+                    # validate(), then require the old archive and its
+                    # historical reading sequence to remain an exact prefix.
+                    self.assertEqual(old_history, history[:len(old_history)])
+                    previous_retired = previous["stateLayout"].get("retired", [])
+                    self.assertEqual(previous_retired,
+                                     published["stateLayout"]["retired"][:old_count])
+                    self.assertEqual(removing, historical["retired"])
+                    old_additions = previous["stateLayout"]["additions"]
+                    later_additions = published["stateLayout"]["additions"]
+                    self.assertEqual(old_additions,
+                                     later_additions[:len(old_additions)])
+                    self.assertGreater(len(later_additions), len(old_additions))
+                    return
                 rehearsal = layout.retire(previous, removing,
                     activity_after=published.get("activityAfter", []),
                     reference_after=published.get("referenceAfter", []),
