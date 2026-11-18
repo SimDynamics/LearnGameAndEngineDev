@@ -130,6 +130,16 @@ void compact_diagnostic_path_cases(){
         L"tests\\main.cpp(9): note: aquí\n","The control project or a same-basename file lost its relative folder");
     expect(L"C:\\QA\\Código & (espacio)\\run-1\\control\\main.cpp(1,1): error C1189: control\n",
         L"main.cpp(1,1): error C1189: control\n","The single-file control root was not shortened");
+    // A failed native build can put the same source location in the
+    // driver's error_utf8 field instead of MSVC stdout/stderr. The caller
+    // now uses this exact display transformation for both channels.
+    const std::wstring driver_error=
+        L"C:\\QA\\Código & (espacio)\\run-1\\candidate\\main.cpp(16,31): error C2059: ')'\r\n"
+        L"  El proceso de compilación no pudo continuar.\r\n";
+    expect(driver_error,
+        L"main.cpp(16,31): error C2059: ')'\r\n"
+        L"  El proceso de compilación no pudo continuar.\r\n",
+        "The driver exception left a long owned source path or changed its failure reason");
     expect(L"C:/QA/Código & (espacio)/run-1/main.cpp:4:9: error: expected ';'\r\n",
         L"main.cpp:4:9: error: expected ';'\r\n","Clang coordinates or CRLF changed");
     expect(L"In file included from C:/QA/Código & (espacio)/run-1/candidate/project/include/uno.hpp:3:\n"
