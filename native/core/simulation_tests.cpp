@@ -350,7 +350,7 @@ void validated_simulation_session() {
             "The validated text list lost its empty/space distinctions");
     }
     for(const auto* invalid : {R"(["a",])",R"(["\u0000"])",R"(["\n"])",
-            R"(["patio" ""])") {
+            R"(["patio" ""])"}) {
         rejected([&]{(void)words_session.parse_values(invalid,SimulationInputFormat::json);},
             "A reusable text session accepted a forbidden JSON draft");
     }
