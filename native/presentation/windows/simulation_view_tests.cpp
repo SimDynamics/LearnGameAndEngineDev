@@ -2945,6 +2945,78 @@ void static_simulation_text_is_not_restreamed(HWND host) {
 }
 
 
+void silent_richedit_explanation_stream_cannot_commit_step(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    const auto explanation=GetDlgItem(view.window(),explanation_id);
+    const auto error_control=GetDlgItem(view.window(),error_id);
+    check(explanation&&error_control,
+        "Missing native explanation and error controls for silent stream rejection");
+    const auto previous_text=text(view,explanation_id);
+    const auto expected_next=build_simulation_trace(spec).frames.at(1).explanation;
+    check(previous_text!=expected_next,
+        "A silent RichEdit replacement needs genuinely different frame explanations");
+    const auto previous_array=name(GetDlgItem(view.window(),array_id));
+    const auto previous_output=text(view,output_id);
+    const auto previous_steps=view.step_count();
+    const auto previous_regions=view.reading_regions();
+
+    struct StreamProbe {int streams=0,skipped=0;} probe;
+    const auto skip_once=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& state=*reinterpret_cast<StreamProbe*>(raw);
+        if(message==EM_STREAMIN){
+            ++state.streams;
+            if(!state.skipped){++state.skipped;return 0;}
+        }
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53495354;
+    check(SetWindowSubclass(explanation,skip_once,hook_id,
+        reinterpret_cast<DWORD_PTR>(&probe))!=FALSE,
+        "Cannot intercept the simulation explanation RichEdit stream");
+    struct Unhook {
+        HWND child;SUBCLASSPROC proc;UINT_PTR id;
+        ~Unhook(){if(IsWindow(child))RemoveWindowSubclass(child,proc,id);}
+    } guard{explanation,skip_once,hook_id};
+
+    // An EM_STREAMIN that silently leaves the old document in place must
+    // reject the new computed step. The recovery may stream the previous
+    // explanation, but it may not claim that a different explanation is shown.
+    const auto accepted=view.go_to_step(1);
+    const auto diagnostic=text(view,error_id);
+    check(!accepted&&probe.skipped==1&&probe.streams>=2&&
+        view.step_index()==0&&view.step_count()==previous_steps&&
+        text(view,explanation_id)==previous_text&&
+        text(view,output_id)==previous_output&&
+        name(GetDlgItem(view.window(),array_id))==previous_array&&
+        diagnostic.find("No se pudo cambiar el paso.")!=std::string::npos&&
+        diagnostic.find("RichEdit no conservó el texto de presentación.")!=std::string::npos&&
+        spec==authored,
+        "A silently rejected RichEdit explanation stream was committed or hid its cause");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==error_control&&region.source_text==diagnostic;
+    }),"A silently rejected explanation was not reported to accessible narration");
+    for(const auto& old:previous_regions){
+        if(old.target==error_control)continue;
+        const auto regions=view.reading_regions();
+        const auto current=std::ranges::find_if(regions,[&](const auto& item){
+            return item.target==old.target;
+        });
+        check(current!=regions.end()&&current->key==old.key&&
+            current->source_text==old.source_text,
+            "A rejected explanation changed an unrelated calculated narration");
+    }
+
+    // The one-shot fault is gone. The next navigation must present the exact
+    // new explanation and clear only the transient error.
+    check(view.go_to_step(1)&&probe.streams>=3&&
+        view.step_index()==1&&text(view,explanation_id)==expected_next&&
+        text(view,error_id).empty()&&spec==authored,
+        "After a silent RichEdit rejection, a valid retry did not refresh its explanation");
+}
+
 void step_navigation_rolls_back_native_presentation_failure(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -5964,6 +6036,7 @@ int main(int argc,char** argv)try {
     run("repeated_step_explanation_preserves_native_reading",[&]{repeated_step_explanation_preserves_native_reading(host.value);});
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("step_navigation_rolls_back_native_presentation_failure",[&]{step_navigation_rolls_back_native_presentation_failure(host.value);});
+    run("silent_richedit_explanation_stream_cannot_commit_step",[&]{silent_richedit_explanation_stream_cannot_commit_step(host.value);});
     run("reentrant_navigation_keeps_newer_native_error",[&]{reentrant_navigation_keeps_newer_native_error(host.value);});
     run("navigation_callback_failure_keeps_committed_steps",[&]{navigation_callback_failure_keeps_committed_steps(host.value);});
     run("reentrant_success_survives_outer_observer_exception",[&]{reentrant_success_survives_outer_observer_exception(host.value);});
