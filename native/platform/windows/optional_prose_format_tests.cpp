@@ -33,7 +33,10 @@ void rejected(const std::filesystem::path& file,
                     std::string_view(error.what()).find(expected_reason) != std::string_view::npos,
                 "The Windows loader rejected blank Unicode prose for an unrelated reason");
         }
-        require(failed, "The Windows loader accepted an unproved source/prose revision");
+        require(failed, std::string("The Windows ") +
+            (progress ? "progress" : "lesson") +
+            " loader accepted an unproved source/prose revision: " +
+            file.filename().string());
     }
 }
 }
