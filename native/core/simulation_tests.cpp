@@ -195,6 +195,10 @@ void empty_text_values_and_labels() {
         trace.frames.size() == 4 && trace.frames.back().maximum == 1 &&
         trace.frames.back().leaders == words({""}) && trace.frames.back().output == ":1\n",
         "A single empty text was confused with an empty collection");
+    const auto single_candidate = simulation_frame_text(spec, trace, trace.frames.back());
+    check(single_candidate.find("Máxima: 1\nMayores: \"\" (cadena vacía)\n") != std::string::npos &&
+        single_candidate.ends_with("Salida:\n:1\n"),
+        "An empty-string winner must remain distinct from no candidate");
     check(trace.frames[1].explanation.find("\"\" (cadena vacía)") != std::string::npos &&
         trace.frames.back().explanation.find("mayores=\"\" (cadena vacía)") != std::string::npos,
         "The explanation omitted the empty value or its candidate");
