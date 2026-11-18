@@ -1531,6 +1531,12 @@ struct SimulationView::Impl {
                 report_native_error("",diagnostic+
                     " No se pudo presentar el aviso con los controles de Windows.");
             }
+            // The failed RichEdit zoom precedes the usual CBN selector sync
+            // in update(). Restore the native choice even when that redraw
+            // never reaches its input-format controls.
+            if(const auto selector=item(input_format_id);selector&&IsWindow(selector))
+                SendMessageW(selector,CB_SETCURSEL,
+                    previous_format==SimulationInputFormat::json?1:0,0);
             restore_output_reading_anchor(reading,input_id);
             // Even a throwing observer must not overwrite the meaningful
             // conversion error which the learner needs to correct.
