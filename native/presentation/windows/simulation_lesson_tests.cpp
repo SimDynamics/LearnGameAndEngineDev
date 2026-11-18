@@ -165,6 +165,11 @@ int main(int argc,char** argv)try {
         "Exploration unexpectedly became a graded compiler activity");
     const auto trace=curriculum::build_simulation_trace(*block.simulation);
     check(trace.frames.size()>2&&!trace.groups.empty(),"The authored example has no real computed traversal");
+    check(trace.frames.front().explanation.find("Datos pendientes por contar: 9.")!=std::string::npos &&
+          trace.frames[1].explanation.find("Progreso: 1 de 9; posiciones pendientes: 8.")!=std::string::npos &&
+          trace.frames[3].explanation.find("Después de decidir, posiciones pendientes: 7.")!=std::string::npos &&
+          trace.frames.back().explanation.find("Posiciones pendientes: 0.")!=std::string::npos,
+        "The documented numeric explanation lost dynamic processed/remaining counts");
     check(trace.source_indices==std::vector<std::size_t>{2,6,1,4,7,0,3,8,5} &&
           trace.frames[1].explanation.find("casilla 0 de la copia ordenada, que procede del índice original 2")!=std::string::npos &&
           trace.frames[2].explanation.find("casilla 1, procedente del índice original 6")!=std::string::npos &&
@@ -226,6 +231,18 @@ int main(int argc,char** argv)try {
             final.maximum==expected.maximum&&
             final.output==expected.output&&leaders==expected.leaders,
             "The real text example's groups, empty/space candidates or stdout changed");
+        if(applied.empty()) {
+            check(computed.frames.size()==1&&
+                computed.frames.front().explanation.find(
+                    "Etiquetas procesadas: 0; pendientes: 0.")!=std::string::npos,
+                "The documented empty scenario invented a processed item");
+        } else {
+            const auto first_progress="Progreso: 1 de "+std::to_string(applied.size())+
+                "; etiquetas pendientes: "+std::to_string(applied.size()-1)+".";
+            check(computed.frames[1].explanation.find(first_progress)!=std::string::npos&&
+                final.explanation.find("Etiquetas pendientes: 0.")!=std::string::npos,
+                "The documented text scenario lost the dynamic pending count");
+        }
         if(std::string_view(expected.scenario)=="desorden_y_repeticiones")
             check(computed.source_indices==std::vector<std::size_t>{3,1,0,2} &&
                 computed.frames[1].explanation.find("casilla 0 de la copia ordenada, procedente del índice original 3")!=std::string::npos &&
