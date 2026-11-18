@@ -253,6 +253,7 @@ class CourseEditionAuthoringTest(unittest.TestCase):
                              if "/edition_es_1__" in path and "/unit_" in path)
         lesson_relative = next(path for path in current
                                if "/edition_es_1__" in path and "/lesson_" in path)
+        course_relative = f"{CONTENT}/es/programming/{COURSE}/course_{COURSE}.json"
         with tempfile.TemporaryDirectory(prefix="edition-alias-guard-qa-",
                                          dir=Path.cwd()) as temporary:
             root = Path(temporary)
@@ -264,7 +265,11 @@ class CourseEditionAuthoringTest(unittest.TestCase):
             for kind, alias in (
                     ("unit-file", root / unit_relative),
                     ("lesson-file", root / lesson_relative),
-                    ("unit-folder", (root / unit_relative).parent)):
+                    ("unit-folder", (root / unit_relative).parent),
+                    ("course-index", root / course_relative),
+                    ("course-folder", (root / course_relative).parent),
+                    ("locale-folder", (root / course_relative).parents[2]),
+                    ("content-folder", (root / course_relative).parents[3])):
                 def flagged(path):
                     return path == alias or real_is_symlink(path)
                 with self.subTest(kind=kind), \
@@ -274,11 +279,41 @@ class CourseEditionAuthoringTest(unittest.TestCase):
                         mock.patch.object(edition, "_git_bytes",
                                           side_effect=lambda _, __, name: before[name]):
                     with self.assertRaisesRegex(edition.CourseEditionError, "symbolic alias"):
-                        edition.check_repository(root, "0" * 40)
+                        if kind in ("course-index", "course-folder",
+                                    "locale-folder", "content-folder"):
+                            # Avoid dependence on pathlib.glob traversing a
+                            # mocked ancestor link: test the indexed walk itself.
+                            edition._active_documents(root, course_relative,
+                                                      current[course_relative])
+                        else:
+                            edition.check_repository(root, "0" * 40)
             self.assertEqual(encoded(current), {
                 path.relative_to(root).as_posix(): path.read_bytes()
                 for path in root.rglob("*.json")
             }, "A rejected alias must not rewrite course or student assets")
+
+    def test_active_edition_rejects_windows_directory_junction(self):
+        # Junctions can redirect an entire unit without Path.is_symlink()
+        # reporting a link. Verify the Windows-specific metadata check too.
+        if not hasattr(Path, "is_junction"):
+            self.skipTest("Path.is_junction requires Python 3.12 or later")
+        current = {**current_documents(), **current_documents(descriptor())}
+        course_relative = f"{CONTENT}/es/programming/{COURSE}/course_{COURSE}.json"
+        with tempfile.TemporaryDirectory(prefix="edition-junction-qa-",
+                                         dir=Path.cwd()) as temporary:
+            root = Path(temporary)
+            for relative, raw in encoded(current).items():
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(raw)
+            alias = (root / course_relative).parent
+            actual = Path.is_junction
+            with mock.patch.object(Path, "is_junction", autospec=True,
+                                   side_effect=lambda path: path == alias or actual(path)):
+                with self.assertRaisesRegex(edition.CourseEditionError, "junction"):
+                    edition._active_documents(root, course_relative,
+                                              current[course_relative])
+            self.assertTrue((root / course_relative).is_file())
 
     def test_generation_does_not_weaken_answer_transitions(self):
         before = edition.prepare_edition_lesson(lesson_source(descriptor()), descriptor())
