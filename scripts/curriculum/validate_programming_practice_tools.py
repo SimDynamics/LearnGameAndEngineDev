@@ -102,9 +102,11 @@ def _block(contract, block, where, *, root, document, position, structure_only):
             _validate(contract, where, contract.validate_answer_contract, block, where)
     if kind == "order_code":
         fragments, order = block.get("fragments"), block.get("correctOrder")
+        # Windows strings(..., require_nonempty=true) rejects blank cards.
+        # Visual empty separators live in orderVisualSeparators, not fragments.
         valid_fragments = (isinstance(fragments, list) and bool(fragments)
-                           and all(isinstance(item, str) for item in fragments))
-        require(valid_fragments, where, "fragments debe ser una lista de textos no vacía")
+                           and all(_text(item) for item in fragments))
+        require(valid_fragments, where, "fragments debe ser una lista de textos no vacíos")
         require(valid_fragments and isinstance(order, list)
                 and all(type(index) is int for index in order)
                 and sorted(order) == list(range(len(fragments))),
