@@ -411,7 +411,7 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
         # source-formatted prediction's authenticated /explanation marker.
         import optional_prose_format_fixture_source as source
         records = source.fixtures()
-        self.assertEqual(13, len(records))
+        self.assertEqual(14, len(records))
         authored = records["optional-prose.after"]
         self.assertEqual({("block_0000_0000", "/explanation"),
                           ("block_0000_0001", "/explanation")},
@@ -420,6 +420,12 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exact authored text descriptor"):
             layout.validate_transition(records["optional-prose.before"],
                                        records["optional-prose.missing-drag-mark"])
+        # The fourteenth fixture also removes its marker, but leaves a NEL-
+        # only explanation. It must fail authoring before any Windows reader
+        # is allowed to present it as an authenticated study passage.
+        with self.assertRaises(ValueError):
+            layout.validate_transition(records["optional-prose.before"],
+                                       records["optional-prose.blank-unmarked-drag-explanation"])
 
     def test_optional_explanation_uses_original_identity_after_page_reorganization(self):
         # A completed unit may have moved the activity to a different page.
