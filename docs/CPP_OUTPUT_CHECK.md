@@ -1637,6 +1637,19 @@ intermedia derivada exclusivamente de ella acreditan dos usos de la
 constante. En cambio, `capacidad - (-capacidad)` y
 `capacidad + capacidad` siguen siendo expresiones dependientes de su
 valor y se comprueban después mediante ejecución.
+El **operador coma** también exige distinguir referencias de valores
+utilizados. En `return (capacidad, capacidad);` se evalúa primero la
+expresión izquierda, pero su valor se descarta: sólo el operando final
+determina el valor retornado. Por eso no se acreditan referencias a
+una constante que aparezcan exclusivamente en un operando anterior,
+cuando éste sea aritmética pura sin efectos secundarios. Se reconocen
+tanto la coma entre paréntesis como `return capacidad, capacidad;`;
+se conservan las referencias reales de la última expresión. Las comas
+que separan los argumentos de una función o los elementos de una
+lista entre llaves no son ese operador. El análisis no intenta borrar
+usos de expresiones cuyos posibles efectos secundarios no pueda
+descartar y mantiene la verificación mediante compilación y sondas
+independientes.
 La comprobación se limita a identidades comprobables
 en la expresión examinada: `capacidad - (capacidad * 2)` no equivale
 a una cancelación y debe seguir bajo los oráculos de ejecución. Otros
