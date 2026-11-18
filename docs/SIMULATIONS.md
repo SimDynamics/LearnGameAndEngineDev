@@ -860,8 +860,10 @@ Los dos nuevos índices sólo tienen contenido en `start` y `advance`,
 que son las fases donde se cuenta un elemento. Durante `initial`, las
 decisiones `newMaximum`, `tie` y `belowMaximum`, `done` y `empty`
 su sustitución es una cadena vacía: **una decisión no vuelve a leer la
-última casilla**. Por el mismo motivo, no se utilizan para crear datos
-de salida en `outputTemplate`, que se evalúa al terminar cada grupo.
+última casilla**. Por el mismo motivo, el contrato **rechaza** esos
+marcadores en `outputTemplate`, que se evalúa al terminar cada grupo,
+sin contar allí ningún elemento nuevo. Los demás marcadores siguen
+disponibles para la salida calculada.
 Si `sort` es `false` o los datos ya están ordenados, los índices
 coinciden; si se ordenan, `originIndex` se calcula conservando el
 orden original entre valores iguales.
