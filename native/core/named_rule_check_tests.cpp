@@ -1620,6 +1620,87 @@ void conditional_assignment_branches() {
             return resultado;
         })cpp",rules,true,
         "A mutable call affecting a shadow must not erase its outer counterpart");
+    verify(R"cpp(
+        #include <utility>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            int sustituto = (piezas + 3) / 4;
+            std::swap(resultado, sustituto);
+            return resultado;
+        })cpp",rules,false,
+        "An unconditional swap must not launder a hardcoded replacement");
+    verify(R"cpp(
+        void sustituir(int& destino, int value) { destino = value; }
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            sustituir(resultado, (piezas + 3) / 4);
+            return resultado;
+        })cpp",rules,false,
+        "A direct custom call can mutate the named calculation's result");
+    verify(R"cpp(
+        #include <utility>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            int sustituto = (piezas + 3) / 4;
+            {
+                std::swap(resultado, sustituto);
+            }
+            return resultado;
+        })cpp",rules,false,
+        "A nested block cannot conceal an unconditional swap of the outer alias");
+    verify(R"cpp(
+        #include <utility>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            {
+                int resultado = (piezas + 3) / 4;
+                int sustituto = 4;
+                std::swap(resultado, sustituto);
+            }
+            return resultado;
+        })cpp",rules,true,
+        "Swapping an independent block-local shadow preserves the outer result");
+    verify(R"cpp(
+        #include <iostream>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            std::cout << resultado;
+            return resultado;
+        })cpp",rules,true,
+        "Observing a result through stream insertion does not replace it");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            int& alias = resultado;
+            alias = (piezas + 3) / 4;
+            return resultado;
+        })cpp",rules,false,
+        "An escaped non-const reference can replace a named result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            int* puntero = &resultado;
+            *puntero = (piezas + 3) / 4;
+            return resultado;
+        })cpp",rules,false,
+        "Taking the result's address can bypass direct assignment tracking");
+    verify(R"cpp(
+        #include <functional>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            auto variable = std::ref(resultado);
+            variable.get() = (piezas + 3) / 4;
+            return resultado;
+        })cpp",rules,false,
+        "An initializer that forwards the result by reference is not inert");
 }
 
 void separate_rules() {
