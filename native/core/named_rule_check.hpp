@@ -852,6 +852,10 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             auto operand=at;
             while(operand>first&&op(t[operand-1],"("))--operand;
             if(operand==first||!op(t[operand-1],">>"))continue;
+            // An integer literal shifted by the count is a read-only
+            // built-in operation, not an input stream extraction.
+            if(operand>=first+2&&
+               t[operand-2].starts_with("number:"))continue;
             if(std::ranges::any_of(aliases,[&](const Alias& alias){
                 return id(t[at],alias.name);
             }))return true;
@@ -1281,7 +1285,8 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         // write even though it has no assignment operator or function-call
         // parentheses in the student's source. Invalidate only this alias:
         // an unrelated genuine returned calculation remains acceptable.
-        if(t[i].starts_with("id:")&&extracted_alias(i?i-1:0,i+1)) {
+        if(t[i].starts_with("id:")&&
+           extracted_alias(bounds.open+1,i+1)) {
             const auto found=std::find_if(aliases.rbegin(),aliases.rend(),
                 [&](const Alias& alias){return id(t[i],alias.name);});
             if(found!=aliases.rend()){
