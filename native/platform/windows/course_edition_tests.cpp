@@ -452,7 +452,9 @@ void physical_edition_catalog_alias_rejected(const Fixture& fixture) {
     // target, warm the normal catalog/identity caches, then replace one path
     // with a byte-identical symbolic link. Cached metadata cannot authorize
     // a path which became a reparse point after the initial catalog load.
-    for (const int kind : {0, 1, 2, 3}) {
+    for (const int kind : {0, 1, 2, 3, 4}) {
+        // Case 4 aliases the entire fixture, above the content root. This
+        // must fail even when all content-relative paths are ordinary files.
         const auto mirror = fixture.root / ("edition-alias-isolation-" + std::to_string(kind));
         for (const auto& [relative, unused] : fixture.originals) {
             const auto file = relative_path(relative);
@@ -468,9 +470,10 @@ void physical_edition_catalog_alias_rejected(const Fixture& fixture) {
                 windows::load_catalog(content, unit_location()).entries.size() == 2,
             "The isolated edition catalog was invalid before alias injection");
 
-        const bool directory = kind == 3;
+        const bool directory = kind >= 3;
         const auto linked = kind == 0 ? course :
-            kind == 1 ? unit : kind == 2 ? lesson : unit.parent_path();
+            kind == 1 ? unit : kind == 2 ? lesson :
+            kind == 3 ? unit.parent_path() : mirror;
         const auto physical = fs::path(linked.wstring() + L".physical-qa");
         require(!fs::exists(physical), "A previous QA alias target was present");
         fs::rename(linked, physical);
@@ -506,14 +509,22 @@ void physical_edition_catalog_alias_rejected(const Fixture& fixture) {
         };
         rejects_alias([&] { (void)windows::load_lesson(lesson); });
         rejects_alias([&] { (void)windows::load_lesson_progress_metadata(lesson); });
-        if (kind != 2) {
-            // Course catalog reads the active unit resource, but not the
-            // lesson itself. A lesson alias must instead be found by the
-            // unit catalog, without rejecting an unrelated valid parent.
-            rejects_alias([&] { (void)windows::load_catalog(content, course_location()); });
-        } else require(windows::load_catalog(content, course_location()).entries.size() == 1,
-            "A lesson-file alias incorrectly invalidated its course index");
-        rejects_alias([&] { (void)windows::load_catalog(content, unit_location()); });
+        if (kind == 4) {
+            // Catalog operations also refuse this ancestor through their
+            // existing path-safety guard, whose diagnostic differs from the
+            // course-edition loader's explicit alias error.
+            rejects([&] { (void)windows::load_catalog(content, course_location()); },
+                "The catalog accepted a symbolic alias above the content root");
+            rejects([&] { (void)windows::load_catalog(content, unit_location()); },
+                "The unit catalog accepted a symbolic alias above the content root");
+        } else {
+            if (kind != 2) {
+                // A course index reads units, but does not yet read lessons.
+                rejects_alias([&] { (void)windows::load_catalog(content, course_location()); });
+            } else require(windows::load_catalog(content, course_location()).entries.size() == 1,
+                "A lesson-file alias incorrectly invalidated its course index");
+            rejects_alias([&] { (void)windows::load_catalog(content, unit_location()); });
+        }
         require(fs::exists(physical), "The QA link check destroyed the original bytes");
     }
 }
