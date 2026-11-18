@@ -2874,11 +2874,18 @@ void repeated_step_explanation_preserves_native_reading(HWND host) {
         const auto current=scroll_state(explanation);
         const auto anchor_line=SendMessageW(explanation,EM_EXLINEFROMCHAR,0,
             static_cast<LPARAM>(reading_character));
-        check(current.first>0&&anchor_line>=current.first&&
+        const bool preserved=current.first>0&&anchor_line>=current.first&&
             anchor_line<=current.first+1&&
             current.selection.cpMin==reading_selection.cpMin&&
             current.selection.cpMax==reading_selection.cpMax&&
-            text(view,explanation_id)==repeated&&spec==authored,failure);
+            text(view,explanation_id)==repeated&&spec==authored;
+        if(!preserved)
+            std::cerr<<"Explanation reflow: "<<failure
+                <<"; anchor_char="<<reading_character
+                <<"; anchor_line="<<anchor_line
+                <<"; before="<<scroll_description(reading_start)
+                <<"; after="<<scroll_description(current)<<'\n';
+        check(preserved,failure);
     };
 
     // A real typography change must invalidate the content cache even when
