@@ -132,6 +132,30 @@ class RetiredStateLayoutTest(unittest.TestCase):
                 if len(history) == len(old_history):
                     layout.validate_transition(previous, published)
                     return
+                if len(history) > len(old_history) + 1:
+                    # The current published lesson may contain several later
+                    # independent retirement releases. They are NOT one legal
+                    # transition. validate(published) already authenticates
+                    # every archival batch and reading snapshot; pin the exact
+                    # previous edition at the first additional batch.
+                    self.assertEqual(old_history, history[:len(old_history)])
+                    first_new = history[len(old_history)]
+                    self.assertEqual(previous["pages"], first_new["pages"])
+                    self.assertEqual(previous["stateLayout"]["current"], first_new["current"])
+                    self.assertEqual(previous.get("referenceAfter", []), first_new["referenceAfter"])
+                    self.assertEqual(previous.get("activityAfter", []), first_new["activityAfter"])
+                    old_ids = [entry["id"] for entry in previous["stateLayout"].get("retired", [])]
+                    current_ids = [entry["id"] for entry in published["stateLayout"].get("retired", [])]
+                    self.assertEqual(old_ids, current_ids[:len(old_ids)])
+                    self.assertEqual(
+                        [identity for snapshot in history[len(old_history):]
+                         for identity in snapshot["retired"]],
+                        current_ids[len(old_ids):])
+                    with self.assertRaisesRegex(
+                            layout.LayoutError,
+                            "One transition can archive only its actual previous reading layout"):
+                        layout.validate_transition(previous, published)
+                    return
                 self.assertEqual(len(old_history) + 1, len(history))
                 old_count = len(previous["stateLayout"].get("retired", []))
                 removing = [item["id"] for item in published["stateLayout"]["retired"][old_count:]]
@@ -164,11 +188,23 @@ class RetiredStateLayoutTest(unittest.TestCase):
                 projected = layout._historical_order_contract(after, identity, current[identity])
                 self.assertEqual(layout.state_payload(published[identity]), layout.state_payload(projected))
             references = REFERENCE_RETIREMENTS.get(filename, ())
-            self.assertEqual(list(identities + references), [row["id"] for row in after["stateLayout"]["retired"]])
-            for record in after["stateLayout"]["retired"]:
+            # The original compiler and reference retirements remain exact
+            # prefixes. Work may subsequently retire unrelated obsolete
+            # presentation blocks in additional authenticated releases.
+            archive = after["stateLayout"]["retired"]
+            legacy_ids = list(identities + references)
+            self.assertEqual(legacy_ids, [row["id"] for row in archive[:len(legacy_ids)]])
+            for record in archive[:len(legacy_ids)]:
                 self.assertEqual(published[record["id"]], record["block"])
             history = after["stateLayout"]["retirementHistory"]
-            self.assertEqual(1 + bool(references), len(history))
+            self.assertGreaterEqual(len(history), 1 + bool(references))
+            self.assertEqual(
+                [identity for snapshot in history for identity in snapshot["retired"]],
+                [entry["id"] for entry in archive])
+            self.assertEqual(
+                [identity for snapshot in history[1 + bool(references):]
+                 for identity in snapshot["retired"]],
+                [entry["id"] for entry in archive[len(legacy_ids):]])
             self.assertEqual(before["pages"], history[0]["pages"])
             self.assertEqual(before["stateLayout"]["current"], history[0]["current"])
             self.assertEqual(before.get("activityAfter", []), history[0]["activityAfter"])
