@@ -2176,8 +2176,12 @@ El cargador comprueba la coincidencia del descriptor, la identidad y la ruta en
 los tres niveles. En Windows, la carga completa, la proyección de progreso y
 el catálogo comparten la comprobación física de las rutas de ediciones
 activas: índices de curso y unidad, lecciones y sus carpetas intermedias
-deben estar libres de enlaces simbólicos y uniones de directorio desde la
-raíz de contenido, aunque los bytes coincidan con la publicación original.
+deben estar libres de enlaces simbólicos y uniones de directorio, aunque los
+bytes coincidan con la publicación original. El cargador directo verifica
+también los ancestros de `content`, hasta la raíz física del volumen: un
+enlace en el directorio de instalación o en el perfil QA no puede ocultarse
+por estar situado fuera de esa carpeta. La comprobación usa rutas Win32
+extendidas y no resuelve enlaces previamente.
 El catálogo comprueba el recurso hijo antes de consultar su identidad
 almacenada en caché; la proyección de progreso también vuelve a comprobar
 la ruta antes de reutilizar metadatos con la misma fecha y tamaño.
@@ -2189,8 +2193,9 @@ más de 260 caracteres y comprueba atributos, lectura completa de la lección,
 proyección de progreso, índices activos y rechazo de un recurso inexistente.
 La prueba requiere ejecución real en Windows antes de acreditarse.
 `native.course_edition` reproduce enlaces reales de índice de curso,
-índice de unidad, archivo de lección y carpeta de unidad en árboles QA
-aislados, después de poblar las cachés con rutas originales válidas. Si
+índice de unidad, archivo de lección, carpeta de unidad y directorio
+superior a `content` en árboles QA aislados, después de poblar las cachés
+con rutas originales válidas. Si
 la cuenta Windows no puede crear un enlace, informa `SKIP` para ese caso,
 que no se declara acreditado. La comprobación de los recursos históricos
 durante publicación sigue siendo una obligación separada de la carga nativa.
