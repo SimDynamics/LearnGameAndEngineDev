@@ -195,6 +195,85 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         with self.assertRaises(layout.LayoutError):
             layout.revise_choice_editorial(authored, OWNER, 0, REVISED)
 
+    def test_explicit_semantics_can_reselect_a_changed_marked_option(self):
+        authored = deepcopy(self.original)
+        prior = next(field for field in authored["textSemantics"]["fields"]
+                     if field["block"] == OWNER and field["path"] == "/options/0")
+        prior["spans"] = [layout.text_semantics.select(
+            self.block["options"][0], "precondición", "cpp", reading="technical")]
+        layout.validate(authored)
+        revised_spans = [layout.text_semantics.select(
+            REVISED, "condición para aceptar la transición", "prose", reading="natural")]
+        reviewed = layout.revise_choice_editorial(
+            authored, OWNER, 0, REVISED, spans=revised_spans)
+        record = reviewed["stateLayout"]["choiceRevisions"][0]
+        current = next(field for field in reviewed["textSemantics"]["fields"]
+                       if field["block"] == OWNER and field["path"] == "/options/0")
+        self.assertEqual(record["semanticBefore"], prior)
+        self.assertEqual(record["semanticAfter"], current)
+        self.assertTrue(record["semanticRootBefore"])
+        self.assertEqual(current["spans"], revised_spans)
+        self.assertEqual(layout.original_projection(reviewed)["textSemantics"],
+                         authored["textSemantics"])
+        self.assertEqual(layout._blocks(reviewed)[OWNER]["correctIndex"],
+                         self.block["correctIndex"])
+        layout.validate_transition(authored, reviewed)
+
+        for mutation in ("after-archive", "current-mark", "wrong-answer",
+                         "fake-root", "removed-mark", "unrelated-mark"):
+            candidate = deepcopy(reviewed)
+            record = candidate["stateLayout"]["choiceRevisions"][0]
+            marker = next(field for field in candidate["textSemantics"]["fields"]
+                          if field["block"] == OWNER and field["path"] == "/options/0")
+            if mutation == "after-archive":
+                record["semanticAfter"]["sourceSha256"] = "0" * 64
+            elif mutation == "current-mark":
+                marker["spans"] = []
+            elif mutation == "wrong-answer":
+                layout._blocks(candidate)[OWNER]["correctIndex"] = 1
+            elif mutation == "fake-root":
+                record["semanticRootBefore"] = False
+            elif mutation == "removed-mark":
+                candidate["textSemantics"]["fields"].remove(marker)
+            else:
+                candidate["textSemantics"]["fields"][0]["sourceSha256"] = "0" * 64
+            with self.subTest(mutation=mutation), self.assertRaises(layout.LayoutError):
+                layout.validate(candidate)
+
+        with self.assertRaises(layout.LayoutError):
+            layout.revise_choice_editorial(authored, OWNER, 0, REVISED, spans=[])
+
+    def test_explicit_semantics_can_add_and_recover_a_missing_option_marker(self):
+        original = deepcopy(self.original)
+        prior = next(field for field in original["textSemantics"]["fields"]
+                     if field["block"] == OWNER and field["path"] == "/options/0")
+        original["textSemantics"]["fields"].remove(prior)
+        layout.validate(original)
+        spans = [layout.text_semantics.select(
+            REVISED, "transición", "prose", reading="natural")]
+        changed = layout.revise_choice_editorial(original, OWNER, 0, REVISED, spans=spans)
+        record = changed["stateLayout"]["choiceRevisions"][0]
+        self.assertIsNone(record["semanticBefore"])
+        self.assertEqual(record["semanticAfter"]["spans"], spans)
+        self.assertTrue(record["semanticRootBefore"])
+        layout.validate_transition(original, changed)
+        self.assertEqual(layout.original_projection(changed)["textSemantics"],
+                         original["textSemantics"])
+
+    def test_new_semantic_root_is_authored_and_removed_from_historical_projection(self):
+        original = deepcopy(self.original)
+        original.pop("textSemantics", None)
+        layout.validate(original)
+        changed = layout.revise_choice_editorial(original, OWNER, 0, REVISED, spans=[])
+        self.assertFalse(changed["stateLayout"]["choiceRevisions"][0]["semanticRootBefore"])
+        self.assertIn("textSemantics", changed)
+        self.assertNotIn("textSemantics", layout.original_projection(changed))
+        layout.validate_transition(original, changed)
+        forged = deepcopy(changed)
+        forged["stateLayout"]["choiceRevisions"][0]["semanticRootBefore"] = True
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(original, forged)
+
     def test_rejects_stale_or_rewritten_narration_marking(self):
         valid = self.revise()
         changed = deepcopy(valid)
