@@ -521,8 +521,12 @@ void physical_edition_catalog_alias_rejected(const Fixture& fixture) {
             bool rejected = false;
             try { action(); }
             catch (const std::exception& failure) {
-                rejected = std::string_view(failure.what()).find(
-                    "symbolic link or junction") != std::string_view::npos;
+                // The catalog resolves through the general state I/O guard
+                // before its edition-specific guard. Both diagnostics prove
+                // that the real reparse-point path was rejected.
+                const std::string_view message(failure.what());
+                rejected = message.find("symbolic link or junction") != message.npos ||
+                    message.find("El estado no admite enlaces ni puntos de redireccion") != message.npos;
             }
             require(rejected, "An edition consumer accepted a published path via a reparse point");
         };
