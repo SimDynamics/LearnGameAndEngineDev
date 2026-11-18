@@ -4261,6 +4261,73 @@ void applying_valid_data_is_atomic_after_native_failure(HWND host) {
 }
 
 
+void applying_rejection_survives_repeated_native_presentation_failure(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.scenarios.clear();
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the previous simulation for repeated Apply failures");
+    const auto old_step=view.step_index(),old_count=view.step_count();
+    const auto old_output=text(view,output_id);
+    const auto old_array=name(GetDlgItem(view.window(),array_id));
+    const auto old_reading=view.reading_regions()[2].key;
+    const auto output=GetDlgItem(view.window(),output_id);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto warning_control=GetDlgItem(view.window(),error_id);
+    check(output&&editor&&warning_control,
+        "Missing native controls for repeated Apply rejection");
+
+    // Reject the new trace, the restoration redraw and the error redraw.
+    // The final failure must use the native accessible-warning fallback.
+    int failures_left=3;
+    const auto reject_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT {
+        auto& pending=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&pending>0){--pending;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53494152;
+    check(SetWindowSubclass(output,reject_zoom,hook_id,
+        reinterpret_cast<DWORD_PTR>(&failures_left))!=FALSE,
+        "Cannot inject repeated native Apply presentation failures");
+    struct Unhook {
+        HWND child;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(child))RemoveWindowSubclass(child,callback,id);}
+    } guard{output,reject_zoom,hook_id};
+
+    set_edit_text(editor,"1\n2\n3");
+    click(view,apply_id);
+    const auto warning=text(view,error_id);
+    check(failures_left==0&&
+        warning.find("No se aplicaron los datos.")!=std::string::npos&&
+        warning.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+        warning.find("No se pudo presentar el aviso con RichEdit: ")!=std::string::npos&&
+        warning.find("No se pudo actualizar la simulación.")==std::string::npos&&
+        view.step_index()==old_step&&view.step_count()==old_count&&
+        text(view,input_id)=="1\n2\n3"&&text(view,output_id)==old_output&&
+        name(GetDlgItem(view.window(),array_id))==old_array&&
+        view.reading_regions()[2].key==old_reading&&
+        control_shown(warning_control)&&spec==authored,
+        "Repeated native Apply failures hid the original diagnostic or changed the applied trace");
+    check(name(warning_control)==warning&&
+        std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==warning_control&&region.source_text==warning;
+        }),"Repeated native Apply failures lost the accessible diagnostic");
+
+    // The same valid draft can be applied after the native faults stop.
+    click(view,apply_id);
+    check(failures_left==0&&text(view,error_id).empty()&&
+        name(warning_control,true).empty()&&
+        std::ranges::none_of(view.reading_regions(),[&](const auto& region){
+            return region.target==warning_control;
+        })&&view.step_index()==0&&view.step_count()!=old_count&&
+        view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="1:1\n2:1\n3:1\n"&&spec==authored,
+        "Valid Apply retry failed or announced the prior rejection");
+}
+
+
 void scenario_change_is_atomic_after_native_failure(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -6632,6 +6699,7 @@ int main(int argc,char** argv)try {
     run("applied_data_survive_observer_exception",[&]{applied_data_survive_observer_exception(host.value);});
     run("scenario_observer_reentry_keeps_committed_data",[&]{scenario_observer_reentry_keeps_committed_data(host.value);});
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
+    run("applying_rejection_survives_repeated_native_presentation_failure",[&]{applying_rejection_survives_repeated_native_presentation_failure(host.value);});
     run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
     run("scenario_rejection_survives_repeated_native_presentation_failure",[&]{scenario_rejection_survives_repeated_native_presentation_failure(host.value);});
     run("rejected_scenario_notification_keeps_newer_navigation",[&]{rejected_scenario_notification_keeps_newer_navigation(host.value);});
