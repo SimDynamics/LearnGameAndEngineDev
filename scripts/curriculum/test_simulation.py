@@ -397,11 +397,11 @@ class SimulationContractTest(unittest.TestCase):
         self.assertIs(simulation.validate_contract(lesson), spec)
         # Independent 14-frame oracle, enumerated by observed count and
         # group decision rather than reusing the validator's loop.
-        one = "1:1/0\\n"
-        two = one + "2:1/1\\n"
-        three = two + "3:2/1\\n"
-        four = three + "5:1/2\\n"
-        five = four + "7:2/2\\n"
+        one = "1:1/0\n"
+        two = one + "2:1/1\n"
+        three = two + "3:2/1\n"
+        four = three + "5:1/2\n"
+        five = four + "7:2/2\n"
         steps = [
             ("Inicio: .", ""),
             ("Contar: .", ""),
@@ -428,8 +428,8 @@ class SimulationContractTest(unittest.TestCase):
         # The previous maximum is zero for the first (empty-string) group,
         # then one before the repeated text takes the lead.
         spec.update(valueType="text", values=["patio", "", "patio"])
-        empty_group = ":1/0\\n"
-        whole_output = empty_group + "patio:2/1\\n"
+        empty_group = ":1/0\n"
+        whole_output = empty_group + "patio:2/1\n"
         label_steps = [
             ("Inicio: .", ""),
             ("Contar: .", ""),
