@@ -1232,7 +1232,7 @@ void conditional_assignment_branches() {
             if (piezas % 2 == 0) {
                 resultado = (piezas + capacidad - 1) / capacidad;
             } else {
-                resultado = (piezas - 1) / capacidad + 1;
+                resultado = (piezas - 1 + capacidad) / capacidad;
             }
             return resultado;
         })cpp",rules,true,
