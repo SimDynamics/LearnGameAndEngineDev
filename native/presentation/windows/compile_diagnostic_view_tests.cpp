@@ -146,6 +146,20 @@ void compact_diagnostic_path_cases(){
         L"                 from C:/QA/Código & (espacio)/run-1/candidate/project/include/dos.hpp:8,\n",
         L"In file included from include/uno.hpp:3:\n"
         L"                 from include/dos.hpp:8,\n","The include stack lost its message or relative headers");
+    // /showIncludes does NOT include a line:column suffix. Preserve all
+    // nesting whitespace and line endings while shortening only known roots.
+    expect(L"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project\\include\\uno.hpp\r\n"
+           L"  Note: including file:  C:/QA/Código & (espacio)/run-1/candidate/project/include/dos.hpp\n",
+        L"Note: including file: include\\uno.hpp\r\n"
+        L"  Note: including file:  include/dos.hpp\n",
+        "MSVC /showIncludes did not preserve nested indentation and known relative include paths");
+    expect(L"Note: including file: D:\\SDK\\externo\\stdio.h\r\n"
+           L"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project_extra\\x.h\n"
+           L"  const char* msg = \"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project\\x.h\";\n",
+        L"Note: including file: D:\\SDK\\externo\\stdio.h\r\n"
+        L"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project_extra\\x.h\n"
+        L"  const char* msg = \"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project\\x.h\";\n",
+        "MSVC include trace changed an external directory, sibling folder or source literal");
     expect(L"CMake Error at C:/QA/cmake/p/CMakeLists.txt:14 (add_executable):\r\n  No SOURCES given to target.\r\n",
         L"CMake Error at CMakeLists.txt:14 (add_executable):\r\n  No SOURCES given to target.\r\n",
         "The CMake location or following explanation changed");
