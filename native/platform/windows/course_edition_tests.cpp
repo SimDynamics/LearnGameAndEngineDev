@@ -408,6 +408,57 @@ void import_isolated(const Fixture& fixture, const state::StateData& historic,
         "La importación aceptó recibos/preferencias nativas como exportación Android.");
 }
 
+void physical_edition_index_alias_rejected(const Fixture& fixture) {
+    // The original fixture and the student's profile are never altered.
+    // Mirror the tiny QA content tree and replace only its course index with
+    // an NTFS symbolic link that preserves every indexed byte and name.
+    const auto mirror = fixture.root / "edition-alias-isolation";
+    for (const auto& [relative, unused] : fixture.originals) {
+        const auto file = relative_path(relative);
+        write(mirror / file, bytes(fixture.root / file));
+    }
+    const auto course = mirror / relative_path(fixture.paths.at("course"));
+    const auto lesson = mirror / relative_path(fixture.paths.at("lesson"));
+    require(windows::load_lesson(lesson).course_edition.has_value(),
+        "The isolated native course-edition source was not valid before creating an alias");
+    const auto physical = fs::path(course.wstring() + L".physical-qa");
+    require(!fs::exists(physical), "An old QA alias target was unexpectedly present");
+    fs::rename(course, physical);
+    struct Restore {
+        fs::path link, original;
+        ~Restore() {
+            std::error_code error;
+            if (fs::is_symlink(link, error)) fs::remove(link, error);
+            if (fs::exists(original, error)) fs::rename(original, link, error);
+        }
+    } restore{course, physical};
+    constexpr DWORD permit_unprivileged = 0x2; // Windows 10+ developer-mode API flag.
+    if (!CreateSymbolicLinkW(course.c_str(), physical.c_str(), permit_unprivileged)) {
+        // Some Windows environments prohibit symbolic links even for an
+        // isolated QA account. Never bypass that OS policy to run a test.
+        std::cout << "SKIP native course-edition symlink: Win32 error "
+                  << GetLastError() << " (creation not permitted).\n";
+        return;
+    }
+    const auto attributes = GetFileAttributesW(course.c_str());
+    require(attributes != INVALID_FILE_ATTRIBUTES &&
+            (attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0,
+        "The QA symlink was not reported as a Win32 reparse point");
+    const auto rejects_alias = [&](const auto& action) {
+        bool rejected = false;
+        try { action(); }
+        catch (const std::exception& failure) {
+            rejected = std::string_view(failure.what()).find(
+                "symbolic link or junction") != std::string_view::npos;
+        }
+        require(rejected, "The native loader did not reject the unchanged symlinked course index");
+    };
+    rejects_alias([&] { (void)windows::load_lesson(lesson); });
+    rejects_alias([&] { (void)windows::load_lesson_progress_metadata(lesson); });
+    require(bytes(physical) == bytes(fixture.path("course")),
+        "The native alias test modified the previously published course index");
+}
+
 void negative_contracts(const Fixture& fixture, const curriculum::Lesson& current,
                         const state::StateData& current_data) {
     const auto original = bytes(fixture.path("lesson"));
@@ -659,6 +710,7 @@ void run(const fs::path& fixture_source) {
     require(bytes(audio_sentinel) == audio_bytes, "La edición borró o cambió un archivo de caché conservado.");
     import_isolated(fixture, historic, current, revision_file, revision);
     negative_contracts(fixture, current, after);
+    physical_edition_index_alias_rejected(fixture);
     fixture.preserved();
     std::cout << "PASS course_edition: índices activos, curso ajeno, estado/drafts/recibos separados, "
         "quiz nativo real, secuencia de páginas, reapertura, identidades de lectura, historial e importación.\n"
