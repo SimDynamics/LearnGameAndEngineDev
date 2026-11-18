@@ -545,6 +545,61 @@ std::string simulation_value_display_text(const SimulationValue& value) {
     return result;
 }
 
+std::vector<std::string> simulation_count_observation_changes(
+        const SimulationTrace& trace, const SimulationFrame& frame) {
+    if (frame.phase != SimulationPhase::start &&
+        frame.phase != SimulationPhase::advance) return {};
+    require(frame.begin < frame.end && frame.end <= trace.ordered.size() &&
+            frame.frequency == frame.end - frame.begin,
+        "La fase de recuento no corresponde a un intervalo observado válido.");
+    const auto observed = frame.end - 1;
+    const auto& current_value = trace.ordered.at(observed);
+    // A stable permutation is already calculated by the model. Display it
+    // only when sorting actually changed the data, matching the native
+    // cells and never disclosing an unobserved future element.
+    const bool reordered = trace.original != trace.ordered;
+    const auto origin_at = [&](std::size_t position) {
+        require(trace.source_indices.size() == trace.ordered.size() &&
+                position < trace.source_indices.size() &&
+                trace.source_indices[position] < trace.original.size() &&
+                trace.original[trace.source_indices[position]] == trace.ordered[position],
+            "La procedencia calculada de la simulación es inválida.");
+        return trace.source_indices[position];
+    };
+    std::vector<std::string> changes;
+    std::string observation = "Dato contado: índice " + std::to_string(observed) +
+        " = " + simulation_value_display_text(current_value);
+    if (reordered)
+        observation += " (origen índice " + std::to_string(origin_at(observed)) + ")";
+    changes.push_back(std::move(observation));
+    // The array interval [begin,end) has exactly end-begin counted values.
+    // end is an exclusive boundary, not an additional element to read.
+    changes.push_back("Recuento de este grupo: fin exclusivo " +
+        std::to_string(frame.end) + " - inicio " + std::to_string(frame.begin) +
+        " = " + std::to_string(frame.frequency) +
+        (frame.frequency == 1 ? " elemento contado." : " elementos contados."));
+    if (observed == 0) {
+        changes.push_back("Primera posición: el índice 0 no tiene un elemento anterior.");
+    } else {
+        const auto& previous_value = trace.ordered.at(observed - 1);
+        const bool equal = previous_value == current_value;
+        changes.push_back("Relación con el anterior: índice " +
+            std::to_string(observed - 1) + " = " +
+            simulation_value_display_text(previous_value) +
+            "; índice " + std::to_string(observed) + " = " +
+            simulation_value_display_text(current_value) +
+            (equal ? ". Son iguales: continúa el grupo." :
+                     ". Son diferentes: comienza un grupo nuevo."));
+        if (reordered)
+            changes.push_back("Procedencia de la comparación: posición ordenada " +
+                std::to_string(observed - 1) + " ← posición original " +
+                std::to_string(origin_at(observed - 1)) +
+                "; posición ordenada " + std::to_string(observed) +
+                " ← posición original " + std::to_string(origin_at(observed)) + ".");
+    }
+    return changes;
+}
+
 std::string simulation_frame_text(const SimulationSpec& spec,
         const SimulationTrace& trace, const SimulationFrame& frame) {
     require(frame.begin <= frame.end && frame.end <= trace.ordered.size() &&
