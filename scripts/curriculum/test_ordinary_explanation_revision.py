@@ -383,6 +383,10 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
                     invalid["stateLayout"]["editorial"][-1]["afterSha256"] = layout.fingerprint(current)
                 self.assertFalse(contract.preserves_ordinary_explanation_revision(
                     SYNTHETIC_PATH, 0, 0, old, current, before, invalid))
+                if mutation in ("no-mark", "deleted-mark"):
+                    with self.assertRaisesRegex(
+                            ValueError, "exact authored text descriptor"):
+                        layout.validate_transition(before, invalid)
 
         # A removed field, an absent question and a malformed old value do
         # not become a general license to introduce arbitrary text.
@@ -400,6 +404,22 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
             layout.revise_ordinary_editorial(after, identity, {
                 "explanation": {"text": None, "spans": []}
             })
+
+    def test_optional_prose_and_formatted_peer_require_both_authored_marks(self):
+        # This reproduces the real ReaderBuild fixture-generation failure:
+        # adding a guide to a separate drag-fill owner cannot borrow the
+        # source-formatted prediction's authenticated /explanation marker.
+        import optional_prose_format_fixture_source as source
+        records = source.fixtures()
+        self.assertEqual(13, len(records))
+        authored = records["optional-prose.after"]
+        self.assertEqual({("block_0000_0000", "/explanation"),
+                          ("block_0000_0001", "/explanation")},
+                         {(entry["block"], entry["path"])
+                          for entry in authored["textSemantics"]["fields"]})
+        with self.assertRaisesRegex(ValueError, "exact authored text descriptor"):
+            layout.validate_transition(records["optional-prose.before"],
+                                       records["optional-prose.missing-drag-mark"])
 
     def test_optional_explanation_uses_original_identity_after_page_reorganization(self):
         # A completed unit may have moved the activity to a different page.
