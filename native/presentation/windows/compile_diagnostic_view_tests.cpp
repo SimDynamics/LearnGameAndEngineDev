@@ -169,6 +169,32 @@ void compact_diagnostic_path_cases(){
     check(driver_io.find(L"C:\\QA\\Código & (espacio)")!=std::wstring::npos,
         "Display-only path compaction mutated the original driver's error text");
 
+    // A location without source coordinates may be followed by CRLF, LF,
+    // standalone CR, or no delimiter. Compact only its owned path.
+    const std::wstring no_coordinate_endings =
+        L"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project\\include\\uno.hpp\r\n"
+        L"Nota: inclusión del archivo: C:/QA/Código & (espacio)/run-1/control/project/include/dos.hpp\n"
+        L"Cannot create run file: C:\\QA\\Código & (espacio)\\run-1\\stdin.bin\r\n"
+        L"Cannot write run file: C:\\QA\\Código & (espacio)\\run-1\\control\\error.log\r";
+    const std::wstring compact_no_coordinate_endings =
+        L"Note: including file: include\\uno.hpp\r\n"
+        L"Nota: inclusión del archivo: include/dos.hpp\n"
+        L"Cannot create run file: stdin.bin\r\n"
+        L"Cannot write run file: error.log\r";
+    check(compact_compiler_diagnostic_paths(no_coordinate_endings,roots,true) ==
+            compact_no_coordinate_endings,
+        "Compacting no-coordinate paths changed CRLF, LF or a final bare CR");
+    check(compact_compiler_diagnostic_paths(no_coordinate_endings,roots) ==
+        std::wstring(
+            L"Note: including file: include\\uno.hpp\r\n"
+            L"Nota: inclusión del archivo: include/dos.hpp\n"
+            L"Cannot create run file: C:\\QA\\Código & (espacio)\\run-1\\stdin.bin\r\n"
+            L"Cannot write run file: C:\\QA\\Código & (espacio)\\run-1\\control\\error.log\r"),
+        "Normal diagnostics compacted a driver-only path or lost a line ending");
+    expect(L"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\main.hpp\r",
+        L"Note: including file: main.hpp\r",
+        "A final standalone CR was consumed along with an include path");
+
     expect(L"C:/QA/Código & (espacio)/run-1/main.cpp:4:9: error: expected ';'\r\n",
         L"main.cpp:4:9: error: expected ';'\r\n","Clang coordinates or CRLF changed");
     expect(L"In file included from C:/QA/Código & (espacio)/run-1/candidate/project/include/uno.hpp:3:\n"
