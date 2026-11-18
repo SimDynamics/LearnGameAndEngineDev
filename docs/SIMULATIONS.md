@@ -779,6 +779,12 @@ su texto por separado al recibir Ctrl+rueda**: entregan ese gesto al
 contenedor del lector para mantener una escala y una distribución
 coherentes. Su desplazamiento con la rueda sin Ctrl permanece disponible.
 Esto se comprueba en `native.simulation_view`, con texto corto y largo.
+Los rótulos de cantidad también respetan el singular y el plural:
+`0 elementos`, `1 elemento` y `2 elementos`, tanto al iniciar como al
+cambiar de escenario, aplicar o restablecer datos. La región narrable
+conserva el mismo rótulo visible y una cadena vacía cuenta como un elemento
+real. Las regresiones Win32 `array_count_caption_uses_correct_number` y
+`neighboring_values_explain_group_boundaries` comprueban estos casos.
 La representación no califica ejercicios ni
 modifica el progreso o los datos del estudiante.
 
@@ -795,6 +801,16 @@ aclaraciones de vacío o espacios.
 
 En las fases `start` y `advance`, el panel identifica el **dato contado**
 mediante su índice `end - 1` y el valor calculado de la copia ordenada.
+Si ordenar la copia cambió la posición de algún dato, el mismo panel
+incluye **«origen índice N»** junto a cada dato contado, utilizando la
+procedencia estable que ya comparten las casillas y los marcadores
+`{countedIndex}` y `{originIndex}`. Así, al recorrer `[7, 3, 7, 2]`,
+la casilla ordenada cero indica que el `2` procede del índice original
+tres; las dos apariciones de `7` remiten a los índices originales cero
+y dos, respectivamente. No añade un origen redundante cuando los datos
+ya están ordenados o `sort` es falso. El texto narrable del panel utiliza
+esa misma procedencia, sin introducir información futura.
+
 No presenta `end` como un acceso válido, ni afirma que la decisión final
 de un grupo haya leído otro elemento.
 
