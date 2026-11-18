@@ -5,6 +5,7 @@
 #include "core/named_rule_battery_check.hpp"
 #include "core/named_rule_constant_variation_check.hpp"
 #include "platform/windows/winrt_apartment.hpp"
+#include "platform/windows/state_store.hpp"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -1076,7 +1077,10 @@ void require_physical_course_edition_asset(
             "A course-edition resource cannot escape its content directory");
 
     const auto physical = [](const std::filesystem::path& current, bool directory) {
-        const auto flags = GetFileAttributesW(current.c_str());
+        // Other native content/state I/O supports extended Windows paths.
+        // Keep the same spelling for this metadata check: otherwise an
+        // ordinary installed course can be rejected past MAX_PATH.
+        const auto flags = GetFileAttributesW(state::native_io_path(current).c_str());
         require(flags != INVALID_FILE_ATTRIBUTES,
             "A course-edition resource or directory is unavailable");
         require((flags & FILE_ATTRIBUTE_REPARSE_POINT) == 0,
