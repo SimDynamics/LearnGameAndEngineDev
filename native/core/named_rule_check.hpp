@@ -604,13 +604,25 @@ inline bool productive(const Tokens& t,std::size_t i,
     if(unevaluated_rule_use(t,i,scope_start)||
        neutral_named_expression_use(t,i,scope_start)||
        discarded_comma_rule_use(t,i,scope_start))return false;
-    // Direct algebraic identities cannot establish that a constant is
-    // meaningfully used. This is deliberately a bounded syntactic check;
-    // arbitrary C++ still requires execution evidence.
-    if((i>=2&&(op(t[i-1],"-")||op(t[i-1],"/")||
-               op(t[i-1],"%"))&&t[i-2]==t[i])||
-       (i+2<t.size()&&(op(t[i+1],"-")||op(t[i+1],"/")||
-               op(t[i+1],"%"))&&t[i+2]==t[i]))
+    // A direct x-x pair is neutral only when C++ precedence has not
+    // attached either x to a multiplicative expression first. For example,
+    // x - x*2 and 2*x - x both genuinely depend on x. An adjacent token
+    // match alone must never reject these valid alternative expressions.
+    // Division/remainder by the same direct operand retain the existing
+    // conservative check (and require independent runtime verification).
+    const auto multiplicative=[&](std::size_t at) {
+        return at<t.size()&&(op(t[at],"*")||op(t[at],"/")||op(t[at],"%"));
+    };
+    const auto direct_neutral=[&](std::size_t left,std::size_t middle,
+            std::size_t right) {
+        if(t[left]!=t[right])return false;
+        if(op(t[middle],"-"))
+            return !(left>0&&multiplicative(left-1))&&
+                   !(right+1<t.size()&&multiplicative(right+1));
+        return op(t[middle],"/")||op(t[middle],"%");
+    };
+    if((i>=2&&direct_neutral(i-2,i-1,i))||
+       (i+2<t.size()&&direct_neutral(i,i+1,i+2)))
         return false;
     const auto zero_after=[&](std::size_t position) {
         if(position>=t.size())return false;
