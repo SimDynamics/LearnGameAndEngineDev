@@ -5138,6 +5138,94 @@ void editable_input_keyboard_focus(HWND host) {
         SetFocus(nullptr);
     }
 }
+void late_reader_zoom_update_failure_restores_native_scale(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(6),
+        "Cannot prepare the calculated walkthrough before a late reader zoom failure");
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto title=GetDlgItem(view.window(),100);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(editor&&title&&output,"Missing native controls for late reader zoom rollback");
+    const auto old_step=view.step_index(),old_count=view.step_count();
+    const auto old_content=rich_edit_contents(view);
+    const auto old_output=text(view,output_id);
+    const auto old_array=name(GetDlgItem(view.window(),array_id));
+    control_wheel(host,editor,2*WHEEL_DELTA);
+    check(rich_edit_scale(editor)==120&&rich_edit_scale(title)==100,
+        "Cannot prepare the editor's independent Ctrl+wheel zoom");
+
+    const CHARRANGE chosen_input{1,3};
+    const CHARRANGE chosen_output{0,3};
+    SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&chosen_input));
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&chosen_output));
+    SetFocus(editor);check(GetFocus()==editor,"Cannot focus native editor before scale failure");
+
+    // The first 125% EM_SETZOOM belongs to fonts() and must succeed.
+    // The second belongs to the later update() of the title and fails.
+    // A fonts-only rollback is insufficient after the new fonts commit.
+    struct Fault {int requested=0,rejected=0;} fault;
+    const auto reject_second=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& state=*reinterpret_cast<Fault*>(raw);
+        if(message==EM_SETZOOM&&wp==5&&lp==4){
+            ++state.requested;
+            if(state.requested==2){++state.rejected;return FALSE;}
+        }
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53495a55;
+    check(SetWindowSubclass(title,reject_second,hook_id,
+        reinterpret_cast<DWORD_PTR>(&fault))!=FALSE,
+        "Cannot intercept a title zoom rejected after the font transaction");
+    struct Unhook {
+        HWND child;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(child))RemoveWindowSubclass(child,callback,id);}
+    } unhook{title,reject_second,hook_id};
+
+    bool failed=false;
+    try{view.set_text_scale(125);}
+    catch(const std::runtime_error& problem){
+        failed=std::string(problem.what()).find("RichEdit rechazó la escala del texto")!=
+            std::string::npos;
+    }
+    CHARRANGE input_after{},output_after{};
+    SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&input_after));
+    SendMessageW(output,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&output_after));
+    check(failed&&fault.requested==2&&fault.rejected==1&&
+        rich_edit_scale(title)==100&&rich_edit_scale(editor)==120&&
+        input_after.cpMin==chosen_input.cpMin&&
+        input_after.cpMax==chosen_input.cpMax&&
+        output_after.cpMin==chosen_output.cpMin&&
+        output_after.cpMax==chosen_output.cpMax&&
+        GetFocus()==editor&&view.step_index()==old_step&&
+        view.step_count()==old_count&&text(view,output_id)==old_output&&
+        name(GetDlgItem(view.window(),array_id))==old_array&&
+        rich_edit_contents(view)==old_content&&spec==authored,
+        "A late rejected zoom retained mixed font sizes, changed the model or lost native selection");
+    for(auto child=GetWindow(view.window(),GW_CHILD);child;
+            child=GetWindow(child,GW_HWNDNEXT)){
+        wchar_t kind[48]{};
+        GetClassNameW(child,kind,48);
+        if(std::wstring_view(kind)!=MSFTEDIT_CLASS||child==editor)continue;
+        check(rich_edit_scale(child)==100,
+            "A different RichEdit kept the rejected reader zoom after recovery");
+    }
+
+    // Once the one-shot fault has cleared, normal reader zoom must still
+    // override the editor's local zoom and then return cleanly to 100%.
+    view.set_text_scale(110);resize(view,820);
+    check(rich_edit_scale(title)==110&&rich_edit_scale(editor)==110&&
+        view.step_index()==old_step&&text(view,output_id)==old_output,
+        "A failed update poisoned the next valid reader zoom");
+    view.set_text_scale(100);resize(view,820);
+    check(rich_edit_scale(title)==100&&rich_edit_scale(editor)==100&&
+        rich_edit_contents(view)==old_content&&spec==authored,
+        "The subsequent reader zoom could not return to the original scale");
+    SetFocus(nullptr);
+}
+
 void scale_limits_and_local_control_wheel(HWND host) {
     auto spec=fixture(SimulationViewMode::summary);SimulationView first(host,spec,"es"),second(host,spec,"es");
     resize(first,800);resize(second,800);
@@ -6148,6 +6236,7 @@ int main(int argc,char** argv)try {
     run("interactive_simulation_feedback_narration_ids",[&]{interactive_simulation_feedback_narration_ids(host.value);});
     run("editable_input_keyboard_focus",[&]{editable_input_keyboard_focus(host.value);});
     run("scale_limits_and_local_control_wheel",[&]{scale_limits_and_local_control_wheel(host.value);});
+    run("late_reader_zoom_update_failure_restores_native_scale",[&]{late_reader_zoom_update_failure_restores_native_scale(host.value);});
     run("input_wheel_session_boundaries",[&]{input_wheel_session_boundaries(host.value);});
     run("reader_scale_wheel_session_boundaries",[&]{reader_scale_wheel_session_boundaries(host.value);});
     run("dpi_rebase_preserves_local_editor_zoom",[&]{dpi_rebase_preserves_local_editor_zoom(host.value);});
