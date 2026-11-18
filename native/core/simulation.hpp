@@ -104,6 +104,12 @@ void validate_simulation_spec(const SimulationSpec& spec);
 [[nodiscard]] std::string simulation_value_text(const SimulationValue& value);
 // Text is quoted/escaped; empty and ASCII-space-only values have visible labels.
 [[nodiscard]] std::string simulation_value_display_text(const SimulationValue& value);
+// Derived explanations for a counted element. Computed only from a validated
+// start/advance frame, its already-observed predecessor and original indices.
+// Decision/initial/final frames yield no count statements. This is shared by
+// portable model tests and the Windows dynamic narration panel.
+[[nodiscard]] std::vector<std::string> simulation_count_observation_changes(
+    const SimulationTrace& trace, const SimulationFrame& frame);
 [[nodiscard]] std::string simulation_frame_text(const SimulationSpec& spec,
     const SimulationTrace& trace, const SimulationFrame& frame);
 // Lines retain their historical literal meaning and optional final LF/CRLF.
