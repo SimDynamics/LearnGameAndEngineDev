@@ -1150,6 +1150,24 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             i=last;
             continue;
         }
+        // A local result may be declared first and assigned on both sides
+        // of a later if/else. No evidence exists at declaration time, and
+        // a missing branch must never inherit an imaginary initialization.
+        if(has_type&&initializer<bounds.close&&
+           t[variable].starts_with("id:")&&op(t[initializer],";")) {
+            const auto local=t[variable].substr(3);
+            if(local==name) {
+                if(nesting==0)return 0;
+                named_rule_shadows.push_back(nesting);
+            }else{
+                if(std::ranges::any_of(aliases,[&](const Alias& alias){
+                    return alias.name==local&&alias.depth==nesting;
+                }))return 0;
+                aliases.push_back({local,0,nesting,false});
+            }
+            i=initializer;
+            continue;
+        }
         if(i+1<bounds.close&&t[i].starts_with("id:")&&
            op(t[i+1],"=")) {
             const auto local=t[i].substr(3);
