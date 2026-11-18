@@ -174,7 +174,7 @@ int main(int argc,char** argv) {
         semantic_span.Insert(L"start",JsonValue::CreateNumberValue(static_cast<double>(start)));
         semantic_span.Insert(L"end",JsonValue::CreateNumberValue(
             static_cast<double>(start+selected_words.size())));
-        semantic_span.Insert(L"text",JsonValue::CreateStringValue(winrt::hstring(selected_words)));
+        semantic_span.Insert(L"text",JsonValue::CreateStringValue(L"condición"));
         semantic_span.Insert(L"role",JsonValue::CreateStringValue(L"prose"));
         semantic_span.Insert(L"reading",JsonValue::CreateStringValue(L"natural"));
         auto fields=explicit_root.GetNamedObject(L"textSemantics").GetNamedArray(L"fields");
