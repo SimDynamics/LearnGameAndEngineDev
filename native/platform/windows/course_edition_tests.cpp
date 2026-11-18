@@ -671,7 +671,14 @@ void run(const fs::path& fixture_source) {
         windows::validate_course_edition_physical_path(
             state::native_io_path(fixture.content), state::native_io_path(resource));
     }
-    std::cout << "PASS QA course-edition roots: both normal and extended paths are physical assets.\n";
+    const auto extended_lesson = state::native_io_path(fixture.path("lesson"));
+    const auto projected = windows::load_lesson_progress_metadata(extended_lesson);
+    const auto opened = windows::load_lesson(extended_lesson);
+    require(projected.id == new_id && opened.id == new_id &&
+            projected.course_edition && opened.course_edition &&
+            projected.course_edition == opened.course_edition,
+        "The native Windows course-edition loader rejected a valid extended path");
+    std::cout << "PASS QA course-edition roots: both path spellings load the same edition.\n";
     fixture.old_catalog();
     const auto old = windows::load_lesson(fixture.path("legacyLesson"));
     const auto other = windows::load_lesson(fixture.path("otherLesson"));
