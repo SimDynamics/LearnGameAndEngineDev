@@ -366,9 +366,9 @@ int main(int argc,char** argv) {
         std::cout<<"PASS general choice reading: marked and unmarked original options, "
             "distinct revised UTF-16 semantic spans, genuine reading archives "
             "and original success across reopening; isolated prerequisite models "
-            "per QA profile: five compilers and one math activity\\n";
+            "per QA profile: five compilers and one math activity\n";
     } catch(const std::exception& error) {
-        std::cerr<<"FAIL general choice reading: "<<error.what()<<'\\n';
+        std::cerr<<"FAIL general choice reading: "<<error.what()<<'\n';
         outcome=1;
     }
     OleUninitialize();
