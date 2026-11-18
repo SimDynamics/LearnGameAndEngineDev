@@ -2637,11 +2637,19 @@ void counted_source_origin_explanation(HWND host) {
     narrated("Se contó 0 desde 1: 2.");
     check(view.go_to_step(4),"Cannot observe the last edited repeated value");
     narrated("Se contó 2 desde 2: 4.");
+    // Restore always belongs to the CURRENT selected scenario. Returning
+    // to the initial authored dataset requires selecting scenario zero.
     click(view,restore_id);
-    check(view.step_index()==0&&view.step_count()==9&&spec==authored,
-        "Restore changed the authored model or retained edited provenance");
+    check(view.step_index()==0&&view.step_count()==7&&spec==authored,
+        "Restore failed to recover the currently selected scenario's data");
     narrated("Antes de contar |.");
-    check(view.go_to_step(6),"Restore did not recover the original source mapping");
+    check(view.go_to_step(4),"Restore did not recover the selected scenario's source mapping");
+    narrated("Se contó 2 desde 2: 3.");
+    choose(0);
+    check(view.step_index()==0&&view.step_count()==9&&spec==authored,
+        "Selecting initial data retained a previous scenario's source positions");
+    narrated("Antes de contar |.");
+    check(view.go_to_step(6),"Selecting initial data did not recover its source mapping");
     narrated("Se contó 3 desde 2: 7.");
 
     auto labeled=authored;
