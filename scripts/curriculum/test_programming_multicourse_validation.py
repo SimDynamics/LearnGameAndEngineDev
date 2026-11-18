@@ -307,8 +307,8 @@ class StructuralCourseFixtures(unittest.TestCase):
 
     def test_order_cards_are_nonblank_in_programming1_and_future_courses(self):
         # A blank separator is a presentation-only orderVisualSeparators entry,
-        # not a fragment that the learner has to place in correctOrder. The
-        # native loader rejects even a whitespace-only card.
+        # not a fragment the learner must place in correctOrder. The native
+        # parser retains legacy tolerance, while new authoring rejects it.
         for course_id in ("cpp_fundamentals", "cpp_language_memory_oop",
                           "future_programming_2040"):
             for bad in ("", " \t", "\n"):
