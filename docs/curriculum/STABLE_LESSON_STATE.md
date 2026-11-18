@@ -2229,6 +2229,13 @@ Write-Output "Resultado para revisar e incorporar a la fuente nueva: $prepared"
 
 El bloque lee Git y la fuente; crea únicamente el resultado nuevo en QA.
 `--output` utiliza creación exclusiva y rechaza un archivo que ya exista.
+Antes de preparar, el comando comprueba que la lección seleccionada y los
+índices de curso y unidad sean archivos físicos, sin enlaces simbólicos ni
+uniones de directorio en sus ancestros. Conserva la ruta solicitada hasta
+terminar esta comprobación: resolver un enlace antes la ocultaría. Las mismas
+restricciones se aplican al validar la publicación. La regresión aislada de
+`native.course_edition_authoring` cubre la preparación ante esos alias y
+comprueba que el rechazo no cambie las fuentes.
 No modifica el original, el índice de Git, una rama ni datos del estudiante.
 
 La función equivalente para generadores de autoría y fixtures es
