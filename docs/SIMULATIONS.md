@@ -874,6 +874,17 @@ por qué se actualizó el máximo a 4. Esta comparación procede de los
 estados calculados, no de los mensajes explicativos redactados por Work.
 El caso de array vacío y las vistas estáticas no inventan observaciones.
 
+La comparación `frecuencia >, = o < máximo anterior` también usa una
+función del núcleo portable, `simulation_group_decision_comparison`.
+Ésta conserva el máximo que existía antes de tomar la decisión, incluso
+en las vistas de grupos completos, y rechaza estados incompatibles con
+su relación matemática. La vista Win32 comparte el mismo texto y las
+pruebas C++ lo contrastan para máximos nuevos, empates, grupos menores,
+saltos, rótulos curriculares y decisiones falsificadas. La ejecución
+`44356007903` terminó correctamente en Python, GCC, Clang y MSVC
+portable. La aprobación portable no equivale a una ejecución de los
+controles RichEdit o a la validación integral del lector Win32.
+
 Al saltar directamente del paso 1 al 9, el panel compara **el paso 8 con
 el 9**, no el último paso que el estudiante visitó. En `groups` y
 `candidates`, contrasta los grupos terminados consecutivos; el primer
