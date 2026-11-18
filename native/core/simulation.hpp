@@ -91,6 +91,7 @@ public:
 private:
     SimulationSpec authored_;
     SimulationTrace initial_;
+    bool initial_taken_ = false;
 };
 
 // A deterministic model of runs in an ordered copy; it never interprets C++.
