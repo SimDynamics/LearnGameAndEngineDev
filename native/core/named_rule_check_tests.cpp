@@ -1701,6 +1701,45 @@ void conditional_assignment_branches() {
             return resultado;
         })cpp",rules,false,
         "An initializer that forwards the result by reference is not inert");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            return int(resultado);
+        })cpp",rules,true,
+        "A built-in functional cast reads, but cannot mutate, the result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                int copia(resultado);
+                (void)copia;
+            }
+            return resultado;
+        })cpp",rules,true,
+        "Direct-initializing an independent int inside an if is harmless");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                int const copia(resultado);
+                (void)copia;
+            }
+            return resultado;
+        })cpp",rules,true,
+        "East-const direct initialization is not a mutating function call");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                (void)int(resultado);
+            }
+            return resultado;
+        })cpp",rules,true,
+        "An ignored built-in value cast leaves the named computation intact");
 }
 
 void separate_rules() {
