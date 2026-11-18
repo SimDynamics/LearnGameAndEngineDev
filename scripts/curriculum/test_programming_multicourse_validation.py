@@ -314,9 +314,20 @@ class StructuralCourseFixtures(unittest.TestCase):
             for bad in ("", " \t", "\n"):
                 with self.subTest(course=course_id, fragment=repr(bad)):
                     self.select_course(course_id)
-                    self.complete_lesson()
-                    order = self.lesson["pages"][0]["blocks"][2]
-                    self.assertEqual(order["type"], "order_code")
+                    if course_id == "cpp_fundamentals":
+                        # Keep its fixture independent of later project
+                        # contract extensions specific to this first course.
+                        self.lesson["pages"][0]["blocks"].append({
+                            "type": "order_code", "id": "orden_fixture",
+                            "language": "cpp", "question": "Ordena el programa.",
+                            "fragments": ["int n = 7;", "return n;"],
+                            "correctOrder": [0, 1],
+                        })
+                        self.save()
+                    else:
+                        self.complete_lesson()
+                    order = next(block for block in self.lesson["pages"][0]["blocks"]
+                                 if block["type"] == "order_code")
                     self.assertIn(f"Curso {course_id}:", self.run_course())
                     order["fragments"][0] = bad
                     self.save()
