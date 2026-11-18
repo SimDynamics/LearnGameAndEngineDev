@@ -664,6 +664,7 @@ void run(const fs::path& fixture_source) {
     require(fixture.content.is_absolute(), "The isolated QA content root is not absolute");
     for (const auto role : {"course", "unit", "lesson"})
         windows::validate_course_edition_physical_path(fixture.content, fixture.path(role));
+    std::cout << "PASS QA course-edition roots: course/unit/lesson are physical assets.\n";
     fixture.old_catalog();
     const auto old = windows::load_lesson(fixture.path("legacyLesson"));
     const auto other = windows::load_lesson(fixture.path("otherLesson"));
