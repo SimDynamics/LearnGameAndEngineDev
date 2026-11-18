@@ -885,6 +885,23 @@ class SourceFormatTest(unittest.TestCase):
 
 
 
+    def _closed_compiler_family(self, spanish, relative):
+        """Use every genuine locale pinned by the published v2 family.
+
+        A source-format proof changes only the Spanish owner, but the
+        historical family check must still see its unchanged English/French
+        translations. Never synthesize a locale or shrink that manifest.
+        """
+        repository = Path(__file__).resolve().parents[2]
+        baseline_ref = "52d057d1aad844b133d0d26ff195cbfcbe18b2e1"
+        locales = spanish["stateLayout"]["family"]
+        return {
+            language: (spanish if language == "es" else layout._git_document(
+                repository, baseline_ref,
+                relative.replace("/es/", f"/{language}/", 1)))
+            for language in locales
+        }
+
     def _closed_compiler_format_fixture(self, name, compiler, reference, *,
                                         format_compiler=True):
         """Use the real publication before the closed compiler expansions."""
@@ -907,7 +924,7 @@ class SourceFormatTest(unittest.TestCase):
             self.assertEqual(block[field].count("    return 0;\n}\n"), 1)
             block[field] = block[field].replace(
                 "    return 0;\n}\n", "\n    return 0;\n}\n", 1)
-        formatted = layout.prepare_v2(updated, "es", {"es": expanded}, expanded)
+        formatted = layout.prepare_v2(updated, "es", self._closed_compiler_family(expanded, relative), expanded)
         self.assertEqual(published, published_copy)
         return relative, published, expanded, formatted, owners
 
@@ -1002,7 +1019,7 @@ class SourceFormatTest(unittest.TestCase):
                     field = "initialCode" if identity == compiler else "code"
                     block[field] = block[field].replace(
                         "    return 0;\n}\n", "\n    return 0;\n}\n", 1)
-                later = layout.prepare_v2(updated, "es", {"es": formatted}, formatted)
+                later = layout.prepare_v2(updated, "es", self._closed_compiler_family(formatted, relative), formatted)
                 self.assertEqual(later["stateLayout"]["sourceFormatRevisions"],
                                  formatted["stateLayout"]["sourceFormatRevisions"])
                 for document in (formatted, later):
