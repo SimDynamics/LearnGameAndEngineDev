@@ -533,7 +533,7 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
 // In the built-in comma operator, every left operand is evaluated and
 // discarded. A plain named integer or side-effect-free arithmetic on that
 // integer does not contribute to the value of the rightmost operand.
-// Recognize only parenthesized comma expressions; calls such as
+// Recognize parenthesized and direct return comma expressions; calls such as
 // f(capacidad, capacidad) have argument separators, not discarded operands.
 inline bool discarded_comma_rule_use(const Tokens& t,std::size_t i,
         std::size_t scope_start) {
@@ -554,6 +554,22 @@ inline bool discarded_comma_rule_use(const Tokens& t,std::size_t i,
         }
         return has_named;
     };
+    const auto discarded_in=[&](std::size_t first,std::size_t last) {
+        std::size_t parentheses=0,brackets=0,braces=0,part=first;
+        for(auto at=first;at<last;++at) {
+            if(op(t[at],"(")){++parentheses;continue;}
+            if(op(t[at],")")){if(parentheses)--parentheses;continue;}
+            if(op(t[at],"[")){++brackets;continue;}
+            if(op(t[at],"]")){if(brackets)--brackets;continue;}
+            if(op(t[at],"{")){++braces;continue;}
+            if(op(t[at],"}")){if(braces)--braces;continue;}
+            if(parentheses||brackets||braces||!op(t[at],","))continue;
+            if(i>=part&&i<at&&pure_named_arithmetic(part,at))
+                return true;
+            part=at+1;
+        }
+        return false;
+    };
     std::vector<std::size_t> enclosing;
     for(auto at=scope_start;at<i;++at) {
         if(op(t[at],"("))enclosing.push_back(at);
@@ -566,16 +582,20 @@ inline bool discarded_comma_rule_use(const Tokens& t,std::size_t i,
              op(t[open-1],")")||op(t[open-1],"]")))
             continue;
         const auto close=closing(t,open,"(",")");
-        if(!close||*close<=i)continue;
-        std::size_t depth=0,part=open+1;
-        for(auto at=open+1;at<*close;++at) {
-            if(op(t[at],"(")){++depth;continue;}
-            if(op(t[at],")")){if(depth)--depth;continue;}
-            if(depth||!op(t[at],","))continue;
-            if(i>=part&&i<at&&pure_named_arithmetic(part,at))
-                return true;
-            part=at+1;
+        if(close&&*close>i&&discarded_in(open+1,*close))return true;
+    }
+    // The return-expression itself can be a comma expression without outer
+    // parentheses. Nested call arguments and braced initializers retain
+    // their own delimiters and are never treated as top-level commas.
+    auto first=i;
+    while(first>scope_start&&!op(t[first-1],";")&&
+            !op(t[first-1],"{")&&!op(t[first-1],"}")) {
+        if(id(t[first-1],"return")||id(t[first-1],"co_return")) {
+            auto last=i+1;
+            while(last<t.size()&&!op(t[last],";"))++last;
+            return discarded_in(first,last);
         }
+        --first;
     }
     return false;
 }
