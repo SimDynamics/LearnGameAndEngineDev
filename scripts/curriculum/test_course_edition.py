@@ -318,5 +318,80 @@ class CourseEditionAuthoringTest(unittest.TestCase):
             state.validate(foreign)
 
 
+class CourseEditionFixtureTreeTest(unittest.TestCase):
+    """The CMake/Ninja fixture generator must not mistake empty output
+    directories for foreign files, or overwrite any unrecognized QA data.
+    """
+
+    def test_ninja_byproduct_directories_are_safe_on_first_generation(self):
+        import course_edition_fixture_source as fixture
+
+        with tempfile.TemporaryDirectory(prefix="edition-byproducts-qa-") as base:
+            root = Path(base) / "course-edition"
+            files, _ = fixture.documents()
+            # Ninja precreates the parents of all declared BYPRODUCTS before
+            # invoking the Python producer. This is precisely the Windows CI
+            # shape that failed with a missing manifest.
+            for name in files:
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
+            self.assertTrue(any(root.iterdir()))
+            self.assertFalse((root / "manifest.json").exists())
+            self.assertFalse(any(entry.is_file() for entry in root.rglob("*")))
+
+            fixture.produce(root)
+            manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["fixture"], fixture.MARKER)
+            self.assertEqual(set(manifest["files"]), set(files))
+            before = {name: (root / name).read_bytes() for name in files}
+            self.assertEqual(set(manifest["files"]), set(before))
+            fixture.produce(root)
+            self.assertEqual({name: (root / name).read_bytes() for name in files}, before)
+            self.assertEqual(json.loads((root / "manifest.json").read_text(encoding="utf-8")),
+                             manifest, "A repeated fixture build silently changed the QA manifest")
+
+    def test_preexisting_files_and_unrecognized_empty_directories_are_rejected(self):
+        import course_edition_fixture_source as fixture
+
+        files, _ = fixture.documents()
+        inside = next(name for name in files if "/" in name)
+        for unwanted in ("foreign-file", "expected-path-file", "foreign-directory"):
+            with self.subTest(unwanted=unwanted), tempfile.TemporaryDirectory(
+                    prefix="edition-foreign-qa-") as base:
+                root = Path(base) / "course-edition"
+                if unwanted == "foreign-file":
+                    path = root / "student-notes.txt"
+                    path.parent.mkdir(parents=True)
+                    path.write_text("must be preserved", encoding="utf-8")
+                elif unwanted == "expected-path-file":
+                    path = root / inside
+                    path.parent.mkdir(parents=True)
+                    path.write_text("must be preserved", encoding="utf-8")
+                else:
+                    path = root / "unexpected"
+                    path.mkdir(parents=True)
+                with self.assertRaisesRegex(
+                        ValueError, "no es un árbol de pruebas de edición reconocido"):
+                    fixture.produce(root)
+                self.assertTrue(path.exists())
+                if path.is_file():
+                    self.assertEqual(path.read_text(encoding="utf-8"), "must be preserved")
+                self.assertFalse((root / "manifest.json").exists())
+
+    def test_unrecognized_existing_manifest_is_not_replaced(self):
+        import course_edition_fixture_source as fixture
+
+        with tempfile.TemporaryDirectory(prefix="edition-marker-qa-") as base:
+            root = Path(base) / "course-edition"
+            root.mkdir()
+            marker = root / "manifest.json"
+            marker.write_text('{"fixture": "unrelated"}', encoding="utf-8")
+            with self.assertRaisesRegex(
+                    ValueError, "no es un árbol de pruebas de edición reconocido"):
+                fixture.produce(root)
+            self.assertEqual(json.loads(marker.read_text(encoding="utf-8"))["fixture"],
+                             "unrelated")
+            self.assertEqual([p.name for p in root.iterdir()], ["manifest.json"])
+
+
 if __name__ == "__main__":
     unittest.main()
