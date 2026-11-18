@@ -89,6 +89,8 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_named_rule_checks.py -v
       - name: Verify course-edition authoring and Ninja fixture tree safety
         run: python -B -m unittest discover -s scripts/curriculum -p test_course_edition.py -v
+      - name: Verify authenticated question and explanation revisions including U1L4
+        run: python -B -m unittest discover -s scripts/curriculum -p test_general_choice_editorial.py -v
       - name: Compile readers and execute catalog and actual Win32 regressions
         run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild
       - name: Preserve configure and compilation results
