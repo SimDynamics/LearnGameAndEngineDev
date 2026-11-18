@@ -2181,6 +2181,13 @@ raíz de contenido, aunque los bytes coincidan con la publicación original.
 El catálogo comprueba el recurso hijo antes de consultar su identidad
 almacenada en caché; la proyección de progreso también vuelve a comprobar
 la ruta antes de reutilizar metadatos con la misma fecha y tamaño.
+Estas comprobaciones y las aperturas nativas de los JSON utilizan las rutas
+Win32 extendidas, como el almacenamiento del proyecto. Así, un directorio
+profundo o identificadores extensos no deben producir un rechazo falso por
+`MAX_PATH`. La regresión `physical_edition_long_paths` crea un árbol QA de
+más de 260 caracteres y comprueba atributos, lectura completa de la lección,
+proyección de progreso, índices activos y rechazo de un recurso inexistente.
+La prueba requiere ejecución real en Windows antes de acreditarse.
 `native.course_edition` reproduce enlaces reales de índice de curso,
 índice de unidad, archivo de lección y carpeta de unidad en árboles QA
 aislados, después de poblar las cachés con rutas originales válidas. Si
