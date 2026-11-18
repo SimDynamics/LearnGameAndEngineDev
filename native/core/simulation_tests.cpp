@@ -106,6 +106,61 @@ void ties_and_text() {
         "A value was evaluated recursively as a template");
 }
 
+void counted_source_positions_and_templates() {
+    auto spec = example();
+    spec.values = integers({7, 3, 7, 2});
+    spec.explanations.initial = "Antes de contar: {countedIndex}|{originIndex}.";
+    spec.explanations.start = "Contado {countedIndex}, origen {originIndex}, valor {value}.";
+    spec.explanations.advance = "Avanza {countedIndex}, origen {originIndex}, frecuencia {frequency}.";
+    spec.explanations.new_maximum = "Decisión sin nueva lectura {countedIndex}|{originIndex}.";
+    spec.explanations.done = "Terminado {countedIndex}|{originIndex}.";
+    spec.explanations.empty = "Vacío {countedIndex}|{originIndex}.";
+    const auto trace = build_simulation_trace(spec);
+    check(trace.original == integers({7, 3, 7, 2}) &&
+            trace.ordered == integers({2, 3, 7, 7}) &&
+            trace.source_indices == std::vector<std::size_t>{3, 1, 0, 2},
+        "Stable numeric provenance did not preserve duplicate source positions");
+    check(trace.frames.size() == 9 &&
+            trace.frames[0].explanation == "Antes de contar: |." &&
+            trace.frames[1].explanation == "Contado 0, origen 3, valor 2." &&
+            trace.frames[3].explanation == "Contado 1, origen 1, valor 3." &&
+            trace.frames[5].explanation == "Contado 2, origen 0, valor 7." &&
+            trace.frames[6].explanation == "Avanza 3, origen 2, frecuencia 2." &&
+            trace.frames[7].explanation == "Decisión sin nueva lectura |." &&
+            trace.frames.back().explanation == "Terminado |.",
+        "Counted positions escaped their start/advance phases or mixed up duplicate origins");
+    check(build_simulation_trace(spec,integers({2, 7, 2, 7})).source_indices ==
+            std::vector<std::size_t>{0, 2, 1, 3} &&
+            spec.values == integers({7, 3, 7, 2}),
+        "A user-applied dataset changed the authored source or lost stable provenance");
+
+    spec.text_values = true;
+    spec.values = words({"patio", "", "patio"});
+    const auto text = build_simulation_trace(spec);
+    check(text.ordered == words({"", "patio", "patio"}) &&
+            text.source_indices == std::vector<std::size_t>{1, 0, 2} &&
+            text.frames[1].explanation ==
+                "Contado 0, origen 1, valor \"\" (cadena vacía)." &&
+            text.frames[3].explanation == "Contado 1, origen 0, valor \"patio\"." &&
+            text.frames[4].explanation == "Avanza 2, origen 2, frecuencia 2.",
+        "Empty text or repeated UTF-8 labels lost their original positions");
+
+    spec.sort = false;
+    spec.values = words({"", "", "patio"});
+    const auto ordered = build_simulation_trace(spec);
+    check(ordered.source_indices == std::vector<std::size_t>{0, 1, 2} &&
+            ordered.frames[1].explanation ==
+                "Contado 0, origen 0, valor \"\" (cadena vacía)." &&
+            ordered.frames[2].explanation == "Avanza 1, origen 1, frecuencia 2.",
+        "An already ordered dataset needs an identity origin mapping");
+    spec.values.clear();
+    const auto empty = build_simulation_trace(spec);
+    check(empty.source_indices.empty() && empty.ordered.empty() &&
+            empty.frames.size() == 1 &&
+            empty.frames[0].explanation == "Vacío |.",
+        "An empty collection invented a source position or an extra read");
+}
+
 void boundary_states() {
     auto spec = example();
     const auto empty = build_simulation_trace(spec);
@@ -646,6 +701,7 @@ int main() {
     try {
         runs_and_completion();
         ties_and_text();
+        counted_source_positions_and_templates();
         boundary_states();
         replay_inputs_and_accessibility();
         empty_text_values_and_labels();
