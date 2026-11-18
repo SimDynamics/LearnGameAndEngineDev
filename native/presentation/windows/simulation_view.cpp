@@ -1402,7 +1402,19 @@ struct SimulationView::Impl {
             auto candidate=simulation_parse_input_trace(spec,edit_text(item(input_id)),input_format);
             replace_trace(std::move(candidate),false);
         }catch(const std::exception& failure){
-            error=std::string("No se aplicaron los datos. ")+failure.what();update();publish();
+            // Parsing or native presentation rejected the candidate. The
+            // student must see that specific explanation, even if an external
+            // changed/layout_changed observer fails while reporting it.
+            error=std::string("No se aplicaron los datos. ")+failure.what();
+            update();
+            try{publish();}
+            catch(...){
+                // The model was already rejected and its visible/accessibility
+                // feedback was published by update(). A callback failure is
+                // secondary and must not cross the Win32 command procedure
+                // or replace the useful validation diagnostic.
+                OutputDebugStringW(L"Falló una notificación tras rechazar los datos de simulación.\n");
+            }
         }
     }
     void change_input_format(SimulationInputFormat requested) {

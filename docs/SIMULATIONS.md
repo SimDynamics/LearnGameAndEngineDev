@@ -246,7 +246,11 @@ el simulador no deshace datos ya aplicados ni el último paso confirmado.
 El aviso accesible identifica un fallo de notificación sin afirmar que
 **Aplicar datos** haya sido rechazado. Si durante esa notificación se genera
 otro diagnóstico, por ejemplo al intentar aplicar un borrador inválido,
-el aviso del observador exterior no lo sustituye. También se conserva un
+el aviso del observador exterior no lo sustituye. Incluso cuando
+**Aplicar datos** rechaza directamente un borrador, una excepción del
+observador que recibe el diagnóstico no debe ocultar la validación, cambiar
+la traza anterior ni impedir corregir la entrada. La regresión Win32
+`rejected_apply_observer_cannot_hide_input_diagnostic` cubre este caso. También se conserva un
 diagnóstico previo del editor al navegar por la simulación. Las regresiones
 `reentrant_invalid_input_outweighs_observer_failure`,
 `applied_data_survive_observer_exception` y

@@ -2831,6 +2831,69 @@ void navigation_retry_preserves_previous_invalid_draft(HWND host) {
     }),"The original draft feedback lost its accessible reading after retry");
 }
 
+void rejected_apply_observer_cannot_hide_input_diagnostic(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    spec.scenarios.clear();
+    // Only the test's local copy is edited. The curriculum model used by
+    // this view remains immutable throughout the rejection and retry.
+    const auto reviewed=spec;
+    bool throw_on_rejection=false;
+    int notifications=0;
+    SimulationCallbacks callbacks{};
+    SimulationView* active=nullptr;
+    callbacks.changed=[&]{
+        ++notifications;
+        if(!throw_on_rejection)return;
+        throw_on_rejection=false;
+        check(text(*active,error_id).find("No se aplicaron los datos.")!=std::string::npos,
+            "Invalid-data feedback was not rendered before observer notification");
+        throw std::runtime_error("Fallo QA al notificar rechazo de datos");
+    };
+    SimulationView view(host,spec,"es",callbacks);active=&view;resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the previously applied trace for an invalid Apply");
+    const auto prior_position=view.step_index();
+    const auto prior_count=view.step_count();
+    const auto prior_output=text(view,output_id);
+    const auto prior_array=name(GetDlgItem(view.window(),array_id));
+    const auto prior_reading=view.reading_regions()[2].key;
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(editor,"Missing native simulation editor");
+    set_edit_text(editor,"2147483648");
+    const CHARRANGE selected{1,4};
+    SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    throw_on_rejection=true;
+    click(view,apply_id);
+    const auto diagnostic=text(view,error_id);
+    CHARRANGE retained{};
+    SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&retained));
+    check(!throw_on_rejection&&notifications>=1&&
+        diagnostic.find("No se aplicaron los datos.")!=std::string::npos&&
+        diagnostic.find("No se pudo actualizar la simulación.")==std::string::npos&&
+        diagnostic.find("Fallo QA al notificar rechazo de datos")==std::string::npos&&
+        view.step_index()==prior_position&&view.step_count()==prior_count&&
+        text(view,input_id)=="2147483648"&&
+        text(view,output_id)==prior_output&&
+        name(GetDlgItem(view.window(),array_id))==prior_array&&
+        view.reading_regions()[2].key==prior_reading&&
+        retained.cpMin==selected.cpMin&&retained.cpMax==selected.cpMax&&
+        spec==reviewed,
+        "A throwing observer hid rejected-input feedback or changed the applied trace");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==diagnostic;
+    }),"The original invalid-Apply diagnostic was not accessible to narration");
+
+    set_edit_text(editor,"1\n2\n3");
+    click(view,apply_id);
+    check(text(view,error_id).empty()&&view.step_index()==0&&
+        view.step_count()!=prior_count&&
+        view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="1:1\n2:1\n3:1\n"&&spec==reviewed,
+        "A later valid Apply failed after an observer exception on invalid data");
+}
+
 void reentrant_invalid_input_outweighs_observer_failure(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     spec.scenarios.clear();
@@ -5069,6 +5132,7 @@ int main(int argc,char** argv)try {
     run("navigation_callback_failure_keeps_committed_steps",[&]{navigation_callback_failure_keeps_committed_steps(host.value);});
     run("reentrant_success_survives_outer_observer_exception",[&]{reentrant_success_survives_outer_observer_exception(host.value);});
     run("navigation_retry_preserves_previous_invalid_draft",[&]{navigation_retry_preserves_previous_invalid_draft(host.value);});
+    run("rejected_apply_observer_cannot_hide_input_diagnostic",[&]{rejected_apply_observer_cannot_hide_input_diagnostic(host.value);});
     run("reentrant_invalid_input_outweighs_observer_failure",[&]{reentrant_invalid_input_outweighs_observer_failure(host.value);});
     run("applied_data_survive_observer_exception",[&]{applied_data_survive_observer_exception(host.value);});
     run("scenario_observer_reentry_keeps_committed_data",[&]{scenario_observer_reentry_keeps_committed_data(host.value);});
