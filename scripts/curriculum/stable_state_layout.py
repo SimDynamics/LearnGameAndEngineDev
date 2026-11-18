@@ -1064,34 +1064,45 @@ def _require_formatted_question_authorship(previous: dict, current: dict,
 
 
 def _general_choice_semantic_projection(document: dict) -> dict | None:
-    """Restore the original option's presentation hash in a historical view.
+    """Restore the exact published option marks, not merely the old text SHA.
 
-    Source selection and narration must not borrow the revised option's SHA
-    when reconstructing the published original response. All span annotations
-    remain intact, rather than being silently regenerated or repositioned.
+    The legacy five-field archive retains its unchanged-span contract. A new
+    explicitly authored revision also archives its full new descriptor, so
+    reselecting spans after a wording change never grants old listening credit.
     """
     overlay = deepcopy(document.get(text_semantics.ROOT_FIELD))
     if overlay is None:
         return None
     shadow = {**document, text_semantics.ROOT_FIELD: overlay}
+    introduced_root = False
     for item in document.get("stateLayout", {}).get("choiceRevisions", []):
         if "optionIndex" not in item:
             continue
-        marker = _choice_semantic_entry(shadow, item["id"], item["optionIndex"])
+        identity, index = item["id"], item["optionIndex"]
+        marker = _choice_semantic_entry(shadow, identity, index)
         archived = item["semanticBefore"]
-        if archived is None:
-            require(marker is None,
-                    "A revised choice invented a semantic marker absent from its original")
+        if "semanticAfter" in item:
+            expected = item["semanticAfter"]
+            introduced_root = introduced_root or not item["semanticRootBefore"]
+        elif archived is None:
+            expected = None
         else:
-            require(marker is not None,
-                    "A revised choice dropped its archived semantic marker")
             expected = deepcopy(archived)
-            expected["sourceSha256"] = hashlib.sha256(
-                item["replacement"].encode("utf-8")).hexdigest()
-            require(marker == expected,
-                    "Revised choice semantic spans differ from their complete archive")
+            expected["sourceSha256"] = hashlib.sha256(item["replacement"].encode("utf-8")).hexdigest()
+        require(marker == expected,
+                "Revised choice semantic spans differ from their authenticated archive")
+        if archived is None:
+            # The option used to have no descriptor. An explicitly added mark
+            # belongs only to the new wording and must not enter its history.
+            overlay["fields"] = [field for field in overlay["fields"]
+                                 if (field["block"], field["path"]) !=
+                                 (identity, f"/options/{index}")]
+        else:
+            require(marker is not None, "A reviewed choice lost its archived semantic owner")
             marker.clear()
             marker.update(deepcopy(archived))
+    if introduced_root and not overlay["fields"] and not overlay.get("rootFields", []):
+        return None
     return overlay
 
 
@@ -2180,9 +2191,11 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                     "The choice snapshot does not match its immutable response contract")
             choices[identity] = spec
         else:
-            require(set(item) == {"id", "block", "optionIndex", "replacement", "semanticBefore"}
+            legacy_fields = {"id", "block", "optionIndex", "replacement", "semanticBefore"}
+            explicit_fields = {"semanticAfter", "semanticRootBefore"}
+            require(set(item) in (legacy_fields, legacy_fields | explicit_fields)
                     and spec is None,
-                    "A general choice review needs its original, one option and exact semantic archive")
+                    "A general choice review needs its original, one option and authenticated semantic archive")
             require(type(original) is dict and original.get("type") == "multiple_choice"
                     and type(original.get("options")) is list
                     and all(type(option) is str for option in original["options"])
@@ -2212,12 +2225,30 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 except (KeyError, TypeError, ValueError) as exc:
                     raise LayoutError("Archived choice semantic spans are invalid") from exc
             semantic_after = _choice_semantic_entry(document, identity, index)
-            expected_semantic = deepcopy(semantic_before)
-            if expected_semantic is not None:
-                expected_semantic["sourceSha256"] = hashlib.sha256(
-                    item["replacement"].encode("utf-8")).hexdigest()
+            if "semanticAfter" in item:
+                expected_semantic = item["semanticAfter"]
+                require(type(item["semanticRootBefore"]) is bool
+                        and (item["semanticRootBefore"] or semantic_before is None),
+                        "An explicit choice revision has an invalid original semantic root")
+                require(type(expected_semantic) is dict
+                        and set(expected_semantic) == {"block", "path", "sourceSha256", "spans"}
+                        and expected_semantic["block"] == identity
+                        and expected_semantic["path"] == f"/options/{index}",
+                        "An explicit choice descriptor must name its original owner and option")
+                try:
+                    text_semantics._descriptor(expected_semantic, item["replacement"])
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise LayoutError("A revised choice has invalid authored UTF-16 spans") from exc
+                require(semantic_before is None or not semantic_before["spans"]
+                        or bool(expected_semantic["spans"]),
+                        "A marked choice cannot silently lose all its authored highlights")
+            else:
+                expected_semantic = deepcopy(semantic_before)
+                if expected_semantic is not None:
+                    expected_semantic["sourceSha256"] = hashlib.sha256(
+                        item["replacement"].encode("utf-8")).hexdigest()
             require(semantic_after == expected_semantic,
-                    "A revised choice changed, inserted or lost historical semantic spans")
+                    "A revised choice changed, inserted or lost authenticated semantic spans")
             general_choices[identity] = item
     compiler_revisions = meta.get("compilerRevisions", [])
     require(type(compiler_revisions) is list and len(compiler_revisions) <= len(COMPILER_CASE_REVISIONS),
@@ -5497,12 +5528,13 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
 
 
 def revise_choice_editorial(document: dict, identity: str,
-                            option_index: int, replacement: str) -> dict:
-    """Author one authenticated text-only change without a lesson hash allowlist.
+                            option_index: int, replacement: str, *,
+                            spans: list | None = None) -> dict:
+    """Revise one option without changing the protected response contract.
 
-    The original block is archived unchanged and a single option receives
-    revised prose; correct index, all other answers, feedback and narration
-    coordinates remain exactly as published.
+    Omitting spans preserves the published marker exactly (legacy behavior).
+    Supplying spans, including an explicit [], authenticates a new descriptor
+    for the replacement text and archives both exact semantic versions.
     """
     validate(document)
     meta = document.get("stateLayout", {})
@@ -5522,20 +5554,39 @@ def revise_choice_editorial(document: dict, identity: str,
             and type(replacement) is str and bool(replacement.strip())
             and replacement != original["options"][option_index],
             "General choice review must revise exactly one nonblank option")
+    require(spans is None or type(spans) is list,
+            "Authored option semantics must be an explicit UTF-16 span list")
     previous_semantic = deepcopy(_choice_semantic_entry(document, identity, option_index))
+    if spans is not None:
+        require(previous_semantic is None or not previous_semantic["spans"] or bool(spans),
+                "A marked option cannot silently lose all highlights")
     result = deepcopy(document)
     actual = _blocks(result)[identity]
     actual["options"][option_index] = replacement
+    previous_root = text_semantics.ROOT_FIELD in document
     semantic = _choice_semantic_entry(result, identity, option_index)
-    if semantic is not None:
-        # The exact published highlights remain authoritative. A changed
-        # excerpt that no longer matches its UTF-16 span is rejected rather
-        # than automatically moving the student's narration/emphasis ranges.
+    if spans is not None:
+        overlay = result.setdefault(text_semantics.ROOT_FIELD, {"version": 1, "fields": []})
+        revised = text_semantics.make_field(result, identity, f"/options/{option_index}", spans)
+        if semantic is None:
+            overlay["fields"].append(revised)
+        else:
+            semantic.clear()
+            semantic.update(deepcopy(revised))
+        text_semantics.validate(result)
+    elif semantic is not None:
+        # Legacy callers retain the existing source selections and narration.
+        # If the old offsets no longer describe the new text, validation fails.
         semantic["sourceSha256"] = hashlib.sha256(replacement.encode("utf-8")).hexdigest()
-    result["stateLayout"].setdefault("choiceRevisions", []).append({
+    record = {
         "id": identity, "block": deepcopy(original),
         "optionIndex": option_index, "replacement": replacement,
-        "semanticBefore": previous_semantic})
+        "semanticBefore": previous_semantic
+    }
+    if spans is not None:
+        record["semanticAfter"] = deepcopy(revised)
+        record["semanticRootBefore"] = previous_root
+    result["stateLayout"].setdefault("choiceRevisions", []).append(record)
     result["stateLayout"]["editorial"].append({
         "id": identity, "beforeSha256": fingerprint(original),
         "afterSha256": fingerprint(actual)})
@@ -5921,6 +5972,10 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
             require(item["semanticBefore"] == _choice_semantic_entry(
                 baseline, item["id"], item["optionIndex"]),
                 "A choice semantic archive differs from the exact prior lesson")
+            if "semanticAfter" in item:
+                require(item["semanticRootBefore"] ==
+                        (text_semantics.ROOT_FIELD in baseline),
+                        "A choice revision falsified the original semantic root")
     new_general_choices = [item for item in choices[len(old_choices):] if "optionIndex" in item]
     if new_general_choices:
         # A single response-text precision must not silently repaint another
@@ -5936,10 +5991,21 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                                            if field["block"] not in retiring_owners]
             expectation = {**baseline, text_semantics.ROOT_FIELD: expected_semantics}
         for item in new_general_choices:
-            marker = _choice_semantic_entry(expectation, item["id"], item["optionIndex"])
-            if marker is not None:
-                marker["sourceSha256"] = hashlib.sha256(
-                    item["replacement"].encode("utf-8")).hexdigest()
+            if "semanticAfter" in item:
+                if expected_semantics is None:
+                    expected_semantics = {"version": 1, "fields": []}
+                    expectation = {**expectation, text_semantics.ROOT_FIELD: expected_semantics}
+                marker = _choice_semantic_entry(expectation, item["id"], item["optionIndex"])
+                if marker is None:
+                    expected_semantics["fields"].append(deepcopy(item["semanticAfter"]))
+                else:
+                    marker.clear()
+                    marker.update(deepcopy(item["semanticAfter"]))
+            else:
+                marker = _choice_semantic_entry(expectation, item["id"], item["optionIndex"])
+                if marker is not None:
+                    marker["sourceSha256"] = hashlib.sha256(
+                        item["replacement"].encode("utf-8")).hexdigest()
         expected_semantics = _compose_ordinary_editorial_semantics(
             baseline, current, expected_semantics, {item["id"] for item in new_general_choices})
         require(expected_semantics == current.get(text_semantics.ROOT_FIELD),
@@ -6661,7 +6727,7 @@ def main() -> None:
     parser.add_argument("--option-index", type=int, help="Index of the existing multiple-choice option to clarify")
     parser.add_argument("--replacement", help="Exact revised nonblank choice or math prompt text")
     parser.add_argument("--semantic-spans", type=Path,
-                        help="Explicit JSON list of UTF-16 spans for revise-math-prompt-editorial")
+                        help="Explicit JSON list of UTF-16 spans for a revised math prompt or choice option")
     parser.add_argument("--return-to", type=int,
                         help="Explicit earlier full-block revision for a mathematical prompt or compiler case-order return")
     parser.add_argument("--editorial-fields", type=Path,
@@ -6675,8 +6741,9 @@ def main() -> None:
         require(args.action in {"revise-choice-editorial", "revise-math-prompt-editorial"}
                 or args.replacement is None,
                 "Replacement text belongs to a choice or mathematical prompt revision")
-        require(args.action == "revise-math-prompt-editorial" or args.semantic_spans is None,
-                "Semantic spans belong only to revise-math-prompt-editorial")
+        require(args.action in {"revise-math-prompt-editorial", "revise-choice-editorial"}
+                or args.semantic_spans is None,
+                "Explicit semantic spans belong only to a mathematical prompt or choice revision")
         require(args.action in {"revise-math-prompt-editorial", "reorder-compiler-cases", "revise-compiler-cases", "revise-compiler-client-cases", "revise-compiler-cmake-recipe"}
                 or args.return_to is None, "Return-to belongs to a supported authenticated editorial return")
         require(args.action in {"revise-compiler-cases", "revise-compiler-client-cases"}
@@ -6761,8 +6828,9 @@ def main() -> None:
                     "revise-choice-editorial requires --identity, --option-index and "
                     "--replacement without a move/addition plan")
             baseline = prepare_v2(source, locale, family, previous) if family is not None else source
-            result = revise_choice_editorial(baseline, args.identity,
-                                             args.option_index, args.replacement)
+            result = revise_choice_editorial(
+                baseline, args.identity, args.option_index, args.replacement,
+                spans=load(args.semantic_spans) if args.semantic_spans is not None else None)
         elif args.action == "revise-math-prompt-editorial":
             require(args.identity is not None and args.replacement is not None
                     and args.semantic_spans is not None and args.plan is None and args.additions is None,
