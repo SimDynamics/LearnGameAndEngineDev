@@ -2792,6 +2792,80 @@ void original_order_reading_session(HWND host) {
 }
 
 
+void repeated_step_explanation_preserves_native_reading(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    // Two different computed frames can intentionally explain the same
+    // operation. Their native text must not be streamed again just because
+    // the model's step index advances.
+    std::string repeated;
+    for(int i=0;i<40;++i)
+        repeated+="Lectura estable del grupo, línea "+std::to_string(i)+".\n";
+    spec.explanations.start=repeated;
+    spec.explanations.advance=repeated;
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(3),
+        "Cannot prepare the first step of a group with repeated explanation");
+    const auto explanation=GetDlgItem(view.window(),explanation_id);
+    check(explanation&&text(view,explanation_id)==repeated,
+        "The authored repeated explanation was not presented");
+    int streams=0;
+    const auto probe=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        if(message==EM_STREAMIN)++*reinterpret_cast<int*>(raw);
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53494558;
+    check(SetWindowSubclass(explanation,probe,hook_id,
+        reinterpret_cast<DWORD_PTR>(&streams))!=FALSE,
+        "Cannot count native explanation text replacements");
+    struct Unhook {
+        HWND child;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(child))RemoveWindowSubclass(child,callback,id);}
+    } guard{explanation,probe,hook_id};
+
+    const CHARRANGE selection{4,15};
+    SendMessageW(explanation,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    SendMessageW(explanation,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    SendMessageW(explanation,EM_LINESCROLL,0,8);
+    const auto earlier=scroll_state(explanation);
+    check(earlier.first>0&&
+        earlier.selection.cpMin==selection.cpMin&&
+        earlier.selection.cpMax==selection.cpMax,
+        "Cannot establish a separately selected and scrolled explanation");
+    for(const std::size_t step:std::array<std::size_t,3>{4,5,6}){
+        check(view.go_to_step(step),"Cannot advance through the repeated group explanation");
+        const auto current=scroll_state(explanation);
+        check(streams==0&&text(view,explanation_id)==repeated&&
+            current.first==earlier.first&&
+            current.selection.cpMin==selection.cpMin&&
+            current.selection.cpMax==selection.cpMax,
+            "An unchanged explanation was retransmitted or moved its reading selection");
+    }
+    check(view.go_to_step(7)&&streams==1&&
+        text(view,explanation_id)!=repeated,
+        "A changed computed explanation was not rendered");
+    check(view.go_to_step(3)&&streams==2&&
+        text(view,explanation_id)==repeated,
+        "Returning to earlier explanation did not restore its content");
+    check(view.go_to_step(4)&&streams==2,
+        "Revisiting an identical explanation sent another native text stream");
+
+    // A real typography change must invalidate the content cache even when
+    // the explanation string is identical to its previous value.
+    view.set_text_scale(125);resize(view,820);
+    check(streams==3&&rich_edit_scale(explanation)==125&&
+        text(view,explanation_id)==repeated&&spec==authored,
+        "A real zoom failed to refresh the explanation's native formatting");
+    check(view.go_to_step(5)&&streams==3,
+        "The post-zoom step re-streamed an unchanged explanation");
+    SendMessageW(view.window(),WM_DPICHANGED_AFTERPARENT,0,0);pump(host);
+    resize(view,820);
+    check(streams==4&&rich_edit_scale(explanation)==125&&
+        text(view,explanation_id)==repeated&&spec==authored,
+        "A DPI rebase did not invalidate the explanation's text-format cache");
+}
+
 void static_simulation_text_is_not_restreamed(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto original=spec;
@@ -5781,6 +5855,7 @@ int main(int argc,char** argv)try {
     run("original_order_comparison",[&]{original_order_comparison(host.value);});
     run("original_order_reading_session",[&]{original_order_reading_session(host.value);});
     run("static_simulation_text_is_not_restreamed",[&]{static_simulation_text_is_not_restreamed(host.value);});
+    run("repeated_step_explanation_preserves_native_reading",[&]{repeated_step_explanation_preserves_native_reading(host.value);});
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("step_navigation_rolls_back_native_presentation_failure",[&]{step_navigation_rolls_back_native_presentation_failure(host.value);});
     run("reentrant_navigation_keeps_newer_native_error",[&]{reentrant_navigation_keeps_newer_native_error(host.value);});
