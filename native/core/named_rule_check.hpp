@@ -487,15 +487,23 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
         unwrap(first,last);
         return first+1==last&&id(t[first],name);
     };
+    const auto negated=[&](std::size_t first,std::size_t last) {
+        unwrap(first,last);
+        return first<last&&op(t[first],"-")&&single(first+1,last);
+    };
     const auto neutral=[&](std::size_t first,std::size_t last) {
         unwrap(first,last);
         std::size_t depth=0;
         for(auto at=first;at<last;++at) {
             if(op(t[at],"(")){++depth;continue;}
             if(op(t[at],")")){if(depth)--depth;continue;}
-            if(depth||(!op(t[at],"-")&&!op(t[at],"/")&&!op(t[at],"%")))
-                continue;
-            if(single(first,at)&&single(at+1,last))return true;
+            if(depth)continue;
+            if((op(t[at],"-")||op(t[at],"/")||op(t[at],"%"))&&
+                single(first,at)&&single(at+1,last))return true;
+            // The two lexical references also cancel as x+(-x) or (-x)+x.
+            if(op(t[at],"+")&&
+                ((single(first,at)&&negated(at+1,last))||
+                 (negated(first,at)&&single(at+1,last))))return true;
         }
         return false;
     };
