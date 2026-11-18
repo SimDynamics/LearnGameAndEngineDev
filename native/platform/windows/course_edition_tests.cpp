@@ -662,9 +662,16 @@ void run(const fs::path& fixture_source) {
     // root. Verify the whole physical ancestor chain without mistaking the
     // drive root-name for an unavailable directory before loading JSON.
     require(fixture.content.is_absolute(), "The isolated QA content root is not absolute");
-    for (const auto role : {"course", "unit", "lesson"})
-        windows::validate_course_edition_physical_path(fixture.content, fixture.path(role));
-    std::cout << "PASS QA course-edition roots: course/unit/lesson are physical assets.\n";
+    for (const auto role : {"course", "unit", "lesson"}) {
+        const auto resource = fixture.path(role);
+        windows::validate_course_edition_physical_path(fixture.content, resource);
+        // The catalog's metadata cache supplies extended native I/O paths,
+        // not just the ordinary spelling used by these fixture helpers.
+        // Both forms must accept exactly the same physical resources.
+        windows::validate_course_edition_physical_path(
+            state::native_io_path(fixture.content), state::native_io_path(resource));
+    }
+    std::cout << "PASS QA course-edition roots: both normal and extended paths are physical assets.\n";
     fixture.old_catalog();
     const auto old = windows::load_lesson(fixture.path("legacyLesson"));
     const auto other = windows::load_lesson(fixture.path("otherLesson"));
