@@ -93,11 +93,13 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_named_rule_check_tests',
                 'lgaed_named_rule_runtime_tests',
                 'lgaed_cpp_cmake_runner_tests',
+                'lgaed_cpp_runner_tests',
                 'lgaed_u3_runtime_semantics_tests',
                 'lgaed_premium_windows_tests',
                 'lgaed_compiler_first_case_view_tests',
                 'lgaed_cpp_history_training_tests',
                 'lgaed_course_edition_tests',
+                'lgaed_optional_prose_format_tests',
                 'lgaed_semantic_retirement_view_tests',
                 'lgaed_compiler_case_order_view_tests',
                 'lgaed_catalog_tests',
@@ -109,6 +111,7 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_reduction_runtime_tests',
                 'lgaed_integer_battery_check_tests',
                 'lgaed_integer_battery_runtime_tests',
+                'lgaed_open_battery_check_tests',
                 'lgaed_open_battery_runtime_tests'
             )
             Results = 'reader-build'
