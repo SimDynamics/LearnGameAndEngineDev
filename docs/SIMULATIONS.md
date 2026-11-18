@@ -826,7 +826,8 @@ terminado o el paso final no inventan un recuento adicional. Esta
 explicación calculada aparece también en la región narrable. La
 regresión Win32 `calculated_step_changes` comprueba el singular, plural,
 la edición, las cadenas vacías, los escenarios y la ausencia de
-lecturas futuras; su ejecución nativa sigue pendiente.
+lecturas futuras; pasó en GitHub Actions con el MSVC exacto del
+proyecto (ejecución `44363844966`).
 
 Además, muestra la **relación con el elemento anterior**. Para el índice
 cero indica que todavía no existe un elemento previo. En los demás
@@ -850,7 +851,7 @@ un grupo, ni en el paso inicial o final. La narración utiliza el mismo
 texto, sin anticipar el siguiente elemento. La regresión Win32
 `neighboring_values_explain_group_boundaries` cubre valores numéricos,
 etiquetas vacías y repetidas, escenarios, datos editados y lectura
-accesible; su ejecución nativa en Windows sigue pendiente.
+accesible; pasó en la ejecución Windows `44363844966`.
 
 Las observaciones de recuento descritas arriba proceden ahora de una
 única función portable, `simulation_count_observation_changes`, en
@@ -1142,8 +1143,9 @@ de cada estado; y que la edición explícita entre comillas conserve el
 dato vacío y los espacios. Comprueba también que la exploración no
 genera respuestas ni modifica el progreso de la lección. Utiliza
 lecciones sintéticas y perfiles QA, no datos del estudiante. La
-implementación de la prueba no constituye una ejecución verificada
-hasta correrla en Windows local.
+implementación de la prueba se ha ejecutado en Windows Server de
+GitHub Actions con MSVC 14.51.36231. Esto acredita el entorno de
+integración desechable, no una comprobación manual en el PC del usuario.
 
 Desde la raíz del repositorio, las pruebas acotadas de autoría se ejecutan con:
 
@@ -1157,6 +1159,26 @@ vacías y con espacios, y la conservación de las identidades. Las pruebas
 nativas del modelo y del lector Windows comprueban por separado el cálculo y
 la integración. La validación JSON por sí sola no demuestra una interacción
 visual ni una ejecución de C++.
+
+### Evidencia de simulación en Windows con el toolchain fijado
+
+La ejecución de GitHub Actions
+[`44363844966`](https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/44363844966)
+registró **4 de 4** pruebas nativas de simulación aprobadas:
+`native.simulation_model`, `native.simulation_view`,
+`native.simulation_lesson` y `native.simulation_authoring`. El
+mismo entorno declaró MSVC `14.51.36231` con
+`cl.exe 19.51.36260.0`. También pasaron las dos pruebas
+`native.lesson_menu` y `native.lesson_scroll_render`.
+La integración comprobada utiliza lecciones y perfiles aislados de QA;
+no modifica el progreso del usuario.
+
+La batería ReaderBuild general terminó fallida después de estas
+pruebas, al encontrar cuatro registros CTest válidos que faltaban
+en su inventario estricto. Esa discrepancia de registro está corregida
+en `db8ad3f0`, con una nueva ejecución de la batería general aún
+por confirmar. La aceptación visual y auditiva humana en el PC del
+usuario sigue siendo una comprobación distinta.
 
 ### Batería de núcleo independiente cuando falta el toolset Win32
 
