@@ -487,6 +487,17 @@ reintentar. El sello de formato sólo se conserva tras una actualización
 completa. La regresión Windows
 `silent_richedit_explanation_stream_cannot_commit_step` comprueba la
 recuperación y el reintento; requiere ejecutarse localmente en Windows.
+También se comprueba que la salida calculada realmente se haya escrito en
+el RichEdit de consola. Si `EM_STREAMIN` deja silenciosamente la salida
+anterior, no se confirma el nuevo paso. La recuperación no retransmite el
+documento anterior cuando éste ya estaba intacto, para conservar su
+selección y punto de lectura. El siguiente intento puede actualizar la
+salida correctamente. Esta comprobación sólo normaliza los finales de línea
+`CR` o `CRLF` a `LF` al comparar con la lectura nativa: no modifica
+los bytes de la salida calculada ni su contrato curricular. Las regresiones
+Windows `silent_richedit_stdout_stream_cannot_commit_step` y
+`calculated_stdout_accepts_crlf_template` verifican el rechazo, el
+reintento y las plantillas con `CRLF`; requieren ejecución local.
 Un aviso accesible explica el fallo,
 sin propagar la excepción fuera de los controles Win32. La limpieza de un
 aviso transitorio ocurre antes de notificar a los observadores del modelo:
