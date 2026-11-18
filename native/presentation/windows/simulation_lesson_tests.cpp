@@ -170,6 +170,18 @@ int main(int argc,char** argv)try {
           trace.frames[3].explanation.find("Después de decidir, posiciones pendientes: 7.")!=std::string::npos &&
           trace.frames.back().explanation.find("Posiciones pendientes: 0.")!=std::string::npos,
         "The documented numeric explanation lost dynamic processed/remaining counts");
+    const std::vector<std::string> numeric_decisions{
+        "supera el máximo anterior de 0.",
+        "supera el máximo anterior de 2.",
+        "iguala el máximo anterior de 3.",
+        "es menor que el máximo anterior de 3."
+    };
+    check(trace.candidate_frames.size()==numeric_decisions.size(),
+        "The documented numeric example changed its number of group decisions");
+    for(std::size_t i=0;i<numeric_decisions.size();++i)
+        check(trace.frames.at(trace.candidate_frames[i]).explanation.find(
+            numeric_decisions[i])!=std::string::npos,
+            "A numeric group compared its new maximum with itself");
     check(trace.source_indices==std::vector<std::size_t>{2,6,1,4,7,0,3,8,5} &&
           trace.frames[1].explanation.find("casilla 0 de la copia ordenada, que procede del índice original 2")!=std::string::npos &&
           trace.frames[2].explanation.find("casilla 1, procedente del índice original 6")!=std::string::npos &&
@@ -214,6 +226,14 @@ int main(int argc,char** argv)try {
     };
     check(text_spec.scenarios.size()+1==text_example_cases.size(),
         "The documented text example lost a scenario");
+    // Published source-independent group oracles: first group starts at
+    // maximum zero; subsequent ties and increases compare to the maximum
+    // already observed BEFORE their decision, never the newly written one.
+    const std::vector<std::vector<std::size_t>> prior_maxima{
+        {0,1},{},{0},{0,1},{0,1},{0,1,1},{0,1,1}
+    };
+    check(prior_maxima.size()==text_example_cases.size(),
+        "The maximum oracle no longer covers every authored text scenario");
     for(std::size_t i=0;i<text_example_cases.size();++i){
         const auto& expected=text_example_cases[i];
         const auto& applied=i==0?text_spec.values:text_spec.scenarios[i-1].values;
@@ -231,6 +251,20 @@ int main(int argc,char** argv)try {
             final.maximum==expected.maximum&&
             final.output==expected.output&&leaders==expected.leaders,
             "The real text example's groups, empty/space candidates or stdout changed");
+        check(computed.candidate_frames.size()==prior_maxima[i].size(),
+            "A text scenario has an unexpected number of comparison frames");
+        for(std::size_t j=0;j<prior_maxima[i].size();++j){
+            const auto& decision=computed.frames.at(computed.candidate_frames[j]);
+            const auto previous=std::to_string(prior_maxima[i][j]);
+            const bool exact =
+                (decision.phase==curriculum::SimulationPhase::new_maximum &&
+                 decision.explanation.find("Supera el máximo anterior de "+previous+":")!=std::string::npos)||
+                (decision.phase==curriculum::SimulationPhase::tie &&
+                 decision.explanation.find("Iguala el máximo anterior de "+previous)!=std::string::npos)||
+                (decision.phase==curriculum::SimulationPhase::below_maximum &&
+                 decision.explanation.find("por debajo del máximo anterior de "+previous+".")!=std::string::npos);
+            check(exact,"The real text scenario narrated a stale maximum at a group decision");
+        }
         if(applied.empty()) {
             check(computed.frames.size()==1&&
                 computed.frames.front().explanation.find(
