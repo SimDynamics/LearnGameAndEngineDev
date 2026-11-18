@@ -491,18 +491,23 @@ function(lgaed_add_general_choice_editorial_tests)
         "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/general-choice-editorial/u9-reviewed.json")
     set(LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED
         "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/general-choice-editorial/u9-reviewed-marked.json")
+    set(LGAED_GENERAL_CHOICE_EDITORIAL_QA_UNMARKED_PREVIOUS
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/general-choice-editorial/u9-reviewed-new-mark-from-unmarked.json")
     # All three snapshots share one authenticated historical source. An
     # editorial correction in the live lesson must not rewrite its QA origin.
     add_custom_command(
         OUTPUT "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL}"
             "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}"
             "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}"
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_UNMARKED_PREVIOUS}"
         COMMAND ${_lgaed_state_fixture_python} "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
             --write-original "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL}"
         COMMAND ${_lgaed_state_fixture_python} "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
             --write-reviewed "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}"
         COMMAND ${_lgaed_state_fixture_python} "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
             --write-reviewed-marked "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}"
+        COMMAND ${_lgaed_state_fixture_python} "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
+            --write-reviewed-new-mark-from-unmarked "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_UNMARKED_PREVIOUS}"
         DEPENDS "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/editorial_fixture_history.py"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
@@ -513,7 +518,8 @@ function(lgaed_add_general_choice_editorial_tests)
     add_custom_target(lgaed_general_choice_editorial_fixture
         DEPENDS "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL}"
             "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}"
-            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}")
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}"
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_UNMARKED_PREVIOUS}")
     add_executable(lgaed_general_choice_editorial_tests
         native/platform/windows/general_choice_editorial_tests.cpp)
     target_link_libraries(lgaed_general_choice_editorial_tests PRIVATE lgaed_curricular_windows)
@@ -522,7 +528,8 @@ function(lgaed_add_general_choice_editorial_tests)
     add_test(NAME native.general_choice_editorial
         COMMAND lgaed_general_choice_editorial_tests
             "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL}"
-            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}")
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}"
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_UNMARKED_PREVIOUS}")
     set_tests_properties(native.general_choice_editorial PROPERTIES TIMEOUT 100)
     add_executable(lgaed_general_choice_editorial_view_tests
         native/presentation/windows/general_choice_editorial_view_tests.cpp)
