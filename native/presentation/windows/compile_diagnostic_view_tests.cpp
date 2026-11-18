@@ -140,6 +140,35 @@ void compact_diagnostic_path_cases(){
         L"main.cpp(16,31): error C2059: ')'\r\n"
         L"  El proceso de compilación no pudo continuar.\r\n",
         "The driver exception left a long owned source path or changed its failure reason");
+
+    // cpp_runner::write_exact throws these messages BEFORE it can produce
+    // source coordinates. Only the internal-driver mode recognizes them.
+    const std::wstring driver_io=
+        L"Cannot create run file: C:\\QA\\Código & (espacio)\\run-1\\stdin.bin\r\n"
+        L"Cannot write run file: C:/QA/Código & (espacio)/run-1/candidate/project/tmp/diagnostics.log\n";
+    const std::wstring compact_io=
+        L"Cannot create run file: stdin.bin\r\n"
+        L"Cannot write run file: tmp/diagnostics.log\n";
+    check(compact_compiler_diagnostic_paths(driver_io,roots)==driver_io,
+        "Normal compiler diagnostics must not rewrite driver-only run-file messages");
+    check(compact_compiler_diagnostic_paths(driver_io,roots,true)==compact_io,
+        "The internal driver kept absolute paths in run-file creation or write errors");
+    const std::wstring untouched_driver=
+        L"Cannot create run file: D:\\External\\private.txt\r\n"
+        L"Cannot write run file: C:\\QA\\Código & (espacio)\\run-1_extra\\stdin.bin\n"
+        L"  Cannot create run file: C:\\QA\\Código & (espacio)\\run-1\\source-example.txt\n"
+        L"Program output: Cannot create run file: C:\\QA\\Código & (espacio)\\run-1\\text.txt\n"
+        L"Cannot open another file: C:\\QA\\Código & (espacio)\\run-1\\unknown.bin";
+    check(compact_compiler_diagnostic_paths(untouched_driver,roots,true)==untouched_driver,
+        "An external path, sibling directory, source excerpt or unknown driver message changed");
+    const std::wstring unc_driver=
+        L"Cannot write run file: \\\\servidor\\curso\\proyecto\\logs\\salida.bin\n";
+    check(compact_compiler_diagnostic_paths(unc_driver,roots,true)==
+        L"Cannot write run file: logs\\salida.bin\n",
+        "A recognized UNC run-file exception retained its absolute private path");
+    check(driver_io.find(L"C:\\QA\\Código & (espacio)")!=std::wstring::npos,
+        "Display-only path compaction mutated the original driver's error text");
+
     expect(L"C:/QA/Código & (espacio)/run-1/main.cpp:4:9: error: expected ';'\r\n",
         L"main.cpp:4:9: error: expected ';'\r\n","Clang coordinates or CRLF changed");
     expect(L"In file included from C:/QA/Código & (espacio)/run-1/candidate/project/include/uno.hpp:3:\n"
