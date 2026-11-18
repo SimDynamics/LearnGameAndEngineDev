@@ -320,7 +320,16 @@ incompatible. Los mensajes de error de intentos diferentes en el mismo paso
 también tienen identidades separadas cuando cambia el diagnóstico visible:
 se calcula una clave opaca y estable a partir del **mensaje**, sin incluir
 el borrador introducido. Repetir el mismo error conserva su identidad;
-corregir los datos lo retira del recorrido de lectura. El panel de
+corregir los datos lo retira del recorrido de lectura. Si el diagnóstico
+permanece igual mientras se avanza o retrocede por el recorrido aplicado,
+su documento RichEdit y su selección se conservan, sin retransmitir el
+mismo error en cada paso. Un mensaje diferente se presenta normalmente.
+Si el texto se mostró mediante recuperación Win32 directa tras un fallo
+de RichEdit, el siguiente redibujado válido recupera el formato normal,
+en vez de reutilizar una marca visual anterior. La regresión Win32
+`repeated_invalid_draft_diagnostic_preserves_reading` cubre la navegación
+con error repetido, su sustitución, el zoom y la recuperación tras un fallo
+nativo; requiere ejecución local en Windows. El panel de
 ayuda mantiene también su selección y documento RichEdit durante pasos,
 errores y aplicación de otros datos si el formato sigue siendo el mismo;
 no retransmite un texto idéntico. Un cambio real entre líneas y lista
