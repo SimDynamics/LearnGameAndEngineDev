@@ -648,6 +648,12 @@ void negative_contracts(const Fixture& fixture, const curriculum::Lesson& curren
 void run(const fs::path& fixture_source) {
     Profile profile(L"native");
     Fixture fixture(profile, fixture_source);
+    // The real Windows environment can supply an extended \\?\C:\... QA
+    // root. Verify the whole physical ancestor chain without mistaking the
+    // drive root-name for an unavailable directory before loading JSON.
+    require(fixture.content.is_absolute(), "The isolated QA content root is not absolute");
+    for (const auto role : {"course", "unit", "lesson"})
+        windows::validate_course_edition_physical_path(fixture.content, fixture.path(role));
     fixture.old_catalog();
     const auto old = windows::load_lesson(fixture.path("legacyLesson"));
     const auto other = windows::load_lesson(fixture.path("otherLesson"));
