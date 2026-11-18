@@ -141,7 +141,11 @@ std::string window_text(HWND window) {
 }
 
 struct SimulationView::Impl {
-    SimulationSpec spec;
+    // The model snapshots and authenticates the immutable curriculum once.
+    // All native gestures thereafter validate only new data and build that
+    // data's trace, rather than recomputing eight unchanged scenarios.
+    SimulationSession model;
+    const SimulationSpec& spec;
     SimulationTrace trace;
     std::size_t authored_group_count=0,authored_maximum=0;
     std::vector<SimulationValue> authored_leaders;
@@ -205,7 +209,7 @@ struct SimulationView::Impl {
 
     Impl(const SimulationSpec& source,std::string language,SimulationCallbacks events,
             const std::map<std::string,TextSemantics>& authored)
-        :spec(source),trace(build_simulation_trace(spec)),
+        :model(source),spec(model.specification()),trace(model.take_initial_trace()),
          source_positions(stable_source_positions(trace)),locale(std::move(language)),
          callbacks(std::move(events)),semantics(authored),input_key(data_identity(trace.original)) {
         // Cache only the authored final statistics, not a second 8 MiB trace.
@@ -1490,7 +1494,7 @@ struct SimulationView::Impl {
         }
     }
     void replace_data(std::vector<SimulationValue> values,bool replace_editor) {
-        replace_trace(build_simulation_trace(spec,std::move(values)),replace_editor);
+        replace_trace(model.build_trace(std::move(values)),replace_editor);
     }
     void apply_input() {
         // A rejected draft also supersedes an in-flight mouse gesture.
@@ -1498,7 +1502,7 @@ struct SimulationView::Impl {
         try {
             // Parsing already builds and validates every frame. Reuse it,
             // rather than computing all authored scenarios and the edit twice.
-            auto candidate=simulation_parse_input_trace(spec,edit_text(item(input_id)),input_format);
+            auto candidate=model.parse_trace(edit_text(item(input_id)),input_format);
             replace_trace(std::move(candidate),false);
         }catch(const std::exception& failure){
             // Parsing or native presentation rejected the candidate. Keep the
@@ -1538,7 +1542,7 @@ struct SimulationView::Impl {
         std::optional<std::string> previous_text;
         try {
             previous_text=edit_text(editor);
-            const auto values=simulation_parse_input(spec,*previous_text,previous_format);
+            const auto values=model.parse_values(*previous_text,previous_format);
             const auto converted=simulation_input_text(values,requested);
             set_edit_text(editor,converted);
             // EM_STREAMIN is allowed to report zero dwError even when the
