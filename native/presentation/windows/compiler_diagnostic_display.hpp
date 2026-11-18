@@ -182,8 +182,14 @@ inline std::optional<std::size_t> root_length(std::wstring_view path, const std:
         // Other compiler/CMake diagnostics still require a recognized suffix.
         // All formats must start under an owned root: no arbitrary message
         // or student output is scanned for path-like substrings.
+        // No-coordinate paths occupy the line except for an optional CR
+        // preceding LF. Keep that CR outside the compacted span, just as the
+        // coordinate-based path_end() already does. Rewriting only the path
+        // must never turn CRLF into LF or consume a final standalone CR.
         const auto last = root ? (driver_begin || include_begin
-                ? std::optional<std::size_t>{line.size()} : path_end(line, first))
+                ? std::optional<std::size_t>{line.size() - (
+                    !line.empty() && line.back() == L'\r' ? 1u : 0u)}
+                : path_end(line, first))
             : std::nullopt;
         if (root && last && *last > first + *root + 1) {
             result.append(line.substr(0, first));
