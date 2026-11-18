@@ -23,7 +23,7 @@ EXPLANATION_FIELDS = frozenset({
 VIEWS = frozenset({"array", "groups", "walkthrough", "candidates", "summary"})
 TEMPLATE_FIELDS = frozenset({
     "value", "start", "end", "frequency", "maximum", "leaders", "size", "group", "groups",
-    "countedIndex", "originIndex", "processedCount", "remainingCount",
+    "countedIndex", "originIndex", "processedCount", "remainingCount", "previousMaximum",
 })
 MAX_VALUES = 64
 MAX_SCENARIOS = 8
@@ -125,7 +125,8 @@ def _trace_text_bytes(spec, values):
             return rendered + (" (1 espacio)" if len(value) == 1 else f" ({len(value)} espacios)")
         return rendered
 
-    def context(begin, end, group, frequency, value=None, *, display=False, counted_at=None):
+    def context(begin, end, group, frequency, value=None, *, display=False,
+                counted_at=None, previous_maximum=None):
         return {"value": "" if value is None else value_text(value, display=display),
                 "start": str(begin), "end": str(end),
                 "frequency": str(frequency), "maximum": str(maximum),
@@ -133,7 +134,9 @@ def _trace_text_bytes(spec, values):
                 "size": str(len(ordered)), "group": str(group), "groups": str(len(groups)),
                 "countedIndex": "" if counted_at is None else str(counted_at),
                 "originIndex": "" if counted_at is None else str(source_indices[counted_at]),
-                "processedCount": str(end), "remainingCount": str(len(ordered) - end)}
+                "processedCount": str(end), "remainingCount": str(len(ordered) - end),
+                "previousMaximum": ("" if previous_maximum is None
+                                    else str(previous_maximum))}
 
     def render(template, values):
         return re.sub(r"\{([^{}]+)\}", lambda match: values[match[1]], template)
@@ -156,6 +159,7 @@ def _trace_text_bytes(spec, values):
             frame("advance", context(begin, at, group, at - begin, value,
                                      display=True, counted_at=at - 1))
         frequency = end - begin
+        previous_maximum = maximum
         if frequency > maximum:
             maximum, leaders, phase = frequency, [value], "newMaximum"
         elif frequency == maximum:
@@ -163,9 +167,11 @@ def _trace_text_bytes(spec, values):
             phase = "tie"
         else:
             phase = "belowMaximum"
-        current = context(begin, end, group, frequency, value)
+        current = context(begin, end, group, frequency, value,
+                          previous_maximum=previous_maximum)
         output += render(spec["outputTemplate"], current) + "\n"
-        frame(phase, context(begin, end, group, frequency, value, display=True))
+        frame(phase, context(begin, end, group, frequency, value,
+                             display=True, previous_maximum=previous_maximum))
     frame("done", context(len(ordered), len(ordered), len(groups), 0, display=True))
     return total
 
