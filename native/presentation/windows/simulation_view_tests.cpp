@@ -1901,10 +1901,10 @@ void neighboring_values_explain_group_boundaries(HWND host) {
             current().find("Relación con el anterior:")==std::string::npos&&
             current().find("Primera posición:")==std::string::npos,
             "Decision or final frames fabricated a new comparison of neighbors");
-    // Origins belong only to the already-observed comparison step, never to
-    // a group decision or the end of the trace.
-    check(current().find("Procedencia de la comparación:")==std::string::npos,
-        "A decision or terminal step exposed source positions from another frame");
+        // Origins belong only to the already-observed comparison step, never to
+        // a group decision or the end of the trace.
+        check(current().find("Procedencia de la comparación:")==std::string::npos,
+            "A decision or terminal step exposed source positions from another frame");
     }
     check(view.go_to_step(3)&&current()==boundary&&
         view.go_to_step(4)&&current()==equal,
