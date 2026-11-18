@@ -205,6 +205,16 @@ class RetiredStateLayoutTest(unittest.TestCase):
                 [identity for snapshot in history[1 + bool(references):]
                  for identity in snapshot["retired"]],
                 [entry["id"] for entry in archive[len(legacy_ids):]])
+            if len(history) > 1 + bool(references):
+                # Genuine later releases are allowed, but their individual
+                # identity batches cannot be shortened while retaining the
+                # same complete retired-block archive and reading history.
+                forged = deepcopy(after)
+                extra_batch = forged["stateLayout"]["retirementHistory"][-1]["retired"]
+                self.assertGreater(len(extra_batch), 1)
+                extra_batch.pop()
+                with self.assertRaises(layout.LayoutError):
+                    layout.validate(forged)
             self.assertEqual(before["pages"], history[0]["pages"])
             self.assertEqual(before["stateLayout"]["current"], history[0]["current"])
             self.assertEqual(before.get("activityAfter", []), history[0]["activityAfter"])
