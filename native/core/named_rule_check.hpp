@@ -1386,7 +1386,13 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             const auto found=std::find_if(aliases.rbegin(),aliases.rend(),
                 [&](const Alias& alias){return id(t[i],alias.name);});
             if(found!=aliases.rend()) {
-                if(op(t[i+1],"++")||op(t[i+1],"--"))return 0;
+                if(op(t[i+1],"++")||op(t[i+1],"--")) {
+                    // Invalidate this value's evidence, not unrelated
+                    // named expressions that may be returned instead.
+                    found->count=0;found->zero=false;
+                    ++i;
+                    continue;
+                }
                 const bool compound=op(t[i+1],"+=")||op(t[i+1],"-=")||
                     op(t[i+1],"*=")||op(t[i+1],"/=")||
                     op(t[i+1],"%=")||op(t[i+1],"^=")||
@@ -1415,18 +1421,26 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                         i=last;
                         continue;
                     }
-                    // Other compound operations require control/data flow
-                    // beyond this conservative source proof. Runtime probes
-                    // remain necessary but cannot restore canceled evidence.
-                    return 0;
+                    // Other compound operations invalidate the affected
+                    // local's source evidence. An unused auxiliary variable
+                    // must not reject an otherwise correct direct return.
+                    found->count=0;
+                    found->zero=false;
+                    i=last;
+                    continue;
                 }
             }
         }
         if(i+1<bounds.close&&(op(t[i],"++")||op(t[i],"--"))&&
-           t[i+1].starts_with("id:")&&
-           std::ranges::any_of(aliases,[&](const Alias& alias){
-               return id(t[i+1],alias.name);
-           }))return 0;
+           t[i+1].starts_with("id:")) {
+            const auto found=std::find_if(aliases.rbegin(),aliases.rend(),
+                [&](const Alias& alias){return id(t[i+1],alias.name);});
+            if(found!=aliases.rend()) {
+                found->count=0;found->zero=false;
+                ++i;
+                continue;
+            }
+        }
     }
     // A conditional-only return does not prove that every input path uses the rule.
     return 0;
