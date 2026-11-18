@@ -805,7 +805,7 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     // A block may declare a new variable with an existing outer name.
     // Its evidence expires at scope exit; assignments to the outer variable
     // still propagate when there is no inner shadowing declaration.
-    struct Alias { std::string name; std::size_t count,depth; };
+    struct Alias { std::string name; std::size_t count,depth; bool zero=false; };
     std::vector<Alias> aliases;
     // An inner declaration with the same spelling as the required rule
     // temporarily hides the outer rule; it does not invalidate that rule.
@@ -825,6 +825,21 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             count+=std::min(contribution,limit-count);
         }
         return count;
+    };
+    // Only a proven literal-zero alternative may omit the named calculation.
+    // A different hard-coded default is not a domain guard, even if the
+    // conditional branch uses the right constant.
+    const auto zero_expression=[&](std::size_t first,std::size_t last) {
+        while(first<last&&(op(t[first],"(")||op(t[first],"{"))) {
+            const auto braces=op(t[first],"{");
+            const auto close=closing(t,first,braces?"{":"(",braces?"}":")");
+            if(!close||*close+1!=last)break;
+            ++first;--last;
+        }
+        if(first==last)return true; // int value{} is zero-initialized.
+        const auto value=arithmetic_constant(t,first,last);
+        return (value&&*value==0)||
+            (first+1==last&&id(t[first],"false"));
     };
     bool declared=false;
     std::size_t nesting=0;
@@ -903,11 +918,28 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         while(semicolon<bounds.close&&!op(t[semicolon],";"))++semicolon;
         if(semicolon>=bounds.close||semicolon==at+2)return {};
         if(block_end&&semicolon+1!=*block_end)return {};
-        const auto literal=arithmetic_constant(t,at+2,semicolon);
-        const bool zero=(literal&&*literal==0)||
-            (at+3==semicolon&&id(t[at+2],"false"));
         return BranchAssignment{local,uses(at+2,semicolon),
-            block_end?*block_end:semicolon,zero};
+            block_end?*block_end:semicolon,zero_expression(at+2,semicolon)};
+    };
+    const auto statement_end=[&](std::size_t at)->std::optional<std::size_t> {
+        if(at>=bounds.close||id(t[at],"if"))return {};
+        if(op(t[at],"{"))return closing(t,at,"{","}");
+        while(at<bounds.close&&!op(t[at],";"))++at;
+        return at<bounds.close?std::optional<std::size_t>(at):std::nullopt;
+    };
+    // A conditional block with an extra statement is not a proven atomic
+    // assignment. Do not silently credit it by scanning the assignment as
+    // though it ran on every path.
+    const auto writes_existing_alias=[&](std::size_t statement) {
+        const auto last=statement_end(statement);
+        if(!last)return true;
+        for(auto at=statement;at+1<=*last;++at) {
+            if(!t[at].starts_with("id:")||!op(t[at+1],"="))continue;
+            if(std::ranges::any_of(aliases,[&](const Alias& alias){
+                return id(t[at],alias.name);
+            }))return true;
+        }
+        return false;
     };
     for(auto i=bounds.open+1;i<bounds.close;++i) {
         if(op(t[i],"{")){++nesting;continue;}
@@ -973,6 +1005,28 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                     if(always) {
                         if(const auto branch=direct_return(statement))
                             return include_prior(branch->first);
+                        if(const auto assignment=direct_assignment(statement)) {
+                            auto found=std::find_if(aliases.rbegin(),aliases.rend(),
+                                [&](const Alias& alias){
+                                    return alias.name==assignment->name;
+                                });
+                            if(found==aliases.rend())return 0;
+                            found->count=assignment->count;
+                            found->zero=assignment->zero;
+                            auto end=assignment->end;
+                            if(end+1<bounds.close&&id(t[end+1],"else")) {
+                                const auto skipped=statement_end(end+2);
+                                if(!skipped)return 0;
+                                end=*skipped;
+                            }
+                            i=end;
+                            continue;
+                        }
+                        // An unrecognized certain branch with a live alias
+                        // assignment cannot be credited through its dead else.
+                        if(const auto end=statement_end(statement);
+                           end&&*end+1<bounds.close&&id(t[*end+1],"else"))
+                            return 0;
                     }else if(const auto branch=direct_return(statement)) {
                         const auto first_return=
                             id(t[statement],"return")?statement:statement+1;
@@ -1007,25 +1061,36 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                     // target the same already-known result variable.
                     if(!literal&&nesting==0) {
                         if(const auto first=direct_assignment(statement)) {
+                            const auto found=std::find_if(
+                                aliases.rbegin(),aliases.rend(),
+                                [&](const Alias& alias){
+                                    return alias.name==first->name;
+                                });
+                            if(found==aliases.rend())return 0;
                             const auto else_at=first->end+1;
                             if(else_at<bounds.close&&id(t[else_at],"else")) {
                                 const auto other=direct_assignment(else_at+1);
-                                if(other&&first->name==other->name) {
-                                    const auto count=first->zero?other->count:
-                                        other->zero?first->count:
-                                        std::min(first->count,other->count);
-                                    const auto found=std::find_if(
-                                        aliases.rbegin(),aliases.rend(),
-                                        [&](const Alias& alias){
-                                            return alias.name==first->name;
-                                        });
-                                    if(found==aliases.rend())return 0;
-                                    found->count=count;
-                                    i=other->end;
-                                    continue;
-                                }
+                                if(!other||first->name!=other->name)return 0;
+                                found->count=first->zero&&other->zero?0:
+                                    first->zero?other->count:
+                                    other->zero?first->count:
+                                    std::min(first->count,other->count);
+                                found->zero=first->zero&&other->zero;
+                                i=other->end;
+                            }else {
+                                // An absent else leaves the prior value live.
+                                // Only a literal zero on either path is a
+                                // possible guard; all other paths must use
+                                // the purpose-named agreement.
+                                found->count=found->zero?first->count:
+                                    first->zero?found->count:
+                                    std::min(found->count,first->count);
+                                found->zero=found->zero&&first->zero;
+                                i=first->end;
                             }
+                            continue;
                         }
+                        if(writes_existing_alias(statement))return 0;
                     }
                 }
             }
@@ -1071,14 +1136,15 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                 }
             }else {
                 const auto count=uses(initializer+1,last);
+                const auto zero=zero_expression(initializer+1,last);
                 // A declaration within braces shadows rather than updating
                 // an alias that belongs to the enclosing scope.
                 const auto found=std::ranges::find_if(aliases,
                     [&](const Alias& alias){
                         return alias.name==local&&alias.depth==nesting;
                     });
-                if(found==aliases.end())aliases.push_back({local,count,nesting});
-                else found->count=count;
+                if(found==aliases.end())aliases.push_back({local,count,nesting,zero});
+                else {found->count=count;found->zero=zero;}
             }
             i=last;
             continue;
@@ -1090,11 +1156,12 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             while(last<bounds.close&&!op(t[last],";"))++last;
             if(local==name)return 0;
             const auto count=uses(i+2,last);
+            const auto zero=zero_expression(i+2,last);
             // Assignments target the nearest in-scope declaration.
             const auto found=std::find_if(aliases.rbegin(),aliases.rend(),
                 [&](const Alias& alias){return alias.name==local;});
-            if(found==aliases.rend())aliases.push_back({local,count,nesting});
-            else found->count=count;
+            if(found==aliases.rend())aliases.push_back({local,count,nesting,zero});
+            else {found->count=count;found->zero=zero;}
             i=last;
         }
     }
