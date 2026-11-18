@@ -40,6 +40,7 @@ on:
       - scripts/curriculum/test_general_choice_editorial.py
       - scripts/curriculum/test_ordinary_explanation_revision.py
       - scripts/curriculum/test_published_u12_question_editorials.py
+      - scripts/curriculum/test_programming_multicourse_validation.py
       - scripts/curriculum/editorial_fixture_history.py
       - scripts/curriculum/code_format_fixture_source.py
       - scripts/curriculum/text_semantics.py
@@ -94,6 +95,8 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_general_choice_editorial.py -v
       - name: Verify optional explanations against archived U1L4 and unchanged answer contracts
         run: python -B -m unittest discover -s scripts/curriculum -p test_ordinary_explanation_revision.py -v
+      - name: Verify every programming course uses the complete indexed contract
+        run: python -B -m unittest discover -s scripts/curriculum -p test_programming_multicourse_validation.py -v
       - name: Compile readers and execute catalog and actual Win32 regressions
         run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild
       - name: Preserve configure and compilation results
