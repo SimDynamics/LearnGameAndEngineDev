@@ -372,10 +372,12 @@ La regresión `native.ordinary_explanation_authoring` contempla las
 cinco clases con fuente física, sus respuestas, el origen y los rechazos de
 revisiones encubiertas; la selección múltiple sin fuente sigue el contrato
 ordinario anterior. La nueva `native.optional_prose_format` genera una
-lección sintética, comprueba en ambos cargadores Windows la explicación con
-marcado explícito y el código espaciado, recupera una respuesta e intentos
-guardados y rechaza un descriptor ausente o adulterado, una respuesta cambiada
-o un token nuevo. Se incluye en ReaderBuild y en la construcción completa de
+lección sintética con una predicción de salida y un `drag_fill_code` como
+el de U1L4. Contrasta el formato físico del código, las dos explicaciones
+añadidas con su marcado explícito y la conservación independiente de ambas
+respuestas, sus intentos y sus identidades. En ambos cargadores Windows
+rechaza ocho variantes con marcas ausentes o adulteradas, respuestas cambiadas
+o tokens sustituidos. Se incluye en ReaderBuild y en la construcción completa de
 pruebas mediante CTest, sin cambiar recursos curriculares de Work. Estas
 regresiones están **preparadas, no ejecutadas en el PC Windows autorizado**;
 su ejecución allí sigue siendo necesaria para acreditar el resultado.
