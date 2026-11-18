@@ -2781,9 +2781,16 @@ void array_count_caption_uses_correct_number(HWND host) {
     const auto authored=spec;
     SimulationView view(host,spec,"es");resize(view,820);
     const auto caption=[&]{return text(view,array_label_id);};
+    const auto narrated_caption=[](const SimulationView& current,std::string_view caption) {
+        const auto label=GetDlgItem(current.window(),array_label_id);
+        const auto regions=current.reading_regions();
+        return label&&std::ranges::any_of(regions,[&](const auto& region){
+            return region.target==label&&region.source_text==caption;
+        });
+    };
     check(caption()=="Datos ordenados · 1 elemento" &&
-        name(GetDlgItem(view.window(),array_label_id))==caption(),
-        "A single item retained a plural caption or a different accessible name");
+        narrated_caption(view,caption()),
+        "A single item retained a plural caption or a different narrated label");
     const auto selector=GetDlgItem(view.window(),scenario_id);
     check(selector,"The array-count caption lost its scenario selector");
     const auto choose=[&](int index) {
@@ -2816,8 +2823,7 @@ void array_count_caption_uses_correct_number(HWND host) {
     labels.values={std::string("")};
     SimulationView words(host,labels,"es");resize(words,820);
     check(text(words,array_label_id)=="Datos ordenados · 1 elemento"&&
-        name(GetDlgItem(words.window(),array_label_id))==
-            text(words,array_label_id),
+        narrated_caption(words,text(words,array_label_id)),
         "The empty text value was confused with zero elements or a plural count");
 }
 
