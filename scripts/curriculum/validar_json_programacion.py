@@ -1778,7 +1778,15 @@ def _validate_cpp_fundamentals(base_commit):
                     require(isinstance(answers, list) and bool(answers) and all(isinstance(a, str) and a.strip() for a in answers), where, "respuesta vacía o no textual")
                     validate_answer_contract(block, where)
                 if kind == "order_code":
-                    require(sorted(block["correctOrder"]) == list(range(len(block["fragments"]))), where, "orden no es una permutación")
+                    # Windows rejects blank fragments: visual separators are
+                    # separately authored, never a physical graded card.
+                    fragments = block["fragments"]
+                    require(isinstance(fragments, list) and bool(fragments)
+                            and all(isinstance(fragment, str) and fragment.strip()
+                                    for fragment in fragments),
+                            where, "fragments debe contener tarjetas de código no vacías")
+                    require(sorted(block["correctOrder"]) == list(range(len(fragments))),
+                            where, "orden no es una permutación")
                 if kind in {"drag_fill_code", "inline_fill_code"}:
                     key = "correctOrder" if kind == "drag_fill_code" else "answers"
                     require(block["template"].count("[]") == len(block[key]), where, "huecos y respuestas no coinciden")
