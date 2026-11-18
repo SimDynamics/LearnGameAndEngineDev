@@ -2851,19 +2851,56 @@ void repeated_step_explanation_preserves_native_reading(HWND host) {
     check(view.go_to_step(4)&&streams==2,
         "Revisiting an identical explanation sent another native text stream");
 
+    // A zoom or DPI rebase has to re-stream the explanation's formatting.
+    // Unlike step changes, the text and its current reading position still
+    // belong to the same passage. Keep the selected characters and the
+    // logical line being examined, even after a narrow-width wrap.
+    const CHARRANGE reading_selection{4,15};
+    SendMessageW(explanation,EM_EXSETSEL,0,
+        reinterpret_cast<LPARAM>(&reading_selection));
+    SendMessageW(explanation,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+    SendMessageW(explanation,EM_LINESCROLL,0,9);
+    const auto reading_start=scroll_state(explanation);
+    const auto first_visible_character=[&]{
+        const auto first=SendMessageW(explanation,EM_GETFIRSTVISIBLELINE,0,0);
+        return SendMessageW(explanation,EM_LINEINDEX,static_cast<WPARAM>(first),0);
+    };
+    const auto reading_character=first_visible_character();
+    check(reading_start.first>0&&reading_character>0&&
+        reading_start.selection.cpMin==reading_selection.cpMin&&
+        reading_start.selection.cpMax==reading_selection.cpMax,
+        "Cannot prepare a selected, separately scrolled explanation before reflow");
+    const auto remains_visible=[&](const char* failure){
+        const auto current=scroll_state(explanation);
+        const auto anchor_line=SendMessageW(explanation,EM_EXLINEFROMCHAR,0,
+            static_cast<LPARAM>(reading_character));
+        check(current.first>0&&anchor_line>=current.first&&
+            anchor_line<=current.first+1&&
+            current.selection.cpMin==reading_selection.cpMin&&
+            current.selection.cpMax==reading_selection.cpMax&&
+            text(view,explanation_id)==repeated&&spec==authored,failure);
+    };
+
     // A real typography change must invalidate the content cache even when
     // the explanation string is identical to its previous value.
     view.set_text_scale(125);resize(view,820);
     check(streams==3&&rich_edit_scale(explanation)==125&&
         text(view,explanation_id)==repeated&&spec==authored,
         "A real zoom failed to refresh the explanation's native formatting");
+    remains_visible("Zooming repeated explanation lost its selected or visible text");
     check(view.go_to_step(5)&&streams==3,
         "The post-zoom step re-streamed an unchanged explanation");
+    remains_visible("Revisiting an unchanged explanation after zoom moved its reading");
     SendMessageW(view.window(),WM_DPICHANGED_AFTERPARENT,0,0);pump(host);
     resize(view,820);
     check(streams==4&&rich_edit_scale(explanation)==125&&
         text(view,explanation_id)==repeated&&spec==authored,
         "A DPI rebase did not invalidate the explanation's text-format cache");
+    remains_visible("DPI rebase lost the explanation's selected or visible line");
+    resize(view,340);
+    remains_visible("Narrow-width reflow lost the explanation's reading context");
+    resize(view,820);
+    remains_visible("Restoring wide layout lost the explanation's reading context");
 }
 
 void static_simulation_text_is_not_restreamed(HWND host) {
