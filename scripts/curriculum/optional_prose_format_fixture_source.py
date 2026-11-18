@@ -125,6 +125,11 @@ def fixtures() -> dict[str, dict]:
             blank_nel_drag_explanation, DRAG_OWNER, "/explanation", []))
     repin_modified_answer(blank_nel_drag_explanation, DRAG_OWNER)
 
+    # Distinguish a newly introduced but unmarked NEL-only explanation
+    # from a marked blank one. Both must be rejected by native loaders.
+    blank_unmarked_drag_explanation = deepcopy(blank_nel_drag_explanation)
+    blank_unmarked_drag_explanation["textSemantics"]["fields"].pop(1)
+
     examples = {
         "optional-prose.before": before,
         "optional-prose.after": after,
@@ -139,6 +144,7 @@ def fixtures() -> dict[str, dict]:
         "optional-prose.blank-nel-explanation": blank_nel_explanation,
         "optional-prose.blank-nel-question": blank_nel_question,
         "optional-prose.blank-nel-drag-explanation": blank_nel_drag_explanation,
+        "optional-prose.blank-unmarked-drag-explanation": blank_unmarked_drag_explanation,
     }
     for name, candidate in examples.items():
         if name.endswith((".before", ".after")):
@@ -161,7 +167,7 @@ def main() -> None:
         (args.output_dir / (label + ".json")).write_text(
             json.dumps(document, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8")
-    print("Prepared thirteen isolated optional-prose/source-format QA fixtures")
+    print("Prepared fourteen isolated optional-prose/source-format QA fixtures")
 
 
 if __name__ == "__main__":
