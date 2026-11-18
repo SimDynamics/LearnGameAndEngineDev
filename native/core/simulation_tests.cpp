@@ -443,6 +443,24 @@ void exhaustive_small_arrays() {
             for(const auto value:ordered)expected_values.emplace_back(value);
             verify(trace.original==spec.values&&trace.ordered==expected_values,
                 "Original data or ordered copy changed");
+            // Independently match each ordered value to its first unused
+            // source occurrence. This oracle is deliberately not a second
+            // stable_sort over the same data.
+            std::vector<std::size_t> expected_sources;
+            std::vector<bool> source_used(original.size(),false);
+            for(const auto& value:ordered){
+                bool found=false;
+                for(std::size_t source=0;source<original.size();++source){
+                    if(source_used[source]||original[source]!=value)continue;
+                    source_used[source]=true;
+                    expected_sources.push_back(source);
+                    found=true;
+                    break;
+                }
+                verify(found,"Stable source index could not be recovered");
+            }
+            verify(trace.source_indices==expected_sources,
+                "The counted-element origin mapping changed for a repeated number");
             // An explicitly preordered lesson must produce the same group
             // decisions without sorting or rewriting any authored element.
             auto preordered=spec;
@@ -562,6 +580,21 @@ void exhaustive_small_text_arrays() {
                     expected_order.emplace_back(std::string(labels[i]));
             verify(trace.original==spec.values&&trace.ordered==expected_order,
                 "UTF-8 byte order or source data was lost");
+            std::vector<bool> source_used(spec.values.size(),false);
+            std::vector<std::size_t> expected_sources;
+            for(const auto& value:expected_order){
+                bool found=false;
+                for(std::size_t source=0;source<spec.values.size();++source){
+                    if(source_used[source]||spec.values[source]!=value)continue;
+                    source_used[source]=true;
+                    expected_sources.push_back(source);
+                    found=true;
+                    break;
+                }
+                verify(found,"A repeated text value has no remaining source owner");
+            }
+            verify(trace.source_indices==expected_sources,
+                "The empty, space or UTF-8 text origin was not stable");
             auto preordered=spec;
             preordered.sort=false;
             preordered.values=expected_order;
