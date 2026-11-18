@@ -60,7 +60,8 @@ constexpr std::array<std::string_view, 11> placeholders{
     "countedIndex", "originIndex"
 };
 
-void validate_template(std::string_view text, std::size_t limit, std::string_view field) {
+void validate_template(std::string_view text, std::size_t limit, std::string_view field,
+                       bool counting_explanation = true) {
     public_text(text, limit, field);
     for (std::size_t at = 0; at < text.size();) {
         require(text[at] != '}', "Una plantilla de simulación tiene una llave de cierre sin apertura.");
@@ -70,6 +71,11 @@ void validate_template(std::string_view text, std::size_t limit, std::string_vie
         const auto name = text.substr(at + 1, end - at - 1);
         require(std::find(placeholders.begin(), placeholders.end(), name) != placeholders.end(),
             "Una plantilla de simulación utiliza un marcador desconocido o anidado.");
+        // outputTemplate is evaluated at the GROUP DECISION, not during an
+        // observed-element step. Its source index would always be empty,
+        // silently teaching a fabricated position in the calculated output.
+        require(counting_explanation || (name != "countedIndex" && name != "originIndex"),
+            "La salida de grupos no puede usar índices de un elemento recién contado.");
         at = end + 1;
     }
 }
@@ -131,7 +137,7 @@ void validate_contract(const SimulationSpec& spec) {
              &spec.explanations.advance, &spec.explanations.new_maximum, &spec.explanations.tie,
              &spec.explanations.below_maximum, &spec.explanations.done, &spec.explanations.empty})
         validate_template(*explanation, 2000, "explanations");
-    validate_template(spec.output_template, 256, "outputTemplate");
+    validate_template(spec.output_template, 256, "outputTemplate", false);
     validate_values(spec.values, spec.text_values, !spec.sort);
     require(spec.scenarios.size() <= 8, "Una simulación admite como máximo 8 escenarios.");
     std::set<std::string> identities;
