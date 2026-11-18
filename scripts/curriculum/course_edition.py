@@ -240,10 +240,31 @@ def _course_path_parts(relative):
     return parts[0], parts[1], parts[2]
 
 
+def _edition_file(repository, relative, role):
+    """Require a real indexed asset, not a link in any ancestor directory.
+
+    Merely checking the file and its immediate parent does not catch a
+    same-course alias through the course, locale, or content directory.
+    Windows directory junctions need the same protection as symlinks.
+    """
+    relative = PurePosixPath(relative)
+    require(not relative.is_absolute() and ".." not in relative.parts,
+            "Unsafe active edition asset path")
+    path = repository
+    for part in relative.parts:
+        path = path / part
+        junction = getattr(path, "is_junction", None)
+        require(not path.is_symlink() and not (junction is not None and junction()),
+                f"An active edition {role} cannot use a symbolic alias or junction")
+    require(path.is_file(), f"Missing active edition {role}: {relative.as_posix()}")
+    return path
+
+
 def _active_documents(repository, course_relative, course):
     folder = PurePosixPath(course_relative).parent
     course_id = course.get("id")
     require(_safe(course_id, 256), "Invalid course index identity")
+    _edition_file(repository, course_relative, "course index")
     units, lessons, paths = {}, {}, {}
     for unit_id in _entries(course, "units"):
         prefix = course_id + "__"
@@ -251,9 +272,7 @@ def _active_documents(repository, course_relative, course):
         unit_folder = unit_id[len(prefix):]
         require(_safe(unit_folder, 256), "Unsafe unit folder")
         relative = (folder / unit_folder / f"unit_{unit_folder}.json").as_posix()
-        path = repository / relative
-        require(path.is_file() and not path.is_symlink() and not path.parent.is_symlink(),
-                "An active edition unit cannot use a symbolic alias")
+        path = _edition_file(repository, relative, "unit")
         require(path.resolve().is_relative_to((repository / folder).resolve()), "Unit escapes its course directory")
         unit = _load(path)
         units[unit_id], paths[unit_id] = unit, relative
@@ -262,9 +281,7 @@ def _active_documents(repository, course_relative, course):
             slug = lesson_id[len(unit_id) + 2:]
             require(_safe(slug, 256), "Unsafe lesson filename")
             relative = (folder / unit_folder / f"lesson_{slug}.json").as_posix()
-            path = repository / relative
-            require(path.is_file() and not path.is_symlink() and not path.parent.is_symlink(),
-                    "An active edition lesson cannot use a symbolic alias")
+            path = _edition_file(repository, relative, "lesson")
             require(path.resolve().is_relative_to((repository / folder).resolve()), "Lesson escapes its course directory")
             lesson = _load(path)
             require(lesson_id not in lessons, "An edition activates a lesson more than once")
