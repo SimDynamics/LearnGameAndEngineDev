@@ -23,7 +23,7 @@ EXPLANATION_FIELDS = frozenset({
 VIEWS = frozenset({"array", "groups", "walkthrough", "candidates", "summary"})
 TEMPLATE_FIELDS = frozenset({
     "value", "start", "end", "frequency", "maximum", "leaders", "size", "group", "groups",
-    "countedIndex", "originIndex",
+    "countedIndex", "originIndex", "processedCount", "remainingCount",
 })
 MAX_VALUES = 64
 MAX_SCENARIOS = 8
@@ -132,7 +132,8 @@ def _trace_text_bytes(spec, values):
                 "leaders": ", ".join(value_text(item, display=display) for item in leaders),
                 "size": str(len(ordered)), "group": str(group), "groups": str(len(groups)),
                 "countedIndex": "" if counted_at is None else str(counted_at),
-                "originIndex": "" if counted_at is None else str(source_indices[counted_at])}
+                "originIndex": "" if counted_at is None else str(source_indices[counted_at]),
+                "processedCount": str(end), "remainingCount": str(len(ordered) - end)}
 
     def render(template, values):
         return re.sub(r"\{([^{}]+)\}", lambda match: values[match[1]], template)
