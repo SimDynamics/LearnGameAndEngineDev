@@ -1281,6 +1281,124 @@ void conditional_assignment_branches() {
             return resultado;
         })cpp",rules,false,
         "A later hardcoded overwrite removes branch-assignment evidence");
+
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + 3) / 4;
+            if (piezas < 0)
+                resultado = (piezas + capacidad - 1) / capacidad;
+            return resultado;
+        })cpp",rules,false,
+        "A conditional named assignment cannot overwrite a hardcoded default on every path");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 10) {
+                resultado = (piezas + 3) / 4;
+            }
+            return resultado;
+        })cpp",rules,false,
+        "An optional hardcoded overwrite must not inherit initial named-rule evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{2};
+            if (piezas > 0)
+                resultado = (piezas + capacidad - 1) / capacidad;
+            return resultado;
+        })cpp",rules,false,
+        "A nonzero hardcoded fallback is not a valid zero-domain guard");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            if (piezas > 0)
+                resultado = (piezas + capacidad - 1) / capacidad;
+            return resultado;
+        })cpp",rules,true,
+        "Value-initialized zero plus a positive-input branch is a legitimate calculation");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = {0};
+            if (piezas > 0) {
+                resultado = (piezas + capacidad - 1) / capacidad;
+            }
+            return resultado;
+        })cpp",rules,true,
+        "Copy-list initialized zero preserves a calculated conditional result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas == 0) resultado = 0;
+            return resultado;
+        })cpp",rules,true,
+        "A conditional zero guard does not erase the real calculation on other paths");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            if (true)
+                resultado = (piezas + capacidad - 1) / capacidad;
+            else
+                resultado = (piezas + 3) / 4;
+            return resultado;
+        })cpp",rules,true,
+        "A constant-true assignment ignores a dead hardcoded else");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            if (true)
+                resultado = (piezas + 3) / 4;
+            else
+                resultado = (piezas + capacidad - 1) / capacidad;
+            return resultado;
+        })cpp",rules,false,
+        "An unreachable named else cannot rescue a true hardcoded branch");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            if (false) resultado = (piezas + 3) / 4;
+            else resultado = (piezas + capacidad - 1) / capacidad;
+            return resultado;
+        })cpp",rules,true,
+        "A constant-false condition gives the live else the named-rule calculation");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            if (piezas > 0) {
+                resultado = (piezas + capacidad - 1) / capacidad;
+                (void)resultado;
+            }
+            return resultado;
+        })cpp",rules,false,
+        "An unrecognized multi-statement branch cannot appear to assign unconditionally");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            if (piezas > 10) {
+                resultado = (piezas + capacidad - 1) / capacidad;
+                resultado = (piezas + 3) / 4;
+            }
+            return resultado;
+        })cpp",rules,false,
+        "A conditional branch cannot hide a hardcoded second assignment");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas < 0)
+                resultado = (piezas + capacidad - 1) / capacidad;
+            return resultado;
+        })cpp",rules,true,
+        "Two authentic results survive a conditional reassignment without an else");
 }
 
 void separate_rules() {
