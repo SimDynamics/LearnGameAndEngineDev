@@ -222,8 +222,10 @@ int main(int argc, char** argv) {
             "Combined source/question revision needs nonblank public wording");
         rejected(dir / "optional-prose.blank-nel-drag-explanation.json",
             "Authored ordinary public prose cannot be blank");
+        rejected(dir / "optional-prose.blank-unmarked-drag-explanation.json",
+            "Combined source/explanation revision needs nonblank authored prose");
         std::cout << "PASS optional C++ format/prose and drag-fill: both historical answers, "
-            "two authored semantic markers, native progress and eleven forged revisions rejected\n";
+            "two authored semantic markers, native progress and twelve forged revisions rejected\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "FAIL optional C++ format/prose: " << error.what() << '\n';
