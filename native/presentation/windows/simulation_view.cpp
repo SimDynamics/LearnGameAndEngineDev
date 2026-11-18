@@ -466,6 +466,10 @@ struct SimulationView::Impl {
             const auto cached=static_text_stamps.find(id);
             if(previous!=visible_text.end()&&previous->second==text&&
                     cached!=static_text_stamps.end()&&cached->second==*stamp)return;
+            // Cache a formatting stamp only after both the native document
+            // stream and its scale have succeeded. If either fails during a
+            // transaction, the previous stamp cannot certify this attempt.
+            static_text_stamps.erase(id);
         }
         visible_text[id]=std::move(text);
         set_rich_text(item(id),visible_text.at(id),{},false,role,locale,{}, {},authored);
