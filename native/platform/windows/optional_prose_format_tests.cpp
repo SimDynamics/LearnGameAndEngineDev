@@ -31,7 +31,8 @@ void rejected(const std::filesystem::path& file,
             failed = true;
             require(expected_reason.empty() ||
                     std::string_view(error.what()).find(expected_reason) != std::string_view::npos,
-                "The Windows loader rejected blank Unicode prose for an unrelated reason");
+                std::string("Unexpected rejection of ") + file.filename().string() +
+                    (progress ? " (progress): " : " (lesson): ") + error.what());
         }
         require(failed, std::string("The Windows ") +
             (progress ? "progress" : "lesson") +
