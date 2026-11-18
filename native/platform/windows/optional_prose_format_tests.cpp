@@ -167,6 +167,36 @@ int main(int argc, char** argv) {
         require(drag_reopened == progress,
             "Reopening an isolated QA receipt modified its prior student state");
 
+        // A failed drag-fill attempt is also a first-class historical state.
+        // Preserve its native JSON slots, retry count and reviewed verdict
+        // without treating an added explanation as a fresh correct attempt.
+        auto failed_progress = reopened;
+        state::Response failed_drag;
+        failed_drag.correct = false;
+        failed_drag.raw_json =
+            R"({"slots":[1,0,2],"incorrectAttempts":4,"selection":3})";
+        state::mark_response_reviewed(failed_drag, old_drag);
+        require(state::response_reviewed(failed_drag, old_drag),
+            "The original drag-fill failed attempt cannot be reviewed");
+        state::put_response(failed_progress, before, old_drag, failed_drag);
+        const auto failed_snapshot = state::string_value(
+            failed_progress, "learning_progress",
+            curriculum::exercise_key(before, old_drag));
+        const auto failed_reopened = state::decode(state::encode(failed_progress));
+        auto failed_migrated = failed_reopened;
+        state::prepare_lesson_state(failed_migrated, after);
+        state::validate_lesson_state(failed_migrated, after);
+        const auto failed_receipt = state::get_response(failed_migrated, after, new_drag);
+        const auto companion_receipt = state::get_response(failed_migrated, after, current);
+        require(failed_receipt && !failed_receipt->correct &&
+                state::response_reviewed(*failed_receipt, new_drag) &&
+                failed_receipt->raw_json == failed_snapshot &&
+                failed_receipt->raw_json.find(R"("slots":[1,0,2])") != std::string::npos &&
+                failed_receipt->raw_json.find(R"("incorrectAttempts":4)") != std::string::npos &&
+                companion_receipt && companion_receipt->correct &&
+                failed_reopened == failed_progress,
+            "Optional drag-fill prose rewrote a failed/reviewed historical attempt");
+
         for (const auto filename : {
                 "optional-prose.missing-mark.json",
                 "optional-prose.stale-mark.json",
