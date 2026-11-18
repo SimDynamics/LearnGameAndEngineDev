@@ -846,16 +846,19 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     // The RHS of >> can be an int& receiving data from a stream. A
     // candidate's source proof cannot assume a shift rather than extraction
     // when the C++ type of the left operand is not known lexically.
+    const auto extraction_operand=[&](std::size_t at,std::size_t first) {
+        if(at>=t.size()||at<first||!t[at].starts_with("id:"))
+            return false;
+        auto operand=at;
+        while(operand>first&&op(t[operand-1],"("))--operand;
+        if(operand==first||!op(t[operand-1],">>"))return false;
+        // A numeric left operand is a built-in shift, not a stream.
+        return operand<first+2||
+            !t[operand-2].starts_with("number:");
+    };
     const auto extracted_alias=[&](std::size_t first,std::size_t last) {
         for(auto at=first;at<last;++at) {
-            if(!t[at].starts_with("id:"))continue;
-            auto operand=at;
-            while(operand>first&&op(t[operand-1],"("))--operand;
-            if(operand==first||!op(t[operand-1],">>"))continue;
-            // An integer literal shifted by the count is a read-only
-            // built-in operation, not an input stream extraction.
-            if(operand>=first+2&&
-               t[operand-2].starts_with("number:"))continue;
+            if(!extraction_operand(at,first))continue;
             if(std::ranges::any_of(aliases,[&](const Alias& alias){
                 return id(t[at],alias.name);
             }))return true;
@@ -1285,8 +1288,7 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         // write even though it has no assignment operator or function-call
         // parentheses in the student's source. Invalidate only this alias:
         // an unrelated genuine returned calculation remains acceptable.
-        if(t[i].starts_with("id:")&&
-           extracted_alias(bounds.open+1,i+1)) {
+        if(extraction_operand(i,bounds.open+1)) {
             const auto found=std::find_if(aliases.rbegin(),aliases.rend(),
                 [&](const Alias& alias){return id(t[i],alias.name);});
             if(found!=aliases.rend()){
