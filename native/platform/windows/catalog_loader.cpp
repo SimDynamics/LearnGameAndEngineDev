@@ -93,6 +93,13 @@ std::shared_ptr<const Lesson> progress_metadata(const CatalogEntry& entry) {
     };
     static std::mutex lock;
     static std::map<std::pair<std::filesystem::path,std::string>,Cached> entries;
+    // Metadata may be served from the timestamp/size cache. Do not let a
+    // late symlink/junction replacement bypass the physical-edition guard.
+    if (uses_course_edition_namespace(entry.id)) {
+        const auto root = entry.asset.parent_path().parent_path().parent_path()
+            .parent_path().parent_path();
+        validate_course_edition_physical_path(root, entry.asset);
+    }
     const auto path = state::native_io_path(entry.asset);
     const auto stamp = std::filesystem::last_write_time(path);
     const auto size = std::filesystem::file_size(path);
@@ -170,12 +177,20 @@ curriculum::CatalogPage load_catalog(const std::filesystem::path& content_root, 
             auto course = location; course.unit.clear(); course.lesson.clear();
             const auto owner = resolve(content_root,location.locale,catalog_index_path(course));
             require(!owner.path.empty(),"no existe el índice padre de la edición.");
+            // A reserved unit namespace identifies an edition before its
+            // JSON has been loaded, so reject a physical alias first.
+            if (uses_course_edition_namespace(location.unit))
+                validate_course_edition_physical_path(content_root, owner.path);
             const auto parent = read(owner.path);
             parent_edition = parse_course_edition_metadata(parent.source,owner.locale);
+            if (parent_edition)
+                validate_course_edition_physical_path(content_root, owner.path);
         }
         const auto asset = resolve(content_root,parent_edition ? parent_edition->locale : location.locale,
             catalog_index_path(location),parent_edition.has_value());
         require(!asset.path.empty(),"este índice todavía no contiene material instalado.");
+        if (parent_edition)
+            validate_course_edition_physical_path(content_root, asset.path);
         const auto document = read(asset.path);
         const auto& json = document.value;
         std::optional<CourseEdition> edition;
@@ -185,7 +200,10 @@ curriculum::CatalogPage load_catalog(const std::filesystem::path& content_root, 
         } else {
             const auto object = json.GetObject(); result.title = text(object,L"title");
             edition = parse_course_edition_metadata(document.source,asset.locale);
-            if (edition) require(edition->course_id == location.course,"la edición pertenece a otro curso.");
+            if (edition) {
+                validate_course_edition_physical_path(content_root, asset.path);
+                require(edition->course_id == location.course,"la edición pertenece a otro curso.");
+            }
             if (level == CatalogLevel::units) {
                 require(text(object,L"id") == location.course,"el índice pertenece a otro curso.");
                 require(!uses_course_edition_namespace(location.course),"el ID del curso no puede usar un espacio de unidad reservado.");
@@ -224,6 +242,7 @@ curriculum::CatalogPage load_catalog(const std::filesystem::path& content_root, 
             entry.asset = installed.path; entry.asset_locale = installed.locale; entry.available = !entry.asset.empty();
             if (edition) {
                 require(entry.available,"la edición activa tiene una entrada sin recurso en su idioma.");
+                validate_course_edition_physical_path(content_root, entry.asset);
                 const auto child = edition_resource_identity(entry.asset,entry.asset_locale);
                 require(child.edition == edition,"el recurso no declara la misma edición que su índice.");
                 if (level == CatalogLevel::units)
