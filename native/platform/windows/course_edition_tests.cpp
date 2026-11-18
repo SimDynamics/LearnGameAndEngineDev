@@ -408,23 +408,30 @@ void import_isolated(const Fixture& fixture, const state::StateData& historic,
         "La importación aceptó recibos/preferencias nativas como exportación Android.");
 }
 
-void physical_edition_index_alias_rejected(const Fixture& fixture) {
-    // The original fixture and student profile remain untouched. Each case
-    // mirrors QA assets into a new directory, then replaces only one path
-    // with an equivalent link whose contents and indexed names still match.
-    for (const bool directory : {false, true}) {
-        const auto mirror = fixture.root /
-            (directory ? "edition-folder-alias-isolation" : "edition-file-alias-isolation");
+void physical_edition_catalog_alias_rejected(const Fixture& fixture) {
+    // The original fixture and student profile remain untouched. For every
+    // target, warm the normal catalog/identity caches, then replace one path
+    // with a byte-identical symbolic link. Cached metadata cannot authorize
+    // a path which became a reparse point after the initial catalog load.
+    for (const int kind : {0, 1, 2, 3}) {
+        const auto mirror = fixture.root / ("edition-alias-isolation-" + std::to_string(kind));
         for (const auto& [relative, unused] : fixture.originals) {
             const auto file = relative_path(relative);
             write(mirror / file, bytes(fixture.root / file));
         }
+        const auto content = mirror / "content";
         const auto lesson = mirror / relative_path(fixture.paths.at("lesson"));
+        const auto course = mirror / relative_path(fixture.paths.at("course"));
+        const auto unit = mirror / relative_path(fixture.paths.at("unit"));
         require(windows::load_lesson(lesson).course_edition.has_value(),
             "The isolated native edition was invalid before creating an alias");
-        const auto linked = directory ?
-            (mirror / relative_path(fixture.paths.at("unit"))).parent_path() :
-            mirror / relative_path(fixture.paths.at("course"));
+        require(windows::load_catalog(content, course_location()).entries.size() == 1 &&
+                windows::load_catalog(content, unit_location()).entries.size() == 2,
+            "The isolated edition catalog was invalid before alias injection");
+
+        const bool directory = kind == 3;
+        const auto linked = kind == 0 ? course :
+            kind == 1 ? unit : kind == 2 ? lesson : unit.parent_path();
         const auto physical = fs::path(linked.wstring() + L".physical-qa");
         require(!fs::exists(physical), "A previous QA alias target was present");
         fs::rename(linked, physical);
@@ -439,11 +446,10 @@ void physical_edition_index_alias_rejected(const Fixture& fixture) {
         constexpr DWORD permit_unprivileged = 0x2; // Windows 10+ developer-mode flag.
         const DWORD flags = permit_unprivileged | (directory ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0);
         if (!CreateSymbolicLinkW(linked.c_str(), physical.c_str(), flags)) {
-            // Many Windows profiles prohibit links; do not override that
-            // policy merely to run an optional real-filesystem regression.
-            std::cout << "SKIP native course-edition "
-                      << (directory ? "directory" : "file")
-                      << " symlink: Win32 error " << GetLastError() << "\n";
+            // OS policy can prohibit links even inside an isolated QA profile.
+            // Do not report this particular case as verified when it was skipped.
+            std::cout << "SKIP native course-edition alias type " << kind
+                      << ": Win32 error " << GetLastError() << "\n";
             continue;
         }
         const auto attributes = GetFileAttributesW(linked.c_str());
@@ -457,10 +463,18 @@ void physical_edition_index_alias_rejected(const Fixture& fixture) {
                 rejected = std::string_view(failure.what()).find(
                     "symbolic link or junction") != std::string_view::npos;
             }
-            require(rejected, "The loader accepted unchanged source through a reparse point");
+            require(rejected, "An edition consumer accepted a published path via a reparse point");
         };
         rejects_alias([&] { (void)windows::load_lesson(lesson); });
         rejects_alias([&] { (void)windows::load_lesson_progress_metadata(lesson); });
+        if (kind != 2) {
+            // Course catalog reads the active unit resource, but not the
+            // lesson itself. A lesson alias must instead be found by the
+            // unit catalog, without rejecting an unrelated valid parent.
+            rejects_alias([&] { (void)windows::load_catalog(content, course_location()); });
+        } else require(windows::load_catalog(content, course_location()).entries.size() == 1,
+            "A lesson-file alias incorrectly invalidated its course index");
+        rejects_alias([&] { (void)windows::load_catalog(content, unit_location()); });
         require(fs::exists(physical), "The QA link check destroyed the original bytes");
     }
 }
@@ -717,7 +731,7 @@ void run(const fs::path& fixture_source) {
     require(bytes(audio_sentinel) == audio_bytes, "La edición borró o cambió un archivo de caché conservado.");
     import_isolated(fixture, historic, current, revision_file, revision);
     negative_contracts(fixture, current, after);
-    physical_edition_index_alias_rejected(fixture);
+    physical_edition_catalog_alias_rejected(fixture);
     fixture.preserved();
     std::cout << "PASS course_edition: índices activos, curso ajeno, estado/drafts/recibos separados, "
         "quiz nativo real, secuencia de páginas, reapertura, identidades de lectura, historial e importación.\n"
