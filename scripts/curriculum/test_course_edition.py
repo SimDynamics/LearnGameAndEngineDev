@@ -455,6 +455,10 @@ class CourseEditionAuthoringTest(unittest.TestCase):
         course_relative = f"{CONTENT}/es/programming/{COURSE}/course_{COURSE}.json"
         unit_relative = next(path for path in current if "/edition_es_1__" in path and "/unit_" in path)
         lesson_relative = next(path for path in current if "/edition_es_1__" in path and "/lesson_" in path)
+        # This is a NEW, unprepared authoring source. The default indexed
+        # fixture already has stateLayout v2 and must not be prepared again.
+        # Keep the published course/unit descriptors from that fixture.
+        current[lesson_relative] = lesson_source(descriptor())
         with tempfile.TemporaryDirectory(prefix="edition-prepare-alias-qa-",
                                          dir=Path.cwd()) as temporary:
             root = Path(temporary)
