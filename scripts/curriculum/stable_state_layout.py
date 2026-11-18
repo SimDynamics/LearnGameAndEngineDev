@@ -1101,7 +1101,10 @@ def _general_choice_semantic_projection(document: dict) -> dict | None:
             require(marker is not None, "A reviewed choice lost its archived semantic owner")
             marker.clear()
             marker.update(deepcopy(archived))
-    if introduced_root and not overlay["fields"] and not overlay.get("rootFields", []):
+    if introduced_root:
+        # A later lesson revision may have added unrelated descriptors, but
+        # the original publication had no semantic root at all. Restore its
+        # exact absence, not an invented partial historical overlay.
         return None
     return overlay
 
