@@ -1630,7 +1630,14 @@ operandos tengan paréntesis redundantes: `(capacidad - (capacidad))`,
 `((capacidad) / capacidad)` y `((capacidad) % capacidad)` no
 acreditan usos del acuerdo. También impide transferir dos referencias
 ficticias a un resultado por medio de una variable intermedia calculada
-con esa operación. La comprobación se limita a identidades comprobables
+con esa operación. También descarta los inversos aditivos
+`capacidad + (-capacidad)` y `(-capacidad) + capacidad`, aunque la
+referencia negada contenga más paréntesis. Ni esa suma ni una variable
+intermedia derivada exclusivamente de ella acreditan dos usos de la
+constante. En cambio, `capacidad - (-capacidad)` y
+`capacidad + capacidad` siguen siendo expresiones dependientes de su
+valor y se comprueban después mediante ejecución.
+La comprobación se limita a identidades comprobables
 en la expresión examinada: `capacidad - (capacidad * 2)` no equivale
 a una cancelación y debe seguir bajo los oráculos de ejecución. Otros
 cálculos algebraicos complejos no quedan demostrados sólo por el
