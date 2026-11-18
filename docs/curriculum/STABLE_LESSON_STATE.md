@@ -2173,10 +2173,20 @@ activas pasan a las unidades de la edición actual. Las unidades históricas
 permanecen como recursos existentes, sin entradas activas en ese índice.
 
 El cargador comprueba la coincidencia del descriptor, la identidad y la ruta en
-los tres niveles. Una edición española no toma silenciosamente una unidad o
-lección inglesa, francesa o histórica como respaldo. Los recursos EN/FR
-anteriores permanecen sin editar; sus familias y su edición no se atribuyen a
-las lecciones españolas nuevas.
+los tres niveles. En Windows, la carga completa y la proyección de progreso
+verifican además que el archivo de lección y sus índices activos de curso y
+unidad sean archivos físicos, sin enlaces simbólicos ni uniones de directorio
+entre la raíz de contenido y esos recursos. Rechaza también enlaces en carpetas
+intermedias, aunque los bytes de los archivos coincidan con el índice publicado.
+`native.course_edition` contiene una regresión Win32 que reproduce enlaces
+reales de archivo y directorio dentro de un árbol QA aislado: si la cuenta no
+puede crearlos, informa `SKIP` para esos casos, que no quedan acreditados por
+el mero hecho de registrar la prueba. La comprobación del contenido histórico
+durante publicación sigue siendo una obligación separada de la carga nativa.
+Una edición española no toma silenciosamente una unidad o lección inglesa,
+francesa o histórica como respaldo. Los recursos EN/FR anteriores permanecen
+sin editar; sus familias y su edición no se atribuyen a las lecciones españolas
+nuevas.
 
 ### Preparar una lección nueva
 
