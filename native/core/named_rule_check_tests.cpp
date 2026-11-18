@@ -783,6 +783,43 @@ void capacity() {
             return (piezas + 3) / 4 + ((capacidad + 1) / capacidad);
         })cpp",rules,true,
         "A quotient of different expressions must not be mistaken for a neutral pair");
+    // Unary negation also cancels the same local value in an additive
+    // expression. The two tokens do not establish two meaningful uses.
+    for(const auto* neutral:{
+            "(capacidad + (-capacidad))",
+            "((-capacidad) + capacidad)",
+            "(capacidad + (-((capacidad))))"}) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
+            rules,false,"Additive inverse operands must not manufacture named-rule evidence");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int ajuste = capacidad + (-capacidad);
+            return (piezas + 3) / 4 + ajuste + ajuste;
+        })cpp",rules,false,
+        "An additive inverse cannot launder fake constant uses through an alias");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad + (-capacidad));
+        })cpp",rules,true,
+        "An additive inverse must not erase genuine independent uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 + (capacidad - (-capacidad));
+        })cpp",rules,true,
+        "Subtracting a negation is not a cancellation");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 + (capacidad + capacidad);
+        })cpp",rules,true,
+        "Adding two positive references is not a cancellation");
+
 
     verify(R"cpp(
         int cajas_para(int piezas) {
