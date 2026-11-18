@@ -1742,6 +1742,101 @@ void conditional_assignment_branches() {
         "An ignored built-in value cast leaves the named computation intact");
 }
 
+void compound_assignment_evidence() {
+    const std::array rules{NamedRuleRequirement{"cajas_para",4,
+        {"capacidad","plaza","cupo"},2}};
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            resultado ^= resultado;
+            resultado += (piezas + 3) / 4;
+            return resultado;
+        })cpp",rules,false,
+        "XOR self-cancellation followed by a literal answer is not named evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            resultado -= resultado;
+            resultado += (piezas + 3) / 4;
+            return resultado;
+        })cpp",rules,false,
+        "Subtracting the named result from itself cannot leave earlier credit");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            resultado *= 0;
+            resultado += (piezas + 3) / 4;
+            return resultado;
+        })cpp",rules,false,
+        "Multiplying a dependent result by zero removes its authenticated uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado{0};
+            resultado += (piezas + capacidad - 1) / capacidad;
+            return resultado;
+        })cpp",rules,true,
+        "A zero initialized accumulator may genuinely use the named rule");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = {0};
+            resultado += (piezas + capacidad - 1) / capacidad;
+            return resultado;
+        })cpp",rules,true,
+        "Copy-list zero initialization supports an equivalent accumulation");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            resultado += 0;
+            resultado -= 0;
+            resultado ^= 0;
+            resultado |= 0;
+            return resultado;
+        })cpp",rules,true,
+        "Provably neutral compound updates preserve useful source evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int observacion = (piezas + capacidad - 1) / capacidad;
+            observacion ^= observacion;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "An unrelated canceled temporary cannot reject a correct direct return");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            resultado ^= resultado;
+            resultado = (piezas + capacidad - 1) / capacidad;
+            return resultado;
+        })cpp",rules,true,
+        "A later correct plain assignment can restore proven dependency");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            resultado++;
+            resultado--;
+            resultado += (piezas + 3) / 4;
+            return resultado;
+        })cpp",rules,false,
+        "Increment and decrement cannot lend a later literal answer old evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            --resultado;
+            resultado = (piezas + 3) / 4;
+            return resultado;
+        })cpp",rules,false,
+        "Prefix updates invalidate earlier evidence before a hardcoded return");
+}
+
 void separate_rules() {
     const std::array rules{
         NamedRuleRequirement{"cajas_para",6,{"capacidad","plaza","cupo"},2},
@@ -2528,7 +2623,7 @@ void constant_variation_source_identity() {
 
 int main() {
     try {
-        capacity();conditional_assignment_branches();separate_rules();price_and_minimum();
+        capacity();conditional_assignment_branches();compound_assignment_evidence();separate_rules();price_and_minimum();
         comment_only_header_changes();independently_generated_probe();
         real_battery_contract_and_sources();real_battery_traces_and_verdicts();
         constant_variation_contract();constant_variation_source_identity();
