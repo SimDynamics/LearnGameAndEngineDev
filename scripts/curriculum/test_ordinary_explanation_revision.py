@@ -91,6 +91,109 @@ def synthetic_missing_explanation(kind):
 
 
 class OrdinaryExplanationRevisionTest(unittest.TestCase):
+    def _formatted_optional_explanation(self, kind, *, revise_question=False):
+        """Use the same published identity for a lexical layout/prose pair."""
+        before = synthetic_missing_explanation(kind)
+        proposed = deepcopy(before)
+        identity = "block_0000_0000"
+        owner = layout._blocks(proposed)[identity]
+        if kind == "order_code":
+            self.assertEqual(owner["fragments"][0], "int x = 1;")
+            owner["fragments"][0] = "int  x = 1;"
+        else:
+            key = "template" if kind in {"drag_fill_code", "inline_fill_code"} else "code"
+            self.assertIn("int x", owner[key])
+            owner[key] = owner[key].replace("int x", "int  x", 1)
+        owner["explanation"] = "Explicación nueva: conserva la respuesta y muestra el espaciado."
+        markers = [layout.text_semantics.make_field(proposed, identity, "/explanation", [])]
+        if revise_question:
+            owner["question"] = "Pregunta revisada con el mismo resultado."
+            markers.append(layout.text_semantics.make_field(proposed, identity, "/question", []))
+        proposed["textSemantics"] = {"version": 1, "fields": markers}
+        return before, proposed
+
+    def test_optional_explanation_and_physical_code_spacing_share_one_safe_revision(self):
+        for kind in ("fill_code", "output_prediction", "order_code",
+                     "drag_fill_code", "inline_fill_code"):
+            with self.subTest(kind=kind):
+                before, proposed = self._formatted_optional_explanation(kind)
+                owner = "block_0000_0000"
+                old, new = layout._blocks(before)[owner], layout._blocks(proposed)[owner]
+                self.assertTrue(layout.require_source_format_with_editorial(old, new))
+                published = layout.prepare_v2(proposed, "es", {"es": before}, before)
+                layout.validate_transition(before, published)
+                self.assertEqual(layout.validate(before), layout.validate(published))
+                self.assertEqual(before["stateLayout"]["origin"], published["stateLayout"]["origin"])
+                self.assertEqual(before["stateLayout"]["family"], published["stateLayout"]["family"])
+                self.assertEqual(before["stateLayout"]["current"], published["stateLayout"]["current"])
+                self.assertEqual([owner], [item["id"] for item in
+                                            published["stateLayout"]["sourceFormatRevisions"]])
+                self.assertEqual(old,
+                    published["stateLayout"]["sourceFormatRevisions"][0]["block"])
+                self.assertEqual(
+                    published["stateLayout"]["editorial"][-1]["afterSha256"],
+                    layout.fingerprint(layout._blocks(published)[owner]))
+                self.assertEqual(layout.state_fingerprint(old), layout.state_fingerprint(new))
+                self.assertEqual(published["textSemantics"]["fields"][0]["spans"], [])
+                self.assertTrue(contract.preserves_previous_exercise(
+                    SYNTHETIC_PATH, 0, 0, old, layout._blocks(published)[owner],
+                    previous_document=before, current_document=published))
+                self.assertNotIn("explanation", layout._blocks(before)[owner])
+
+    def test_optional_explanation_can_be_authored_with_question_and_code_spacing(self):
+        before, proposed = self._formatted_optional_explanation(
+            "fill_code", revise_question=True)
+        published = layout.prepare_v2(proposed, "es", {"es": before}, before)
+        layout.validate_transition(before, published)
+        self.assertEqual({"/question", "/explanation"},
+                         {entry["path"] for entry in published["textSemantics"]["fields"]})
+        self.assertTrue(contract.preserves_previous_exercise(
+            SYNTHETIC_PATH, 0, 0,
+            layout._blocks(before)["block_0000_0000"],
+            layout._blocks(published)["block_0000_0000"],
+            previous_document=before, current_document=published))
+
+    def test_combined_optional_explanation_rejects_unmarked_or_tampered_revision(self):
+        before, proposed = self._formatted_optional_explanation("fill_code")
+        original, authored = (layout._blocks(before)["block_0000_0000"],
+                              layout._blocks(proposed)["block_0000_0000"])
+        valid = layout.prepare_v2(proposed, "es", {"es": before}, before)
+        for mutation in ("missing-mark", "stale-mark", "wrong-answer",
+                         "changed-token", "invented-review-feedback"):
+            altered = deepcopy(valid)
+            block = layout._blocks(altered)["block_0000_0000"]
+            if mutation == "missing-mark":
+                altered["textSemantics"]["fields"].clear()
+            elif mutation == "stale-mark":
+                altered["textSemantics"]["fields"][0]["sourceSha256"] = "0" * 64
+            elif mutation == "wrong-answer":
+                block["answers"] = ["3"]
+            elif mutation == "changed-token":
+                block["code"] = block["code"].replace("x", "y")
+            else:
+                block["reviewFeedback"] = "Respuesta aparentemente incorrecta."
+            if mutation not in {"missing-mark", "stale-mark"}:
+                altered["stateLayout"]["editorial"][-1]["afterSha256"] = layout.fingerprint(block)
+            with self.subTest(mutation=mutation), self.assertRaises(layout.LayoutError):
+                layout.validate_transition(before, altered)
+            self.assertFalse(contract.preserves_previous_exercise(
+                SYNTHETIC_PATH, 0, 0, original, block,
+                previous_document=before, current_document=altered))
+
+        # The absence of the OLD optional guide can be restored only on an
+        # ordinary exercise. It does not authorize adding nested compileCheck
+        # or outputCheck explanations under the compiler's source-format map.
+        old_compiler = {"type": "cpp_compiler", "initialCode": "int a=0;",
+                        "compileCheck": {"diagnostic": "qa-review"}}
+        forged = deepcopy(old_compiler)
+        forged["initialCode"] = "int  a=0;"
+        forged["compileCheck"]["explanation"] = "Guía no publicada."
+        with self.assertRaises(layout.LayoutError):
+            layout.require_source_format_with_editorial(old_compiler, forged)
+        self.assertEqual("int a=0;", old_compiler["initialCode"])
+        self.assertEqual(original["answers"], ["7"])
+        self.assertEqual(authored["answers"], ["7"])
+
     def test_optional_missing_explanation_is_authored_without_changing_answers(self):
         for kind in sorted(contract.REVIEW_FEEDBACK_TYPES):
             with self.subTest(kind=kind):
