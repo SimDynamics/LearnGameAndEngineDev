@@ -133,7 +133,14 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
                 self.assertEqual(
                     published["stateLayout"]["editorial"][-1]["afterSha256"],
                     layout.fingerprint(layout._blocks(published)[owner]))
-                self.assertEqual(layout.state_fingerprint(old), layout.state_fingerprint(new))
+                # Source bytes are intentionally newer; state equivalence
+                # is established only after the authenticated lexical source
+                # projection restores the old code, not by hashing raw drafts.
+                self.assertNotEqual(layout.state_fingerprint(old),
+                                    layout.state_fingerprint(new))
+                self.assertEqual(
+                    layout.state_fingerprint(old),
+                    layout.state_fingerprint(layout.code_format.source_projection(new, old)))
                 self.assertEqual(published["textSemantics"]["fields"][0]["spans"], [])
                 self.assertTrue(contract.preserves_previous_exercise(
                     SYNTHETIC_PATH, 0, 0, old, layout._blocks(published)[owner],
