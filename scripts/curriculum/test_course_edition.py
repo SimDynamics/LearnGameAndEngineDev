@@ -210,6 +210,44 @@ class CourseEditionAuthoringTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "active or an unchanged historical"):
             self.check_tree(prior, after)
 
+    def test_preserved_history_rejects_ancestor_alias_despite_equal_bytes(self):
+        # A historical lesson/unit remains available after the course starts
+        # its new edition. An ancestor alias must not pass merely because its
+        # current bytes equal the published Git version.
+        prior = current_documents()
+        current = {**deepcopy(prior), **current_documents(descriptor())}
+        baseline = encoded(prior)
+        old_unit = next(path for path in prior if "/unit_" in path)
+        with tempfile.TemporaryDirectory(prefix="edition-history-alias-qa-",
+                                         dir=Path.cwd()) as temporary:
+            root = Path(temporary)
+            for relative, raw in encoded(current).items():
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(raw)
+            historical_folder = (root / old_unit).parent
+            methods = ["is_symlink"]
+            if hasattr(Path, "is_junction"):
+                methods.append("is_junction")
+            for method in methods:
+                original = getattr(Path, method)
+                def pretend_alias(path, original=original):
+                    return path == historical_folder or original(path)
+                with self.subTest(method=method), \
+                        mock.patch.object(Path, method, autospec=True,
+                                          side_effect=pretend_alias), \
+                        mock.patch.object(edition, "_paths_at",
+                                          return_value=set(baseline)), \
+                        mock.patch.object(edition, "_git_bytes",
+                                          side_effect=lambda _, __, p: baseline[p]):
+                    with self.assertRaisesRegex(edition.CourseEditionError,
+                                                SYMLINK_REJECTION):
+                        edition.check_repository(root, "0" * 40)
+            self.assertEqual(encoded(current), {
+                path.relative_to(root).as_posix(): path.read_bytes()
+                for path in root.rglob("*.json")
+            }, "A rejected historical alias must not change curricular assets")
+
     def test_active_edition_rejects_symbolic_aliases_inside_course(self):
         # A same-course symlink passes the containment check but can point an
         # allegedly new edition at untracked or later replaced source bytes.
