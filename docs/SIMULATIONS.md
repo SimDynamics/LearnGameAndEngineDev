@@ -849,6 +849,7 @@ Las ocho explicaciones y `outputTemplate` permiten estas sustituciones:
 | `{start}`, `{end}` | Inicio y límite exclusivo del grupo observado. |
 | `{frequency}` | Cantidad observada en el grupo actual. |
 | `{maximum}` | Máxima frecuencia de los grupos ya terminados. |
+| `{previousMaximum}` | Máximo **antes** de comparar la frecuencia del grupo recién terminado, no el máximo que resulta de esa decisión. Solo tiene contenido en `newMaximum`, `tie`, `belowMaximum` y `outputTemplate`. |
 | `{leaders}` | Valores que alcanzan ese máximo, separados por coma y espacio; presentación legible en explicaciones y datos crudos en `outputTemplate`. |
 | `{size}` | Cantidad de elementos del array. |
 | `{group}` | Número del grupo actual desde uno; cero antes del primero. |
@@ -870,6 +871,25 @@ puntos y el primer grupo de `[5, 2, 5]` contiene sólo el valor `2`.
 No cambia el dato ni las frecuencias: sólo muestra cuánto recorrido se
 ha completado. Las cantidades se recalculan después de editar, restablecer
 o cambiar de escenario, incluso con etiquetas vacías.
+
+`{previousMaximum}` permite explicar la comparación que realmente toma
+la decisión de cada grupo: su frecuencia se compara con el máximo
+obtenido **antes** de terminar ese grupo. Por ejemplo, al ordenar
+`[5, 2, 5]`, el grupo de `2` tiene frecuencia `1` y supera al
+máximo anterior de `0`; después, el grupo de `5` alcanza frecuencia
+`2` y supera el máximo anterior de `1`. El marcador conserva
+el número previo, mientras `{maximum}` muestra el resultado
+**posterior** a la decisión. En un empate, ambos números coinciden;
+si la frecuencia es menor, el máximo no cambia. El motor obtiene ese
+número del paso de recuento inmediatamente anterior, con independencia
+de la redacción elegida por Work.
+
+En `initial`, `start`, `advance`, `done` y `empty`,
+`{previousMaximum}` se sustituye por una cadena vacía, pues no se
+está tomando una decisión nueva. En `outputTemplate` sí tiene valor:
+la salida de un grupo se calcula precisamente al tomar esa decisión.
+Funciona con números, textos, empates, colecciones vacías y escenarios
+editados sin cambiar los oráculos ni adelantar datos futuros.
 
 Los dos índices de procedencia sólo tienen contenido en `start` y `advance`,
 que son las fases donde se cuenta un elemento. Durante `initial`, las
@@ -905,8 +925,11 @@ ejecución local Windows para acreditar su resultado.
 La regresión `processed_remaining_progress_in_reader` comprueba también
 el recuento acumulado y pendiente en el lector Win32, sus regiones narrables
 y la salida de cada grupo, antes y después de modificar datos, seleccionar un
-escenario vacío y restablecer los valores. Las comprobaciones independientes
-de C++ y Python incluyen intervalos ordenados, textos repetidos, cadenas
+escenario vacío y restablecer los valores. También verifica el
+`{previousMaximum}` anterior a cada decisión en las explicaciones
+visibles y las regiones narrables, sin reutilizar el máximo ya actualizado.
+Las comprobaciones independientes de C++ y Python incluyen intervalos
+ordenados, textos repetidos, cadenas
 vacías y la suma del tamaño de todas las explicaciones y salidas.
 
 Las sustituciones se aplican una sola vez. Las llaves que formen parte de un
