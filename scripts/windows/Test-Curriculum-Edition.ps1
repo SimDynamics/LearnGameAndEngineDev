@@ -43,16 +43,17 @@ try {
         throw 'Curricular edition QA requires the local Codex branch, not main or detached HEAD.'
     }
 
-    # Prepare ONLY the isolated C++ test and its disposable course fixtures,
-    # never the complete app or the Work checkout.
-    & (Join-Path $PSScriptRoot 'Build-Native.ps1') -Preset $Preset -Profile Codex -SkipTests -Fresh:$Fresh -Target lgaed_course_edition_tests
+    # Prepare only two isolated native tests and their disposable course and
+    # optional-prose fixtures, never the complete app or the Work checkout.
+    & (Join-Path $PSScriptRoot 'Build-Native.ps1') -Preset $Preset -Profile Codex -SkipTests -Fresh:$Fresh -Target lgaed_curriculum_edition_qa
 
     $expected = @(
         'native.ordinary_explanation_authoring',
         'native.course_edition_authoring',
-        'native.course_edition'
+        'native.course_edition',
+        'native.optional_prose_format'
     )
-    $regex = '^native[.](ordinary_explanation_authoring|course_edition_authoring|course_edition)$'
+    $regex = '^native[.](ordinary_explanation_authoring|course_edition_authoring|course_edition|optional_prose_format)$'
 
     # Fail closed if a test was renamed, omitted or an unintended test matched.
     # CTest resolves presets relative to the caller's working directory.
@@ -72,7 +73,7 @@ try {
     $parsed = ($json -join [Environment]::NewLine) | ConvertFrom-Json
     $discovered = @($parsed.tests | ForEach-Object { [string] $_.name })
     if ($discovered.Count -ne $expected.Count) {
-        throw "Expected 3 curricular QA tests, found $($discovered.Count): $($discovered -join ', ')"
+        throw "Expected 4 curricular QA tests, found $($discovered.Count): $($discovered -join ', ')"
     }
     foreach ($test in $expected) {
         if ($discovered -cnotcontains $test) {
@@ -117,7 +118,7 @@ try {
     if ($exitCode -ne 0) {
         throw "Curricular edition QA failed ($exitCode). Logs: $stdoutPath and $stderrPath"
     }
-    Write-Host "Local Windows curricular edition QA: 3 focused tests passed ($Preset)."
+    Write-Host "Local Windows curricular edition QA: 4 focused tests passed ($Preset)."
 }
 finally {
     foreach ($name in $environmentNames) {
