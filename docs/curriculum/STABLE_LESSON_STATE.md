@@ -213,14 +213,16 @@ conserva los marcadores de otros campos actuales y no reutiliza la huella
 nueva sobre un texto anterior. Se comprueba la consistencia de esa
 proyección mediante el validador de `textSemantics`.
 Las ocho revisiones cerradas anteriores conservan sus reglas de lectura.
-La prueba `native.general_choice_editorial_reader` utiliza un perfil QA
-oculto y una copia temporal U9L13 con dos marcados **diferentes**:
-`precondición` en la opción publicada y `condición para aceptar la
-transición` en la redacción nueva. Comprueba que el lector reconstruya
-la marca anterior directamente del descriptor `semanticBefore` validado,
-sin trasladarle los nuevos desplazamientos UTF-16. También comprueba
-las regiones de lectura activa e histórica al reabrir y la conservación
-del éxito anterior. Los archivos curriculares de Work no se modifican.
+La prueba `native.general_choice_editorial_reader` utiliza dos
+perfiles QA ocultos y dos variantes temporales de U9L13. La primera
+cambia de `precondición` (marcado previo) a `condición para aceptar
+la transición` (marcado actual), y exige recuperar el descriptor
+`semanticBefore` sin trasladar los nuevos desplazamientos UTF-16.
+La segunda incorpora marcas a una opción que originalmente no tenía
+descriptor; el lector debe conservar la **ausencia** histórica de
+marcado y mostrar únicamente las marcas nuevas en la vista actual.
+En ambos casos reabre el lector, comprueba sus regiones de lectura,
+conserva la respuesta aprobada y no modifica el currículo de Work.
 No sustituye una prueba audible de voz ni acredita escucha humana.
 
 El mecanismo admite exactamente un cambio de texto de opción por
@@ -244,8 +246,24 @@ Las ocho revisiones cerradas preexistentes conservan sus contratos,
 sin convertirse en excepciones de la nueva modalidad. La prueba
 `native.general_choice_editorial_authoring` valida el primer ejemplo
 real sin modificar los JSON curriculares; `native.general_choice_editorial`
-comprueba el cargador y el estado nativo Windows sobre un archivo
-de prueba generado en el directorio de construcción.
+comprueba el cargador y el estado nativo Windows sobre archivos
+de prueba generados en el directorio de construcción.
+
+Para realizar únicamente estas tres comprobaciones en el checkout
+físico y autorizado `LearnGameAndEngineDev-Codex` de Windows, usar:
+
+```powershell
+& '.\\scripts\\windows\\Test-GeneralChoiceEditorial.ps1' -Preset windows-x64-debug
+```
+
+El script exige la rama local `Codex`, crea sólo los ejecutables
+nativos correspondientes y sus fixtures de autoría, verifica los tres
+nombres exactos de CTest y los ejecuta en serie. Conserva los registros
+bajo `out/build/<preset>/logs/general-choice-editorial-qa.*.log`.
+Si se ha movido el checkout y la caché CMake contiene una ruta vieja,
+añadir `-Fresh` únicamente en esa ocasión. No ejecuta CI ni modifica
+perfiles personales. **Publicar los casos y el ejecutor no acredita
+que hayan sido compilados o ejecutados en Windows**.
 
 Los orígenes y hashes familiares no se regeneran. Los archivos hermanos sin mapa
 deben conservar exactamente su documento publicado; la puerta verifica esa
