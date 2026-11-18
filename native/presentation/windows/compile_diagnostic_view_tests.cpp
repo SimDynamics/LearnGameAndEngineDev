@@ -194,6 +194,13 @@ void compact_diagnostic_path_cases(){
     expect(L"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\main.hpp\r",
         L"Note: including file: main.hpp\r",
         "A final standalone CR was consumed along with an include path");
+    expect(L"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project\\include\\sin_final.hpp",
+        L"Note: including file: include\\sin_final.hpp",
+        "An include path without a line delimiter was not shortened");
+    check(compact_compiler_diagnostic_paths(
+            L"Cannot write run file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\sin_final.bin",
+            roots,true) == L"Cannot write run file: sin_final.bin",
+        "An internal file error without a line delimiter changed its contents");
 
     expect(L"C:/QA/Código & (espacio)/run-1/main.cpp:4:9: error: expected ';'\r\n",
         L"main.cpp:4:9: error: expected ';'\r\n","Clang coordinates or CRLF changed");
