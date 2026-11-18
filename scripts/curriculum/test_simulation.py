@@ -378,6 +378,73 @@ class SimulationContractTest(unittest.TestCase):
         self.assertEqual(66, simulation._trace_text_bytes(spec, spec["values"]))
         self.assertEqual(value, before)
 
+    def test_previous_maximum_precedes_decision_in_explanation_and_output(self):
+        lesson = block()
+        spec = lesson["simulation"]
+        spec.update(values=[7, 1, 7, 3, 3, 2, 5], scenarios=[],
+                    outputTemplate="{value}:{frequency}/{previousMaximum}",
+                    explanations={
+                        "initial": "Inicio: {previousMaximum}.",
+                        "start": "Contar: {previousMaximum}.",
+                        "advance": "Continuar: {previousMaximum}.",
+                        "newMaximum": "Antes {previousMaximum}; ahora {maximum}; frecuencia {frequency}.",
+                        "tie": "Empate {frequency} con {previousMaximum}; máximo {maximum}.",
+                        "belowMaximum": "Menor {frequency} que {previousMaximum}; sigue {maximum}.",
+                        "done": "Fin: {previousMaximum}.",
+                        "empty": "Vacío: {previousMaximum}.",
+                    })
+        original = deepcopy(lesson)
+        self.assertIs(simulation.validate_contract(lesson), spec)
+        # Independent 14-frame oracle, enumerated by observed count and
+        # group decision rather than reusing the validator's loop.
+        one = "1:1/0\\n"
+        two = one + "2:1/1\\n"
+        three = two + "3:2/1\\n"
+        four = three + "5:1/2\\n"
+        five = four + "7:2/2\\n"
+        steps = [
+            ("Inicio: .", ""),
+            ("Contar: .", ""),
+            ("Antes 0; ahora 1; frecuencia 1.", one),
+            ("Contar: .", one),
+            ("Empate 1 con 1; máximo 1.", two),
+            ("Contar: .", two),
+            ("Continuar: .", two),
+            ("Antes 1; ahora 2; frecuencia 2.", three),
+            ("Contar: .", three),
+            ("Menor 1 que 2; sigue 2.", four),
+            ("Contar: .", four),
+            ("Continuar: .", four),
+            ("Empate 2 con 2; máximo 2.", five),
+            ("Fin: .", five),
+        ]
+        expected = sum(len(explanation.encode("utf-8")) + len(output.encode("utf-8"))
+                       for explanation, output in steps)
+        self.assertEqual(expected, simulation._trace_text_bytes(spec, spec["values"]))
+        self.assertEqual(1 + len("Vacío: ".encode("utf-8")),
+                         len("Vacío: .".encode("utf-8")))
+        self.assertEqual(len("Vacío: .".encode("utf-8")),
+                         simulation._trace_text_bytes(spec, []))
+        self.assertEqual(lesson, original)
+
+        # The previous maximum is zero for the first (empty-string) group,
+        # then one before the repeated text takes the lead.
+        spec.update(valueType="text", values=["patio", "", "patio"])
+        empty_group = ":1/0\\n"
+        whole_output = empty_group + "patio:2/1\\n"
+        label_steps = [
+            ("Inicio: .", ""),
+            ("Contar: .", ""),
+            ("Antes 0; ahora 1; frecuencia 1.", empty_group),
+            ("Contar: .", empty_group),
+            ("Continuar: .", empty_group),
+            ("Antes 1; ahora 2; frecuencia 2.", whole_output),
+            ("Fin: .", whole_output),
+        ]
+        label_total = sum(len(explanation.encode("utf-8")) + len(output.encode("utf-8"))
+                          for explanation, output in label_steps)
+        self.assertEqual(label_total, simulation._trace_text_bytes(spec, spec["values"]))
+
     def test_trace_budget_counts_every_accumulated_frame_as_native_does(self):
         value = block()
         spec = value["simulation"]
