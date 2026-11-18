@@ -399,39 +399,60 @@ JsonObject source_format_projection(const JsonObject& active,const JsonObject& s
     return projected;
 }
 
-// A physical reformat may accompany editorial wording, but the new question
-// must carry its own authored presentation/narration marker. Optional markers
-// are valid for unchanged questions; changed ones may not silently inherit
-// old reading coverage or acquire technical tint from contextual heuristics.
+// Source formatting can accompany a question correction or an optional
+// ordinary explanation introduced for the first time. A changed passage
+// always requires its own authored semantic descriptor. Unchanged prose is
+// not granted new reading credit through this source-format allowance.
 void require_formatted_question_semantics(const JsonObject& root,
         std::string_view identity,const JsonObject& original,const JsonObject& current) {
     require(original.HasKey(L"question")==current.HasKey(L"question"),
         "Source formatting cannot add or remove a published question");
-    if(!original.HasKey(L"question"))return;
-    const auto previous=text(original,"question"),revised=text(current,"question");
-    if(previous==revised)return;
-    // Apply the same Unicode-aware whitespace convention used for authored
-    // language metadata. The later SemanticPublicFields::trimmed method is
-    // not visible here, and calling it broke the actual MSVC Windows build.
+    const auto changed_question=original.HasKey(L"question")&&
+        text(original,"question")!=text(current,"question");
+    const auto type=text(current,"type");
+    const bool ordinary=type=="multiple_choice"||type=="fill_code"||
+        type=="output_prediction"||type=="order_code"||
+        type=="drag_fill_code"||type=="inline_fill_code";
+    const bool old_explanation=original.HasKey(L"explanation");
+    const bool new_explanation=current.HasKey(L"explanation");
+    const bool changed_explanation=ordinary&&(
+        old_explanation!=new_explanation||
+        (old_explanation&&text(original,"explanation")!=text(current,"explanation")));
+    if(!changed_question&&!changed_explanation)return;
+
+    // Match the Unicode-aware nonblank contract used for other public
+    // authored metadata, including newly added optional explanations.
     const auto nonblank=[](std::string_view value) {
         const auto utf16=key(value);
         return std::ranges::any_of(std::wstring_view(utf16.c_str(),utf16.size()),
             [](wchar_t c){return !narration_space(c);});
     };
-    require(nonblank(previous)&&nonblank(revised),
-        "Combined source/question revision needs nonblank public wording");
+    if(changed_question)
+        require(nonblank(text(original,"question"))&&
+                nonblank(text(current,"question")),
+            "Combined source/question revision needs nonblank public wording");
+    if(changed_explanation)
+        require(new_explanation&&(!old_explanation||
+                    nonblank(text(original,"explanation")))&&
+                nonblank(text(current,"explanation")),
+            "Combined source/explanation revision needs nonblank authored prose");
+
     require(root.HasKey(L"textSemantics"),
-        "Formatted question needs an explicit semantic descriptor");
+        "Formatted prose needs an explicit semantic descriptor");
     const auto semantics=root.GetNamedObject(L"textSemantics");
-    std::size_t count=0;
-    for(const auto& value:array(semantics,"fields")) {
-        const auto field=value.GetObject();
-        if(text(field,"block")!=identity||text(field,"path")!="/question")continue;
-        ++count;
-        require(text(field,"sourceSha256")==sha256(revised),
-            "Formatted question has stale authored semantic source");
-    }
-    require(count==1,"Formatted question needs exactly one authored source marker");
+    const auto assert_mark=[&](std::string_view path,std::string_view source){
+        std::size_t count=0;
+        for(const auto& value:array(semantics,"fields")) {
+            const auto field=value.GetObject();
+            if(text(field,"block")!=identity||text(field,"path")!=path)continue;
+            ++count;
+            require(text(field,"sourceSha256")==sha256(source),
+                "Formatted prose has a stale authored semantic source");
+        }
+        require(count==1,"Formatted prose needs exactly one authored source marker");
+    };
+    if(changed_question)assert_mark("/question",text(current,"question"));
+    if(changed_explanation)assert_mark("/explanation",text(current,"explanation"));
 }
 std::string state_fingerprint(const JsonObject& original) {
     const auto value = JsonObject::Parse(original.Stringify());
