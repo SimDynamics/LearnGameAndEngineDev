@@ -1132,3 +1132,28 @@ vacías y con espacios, y la conservación de las identidades. Las pruebas
 nativas del modelo y del lector Windows comprueban por separado el cálculo y
 la integración. La validación JSON por sí sola no demuestra una interacción
 visual ni una ejecución de C++.
+
+### Batería de núcleo independiente cuando falta el toolset Win32
+
+El flujo `.github/workflows/simulation-core-codex.yml` ejecuta
+`native/core/simulation.cpp` junto con `native/core/simulation_tests.cpp`
+sin la interfaz gráfica ni dependencias del cargador Windows. Compila en
+GCC y Clang con C++23 sobre Ubuntu y en MSVC sobre un ejecutor Windows 2022
+con la opción C++ más reciente. Ejecuta además
+`scripts/curriculum/test_simulation.py`. Así se pueden detectar errores
+de sintaxis, contratos y trazas del **modelo portable** sin atribuir al
+núcleo una validación de interfaz que todavía no ha ocurrido.
+
+La primera ejecución de este flujo identificó una llave ausente en el
+inicializador de una batería de JSON inválidos. La reparación
+`647b89a5` conservó los cuatro datos rechazados. La nueva ejecución
+`44349891943` terminó correctamente en sus cuatro trabajos: Python,
+GCC, Clang y MSVC portable.
+
+**Separación obligatoria:** este flujo no selecciona el MSVC
+14.51.36231 ni el SDK 10.0.28000.0 declarados para la compilación
+integral en `toolchains/windows.versions.json`. La ejecución de la
+batería portable en un ejecutor Windows 2022 **no acredita**
+`native.simulation_view`, `native.simulation_lesson`, la narración
+RichEdit ni las demás pruebas Win32. Éstas siguen sujetas al conjunto
+local `Test-Simulation.ps1` y a su toolchain autorizado.
