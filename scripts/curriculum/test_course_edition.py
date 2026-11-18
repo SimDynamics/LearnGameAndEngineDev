@@ -207,6 +207,41 @@ class CourseEditionAuthoringTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "active or an unchanged historical"):
             self.check_tree(prior, after)
 
+    def test_active_edition_rejects_symbolic_aliases_inside_course(self):
+        # A same-course symlink passes the containment check but can point an
+        # allegedly new edition at untracked or later replaced source bytes.
+        # Publication must require actual files at the indexed paths.
+        prior = current_documents()
+        current = {**deepcopy(prior), **current_documents(descriptor())}
+        before = encoded(prior)
+        unit_relative = next(path for path in current
+                             if "/edition_es_1__" in path and "/unit_" in path)
+        lesson_relative = next(path for path in current
+                               if "/edition_es_1__" in path and "/lesson_" in path)
+        for kind in ("unit", "lesson", "unit-folder"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory(
+                    prefix="edition-alias-qa-", dir=Path.cwd()) as temporary:
+                root = Path(temporary)
+                for relative, raw in encoded(current).items():
+                    path = root / relative
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(raw)
+                selected = unit_relative if kind != "lesson" else lesson_relative
+                source = root / selected
+                if kind == "unit-folder":
+                    source = source.parent
+                original = source.with_name("stored_" + source.name)
+                source.rename(original)
+                try:
+                    source.symlink_to(original.name, target_is_directory=kind == "unit-folder")
+                except (OSError, NotImplementedError) as exc:
+                    self.skipTest(f"OS cannot create symbolic links: {exc}")
+                with mock.patch.object(edition, "_paths_at", return_value=set(before)), \
+                        mock.patch.object(edition, "_git_bytes", side_effect=lambda _, __, path: before[path]):
+                    with self.assertRaisesRegex(edition.CourseEditionError, "symbolic alias"):
+                        edition.check_repository(root, "0" * 40)
+                self.assertTrue(original.exists(), "The rejection must preserve the indexed content")
+
     def test_generation_does_not_weaken_answer_transitions(self):
         before = edition.prepare_edition_lesson(lesson_source(descriptor()), descriptor())
         after = deepcopy(before)
