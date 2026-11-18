@@ -437,6 +437,11 @@ void physical_edition_long_paths(const Fixture& fixture) {
     require(course.entries.size() == 1 && course.entries.front().id == new_unit &&
             unit.entries.size() == 2 && unit.entries[0].id == new_id,
         "The native edition catalog could not open a valid long-path index");
+    const state::StateData empty_profile;
+    const auto progress = windows::catalog_entry_progress(content, unit_location(),
+        unit.entries.front(), empty_profile);
+    require(progress.completed == 0 && progress.total == 3,
+        "The catalog progress projection could not read the long-path edition lesson");
     // A missing file at the same depth must still fail closed.
     const auto missing = folder / relative_path(fixture.paths.at("lesson"));
     std::error_code ignored;
@@ -466,9 +471,15 @@ void physical_edition_catalog_alias_rejected(const Fixture& fixture) {
         const auto unit = mirror / relative_path(fixture.paths.at("unit"));
         require(windows::load_lesson(lesson).course_edition.has_value(),
             "The isolated native edition was invalid before creating an alias");
-        require(windows::load_catalog(content, course_location()).entries.size() == 1 &&
-                windows::load_catalog(content, unit_location()).entries.size() == 2,
+        const auto old_course = windows::load_catalog(content, course_location());
+        const auto old_unit = windows::load_catalog(content, unit_location());
+        require(old_course.entries.size() == 1 && old_unit.entries.size() == 2,
             "The isolated edition catalog was invalid before alias injection");
+        const state::StateData empty_profile;
+        const auto old_progress = windows::catalog_entry_progress(content, unit_location(),
+            old_unit.entries.front(), empty_profile);
+        require(old_progress.completed == 0 && old_progress.total == 3,
+            "Cannot warm the native edition progress cache before the alias regression");
 
         const bool directory = kind >= 3;
         const auto linked = kind == 0 ? course :
@@ -525,6 +536,11 @@ void physical_edition_catalog_alias_rejected(const Fixture& fixture) {
                 "A lesson-file alias incorrectly invalidated its course index");
             rejects_alias([&] { (void)windows::load_catalog(content, unit_location()); });
         }
+        // This public progress API must not reuse a cached read-only lesson
+        // or silently continue with an alias installed after the first read.
+        rejects([&] { (void)windows::catalog_entry_progress(content, unit_location(),
+            old_unit.entries.front(), empty_profile); },
+            "The catalog credited progress after an edition resource became an alias");
         require(fs::exists(physical), "The QA link check destroyed the original bytes");
     }
 }
