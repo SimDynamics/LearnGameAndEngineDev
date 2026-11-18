@@ -509,7 +509,12 @@ SimulationTrace SimulationSession::build_trace(std::vector<SimulationValue> valu
 
 std::vector<SimulationValue> SimulationSession::parse_values(
         std::string_view input, SimulationInputFormat format) const {
-    return parse_values_checked(authored_, input, format);
+    // Conversion of a pending draft must retain the same validity guarantee
+    // as the original public API: the calculated trace cannot exceed 8 MiB.
+    // Reuse the once-authenticated contract, but still validate THIS input's
+    // complete trace before offering a lossless format conversion.
+    auto trace = make_trace(authored_, parse_values_checked(authored_, input, format));
+    return std::move(trace.original);
 }
 
 SimulationTrace SimulationSession::parse_trace(
