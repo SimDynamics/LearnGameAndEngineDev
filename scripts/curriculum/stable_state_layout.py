@@ -768,9 +768,18 @@ def require_source_format_with_editorial(original: dict, current: dict) -> bool:
         require(before == after, "A reviewed guide changed its data type or contract")
         return deepcopy(before)
 
-    def restore_guides(before: dict, after: dict) -> None:
+    def restore_guides(before: dict, after: dict, *, allow_optional_explanation: bool = False) -> None:
         for key in ("explanation", "reviewFeedback"):
             if key not in before and key not in after:
+                continue
+            if key == "explanation" and key not in before and allow_optional_explanation:
+                # Ordinary exercise explanations are optional prose. Restore
+                # their genuine historical absence when source formatting and
+                # a newly authored explanation share one editorial edge.
+                # Nested compiler/output goals cannot use this exception.
+                require(type(after.get(key)) is str and bool(after[key].strip()),
+                        "A combined optional explanation must contain nonblank authored text")
+                after.pop(key)
                 continue
             require(key in before and key in after,
                     "A combined review cannot add or remove guidance fields")
@@ -788,7 +797,8 @@ def require_source_format_with_editorial(original: dict, current: dict) -> bool:
         after["question"] = restore_feedback(before["question"], after["question"])
 
     restore_public_question(original, projected)
-    restore_guides(original, projected)
+    restore_guides(original, projected,
+                   allow_optional_explanation=original.get("type") in ORDINARY_EDITORIAL_TYPES)
     for field in ("compileCheck", "outputCheck"):
         older, newer = original.get(field), projected.get(field)
         if type(older) is dict and type(newer) is dict:
