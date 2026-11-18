@@ -1099,18 +1099,16 @@ void require_physical_course_edition_asset(
         require(((flags & FILE_ATTRIBUTE_DIRECTORY) != 0) == directory,
             "A course-edition resource has an unexpected file type");
     };
-    // Checking only 'content' and its descendants misses a reparse point
-    // in e.g. the checkout, installation or QA profile above that folder.
-    // Walk real directory components, but stop before the volume's root
-    // spelling. On extended Windows paths, walking parent_path() past that
-    // point can produce a root-name-only path (e.g. \\?\C:) which is not
-    // itself a directory accepted by GetFileAttributesW.
-    for (auto ancestor = root; ancestor.has_relative_path();) {
-        physical(ancestor, true);
-        const auto parent = ancestor.parent_path();
-        if (parent.empty() || parent == ancestor) break;
-        ancestor = parent;
-    }
+    // The catalog sometimes passes a native_io_path() spelling, such as
+    // \\?\C:\... . std::filesystem::parent_path() of that spelling can
+    // yield a root-name-only "C:" component, which GetFileAttributesW
+    // rejects with Win32 ERROR_INVALID_PARAMETER (87). Use the already
+    // established state path guard for the ancestors: it checks reparse
+    // points without mistaking a root-name spelling for a directory.
+    // Our stricter physical() check below still requires the content root
+    // and each indexed resource to exist with the correct file type.
+    state::require_safe_path(root);
+    physical(root, true);
     auto current = root;
     auto iterator = relative.begin();
     for (; iterator != relative.end(); ++iterator) {
