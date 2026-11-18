@@ -819,6 +819,65 @@ void capacity() {
             return (piezas + 3) / 4 + (capacidad + capacidad);
         })cpp",rules,true,
         "Adding two positive references is not a cancellation");
+    // The left operand of a built-in comma expression is discarded. Two
+    // appearances cannot satisfy minUses=2 when only one reaches the
+    // returned value. This must not confuse a function-call argument list.
+    for(const auto* discarded:{
+            "(capacidad, capacidad)",
+            "(capacidad + capacidad, 0)",
+            "(capacidad, capacidad + 0)",
+            "(capacidad, capacidad, 0)",
+            "(capacidad, (capacidad))"}) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(discarded)+"; }",
+            rules,false,"Discarded pure comma operand manufactured rule uses");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return capacidad, capacidad;
+        })cpp",rules,false,
+        "A direct return comma expression must count only the final named value");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return capacidad + capacidad, 0;
+        })cpp",rules,false,
+        "Both named references before an unparenthesized return comma are discarded");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int ajuste = (capacidad + capacidad, 0);
+            return (piezas + 3) / 4 + ajuste;
+        })cpp",rules,false,
+        "An alias of a discarded expression must not create two rule uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (capacidad, (piezas + capacidad - 1) / capacidad);
+        })cpp",rules,true,
+        "An unused comma operand must not erase two productive references");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad + (capacidad, 0);
+        })cpp",rules,true,
+        "A harmless discarded comma operand must not erase a correct computation");
+    verify(R"cpp(
+        int elegir(int a, int b) { return a + b; }
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return elegir(capacidad, capacidad);
+        })cpp",rules,true,
+        "Function argument separators cannot be interpreted as the comma operator");
+    verify(R"cpp(
+        #include <array>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return std::array{capacidad, capacidad}[0];
+        })cpp",rules,true,
+        "Braced initializer separators cannot be interpreted as the comma operator");
+
 
 
     verify(R"cpp(
