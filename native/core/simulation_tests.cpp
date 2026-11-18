@@ -280,6 +280,101 @@ void previous_maximum_decision_explanations() {
         "Empty labels or stable text order changed the actual previous maximum");
 }
 
+void validated_simulation_session() {
+    auto authored = example();
+    authored.values = integers({7,3,7,2});
+    authored.scenarios = {{"empty","Sin datos",{}},
+        {"tie","Repeticiones",integers({4,1,4,1})}};
+    const auto original = authored;
+    const auto expected = build_simulation_trace(original);
+    SimulationSession session(authored);
+    check(session.specification()==original,
+        "The validated session did not keep its immutable authored contract");
+    check(session.take_initial_trace()==expected,
+        "Transferring the initial trace changed its calculated groups or original positions");
+    rejected([&] { (void)session.take_initial_trace(); },
+        "An already transferred initial trace was allowed to be reused");
+
+    // The UI may outlive the caller's original specification. The snapshot
+    // retains previously authenticated text, scenarios, and answer-free data.
+    authored.values = integers({-9});
+    authored.scenarios[0].values = {std::string("incompatible")};
+    rejected([&] { validate_simulation_spec(authored); },
+        "The independent strict entry point failed to reject a mutated scenario");
+    check(session.specification()==original,
+        "Mutating the external authoring source changed the validated session");
+
+    for(const auto& edited : {integers({2,9,2}),integers({}),
+            integers({3,3,3,3}),integers({4,1,4,1})}){
+        const auto strict=build_simulation_trace(original,edited);
+        const auto cached=session.build_trace(edited);
+        check(cached==strict && cached.original==edited,
+            "An edited/scenario trace differs from the strict full-validation path");
+    }
+    for(const auto* input : {"", "2\n9\n2", "4\r\n1\r\n4\r\n1\r\n", "-2147483648\n2147483647"}){
+        check(session.parse_values(input)==simulation_parse_input(original,input) &&
+            session.parse_trace(input)==simulation_parse_input_trace(original,input),
+            "Parsed editable integers differ between validated and stateless paths");
+    }
+    for(const auto* invalid : {"\n","2\n\n9","2147483648","1.0","-2147483649"}){
+        rejected([&] { (void)session.parse_values(invalid); },
+            "The validated session accepted an invalid integer draft");
+        rejected([&] { (void)session.parse_trace(invalid); },
+            "The validated session accepted an invalid integer trace");
+    }
+    rejected([&] { (void)session.parse_trace("[]",SimulationInputFormat::json); },
+        "A validated numeric session accepted JSON text mode");
+    rejected([&] { (void)session.build_trace(words({"2"})); },
+        "The validated session accepted a different data type");
+    rejected([&] { (void)session.build_trace(integers({2147483648LL})); },
+        "The validated session accepted an integer outside 32 bits");
+
+    auto text=example();
+    text.text_values=true;
+    text.values=words({"patio","","patio"});
+    text.scenarios={{"empty","Vacío",{}},
+        {"space","Cadena vacía y espacio",words({""," "})}};
+    const auto original_text=text;
+    SimulationSession words_session(text);
+    check(words_session.take_initial_trace()==build_simulation_trace(original_text),
+        "A text session lost empty-string grouping or stable UTF-8 provenance");
+    text.values=words({"otro"});
+    text.scenarios.front().values={std::int64_t{1}};
+    rejected([&]{validate_simulation_spec(text);},
+        "A forged source mutation was accepted by the strict text contract");
+    for(const auto* draft : {"[]",R"([""])",R"(["patio", "", "patio"])",R"(["", " "])"}){
+        const auto values=words_session.parse_values(draft,SimulationInputFormat::json);
+        check(values==simulation_parse_input(original_text,draft,SimulationInputFormat::json) &&
+            words_session.parse_trace(draft,SimulationInputFormat::json)==
+                build_simulation_trace(original_text,values),
+            "The validated text list lost its empty/space distinctions");
+    }
+    for(const auto* invalid : {R"(["a",])",R"(["\u0000"])",R"(["\n"])",
+            R"(["patio", ""])") {
+        rejected([&]{(void)words_session.parse_values(invalid,SimulationInputFormat::json);},
+            "A reusable text session accepted a forbidden JSON draft");
+    }
+    rejected([&]{(void)words_session.build_trace(integers({1}));},
+        "The reusable text session accepted numeric data");
+    auto untrusted=original_text;
+    untrusted.scenarios.front().values={std::int64_t{1}};
+    rejected([&]{(void)SimulationSession(untrusted);},
+        "A session was created from a contract with a malformed future scenario");
+
+    auto sorted=example();
+    sorted.sort=false;
+    sorted.values=integers({1,1,2});
+    sorted.scenarios.clear();
+    SimulationSession ordered(sorted);
+    check(ordered.take_initial_trace().source_indices==
+            std::vector<std::size_t>{0,1,2},
+        "A preordered session changed its original positions");
+    rejected([&]{(void)ordered.build_trace(integers({2,1}));},
+        "A session bypassed the authored sort=false ordering contract");
+    rejected([&]{(void)ordered.parse_values("2\n1");},
+        "The reusable line parser accepted data out of order");
+}
+
 void boundary_states() {
     auto spec = example();
     const auto empty = build_simulation_trace(spec);
@@ -864,6 +959,7 @@ int main() {
         counted_source_positions_and_templates();
         processed_remaining_counts();
         previous_maximum_decision_explanations();
+        validated_simulation_session();
         boundary_states();
         replay_inputs_and_accessibility();
         empty_text_values_and_labels();
