@@ -810,7 +810,33 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     // An inner declaration with the same spelling as the required rule
     // temporarily hides the outer rule; it does not invalidate that rule.
     std::vector<std::size_t> named_rule_shadows;
+    bool declared=false;
+    std::size_t nesting=0;
+    const auto unsafe_alias_call=[&](std::size_t first,std::size_t last) {
+        // For result aliases, a call may write through an int& or int*.
+        // An inner shadow dies when its block ends and must not revoke the
+        // value of a distinct, still-live outer alias.
+        for(auto at=first;at+1<last;++at) {
+            if(!op(t[at+1],"("))continue;
+            const bool call=(t[at].starts_with("id:")&&
+                !id(t[at],"sizeof")&&!id(t[at],"decltype")&&
+                !id(t[at],"noexcept")&&!id(t[at],"typeid"))||
+                op(t[at],")")||op(t[at],"]");
+            if(!call)continue;
+            const auto end=closing(t,at+1,"(",")");
+            if(!end||*end>=last)continue;
+            for(auto arg=at+2;arg<*end;++arg) {
+                if(!t[arg].starts_with("id:"))continue;
+                const auto found=std::find_if(aliases.rbegin(),aliases.rend(),
+                    [&](const Alias& alias){return id(t[arg],alias.name);});
+                if(found!=aliases.rend()&&
+                   (nesting==0||found->depth<nesting))return true;
+            }
+        }
+        return false;
+    };
     const auto uses=[&](std::size_t first,std::size_t last) {
+        if(unsafe_alias_call(first,last))return std::size_t{0};
         std::size_t count=0;
         for(auto i=first;i<last;++i) {
             if(absorbed_by_boolean_literal(t,i,first,last)||
@@ -841,8 +867,6 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         return (value&&*value==0)||
             (first+1==last&&id(t[first],"false"));
     };
-    bool declared=false;
-    std::size_t nesting=0;
     // A conditional branch that computes a nontrivial result is part of
     // the function's contract even when a later unconditional return uses
     // the named constant correctly. Keep the weakest live return path.
@@ -1214,6 +1238,14 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             // from a correct but later fallthrough.
             if(nesting)return 0;
             return include_prior(result_uses);
+        }
+        // The earlier guarded-if check cannot cover a straight-line call.
+        // A passed result alias may be replaced without an assignment in
+        // this function (for example, swap(result, hardcoded)).
+        if(i+1<bounds.close&&op(t[i+1],"(")&&
+           (t[i].starts_with("id:")||op(t[i],")")||op(t[i],"]"))) {
+            const auto end=closing(t,i+1,"(",")");
+            if(end&&unsafe_alias_call(i,*end+1))return 0;
         }
         auto start=i;
         if(id(t[start],"const")||id(t[start],"constexpr"))++start;
