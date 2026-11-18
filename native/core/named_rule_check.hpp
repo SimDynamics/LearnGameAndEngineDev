@@ -819,7 +819,14 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         // value of a distinct, still-live outer alias.
         for(auto at=first;at+1<last;++at) {
             if(!op(t[at+1],"("))continue;
-            const bool call=(t[at].starts_with("id:")&&
+            // A built-in functional cast observes the value but cannot
+            // mutate the original int through a non-const reference.
+            const bool value_cast=id(t[at],"int")||id(t[at],"long")||
+                id(t[at],"short")||id(t[at],"bool")||
+                id(t[at],"char")||id(t[at],"float")||
+                id(t[at],"double")||id(t[at],"unsigned")||
+                id(t[at],"signed");
+            const bool call=(t[at].starts_with("id:")&&!value_cast&&
                 !id(t[at],"sizeof")&&!id(t[at],"decltype")&&
                 !id(t[at],"noexcept")&&!id(t[at],"typeid"))||
                 op(t[at],")")||op(t[at],"]");
@@ -984,7 +991,14 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         };
         for(auto at=statement;at<=*last;++at) {
             if(op(t[at],"(")) {
-                const bool call=at>statement&&
+                // int copia(resultado) is direct initialization of a local,
+                // not a call that could modify the source result by reference.
+                const bool local_initializer=at>=statement+2&&
+                    (id(t[at-2],"int")||id(t[at-2],"auto")||
+                     (at>=statement+3&&
+                      (id(t[at-2],"const")||id(t[at-2],"constexpr"))&&
+                      (id(t[at-3],"int")||id(t[at-3],"auto"))));
+                const bool call=at>statement&&!local_initializer&&
                     ((t[at-1].starts_with("id:")&&!unevaluated(at-1))||
                      op(t[at-1],")")||op(t[at-1],"]"));
                 parentheses.push_back(call);
