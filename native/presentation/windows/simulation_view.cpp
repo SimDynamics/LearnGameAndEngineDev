@@ -840,8 +840,14 @@ struct SimulationView::Impl {
         if(after.phase==SimulationPhase::start||after.phase==SimulationPhase::advance){
             const auto observed=after.end-1;
             const auto& current_value=trace.ordered.at(observed);
-            changes.push_back("Dato contado: índice "+std::to_string(observed)+" = "+
-                simulation_value_display_text(current_value));
+            std::string observation="Dato contado: índice "+std::to_string(observed)+" = "+
+                simulation_value_display_text(current_value);
+            // If sorting moved this item, state its original array position
+            // in the SAME dynamic explanation read by Windows narration.
+            // Preserve the sorted index for adjacent-value comparisons.
+            if(!source_positions.empty())
+                observation+=" (origen índice "+std::to_string(source_positions.at(observed))+")";
+            changes.push_back(std::move(observation));
             if(observed==0){
                 changes.push_back("Primera posición: el índice 0 no tiene un elemento anterior.");
             }else{
@@ -907,8 +913,9 @@ struct SimulationView::Impl {
         set_label(description_id,spec.description,RichTextRole::body,semantic("/description"));
         set_label(scenario_label_id,"Escenario");
         const auto original=original_order_text();
+        const auto elements=trace.ordered.size();
         set_label(array_label_id,spec.labels.array+(original.empty()?"":" · copia ordenada")+
-            " · "+std::to_string(trace.ordered.size())+" elementos");
+            " · "+std::to_string(elements)+(elements==1?" elemento":" elementos"));
         // This source comparison remains the same across all steps of one
         // trace. Streaming it again on every Next/Previous loses the student's
         // native RichEdit selection and the line they were examining.
