@@ -843,8 +843,24 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         }
         return false;
     };
+    // The RHS of >> can be an int& receiving data from a stream. A
+    // candidate's source proof cannot assume a shift rather than extraction
+    // when the C++ type of the left operand is not known lexically.
+    const auto extracted_alias=[&](std::size_t first,std::size_t last) {
+        for(auto at=first;at<last;++at) {
+            if(!t[at].starts_with("id:"))continue;
+            auto operand=at;
+            while(operand>first&&op(t[operand-1],"("))--operand;
+            if(operand==first||!op(t[operand-1],">>"))continue;
+            if(std::ranges::any_of(aliases,[&](const Alias& alias){
+                return id(t[at],alias.name);
+            }))return true;
+        }
+        return false;
+    };
     const auto uses=[&](std::size_t first,std::size_t last) {
-        if(unsafe_alias_call(first,last))return std::size_t{0};
+        if(unsafe_alias_call(first,last)||extracted_alias(first,last))
+            return std::size_t{0};
         std::size_t count=0;
         for(auto i=first;i<last;++i) {
             if(absorbed_by_boolean_literal(t,i,first,last)||
@@ -1261,6 +1277,18 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             if(nesting)return 0;
             return include_prior(result_uses);
         }
+        // An input expression such as stream >> result is an observable
+        // write even though it has no assignment operator or function-call
+        // parentheses in the student's source. Invalidate only this alias:
+        // an unrelated genuine returned calculation remains acceptable.
+        if(t[i].starts_with("id:")&&extracted_alias(i?i-1:0,i+1)) {
+            const auto found=std::find_if(aliases.rbegin(),aliases.rend(),
+                [&](const Alias& alias){return id(t[i],alias.name);});
+            if(found!=aliases.rend()){
+                found->count=0;
+                found->zero=false;
+            }
+        }
         // A reference/pointer to the result also allows later writes
         // through a different name; such an escape cannot be credited by
         // the simple lexical dependency proof.
@@ -1327,7 +1355,8 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                 // An initializer that forwards the result to a function
                 // can have side effects even when the intermediate is never
                 // returned. Do not silently discard that mutation.
-                if(unsafe_alias_call(initializer+1,last))return 0;
+                if(unsafe_alias_call(initializer+1,last)||
+                   extracted_alias(initializer+1,last))return 0;
                 const auto count=uses(initializer+1,last);
                 const auto zero=zero_expression(
                     op(t[initializer],"=")?initializer+1:initializer,last);
@@ -1367,7 +1396,8 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             auto last=i+2;
             while(last<bounds.close&&!op(t[last],";"))++last;
             if(local==name)return 0;
-            if(unsafe_alias_call(i+2,last))return 0;
+            if(unsafe_alias_call(i+2,last)||
+               extracted_alias(i+2,last))return 0;
             const auto count=uses(i+2,last);
             const auto zero=zero_expression(i+2,last);
             // Assignments target the nearest in-scope declaration.
