@@ -385,8 +385,12 @@ respuestas y sus identidades. La regresión usa los `slots` JSON que realmente
 guarda `CppFillView`, no `Response.order` (reservado a `order_code`).
 También protege la evaluación de las tres fichas, los distractores, los
 intentos incorrectos revisados, sus metadatos y los logros previos sin
-conceder aciertos nuevos. En ambos cargadores Windows rechaza ocho variantes
-con marcas ausentes o adulteradas, respuestas cambiadas o tokens sustituidos.
+conceder aciertos nuevos. En ambos cargadores Windows rechaza diez variantes:
+ocho con marcas ausentes o adulteradas, respuestas cambiadas o tokens
+sustituidos y dos con prosa compuesta únicamente por espacios Unicode.
+Los dos últimos casos incluyen NEL (U+0085), con huellas y descriptores
+coherentes para comprobar específicamente el rechazo de una explicación
+opcional o una pregunta reformulada sin contenido significativo.
 Se incluye en ReaderBuild y en la construcción completa de
 pruebas mediante CTest, sin cambiar recursos curriculares de Work. Estas
 regresiones están **preparadas, no ejecutadas en el PC Windows autorizado**;
