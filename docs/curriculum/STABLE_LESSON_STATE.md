@@ -253,7 +253,7 @@ Para realizar únicamente estas tres comprobaciones en el checkout
 físico y autorizado `LearnGameAndEngineDev-Codex` de Windows, usar:
 
 ```powershell
-& '.\\scripts\\windows\\Test-GeneralChoiceEditorial.ps1' -Preset windows-x64-debug
+& '.\scripts\windows\Test-GeneralChoiceEditorial.ps1' -Preset windows-x64-debug
 ```
 
 El script exige la rama local `Codex`, crea sólo los ejecutables
