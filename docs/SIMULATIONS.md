@@ -227,6 +227,13 @@ conservan los datos, la selección de formato y cualquier paso anidado válido.
 Si la entrada era inválida, su diagnóstico conserva prioridad aunque también
 falle la notificación. La regresión Win32
 `input_format_callback_failure_keeps_converted_draft` cubre ambos casos.
+Si RichEdit también rechaza el segundo intento de presentar el aviso después
+de recuperar el formato anterior, se conserva el diagnóstico original mediante
+el control Win32, incluido el nombre accesible y el texto de narración. El
+borrador y la selección anterior deben seguir disponibles, y la siguiente
+conversión válida puede repetirse sin alterar el recorrido aplicado. La
+regresión Windows `input_format_rejection_survives_repeated_richedit_failure`
+cubre los dos rechazos nativos consecutivos; requiere ejecución local.
 Un rechazo silencioso de escritura
 o un fallo tardío de presentación restablecen formato, borrador, selección,
 posición de lectura y ayuda anteriores sin modificar la traza aplicada.
