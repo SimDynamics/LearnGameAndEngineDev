@@ -2454,9 +2454,45 @@ SimulationView::SimulationView(HWND parent,const curriculum::SimulationSpec& spe
 SimulationView::~SimulationView()=default;
 HWND SimulationView::window()const{return impl_->host;}
 int SimulationView::height_for_width(int width){return impl_->measured_height(width);}
-void SimulationView::set_text_scale(int percentage){percentage=std::clamp(percentage,25,150);if(percentage==impl_->scale)return;
+void SimulationView::set_text_scale(int percentage) {
+    percentage=std::clamp(percentage,25,150);
+    if(percentage==impl_->scale)return;
     Impl::SimulationReadingRestorer reading{*impl_};
-    impl_->fonts(false,percentage);impl_->update();}
+    const auto previous_scale=impl_->scale;
+    const auto previous_input_wheel=impl_->input_wheel_delta;
+    const auto previous_frequency_wheel=impl_->frequency_wheel_remainder;
+    // A data editor may have a separate Ctrl+wheel zoom. The reader zoom
+    // normally overrides it, but an unsuccessful transaction must restore
+    // the exact native fraction instead of assuming the old reader scale.
+    const auto editor=impl_->item(input_id);
+    int editor_numerator=0,editor_denominator=0;
+    if(editor&&IsWindow(editor))
+        SendMessageW(editor,EM_GETZOOM,
+            reinterpret_cast<WPARAM>(&editor_numerator),
+            reinterpret_cast<LPARAM>(&editor_denominator));
+    impl_->fonts(false,percentage);
+    try {
+        impl_->update();
+    }catch(...){
+        const auto failure=std::current_exception();
+        // Font staging already rolled back if it threw. Here the fonts
+        // succeeded, but a later RichEdit stream, zoom or layout rejected
+        // the new presentation. Recover the old scale and model view before
+        // the caller reports the original failure.
+        try{
+            impl_->fonts(false,previous_scale);
+            if(editor&&IsWindow(editor)&&editor_numerator>0&&editor_denominator>0&&
+                    !SendMessageW(editor,EM_SETZOOM,editor_numerator,editor_denominator))
+                throw std::runtime_error("RichEdit no pudo restaurar el zoom del editor.");
+            impl_->input_wheel_delta=previous_input_wheel;
+            impl_->frequency_wheel_remainder=previous_frequency_wheel;
+            impl_->update();
+        }catch(...){
+            OutputDebugStringW(L"No se pudo reconstruir completamente la escala previa de simulación.\n");
+        }
+        std::rethrow_exception(failure);
+    }
+}
 std::size_t SimulationView::step_index()const{return impl_->position;}
 std::size_t SimulationView::step_count()const{return impl_->count();}
 bool SimulationView::go_to_step(std::size_t index){return impl_->go(index);}
