@@ -1059,6 +1059,39 @@ EditionIndex read_edition_index(const std::filesystem::path& path) {
     if (source.starts_with("\xEF\xBB\xBF")) source.erase(0, 3);
     return {JsonObject::Parse(key(source)), std::move(source)};
 }
+void require_physical_course_edition_asset(
+        const std::filesystem::path& content_root,
+        const std::filesystem::path& resource) {
+    // The publication gate checks physical files from the repository root.
+    // At runtime the content root is the trustworthy boundary we can derive
+    // from an authored lesson. Never follow a link/junction below that root.
+    const auto root = content_root.lexically_normal();
+    const auto relative = resource.lexically_normal().lexically_relative(root);
+    require(!relative.empty() && !relative.is_absolute() &&
+            relative != std::filesystem::path(L"."),
+        "A course-edition resource must be inside its content directory");
+    for (const auto& component : relative)
+        require(component != L"." && component != L"..",
+            "A course-edition resource cannot escape its content directory");
+
+    const auto physical = [](const std::filesystem::path& current, bool directory) {
+        const auto flags = GetFileAttributesW(current.c_str());
+        require(flags != INVALID_FILE_ATTRIBUTES,
+            "A course-edition resource or directory is unavailable");
+        require((flags & FILE_ATTRIBUTE_REPARSE_POINT) == 0,
+            "A course-edition resource cannot use a symbolic link or junction");
+        require(((flags & FILE_ATTRIBUTE_DIRECTORY) != 0) == directory,
+            "A course-edition resource has an unexpected file type");
+    };
+    physical(root, true);
+    auto current = root;
+    auto iterator = relative.begin();
+    for (; iterator != relative.end(); ++iterator) {
+        current /= *iterator;
+        const auto next = std::next(iterator);
+        physical(current, next != relative.end());
+    }
+}
 void validate_course_edition_file(const std::filesystem::path& path, const Lesson& lesson) {
     // Legacy translated assets retain their historical per-file ES fallback,
     // including existing files outside the new Spanish edition's active index.
@@ -1078,7 +1111,13 @@ void validate_course_edition_file(const std::filesystem::path& path, const Lesso
         require(lesson.id.starts_with(unit_id + "__") &&
                 path.filename().string() == "lesson_" + lesson.id.substr(unit_id.size() + 2) + ".json",
             "Course-edition lesson file does not match its published identity");
-        const auto course = read_edition_index(course_folder / ("course_" + edition.course_id + ".json"));
+        const auto root = course_folder.parent_path().parent_path().parent_path();
+        const auto course_path = course_folder / ("course_" + edition.course_id + ".json");
+        const auto unit_path = unit_folder / ("unit_" + unit_slug + ".json");
+        require_physical_course_edition_asset(root, path);
+        require_physical_course_edition_asset(root, course_path);
+        require_physical_course_edition_asset(root, unit_path);
+        const auto course = read_edition_index(course_path);
         require(text(course.object, "id") == edition.course_id &&
                 read_course_edition(course.object, edition.locale, course.source) == lesson.course_edition,
             "Lesson edition differs from its active course index");
@@ -1089,7 +1128,7 @@ void validate_course_edition_file(const std::filesystem::path& path, const Lesso
                 "Course edition contains a mixed or duplicated unit identity");
         }
         require(units.contains(unit_id), "Course-edition unit is not active in its course index");
-        const auto unit = read_edition_index(unit_folder / ("unit_" + unit_slug + ".json"));
+        const auto unit = read_edition_index(unit_path);
         require(text(unit.object, "courseId") == edition.course_id && text(unit.object, "unitId") == unit_id &&
                 read_course_edition(unit.object, edition.locale, unit.source) == lesson.course_edition,
             "Lesson edition differs from its active unit index");
