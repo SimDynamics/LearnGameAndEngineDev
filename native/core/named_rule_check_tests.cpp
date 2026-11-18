@@ -739,6 +739,51 @@ void capacity() {
             const int capacidad{4};
             return (piezas + 3) / 4 + (capacidad - capacidad);
         })cpp",rules,false,"A self-cancelling subtraction does not use the capacity");
+    // Extra parentheses do not turn a neutral expression into an actual
+    // dependency on the four-place agreement. Each case has two lexical
+    // occurrences that can otherwise satisfy the min_uses=2 source gate.
+    for(const auto* neutral:{
+            "(capacidad - (capacidad))",
+            "((capacidad) - ((capacidad)))",
+            "(capacidad / (capacidad))",
+            "((capacidad) % capacidad)"}) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
+            rules,false,"Parenthesized self-cancellation is not a productive constant use");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return capacidad - (capacidad);
+        })cpp",rules,false,
+        "A complete unparenthesized return must not credit two cancelled uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int ajuste = capacidad - (capacidad);
+            return (piezas + 3) / 4 + ajuste + ajuste;
+        })cpp",rules,false,
+        "An alias of a neutral subtraction cannot launder two fake uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad - (capacidad));
+        })cpp",rules,true,
+        "A neutral subexpression must not suppress two genuine independent uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 + (capacidad - (capacidad * 2));
+        })cpp",rules,true,
+        "A non-neutral subtraction keeps its two real uses for the independent runtime probe");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 + ((capacidad + 1) / capacidad);
+        })cpp",rules,true,
+        "A quotient of different expressions must not be mistaken for a neutral pair");
+
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
