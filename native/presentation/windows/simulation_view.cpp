@@ -848,6 +848,14 @@ struct SimulationView::Impl {
             if(!source_positions.empty())
                 observation+=" (origen índice "+std::to_string(source_positions.at(observed))+")";
             changes.push_back(std::move(observation));
+            // The current run contains exactly [begin,end). The exclusive
+            // boundary is not read as an array element; subtracting begin
+            // from end counts only the observations in THIS run. Build the
+            // explanation from the calculated frame, not authored prose.
+            changes.push_back("Recuento de este grupo: fin exclusivo "+
+                std::to_string(after.end)+" - inicio "+
+                std::to_string(after.begin)+" = "+std::to_string(after.frequency)+
+                (after.frequency==1?" elemento contado.":" elementos contados."));
             if(observed==0){
                 changes.push_back("Primera posición: el índice 0 no tiene un elemento anterior.");
             }else{
