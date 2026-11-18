@@ -241,22 +241,22 @@ def _course_path_parts(relative):
 
 
 def _edition_file(repository, relative, role):
-    """Require a real indexed asset, not a link in any ancestor directory.
+    """Require a real edition asset, not a link in any ancestor directory.
 
-    Merely checking the file and its immediate parent does not catch a
-    same-course alias through the course, locale, or content directory.
-    Windows directory junctions need the same protection as symlinks.
+    Both active and preserved historical resources must remain physical files
+    under the same repository tree. A symlink or Windows junction through an
+    ancestor is not equivalent to retaining that published resource.
     """
     relative = PurePosixPath(relative)
     require(not relative.is_absolute() and ".." not in relative.parts,
-            "Unsafe active edition asset path")
+            "Unsafe edition asset path")
     path = repository
     for part in relative.parts:
         path = path / part
         junction = getattr(path, "is_junction", None)
         require(not path.is_symlink() and not (junction is not None and junction()),
-                f"An active edition {role} cannot use a symbolic alias or junction")
-    require(path.is_file(), f"Missing active edition {role}: {relative.as_posix()}")
+                f"An edition {role} cannot use a symbolic alias or junction")
+    require(path.is_file(), f"Missing edition {role}: {relative.as_posix()}")
     return path
 
 
@@ -342,9 +342,14 @@ def check_repository(repository, commit, *, documents=None):
         prefix = PurePosixPath(relative).parent.as_posix() + "/"
         for path in sorted(previous_paths):
             if path.startswith(prefix) and path != relative and (advanced or path not in paths.values()):
+                # The bytes alone do not prove preservation if an ancestor is
+                # now a symlink/junction. Apply the same physical-path check
+                # used for active edition units and lessons.
                 existing = repository / path
-                require(existing.is_file() and not existing.is_symlink()
-                        and existing.read_bytes() == _git_bytes(repository, commit, path),
+                require(existing.is_file(),
+                        "A course edition must retain its previous resources intact: " + path)
+                retained = _edition_file(repository, path, "historical resource")
+                require(retained.read_bytes() == _git_bytes(repository, commit, path),
                         "A course edition must retain its previous resources intact: " + path)
         active_paths.update(paths.values())
     # Any new descriptor needs an index, including metadata omitted from an active
@@ -360,8 +365,10 @@ def check_repository(repository, commit, *, documents=None):
         if not is_lesson:
             unit_slug(identity, value)
         if relative not in active_paths:
-            require(relative in previous_paths
-                    and path.read_bytes() == _git_bytes(repository, commit, relative),
+            require(relative in previous_paths,
+                    "An edition resource must be active or an unchanged historical resource: " + relative)
+            retained = _edition_file(repository, relative, "inactive historical resource")
+            require(retained.read_bytes() == _git_bytes(repository, commit, relative),
                     "An edition resource must be active or an unchanged historical resource: " + relative)
     return {"course_edition_boundaries": boundaries, "active_edition_resources": sorted(active_paths)}
 
