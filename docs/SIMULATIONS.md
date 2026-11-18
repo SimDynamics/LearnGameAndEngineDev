@@ -825,6 +825,19 @@ compara `3` con `3` y mantiene el mismo grupo. Sólo se consultan los
 `datos[end]`. Las cadenas vacías y los espacios conservan su
 representación explícita entre comillas.
 
+Si la copia ordenada cambió el orden de los datos, la comparación de
+vecinos incluye otra línea: **Procedencia de la comparación**. Distingue
+la posición **ordenada** y la posición **original** de ambos elementos
+que ya se contaron. Con `[7, 3, 7, 2]`, la comparación de las posiciones
+ordenadas 2 y 3 enfrenta dos valores `7` procedentes de las posiciones
+originales 0 y 2; no son un único elemento repetido por el renderizador.
+La línea no aparece cuando la entrada ya estaba ordenada, ni al cerrar
+un grupo, ni en el paso inicial o final. La narración utiliza el mismo
+texto, sin anticipar el siguiente elemento. La regresión Win32
+`neighboring_values_explain_group_boundaries` cubre valores numéricos,
+etiquetas vacías y repetidas, escenarios, datos editados y lectura
+accesible; su ejecución nativa en Windows sigue pendiente.
+
 Al terminar cada grupo, el panel
 también muestra la comparación efectiva entre su frecuencia y el
 **máximo anterior a la decisión**: `>` reemplaza candidatos, `=` agrega
