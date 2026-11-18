@@ -33,10 +33,13 @@ void rejected_change(std::string_view original,
         const std::function<void(JsonObject)>& change,std::string_view reason) {
     auto root=JsonObject::Parse(winrt::to_hstring(original));
     change(root);
-    bool rejected=false;
-    try { (void)parse_lesson_json(winrt::to_string(root.Stringify()),"es"); }
-    catch(const std::exception&) {rejected=true;}
-    require(rejected,reason);
+    const auto bytes=winrt::to_string(root.Stringify());
+    bool rejected_full=false,rejected_progress=false;
+    try { (void)parse_lesson_json(bytes,"es"); }
+    catch(const std::exception&) {rejected_full=true;}
+    try { (void)parse_lesson_progress_metadata(bytes,"es"); }
+    catch(const std::exception&) {rejected_progress=true;}
+    require(rejected_full&&rejected_progress,reason);
 }
 }
 
@@ -249,6 +252,16 @@ int main(int argc,char** argv) {
                 unmarked_receipt&&unmarked_receipt->correct&&
                 unmarked_receipt->selected==0,
             "Adding semantic marks to an unmarked option invalidated old response credit");
+
+        rejected_change(unmarked_bytes,[](JsonObject root) {
+            root.GetNamedObject(L"stateLayout").GetNamedArray(L"choiceRevisions")
+                .GetObjectAt(0).Remove(L"semanticRootBefore");
+        },"An originally unmarked revision omitted its required root provenance");
+        rejected_change(unmarked_bytes,[](JsonObject root) {
+            root.GetNamedObject(L"stateLayout").GetNamedArray(L"choiceRevisions")
+                .GetObjectAt(0).GetNamedObject(L"semanticAfter")
+                .GetNamedArray(L"spans").Clear();
+        },"A newly marked option silently changed its authenticated UTF-16 ranges");
 
         rejected_change(explicit_bytes,[](JsonObject root) {
             root.GetNamedObject(L"stateLayout").GetNamedArray(L"choiceRevisions")
