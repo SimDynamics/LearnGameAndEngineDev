@@ -948,7 +948,22 @@ void expansion_bounds_and_modes() {
     const auto encoded=simulation_input_text(huge,SimulationInputFormat::json);
     rejected([&] { (void)simulation_parse_input_trace(spec,encoded,SimulationInputFormat::json); },
         "Reusable parsed trace bypassed the 8 MiB expansion limit");
-    check(spec == original, "Rejected expansion modified the authored model");
+    // A cached/validated native session must retain the SAME bound when
+    // applying data or merely converting a pending draft to another format.
+    // Skipping unchanged authored-scenario revalidation may never skip the
+    // new edited trace's 8 MiB budget or accept a half-updated view.
+    SimulationSession session(spec);
+    const auto initial=session.take_initial_trace();
+    check(initial==build_simulation_trace(original),
+        "A cached session changed the initial large-template contract");
+    rejected([&] { (void)session.build_trace(huge); },
+        "A cached session bypassed the 8 MiB bound on edited data");
+    rejected([&] { (void)session.parse_trace(encoded,SimulationInputFormat::json); },
+        "A cached session bypassed the 8 MiB bound on applied input");
+    rejected([&] { (void)session.parse_values(encoded,SimulationInputFormat::json); },
+        "Format conversion accepted a draft whose resulting trace exceeds 8 MiB");
+    check(session.specification()==original&&spec==original,
+        "Rejecting a large draft changed validated authoring or source state");
 }
 } // namespace
 
