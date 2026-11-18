@@ -190,6 +190,56 @@ void counted_observation_changes_are_portable() {
         "Portable count narration mutated authored data or the calculated trace");
 }
 
+void calculated_group_decisions_are_portable() {
+    auto spec=example();
+    spec.values=integers({-8,3,3,3,3,10});
+    const auto authored=spec;
+    const auto trace=build_simulation_trace(spec);
+    const auto statement=[&](std::size_t frame) {
+        return simulation_group_decision_comparison(
+            spec,trace.frames.at(frame-1),trace.frames.at(frame));
+    };
+    check(statement(2)=="Comparación: Frecuencia 1 > Máxima anterior 0. Nuevo máximo: reemplaza candidatos."&&
+          statement(7)=="Comparación: Frecuencia 4 > Máxima anterior 1. Nuevo máximo: reemplaza candidatos."&&
+          statement(9)=="Comparación: Frecuencia 1 < Máxima anterior 4. No supera el máximo: conserva los candidatos.",
+        "The decision narrated the already updated maximum instead of the previous one");
+    check(simulation_group_decision_comparison(spec,trace.frames.front(),trace.frames.at(2))==statement(2)&&
+          simulation_group_decision_comparison(spec,trace.frames.at(2),trace.frames.at(7))==statement(7)&&
+          simulation_group_decision_comparison(spec,trace.frames.at(7),trace.frames.at(9))==statement(9),
+        "Grouped presentation compared the wrong completed group's former maximum");
+    check(statement(1).empty()&&statement(3).empty()&&
+          statement(4).empty()&&statement(10).empty(),
+        "A counted observation or terminal frame fabricated a group decision");
+
+    auto tie_spec=example();tie_spec.values=integers({9,4,9,4});
+    const auto tie=build_simulation_trace(tie_spec);
+    check(tie.candidate_frames==std::vector<std::size_t>{3,6}&&
+          simulation_group_decision_comparison(tie_spec,tie.frames.at(5),tie.frames.at(6))==
+              "Comparación: Frecuencia 2 = Máxima anterior 2. Empate: agrega el valor a los candidatos."&&
+          simulation_group_decision_comparison(tie_spec,tie.frames.at(3),tie.frames.at(6))==
+              "Comparación: Frecuencia 2 = Máxima anterior 2. Empate: agrega el valor a los candidatos.",
+        "A tie failed to retain both candidates or used the wrong maximum for a grouped jump");
+    auto custom=spec;
+    custom.labels.frequency="Apariciones";
+    custom.labels.maximum="Récord";
+    check(simulation_group_decision_comparison(custom,trace.frames.at(6),trace.frames.at(7))==
+          "Comparación: Apariciones 4 > Récord anterior 1. Nuevo máximo: reemplaza candidatos.",
+        "The portable group decision ignored the authored labels");
+
+    auto invalid=trace.frames.at(7);
+    invalid.frequency=1;
+    rejected([&]{(void)simulation_group_decision_comparison(spec,trace.frames.at(6),invalid);},
+        "A forged decision with inconsistent group frequency was narrated");
+    invalid=trace.frames.at(7);invalid.maximum=99;
+    rejected([&]{(void)simulation_group_decision_comparison(spec,trace.frames.at(6),invalid);},
+        "A decision announcing an unrelated maximum was narrated");
+    invalid=trace.frames.at(7);invalid.phase=SimulationPhase::tie;
+    rejected([&]{(void)simulation_group_decision_comparison(spec,trace.frames.at(6),invalid);},
+        "A fabricated equality with a different prior maximum was narrated");
+    check(spec==authored&&trace==build_simulation_trace(spec),
+        "Decision explanations modified the authored specification or the calculated trace");
+}
+
 void counted_source_positions_and_templates() {
     auto spec = example();
     spec.values = integers({7, 3, 7, 2});
@@ -1143,6 +1193,7 @@ int main() {
         runs_and_completion();
         ties_and_text();
         counted_observation_changes_are_portable();
+        calculated_group_decisions_are_portable();
         counted_source_positions_and_templates();
         processed_remaining_counts();
         previous_maximum_decision_explanations();
