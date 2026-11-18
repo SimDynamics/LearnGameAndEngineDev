@@ -375,6 +375,93 @@ void validated_simulation_session() {
         "The reusable line parser accepted data out of order");
 }
 
+// The reusable native session must behave like the old public APIs for every
+// small edited input, not only for a few hand-picked authored scenarios.
+// Build one valid immutable model and apply hundreds of independent inputs
+// without resetting it, including empty strings and non-ASCII labels.
+void exhaustive_cached_session_replay() {
+    auto numeric=example();
+    numeric.values=integers({-1,0,1});
+    numeric.scenarios={{"empty","Sin elementos",{}},
+        {"tie","Valores empatados",integers({1,-1,1,-1})}};
+    const auto original_numeric=numeric;
+    SimulationSession numbers_session(numeric);
+    check(numbers_session.take_initial_trace()==build_simulation_trace(original_numeric),
+        "A cached numeric session changed the initial authored trace");
+    std::size_t numeric_count=0;
+    for(std::size_t length=0;length<=5;++length){
+        std::size_t combinations=1;
+        for(std::size_t digit=0;digit<length;++digit)combinations*=3;
+        for(std::size_t pattern=0;pattern<combinations;++pattern){
+            std::size_t encoded=pattern;
+            std::vector<SimulationValue> values;
+            for(std::size_t position=0;position<length;++position){
+                values.emplace_back(static_cast<std::int64_t>(encoded%3)-1);
+                encoded/=3;
+            }
+            const auto legacy=build_simulation_trace(original_numeric,values);
+            const auto cached=numbers_session.build_trace(values);
+            const auto literal=simulation_input_text(values);
+            check(cached==legacy&&numbers_session.parse_trace(literal)==legacy&&
+                numbers_session.parse_values(literal)==values,
+                "A cached numeric session reused a prior edit's calculated frames");
+            ++numeric_count;
+        }
+    }
+    check(numeric_count==364&&numbers_session.specification()==original_numeric,
+        "The exhaustive numeric cache test skipped inputs or changed its authored source");
+
+    auto text=example();
+    text.text_values=true;
+    text.values=words({"patio","","patio"});
+    text.scenarios={{"empty","Colección vacía",{}},
+        {"spaces","Cadena vacía y espacio",words({""," "})}};
+    const auto original_text=text;
+    SimulationSession strings_session(text);
+    check(strings_session.take_initial_trace()==build_simulation_trace(original_text),
+        "A cached text session changed the original empty-label grouping");
+    constexpr std::array<std::string_view,4> labels{"", " ", "patio", "á"};
+    std::size_t text_count=0;
+    for(std::size_t length=0;length<=4;++length){
+        std::size_t combinations=1;
+        for(std::size_t digit=0;digit<length;++digit)combinations*=labels.size();
+        for(std::size_t pattern=0;pattern<combinations;++pattern){
+            std::size_t encoded=pattern;
+            std::vector<SimulationValue> values;
+            for(std::size_t position=0;position<length;++position){
+                values.emplace_back(std::string(labels[encoded%labels.size()]));
+                encoded/=labels.size();
+            }
+            const auto legacy=build_simulation_trace(original_text,values);
+            const auto cached=strings_session.build_trace(values);
+            const auto json=simulation_input_text(values,SimulationInputFormat::json);
+            check(cached==legacy&&
+                strings_session.parse_trace(json,SimulationInputFormat::json)==legacy&&
+                strings_session.parse_values(json,SimulationInputFormat::json)==values,
+                "A cached text session merged empty labels or retained a prior origin mapping");
+            ++text_count;
+        }
+    }
+    check(text_count==341&&strings_session.specification()==original_text,
+        "The exhaustive text cache test skipped scenarios or altered its authoring");
+
+    // A rejection must not poison the next valid edit. Also keep the
+    // authoring-bound sort=false invariant even after an invalid attempt.
+    auto ordered=example();
+    ordered.values=integers({-1,0,1});
+    ordered.sort=false;
+    ordered.scenarios.clear();
+    SimulationSession ordered_session(ordered);
+    const auto baseline=ordered_session.take_initial_trace();
+    rejected([&]{(void)ordered_session.parse_trace("2\n1");},
+        "A cached sort=false session accepted unsorted edited input");
+    rejected([&]{(void)ordered_session.build_trace(integers({1,0}));},
+        "A cached session accepted an unsorted direct trace");
+    check(ordered_session.parse_trace("-1\n0\n1")==baseline&&
+        ordered_session.build_trace(integers({-1,0,1}))==baseline,
+        "Rejecting an edit poisoned the valid original sort=false run");
+}
+
 void boundary_states() {
     auto spec = example();
     const auto empty = build_simulation_trace(spec);
@@ -975,6 +1062,7 @@ int main() {
         processed_remaining_counts();
         previous_maximum_decision_explanations();
         validated_simulation_session();
+        exhaustive_cached_session_replay();
         boundary_states();
         replay_inputs_and_accessibility();
         empty_text_values_and_labels();
