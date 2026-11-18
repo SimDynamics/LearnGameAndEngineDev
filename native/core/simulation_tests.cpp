@@ -165,6 +165,64 @@ void counted_source_positions_and_templates() {
         "An empty collection invented a source position or an extra read");
 }
 
+void processed_remaining_counts() {
+    auto spec = example();
+    spec.values = integers({5, 2, 5});
+    spec.explanations.initial = "Contados {processedCount}; faltan {remainingCount} de {size}.";
+    spec.explanations.start = "Posición {countedIndex}, origen {originIndex}: {processedCount} contados, faltan {remainingCount}.";
+    spec.explanations.advance = spec.explanations.start;
+    spec.explanations.new_maximum = "{processedCount} procesados; {remainingCount} por contar; máximo {maximum}.";
+    spec.explanations.done = "Terminados {processedCount}; quedan {remainingCount}.";
+    spec.explanations.empty = "Vacío: {processedCount} procesados y {remainingCount} restantes.";
+    // A group output may report totals already observed, unlike the
+    // per-element source index, which is restricted to count frames.
+    spec.output_template = "{value}:{processedCount}/{remainingCount}";
+    const auto authored = spec;
+    const auto trace = build_simulation_trace(spec);
+    check(trace.ordered == integers({2, 5, 5}) &&
+        trace.source_indices == std::vector<std::size_t>{1, 0, 2} &&
+        trace.frames.size() == 7, "The progress fixture lost the sorted source");
+    check(trace.frames[0].explanation == "Contados 0; faltan 3 de 3." &&
+        trace.frames[1].explanation == "Posición 0, origen 1: 1 contados, faltan 2." &&
+        trace.frames[2].explanation == "1 procesados; 2 por contar; máximo 1." &&
+        trace.frames[3].explanation == "Posición 1, origen 0: 2 contados, faltan 1." &&
+        trace.frames[4].explanation == "Posición 2, origen 2: 3 contados, faltan 0." &&
+        trace.frames[5].explanation == "3 procesados; 0 por contar; máximo 2." &&
+        trace.frames[6].explanation == "Terminados 3; quedan 0.",
+        "The number processed or remaining disagreed with the actual observed range");
+    check(trace.frames[2].output == "2:1/2\n" &&
+        trace.frames[5].output == "2:1/2\n5:3/0\n" &&
+        trace.frames.back().output == trace.frames[5].output,
+        "The calculated stdout used guessed indices or counted a decision as another element");
+    check(spec == authored && build_simulation_trace(spec) == trace,
+        "A second progress trace changed the authored source or calculated totals");
+
+    const auto applied = build_simulation_trace(spec, integers({9, 9, 9}));
+    check(applied.frames[1].explanation ==
+        "Posición 0, origen 0: 1 contados, faltan 2." &&
+        applied.frames[3].explanation ==
+        "Posición 2, origen 2: 3 contados, faltan 0." &&
+        applied.frames.back().output == "9:3/0\n" &&
+        spec == authored,
+        "Editing a dataset borrowed previous progress or source-index values");
+
+    const auto empty = build_simulation_trace(spec, integers({}));
+    check(empty.source_indices.empty() && empty.frames.size() == 1 &&
+        empty.frames.front().explanation == "Vacío: 0 procesados y 0 restantes." &&
+        empty.frames.front().output.empty(),
+        "The zero-element run invented a remaining value or a result line");
+    spec.text_values = true;
+    spec.values = words({"patio", "", "patio"});
+    const auto text = build_simulation_trace(spec);
+    check(text.source_indices == std::vector<std::size_t>{1, 0, 2} &&
+        text.frames[1].explanation ==
+            "Posición 0, origen 1: 1 contados, faltan 2." &&
+        text.frames[4].explanation ==
+            "Posición 2, origen 2: 3 contados, faltan 0." &&
+        text.frames.back().output == ":1/2\npatio:3/0\n",
+        "Empty or repeated text values changed processed counts or raw output");
+}
+
 void boundary_states() {
     auto spec = example();
     const auto empty = build_simulation_trace(spec);
@@ -747,6 +805,7 @@ int main() {
         runs_and_completion();
         ties_and_text();
         counted_source_positions_and_templates();
+        processed_remaining_counts();
         boundary_states();
         replay_inputs_and_accessibility();
         empty_text_values_and_labels();
