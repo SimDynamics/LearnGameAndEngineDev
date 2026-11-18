@@ -42,7 +42,7 @@ void rejected_change(std::string_view original,
 
 int main(int argc,char** argv) {
     try {
-        require(argc==3,"Expected original and generated choice revision JSON paths");
+        require(argc==4,"Expected original, reviewed and synthetic unmarked-predecessor choice JSON paths");
         const auto original=load_lesson(std::filesystem::path(argv[1]),"es");
         const auto revised=load_lesson(std::filesystem::path(argv[2]),"es");
         require(original.id==revised.id&&original.locale=="es"&&
@@ -213,11 +213,11 @@ int main(int argc,char** argv) {
         // A previously unmarked option may acquire a new technical/prose
         // descriptor. Its old reading must remain unmarked, while its proven
         // correct answer and visible new selection survive both loaders.
-        auto unmarked_root=JsonObject::Parse(winrt::to_hstring(explicit_bytes));
-        const auto unmarked_revision=unmarked_root.GetNamedObject(L"stateLayout")
-            .GetNamedArray(L"choiceRevisions").GetObjectAt(0);
-        unmarked_revision.Insert(L"semanticBefore",JsonValue::CreateNullValue());
-        const auto unmarked_bytes=winrt::to_string(unmarked_root.Stringify());
+        // The fixture generator removed the predecessor marker BEFORE
+        // authoring this synthetic variant, and validated its transition.
+        // Never invent missing historical authoring by editing an archive
+        // directly inside the Windows loader test.
+        const auto unmarked_bytes=read_file(std::filesystem::path(argv[3]));
         const auto unmarked_lesson=parse_lesson_json(unmarked_bytes,"es");
         const auto unmarked_progress=parse_lesson_progress_metadata(unmarked_bytes,"es");
         const auto& unmarked_block=unmarked_lesson.pages[position->page].blocks[position->block];
