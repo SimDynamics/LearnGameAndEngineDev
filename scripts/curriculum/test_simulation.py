@@ -421,8 +421,6 @@ class SimulationContractTest(unittest.TestCase):
         expected = sum(len(explanation.encode("utf-8")) + len(output.encode("utf-8"))
                        for explanation, output in steps)
         self.assertEqual(expected, simulation._trace_text_bytes(spec, spec["values"]))
-        self.assertEqual(1 + len("Vacío: ".encode("utf-8")),
-                         len("Vacío: .".encode("utf-8")))
         self.assertEqual(len("Vacío: .".encode("utf-8")),
                          simulation._trace_text_bytes(spec, []))
         self.assertEqual(lesson, original)
