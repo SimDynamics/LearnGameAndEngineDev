@@ -2197,9 +2197,12 @@ La prueba requiere ejecución real en Windows antes de acreditarse.
 `native.course_edition` reproduce enlaces reales de índice de curso,
 índice de unidad, archivo de lección, carpeta de unidad y directorio
 superior a `content` en árboles QA aislados, después de poblar las cachés
-con rutas originales válidas. Si
-la cuenta Windows no puede crear un enlace, informa `SKIP` para ese caso,
-que no se declara acreditado. La comprobación de los recursos históricos
+con rutas originales válidas. Para cada enlace intenta primero el modo
+Developer Mode y, si no está habilitado, el modo Win32 ordinario que puede
+estar autorizado a una cuenta elevada. El registro indica exactamente cuántas
+de las cinco variantes se ejecutaron realmente. Si ninguno de los dos modos
+permite crear el enlace, informa `SKIP` para ese caso y no lo declara acreditado.
+La comprobación de los recursos históricos
 durante publicación sigue siendo una obligación separada de la carga nativa.
 Una edición española no toma silenciosamente una unidad o lección inglesa,
 francesa o histórica como respaldo. Los recursos EN/FR anteriores permanecen
