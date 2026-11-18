@@ -161,7 +161,8 @@ class RetiredStateLayoutTest(unittest.TestCase):
                 removing = [item["id"] for item in published["stateLayout"]["retired"][old_count:]]
                 historical = history[-1]
                 if (historical["pages"] != previous["pages"] or
-                        historical["current"] != previous["stateLayout"]["current"]):
+                        historical["current"] != previous["stateLayout"]["current"] or
+                        published["stateLayout"]["additions"] != previous["stateLayout"]["additions"]):
                     # This historical batch followed a real intermediate
                     # publication that added pages or exercises. Replaying
                     # it directly against the much older fixture would
