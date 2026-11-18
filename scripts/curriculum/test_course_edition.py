@@ -446,6 +446,61 @@ class CourseEditionAuthoringTest(unittest.TestCase):
             actual = {path.relative_to(root).as_posix(): path.read_bytes() for path in root.rglob("*.json")}
             self.assertEqual(encoded(current), actual)
 
+    def test_prepare_rejects_aliases_in_authoring_source_and_parent_indexes(self):
+        # Preparation is read-only and can run before all new lessons exist.
+        # It must apply the same path identity rules as publication without
+        # following an alias to an apparently valid physical target first.
+        previous = encoded(current_documents())
+        current = {**current_documents(), **current_documents(descriptor())}
+        course_relative = f"{CONTENT}/es/programming/{COURSE}/course_{COURSE}.json"
+        unit_relative = next(path for path in current if "/edition_es_1__" in path and "/unit_" in path)
+        lesson_relative = next(path for path in current if "/edition_es_1__" in path and "/lesson_" in path)
+        with tempfile.TemporaryDirectory(prefix="edition-prepare-alias-qa-",
+                                         dir=Path.cwd()) as temporary:
+            root = Path(temporary)
+            for relative, raw in encoded(current).items():
+                file = root / relative
+                file.parent.mkdir(parents=True, exist_ok=True)
+                file.write_bytes(raw)
+            def git(command, **_):
+                return SimpleNamespace(returncode=0, stderr="",
+                    stdout=str(root) + "\n" if "--show-toplevel" in command else "0" * 40 + "\n")
+            before = {path.relative_to(root).as_posix(): path.read_bytes()
+                      for path in root.rglob("*.json")}
+            with mock.patch.object(edition, "_paths_at", return_value=set(previous)), \
+                    mock.patch.object(edition, "_git_bytes",
+                                      side_effect=lambda _, __, path: previous[path]), \
+                    mock.patch.object(edition.subprocess, "run", side_effect=git):
+                valid = edition.prepare_from_repository(root / lesson_relative, "0" * 40, locale="es")
+                edition.validate_lesson(valid, require_layout=True)
+                aliases = {
+                    "lesson-file": root / lesson_relative,
+                    "unit-file": root / unit_relative,
+                    "unit-folder": (root / unit_relative).parent,
+                    "course-file": root / course_relative,
+                    "course-folder": (root / course_relative).parent,
+                    "locale-folder": (root / course_relative).parents[2],
+                    "content-folder": (root / course_relative).parents[3],
+                }
+                for method in ("is_symlink", "is_junction"):
+                    if not hasattr(Path, method):
+                        continue
+                    original = getattr(Path, method)
+                    for label, alias in aliases.items():
+                        def flagged(path, alias=alias, original=original):
+                            return path == alias or original(path)
+                        with self.subTest(method=method, alias=label), \
+                                mock.patch.object(Path, method, autospec=True,
+                                                  side_effect=flagged):
+                            with self.assertRaisesRegex(edition.CourseEditionError,
+                                                        SYMLINK_REJECTION):
+                                edition.prepare_from_repository(
+                                    root / lesson_relative, "0" * 40, locale="es")
+            self.assertEqual(before, {
+                path.relative_to(root).as_posix(): path.read_bytes()
+                for path in root.rglob("*.json")
+            }, "Failed single-lesson authoring modified source files")
+
     def test_descriptor_and_namespace_reject_ambiguous_or_cross_scope_values(self):
         for value in (dict(descriptor(), version=True), dict(descriptor(), generation=True),
                       dict(descriptor(), version=1.0), dict(descriptor(), generation=1.0),
