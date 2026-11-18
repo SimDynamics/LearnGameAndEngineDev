@@ -391,6 +391,14 @@ void contract_rejections() {
         invalid([&](auto& s) { s.explanations.initial = broken; }, "Invalid explanation marker accepted");
         invalid([&](auto& s) { s.output_template = broken; }, "Invalid output marker accepted");
     }
+    for(const auto* counted : {"{countedIndex}", "{originIndex}", "{value}:{originIndex}"}) {
+        invalid([&](auto& s) { s.output_template = counted; },
+            "A completed-group output accepted the position of an element it did not read");
+        auto explanatory = good;
+        explanatory.explanations.start = counted;
+        explanatory.explanations.advance = counted;
+        validate_simulation_spec(explanatory);
+    }
     invalid([](auto& s) { s.values.assign(65, std::int64_t{0}); }, "More than 64 values accepted");
     invalid([](auto& s) { s.values = {std::int64_t{0}, std::string("0")}; }, "Mixed types accepted");
     invalid([](auto& s) { s.values = {std::numeric_limits<std::int64_t>::max()}; }, "Oversized integer accepted");
