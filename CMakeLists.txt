@@ -483,8 +483,18 @@ function(lgaed_add_optional_prose_format_tests)
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/optional_prose_format_fixture_source.py")
     set(_optional_prose_dir
         "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/optional-prose-format")
+    # The generator creates a complete before/after pair and eight negative
+    # contracts. Every file is an output: removing any one must regenerate the
+    # entire fixture set before CTest (including incremental Windows builds).
+    set(_optional_prose_files)
+    foreach(_optional_prose_name IN ITEMS
+            before after missing-mark stale-mark changed-answer changed-code
+            missing-drag-mark stale-drag-mark changed-drag-answer changed-drag-template)
+        list(APPEND _optional_prose_files
+            "${_optional_prose_dir}/optional-prose.${_optional_prose_name}.json")
+    endforeach()
     add_custom_command(
-        OUTPUT "${_optional_prose_dir}/optional-prose.after.json"
+        OUTPUT ${_optional_prose_files}
         COMMAND "${Python3_EXECUTABLE}" -B "${_optional_prose_source}"
             --output-dir "${_optional_prose_dir}"
         DEPENDS "${_optional_prose_source}"
@@ -494,7 +504,7 @@ function(lgaed_add_optional_prose_format_tests)
         COMMENT "Authenticating optional prose and lexical C++ format QA"
         VERBATIM)
     add_custom_target(lgaed_optional_prose_format_fixtures
-        DEPENDS "${_optional_prose_dir}/optional-prose.after.json")
+        DEPENDS ${_optional_prose_files})
     add_executable(lgaed_optional_prose_format_tests
         native/platform/windows/optional_prose_format_tests.cpp)
     target_link_libraries(lgaed_optional_prose_format_tests PRIVATE
