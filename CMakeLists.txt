@@ -540,9 +540,10 @@ function(lgaed_add_general_choice_editorial_tests)
         lgaed_general_choice_editorial_fixture)
     add_test(NAME native.general_choice_editorial_reader
         COMMAND lgaed_general_choice_editorial_view_tests
-            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}")
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}"
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_UNMARKED_PREVIOUS}")
     set_tests_properties(native.general_choice_editorial_reader
-        PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+        PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
 endfunction()
 
 # The same open-program checks run in the focused Windows gate and the full
