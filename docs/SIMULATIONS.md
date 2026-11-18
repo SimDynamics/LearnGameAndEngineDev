@@ -301,7 +301,13 @@ y la posición de lectura. El borrador enviado se conserva para corregirlo
 o reintentar, y no se informa de que los datos quedaron aplicados. Si el fallo
 proviene de la presentación Win32, el aviso visible también actualiza su
 nombre accesible y la región de narración, incluso si el formateador RichEdit
-continúa rechazando la operación.
+continúa rechazando la operación. Cuando se reintenta con éxito, desaparecen
+el mensaje y la anotación accesible del rechazo anterior. La regresión
+`applying_rejection_survives_repeated_native_presentation_failure` inyecta tres
+rechazos consecutivos al aplicar datos: comprueba que no se sustituya el
+modelo ya aplicado, que el borrador siga visible, que el error original
+permanezca disponible para narración y que el segundo intento correcto
+no vuelva a anunciarlo. Requiere ejecución real en Windows.
 Si la escritura del editor también falla durante la restauración, se intenta
 reponer literalmente el texto previo por `EM_REPLACESEL` sobre todo el
 documento, sin volver a utilizar `EM_STREAMIN`; si el control rechaza también
