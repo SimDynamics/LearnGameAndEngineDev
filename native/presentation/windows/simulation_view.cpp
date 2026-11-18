@@ -838,51 +838,12 @@ struct SimulationView::Impl {
         // its frequency with the maximum *before* that group's decision.
         // Derive both statements from actual frames, never authored prose.
         if(after.phase==SimulationPhase::start||after.phase==SimulationPhase::advance){
-            const auto observed=after.end-1;
-            const auto& current_value=trace.ordered.at(observed);
-            std::string observation="Dato contado: índice "+std::to_string(observed)+" = "+
-                simulation_value_display_text(current_value);
-            // If sorting moved this item, state its original array position
-            // in the SAME dynamic explanation read by Windows narration.
-            // Preserve the sorted index for adjacent-value comparisons.
-            if(!source_positions.empty())
-                observation+=" (origen índice "+std::to_string(source_positions.at(observed))+")";
-            changes.push_back(std::move(observation));
-            // The current run contains exactly [begin,end). The exclusive
-            // boundary is not read as an array element; subtracting begin
-            // from end counts only the observations in THIS run. Build the
-            // explanation from the calculated frame, not authored prose.
-            changes.push_back("Recuento de este grupo: fin exclusivo "+
-                std::to_string(after.end)+" - inicio "+
-                std::to_string(after.begin)+" = "+std::to_string(after.frequency)+
-                (after.frequency==1?" elemento contado.":" elementos contados."));
-            if(observed==0){
-                changes.push_back("Primera posición: el índice 0 no tiene un elemento anterior.");
-            }else{
-                // Both values have already been observed in the immutable
-                // computed trace. Never compare against the NEXT element
-                // or claim the exclusive 'end' boundary is an array index.
-                const auto& previous_value=trace.ordered.at(observed-1);
-                const bool equal=previous_value==current_value;
-                changes.push_back("Relación con el anterior: índice "+
-                    std::to_string(observed-1)+" = "+
-                    simulation_value_display_text(previous_value)+
-                    "; índice "+std::to_string(observed)+" = "+
-                    simulation_value_display_text(current_value)+
-                    (equal?". Son iguales: continúa el grupo.":
-                        ". Son diferentes: comienza un grupo nuevo."));
-                // Both neighbors have already been counted. When stable
-                // sorting moved the data, make their original positions as
-                // explicit as those of the newly observed item. Never expose
-                // the next (unobserved) element or fabricate an origin when
-                // the input is already ordered.
-                if(!source_positions.empty())
-                    changes.push_back("Procedencia de la comparación: posición ordenada "+
-                        std::to_string(observed-1)+" ← posición original "+
-                        std::to_string(source_positions.at(observed-1))+
-                        "; posición ordenada "+std::to_string(observed)+
-                        " ← posición original "+std::to_string(source_positions.at(observed))+".");
-            }
+            // Portable, model-derived lines must match both the visible
+            // transition and the narration read from the same current state.
+            // Stable source indices, neighbor values and exclusive bounds
+            // are now checked by the portable regression battery too.
+            const auto observed=simulation_count_observation_changes(trace,after);
+            changes.insert(changes.end(),observed.begin(),observed.end());
         }else if(after.phase==SimulationPhase::new_maximum||
                  after.phase==SimulationPhase::tie||
                  after.phase==SimulationPhase::below_maximum){
