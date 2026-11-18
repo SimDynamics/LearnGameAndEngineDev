@@ -544,7 +544,11 @@ actualizar colores tampoco debe devolverlo involuntariamente al principio.
 Al cambiar la escala de lectura, el DPI de la ventana o el ancho disponible,
 el simulador toma como referencia el **carácter de la primera línea visible**
 y recupera esa misma región después del reflujo, sin depender de los píxeles
-anteriores. Conserva también la selección. Si ya se estaba leyendo el final,
+anteriores. Como RichEdit puede quedar una línea más abajo al aplicar el
+nuevo zoom por redondeo interno, la recuperación comprueba la línea realmente
+visible y corrige un desfase restante de forma acotada. Esta regla también
+protege las explicaciones largas. Conserva asimismo la selección. Si ya
+se estaba leyendo el final,
 la salida continúa mostrando el final tras el cambio. La regresión Win32
 `output_zoom_preserves_reading_anchor` cubre zoom, rebase de DPI, cambio de
 anchura, desplazamiento al final y rechazo tardío de una escala por RichEdit.
