@@ -1899,6 +1899,40 @@ void stream_extraction_and_shift_evidence() {
             return resultado;
         })cpp",rules,true,
         "A literal integer bit shift cannot mutate its shift count");
+    verify(R"cpp(
+        #include <sstream>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            std::istringstream entrada{"1"};
+            if (piezas > 0) {
+                entrada >> (resultado);
+            }
+            return resultado;
+        })cpp",rules,false,
+        "A parenthesized extraction inside a conditional still overwrites the result");
+    verify(R"cpp(
+        #include <sstream>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            int lectura = 0;
+            std::istringstream entrada{"1"};
+            entrada >> lectura;
+            resultado += 0;
+            return resultado;
+        })cpp",rules,true,
+        "Reading a separate variable cannot invalidate a later neutral update to the result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            int desplazamiento = 64 >> (resultado);
+            (void)desplazamiento;
+            resultado += 0;
+            return resultado;
+        })cpp",rules,true,
+        "A parenthesized integer-literal bit shift remains a read-only observation");
 }
 
 void separate_rules() {
