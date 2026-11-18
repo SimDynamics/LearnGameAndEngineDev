@@ -382,6 +382,49 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
             self.assertEqual(original_bytes, source.read_bytes())
 
 
+    def test_explicit_semantic_cli_creates_isolated_authored_option(self):
+        source_bytes = history.historical_bytes("es/" + RELATIVE)
+        spans = [layout.text_semantics.select(
+            REVISED, "condición para aceptar la transición", "prose",
+            reading="natural")]
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            previous = base / "original.json"
+            semantic = base / "spans.json"
+            proposal = base / "proposal.json"
+            previous.write_bytes(source_bytes)
+            semantic.write_text(json.dumps(spans, ensure_ascii=False),
+                                encoding="utf-8")
+            command = [
+                sys.executable, "-B", str(Path(layout.__file__)),
+                "revise-choice-editorial", str(previous),
+                "--previous", str(previous), "--identity", OWNER,
+                "--option-index", "0", "--replacement", REVISED,
+                "--semantic-spans", str(semantic),
+                "--output", str(proposal),
+            ]
+            status = subprocess.run(command, capture_output=True,
+                                    text=True, encoding="utf-8")
+            self.assertEqual(status.returncode, 0, status.stdout + status.stderr)
+            authored = json.loads(proposal.read_text(encoding="utf-8"))
+            self.assertEqual(authored, layout.revise_choice_editorial(
+                self.original, OWNER, 0, REVISED, spans=spans))
+            self.assertEqual(previous.read_bytes(), source_bytes)
+            self.assertEqual(layout.original_projection(authored)["textSemantics"],
+                             self.original["textSemantics"])
+
+            rejected = base / "invalid.json"
+            corrupt = deepcopy(spans)
+            corrupt[0]["start"] += 1
+            semantic.write_text(json.dumps(corrupt, ensure_ascii=False), encoding="utf-8")
+            command[-1] = str(rejected)
+            failure = subprocess.run(command, capture_output=True,
+                                     text=True, encoding="utf-8")
+            self.assertNotEqual(failure.returncode, 0)
+            self.assertFalse(rejected.exists())
+            self.assertEqual(previous.read_bytes(), source_bytes)
+
+
 class GeneralChoiceCompositionTests(unittest.TestCase):
     """Compose real U9 option/prose revisions across a skipped publication."""
     OTHER = "block_0006_0001"
