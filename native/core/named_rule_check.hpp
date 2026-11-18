@@ -1073,8 +1073,8 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             // std::swap(result, other), mutate(result), a forwarded
             // reference, an address-taking expression or an extraction can
             // change an outer variable without spelling "result =".
-            if(active_calls||(at>statement&&
-                    (op(t[at-1],"&")||op(t[at-1],">>"))))
+            if(active_calls||extraction_operand(at,statement)||
+               (at>statement&&op(t[at-1],"&")))
                 return {};
             // int& alias=result and auto&& alias=result can later change
             // the outer result, even if that write uses a different name.
