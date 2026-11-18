@@ -502,6 +502,71 @@ void current_frequency_decision(HWND host,const std::filesystem::path& captures)
         "A static summary invented a current per-group decision");
     check(spec==authored,"Marking the current group modified authored data");
 }
+void layout_reflow_cancels_pending_histogram_and_array_click(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,850);
+    check(view.go_to_step(7),"Cannot prepare a completed-group view for interrupted reflow");
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    const auto canvas=GetDlgItem(view.window(),array_id);
+    check(chart&&canvas,"Missing interactive simulation surfaces");
+    const auto output_before=text(view,output_id);
+    const auto array_before=name(canvas);
+    const auto reading_before=view.reading_regions()[2].key;
+    const auto initial_count=view.step_count();
+    const auto center=[](RECT box) {
+        const POINT pt{(box.left+box.right)/2,(box.top+box.bottom)/2};
+        check(PtInRect(&box,pt),"No clickable interior for reflow test");
+        return pt;
+    };
+    const auto press=[](HWND window,POINT pt){
+        SendMessageW(window,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(pt.x,pt.y));
+    };
+    const auto release=[](HWND window,POINT pt){
+        SendMessageW(window,WM_LBUTTONUP,0,MAKELPARAM(pt.x,pt.y));
+    };
+    const auto assert_untouched=[&](const char* why){
+        check(view.step_index()==7&&view.step_count()==initial_count&&
+            text(view,output_id)==output_before&&name(canvas)==array_before&&
+            view.reading_regions()[2].key==reading_before&&
+            text(view,error_id).empty()&&spec==authored,why);
+    };
+
+    // The original screen coordinates become valid again after restoring
+    // the same width. Without cancelling the chart press on the intervening
+    // reflow, a later mouse-up wrongly navigates to that old group.
+    const auto first_card=view.frequency_card_bounds_in_canvas(0);
+    check(first_card.has_value(),"Missing visible completed chart card");
+    const auto chart_point=center(*first_card);
+    press(chart,chart_point);
+    resize(view,340);
+    resize(view,850);
+    release(chart,chart_point);pump();
+    assert_untouched("A chart mouse-up completed a press from before responsive reflow");
+
+    // Source cells must obey the identical rule, including when a font
+    // scale change triggers a redraw at the original host width.
+    const auto first_cell=view.cell_bounds_in_canvas(0);
+    check(first_cell.has_value(),"Missing clickable array cell");
+    const auto cell_point=center(*first_cell);
+    press(canvas,cell_point);
+    view.set_text_scale(140);resize(view,850);
+    view.set_text_scale(100);resize(view,850);
+    release(canvas,cell_point);pump();
+    assert_untouched("An array mouse-up completed a press from before a font reflow");
+
+    // Explicit new presses remain valid. The cancellation must not disable
+    // the chart or array navigation of the calculated trace.
+    click_frequency_card(view,0);
+    check(view.step_index()==2&&text(view,output_id)=="-8:1\n",
+        "Cancelling the old chart press blocked a new complete chart click");
+    check(view.go_to_step(7),"Cannot return to the original frame for the array click");
+    click_array_cell(view,0);
+    check(view.step_index()==1&&text(view,output_id).empty()&&
+        text(view,error_id).empty()&&spec==authored,
+        "Cancelling an old array press blocked a new complete array click");
+}
+
 void intervening_interaction_cancels_pending_mouse_press(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -5438,6 +5503,7 @@ int main(int argc,char** argv)try {
     };
     run("native_text_control_contract",[&]{native_text_control_contract(host.value);});
     run("current_frequency_decision",[&]{current_frequency_decision(host.value,captures);});
+    run("layout_reflow_cancels_pending_histogram_and_array_click",[&]{layout_reflow_cancels_pending_histogram_and_array_click(host.value);});
     run("intervening_interaction_cancels_pending_mouse_press",[&]{intervening_interaction_cancels_pending_mouse_press(host.value);});
     run("reentrant_reader_gesture_does_not_override_newer_selection",[&]{reentrant_reader_gesture_does_not_override_newer_selection(host.value);});
     run("cancelled_passive_gesture_cannot_finish_click",[&]{cancelled_passive_gesture_cannot_finish_click(host.value);});

@@ -557,6 +557,11 @@ reutilizar destinos tras una actualización fallida. Las regresiones Win32
 `reentrant_reader_gesture_does_not_override_newer_selection` e
 `intervening_interaction_cancels_pending_mouse_press` comprueban
 navegación anidada, pasos intermedios, Aplicar datos y clics posteriores.
+La reorganización visual también cancela las pulsaciones en ambas superficies:
+si cambia el ancho de la ventana o la escala y después se suelta el ratón,
+no se selecciona una tarjeta antigua, aunque el ancho vuelva al inicial.
+La regresión Win32 `layout_reflow_cancels_pending_histogram_and_array_click`
+comprueba los dos controles y que sigan admitiendo clics nuevos.
 Los espacios entre tarjetas y las áreas ocultas tras el desplazamiento
 no son destinos. El puntero indica cuándo una tarjeta es seleccionable.
 El selector de pasos, los botones de decisión y las casillas del array

@@ -1540,7 +1540,7 @@ struct SimulationView::Impl {
         return std::max(sp(22),static_cast<int>(box.bottom-box.top))+sp(8);
     }
     int array_layout(int available) {
-        pressed_target.reset();cell_rects.clear();markers.clear();limit_text.clear();limit_bounds={};
+        cell_rects.clear();markers.clear();limit_text.clear();limit_bounds={};
         const bool pointer=spec.view==SimulationViewMode::groups||stepping();
         const auto& state=frame();
         const auto marker_text=[&](std::size_t index){std::string result;
@@ -1666,6 +1666,12 @@ struct SimulationView::Impl {
     int arrange(int requested,bool move) {
         if(arranging||!host)return height;arranging=true;
         struct Guard{bool& value;~Guard(){value=false;}} guard{arranging};
+        // Reflow invalidates hit-test geometry for BOTH interactive canvases.
+        // The array already cancelled a pending press in array_layout(), but
+        // the histogram kept its old group until the next mouse-up. Cancel
+        // both before controls are moved or their scrollbars are recomputed.
+        pressed_target.reset();
+        pressed_frequency_group.reset();
         layout_valid=false;
         width=std::max(1,requested);const auto margin=std::min(px(16),std::max(0,(width-1)/4));
         const auto available=std::max(1,width-2*margin);int top=px(16);
