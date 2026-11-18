@@ -2833,10 +2833,9 @@ void navigation_retry_preserves_previous_invalid_draft(HWND host) {
 
 void rejected_apply_observer_cannot_hide_input_diagnostic(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
-    const auto authored=spec;
     spec.scenarios.clear();
-    // Only the test's local copy is edited. The curriculum model used by
-    // this view remains immutable throughout the rejection and retry.
+    // Only the test's local copy is edited. The model given to the view
+    // remains immutable throughout the rejection and retry.
     const auto reviewed=spec;
     bool throw_on_rejection=false;
     int notifications=0;
