@@ -452,193 +452,14 @@ if ($Suite -eq 'ReaderBuild') {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the focused reader and catalog test registration.' }
     $qaUiListing = ($qaUiListingText -join "`n") | ConvertFrom-Json
     $qaUiNames = @($qaUiListing.tests | ForEach-Object { $_.name })
-    # CTest registers the executable path even when its build target was
-    # omitted. Detect that omission before expensive runtime tests begin.
-    # Python authoring checks remain external interpreter invocations.
+    # Check every registered native executable before running the long QA.
+    # CTest can list a target even when that target was never built.
     $qaMissingTestExecutables = @(
         foreach ($qaRegisteredTest in $qaUiListing.tests) {
             $qaCommand = @($qaRegisteredTest.command)
             if ($qaCommand.Count -eq 0) { continue }
             $qaExecutable = [string] $qaCommand[0]
-            if ($qaExecutable -match '[/\\]lgaed_[^/\\]+\.exe    # LGAED_READER_BUILD_QA_ONLY. New isolated tests cannot silently bypass
-    # the build, and obsolete names cannot masquerade as passing regressions.
-    $qaUiExpected = @(
-        'native.simulation_model',
-        'native.simulation_view',
-        'native.simulation_lesson',
-        'native.simulation_authoring',
-        'native.code_gutter_wheel',
-        'native.reader_interaction',
-        'native.diagnostic_paths',
-        'native.order_equivalence_authoring',
-        'native.ordinary_explanation_authoring',
-        'native.cpp_project_internal_dialogs',
-        'native.cpp_history_training',
-        'native.p2_u3_workflow_authoring',
-        'native.cpp_project_u3_selective_individual',
-        'native.cpp_project_u3_selective_lesson',
-        'native.cpp_project_u3_original_gates',
-        'native.cpp_project_u2_exact_eof',
-        'native.cpp_project_u3_declaration',
-        'native.cpp_project_u3_declared_selective',
-        'native.cpp_project_u3_original_prerequisites',
-        'native.cpp_project_u3_first_cmake',
-        'native.cpp_project_u3_first_cmake_repair',
-        'native.cpp_project_u3_real_history_gate',
-        'native.cpp_project_u3_entire_original',
-        'native.cpp_project_u3_cmake_structure',
-        'native.cpp_project_other_cpp_multicase',
-        'native.order_spacing_contract',
-        'native.order_code_whitespace_view',
-        'native.code_editor_viewport',
-        'native.code_editor',
-        'native.code_format_compat',
-        'native.cpp_expression_repair',
-        'native.rejection_diagnostic_facts',
-        'native.named_rule_source',
-        'native.named_rule_runtime',
-        'native.cpp_cmake_graph',
-        'native.u3_runtime_semantics',
-        'native.premium_windows',
-        'native.compiler_puzzles',
-        'native.semantic_retirement_view',
-        'native.compiler_case_order_view',
-        'native.compiler_case_revision_view',
-        'native.catalog',
-        'native.course_edition',
-        'native.course_edition_authoring',
-        'native.optional_prose_format',
-        'native.general_choice_editorial_authoring',
-        'native.general_choice_editorial',
-        'native.general_choice_editorial_reader',
-        'native.boolean_battery',
-        'native.boolean_battery_runtime',
-        'native.reduction',
-        'native.reduction_runtime',
-        'native.integer_battery',
-        'native.integer_battery_runtime',
-        'native.open_battery',
-        'native.open_battery_authoring',
-        'native.open_battery_runner',
-        'native.open_battery_runtime',
-        'native.rich_text_hit_geometry',
-        'native.lesson_menu',
-        'native.lesson_scroll_render'
-    )
-    $qaUiMissing = @($qaUiExpected | Where-Object { $_ -notin $qaUiNames })
-    $qaUiUnexpected = @($qaUiNames | Where-Object { $_ -notin $qaUiExpected })
-    if ($qaUiNames.Count -ne $qaUiExpected.Count -or
-        $qaUiMissing.Count -gt 0 -or $qaUiUnexpected.Count -gt 0) {
-        Write-Host ("ReaderBuild missing CTest registrations: " + ($qaUiMissing -join ', '))
-        Write-Host ("ReaderBuild unexpected CTest registrations: " + ($qaUiUnexpected -join ', '))
-        throw 'ReaderBuild must register independent native glyph hit geometry, console fullscreen/zoom, menu/scroll, Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery, stateful reduction, integer CMake battery, optional prose/format review and all four open-battery contracts and execution regressions.'
-    }
-    # Obtain CMake structure, U3 semantics and named-rule variation
-    # evidence before the remaining compiler cases. A failure in one must
-    # retain the other independent diagnostics.
-    # Simulation and console gestures already ran before the larger build.
-    # Keep the other focal checks and execute each registered test once.
-    $qaFocalPattern = '^native\.(rich_text_hit_geometry|cpp_cmake_graph|cpp_project_u3_cmake_structure|u3_runtime_semantics|named_rule_runtime)$'
-    $qaCompletedPattern = "($qaSimulationPattern)|($qaGesturePattern)|($qaFocalPattern)"
-    & $qaCTest --test-dir $qaBuild -R $qaFocalPattern --verbose --output-on-failure --no-tests=error --timeout 300
-    if ($LASTEXITCODE -ne 0) { throw 'A native glyph, CMake structure, U3 semantic or named-rule regression failed.' }
-    & $qaCTest --test-dir $qaBuild -E $qaCompletedPattern --output-on-failure --no-tests=error --timeout 300 --stop-on-failure
-    if ($LASTEXITCODE -ne 0) { throw 'A focused native reader, catalog, compiler or Win32 regression failed.' }
-    Write-Host 'PASS original reader/U6 executables compiled and linked; catalog, general-choice reading preservation, boolean battery execution/provenance, console fullscreen/zoom and Escape, actual Win32 History dialogs and focused published lesson execution/reopen/reset tested. No reader/audio playback executed.'
-    return
-}
-
-$qaListingText = & $qaCTest --test-dir $qaBuild --show-only=json-v1
-if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the focused native test registration.' }
-$qaListing = ($qaListingText -join "`n") | ConvertFrom-Json
-$qaExpected = $qaSuiteConfig.Tests
-$qaActualTests = @($qaListing.tests | ForEach-Object { $_.name })
-if ($qaActualTests.Count -ne $qaExpected.Count -or
-    (Compare-Object -ReferenceObject $qaExpected -DifferenceObject $qaActualTests)) {
-    throw "The focused $Suite configuration must register exactly its $($qaExpected.Count) declared tests."
-}
-
-# Keep the complete suite registration intact. An explicit focal run
-# validates its exact original names before using the same CTest filter.
-$qaCTestSelection = @()
-if ($CompilerHistoryGroup -ne 'All' -or $EditorialGroup -ne 'All') {
-    if ($CompilerHistoryGroup -ne 'All') {
-        $qaSelectionLabel = "compiler-history $CompilerHistoryGroup"
-        $qaSelectedExpected = if ($CompilerHistoryGroup -eq 'DeclarationsAssignments') {
-            @('native.u11_declarations_historical_reader_0', 'native.u11_declarations_historical_reader_1',
-              'native.u11_assignments_historical_reader_0', 'native.u11_assignments_historical_reader_1')
-        } else {
-            @('native.u12_characters_historical_reader_0', 'native.u12_characters_historical_reader_1',
-              'native.u12_characters_historical_reader_2', 'native.u12_characters_historical_reader_3')
-        }
-    } else {
-        $qaSelectionLabel = "editorial $EditorialGroup"
-        if ($EditorialGroup -eq 'AssignmentP3') {
-            $qaSelectedExpected = @('native.u11_assignment_published_reader_2')
-        } else {
-            $qaSelectedExpected = @('native.u11_remainder_published26_reader_0', 'native.u11_remainder_published26_reader_1',
-                'native.u11_remainder_published30_reader_0', 'native.u11_remainder_published30_reader_1')
-        }
-    }
-    $qaSelectionPattern = '^(' + (($qaSelectedExpected | ForEach-Object { [regex]::Escape($_) }) -join '|') + ')$'
-    $qaCTestSelection = @('-R', $qaSelectionPattern)
-    $qaSelectedText = & $qaCTest --test-dir $qaBuild --show-only=json-v1 @qaCTestSelection
-    if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the selected original reader tests.' }
-    $qaSelectedListing = ($qaSelectedText -join "`n") | ConvertFrom-Json
-    $qaSelectedActual = @($qaSelectedListing.tests | ForEach-Object { $_.name })
-    if ($qaSelectedActual.Count -ne $qaSelectedExpected.Count -or
-        (Compare-Object -ReferenceObject $qaSelectedExpected -DifferenceObject $qaSelectedActual)) {
-        throw "The $qaSelectionLabel selection must contain exactly its $($qaSelectedExpected.Count) original tests."
-    }
-    Write-Host "Original reader selection: $qaSelectionLabel ($($qaSelectedActual -join ', '))"
-}
-
-if ($Suite -in @('NarrationPlayer', 'U12Reader', 'U11EditorialReader',
-    'CompilerHistoricalReader', 'U6DiagnosticReader')) {
-    # Observe the actual ephemeral machine. Starting an existing, enabled audio
-    # service is preparation; the opt-in endpoint evaluation is a separate step.
-    & {
-        Write-Output "Windows audio environment: $([DateTime]::UtcNow.ToString('O'))"
-        foreach ($qaServiceName in @('AudioEndpointBuilder', 'Audiosrv')) {
-            $qaService = Get-Service -Name $qaServiceName -ErrorAction SilentlyContinue
-            if ($null -eq $qaService) {
-                Write-Output "Audio service absent: $qaServiceName"
-                continue
-            }
-            $qaService | Select-Object Name, Status, StartType | Format-Table -AutoSize | Out-String
-            if ($qaService.Status -eq 'Stopped' -and $qaService.StartType -ne 'Disabled') {
-                Write-Output "Starting existing enabled service: $qaServiceName"
-                $qaService.Start()
-                $qaService.WaitForStatus('Running', [TimeSpan]::FromSeconds(15))
-                $qaService.Refresh()
-                $qaService | Select-Object Name, Status, StartType | Format-Table -AutoSize | Out-String
-            }
-        }
-        try {
-            $qaDevices = @(Get-CimInstance -ClassName Win32_SoundDevice -ErrorAction Stop)
-            Write-Output "Win32_SoundDevice count: $($qaDevices.Count)"
-            $qaDevices | Select-Object Name, Status, PNPDeviceID | Format-Table -AutoSize | Out-String
-            $qaEndpoints = @(Get-PnpDevice -Class AudioEndpoint -PresentOnly -ErrorAction Stop)
-            Write-Output "Present AudioEndpoint device count: $($qaEndpoints.Count)"
-            $qaEndpoints | Select-Object FriendlyName, Status, InstanceId | Format-Table -AutoSize | Out-String
-        } catch {
-            # Inventory is diagnostic, not a replacement for the real player.
-            Write-Output "Audio device inventory unavailable: $($_.Exception.Message)"
-        }
-    } | Tee-Object -FilePath (Join-Path $qaBuild 'audio-environment.log') | Write-Host
-}
-
-if ($VirtualAudio) {
-    $qaSignTool = Join-Path $qaSdkRoot "bin\$qaSdkVersion\x64\signtool.exe"
-    & (Join-Path $PSScriptRoot 'Prepare-VirtualAudioCI.ps1') -PythonPath $qaPython `
-        -SignToolPath $qaSignTool -LogDirectory (Join-Path $qaBuild 'virtual-audio')
-}
-
-& $qaCTest --test-dir $qaBuild @qaCTestSelection --parallel 1 --verbose --output-on-failure --no-tests=error `
-    --output-junit (Join-Path $qaBuild "$($qaSuiteConfig.Results)-results.xml") `
-    --output-log (Join-Path $qaBuild "$($qaSuiteConfig.Results)-results.log")
-if ($LASTEXITCODE -ne 0) { throw "The native $Suite tests failed. Preserve the CTest output." }
- -and
+            if ($qaExecutable -match '[/\\]lgaed_[^/\\]+\.exe$' -and
                 -not (Test-Path -LiteralPath $qaExecutable -PathType Leaf)) {
                 "$($qaRegisteredTest.name): $qaExecutable"
             }
@@ -647,7 +468,7 @@ if ($LASTEXITCODE -ne 0) { throw "The native $Suite tests failed. Preserve the C
     if ($qaMissingTestExecutables.Count -gt 0) {
         Write-Host ("ReaderBuild registered tests without built executables: " +
             ($qaMissingTestExecutables -join '; '))
-        throw 'ReaderBuild must compile every native executable registered by CTest.'
+        throw 'ReaderBuild must build every native executable registered by CTest.'
     }
     # Keep this exact list synchronized with every add_test registered by
     # LGAED_READER_BUILD_QA_ONLY. New isolated tests cannot silently bypass
