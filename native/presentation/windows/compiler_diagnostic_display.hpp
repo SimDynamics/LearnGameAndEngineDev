@@ -86,9 +86,14 @@ inline std::optional<std::size_t> msvc_include_begin(std::wstring_view line) {
     // when it begins the line. The owned-root check still applies.
     // Keep leading spaces and the nested-include indentation untouched.
     auto begin = skip_spaces(line, 0);
-    constexpr std::wstring_view prefix = L"Note: including file:";
-    if (!line.substr(begin).starts_with(prefix)) return std::nullopt;
-    return skip_spaces(line, begin + prefix.size());
+    // cl.exe localizes this prefix. Spanish MSVC reports "Nota: inclusión
+    // del archivo:"; do not guess a path by searching arbitrary prose.
+    constexpr std::wstring_view english = L"Note: including file:";
+    constexpr std::wstring_view spanish = L"Nota: inclusión del archivo:";
+    const auto body = line.substr(begin);
+    if (body.starts_with(english)) return skip_spaces(line, begin + english.size());
+    if (body.starts_with(spanish)) return skip_spaces(line, begin + spanish.size());
+    return std::nullopt;
 }
 inline std::size_t path_begin(std::wstring_view line) {
     auto begin = skip_spaces(line, 0);
