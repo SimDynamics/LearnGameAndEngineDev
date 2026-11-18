@@ -442,6 +442,14 @@ void physical_edition_long_paths(const Fixture& fixture) {
         unit.entries.front(), empty_profile);
     require(progress.completed == 0 && progress.total == 3,
         "The catalog progress projection could not read the long-path edition lesson");
+    const auto scope = windows::catalog_scope(content, course_location());
+    require(scope.lessons == std::vector<std::string>{std::string(new_id), std::string(next_id)},
+        "The long-path catalog lost a lesson while calculating the active edition scope");
+    const curriculum::CatalogLocation current{"es", "programming", "qa_edition",
+        std::string(new_unit), std::string(new_id)};
+    const auto following = windows::next_catalog_lesson(content, current, false, false);
+    require(following && following->lesson == next_id && following->unit == new_unit,
+        "The long-path catalog could not continue to the next authored lesson");
     // A missing file at the same depth must still fail closed.
     const auto missing = folder / relative_path(fixture.paths.at("lesson"));
     std::error_code ignored;
