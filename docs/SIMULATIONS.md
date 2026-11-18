@@ -875,6 +875,16 @@ fijas ni confundir la copia ordenada con el array original. El mismo
 cálculo se aplica a escenarios, entradas editadas y textos, incluso
 cuando el valor es una cadena vacía.
 
+La regresión nativa `counted_source_origin_explanation` abre un lector
+Win32 aislado y comprueba que las casillas, las explicaciones visibles y sus
+regiones narrables señalen el **mismo índice original** al avanzar, hacer
+clic, retroceder, cambiar de escenario, editar datos y restablecerlos.
+Restablecer recupera los datos del escenario seleccionado; regresar a los
+datos iniciales requiere elegir el escenario inicial. La regresión también
+cubre una cadena vacía, repeticiones y una colección sin elementos. Estos
+controles están incorporados a `native.simulation_view` y todavía requieren
+ejecución local Windows para acreditar su resultado.
+
 Las sustituciones se aplican una sola vez. Las llaves que formen parte de un
 valor de texto se conservan como datos y no se vuelven a interpretar. No se
 admiten nombres desconocidos, operaciones dentro de llaves, especificadores
