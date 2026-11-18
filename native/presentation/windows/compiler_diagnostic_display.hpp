@@ -95,6 +95,17 @@ inline std::optional<std::size_t> msvc_include_begin(std::wstring_view line) {
     if (body.starts_with(spanish)) return skip_spaces(line, begin + spanish.size());
     return std::nullopt;
 }
+inline std::optional<std::size_t> driver_file_begin(std::wstring_view line) {
+    // These two exact messages are emitted by cpp_runner::write_exact before
+    // a compiler can write any file:line diagnostic. This recognition is
+    // enabled ONLY for the internal error channel, never normal tool output
+    // or student stdout/stderr. Do not scan arbitrary prose for paths.
+    constexpr std::wstring_view create = L"Cannot create run file: ";
+    constexpr std::wstring_view write = L"Cannot write run file: ";
+    if (line.starts_with(create)) return create.size();
+    if (line.starts_with(write)) return write.size();
+    return std::nullopt;
+}
 inline std::size_t path_begin(std::wstring_view line) {
     auto begin = skip_spaces(line, 0);
     const auto body = line.substr(begin);
@@ -124,7 +135,8 @@ inline std::optional<std::size_t> root_length(std::wstring_view path, const std:
 // bytes/characters, source excerpts, carets and message text in their places.
 // Call only for tool diagnostics, never for a program's stdout or stderr.
 [[nodiscard]] inline std::wstring compact_compiler_diagnostic_paths(
-    std::wstring_view text, std::span<const std::filesystem::path> known_roots) {
+    std::wstring_view text, std::span<const std::filesystem::path> known_roots,
+    bool internal_driver_error = false) {
     using namespace compiler_diagnostic_detail;
     std::vector<std::wstring> roots;
     for (const auto& path : known_roots) {
@@ -162,14 +174,17 @@ inline std::optional<std::size_t> root_length(std::wstring_view path, const std:
         const auto end = newline == text.npos ? text.size() : newline;
         const auto line = text.substr(begin, end - begin); // Keep an original CR.
         const auto include_begin = msvc_include_begin(line);
-        const auto first = include_begin.value_or(path_begin(line));
+        const auto driver_begin = internal_driver_error ? driver_file_begin(line)
+                                                        : std::nullopt;
+        const auto first = driver_begin.value_or(include_begin.value_or(path_begin(line)));
         const auto root = root_length(line.substr(first), roots);
-        // /showIncludes reports only an absolute include path, without
-        // coordinates. Other compiler/CMake diagnostics still need a real
-        // location suffix. Both paths require the same trusted owned root;
-        // literal source lines and external headers remain unchanged.
-        const auto last = root ? (include_begin ? std::optional<std::size_t>{line.size()}
-                                               : path_end(line, first)) : std::nullopt;
+        // /showIncludes and exact run-file I/O exceptions have no coordinates.
+        // Other compiler/CMake diagnostics still require a recognized suffix.
+        // All formats must start under an owned root: no arbitrary message
+        // or student output is scanned for path-like substrings.
+        const auto last = root ? (driver_begin || include_begin
+                ? std::optional<std::size_t>{line.size()} : path_end(line, first))
+            : std::nullopt;
         if (root && last && *last > first + *root + 1) {
             result.append(line.substr(0, first));
             result.append(line.substr(first + *root + 1, *last - first - *root - 1));
