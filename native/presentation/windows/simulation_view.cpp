@@ -1517,7 +1517,20 @@ struct SimulationView::Impl {
                     std::string("Revisa el texto visible antes de aplicar datos. ")+reason;
             else
                 error="No se cambió el formato; se conservaron los datos escritos. "+reason;
-            update();
+            // Failure reporting is itself a native presentation operation.
+            // If RichEdit rejects both the conversion and the following
+            // error redraw, retain the original conversion failure and
+            // publish it directly to the visible, accessible Win32 warning.
+            const auto diagnostic=error;
+            try{
+                update();
+            }catch(const std::exception& presentation){
+                report_native_error("",diagnostic+
+                    " No se pudo presentar el aviso con RichEdit: "+presentation.what());
+            }catch(...){
+                report_native_error("",diagnostic+
+                    " No se pudo presentar el aviso con los controles de Windows.");
+            }
             restore_output_reading_anchor(reading,input_id);
             // Even a throwing observer must not overwrite the meaningful
             // conversion error which the learner needs to correct.
