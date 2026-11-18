@@ -449,12 +449,14 @@ struct SimulationView::Impl {
         SetWindowSubclass(child,button_proc,2,reinterpret_cast<DWORD_PTR>(this));return child;
     }
     void set_label(int id,std::string text,RichTextRole role=RichTextRole::body,const TextSemantics* authored=nullptr) {
-        // The authored heading/description and the editor's format help
-        // stay unchanged across model steps. Do not replace their native
-        // RichEdit document or reading selection without a text change.
-        // Palette, DPI and font revisions still invalidate their formatting.
+        // Authored title/description, input-format help, and calculated
+        // explanations may remain identical across several model steps.
+        // Avoid restreaming an unchanged RichEdit document: it resets the
+        // learner's selection and reading position without new information.
+        // Real text, palette, DPI and font changes still refresh the panel.
         std::optional<StaticTextStamp> stamp;
-        if(id==title_id||id==description_id||id==input_label_id){
+        if(id==title_id||id==description_id||id==input_label_id||
+                id==explanation_id){
             const auto palette=reader_theme::palette(host);
             stamp=StaticTextStamp{fonts_revision,scale,GetDpiForWindow(host),
                 palette.text,palette.muted,palette.accent,palette.card,
