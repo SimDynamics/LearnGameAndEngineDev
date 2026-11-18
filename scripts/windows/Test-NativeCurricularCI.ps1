@@ -251,6 +251,31 @@ foreach ($candidate in $qaVsCandidates) {
     }
 }
 if (-not $qaVsRoot) {
+    # Diagnose the exact mismatch before refusing the build. A hosted image
+    # can ship the requested toolset folder with a serviced cl.exe, or a
+    # different MSVC toolset. Neither case authorizes a silent substitution.
+    # This inventory is read-only and contains no student or profile paths.
+    if ($qaVsCandidates.Count -eq 0) {
+        Write-Host 'MSVC preflight: no Visual Studio 2026 instance with the required x64/x86 C++ tools was discovered.'
+    }
+    foreach ($candidate in $qaVsCandidates) {
+        $toolsets = Join-Path $candidate 'VC\Tools\MSVC'
+        $expected = Join-Path $toolsets "$($qaManifest.visualStudio.msvcToolset)\bin\Hostx64\x64\cl.exe"
+        Write-Host "MSVC preflight: Visual Studio at $candidate"
+        if (Test-Path -LiteralPath $expected -PathType Leaf) {
+            $actual = Get-PhysicalFileVersion $expected
+            Write-Host "MSVC preflight: requested toolset folder exists; cl.exe version $actual; expected $($qaManifest.visualStudio.compilerVersion)."
+        } else {
+            Write-Host "MSVC preflight: requested cl.exe path is absent: $expected"
+        }
+        if (Test-Path -LiteralPath $toolsets -PathType Container) {
+            $available = @(Get-ChildItem -LiteralPath $toolsets -Directory -ErrorAction Stop |
+                Sort-Object Name | Select-Object -ExpandProperty Name)
+            Write-Host "MSVC preflight: available toolset directories: $($available -join ', ')"
+        } else {
+            Write-Host 'MSVC preflight: no VC\Tools\MSVC directory is installed.'
+        }
+    }
     throw "The image lacks MSVC $($qaManifest.visualStudio.msvcToolset) with cl.exe $($qaManifest.visualStudio.compilerVersion). No alternate toolset will be selected."
 }
 $qaVcVars = Join-Path $qaVsRoot 'VC\Auxiliary\Build\vcvarsall.bat'
