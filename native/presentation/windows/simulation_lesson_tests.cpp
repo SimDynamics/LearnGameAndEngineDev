@@ -104,7 +104,8 @@ void invalid_contracts(std::string_view source) {
         auto root=JsonObject::Parse(winrt::to_hstring(source));
         simulation_block(root).GetNamedObject(L"simulation").Insert(L"values",JsonValue::Parse(payload));rejected(root);
     }
-    for(const auto payload:{L"{unknown}",L"{value",L"value}"}) {
+    for(const auto payload:{L"{unknown}",L"{value",L"value}",
+            L"{countedIndex}",L"{originIndex}",L"{value}:{originIndex}"}) {
         auto root=JsonObject::Parse(winrt::to_hstring(source));
         simulation_block(root).GetNamedObject(L"simulation").Insert(L"outputTemplate",JsonValue::CreateStringValue(payload));rejected(root);
     }
