@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <charconv>
 #include <cctype>
+#include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <limits>
