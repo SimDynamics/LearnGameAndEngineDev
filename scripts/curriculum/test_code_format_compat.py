@@ -54,6 +54,20 @@ def edited(source):
     blocks[4]["projectFiles"][1]["initialCode"] = "int main() {\n    return 0;\n}\n"
     return out
 
+def mark_authored_explanation(document):
+    """The QA author must mark revised public prose, including empty spans.
+
+    A format-only transition must never synthesize this provenance on
+    behalf of a lesson. Tests that change /explanation supply its marker.
+    """
+    identity = "block_0000_0001"
+    overlay = document.setdefault("textSemantics", {"version": 1, "fields": []})
+    assert not any(item["block"] == identity and item["path"] == "/explanation"
+                   for item in overlay["fields"])
+    overlay["fields"].append(layout.text_semantics.make_field(
+        document, identity, "/explanation", []))
+
+
 def ucn_boundary_sources():
     # The single removed space changes a local declaration (return 7) into
     # assignment to the global a-alpha (return 2).
@@ -426,6 +440,7 @@ class SourceFormatTest(unittest.TestCase):
         prediction = edited["pages"][0]["blocks"][1]
         prediction["code"] = "int number = 2;\n\nstd::cout << number;"
         prediction["explanation"] = "Guía aclarada con los mismos resultados."
+        mark_authored_explanation(edited)
         compiler = edited["pages"][0]["blocks"][4]
         compiler["initialCode"] = "int main() {\n    return 0;\n}"
         compiler["outputCheck"]["cases"][0]["explanation"] = (
@@ -454,6 +469,39 @@ class SourceFormatTest(unittest.TestCase):
         self.assertEqual(compiler["outputCheck"]["cases"][0]["outputs"],
                          published["pages"][0]["blocks"][4]["outputCheck"]["cases"][0]["outputs"])
 
+    def test_combined_format_requires_author_to_mark_the_revised_explanation(self):
+        before = fixture()
+        before["pages"][0]["blocks"][1]["explanation"] = "Guía histórica."
+        published = layout.prepare_v2(before, "es", {"es": deepcopy(before)})
+        draft = deepcopy(published)
+        updated = draft["pages"][0]["blocks"][1]
+        updated["code"] = "int number = 2;\n\nstd::cout << number;"
+        updated["explanation"] = "Guía revisada por el autor."
+        with self.assertRaisesRegex(
+                layout.LayoutError, "explicit authored text semantics"):
+            layout.prepare_v2(draft, "es", {"es": published}, published)
+        # Even a marker for a different field is insufficient, and a marker
+        # whose source fingerprint belongs to the old prose is not accepted.
+        changed_path = deepcopy(draft)
+        changed_path["textSemantics"] = {
+            "version": 1, "fields": [
+                layout.text_semantics.make_field(changed_path,
+                    "block_0000_0001", "/question", [])]}
+        with self.assertRaises(layout.LayoutError):
+            layout.prepare_v2(changed_path, "es", {"es": published}, published)
+        marked = deepcopy(draft)
+        mark_authored_explanation(marked)
+        altered = deepcopy(marked)
+        altered["textSemantics"]["fields"][0]["sourceSha256"] = "0" * 64
+        with self.assertRaises(layout.LayoutError):
+            layout.prepare_v2(altered, "es", {"es": published}, published)
+        valid = layout.prepare_v2(marked, "es", {"es": published}, published)
+        layout.validate_transition(published, valid)
+        self.assertEqual(layout.validate(published), layout.validate(valid))
+        self.assertEqual(published["stateLayout"]["origin"], valid["stateLayout"]["origin"])
+        self.assertEqual(published["pages"][0]["blocks"][1]["answers"],
+                         valid["pages"][0]["blocks"][1]["answers"])
+
     def test_combined_format_cannot_hide_a_changed_answer_or_project_file(self):
         before = fixture()
         before["pages"][0]["blocks"][1]["explanation"] = "Explicación anterior."
@@ -461,6 +509,7 @@ class SourceFormatTest(unittest.TestCase):
         candidate = deepcopy(published)
         candidate["pages"][0]["blocks"][1]["code"] = "int number = 2;\n\nstd::cout << number;"
         candidate["pages"][0]["blocks"][1]["explanation"] = "Explicación aclarada."
+        mark_authored_explanation(candidate)
         wrong_answer = deepcopy(candidate)
         wrong_answer["pages"][0]["blocks"][1]["answers"] = ["3"]
         with self.assertRaises(layout.LayoutError):
@@ -490,6 +539,7 @@ class SourceFormatTest(unittest.TestCase):
         published = layout.prepare_v2(before, "es", {"es": deepcopy(before)})
         prose = deepcopy(published)
         prose["pages"][0]["blocks"][1]["explanation"] = "Descripción revisada."
+        mark_authored_explanation(prose)
         prose = layout.prepare_v2(prose, "es", {"es": published}, published)
         later = deepcopy(prose)
         later["pages"][0]["blocks"][1]["code"] = (
