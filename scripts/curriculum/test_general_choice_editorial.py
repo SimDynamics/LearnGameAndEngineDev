@@ -115,6 +115,19 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
              for field in layout.original_projection(authored)["textSemantics"]["fields"]})
         self.assertEqual(layout.original_projection(authored)["pages"],
                          layout.original_projection(self.original)["pages"])
+        marked_before = json.loads(fixture_bytes("--write-reviewed-marked"))
+        marked_new = next(field for field in marked_before["textSemantics"]["fields"]
+                          if (field["block"], field["path"]) == (OWNER, "/options/0"))
+        unmarked_new = next(field for field in authored["textSemantics"]["fields"]
+                            if (field["block"], field["path"]) == (OWNER, "/options/0"))
+        self.assertEqual(marked_new["spans"], unmarked_new["spans"])
+        self.assertEqual(marked_new["sourceSha256"], unmarked_new["sourceSha256"])
+        self.assertEqual(marked_before["stateLayout"]["choiceRevisions"][0]["semanticBefore"]["spans"][0]["text"],
+                         "precondición")
+        self.assertIsNone(entry["semanticBefore"])
+        # The full-word C++ native loader test independently uses a shorter
+        # "condición" selection. Do not compare those two valid QA authorings
+        # as if their UTF-16 ranges were required to match.
 
     def test_live_lesson_preserves_origin_and_historical_provenance(self):
         current = json.loads(SOURCE.read_text(encoding="utf-8"))
