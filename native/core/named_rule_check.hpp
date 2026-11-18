@@ -467,9 +467,65 @@ inline bool unevaluated_rule_use(const Tokens& t,std::size_t i,
         return at>scope_start&&query(at-1);
     });
 }
+// Parentheses do not turn a self-cancelling expression into useful
+// evidence: (cupo - (cupo)), ((cupo) / cupo), and cupo % (cupo)
+// are independent of the named integer agreement. Recognize only an
+// entire, provably simple binary expression. Do not discard references
+// in "cupo - (cupo * 2)" or "(cupo + 1) / cupo".
+inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
+        std::size_t scope_start) {
+    if(i>=t.size()||i<scope_start||!t[i].starts_with("id:"))return false;
+    const auto name=t[i].substr(3);
+    const auto unwrap=[&](std::size_t& first,std::size_t& last) {
+        while(first<last&&op(t[first],"(")) {
+            const auto close=closing(t,first,"(",")");
+            if(!close||*close+1!=last)break;
+            ++first;--last;
+        }
+    };
+    const auto single=[&](std::size_t first,std::size_t last) {
+        unwrap(first,last);
+        return first+1==last&&id(t[first],name);
+    };
+    const auto neutral=[&](std::size_t first,std::size_t last) {
+        unwrap(first,last);
+        std::size_t depth=0;
+        for(auto at=first;at<last;++at) {
+            if(op(t[at],"(")){++depth;continue;}
+            if(op(t[at],")")){if(depth)--depth;continue;}
+            if(depth||(!op(t[at],"-")&&!op(t[at],"/")&&!op(t[at],"%")))
+                continue;
+            if(single(first,at)&&single(at+1,last))return true;
+        }
+        return false;
+    };
+    // A complete parenthesized subexpression can occur anywhere in a
+    // return, initializer or alias. Only tokens already in that exact
+    // expression are suppressed, never all other uses of the constant.
+    std::vector<std::size_t> enclosing;
+    for(auto at=scope_start;at<i;++at) {
+        if(op(t[at],"("))enclosing.push_back(at);
+        else if(op(t[at],")")&&!enclosing.empty())enclosing.pop_back();
+    }
+    for(const auto open:enclosing) {
+        const auto close=closing(t,open,"(",")");
+        if(close&&*close>i&&neutral(open+1,*close))return true;
+    }
+    // Also handle a complete unparenthesized return/assignment such as
+    // return cupo - (cupo); without interpreting a larger C++ expression.
+    auto first=i;
+    while(first>scope_start&&!op(t[first-1],";")&&
+            !op(t[first-1],"{")&&!op(t[first-1],"}")&&
+            !op(t[first-1],"=")&&!id(t[first-1],"return"))
+        --first;
+    auto last=i+1;
+    while(last<t.size()&&!op(t[last],";")&&!op(t[last],"}"))++last;
+    return neutral(first,last);
+}
 inline bool productive(const Tokens& t,std::size_t i,
         std::size_t scope_start=0) {
-    if(unevaluated_rule_use(t,i,scope_start))return false;
+    if(unevaluated_rule_use(t,i,scope_start)||
+       neutral_named_expression_use(t,i,scope_start))return false;
     // Direct algebraic identities cannot establish that a constant is
     // meaningfully used. This is deliberately a bounded syntactic check;
     // arbitrary C++ still requires execution evidence.
