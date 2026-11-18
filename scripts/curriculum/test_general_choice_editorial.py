@@ -269,6 +269,13 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         self.assertIn("textSemantics", changed)
         self.assertNotIn("textSemantics", layout.original_projection(changed))
         layout.validate_transition(original, changed)
+        # A later, independently authored descriptor belongs to the current
+        # reading, never to a publication that had no semantic root at all.
+        later = deepcopy(changed)
+        later["textSemantics"]["fields"].append(layout.text_semantics.make_field(
+            later, OWNER, "/question", []))
+        layout.validate(later)
+        self.assertNotIn("textSemantics", layout.original_projection(later))
         forged = deepcopy(changed)
         forged["stateLayout"]["choiceRevisions"][0]["semanticRootBefore"] = True
         with self.assertRaises(layout.LayoutError):
