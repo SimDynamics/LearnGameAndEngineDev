@@ -250,7 +250,14 @@ el aviso del observador exterior no lo sustituye. Incluso cuando
 **Aplicar datos** rechaza directamente un borrador, una excepción del
 observador que recibe el diagnóstico no debe ocultar la validación, cambiar
 la traza anterior ni impedir corregir la entrada. La regresión Win32
-`rejected_apply_observer_cannot_hide_input_diagnostic` cubre este caso. También se conserva un
+`rejected_apply_observer_cannot_hide_input_diagnostic` cubre este caso.
+Si el diagnóstico surge por datos inválidos y RichEdit rechaza mostrarlo,
+se conserva la causa inicial (por ejemplo, un entero fuera de intervalo)
+mediante un aviso Win32 directo. El texto visible y la narración deben
+coincidir; el fallo de presentación sólo se añade como contexto y no
+convierte el rechazo en una ejecución válida. La regresión Windows
+`rejected_apply_preserves_diagnostic_when_richedit_rejects_feedback`
+reproduce ambos errores seguidos y comprueba el reintento con datos corregidos. También se conserva un
 diagnóstico previo del editor al navegar por la simulación. Las regresiones
 `reentrant_invalid_input_outweighs_observer_failure`,
 `applied_data_survive_observer_exception` y

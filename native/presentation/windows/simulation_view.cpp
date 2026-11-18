@@ -1402,17 +1402,25 @@ struct SimulationView::Impl {
             auto candidate=simulation_parse_input_trace(spec,edit_text(item(input_id)),input_format);
             replace_trace(std::move(candidate),false);
         }catch(const std::exception& failure){
-            // Parsing or native presentation rejected the candidate. The
-            // student must see that specific explanation, even if an external
-            // changed/layout_changed observer fails while reporting it.
-            error=std::string("No se aplicaron los datos. ")+failure.what();
-            update();
+            // Parsing or native presentation rejected the candidate. Keep the
+            // originating diagnostic even when a second RichEdit operation
+            // refuses to render its feedback. In particular, the parent
+            // WndProc must not replace it with a generic update failure.
+            const auto diagnostic=std::string("No se aplicaron los datos. ")+failure.what();
+            error=diagnostic;
+            try{
+                update();
+            }catch(const std::exception& presentation){
+                report_native_error("",diagnostic+
+                    " No se pudo presentar el aviso con RichEdit: "+presentation.what());
+            }catch(...){
+                report_native_error("",diagnostic+
+                    " No se pudo presentar el aviso con los controles de Windows.");
+            }
+            // A rejected input cannot become applied merely because a
+            // listener throws while hearing the error notification.
             try{publish();}
             catch(...){
-                // The model was already rejected and its visible/accessibility
-                // feedback was published by update(). A callback failure is
-                // secondary and must not cross the Win32 command procedure
-                // or replace the useful validation diagnostic.
                 OutputDebugStringW(L"Falló una notificación tras rechazar los datos de simulación.\n");
             }
         }

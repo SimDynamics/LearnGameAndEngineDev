@@ -2831,6 +2831,72 @@ void navigation_retry_preserves_previous_invalid_draft(HWND host) {
     }),"The original draft feedback lost its accessible reading after retry");
 }
 
+void rejected_apply_preserves_diagnostic_when_richedit_rejects_feedback(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.scenarios.clear();
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the applied trace for a rejected-input warning failure");
+    const auto old_step=view.step_index(),old_count=view.step_count();
+    const auto old_output=text(view,output_id);
+    const auto old_array=name(GetDlgItem(view.window(),array_id));
+    const auto old_identity=view.reading_regions()[2].key;
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(editor&&output,"Missing input/output RichEdit controls");
+    set_edit_text(editor,"2147483648");
+    const CHARRANGE selection{1,4};
+    SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    int failures_left=1;
+    const auto reject_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& remaining=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&remaining>0){--remaining;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53494144;
+    check(SetWindowSubclass(output,reject_zoom,hook_id,
+        reinterpret_cast<DWORD_PTR>(&failures_left))!=FALSE,
+        "Cannot reject late RichEdit presentation for an invalid Apply");
+    struct Unhook {
+        HWND window;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+    } guard{output,reject_zoom,hook_id};
+    click(view,apply_id);
+    const auto warning=text(view,error_id);
+    CHARRANGE after{};
+    SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+    check(failures_left==0&&
+        warning.find("No se aplicaron los datos.")!=std::string::npos&&
+        warning.find("El entero está fuera del intervalo de 32 bits con signo.")!=std::string::npos&&
+        warning.find("No se pudo presentar el aviso con RichEdit: ")!=std::string::npos&&
+        warning.find("RichEdit rechazó la escala de la salida.")!=std::string::npos&&
+        warning.find("No se pudo actualizar la simulación.")==std::string::npos&&
+        view.step_index()==old_step&&view.step_count()==old_count&&
+        text(view,input_id)=="2147483648"&&
+        text(view,output_id)==old_output&&
+        name(GetDlgItem(view.window(),array_id))==old_array&&
+        view.reading_regions()[2].key==old_identity&&
+        after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&
+        control_shown(GetDlgItem(view.window(),error_id))&&spec==authored,
+        "A RichEdit feedback rejection hid the original invalid input or changed the applied trace");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==GetDlgItem(view.window(),error_id)&&
+            region.source_text==warning;
+    }),"The preserved invalid-input explanation was missing from accessible narration");
+
+    // Correcting the draft must continue to use the original valid trace
+    // as predecessor. The one-shot native fault may not block later Apply.
+    set_edit_text(editor,"1\n2\n3");
+    click(view,apply_id);
+    check(text(view,error_id).empty()&&view.step_index()==0&&
+        view.step_count()!=old_count&&
+        view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="1:1\n2:1\n3:1\n"&&spec==authored,
+        "RichEdit warning fallback prevented correcting and applying valid data");
+}
+
 void rejected_apply_observer_cannot_hide_input_diagnostic(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     spec.scenarios.clear();
@@ -5131,6 +5197,7 @@ int main(int argc,char** argv)try {
     run("navigation_callback_failure_keeps_committed_steps",[&]{navigation_callback_failure_keeps_committed_steps(host.value);});
     run("reentrant_success_survives_outer_observer_exception",[&]{reentrant_success_survives_outer_observer_exception(host.value);});
     run("navigation_retry_preserves_previous_invalid_draft",[&]{navigation_retry_preserves_previous_invalid_draft(host.value);});
+    run("rejected_apply_preserves_diagnostic_when_richedit_rejects_feedback",[&]{rejected_apply_preserves_diagnostic_when_richedit_rejects_feedback(host.value);});
     run("rejected_apply_observer_cannot_hide_input_diagnostic",[&]{rejected_apply_observer_cannot_hide_input_diagnostic(host.value);});
     run("reentrant_invalid_input_outweighs_observer_failure",[&]{reentrant_invalid_input_outweighs_observer_failure(host.value);});
     run("applied_data_survive_observer_exception",[&]{applied_data_survive_observer_exception(host.value);});
