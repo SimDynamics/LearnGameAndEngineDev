@@ -1837,6 +1837,70 @@ void compound_assignment_evidence() {
         "Prefix updates invalidate earlier evidence before a hardcoded return");
 }
 
+void stream_extraction_and_shift_evidence() {
+    const std::array rules{NamedRuleRequirement{"cajas_para",4,
+        {"capacidad","plaza","cupo"},2}};
+    verify(R"cpp(
+        #include <sstream>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            std::istringstream entrada{"1"};
+            entrada >> resultado;
+            return resultado;
+        })cpp",rules,false,
+        "A stream extraction overwrites the named result without '='");
+    verify(R"cpp(
+        #include <sstream>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            std::istringstream entrada{"1"};
+            entrada >> (resultado);
+            return resultado;
+        })cpp",rules,false,
+        "Parenthesized extraction is still a write to the result");
+    verify(R"cpp(
+        #include <sstream>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            std::istringstream entrada{"1"};
+            return (entrada >> resultado, resultado);
+        })cpp",rules,false,
+        "A comma expression cannot hide input extraction inside return");
+    verify(R"cpp(
+        #include <sstream>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            std::ostringstream salida;
+            salida << resultado;
+            return resultado;
+        })cpp",rules,true,
+        "Output insertion only reads the named result");
+    verify(R"cpp(
+        #include <sstream>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            int otro = 0;
+            std::istringstream entrada{"1"};
+            entrada >> otro;
+            return resultado;
+        })cpp",rules,true,
+        "Extraction into an unrelated local does not erase genuine evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            int desplazar = 32 >> resultado;
+            (void)desplazar;
+            return resultado;
+        })cpp",rules,true,
+        "A literal integer bit shift cannot mutate its shift count");
+}
+
 void separate_rules() {
     const std::array rules{
         NamedRuleRequirement{"cajas_para",6,{"capacidad","plaza","cupo"},2},
@@ -2623,7 +2687,7 @@ void constant_variation_source_identity() {
 
 int main() {
     try {
-        capacity();conditional_assignment_branches();compound_assignment_evidence();separate_rules();price_and_minimum();
+        capacity();conditional_assignment_branches();compound_assignment_evidence();stream_extraction_and_shift_evidence();separate_rules();price_and_minimum();
         comment_only_header_changes();independently_generated_probe();
         real_battery_contract_and_sources();real_battery_traces_and_verdicts();
         constant_variation_contract();constant_variation_source_identity();
