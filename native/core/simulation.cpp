@@ -600,6 +600,43 @@ std::vector<std::string> simulation_count_observation_changes(
     return changes;
 }
 
+std::string simulation_group_decision_comparison(
+        const SimulationSpec& spec, const SimulationFrame& before,
+        const SimulationFrame& decision) {
+    const auto phase=decision.phase;
+    if(phase!=SimulationPhase::new_maximum &&
+       phase!=SimulationPhase::tie &&
+       phase!=SimulationPhase::below_maximum)return {};
+    // A decision is based on the completed current group, which has
+    // frequency>0. The previous frame may be a counted observation or a
+    // completed group in the grouped/candidate presentation. Both expose
+    // the maximum known BEFORE this decision.
+    require(decision.group>0 && decision.frequency>0 &&
+            decision.end>decision.begin &&
+            decision.frequency==decision.end-decision.begin &&
+            ((phase==SimulationPhase::new_maximum &&
+              decision.frequency>before.maximum &&
+              decision.maximum==decision.frequency)||
+             (phase==SimulationPhase::tie &&
+              decision.frequency==before.maximum &&
+              decision.maximum==before.maximum)||
+             (phase==SimulationPhase::below_maximum &&
+              decision.frequency<before.maximum &&
+              decision.maximum==before.maximum)),
+        "Una decisión de simulación no corresponde a su máximo anterior.");
+    const char* relation=phase==SimulationPhase::new_maximum?">":
+        phase==SimulationPhase::tie?"=":"<";
+    const char* consequence=phase==SimulationPhase::new_maximum?
+        "Nuevo máximo: reemplaza candidatos.":
+        phase==SimulationPhase::tie?
+        "Empate: agrega el valor a los candidatos.":
+        "No supera el máximo: conserva los candidatos.";
+    return "Comparación: "+spec.labels.frequency+" "+
+        std::to_string(decision.frequency)+" "+relation+" "+
+        spec.labels.maximum+" anterior "+std::to_string(before.maximum)+
+        ". "+consequence;
+}
+
 std::string simulation_frame_text(const SimulationSpec& spec,
         const SimulationTrace& trace, const SimulationFrame& frame) {
     require(frame.begin <= frame.end && frame.end <= trace.ordered.size() &&
