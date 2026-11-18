@@ -244,10 +244,15 @@ ocurre después de confirmar el nuevo modelo y la vista Win32. Si un
 observador falla o navega de forma anidada antes de lanzar una excepción,
 el simulador no deshace datos ya aplicados ni el último paso confirmado.
 El aviso accesible identifica un fallo de notificación sin afirmar que
-**Aplicar datos** haya sido rechazado. Las regresiones
+**Aplicar datos** haya sido rechazado. Si durante esa notificación se genera
+otro diagnóstico, por ejemplo al intentar aplicar un borrador inválido,
+el aviso del observador exterior no lo sustituye. También se conserva un
+diagnóstico previo del editor al navegar por la simulación. Las regresiones
+`reentrant_invalid_input_outweighs_observer_failure`,
 `applied_data_survive_observer_exception` y
-`scenario_observer_reentry_keeps_committed_data` requieren ejecución Windows. Si el modelo calcula una entrada
-válida, pero un control Win32 rechaza su presentación posterior, se recuperan
+`scenario_observer_reentry_keeps_committed_data` requieren ejecución Windows.
+
+Si el modelo calcula una entrada válida, pero un control Win32 rechaza su presentación posterior, se recuperan
 los datos anteriormente aplicados, el paso, el selector, las barras, la salida
 y la posición de lectura. El borrador enviado se conserva para corregirlo
 o reintentar, y no se informa de que los datos quedaron aplicados. Si el fallo

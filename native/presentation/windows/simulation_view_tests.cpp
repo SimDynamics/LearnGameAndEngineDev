@@ -2831,6 +2831,81 @@ void navigation_retry_preserves_previous_invalid_draft(HWND host) {
     }),"The original draft feedback lost its accessible reading after retry");
 }
 
+void reentrant_invalid_input_outweighs_observer_failure(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.scenarios.clear();
+    const auto authored=spec;
+    bool inject_invalid_on_commit=false;
+    bool throw_after_step=false;
+    bool nested_rejected=false;
+    int notifications=0;
+    SimulationView* current=nullptr;
+    SimulationCallbacks callbacks{};
+    callbacks.changed=[&]{
+        ++notifications;
+        if(inject_invalid_on_commit){
+            inject_invalid_on_commit=false;
+            // The outer Apply has already committed. A listener then edits
+            // the pending draft and rejects its own input from the SAME real
+            // Win32 command path, before throwing an unrelated exception.
+            const auto editor=GetDlgItem(current->window(),input_id);
+            const auto apply=GetDlgItem(current->window(),apply_id);
+            check(editor&&apply,"Missing editor during nested invalid-data test");
+            set_edit_text(editor,"2147483648");
+            SendMessageW(current->window(),WM_COMMAND,
+                MAKEWPARAM(apply_id,BN_CLICKED),reinterpret_cast<LPARAM>(apply));
+            nested_rejected=text(*current,error_id).find("No se aplicaron los datos.")!=std::string::npos;
+            throw std::runtime_error("Error exterior tras rechazar el borrador");
+        }
+        if(throw_after_step){
+            throw_after_step=false;
+            throw std::runtime_error("Error exterior con borrador inválido previo");
+        }
+    };
+    SimulationView view(host,spec,"es",callbacks);current=&view;resize(view,820);
+    const auto original_count=view.step_count();
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(editor,"Cannot locate the input editor for nested-invalid regression");
+    set_edit_text(editor,"1\n2\n3");
+    inject_invalid_on_commit=true;
+    click(view,apply_id);
+    const auto rejected=text(view,error_id);
+    check(nested_rejected&&notifications>=2&&view.step_index()==0&&
+        view.step_count()!=original_count&&text(view,input_id)=="2147483648"&&
+        rejected.find("No se aplicaron los datos.")!=std::string::npos&&
+        rejected.find("Datos aplicados; falló la notificación")==std::string::npos&&
+        rejected.find("Error exterior tras rechazar el borrador")==std::string::npos&&
+        spec==authored,
+        "The outer Apply observer hid the nested invalid-data error");
+    const auto error_is_accessible=[&](const std::string& expected) {
+        return std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==GetDlgItem(view.window(),error_id)&&
+                region.source_text==expected;
+        });
+    };
+    check(error_is_accessible(rejected),
+        "Nested input rejection did not retain its accessible reading");
+
+    // An exception from a later step observer must not displace the
+    // pending invalid-draft feedback that was already displayed.
+    throw_after_step=true;
+    check(view.go_to_step(view.step_count()-1)&&
+        view.step_index()==view.step_count()-1&&
+        text(view,output_id)=="1:1\n2:1\n3:1\n"&&
+        text(view,input_id)=="2147483648"&&
+        text(view,error_id)==rejected&&error_is_accessible(rejected)&&
+        spec==authored,
+        "A step observer replaced the active invalid-draft diagnosis");
+
+    // Reentering correct data clears only the relevant error and starts a
+    // fresh session. The old observer failures never turn into achievements.
+    set_edit_text(editor,"1\n2\n3");
+    click(view,apply_id);
+    check(view.step_index()==0&&text(view,error_id).empty()&&
+        text(view,input_id)=="1\n2\n3"&&spec==authored,
+        "Corrected input could not clear its original validation warning");
+}
+
 void applied_data_survive_observer_exception(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     spec.scenarios.clear();
@@ -4994,6 +5069,7 @@ int main(int argc,char** argv)try {
     run("navigation_callback_failure_keeps_committed_steps",[&]{navigation_callback_failure_keeps_committed_steps(host.value);});
     run("reentrant_success_survives_outer_observer_exception",[&]{reentrant_success_survives_outer_observer_exception(host.value);});
     run("navigation_retry_preserves_previous_invalid_draft",[&]{navigation_retry_preserves_previous_invalid_draft(host.value);});
+    run("reentrant_invalid_input_outweighs_observer_failure",[&]{reentrant_invalid_input_outweighs_observer_failure(host.value);});
     run("applied_data_survive_observer_exception",[&]{applied_data_survive_observer_exception(host.value);});
     run("scenario_observer_reentry_keeps_committed_data",[&]{scenario_observer_reentry_keeps_committed_data(host.value);});
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});

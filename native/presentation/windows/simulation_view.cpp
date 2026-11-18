@@ -1045,9 +1045,12 @@ struct SimulationView::Impl {
     // Do not hide a newer native error created by a reentrant notification.
     void report_committed_notification_failure(
             std::string_view context,std::string_view message) noexcept {
-        // A reentrant navigation may already have produced a newer native
-        // error. An outer callback cannot replace that later diagnosis.
-        if(!navigation_error.empty())return;
+        // A nested editor action can publish a newer invalid-data diagnosis
+        // without using navigation_error. Nor should an observer failure
+        // mask a preexisting rejected draft. Preserve ANY visible diagnosis;
+        // only publish the callback warning when no earlier or newer error
+        // currently needs the learner's attention.
+        if(!navigation_error.empty()||!error.empty())return;
         try{
             previous_navigation_error=error;
             report_native_error(context,message);
