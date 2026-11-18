@@ -2057,6 +2057,8 @@ struct SimulationView::Impl {
                     // selector temporarily named the new scenario. Restore the
                     // previous scenario and its native reading context too.
                     const auto failure=std::current_exception();
+                    const auto life=alive;
+                    const auto rollback_epoch=interaction_epoch;
                     scenario=previous;
                     SendMessageW(item(scenario_id),CB_SETCURSEL,scenario,0);
                     output_scenario=previous;original_order_scenario=previous;
@@ -2069,6 +2071,12 @@ struct SimulationView::Impl {
                     }catch(...){
                         OutputDebugStringW(L"No se pudo recuperar la presentación del escenario anterior.\n");
                     }
+                    // A notification may destroy the view or carry out a newer
+                    // user action while restoring the rejected scenario. Do not
+                    // access the destroyed view or overwrite the newer decision
+                    // with an older rejection diagnostic.
+                    if(!*life)return 0;
+                    if(interaction_epoch!=rollback_epoch)return 0;
                     // The originating exception belongs to the rejected
                     // scenario, not to the outer window's generic redraw.
                     // A second native failure while restoring the old view
