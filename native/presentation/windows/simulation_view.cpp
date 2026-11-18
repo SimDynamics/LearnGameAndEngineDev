@@ -847,16 +847,9 @@ struct SimulationView::Impl {
         }else if(after.phase==SimulationPhase::new_maximum||
                  after.phase==SimulationPhase::tie||
                  after.phase==SimulationPhase::below_maximum){
-            const char* relation=after.phase==SimulationPhase::new_maximum?">":
-                after.phase==SimulationPhase::tie?"=":"<";
-            const char* consequence=after.phase==SimulationPhase::new_maximum?
-                "Nuevo máximo: reemplaza candidatos.":
-                after.phase==SimulationPhase::tie?
-                "Empate: agrega el valor a los candidatos.":
-                "No supera el máximo: conserva los candidatos.";
-            changes.push_back("Comparación: "+spec.labels.frequency+" "+
-                std::to_string(after.frequency)+" "+relation+" "+spec.labels.maximum+
-                " anterior "+std::to_string(before->maximum)+". "+consequence);
+            // Keep the actual preceding model maximum, not the value after
+            // this decision. The same explanation is tested without Win32.
+            changes.push_back(simulation_group_decision_comparison(spec,*before,after));
         }
         const auto number=[&](std::string_view label,std::size_t previous,std::size_t current){
             if(previous!=current)
