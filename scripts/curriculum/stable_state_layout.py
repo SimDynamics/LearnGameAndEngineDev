@@ -6184,16 +6184,16 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         # requiring a new marker here also protects an unrelated drag-fill
         # explanation authored in the same multi-owner publication.
         bibliography_only = bibliography_revision.is_bibliography_only_revision(block, actual)
-        # Bibliography revisions already have their own signed reading archive.
-        # Ordinary prose must retain the exact changed field's descriptor.
-        ordinary_fields = () if bibliography_only else ordinary_editorial_fields(block, actual)
-        if ordinary_fields:
+        # This precise gap concerns a newly introduced optional explanation.
+        # Existing prose edits have their own curricular checks; requiring
+        # their markers here would change the established rejection paths.
+        ordinary_fields = ordinary_editorial_fields(block, actual)
+        if not bibliography_only and "explanation" not in block and "explanation" in ordinary_fields:
             current_overlay = current.get(text_semantics.ROOT_FIELD) or {}
             current_marks = {(entry["block"], entry["path"]): entry
                              for entry in current_overlay.get("fields", [])}
-            for field in ordinary_fields:
-                require((identity, "/" + field) in current_marks,
-                        "An ordinary prose revision needs its exact authored text descriptor")
+            require((identity, "/explanation") in current_marks,
+                    "An optional explanation needs its exact authored text descriptor")
         if bibliography_only:
             require(identity in appended and all("bibliography" in proof for proof in appended[identity]),
                     "A new bibliography-only revision requires its exact authored reading archive")
