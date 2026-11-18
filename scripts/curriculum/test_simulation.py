@@ -338,6 +338,46 @@ class SimulationContractTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             simulation.validate_contract(value)
 
+    def test_processed_remaining_counts_use_the_real_observed_range(self):
+        # Seven phases: initial, start, decision, start, advance, decision,
+        # done. Each rendered count is 3 bytes (0/3 through 3/0); the
+        # accumulated group outputs are 6 and then 12 bytes.
+        value = block()
+        spec = value["simulation"]
+        spec.update(values=[5, 2, 5], scenarios=[],
+                    outputTemplate="{value}:{processedCount}/{remainingCount}",
+                    explanations={name: "{processedCount}/{remainingCount}"
+                                  for name in simulation.EXPLANATION_FIELDS})
+        published = deepcopy(value)
+        self.assertIs(simulation.validate_contract(value), spec)
+        self.assertEqual(3 + 3 + 9 + 9 + 9 + 15 + 15,
+                         simulation._trace_text_bytes(spec, spec["values"]))
+        self.assertEqual(value, published)
+
+        # The last counted element is not also counted by the group decision.
+        spec["values"] = [9, 9, 9]
+        simulation.validate_contract(value)
+        self.assertEqual(3 + 3 + 3 + 3 + 9 + 9,
+                         simulation._trace_text_bytes(spec, spec["values"]))
+        spec["values"] = []
+        simulation.validate_contract(value)
+        self.assertEqual(3, simulation._trace_text_bytes(spec, []))
+
+        # For raw text output an empty string remains a real group, adding
+        # ":1/2\\n" (5 bytes) before "patio:3/0\\n" (10 bytes).
+        spec.update(valueType="text", values=["patio", "", "patio"])
+        simulation.validate_contract(value)
+        self.assertEqual(3 + 3 + 8 + 8 + 8 + 18 + 18,
+                         simulation._trace_text_bytes(spec, spec["values"]))
+
+        # The same contracts apply when sort is disabled and the input was
+        # already ordered. Validation never rewrites the authored data.
+        spec.update(sort=False, values=["", "patio", "patio"])
+        before = deepcopy(value)
+        simulation.validate_contract(value)
+        self.assertEqual(66, simulation._trace_text_bytes(spec, spec["values"]))
+        self.assertEqual(value, before)
+
     def test_trace_budget_counts_every_accumulated_frame_as_native_does(self):
         value = block()
         spec = value["simulation"]
