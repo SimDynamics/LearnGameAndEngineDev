@@ -70,6 +70,20 @@ std::string data_identity(const std::vector<SimulationValue>& values) {
         append(std::to_string(text.size()));append(":");append(text);append(";");}
     return std::to_string(hash);
 }
+// RichEdit normalizes every CR or CRLF paragraph separator to LF when
+// edit_text() reads the native document. The computed stdout stays byte-exact
+// in the trace; only the presentation comparison uses this projection.
+std::string normalized_rich_edit_lines(std::string_view text) {
+    std::string result;
+    result.reserve(text.size());
+    for(std::size_t i=0;i<text.size();++i){
+        if(text[i]=='\r'){
+            result+='\n';
+            if(i+1<text.size()&&text[i+1]=='\n')++i;
+        }else result+=text[i];
+    }
+    return result;
+}
 // stable_sort keeps equal items in source order. Reconstruct the source
 // position of each sorted cell without touching the validated trace or
 // inventing a new authored value. A nonempty result means sorting moved data.
@@ -986,7 +1000,17 @@ struct SimulationView::Impl {
         }
         visible_text[output_id]=state.output;
         if(output_changed){
-            set_edit_text(output_window,state.output);
+            const auto expected_native=normalized_rich_edit_lines(state.output);
+            // A failed outer update can leave the original native document
+            // intact even though visible_text already names the new frame.
+            // Do not destroy its selection by needlessly re-streaming it.
+            if(edit_text(output_window)!=expected_native)
+                set_edit_text(output_window,state.output);
+            // EM_STREAMIN can silently keep the previous bytes with dwError=0.
+            // Reject that half-presented frame instead of narrating computed
+            // stdout that the learner cannot actually see.
+            if(edit_text(output_window)!=expected_native)
+                throw std::runtime_error("RichEdit no conservó la salida calculada.");
             if(preserve_selection){
                 // RichEdit STREAMIN recreates the document and its selection.
                 // Retain the selection only within the same calculated trace.
