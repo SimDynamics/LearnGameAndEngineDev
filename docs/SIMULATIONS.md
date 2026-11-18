@@ -853,6 +853,27 @@ Las ocho explicaciones y `outputTemplate` permiten estas sustituciones:
 | `{size}` | Cantidad de elementos del array. |
 | `{group}` | Número del grupo actual desde uno; cero antes del primero. |
 | `{groups}` | Cantidad total de grupos de la copia ordenada. |
+| `{countedIndex}` | Índice, desde cero, de la casilla **recién contada** en la copia ordenada. |
+| `{originIndex}` | Índice original, desde cero, del mismo elemento recién contado **antes de ordenar**. |
+
+Los dos nuevos índices sólo tienen contenido en `start` y `advance`,
+que son las fases donde se cuenta un elemento. Durante `initial`, las
+decisiones `newMaximum`, `tie` y `belowMaximum`, `done` y `empty`
+su sustitución es una cadena vacía: **una decisión no vuelve a leer la
+última casilla**. Por el mismo motivo, no se utilizan para crear datos
+de salida en `outputTemplate`, que se evalúa al terminar cada grupo.
+Si `sort` es `false` o los datos ya están ordenados, los índices
+coinciden; si se ordenan, `originIndex` se calcula conservando el
+orden original entre valores iguales.
+
+Por ejemplo, si la entrada es `[7, 3, 7, 2]`, la copia ordenada es
+`[2, 3, 7, 7]`. Sus posiciones originales son `[3, 1, 0, 2]`.
+En el primer `start`, `{countedIndex}` vale `0` y `{originIndex}`
+vale `3`. Al contar los dos `7`, los pares son `(2, 0)` y
+`(3, 2)`. Work puede describir cada vuelta sin escribir posiciones
+fijas ni confundir la copia ordenada con el array original. El mismo
+cálculo se aplica a escenarios, entradas editadas y textos, incluso
+cuando el valor es una cadena vacía.
 
 Las sustituciones se aplican una sola vez. Las llaves que formen parte de un
 valor de texto se conservan como datos y no se vuelven a interpretar. No se
