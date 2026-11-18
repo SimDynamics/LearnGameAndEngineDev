@@ -3184,6 +3184,110 @@ void reentrant_success_survives_outer_observer_exception(HWND host) {
         "A valid retry did not clear the outer observer's transient warning");
 }
 
+void repeated_invalid_draft_diagnostic_preserves_reading(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(6),
+        "Cannot prepare a visited simulation frame for unchanged diagnostics");
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto error_window=GetDlgItem(view.window(),error_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(editor&&error_window&&output,
+        "Missing data editor, diagnostic RichEdit or calculated output");
+
+    set_edit_text(editor,"2147483648");
+    click(view,apply_id);
+    const auto original_warning=text(view,error_id);
+    check(original_warning.find("No se aplicaron los datos.")!=std::string::npos,
+        "Cannot prepare a rejected draft with visible diagnostic feedback");
+    int streams=0;
+    const auto count_streams=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        if(message==EM_STREAMIN)++*reinterpret_cast<int*>(raw);
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR stream_id=0x53494453;
+    check(SetWindowSubclass(error_window,count_streams,stream_id,
+        reinterpret_cast<DWORD_PTR>(&streams))!=FALSE,
+        "Cannot observe the native diagnostic RichEdit streams");
+    struct Unhook {
+        HWND window;SUBCLASSPROC callback;UINT_PTR id;
+        ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+    } error_guard{error_window,count_streams,stream_id};
+    const CHARRANGE selection{2,9};
+    SendMessageW(error_window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    const auto unchanged=[&](const char* reason,const std::string& expected){
+        CHARRANGE after{};
+        SendMessageW(error_window,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+        check(text(view,error_id)==expected&&
+            after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&
+            std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+                return region.target==error_window&&region.source_text==expected;
+            })&&spec==authored,reason);
+    };
+    for(const std::size_t step:std::array<std::size_t,4>{7,8,7,6}){
+        check(view.go_to_step(step),"Cannot navigate with an existing rejected draft");
+        unchanged("Identical feedback changed its native selection during navigation",original_warning);
+    }
+    check(streams==0,
+        "A repeated invalid-data diagnostic was unnecessarily re-streamed on a model step");
+
+    set_edit_text(editor,"no_es_un_entero");
+    click(view,apply_id);
+    const auto replacement_warning=text(view,error_id);
+    check(streams==1&&replacement_warning!=original_warning&&
+        replacement_warning.find("No se aplicaron los datos.")!=std::string::npos,
+        "Changing the diagnostic did not replace the previously cached text exactly once");
+    SendMessageW(error_window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    check(view.go_to_step(7)&&streams==1,
+        "Navigating with the newly corrected feedback still re-streamed the same warning");
+    unchanged("A changed diagnostic lost its selection after a later step",replacement_warning);
+
+    view.set_text_scale(125);resize(view,820);
+    check(streams==2&&rich_edit_scale(error_window)==125,
+        "A real reader zoom did not refresh the diagnostic formatting");
+    check(view.go_to_step(6)&&streams==2,
+        "After zoom, an unchanged diagnostic was re-streamed again");
+
+    // The fallback bypasses the normal RichEdit formatter. Its next ordinary
+    // update must not reuse a stale formatting stamp from the previous error.
+    int rejected=1;
+    const auto reject_output_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& remaining=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&remaining>0){--remaining;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR reject_id=0x53494446;
+    check(SetWindowSubclass(output,reject_output_zoom,reject_id,
+        reinterpret_cast<DWORD_PTR>(&rejected))!=FALSE,
+        "Cannot inject a late RichEdit rejection for diagnostic recovery");
+    struct OutputUnhook {
+        HWND window;SUBCLASSPROC callback;UINT_PTR id;
+        ~OutputUnhook(){if(IsWindow(window))RemoveWindowSubclass(window,callback,id);}
+    } output_guard{output,reject_output_zoom,reject_id};
+    set_edit_text(editor,"2147483648");
+    click(view,apply_id);
+    const auto fallback_warning=text(view,error_id);
+    check(rejected==0&&streams==2&&
+        fallback_warning.find("No se pudo presentar el aviso con RichEdit:")!=std::string::npos&&
+        fallback_warning.find("El entero está fuera del intervalo de 32 bits")!=std::string::npos&&
+        fallback_warning!=replacement_warning&&
+        name(error_window)==fallback_warning&&spec==authored,
+        "The direct native warning failed to preserve the original input diagnosis");
+    SendMessageW(error_window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    check(view.go_to_step(7)&&streams==3,
+        "The direct Win32 fallback retained a stale rich-text formatting stamp");
+    unchanged("The first RichEdit redraw changed the recovered warning",fallback_warning);
+    check(view.go_to_step(6)&&streams==3,
+        "The formatted fallback warning was unnecessarily re-streamed again");
+    set_edit_text(editor,"1\n2\n3");
+    click(view,apply_id);
+    check(text(view,error_id).empty()&&spec==authored,
+        "Applying corrected data left the rejected diagnostic on the screen");
+}
+
 void navigation_retry_preserves_previous_invalid_draft(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -5862,6 +5966,7 @@ int main(int argc,char** argv)try {
     run("navigation_callback_failure_keeps_committed_steps",[&]{navigation_callback_failure_keeps_committed_steps(host.value);});
     run("reentrant_success_survives_outer_observer_exception",[&]{reentrant_success_survives_outer_observer_exception(host.value);});
     run("navigation_retry_preserves_previous_invalid_draft",[&]{navigation_retry_preserves_previous_invalid_draft(host.value);});
+    run("repeated_invalid_draft_diagnostic_preserves_reading",[&]{repeated_invalid_draft_diagnostic_preserves_reading(host.value);});
     run("rejected_apply_preserves_diagnostic_when_richedit_rejects_feedback",[&]{rejected_apply_preserves_diagnostic_when_richedit_rejects_feedback(host.value);});
     run("rejected_apply_observer_cannot_hide_input_diagnostic",[&]{rejected_apply_observer_cannot_hide_input_diagnostic(host.value);});
     run("reentrant_invalid_input_outweighs_observer_failure",[&]{reentrant_invalid_input_outweighs_observer_failure(host.value);});
