@@ -2145,7 +2145,13 @@ struct SimulationView::Impl {
             self->pressed_target.reset();
         }
         const auto gesture=self->dispatch_passive_gesture(item,message,wp,lp);
-        if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY)return 0;
+        if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY){
+            // The callback can fail on DOWN or MOVE. Without cancelling
+            // the pending press, a later successful UP on the same cell
+            // would navigate despite the failed gesture.
+            if(!gesture.owner_gone)self->pressed_target.reset();
+            return 0;
+        }
         if(clicked_target&&*clicked_target<self->count()){
             self->go(*clicked_target);return 0;
         }
@@ -2201,7 +2207,12 @@ struct SimulationView::Impl {
             self->pressed_frequency_group.reset();
         }
         const auto gesture=self->dispatch_passive_gesture(item,message,wp,lp);
-        if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY)return 0;
+        if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY){
+            // Reject the complete press sequence, not just this message.
+            // A later UP cannot select a card from a failed DOWN or MOVE.
+            if(!gesture.owner_gone)self->pressed_frequency_group.reset();
+            return 0;
+        }
         if(clicked_group){
             const auto destination=self->spec.view==SimulationViewMode::walkthrough?
                 self->trace.candidate_frames.at(*clicked_group):*clicked_group;

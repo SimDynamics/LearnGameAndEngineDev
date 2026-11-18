@@ -540,6 +540,11 @@ escapa del procedimiento nativo. El aviso es accesible y no sustituye
 un diagnóstico de datos inválidos que ya estuviera pendiente. La
 regresión `passive_gesture_exceptions_are_isolated` comprueba celdas,
 barras, variables y textos de lectura, además del siguiente clic válido.
+El rechazo de un gesto al presionar o al mover el ratón cancela también
+su pulsación pendiente: soltar el botón después no elige accidentalmente
+una celda ni una barra. La regresión
+`cancelled_passive_gesture_cannot_finish_click` verifica las dos superficies,
+los dos momentos de fallo y que el siguiente clic completo funcione.
 Los espacios entre tarjetas y las áreas ocultas tras el desplazamiento
 no son destinos. El puntero indica cuándo una tarjeta es seleccionable.
 El selector de pasos, los botones de decisión y las casillas del array

@@ -502,6 +502,86 @@ void current_frequency_decision(HWND host,const std::filesystem::path& captures)
         "A static summary invented a current per-group decision");
     check(spec==authored,"Marking the current group modified authored data");
 }
+void cancelled_passive_gesture_cannot_finish_click(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    HWND reject_target=nullptr;
+    UINT reject_message=0;
+    int rejections=0;
+    SimulationCallbacks listener{};
+    listener.passive_gesture=[&](HWND child,UINT message,WPARAM,LPARAM)
+            ->std::optional<LRESULT>{
+        if(child==reject_target&&message==reject_message){
+            // The failure is one-shot: the matching mouse-up succeeds.
+            // A stale pressed target would incorrectly turn it into a click.
+            reject_target=nullptr;
+            ++rejections;
+            throw std::runtime_error("Gesto cancelado al presionar o mover");
+        }
+        return std::nullopt;
+    };
+    SimulationView view(host,spec,"es",listener);resize(view,850);
+    check(view.go_to_step(7),"Cannot prepare selectable array and frequency cells");
+    const auto old_output=text(view,output_id);
+    const auto old_count=view.step_count();
+    const auto old_reading=view.reading_regions()[2].key;
+    const auto canvas=GetDlgItem(view.window(),array_id);
+    const auto frequencies=GetDlgItem(view.window(),frequencies_id);
+    check(canvas&&frequencies,"Missing array or histogram Win32 surface");
+
+    const auto press=[&](HWND control,RECT bounds,UINT failing_message,int expected){
+        const POINT point{(bounds.left+bounds.right)/2,(bounds.top+bounds.bottom)/2};
+        check(PtInRect(&bounds,point),"The target has no clickable center");
+        reject_target=control;reject_message=failing_message;
+        SendMessageW(control,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(point.x,point.y));
+        if(failing_message==WM_MOUSEMOVE){
+            // Move one pixel, below the drag-cancel threshold. Only the
+            // observer failure should cancel this otherwise valid press.
+            SendMessageW(control,WM_MOUSEMOVE,MK_LBUTTON,
+                MAKELPARAM(point.x+1,point.y+1));
+        }
+        SendMessageW(control,WM_LBUTTONUP,0,MAKELPARAM(point.x,point.y));
+        pump();
+        const auto warning=text(view,error_id);
+        check(rejections==expected&&reject_target==nullptr&&
+            view.step_index()==7&&view.step_count()==old_count&&
+            text(view,output_id)==old_output&&
+            view.reading_regions()[2].key==old_reading&&
+            warning.find("No se pudo procesar el gesto de la simulación.")!=std::string::npos&&
+            warning.find("Gesto cancelado al presionar o mover")!=std::string::npos&&
+            spec==authored,
+            "A successful mouse-up completed a gesture whose press or move had failed");
+        check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+            return region.target==GetDlgItem(view.window(),error_id)&&
+                region.source_text==warning;
+        }),"The interrupted gesture was missing from accessible narration");
+        // A normal new step clears the temporary gesture error without
+        // changing the learner's pending input or the authored specification.
+        check(view.go_to_step(8)&&text(view,error_id).empty()&&
+            view.go_to_step(7)&&text(view,output_id)==old_output,
+            "An interrupted gesture poisoned later navigation");
+    };
+
+    for(const auto failing_message:{WM_LBUTTONDOWN,WM_MOUSEMOVE}){
+        const auto cell=view.cell_bounds_in_canvas(0);
+        const auto card=view.frequency_card_bounds_in_canvas(0);
+        check(cell.has_value()&&card.has_value(),
+            "Cannot locate previously computed clickable cell and chart card");
+        press(canvas,*cell,failing_message,rejections+1);
+        press(frequencies,*card,failing_message,rejections+1);
+    }
+
+    // A fresh, complete click must still navigate on each surface.
+    click_array_cell(view,0);
+    check(view.step_index()==1&&text(view,error_id).empty()&&spec==authored,
+        "A cancelled array press blocked a later valid cell click");
+    check(view.go_to_step(7),"Cannot return to the completed-group frame");
+    click_frequency_card(view,0);
+    check(view.step_index()==2&&text(view,output_id)=="-8:1\n"&&
+        text(view,error_id).empty()&&spec==authored,
+        "A cancelled histogram press blocked a later valid card click");
+}
+
 void passive_gesture_exceptions_are_isolated(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -5229,6 +5309,7 @@ int main(int argc,char** argv)try {
     };
     run("native_text_control_contract",[&]{native_text_control_contract(host.value);});
     run("current_frequency_decision",[&]{current_frequency_decision(host.value,captures);});
+    run("cancelled_passive_gesture_cannot_finish_click",[&]{cancelled_passive_gesture_cannot_finish_click(host.value);});
     run("passive_gesture_exceptions_are_isolated",[&]{passive_gesture_exceptions_are_isolated(host.value);});
     run("histogram_card_navigation",[&]{histogram_card_navigation(host.value);});
     run("progressive_frequency_bars",[&]{progressive_frequency_bars(host.value,captures);});
