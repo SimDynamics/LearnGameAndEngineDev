@@ -759,7 +759,7 @@ ni textos fuente que sólo contienen esas palabras.
 
 Los fallos de creación y escritura de archivos de ejecución pueden producir
 excepciones internas sin coordenadas, por ejemplo `Cannot create run file:
-C:\\...\\stdin.bin`. Únicamente al presentar `error_utf8` se reconocen los
+C:\...\stdin.bin`. Únicamente al presentar `error_utf8` se reconocen los
 dos prefijos exactos `Cannot create run file:` y `Cannot write run file:`,
 si la ruta que sigue pertenece al directorio autorizado. Los mensajes
 desconocidos, los archivos externos y la salida propia del estudiante no
