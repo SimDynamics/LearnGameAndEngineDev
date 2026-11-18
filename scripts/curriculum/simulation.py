@@ -23,6 +23,7 @@ EXPLANATION_FIELDS = frozenset({
 VIEWS = frozenset({"array", "groups", "walkthrough", "candidates", "summary"})
 TEMPLATE_FIELDS = frozenset({
     "value", "start", "end", "frequency", "maximum", "leaders", "size", "group", "groups",
+    "countedIndex", "originIndex",
 })
 MAX_VALUES = 64
 MAX_SCENARIOS = 8
@@ -93,8 +94,14 @@ def _trace_text_bytes(spec, values):
     again. Explanations show quoted text labels; output preserves the raw data.
     This bounded calculation validates each authored scenario separately.
     """
-    ordered = sorted(values, key=(lambda value: value.encode("utf-8"))
-                     if spec["valueType"] == "text" else None) if spec["sort"] else list(values)
+    source_indices = list(range(len(values)))
+    if spec["sort"]:
+        # Sorting indices is stable; repeated values retain their distinct
+        # original positions. Match the native core's single permutation.
+        source_indices.sort(key=(lambda index: values[index].encode("utf-8"))
+                            if spec["valueType"] == "text" else
+                            (lambda index: values[index]))
+    ordered = [values[index] for index in source_indices]
     groups = []
     for index, value in enumerate(ordered):
         if not groups or groups[-1][2] != value:
@@ -115,12 +122,14 @@ def _trace_text_bytes(spec, values):
             return rendered + (" (1 espacio)" if len(value) == 1 else f" ({len(value)} espacios)")
         return rendered
 
-    def context(begin, end, group, frequency, value=None, *, display=False):
+    def context(begin, end, group, frequency, value=None, *, display=False, counted_at=None):
         return {"value": "" if value is None else value_text(value, display=display),
                 "start": str(begin), "end": str(end),
                 "frequency": str(frequency), "maximum": str(maximum),
                 "leaders": ", ".join(value_text(item, display=display) for item in leaders),
-                "size": str(len(ordered)), "group": str(group), "groups": str(len(groups))}
+                "size": str(len(ordered)), "group": str(group), "groups": str(len(groups)),
+                "countedIndex": "" if counted_at is None else str(counted_at),
+                "originIndex": "" if counted_at is None else str(source_indices[counted_at])}
 
     def render(template, values):
         return re.sub(r"\{([^{}]+)\}", lambda match: values[match[1]], template)
@@ -137,9 +146,11 @@ def _trace_text_bytes(spec, values):
         return total
     frame("initial", context(0, 0, 0, 0, display=True))
     for group, (begin, end, value) in enumerate(groups, 1):
-        frame("start", context(begin, begin + 1, group, 1, value, display=True))
+        frame("start", context(begin, begin + 1, group, 1, value,
+                               display=True, counted_at=begin))
         for at in range(begin + 2, end + 1):
-            frame("advance", context(begin, at, group, at - begin, value, display=True))
+            frame("advance", context(begin, at, group, at - begin, value,
+                                     display=True, counted_at=at - 1))
         frequency = end - begin
         if frequency > maximum:
             maximum, leaders, phase = frequency, [value], "newMaximum"
