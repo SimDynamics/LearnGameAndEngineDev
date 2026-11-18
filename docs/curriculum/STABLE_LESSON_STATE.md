@@ -385,14 +385,16 @@ respuestas y sus identidades. La regresión usa los `slots` JSON que realmente
 guarda `CppFillView`, no `Response.order` (reservado a `order_code`).
 También protege la evaluación de las tres fichas, los distractores, los
 intentos incorrectos revisados, sus metadatos y los logros previos sin
-conceder aciertos nuevos. En ambos cargadores Windows rechaza once variantes:
+conceder aciertos nuevos. En ambos cargadores Windows rechaza doce variantes:
 ocho con marcas ausentes o adulteradas, respuestas cambiadas o tokens
-sustituidos y tres con prosa compuesta únicamente por espacios Unicode.
-Estos tres casos incluyen NEL (U+0085), con huellas y descriptores coherentes
-para comprobar específicamente el rechazo de una explicación opcional
-combinada con formato, una pregunta reformulada y una explicación nueva
-en `drag_fill_code` sin archivo de formato. La regla común de autoría se
-aplica a las preguntas y explicaciones con descriptor explícito, sin
+sustituidos y cuatro con prosa compuesta únicamente por espacios Unicode.
+Los casos Unicode incluyen NEL (U+0085), con huellas coherentes para comprobar
+el rechazo de una explicación opcional combinada con formato, una pregunta
+reformulada y una explicación nueva en `drag_fill_code`, tanto marcada como
+sin marca y sin archivo de formato. En esta última situación, el cargador
+exige el descriptor de `/explanation` cuando una arista editorial autenticada
+demuestra que se añadió únicamente ese campo. La regla común de autoría se
+aplica a preguntas y explicaciones con descriptor explícito, sin
 reescribir las versiones históricas ni las respuestas.
 Se incluye en ReaderBuild y en la construcción completa de
 pruebas mediante CTest, sin cambiar recursos curriculares de Work. Estas
