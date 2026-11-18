@@ -368,8 +368,17 @@ anteriores y conserva la clave histórica del ejercicio. La regla sólo admite
 una explicación ausente en un ejercicio ordinario: no permite inventar
 `/question`, crear guías nuevas en `compileCheck` o `outputCheck`, añadir
 `reviewFeedback` sin autorización, alterar respuestas ni sustituir tokens.
-La autoría y las regresiones están preparadas; su ejecución nativa en el PC
-Windows autorizado sigue siendo necesaria para acreditarla.
+La regresión `native.ordinary_explanation_authoring` contempla las
+cinco clases con fuente física, sus respuestas, el origen y los rechazos de
+revisiones encubiertas; la selección múltiple sin fuente sigue el contrato
+ordinario anterior. La nueva `native.optional_prose_format` genera una
+lección sintética, comprueba en ambos cargadores Windows la explicación con
+marcado explícito y el código espaciado, recupera una respuesta e intentos
+guardados y rechaza un descriptor ausente o adulterado, una respuesta cambiada
+o un token nuevo. Se incluye en ReaderBuild y en la construcción completa de
+pruebas mediante CTest, sin cambiar recursos curriculares de Work. Estas
+regresiones están **preparadas, no ejecutadas en el PC Windows autorizado**;
+su ejecución allí sigue siendo necesaria para acreditar el resultado.
 
 Cuando una actividad está en una página distinta de la original, el
 validador resuelve su propietario mediante el `origin` y el `current`
