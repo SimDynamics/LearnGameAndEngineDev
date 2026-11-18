@@ -100,6 +100,11 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
         if kind == "order_code":
             self.assertEqual(owner["fragments"][0], "int x = 1;")
             owner["fragments"][0] = "int  x = 1;"
+        elif kind == "output_prediction":
+            # This fixture prints a literal instead of declaring "int x".
+            # Its token-preserving separator is intentionally different.
+            self.assertEqual(owner["code"], 'std::cout << "A";')
+            owner["code"] = 'std::cout  << "A";'
         else:
             key = "template" if kind in {"drag_fill_code", "inline_fill_code"} else "code"
             self.assertIn("int x", owner[key])
