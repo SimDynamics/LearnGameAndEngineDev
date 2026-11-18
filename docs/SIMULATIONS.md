@@ -297,10 +297,21 @@ para narración. Si todas las vías de restauración del borrador fallan al camb
 de escenario, el aviso conserva la causa original y agrega una advertencia
 para revisar el texto visible. No declara conservado un borrador sin verificarlo.
 Se restaura la traza por movimiento, sin duplicar una segunda copia de
-hasta 8 MiB. Las regresiones `applying_valid_data_is_atomic_after_native_failure`
-y `scenario_change_is_atomic_after_native_failure` provocan una única
+hasta 8 MiB. El rechazo de un escenario identifica directamente
+«No se pudo cambiar el escenario» y conserva la causa original mediante
+el aviso accesible, aunque fallen consecutivamente la nueva presentación,
+la recuperación del panel anterior y el segundo intento de dibujarlo. No
+se sustituye la causa por «No se pudo actualizar la simulación». Si el
+observador de esa recuperación navega de nuevo, la navegación más reciente
+prevalece sobre el aviso de un intento anterior; tampoco se accede a una
+vista destruida por el observador. Las regresiones
+`scenario_rejection_survives_repeated_native_presentation_failure` y
+`rejected_scenario_notification_keeps_newer_navigation` comprueban estas
+condiciones. Las regresiones
+`applying_valid_data_is_atomic_after_native_failure` y
+`scenario_change_is_atomic_after_native_failure` provocan una única
 falla tardía real de RichEdit y comprueban que el intento siguiente pueda
-aplicarse normalmente. Requieren ejecución local en Windows.
+aplicarse normalmente. Todas requieren ejecución local en Windows.
 
 El lector conserva una identidad de narración distinta para la ayuda del
 formato **Lista entre comillas**, sin perder la identidad histórica del
