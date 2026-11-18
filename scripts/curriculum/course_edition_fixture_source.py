@@ -142,11 +142,28 @@ def produce(destination: Path) -> None:
     if destination.is_symlink():
         raise ValueError("El destino QA no puede ser un enlace.")
     destination = destination.resolve()
+    # Ninja creates parent directories for declared BYPRODUCTS before running
+    # their producer. Such empty directories are not a previous QA fixture,
+    # and must not be mistaken for foreign files. Derive their permitted
+    # relative paths from the actual authenticated fixture documents.
+    files, paths = documents()
     if destination.exists() and any(destination.iterdir()):
         marker = destination / "manifest.json"
-        if not marker.is_file() or json.loads(marker.read_text(encoding="utf-8")).get("fixture") != MARKER:
-            raise ValueError("El destino no es un árbol de pruebas de edición reconocido.")
-    files, paths = documents()
+        if marker.is_file():
+            if json.loads(marker.read_text(encoding="utf-8")).get("fixture") != MARKER:
+                raise ValueError("El destino no es un árbol de pruebas de edición reconocido.")
+        else:
+            permitted_dirs = {
+                parent
+                for name in files
+                for parent in Path(name).parents
+                if parent != Path(".")
+            }
+            for existing in destination.rglob("*"):
+                relative = existing.relative_to(destination)
+                if (existing.is_symlink() or not existing.is_dir()
+                        or relative not in permitted_dirs):
+                    raise ValueError("El destino no es un árbol de pruebas de edición reconocido.")
     # No escrituras hasta completar y validar todas las fuentes en memoria.
     payloads = {
         name: (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
