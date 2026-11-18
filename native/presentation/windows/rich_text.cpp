@@ -1235,6 +1235,12 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
     mapping[text.size()] = displayed.size();
     for(const auto& [first,last]:trusted.fragments)fragments.emplace_back(mapping[byte_boundaries[first]],mapping[byte_boundaries[last]]);
     set_edit_text(edit, displayed);
+    // EM_STREAMIN may report success without replacing the document. Never
+    // format or cache an unconfirmed RichEdit presentation as if its text were
+    // the freshly authored source. Compare against the transformed display
+    // text, not the raw source (inline wrappers can be presentation-only).
+    if(edit_text(edit)!=displayed)
+        throw std::runtime_error("RichEdit no conservó el texto de presentación.");
     FormatTransaction transaction(edit);
     default_format(edit, code, role);
     const auto source = wide(displayed);
