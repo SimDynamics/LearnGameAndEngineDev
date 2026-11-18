@@ -2664,6 +2664,86 @@ void counted_source_origin_explanation(HWND host) {
         "A real text view confused an empty value or repeated label's source position");
 }
 
+// Progress is computed from the observed half-open range, not from the
+// number of button presses. The same counts must appear in the RichEdit
+// explanation, its narration source, and the output at each group decision.
+void processed_remaining_progress_in_reader(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.values=numbers({5,2,5});
+    spec.scenarios={{"vacio","Colección vacía",{}}};
+    spec.explanations.initial="Contados {processedCount}; quedan {remainingCount}.";
+    spec.explanations.start="Contados {processedCount}; quedan {remainingCount}.";
+    spec.explanations.advance="Contados {processedCount}; quedan {remainingCount}.";
+    spec.explanations.new_maximum="Decisión: contados {processedCount}; quedan {remainingCount}.";
+    spec.explanations.tie=spec.explanations.new_maximum;
+    spec.explanations.below_maximum=spec.explanations.new_maximum;
+    spec.explanations.done="Fin: contados {processedCount}; quedan {remainingCount}.";
+    spec.explanations.empty="Vacío: contados {processedCount}; quedan {remainingCount}.";
+    spec.output_template="{value}:{processedCount}/{remainingCount}";
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    const auto check_step=[&](std::size_t index,std::string_view explanation,
+                              std::string_view output) {
+        check(view.go_to_step(index),"Cannot select the calculated progress step");
+        const auto target=GetDlgItem(view.window(),explanation_id);
+        check(target&&text(view,explanation_id)==explanation&&
+            text(view,output_id)==output,
+            "The visible progress or stdout differs from the actual counted range");
+        bool found=false;
+        for(const auto& region:view.reading_regions())
+            if(region.target==target){
+                check(!found&&region.source_text==explanation,
+                    "Narration reported a different processed/remaining count");
+                found=true;
+            }
+        check(found,"The calculated progress has no reading region");
+    };
+    check(view.step_count()==7,
+        "The three-element dataset lost its count and decision frames");
+    check_step(0,"Contados 0; quedan 3.","");
+    check_step(1,"Contados 1; quedan 2.","");
+    check_step(2,"Decisión: contados 1; quedan 2.","2:1/2\n");
+    check_step(3,"Contados 2; quedan 1.","2:1/2\n");
+    check_step(4,"Contados 3; quedan 0.","2:1/2\n");
+    check_step(5,"Decisión: contados 3; quedan 0.","2:1/2\n5:3/0\n");
+    check_step(6,"Fin: contados 3; quedan 0.","2:1/2\n5:3/0\n");
+    click(view,previous_id);
+    check(view.step_index()==5,"Previous did not recover the completed group");
+    check_step(4,"Contados 3; quedan 0.","2:1/2\n");
+
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    check(selector&&SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "The empty scenario is unavailable");
+    SendMessageW(view.window(),WM_COMMAND,
+        MAKEWPARAM(scenario_id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(selector));
+    pump();
+    check(view.step_count()==1,
+        "The empty scenario retained a count from a previous input");
+    check_step(0,"Vacío: contados 0; quedan 0.","");
+
+    check(SendMessageW(selector,CB_SETCURSEL,0,0)!=CB_ERR,
+        "Cannot return to the original progress dataset");
+    SendMessageW(view.window(),WM_COMMAND,
+        MAKEWPARAM(scenario_id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(selector));
+    pump();
+    check(view.step_count()==7,"The original dataset did not restore its count frames");
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(editor,"The progress fixture has no editable array input");
+    set_edit_text(editor,"4\n4");
+    click(view,apply_id);
+    check(view.step_count()==5&&view.step_index()==0,
+        "Applying a smaller dataset retained the previous group count");
+    check_step(1,"Contados 1; quedan 1.","");
+    check_step(2,"Contados 2; quedan 0.","");
+    check_step(3,"Decisión: contados 2; quedan 0.","4:2/0\n");
+    check_step(4,"Fin: contados 2; quedan 0.","4:2/0\n");
+    click(view,restore_id);
+    check(view.step_index()==0&&view.step_count()==7&&spec==authored,
+        "Restore modified the authored values or retained edited progress");
+    check_step(1,"Contados 1; quedan 2.","");
+    check_step(6,"Fin: contados 3; quedan 0.","2:1/2\n5:3/0\n");
+}
+
 void original_order_comparison(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -6373,6 +6453,7 @@ int main(int argc,char** argv)try {
     run("counted_cell_emphasis",[&]{counted_cell_emphasis(host.value,captures);});
     run("walkthrough_cell_selection",[&]{walkthrough_cell_selection(host.value);});
     run("counted_source_origin_explanation",[&]{counted_source_origin_explanation(host.value);});
+    run("processed_remaining_progress_in_reader",[&]{processed_remaining_progress_in_reader(host.value);});
     run("original_order_comparison",[&]{original_order_comparison(host.value);});
     run("original_order_reading_session",[&]{original_order_reading_session(host.value);});
     run("static_simulation_text_is_not_restreamed",[&]{static_simulation_text_is_not_restreamed(host.value);});
