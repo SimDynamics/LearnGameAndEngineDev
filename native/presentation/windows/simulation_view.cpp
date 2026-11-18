@@ -154,6 +154,8 @@ struct SimulationView::Impl {
     std::size_t fonts_revision=0;
     std::map<int,int> requested_heights;
     std::size_t position=0,scenario=0;
+    // A reentrant reader action supersedes the target of an older mouse gesture.
+    std::uint64_t interaction_epoch=0;
     SimulationInputFormat input_format=SimulationInputFormat::lines;
     int width=1,height=1,scale=100,canvas_height=1;
     int frequency_scroll=0,frequency_total_height=0;
@@ -1104,6 +1106,7 @@ struct SimulationView::Impl {
     }
     bool go(std::size_t next,bool reveal_decision=false) {
         if(next>=count())return false;
+        ++interaction_epoch;
         if(next==position){
             if(reveal_decision)reveal_current_histogram_decision();
             return true;
@@ -1228,6 +1231,7 @@ struct SimulationView::Impl {
     }
     void toggle_frequency_filter() {
         if(!completed_groups())return;
+        ++interaction_epoch;
         const auto old_mode=frequency_candidates_only;
         const auto old_scroll=frequency_scroll,old_height=frequency_total_height;
         const auto old_wheel=frequency_wheel_remainder;
@@ -1288,6 +1292,7 @@ struct SimulationView::Impl {
         }
     }
     void replace_trace(SimulationTrace candidate,bool replace_editor) {
+        ++interaction_epoch;
         // Only fully validated traces reach this commit point. In particular,
         // parsed editor input already had its expansion checked by the core.
         auto next_source_positions=stable_source_positions(candidate);
@@ -1420,6 +1425,8 @@ struct SimulationView::Impl {
         replace_trace(build_simulation_trace(spec,std::move(values)),replace_editor);
     }
     void apply_input() {
+        // A rejected draft also supersedes an in-flight mouse gesture.
+        ++interaction_epoch;
         try {
             // Parsing already builds and validates every frame. Reuse it,
             // rather than computing all authored scenarios and the edit twice.
@@ -1451,6 +1458,7 @@ struct SimulationView::Impl {
     }
     void change_input_format(SimulationInputFormat requested) {
         if(requested==input_format)return;
+        ++interaction_epoch;
         // A format change edits only a pending draft. The applied simulation
         // trace, traversal step and previous reading sessions never change.
         const auto editor=item(input_id);
@@ -2144,12 +2152,19 @@ struct SimulationView::Impl {
                 std::abs(point.y-self->pressed_at.y)<=self->px(8))clicked_target=self->pressed_target;
             self->pressed_target.reset();
         }
+        const auto press_epoch=self->interaction_epoch;
         const auto gesture=self->dispatch_passive_gesture(item,message,wp,lp);
         if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY){
             // The callback can fail on DOWN or MOVE. Without cancelling
             // the pending press, a later successful UP on the same cell
             // would navigate despite the failed gesture.
             if(!gesture.owner_gone)self->pressed_target.reset();
+            return 0;
+        }
+        if(message!=WM_NCDESTROY&&press_epoch!=self->interaction_epoch){
+            // A reentrant reader action superseded this mouse press.
+            // Its older cell target must not override the newer decision.
+            self->pressed_target.reset();
             return 0;
         }
         if(clicked_target&&*clicked_target<self->count()){
@@ -2206,11 +2221,17 @@ struct SimulationView::Impl {
                 clicked_group=self->pressed_frequency_group;
             self->pressed_frequency_group.reset();
         }
+        const auto press_epoch=self->interaction_epoch;
         const auto gesture=self->dispatch_passive_gesture(item,message,wp,lp);
         if((gesture.failed||gesture.owner_gone)&&message!=WM_NCDESTROY){
             // Reject the complete press sequence, not just this message.
             // A later UP cannot select a card from a failed DOWN or MOVE.
             if(!gesture.owner_gone)self->pressed_frequency_group.reset();
+            return 0;
+        }
+        if(message!=WM_NCDESTROY&&press_epoch!=self->interaction_epoch){
+            // The group's prior card index belongs to an older interaction.
+            self->pressed_frequency_group.reset();
             return 0;
         }
         if(clicked_group){

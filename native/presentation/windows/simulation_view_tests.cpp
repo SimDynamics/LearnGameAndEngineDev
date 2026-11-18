@@ -502,6 +502,68 @@ void current_frequency_decision(HWND host,const std::filesystem::path& captures)
         "A static summary invented a current per-group decision");
     check(spec==authored,"Marking the current group modified authored data");
 }
+void reentrant_reader_gesture_does_not_override_newer_selection(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    enum class ReaderAction {none,navigate,apply};
+    ReaderAction action=ReaderAction::none;
+    HWND target=nullptr;
+    SimulationView* active=nullptr;
+    bool nested_succeeded=false;
+    int callbacks_fired=0;
+    SimulationCallbacks callbacks{};
+    callbacks.passive_gesture=[&](HWND child,UINT message,WPARAM,LPARAM)
+            ->std::optional<LRESULT>{
+        if(child!=target||message!=WM_LBUTTONUP)return std::nullopt;
+        const auto selected=action;
+        action=ReaderAction::none;target=nullptr;
+        ++callbacks_fired;
+        if(selected==ReaderAction::navigate){
+            nested_succeeded=active->go_to_step(8);
+        }else if(selected==ReaderAction::apply){
+            const auto editor=GetDlgItem(active->window(),input_id);
+            const auto apply=GetDlgItem(active->window(),apply_id);
+            check(editor&&apply,"The reentrant Apply controls are unavailable");
+            set_edit_text(editor,"1\n2\n3");
+            SendMessageW(active->window(),WM_COMMAND,
+                MAKEWPARAM(apply_id,BN_CLICKED),reinterpret_cast<LPARAM>(apply));
+            nested_succeeded=active->step_index()==0&&active->step_count()==8;
+        }
+        return std::nullopt;
+    };
+    SimulationView view(host,spec,"es",callbacks);active=&view;resize(view,850);
+    check(view.go_to_step(7),"Cannot show the first two completed groups");
+    const auto chart=GetDlgItem(view.window(),frequencies_id);
+    const auto canvas=GetDlgItem(view.window(),array_id);
+    check(chart&&canvas,"The native click surfaces are unavailable");
+
+    // A callback navigates during mouse-up. The previous card target cannot
+    // displace the decision that was just accepted by that callback.
+    action=ReaderAction::navigate;target=chart;
+    click_frequency_card(view,0);
+    check(callbacks_fired==1&&nested_succeeded&&view.step_index()==8&&
+        text(view,output_id)=="-8:1\n3:4\n"&&
+        text(view,error_id).empty()&&spec==authored,
+        "A stale histogram click overwrote a newer reader decision");
+
+    // An independent callback applies a new trace while an old array cell
+    // is being released. Both traces contain index zero; that does not
+    // authorize selecting step one of the newly applied trace.
+    check(view.go_to_step(7),"Cannot restore the group-comparison step");
+    action=ReaderAction::apply;target=canvas;nested_succeeded=false;
+    click_array_cell(view,0);
+    check(callbacks_fired==2&&nested_succeeded&&
+        view.step_index()==0&&view.step_count()==8&&
+        text(view,input_id)=="1\n2\n3"&&text(view,output_id).empty()&&
+        text(view,error_id).empty()&&spec==authored,
+        "An old array click overwrote a newly applied simulation trace");
+
+    click_array_cell(view,0);
+    check(view.step_index()==1&&text(view,error_id).empty()&&
+        text(view,output_id).empty()&&spec==authored,
+        "Rejecting superseded clicks blocked a later valid cell click");
+}
+
 void cancelled_passive_gesture_cannot_finish_click(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -5309,6 +5371,7 @@ int main(int argc,char** argv)try {
     };
     run("native_text_control_contract",[&]{native_text_control_contract(host.value);});
     run("current_frequency_decision",[&]{current_frequency_decision(host.value,captures);});
+    run("reentrant_reader_gesture_does_not_override_newer_selection",[&]{reentrant_reader_gesture_does_not_override_newer_selection(host.value);});
     run("cancelled_passive_gesture_cannot_finish_click",[&]{cancelled_passive_gesture_cannot_finish_click(host.value);});
     run("passive_gesture_exceptions_are_isolated",[&]{passive_gesture_exceptions_are_isolated(host.value);});
     run("histogram_card_navigation",[&]{histogram_card_navigation(host.value);});

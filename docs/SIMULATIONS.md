@@ -545,6 +545,13 @@ su pulsación pendiente: soltar el botón después no elige accidentalmente
 una celda ni una barra. La regresión
 `cancelled_passive_gesture_cannot_finish_click` verifica las dos superficies,
 los dos momentos de fallo y que el siguiente clic completo funcione.
+Cuando una devolución del lector aplica otros datos o selecciona otro paso,
+se descarta igualmente el destino del clic original: un evento de ratón
+antiguo no puede imponer una selección sobre una operación más reciente.
+Una época interna de interacción también evita reutilizar destinos tras
+una actualización fallida. La regresión Win32
+`reentrant_reader_gesture_does_not_override_newer_selection` comprueba
+la navegación anidada, la aplicación de datos y un clic posterior correcto.
 Los espacios entre tarjetas y las áreas ocultas tras el desplazamiento
 no son destinos. El puntero indica cuándo una tarjeta es seleccionable.
 El selector de pasos, los botones de decisión y las casillas del array
