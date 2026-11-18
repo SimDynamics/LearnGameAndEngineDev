@@ -687,6 +687,118 @@ class OrdinaryExplanationMainTest(unittest.TestCase):
                     return error.code, output.getvalue()
             return 0, output.getvalue()
 
+    def test_full_programming_validator_accepts_real_u1l4_explanation(self):
+        """The actual CLI must accept a new explanation on the moved U1L4
+        drag-fill owner, not merely the isolated authoring helper. The source
+        remains pinned and the disposable tree never modifies curriculum.
+        """
+        repository = Path(__file__).resolve().parents[2]
+        published = "5607e7e503a3240314b82bbd8d829166e8c117de"
+        lesson_tail = ("programas_y_ejecucion/"
+                       "lesson_fuente_compilacion_y_diagnostico.json")
+        known_blobs = {
+            "es": "3d2017f3c1d9feb842fb687f13e5569d6dbc7304",
+            "en": "295f7c0ba99613395d252f7937ecce8012f64d0d",
+            "fr": "8f02ef555262744255f9ffc4ee63dfdab776689d",
+        }
+        sources = {}
+        for locale, expected_blob in known_blobs.items():
+            relative = fixtures.PREFIX.format(locale=locale) + lesson_tail
+            actual_blob = subprocess.check_output(
+                ["git", "rev-parse", published + ":" + relative],
+                cwd=repository, text=True, encoding="utf-8").strip()
+            self.assertEqual(expected_blob, actual_blob)
+            sources[relative] = subprocess.check_output(
+                ["git", "show", published + ":" + relative], cwd=repository)
+        spanish_path = fixtures.PREFIX.format(locale="es") + lesson_tail
+        before = layout.parse_json(sources[spanish_path].decode("utf-8-sig"))
+        stable_id = "block_0004_0001"
+        old = layout._blocks(before)[stable_id]
+        self.assertEqual(("drag_fill_code", "piezas_estructura"),
+                         (old["type"], old["id"]))
+        self.assertNotIn("explanation", old)
+        wording = ("La función main inicia la ejecución; el operador << "
+                   "envía Revision lista a std::cout y el punto y coma "
+                   "termina la instrucción.")
+        authored = layout.revise_ordinary_editorial(before, stable_id, {
+            "explanation": {"text": wording, "spans": []},
+        })
+        self.assertEqual(dict(old, explanation=wording),
+                         layout._blocks(authored)[stable_id])
+
+        with tempfile.TemporaryDirectory(prefix="lgaed-u1l4-edition-qa-") as directory:
+            root = Path(directory)
+            (root / ".git").mkdir()
+            for relative, payload in sources.items():
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                if relative == spanish_path:
+                    path.write_text(json.dumps(authored, ensure_ascii=False),
+                                    encoding="utf-8")
+                else:
+                    path.write_bytes(payload)
+            content = root / fixtures.PREFIX.format(locale="es")
+            unit_id = "cpp_fundamentals__programas_y_ejecucion"
+            unit = {
+                "courseId": "cpp_fundamentals", "unitId": unit_id,
+                "title": "Programas y ejecución",
+                "lessons": [{"number": 1, "id": authored["id"],
+                             "title": authored["title"]}],
+            }
+            (content / "programas_y_ejecucion" /
+             "unit_programas_y_ejecucion.json").write_text(
+                json.dumps(unit, ensure_ascii=False), encoding="utf-8")
+            (content / "course_cpp_fundamentals.json").write_text(
+                json.dumps({"units": [{"number": 1, "id": unit_id,
+                                        "title": unit["title"]}]}),
+                encoding="utf-8")
+
+            def git_run(command, **kwargs):
+                self.assertEqual(root, Path(kwargs["cwd"]))
+                if command == ["git", "rev-parse", "--verify", "--end-of-options",
+                               published + "^{commit}"]:
+                    output = published + "\n"
+                elif command == ["git", "ls-tree", "-r", "--name-only", "-z",
+                                 published, "--", layout.CONTENT_DIRECTORY]:
+                    output = "\0".join(sorted(sources)) + "\0"
+                elif command == ["git", "grep", "-l", "-z", "-F", '"stateLayout"',
+                                 published, "--", layout.CONTENT_DIRECTORY]:
+                    output = "\0".join(
+                        published + ":" + relative for relative in sorted(sources)
+                        if "stateLayout" in json.loads(sources[relative])) + "\0"
+                elif (command[:2] == ["git", "show"] and
+                      (len(command) == 3 or
+                       (len(command) == 4 and command[3] == "--"))):
+                    commit, relative = command[2].split(":", 1)
+                    self.assertEqual(published, commit)
+                    output = sources[relative].decode("utf-8-sig")
+                else:
+                    raise AssertionError("Unexpected Git operation: " + repr(command))
+                return subprocess.CompletedProcess(command, 0, stdout=output, stderr="")
+
+            def git_output(command, **kwargs):
+                self.assertEqual(["git", "show"], command[:2])
+                value = git_run(command, **kwargs).stdout
+                return value if kwargs.get("text") else value.encode("utf-8")
+
+            output = io.StringIO()
+            with patch.object(contract, "ROOT", root), \
+                    patch.object(contract, "CONTENT", content), \
+                    patch.object(contract, "ERRORS", []), \
+                    patch.object(subprocess, "run", side_effect=git_run), \
+                    patch.object(subprocess, "check_output", side_effect=git_output), \
+                    redirect_stdout(output), redirect_stderr(output):
+                try:
+                    contract.main(["--course", "cpp_fundamentals",
+                                   "--base-ref", published])
+                except SystemExit as error:
+                    status = error.code
+                else:
+                    status = 0
+            self.assertEqual(0, status, output.getvalue())
+            self.assertIn("1 lecciones", output.getvalue())
+        self.assertNotIn("explanation", layout._blocks(before)[stable_id])
+
     def test_main_accepts_all_five_authored_revisions_from_the_publication(self):
         code, output = self.run_main()
         self.assertEqual(0, code, output)
