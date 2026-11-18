@@ -458,10 +458,62 @@ std::int64_t decimal(std::string_view value) {
     const auto signed_result = static_cast<std::int64_t>(result);
     return negative ? -signed_result : signed_result;
 }
+std::vector<SimulationValue> parse_values_checked(const SimulationSpec& spec,
+        std::string_view input, SimulationInputFormat format) {
+    require(format == SimulationInputFormat::lines || format == SimulationInputFormat::json,
+        "Formato de entrada de simulación desconocido.");
+    require(input.size() <= (format == SimulationInputFormat::json ? 64 * 1024 : 64 * 130),
+        "La entrada de simulación supera su límite de tamaño.");
+    std::vector<SimulationValue> values;
+    if (format == SimulationInputFormat::json) {
+        require(spec.text_values, "La lista entre comillas sólo está disponible para datos de texto.");
+        values = TextArrayInput(input).parse();
+    } else for (std::size_t at = 0; at < input.size();) {
+        const auto newline = input.find('\n', at);
+        const auto end = newline == input.npos ? input.size() : newline;
+        auto value = input.substr(at, end - at);
+        if (newline != input.npos && !value.empty() && value.back() == '\r') value.remove_suffix(1);
+        require(value.find('\r') == value.npos && !value.empty(),
+            spec.text_values ? "Escribe un texto no vacío por línea; para una cadena vacía, elige Lista entre comillas."
+                             : "Escribe un valor por línea, sin líneas vacías ni retornos aislados.");
+        if (spec.text_values) values.emplace_back(std::string(value));
+        else values.emplace_back(decimal(value));
+        require(values.size() <= item_limit, "Una simulación admite como máximo 64 valores.");
+        if (newline == input.npos) break;
+        at = newline + 1;
+    }
+    validate_values(values, spec.text_values, !spec.sort);
+    return values;
+}
+
 } // namespace
 
 void validate_simulation_spec(const SimulationSpec& spec) {
     (void)validated_trace(spec);
+}
+
+SimulationSession::SimulationSession(SimulationSpec authored)
+    : authored_(std::move(authored)), initial_(validated_trace(authored_)) {}
+
+SimulationTrace SimulationSession::take_initial_trace() {
+    require(!initial_.frames.empty(),
+        "La traza inicial de una sesión de simulación ya se transfirió.");
+    return std::move(initial_);
+}
+
+SimulationTrace SimulationSession::build_trace(std::vector<SimulationValue> values) const {
+    validate_values(values, authored_.text_values, !authored_.sort);
+    return make_trace(authored_, values);
+}
+
+std::vector<SimulationValue> SimulationSession::parse_values(
+        std::string_view input, SimulationInputFormat format) const {
+    return parse_values_checked(authored_, input, format);
+}
+
+SimulationTrace SimulationSession::parse_trace(
+        std::string_view input, SimulationInputFormat format) const {
+    return make_trace(authored_, parse_values_checked(authored_, input, format));
 }
 
 SimulationTrace build_simulation_trace(const SimulationSpec& spec,
@@ -510,30 +562,7 @@ std::string simulation_frame_text(const SimulationSpec& spec,
 SimulationTrace simulation_parse_input_trace(const SimulationSpec& spec, std::string_view input,
         SimulationInputFormat format) {
     validate_simulation_spec(spec);
-    require(format == SimulationInputFormat::lines || format == SimulationInputFormat::json,
-        "Formato de entrada de simulación desconocido.");
-    require(input.size() <= (format == SimulationInputFormat::json ? 64 * 1024 : 64 * 130),
-        "La entrada de simulación supera su límite de tamaño.");
-    std::vector<SimulationValue> values;
-    if (format == SimulationInputFormat::json) {
-        require(spec.text_values, "La lista entre comillas sólo está disponible para datos de texto.");
-        values = TextArrayInput(input).parse();
-    } else for (std::size_t at = 0; at < input.size();) {
-        const auto newline = input.find('\n', at);
-        const auto end = newline == input.npos ? input.size() : newline;
-        auto value = input.substr(at, end - at);
-        if (newline != input.npos && !value.empty() && value.back() == '\r') value.remove_suffix(1);
-        require(value.find('\r') == value.npos && !value.empty(),
-            spec.text_values ? "Escribe un texto no vacío por línea; para una cadena vacía, elige Lista entre comillas."
-                             : "Escribe un valor por línea, sin líneas vacías ni retornos aislados.");
-        if (spec.text_values) values.emplace_back(std::string(value));
-        else values.emplace_back(decimal(value));
-        require(values.size() <= item_limit, "Una simulación admite como máximo 64 valores.");
-        if (newline == input.npos) break;
-        at = newline + 1;
-    }
-    validate_values(values, spec.text_values, !spec.sort);
-    return make_trace(spec, values);
+    return make_trace(spec, parse_values_checked(spec, input, format));
 }
 
 std::vector<SimulationValue> simulation_parse_input(const SimulationSpec& spec, std::string_view input,
