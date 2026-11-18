@@ -1652,8 +1652,15 @@ descartar y mantiene la verificación mediante compilación y sondas
 independientes.
 La comprobación se limita a identidades comprobables
 en la expresión examinada: `capacidad - (capacidad * 2)` no equivale
-a una cancelación y debe seguir bajo los oráculos de ejecución. Otros
-cálculos algebraicos complejos no quedan demostrados sólo por el
+a una cancelación. Esto también se aplica a las grafías equivalentes
+**sin paréntesis** `capacidad - capacidad * 2`,
+`capacidad - capacidad / 2` y `capacidad - capacidad % 3`:
+multiplicación, división y resto forman primero el operando derecho.
+La mera aparición contigua de dos nombres iguales no permite concluir
+que se hayan cancelado; se conservan sus referencias y se someten a
+los oráculos de ejecución. Si el segundo factor es cero, por ejemplo
+`capacidad - capacidad * 0`, sólo el primer uso influye realmente.
+Otros cálculos algebraicos complejos no quedan demostrados sólo por el
 análisis de fuente.
 Esto incluye factores cero que anulan expresiones completas con
 paréntesis, incluso anidadas: `0 * (capacidad + capacidad)` o
