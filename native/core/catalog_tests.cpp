@@ -521,6 +521,67 @@ void catalog_rejects_duplicate_and_unsafe_ids_without_inventing_availability() {
         "Planned courses invented lesson membership or changed student data");
     rejects([&]{ (void)windows::load_catalog(fixture.root,catalog_child(route,"qa_planned")); },
         "An announced course opened without its real course index");
+
+    // Index numbers are presentation order, not the storage owner. Reject
+    // gaps, repeated ordinals and out-of-order rows before a learner can
+    // navigate the catalog. A new course inserted at position 3 remains
+    // legitimate when all 45 entries are renumbered consecutively.
+    for(const auto [first,second] : {
+            std::pair{0,2},std::pair{1,1},std::pair{1,3},
+            std::pair{2,1},std::pair{1,-1}}) {
+        JsonArray malformed;
+        malformed.Append(row("qa_planned",first));
+        malformed.Append(row("qa_later",second));
+        write(malformed);
+        rejects([&]{ (void)windows::load_catalog(fixture.root,route); },
+            "An invalid course ordinal escaped the shared catalog loader");
+    }
+    write(planned);
+
+    const auto write_index=[&](const std::filesystem::path& destination,const JsonObject& document) {
+        std::filesystem::create_directories(destination.parent_path());
+        std::ofstream output(destination,std::ios::binary|std::ios::trunc);
+        output << winrt::to_string(document.Stringify());
+        output.flush();
+        check(output.good(),"Cannot write a disposable unit or lesson index");
+    };
+    const auto announced=catalog_child(route,"qa_planned");
+    const auto start=catalog_child(announced,"qa_planned__start");
+    const auto course_file=fixture.root/"es"/catalog_index_path(announced);
+    const auto unit_file=fixture.root/"es"/catalog_index_path(start);
+    const auto course_index=[&](int second) {
+        JsonArray items;items.Append(row("qa_planned__start",1));
+        items.Append(row("qa_planned__later",second));
+        JsonObject document;
+        document.Insert(L"id",JsonValue::CreateStringValue(L"qa_planned"));
+        document.Insert(L"title",JsonValue::CreateStringValue(L"QA course"));
+        document.Insert(L"units",items);
+        write_index(course_file,document);
+    };
+    course_index(3);
+    rejects([&]{ (void)windows::load_catalog(fixture.root,announced); },
+        "A unit numbering gap was allowed under a valid course parent");
+    course_index(2);
+    const auto units=windows::load_catalog(fixture.root,announced);
+    check(units.entries.size()==2&&units.entries[0].number==1&&units.entries[1].number==2,
+        "Contiguous unit ordinals were incorrectly rejected");
+    const auto lesson_index=[&](int second) {
+        JsonArray items;items.Append(row("qa_planned__start__first",1));
+        items.Append(row("qa_planned__start__second",second));
+        JsonObject document;
+        document.Insert(L"courseId",JsonValue::CreateStringValue(L"qa_planned"));
+        document.Insert(L"unitId",JsonValue::CreateStringValue(L"qa_planned__start"));
+        document.Insert(L"title",JsonValue::CreateStringValue(L"QA unit"));
+        document.Insert(L"lessons",items);
+        write_index(unit_file,document);
+    };
+    lesson_index(1);
+    rejects([&]{ (void)windows::load_catalog(fixture.root,start); },
+        "A repeated lesson ordinal was accepted inside a valid unit");
+    lesson_index(2);
+    const auto lessons=windows::load_catalog(fixture.root,start);
+    check(lessons.entries.size()==2&&lessons.entries[0].number==1&&lessons.entries[1].number==2,
+        "Contiguous lesson ordinals were incorrectly rejected");
 }
 
 void inserted_course_resolves_real_content_and_keeps_id_owned_state(
