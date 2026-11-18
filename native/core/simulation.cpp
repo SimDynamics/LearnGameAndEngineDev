@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <limits>
+#include <numeric>
 #include <set>
 #include <stdexcept>
 #include <utility>
@@ -54,8 +55,9 @@ void public_text(std::string_view text, std::size_t limit, std::string_view fiel
         std::string("Texto de simulación inválido o demasiado largo: ") + std::string(field));
 }
 
-constexpr std::array<std::string_view, 9> placeholders{
-    "value", "start", "end", "frequency", "maximum", "leaders", "size", "group", "groups"
+constexpr std::array<std::string_view, 11> placeholders{
+    "value", "start", "end", "frequency", "maximum", "leaders", "size", "group", "groups",
+    "countedIndex", "originIndex"
 };
 
 void validate_template(std::string_view text, std::size_t limit, std::string_view field) {
@@ -192,12 +194,23 @@ std::string expanded(std::string_view source, const SimulationTrace& trace, cons
     const bool has_value = frame.phase == SimulationPhase::start || frame.phase == SimulationPhase::advance ||
         frame.phase == SimulationPhase::new_maximum || frame.phase == SimulationPhase::tie ||
         frame.phase == SimulationPhase::below_maximum;
-    const std::array<std::string, 9> replacements{
+    // Only the start/advance phases count a new element. A decision about a
+    // completed group must not impersonate an additional read. The index in
+    // the ordered copy is end-1; its original index comes from the stable
+    // permutation calculated once for this trace, including equal values.
+    const bool just_counted = frame.phase == SimulationPhase::start ||
+        frame.phase == SimulationPhase::advance;
+    require(!just_counted || (frame.end > 0 && frame.end <= trace.source_indices.size()),
+        "La fase de recuento no tiene una posición de origen válida.");
+    const std::string counted = just_counted ? std::to_string(frame.end - 1) : std::string{};
+    const std::string origin = just_counted ?
+        std::to_string(trace.source_indices.at(frame.end - 1)) : std::string{};
+    const std::array<std::string, 11> replacements{
         has_value ? (display ? simulation_value_display_text(trace.groups.at(frame.group - 1).value)
                             : simulation_value_text(trace.groups.at(frame.group - 1).value)) : std::string{},
         std::to_string(frame.begin), std::to_string(frame.end), std::to_string(frame.frequency),
         std::to_string(frame.maximum), joined_values(frame.leaders, display), std::to_string(trace.ordered.size()),
-        std::to_string(frame.group), std::to_string(trace.groups.size())
+        std::to_string(frame.group), std::to_string(trace.groups.size()), counted, origin
     };
     std::string result;
     for (std::size_t at = 0; at < source.size();) {
@@ -223,8 +236,15 @@ std::string expanded(std::string_view source, const SimulationTrace& trace, cons
 SimulationTrace make_trace(const SimulationSpec& spec, const std::vector<SimulationValue>& values) {
     SimulationTrace trace;
     trace.original = values;
-    trace.ordered = values;
-    if (spec.sort) std::stable_sort(trace.ordered.begin(), trace.ordered.end(), value_less);
+    trace.source_indices.resize(values.size());
+    std::iota(trace.source_indices.begin(), trace.source_indices.end(), std::size_t{0});
+    if (spec.sort) std::stable_sort(trace.source_indices.begin(), trace.source_indices.end(),
+        [&](std::size_t left, std::size_t right) {
+            return value_less(values[left], values[right]);
+        });
+    trace.ordered.reserve(values.size());
+    for (const auto original_index : trace.source_indices)
+        trace.ordered.push_back(values[original_index]);
     for (std::size_t begin = 0; begin < trace.ordered.size();) {
         auto end = begin + 1;
         while (end < trace.ordered.size() && trace.ordered[end] == trace.ordered[begin]) ++end;
