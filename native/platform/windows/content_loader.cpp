@@ -1053,7 +1053,7 @@ struct EditionIndex {
     std::string source;
 };
 EditionIndex read_edition_index(const std::filesystem::path& path) {
-    std::ifstream input(path, std::ios::binary);
+    std::ifstream input(state::native_io_path(path), std::ios::binary);
     require(input.good(), "Cannot open the active course-edition index");
     std::string source{std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
     require(!input.bad() && source.size() <= 8 * 1024 * 1024,
@@ -5556,7 +5556,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
     }
 }
 curriculum::Lesson load_lesson(const std::filesystem::path& path, std::string_view expected_locale) {
-    std::ifstream input(path, std::ios::binary); require(input.good(), "Cannot open lesson file");
+    std::ifstream input(state::native_io_path(path), std::ios::binary); require(input.good(), "Cannot open lesson file");
     const std::string bytes{std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
     require(!input.bad(), "Cannot read lesson file");
     auto lesson = parse_lesson_json(bytes, expected_locale);
@@ -5682,7 +5682,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
     }
 }
 curriculum::Lesson load_lesson_progress_metadata(const std::filesystem::path& path, std::string_view expected_locale) {
-    std::ifstream input(path,std::ios::binary); require(input.good(),"Cannot open lesson progress metadata");
+    std::ifstream input(state::native_io_path(path),std::ios::binary); require(input.good(),"Cannot open lesson progress metadata");
     const std::string source{std::istreambuf_iterator<char>(input),std::istreambuf_iterator<char>()};
     require(!input.bad(),"Cannot read lesson progress metadata");
     try { auto lesson = parse_lesson_progress_metadata(source,expected_locale);
