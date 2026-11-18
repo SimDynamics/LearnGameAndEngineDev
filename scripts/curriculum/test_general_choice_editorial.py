@@ -114,7 +114,7 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
             {(field["block"], field["path"])
              for field in layout.original_projection(authored)["textSemantics"]["fields"]})
         self.assertEqual(layout.original_projection(authored)["pages"],
-                         self.original["pages"])
+                         layout.original_projection(self.original)["pages"])
 
     def test_live_lesson_preserves_origin_and_historical_provenance(self):
         current = json.loads(SOURCE.read_text(encoding="utf-8"))
