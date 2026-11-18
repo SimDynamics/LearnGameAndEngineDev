@@ -409,22 +409,34 @@ void import_isolated(const Fixture& fixture, const state::StateData& historic,
 }
 
 void physical_edition_long_paths(const Fixture& fixture) {
-    // Keep the original fixture and state untouched. This exercise isolates
-    // the Win32 path guard from RichEdit and the complete lesson loader,
-    // which have their own separate tests.
+    // Keep the original fixture and state untouched. Reproduce a complete
+    // indexed edition beyond MAX_PATH and read it with the real native
+    // lesson, progress and catalog loaders; no student profile is opened.
     auto folder = fixture.root / "edition-long-path-isolation";
     while (folder.native().size() < 295)
         folder /= L"segmento_de_comprobacion_de_rutas_largas_0123456789";
     const auto content = folder / "content";
+    for (const auto& [relative, original] : fixture.originals)
+        write(folder / relative_path(relative), original);
     for (const auto role : {"course", "unit", "lesson"}) {
         const auto target = folder / relative_path(fixture.paths.at(role));
         require(target.native().size() > MAX_PATH,
             "The long-path regression did not exceed the Win32 legacy limit");
-        write(target, bytes(fixture.path(role)));
         require(fs::is_regular_file(state::native_io_path(target)),
             "Cannot create an isolated long-path curriculum resource");
         windows::validate_course_edition_physical_path(content, target);
     }
+    const auto lesson_file = folder / relative_path(fixture.paths.at("lesson"));
+    const auto lesson = windows::load_lesson(lesson_file);
+    const auto metadata = windows::load_lesson_progress_metadata(lesson_file);
+    require(lesson.id == new_id && metadata.id == new_id &&
+            lesson.course_edition == metadata.course_edition,
+        "Extended Win32 path accepted metadata but not the complete edition lesson");
+    const auto course = windows::load_catalog(content, course_location());
+    const auto unit = windows::load_catalog(content, unit_location());
+    require(course.entries.size() == 1 && course.entries.front().id == new_unit &&
+            unit.entries.size() == 2 && unit.entries[0].id == new_id,
+        "The native edition catalog could not open a valid long-path index");
     // A missing file at the same depth must still fail closed.
     const auto missing = folder / relative_path(fixture.paths.at("lesson"));
     std::error_code ignored;
