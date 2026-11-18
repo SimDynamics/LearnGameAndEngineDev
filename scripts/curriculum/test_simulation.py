@@ -250,9 +250,20 @@ class SimulationContractTest(unittest.TestCase):
     def test_templates_allow_only_declared_names_and_do_not_evaluate_values(self):
         value = block()
         all_names = " ".join("{" + field + "}" for field in sorted(simulation.TEMPLATE_FIELDS))
-        value["simulation"]["outputTemplate"] = all_names
+        output_names = " ".join("{" + field + "}" for field in sorted(
+            simulation.TEMPLATE_FIELDS - {"countedIndex", "originIndex"}))
+        value["simulation"]["outputTemplate"] = output_names
         value["simulation"]["explanations"]["done"] = all_names
         simulation.validate_contract(value)
+        for marker in ("{countedIndex}", "{originIndex}", "{value}:{originIndex}"):
+            rejected = deepcopy(value)
+            rejected["simulation"]["outputTemplate"] = marker
+            with self.subTest(output_marker=marker), self.assertRaises(ValueError):
+                simulation.validate_contract(rejected)
+            accepted = deepcopy(value)
+            accepted["simulation"]["explanations"]["start"] = marker
+            accepted["simulation"]["explanations"]["advance"] = marker
+            simulation.validate_contract(accepted)
         for template in ("{unknown}", "{value", "value}", "{}", "{{value}}",
                          "{ value }", "{frequency+1}", "{leaders[0]}", "{value!r}", "{value:4}"):
             for path in ("outputTemplate", "explanation"):
