@@ -2069,7 +2069,17 @@ struct SimulationView::Impl {
                     }catch(...){
                         OutputDebugStringW(L"No se pudo recuperar la presentación del escenario anterior.\n");
                     }
-                    std::rethrow_exception(failure);
+                    // The originating exception belongs to the rejected
+                    // scenario, not to the outer window's generic redraw.
+                    // A second native failure while restoring the old view
+                    // must not mask its cause or prevent accessible feedback.
+                    try{std::rethrow_exception(failure);}
+                    catch(const std::exception& original){
+                        report_native_error("No se pudo cambiar el escenario. ",original.what());
+                    }catch(...){
+                        report_native_error("No se pudo cambiar el escenario. ",
+                            "Error no identificado durante el reemplazo.");
+                    }
                 }
             }
             return 0;}
