@@ -106,6 +106,90 @@ void ties_and_text() {
         "A value was evaluated recursively as a template");
 }
 
+void counted_observation_changes_are_portable() {
+    auto spec=example();
+    spec.values=integers({7,3,7,2});
+    const auto original=spec;
+    const auto trace=build_simulation_trace(spec);
+    const auto changes=[&](std::size_t frame) {
+        return simulation_count_observation_changes(trace,trace.frames.at(frame));
+    };
+    check(changes(0).empty()&&changes(2).empty()&&changes(4).empty()&&
+          changes(7).empty()&&changes(8).empty(),
+        "A decision, initial or terminal state invented a counted observation");
+    check(changes(1)==std::vector<std::string>{
+        "Dato contado: índice 0 = 2 (origen índice 3)",
+        "Recuento de este grupo: fin exclusivo 1 - inicio 0 = 1 elemento contado.",
+        "Primera posición: el índice 0 no tiene un elemento anterior."},
+        "The first observation changed its sorted index, original index or exclusive count");
+    check(changes(3)==std::vector<std::string>{
+        "Dato contado: índice 1 = 3 (origen índice 1)",
+        "Recuento de este grupo: fin exclusivo 2 - inicio 1 = 1 elemento contado.",
+        "Relación con el anterior: índice 0 = 2; índice 1 = 3. Son diferentes: comienza un grupo nuevo.",
+        "Procedencia de la comparación: posición ordenada 0 ← posición original 3; posición ordenada 1 ← posición original 1."},
+        "A new group failed to explain two already-counted neighbors and their origins");
+    check(changes(6)==std::vector<std::string>{
+        "Dato contado: índice 3 = 7 (origen índice 2)",
+        "Recuento de este grupo: fin exclusivo 4 - inicio 2 = 2 elementos contados.",
+        "Relación con el anterior: índice 2 = 7; índice 3 = 7. Son iguales: continúa el grupo.",
+        "Procedencia de la comparación: posición ordenada 2 ← posición original 0; posición ordenada 3 ← posición original 2."},
+        "Stable duplicate origins or frequency were lost during the group advance");
+
+    auto sorted=example();sorted.values=integers({2,3,7,7});
+    const auto ordered=build_simulation_trace(sorted);
+    const auto already=simulation_count_observation_changes(ordered,ordered.frames.at(6));
+    check(already.size()==3&&already[0]=="Dato contado: índice 3 = 7"&&
+          already[1]=="Recuento de este grupo: fin exclusivo 4 - inicio 2 = 2 elementos contados."&&
+          already[2].find("Son iguales: continúa el grupo.")!=std::string::npos,
+        "An already sorted array invented provenance or lost a real counted duplicate");
+    sorted.sort=false;
+    const auto unsorted_disabled=build_simulation_trace(sorted);
+    check(simulation_count_observation_changes(unsorted_disabled,
+            unsorted_disabled.frames.at(6))==already,
+        "Disabling sorting changed the visible observation of an already ordered array");
+
+    auto words_spec=example();words_spec.text_values=true;
+    words_spec.values=words({"patio","","patio"});
+    const auto words_trace=build_simulation_trace(words_spec);
+    const auto first_text=simulation_count_observation_changes(words_trace,
+        words_trace.frames.at(1));
+    check(first_text.size()==3&&
+          first_text[0]=="Dato contado: índice 0 = \"\" (cadena vacía) (origen índice 1)"&&
+          first_text[1]=="Recuento de este grupo: fin exclusivo 1 - inicio 0 = 1 elemento contado.",
+        "An empty text label did not count as one real observed element");
+    const auto repeat_text=simulation_count_observation_changes(words_trace,
+        words_trace.frames.at(4));
+    check(repeat_text.size()==4&&
+          repeat_text[0]=="Dato contado: índice 2 = \"patio\" (origen índice 2)"&&
+          repeat_text[1]=="Recuento de este grupo: fin exclusivo 3 - inicio 1 = 2 elementos contados."&&
+          repeat_text[2].find("\"patio\"; índice 2 = \"patio\"")!=std::string::npos&&
+          repeat_text[3].find("posición original 0; posición ordenada 2 ← posición original 2.")!=std::string::npos,
+        "Repeated text lost its stable original positions or group-specific frequency");
+    words_spec.values=words({" ",""});
+    const auto spaces=build_simulation_trace(words_spec);
+    const auto distinct=simulation_count_observation_changes(spaces,spaces.frames.at(3));
+    check(distinct.size()==4&&
+          distinct[0]=="Dato contado: índice 1 = \" \" (1 espacio) (origen índice 0)"&&
+          distinct[2].find("\"\" (cadena vacía); índice 1 = \" \" (1 espacio). Son diferentes:")!=std::string::npos,
+        "An empty string was conflated with a significant space in a counted comparison");
+
+    auto invalid=trace.frames.at(1);
+    invalid.end=0;
+    rejected([&]{(void)simulation_count_observation_changes(trace,invalid);},
+        "A count with an empty range accessed end-1");
+    invalid=trace.frames.at(1);invalid.frequency=0;
+    rejected([&]{(void)simulation_count_observation_changes(trace,invalid);},
+        "An inaccurate frequency was narrated as a valid range length");
+    auto bad_trace=trace;bad_trace.source_indices[0]=trace.original.size();
+    rejected([&]{(void)simulation_count_observation_changes(bad_trace,trace.frames.at(1));},
+        "A nonexistent source position was accepted as reliable provenance");
+    bad_trace=trace;bad_trace.source_indices.pop_back();
+    rejected([&]{(void)simulation_count_observation_changes(bad_trace,trace.frames.at(1));},
+        "An incomplete source permutation was accepted for a counted observation");
+    check(spec==original&&trace==build_simulation_trace(spec),
+        "Portable count narration mutated authored data or the calculated trace");
+}
+
 void counted_source_positions_and_templates() {
     auto spec = example();
     spec.values = integers({7, 3, 7, 2});
@@ -1058,6 +1142,7 @@ int main() {
     try {
         runs_and_completion();
         ties_and_text();
+        counted_observation_changes_are_portable();
         counted_source_positions_and_templates();
         processed_remaining_counts();
         previous_maximum_decision_explanations();
