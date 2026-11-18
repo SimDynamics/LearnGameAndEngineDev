@@ -161,6 +161,24 @@ int main(int argc,char** argv) {
             "An established response-changing revision lost its separate historical selection");
 
         const auto reviewed_file=read_file(std::filesystem::path(argv[2]));
+        // The Python authoring helper refuses whitespace-only replacements.
+        // Both Windows loaders must reject the same Unicode cases at the
+        // option contract, not merely as an unrelated stale semantic hash.
+        for(const wchar_t* blank : {L"\u00a0",L"\u0085",L"\u2003",L"\u202f",L"\u3000",L"\u00a0\t\\u2003"}) {
+            auto candidate=JsonObject::Parse(winrt::to_hstring(reviewed_file));
+            candidate.GetNamedObject(L"stateLayout").GetNamedArray(L"choiceRevisions")
+                .GetObjectAt(0).Insert(L"replacement",JsonValue::CreateStringValue(blank));
+            const auto authored=winrt::to_string(candidate.Stringify());
+            for(const bool progress : {false,true}) {
+                std::string diagnostic;
+                try {
+                    if(progress) (void)parse_lesson_progress_metadata(authored,"es");
+                    else (void)parse_lesson_json(authored,"es");
+                } catch(const std::exception& error) { diagnostic=error.what(); }
+                require(diagnostic.find("one nonblank option")!=std::string::npos,
+                    "A Unicode-blank choice was accepted or rejected for an unrelated reason");
+            }
+        }
         // Exercise the NEW authoring contract against the actual Windows
         // full and metadata loaders. The existing published fixture remains
         // unchanged and retains its legacy five-field archive.
