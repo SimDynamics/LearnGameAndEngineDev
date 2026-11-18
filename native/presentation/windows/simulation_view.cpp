@@ -1048,7 +1048,15 @@ struct SimulationView::Impl {
         set_label(error_id,error);
         if(error_changed){
             if(const auto warning=item(error_id)){
-                accessible(warning,error);
+                if(error.empty()){
+                    // Restore the control's default name after a valid retry.
+                    // A missing accessible name may legitimately report S_FALSE.
+                    if(accessibility){
+                        const MSAAPROPID property=PROPID_ACC_NAME;
+                        (void)accessibility->ClearHwndProps(warning,
+                            static_cast<DWORD>(OBJID_CLIENT),CHILDID_SELF,&property,1);
+                    }
+                }else accessible(warning,error);
                 NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,warning,OBJID_CLIENT,CHILDID_SELF);
             }
         }
