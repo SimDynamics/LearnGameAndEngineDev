@@ -360,7 +360,13 @@ CTest, de manera secuencial:
 actividad ordinaria, la incorporación de una explicación opcional, el
 desplazamiento de página con identidad de origen intacta, dos revisiones
 consecutivas, la combinación atómica con una pregunta revisada y los
-rechazos de historiales o marcadores alterados.
+rechazos de historiales o marcadores alterados. Incluye una regresión
+del **validador curricular completo**, con las tres fuentes de idioma
+ancladas al commit publicado de U1L4: acepta la nueva explicación de
+`piezas_estructura` bajo su propietario estable `block_0004_0001`,
+aunque esté en otra página, y rechaza modificar su `correctOrder`
+incluso si se recalcula la huella editorial. La prueba usa archivos
+temporales y no incorpora la propuesta al currículo de Work.
 
 `native.course_edition_authoring` comprueba la publicación autenticada
 de una edición de curso con nuevas identidades y recursos históricos
