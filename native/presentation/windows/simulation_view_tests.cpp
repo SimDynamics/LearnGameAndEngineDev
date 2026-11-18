@@ -1876,12 +1876,19 @@ void neighboring_values_explain_group_boundaries(HWND host) {
         boundary.find("índice 2 =")==std::string::npos&&
         reading()==boundary,
         "The second group did not explain the distinct previous observed value");
+    check(boundary.find(
+        "Procedencia de la comparación: posición ordenada 0 ← posición original 2; posición ordenada 1 ← posición original 1.")!=std::string::npos,
+        "A moved boundary does not identify both original neighbors");
     check(view.go_to_step(4),"Missing the repeated value");
     const auto equal=current();
     check(equal.find("Dato contado: índice 2 = 3 (origen índice 3)")!=std::string::npos&&
         equal.find("Relación con el anterior: índice 1 = 3; índice 2 = 3. Son iguales: continúa el grupo.")!=std::string::npos&&
         equal.find("índice 3 =")==std::string::npos,
         "Repeated neighbors did not explain why the group continues");
+    check(equal.find(
+        "Procedencia de la comparación: posición ordenada 1 ← posición original 1; posición ordenada 2 ← posición original 3.")!=std::string::npos&&
+        reading()==equal,
+        "Repeated data lost separate stable origins in its visible or spoken comparison");
     check(view.go_to_step(6)&&
         current().find("Relación con el anterior: índice 3 = 3; índice 4 = 3. Son iguales: continúa el grupo.")!=std::string::npos,
         "The last repeated value compared a future neighbor or wrong index");
@@ -1894,6 +1901,10 @@ void neighboring_values_explain_group_boundaries(HWND host) {
             current().find("Relación con el anterior:")==std::string::npos&&
             current().find("Primera posición:")==std::string::npos,
             "Decision or final frames fabricated a new comparison of neighbors");
+    // Origins belong only to the already-observed comparison step, never to
+    // a group decision or the end of the trace.
+    check(current().find("Procedencia de la comparación:")==std::string::npos,
+        "A decision or terminal step exposed source positions from another frame");
     }
     check(view.go_to_step(3)&&current()==boundary&&
         view.go_to_step(4)&&current()==equal,
@@ -1909,6 +1920,9 @@ void neighboring_values_explain_group_boundaries(HWND host) {
         current().find("Dato contado: índice 2 = 9 (origen índice 0)")!=std::string::npos&&
         current().find("Relación con el anterior: índice 1 = 4; índice 2 = 9. Son diferentes: comienza un grupo nuevo.")!=std::string::npos,
         "The tie scenario used old array values for the group boundary");
+    check(current().find(
+        "Procedencia de la comparación: posición ordenada 1 ← posición original 3; posición ordenada 2 ← posición original 0.")!=std::string::npos,
+        "Switching scenarios did not recalculate the neighbor source positions");
 
     set_edit_text(GetDlgItem(view.window(),input_id),"1\n1\n2");
     click(view,apply_id);
@@ -1918,6 +1932,8 @@ void neighboring_values_explain_group_boundaries(HWND host) {
         current().find("origen índice")==std::string::npos&&
         current().find("Relación con el anterior: índice 0 = 1; índice 1 = 1. Son iguales: continúa el grupo.")!=std::string::npos,
         "Newly applied equal values did not recalculate the comparison");
+    check(current().find("Procedencia de la comparación:")==std::string::npos,
+        "An ordered edited array invented extra source positions");
     check(view.go_to_step(4)&&
         current().find("Relación con el anterior: índice 1 = 1; índice 2 = 2. Son diferentes: comienza un grupo nuevo.")!=std::string::npos,
         "Newly applied distinct values reused an older boundary");
@@ -1951,6 +1967,8 @@ void neighboring_values_explain_group_boundaries(HWND host) {
         text(words,transition_id).find(
             "Relación con el anterior: índice 1 = \" \" (1 espacio); índice 2 = \" \" (1 espacio). Son iguales: continúa el grupo.")!=std::string::npos,
         "Two space-only text values were incorrectly treated as distinct");
+    check(text(words,transition_id).find("Procedencia de la comparación:")==std::string::npos,
+        "Already ordered empty and space-only labels invented a reordering");
 
     // Text values keep the same calculated source-index narration, including
     // an empty first sorted value and two equal labels from distinct origins.
@@ -1969,6 +1987,13 @@ void neighboring_values_explain_group_boundaries(HWND host) {
         text(reordered_words,transition_id).find(
             "Dato contado: índice 2 = \"patio\" (origen índice 2)")!=std::string::npos,
         "Repeated text values reported an earlier duplicate as their source");
+    check(reordered_words.go_to_step(3)&&
+        text(reordered_words,transition_id).find(
+            "Procedencia de la comparación: posición ordenada 0 ← posición original 1; posición ordenada 1 ← posición original 0.")!=std::string::npos&&
+        reordered_words.go_to_step(4)&&
+        text(reordered_words,transition_id).find(
+            "Procedencia de la comparación: posición ordenada 1 ← posición original 0; posición ordenada 2 ← posición original 2.")!=std::string::npos,
+        "Reordered empty and repeated text labels lost the true comparison origins");
     const auto spoken_transition=text(reordered_words,transition_id);
     const auto regions=reordered_words.reading_regions();
     check(std::ranges::any_of(regions,[&](const auto& region){
@@ -1984,6 +2009,8 @@ void neighboring_values_explain_group_boundaries(HWND host) {
         text(already_sorted,transition_id).find(
             "Relación con el anterior: índice 0 = -8; índice 1 = 0. Son diferentes: comienza un grupo nuevo.")!=std::string::npos,
         "Neighbor comparisons should work without sorting a copy");
+    check(text(already_sorted,transition_id).find("Procedencia de la comparación:")==std::string::npos,
+        "A preordered array showed a non-existent source permutation");
     for(const auto mode:{SimulationViewMode::array,SimulationViewMode::summary,
                          SimulationViewMode::groups,SimulationViewMode::candidates}){
         auto other_spec=fixture(mode);
