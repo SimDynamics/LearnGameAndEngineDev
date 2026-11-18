@@ -781,22 +781,34 @@ class OrdinaryExplanationMainTest(unittest.TestCase):
                 value = git_run(command, **kwargs).stdout
                 return value if kwargs.get("text") else value.encode("utf-8")
 
-            output = io.StringIO()
-            with patch.object(contract, "ROOT", root), \
-                    patch.object(contract, "CONTENT", content), \
-                    patch.object(contract, "ERRORS", []), \
-                    patch.object(subprocess, "run", side_effect=git_run), \
-                    patch.object(subprocess, "check_output", side_effect=git_output), \
-                    redirect_stdout(output), redirect_stderr(output):
-                try:
-                    contract.main(["--course", "cpp_fundamentals",
-                                   "--base-ref", published])
-                except SystemExit as error:
-                    status = error.code
-                else:
-                    status = 0
-            self.assertEqual(0, status, output.getvalue())
-            self.assertIn("1 lecciones", output.getvalue())
+            # Rewriting the declared correct order is not an editorial
+            # explanation, even when its new editorial hash is also forged.
+            # The complete CLI must reject it on the same pinned family.
+            forged = deepcopy(authored)
+            changed = layout._blocks(forged)[stable_id]
+            changed["correctOrder"] = [1, 0, 2]
+            forged["stateLayout"]["editorial"][-1]["afterSha256"] = (
+                layout.fingerprint(changed))
+            for candidate, expected_status in ((authored, 0), (forged, 1)):
+                (root / spanish_path).write_text(
+                    json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+                output = io.StringIO()
+                with patch.object(contract, "ROOT", root), \
+                        patch.object(contract, "CONTENT", content), \
+                        patch.object(contract, "ERRORS", []), \
+                        patch.object(subprocess, "run", side_effect=git_run), \
+                        patch.object(subprocess, "check_output", side_effect=git_output), \
+                        redirect_stdout(output), redirect_stderr(output):
+                    try:
+                        contract.main(["--course", "cpp_fundamentals",
+                                       "--base-ref", published])
+                    except SystemExit as error:
+                        status = error.code
+                    else:
+                        status = 0
+                self.assertEqual(expected_status, status, output.getvalue())
+                if expected_status == 0:
+                    self.assertIn("1 lecciones", output.getvalue())
         self.assertNotIn("explanation", layout._blocks(before)[stable_id])
 
     def test_main_accepts_all_five_authored_revisions_from_the_publication(self):
