@@ -1609,6 +1609,7 @@ void conditional_assignment_branches() {
         })cpp",rules,true,
         "Parenthesized observation of a named result is not a mutable call");
     verify(R"cpp(
+        #include <utility>
         int cajas_para(int piezas) {
             const int capacidad{4};
             int resultado = (piezas + capacidad - 1) / capacidad;
