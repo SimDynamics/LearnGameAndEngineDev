@@ -408,6 +408,33 @@ void import_isolated(const Fixture& fixture, const state::StateData& historic,
         "La importación aceptó recibos/preferencias nativas como exportación Android.");
 }
 
+void physical_edition_long_paths(const Fixture& fixture) {
+    // Keep the original fixture and state untouched. This exercise isolates
+    // the Win32 path guard from RichEdit and the complete lesson loader,
+    // which have their own separate tests.
+    auto folder = fixture.root / "edition-long-path-isolation";
+    while (folder.native().size() < 295)
+        folder /= L"segmento_de_comprobacion_de_rutas_largas_0123456789";
+    const auto content = folder / "content";
+    for (const auto role : {"course", "unit", "lesson"}) {
+        const auto target = folder / relative_path(fixture.paths.at(role));
+        require(target.native().size() > MAX_PATH,
+            "The long-path regression did not exceed the Win32 legacy limit");
+        write(target, bytes(fixture.path(role)));
+        require(fs::is_regular_file(state::native_io_path(target)),
+            "Cannot create an isolated long-path curriculum resource");
+        windows::validate_course_edition_physical_path(content, target);
+    }
+    // A missing file at the same depth must still fail closed.
+    const auto missing = folder / relative_path(fixture.paths.at("lesson"));
+    std::error_code ignored;
+    const auto missing_target = missing.parent_path() / "lesson_inexistente.json";
+    require(!fs::exists(state::native_io_path(missing_target), ignored),
+        "The missing long-path QA target unexpectedly exists");
+    rejects([&] { windows::validate_course_edition_physical_path(content, missing_target); },
+        "The long-path guard accepted a missing edition resource");
+}
+
 void physical_edition_catalog_alias_rejected(const Fixture& fixture) {
     // The original fixture and student profile remain untouched. For every
     // target, warm the normal catalog/identity caches, then replace one path
@@ -731,6 +758,7 @@ void run(const fs::path& fixture_source) {
     require(bytes(audio_sentinel) == audio_bytes, "La edición borró o cambió un archivo de caché conservado.");
     import_isolated(fixture, historic, current, revision_file, revision);
     negative_contracts(fixture, current, after);
+    physical_edition_long_paths(fixture);
     physical_edition_catalog_alias_rejected(fixture);
     fixture.preserved();
     std::cout << "PASS course_edition: índices activos, curso ajeno, estado/drafts/recibos separados, "
