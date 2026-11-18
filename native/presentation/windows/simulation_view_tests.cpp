@@ -1718,7 +1718,7 @@ void calculated_step_changes(HWND host) {
         "The first count lost the value and index actually observed");
     const auto first_key=delta_key(view);
     check(!first_key.empty(),"The current-step changes are missing from narration");
-    const spoken=[&]{
+    const auto spoken=[&]{
         for(const auto& region:view.reading_regions())
             if(region.key.find("/transition")!=std::string::npos)return region.source_text;
         return std::string{};
