@@ -212,6 +212,12 @@ curriculum::CatalogPage load_catalog(const std::filesystem::path& content_root, 
             const auto ordinal = number.GetNumber();
             require(std::isfinite(ordinal) && ordinal >= 1 && ordinal <= 1000000 && std::trunc(ordinal) == ordinal,"número de entrada inválido.");
             entry.number = static_cast<std::size_t>(ordinal);
+            // IDs and persisted progress are stable even when a new course
+            // shifts displayed ordinals. A malformed numbering sequence must
+            // not be accepted as a second source of navigation order.
+            // This single rule applies at course, unit and lesson levels.
+            require(entry.number == result.entries.size() + 1,
+                "Los índices curriculares deben numerarse desde 1 y sin huecos ni repeticiones.");
             const auto relative = level == CatalogLevel::lessons ? catalog_lesson_path(location,entry.id)
                 : catalog_index_path(catalog_child(location,entry.id));
             const auto installed = resolve(content_root,edition ? edition->locale : location.locale,relative,edition.has_value());
