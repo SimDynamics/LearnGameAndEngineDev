@@ -159,9 +159,12 @@ struct ChoiceRevision {
     std::vector<std::string> original_options, original_review_feedback_options;
     std::string original_question, original_explanation, original_review_feedback;
     std::optional<std::size_t> original_correct_index;
-    // Generic text-only reviews keep their original semantic spans; closed
-    // historical choice revisions retain their established reader behavior.
+    // A text-only option revision retains the exact authored descriptor of
+    // the ORIGINAL wording. New UTF-16 spans may point elsewhere and must
+    // never be rebound onto historical speech or previous listening progress.
+    // Null means the option had no descriptor in its published predecessor.
     std::optional<std::size_t> general_option_index;
+    std::optional<TextSemantics> original_option_text_semantics;
 };
 // An exact reviewed compiler contract expansion retains its complete original
 // and independent execution proofs; old success never proves the new checks.
