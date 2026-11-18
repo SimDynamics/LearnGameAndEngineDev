@@ -98,6 +98,24 @@ def fixtures() -> dict[str, dict]:
     changed_drag_template["pages"][0]["blocks"][1]["template"] = (
         DRAG_TEMPLATE.replace("std::cout", "std::cerr"))
     repin_modified_answer(changed_drag_template, DRAG_OWNER)
+
+    # Python rejects NEL (U+0085) as whitespace. Pin each forged active
+    # descriptor and editorial after-hash so the native loader cannot reject
+    # for an unrelated stale digest instead of the actual blank prose.
+    blank_nel_explanation = deepcopy(after)
+    layout._blocks(blank_nel_explanation)[OWNER]["explanation"] = "\u0085 \u2003"
+    blank_nel_explanation["textSemantics"]["fields"][0] = (
+        layout.text_semantics.make_field(
+            blank_nel_explanation, OWNER, "/explanation", []))
+    repin_modified_answer(blank_nel_explanation, OWNER)
+
+    blank_nel_question = deepcopy(after)
+    layout._blocks(blank_nel_question)[OWNER]["question"] = "\u0085 \u2003"
+    blank_nel_question["textSemantics"]["fields"].append(
+        layout.text_semantics.make_field(
+            blank_nel_question, OWNER, "/question", []))
+    repin_modified_answer(blank_nel_question, OWNER)
+
     examples = {
         "optional-prose.before": before,
         "optional-prose.after": after,
@@ -109,6 +127,8 @@ def fixtures() -> dict[str, dict]:
         "optional-prose.stale-drag-mark": stale_drag,
         "optional-prose.changed-drag-answer": changed_drag_answer,
         "optional-prose.changed-drag-template": changed_drag_template,
+        "optional-prose.blank-nel-explanation": blank_nel_explanation,
+        "optional-prose.blank-nel-question": blank_nel_question,
     }
     for name, candidate in examples.items():
         if name.endswith((".before", ".after")):
@@ -131,7 +151,7 @@ def main() -> None:
         (args.output_dir / (label + ".json")).write_text(
             json.dumps(document, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8")
-    print("Prepared ten isolated optional-prose/source-format QA fixtures")
+    print("Prepared twelve isolated optional-prose/source-format QA fixtures")
 
 
 if __name__ == "__main__":
