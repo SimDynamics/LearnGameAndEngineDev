@@ -496,8 +496,9 @@ SimulationSession::SimulationSession(SimulationSpec authored)
     : authored_(std::move(authored)), initial_(validated_trace(authored_)) {}
 
 SimulationTrace SimulationSession::take_initial_trace() {
-    require(!initial_.frames.empty(),
+    require(!initial_taken_,
         "La traza inicial de una sesión de simulación ya se transfirió.");
+    initial_taken_ = true;
     return std::move(initial_);
 }
 
