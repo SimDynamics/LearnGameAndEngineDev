@@ -3662,6 +3662,67 @@ void scenario_rejection_survives_repeated_native_presentation_failure(HWND host)
         "A valid scenario retry failed after repeated native presentation rejections");
 }
 
+void rejected_scenario_notification_keeps_newer_navigation(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView* current=nullptr;
+    bool reenter=false,nested_navigation=false;
+    SimulationCallbacks callbacks{};
+    callbacks.changed=[&]{
+        if(reenter){
+            reenter=false;
+            nested_navigation=current->go_to_step(0);
+        }
+    };
+    SimulationView view(host,spec,"es",callbacks);
+    current=&view;resize(view,820);
+    check(view.go_to_step(view.step_count()-1),
+        "Cannot prepare the prior completed scenario for a reentrant rollback");
+    const auto old_count=view.step_count();
+    const auto old_input=text(view,input_id);
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(selector&&output&&SendMessageW(selector,CB_GETCURSEL,0,0)==0,
+        "Cannot inspect the old scenario before a reentrant notification");
+
+    int rejected=1;
+    const auto reject_zoom=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& remaining=*reinterpret_cast<int*>(raw);
+        if(message==EM_SETZOOM&&remaining>0){--remaining;return FALSE;}
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53495352;
+    check(SetWindowSubclass(output,reject_zoom,hook_id,
+        reinterpret_cast<DWORD_PTR>(&rejected))!=FALSE,
+        "Cannot inject a rejected scenario before nested reader navigation");
+    struct Unhook {
+        HWND window;SUBCLASSPROC proc;UINT_PTR id;
+        ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,proc,id);}
+    } guard{output,reject_zoom,hook_id};
+
+    reenter=true;
+    check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "Cannot select the alternate scenario for reentrant recovery");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(rejected==0&&nested_navigation&&!reenter&&
+        SendMessageW(selector,CB_GETCURSEL,0,0)==0&&
+        view.step_index()==0&&view.step_count()==old_count&&
+        text(view,input_id)==old_input&&text(view,output_id).empty()&&
+        text(view,error_id).empty()&&spec==authored,
+        "The old scenario's rejected update overwrote a newer completed reader action");
+
+    check(SendMessageW(selector,CB_SETCURSEL,1,0)!=CB_ERR,
+        "Cannot retry the alternate scenario after nested navigation");
+    SendMessageW(view.window(),WM_COMMAND,MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+        reinterpret_cast<LPARAM>(selector));pump();
+    check(SendMessageW(selector,CB_GETCURSEL,0,0)==1&&
+        view.step_index()==0&&view.go_to_step(view.step_count()-1)&&
+        text(view,output_id)=="4:2\n9:2\n"&&spec==authored,
+        "A reentrant rollback left a rejected scenario pending for the next action");
+}
+
 void scenario_change_keeps_origin_error_when_editor_rollback_fails(HWND host,bool silent_rollback=false) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -5734,6 +5795,7 @@ int main(int argc,char** argv)try {
     run("applying_valid_data_is_atomic_after_native_failure",[&]{applying_valid_data_is_atomic_after_native_failure(host.value);});
     run("scenario_change_is_atomic_after_native_failure",[&]{scenario_change_is_atomic_after_native_failure(host.value);});
     run("scenario_rejection_survives_repeated_native_presentation_failure",[&]{scenario_rejection_survives_repeated_native_presentation_failure(host.value);});
+    run("rejected_scenario_notification_keeps_newer_navigation",[&]{rejected_scenario_notification_keeps_newer_navigation(host.value);});
     run("scenario_change_keeps_origin_error_when_editor_rollback_fails",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value);});
     run("scenario_change_keeps_origin_error_when_rollback_is_silent",[&]{scenario_change_keeps_origin_error_when_editor_rollback_fails(host.value,true);});
     run("scenario_change_reports_unrecoverable_draft",[&]{scenario_change_reports_unrecoverable_draft(host.value);});
