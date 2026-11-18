@@ -743,6 +743,16 @@ la salida recién obtenida; un error de compilación o ejecución es un diagnós
 no una respuesta incorrecta. Editar invalida el veredicto, que nunca se restaura
 como vigente tras reabrir. Las comprobaciones no descuentan corazones.
 
+Los diagnósticos procedentes de MSVC, CMake y del controlador del proceso
+muestran rutas relativas cuando comienzan con una ubicación reconocida bajo
+las carpetas propias del proyecto o de compilación. El compactador conserva
+las líneas, columnas, mensajes y fragmentos de origen, y no modifica los
+datos crudos de ejecución. También trata los errores técnicos
+`CppRunResult.error_utf8` al presentarlos, sin convertirlos en una salida
+ficticia del programa. Las rutas externas y los textos que no sean ubicaciones
+reconocidas quedan intactos. Esta adaptación es solo de presentación; la
+verificación de sus canales corresponde a las pruebas nativas Windows.
+
 Los editores original y de modificación de la página 5 guardan borradores
 independientes, incluidos espacios, saltos y procedencia de la sangría. TAB físico
 y TAB del editor comparten la misma operación; deshacer/rehacer conserva la
