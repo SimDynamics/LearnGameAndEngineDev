@@ -530,10 +530,60 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
     while(last<t.size()&&!op(t[last],";")&&!op(t[last],"}"))++last;
     return neutral(first,last);
 }
+// In the built-in comma operator, every left operand is evaluated and
+// discarded. A plain named integer or side-effect-free arithmetic on that
+// integer does not contribute to the value of the rightmost operand.
+// Recognize only parenthesized comma expressions; calls such as
+// f(capacidad, capacidad) have argument separators, not discarded operands.
+inline bool discarded_comma_rule_use(const Tokens& t,std::size_t i,
+        std::size_t scope_start) {
+    if(i>=t.size()||i<scope_start||!t[i].starts_with("id:"))return false;
+    const auto named=t[i];
+    const auto pure_named_arithmetic=[&](std::size_t first,std::size_t last) {
+        bool has_named=false;
+        for(auto at=first;at<last;++at) {
+            if(t[at]==named){has_named=true;continue;}
+            if(t[at].starts_with("number:")||
+                op(t[at],"(")||op(t[at],")")||
+                op(t[at],"+")||op(t[at],"-")||
+                op(t[at],"*")||op(t[at],"/")||op(t[at],"%"))
+                continue;
+            // An assignment, call, increment or other expression can have
+            // effects even if its resulting value is discarded.
+            return false;
+        }
+        return has_named;
+    };
+    std::vector<std::size_t> enclosing;
+    for(auto at=scope_start;at<i;++at) {
+        if(op(t[at],"("))enclosing.push_back(at);
+        else if(op(t[at],")")&&!enclosing.empty())enclosing.pop_back();
+    }
+    for(const auto open:enclosing) {
+        if(open>scope_start&&
+            ((t[open-1].starts_with("id:")&&
+              !id(t[open-1],"return")&&!id(t[open-1],"co_return"))||
+             op(t[open-1],")")||op(t[open-1],"]")))
+            continue;
+        const auto close=closing(t,open,"(",")");
+        if(!close||*close<=i)continue;
+        std::size_t depth=0,part=open+1;
+        for(auto at=open+1;at<*close;++at) {
+            if(op(t[at],"(")){++depth;continue;}
+            if(op(t[at],")")){if(depth)--depth;continue;}
+            if(depth||!op(t[at],","))continue;
+            if(i>=part&&i<at&&pure_named_arithmetic(part,at))
+                return true;
+            part=at+1;
+        }
+    }
+    return false;
+}
 inline bool productive(const Tokens& t,std::size_t i,
         std::size_t scope_start=0) {
     if(unevaluated_rule_use(t,i,scope_start)||
-       neutral_named_expression_use(t,i,scope_start))return false;
+       neutral_named_expression_use(t,i,scope_start)||
+       discarded_comma_rule_use(t,i,scope_start))return false;
     // Direct algebraic identities cannot establish that a constant is
     // meaningfully used. This is deliberately a bounded syntactic check;
     // arbitrary C++ still requires execution evidence.
