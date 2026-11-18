@@ -2773,6 +2773,54 @@ void processed_remaining_progress_in_reader(HWND host) {
     check_step(6,"Fin: contados 3; quedan 0.","2:1/2\n5:3/0\n");
 }
 
+void array_count_caption_uses_correct_number(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.values=numbers({8});
+    spec.scenarios={{"empty","Sin elementos",{}},
+        {"reorder","Dos valores",numbers({8,2})}};
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    const auto caption=[&]{return text(view,array_label_id);};
+    check(caption()=="Datos ordenados · 1 elemento" &&
+        name(GetDlgItem(view.window(),array_label_id))==caption(),
+        "A single item retained a plural caption or a different accessible name");
+    const auto selector=GetDlgItem(view.window(),scenario_id);
+    check(selector,"The array-count caption lost its scenario selector");
+    const auto choose=[&](int index) {
+        check(SendMessageW(selector,CB_SETCURSEL,index,0)!=CB_ERR,
+            "The array-count scenario is missing");
+        SendMessageW(view.window(),WM_COMMAND,
+            MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(selector));
+        pump();
+    };
+    choose(1);
+    check(caption()=="Datos ordenados · 0 elementos"&&view.step_count()==1,
+        "An empty scenario retained a nonzero array count");
+    choose(2);
+    check(caption()=="Datos ordenados · copia ordenada · 2 elementos",
+        "A sorted two-item scenario lost its copied-array label or plural");
+    set_edit_text(GetDlgItem(view.window(),input_id),"8");
+    click(view,apply_id);
+    check(caption()=="Datos ordenados · 1 elemento"&&view.step_count()==4,
+        "Applying a single item left the earlier scenario count visible");
+    click(view,restore_id);
+    check(caption()=="Datos ordenados · copia ordenada · 2 elementos",
+        "Restoring the scenario failed to recover the two-item caption");
+    choose(0);
+    check(caption()=="Datos ordenados · 1 elemento"&&spec==authored,
+        "Returning to the authored dataset changed its single-item count");
+
+    auto labels=fixture(SimulationViewMode::walkthrough);
+    labels.text_values=true;labels.scenarios.clear();
+    labels.values={std::string("")};
+    SimulationView words(host,labels,"es");resize(words,820);
+    check(text(words,array_label_id)=="Datos ordenados · 1 elemento"&&
+        name(GetDlgItem(words.window(),array_label_id))==
+            text(words,array_label_id),
+        "The empty text value was confused with zero elements or a plural count");
+}
+
 void original_order_comparison(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -6482,6 +6530,7 @@ int main(int argc,char** argv)try {
     run("counted_cell_emphasis",[&]{counted_cell_emphasis(host.value,captures);});
     run("walkthrough_cell_selection",[&]{walkthrough_cell_selection(host.value);});
     run("counted_source_origin_explanation",[&]{counted_source_origin_explanation(host.value);});
+    run("array_count_caption_uses_correct_number",[&]{array_count_caption_uses_correct_number(host.value);});
     run("processed_remaining_progress_in_reader",[&]{processed_remaining_progress_in_reader(host.value);});
     run("original_order_comparison",[&]{original_order_comparison(host.value);});
     run("original_order_reading_session",[&]{original_order_reading_session(host.value);});
