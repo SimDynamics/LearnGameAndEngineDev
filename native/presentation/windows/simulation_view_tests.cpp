@@ -2543,6 +2543,119 @@ void walkthrough_cell_selection(HWND host) {
             return a.key==b.key&&a.source_text==b.source_text;}),
         "An empty-array click fabricated a step or changed reading state");
 }
+// The author may describe a counted item using its index in the sorted copy
+// and its index in the original input. Exercise the actual Win32 explanation,
+// reading regions, mouse/keyboard navigation, scenarios and edited data.
+void counted_source_origin_explanation(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.values=numbers({7,3,7,2});
+    spec.scenarios={{"empty","Sin datos",{}},
+        {"reordered","Otra procedencia",numbers({3,1,3})}};
+    spec.explanations.initial="Antes de contar {countedIndex}|{originIndex}.";
+    spec.explanations.start="Se contó {countedIndex} desde {originIndex}: {value}.";
+    spec.explanations.advance="Se contó {countedIndex} desde {originIndex}: {value}.";
+    spec.explanations.new_maximum="Decisión {countedIndex}|{originIndex}.";
+    spec.explanations.tie="Empate {countedIndex}|{originIndex}.";
+    spec.explanations.below_maximum="Debajo {countedIndex}|{originIndex}.";
+    spec.explanations.done="Fin {countedIndex}|{originIndex}.";
+    spec.explanations.empty="Vacío {countedIndex}|{originIndex}.";
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    const auto narrated=[&](std::string_view expected) {
+        const auto target=GetDlgItem(view.window(),explanation_id);
+        check(target&&text(view,explanation_id)==expected,
+            "The visible counted/origin explanation differs from the selected trace");
+        bool found=false;
+        for(const auto& region:view.reading_regions())
+            if(region.target==target) {
+                check(!found&&region.source_text==expected,
+                    "The spoken explanation uses a stale counted/source index");
+                found=true;
+            }
+        check(found,"The native reader cannot narrate the counted/source explanation");
+    };
+    check(view.step_index()==0&&view.step_count()==9,
+        "The four original items did not produce the expected count/decision frames");
+    narrated("Antes de contar |.");
+    click(view,next_id);
+    check(view.step_index()==1,"The first counted element is not an actual native step");
+    narrated("Se contó 0 desde 3: 2.");
+    check(name(GetDlgItem(view.window(),array_id)).find(
+        "índice 0: 2 (origen índice 3)")!=std::string::npos,
+        "The visible array index and its spoken original position disagree");
+    check(view.go_to_step(2),"Cannot navigate to the first group decision");
+    narrated("Decisión |.");
+    check(view.go_to_step(5),"Cannot reach the first repeated value");
+    narrated("Se contó 2 desde 0: 7.");
+    click_array_cell(view,3);
+    check(view.step_index()==6,
+        "Clicking the next repeated element did not select its counting frame");
+    narrated("Se contó 3 desde 2: 7.");
+    check(view.go_to_step(7),"Cannot select the completed group decision");
+    narrated("Decisión |.");
+    check(view.go_to_step(8),"Cannot select the finished traversal");
+    narrated("Fin |.");
+    click(view,previous_id);
+    check(view.step_index()==7,"Previous did not return to the completed decision");
+    narrated("Decisión |.");
+    click(view,previous_id);
+    check(view.step_index()==6,"Previous did not recover the last counted element");
+    narrated("Se contó 3 desde 2: 7.");
+
+    const auto scenario=GetDlgItem(view.window(),scenario_id);
+    check(scenario,"The scenario selector is missing");
+    const auto choose=[&](int at) {
+        check(SendMessageW(scenario,CB_SETCURSEL,at,0)!=CB_ERR,
+            "The selected source-index scenario does not exist");
+        SendMessageW(view.window(),WM_COMMAND,
+            MAKEWPARAM(scenario_id,CBN_SELCHANGE),
+            reinterpret_cast<LPARAM>(scenario));pump();
+    };
+    choose(1);
+    check(view.step_index()==0&&view.step_count()==1,
+        "An empty scenario retained another traversal's frame positions");
+    narrated("Vacío |.");
+    choose(2);
+    check(view.step_index()==0&&view.step_count()==7,
+        "A shorter scenario retained frames from the authored input");
+    narrated("Antes de contar |.");
+    check(view.go_to_step(1),"Cannot observe the first cell of a scenario");
+    narrated("Se contó 0 desde 1: 1.");
+    check(view.go_to_step(3),"Cannot observe a repeated scenario value");
+    narrated("Se contó 1 desde 0: 3.");
+    check(view.go_to_step(4),"Cannot observe the other repeated scenario value");
+    narrated("Se contó 2 desde 2: 3.");
+
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(editor,"The source-index simulation has no editable input");
+    set_edit_text(editor,"4\n2\n4");
+    click(view,apply_id);
+    check(view.step_index()==0&&view.step_count()==7,
+        "Applying another valid array retained the old scenario's step");
+    narrated("Antes de contar |.");
+    check(view.go_to_step(1),"Cannot observe the first edited input");
+    narrated("Se contó 0 desde 1: 2.");
+    check(view.go_to_step(4),"Cannot observe the last edited repeated value");
+    narrated("Se contó 2 desde 2: 4.");
+    click(view,restore_id);
+    check(view.step_index()==0&&view.step_count()==9&&spec==authored,
+        "Restore changed the authored model or retained edited provenance");
+    narrated("Antes de contar |.");
+    check(view.go_to_step(6),"Restore did not recover the original source mapping");
+    narrated("Se contó 3 desde 2: 7.");
+
+    auto labeled=authored;
+    labeled.text_values=true;
+    labeled.values={std::string("patio"),std::string(""),std::string("patio")};
+    labeled.scenarios.clear();
+    SimulationView words(host,labeled,"es");resize(words,820);
+    check(words.go_to_step(1)&&
+        text(words,explanation_id)=="Se contó 0 desde 1: \"\" (cadena vacía)." &&
+        words.go_to_step(4)&&
+        text(words,explanation_id)=="Se contó 2 desde 2: \"patio\".",
+        "A real text view confused an empty value or repeated label's source position");
+}
+
 void original_order_comparison(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -6251,6 +6364,7 @@ int main(int argc,char** argv)try {
     run("walkthrough_processed_progress",[&]{walkthrough_processed_progress(host.value,captures);});
     run("counted_cell_emphasis",[&]{counted_cell_emphasis(host.value,captures);});
     run("walkthrough_cell_selection",[&]{walkthrough_cell_selection(host.value);});
+    run("counted_source_origin_explanation",[&]{counted_source_origin_explanation(host.value);});
     run("original_order_comparison",[&]{original_order_comparison(host.value);});
     run("original_order_reading_session",[&]{original_order_reading_session(host.value);});
     run("static_simulation_text_is_not_restreamed",[&]{static_simulation_text_is_not_restreamed(host.value);});
