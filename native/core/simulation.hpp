@@ -58,6 +58,10 @@ struct SimulationFrame {
 };
 struct SimulationTrace {
     std::vector<SimulationValue> original, ordered;
+    // For each sorted element, the exact index of its original occurrence.
+    // Stable ordering preserves distinct positions for repeated values.
+    // When no sort was requested this is the identity permutation.
+    std::vector<std::size_t> source_indices;
     std::vector<SimulationGroup> groups;
     std::vector<SimulationFrame> frames;
     std::vector<std::size_t> candidate_frames;
