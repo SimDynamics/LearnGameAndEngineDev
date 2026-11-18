@@ -4108,15 +4108,16 @@ struct LessonView {
         if(vm.selective_recovery)vm.selective_recovery->run(running_program,*result);
         const std::array diagnostic_roots{result->diagnostic_source_directory,
             result->diagnostic_control_source_directory,result->diagnostic_build_directory,result->run_directory};
-        const auto tool_diagnostics=[&](std::string_view bytes){
-            return utf8(compact_compiler_diagnostic_paths(wide(diagnostic_text(bytes)),diagnostic_roots));
+        const auto tool_diagnostics=[&](std::string_view bytes,bool internal_driver_error=false){
+            return utf8(compact_compiler_diagnostic_paths(
+                wide(diagnostic_text(bytes)),diagnostic_roots,internal_driver_error));
         };
         // A driver failure can report source/build paths outside its regular
         // MSVC/CMake channel. Keep the raw error for process evaluation, but
         // compact its DISPLAY with the same owned-root rules. The compiled
         // program's stdout and stderr always remain literal and untouched.
         const auto internal_diagnostic=result->error_utf8.empty()
-            ?std::string{}:tool_diagnostics(result->error_utf8);
+            ?std::string{}:tool_diagnostics(result->error_utf8,true);
         if(block(index).compile_check){
             vm.console_channels={};
             auto diagnostics=tool_diagnostics(result->compilation.stdout_bytes+result->compilation.stderr_bytes);
