@@ -207,6 +207,11 @@ los segmentos del texto anterior, asociándolos a su fuente histórica,
 en vez de conservar el texto nuevo o descartar sus resaltados. El archivo
 anterior se usa sólo para comprobar pausas y procedencia de lectura;
 el texto activo exige su propia narración cuando cambian sus palabras.
+Al comparar la edición nueva con la anterior, `align_for_previous_validation`
+restaura además la huella y los rangos del descriptor de la opción antigua;
+conserva los marcadores de otros campos actuales y no reutiliza la huella
+nueva sobre un texto anterior. Se comprueba la consistencia de esa
+proyección mediante el validador de `textSemantics`.
 Las ocho revisiones cerradas anteriores conservan sus reglas de lectura.
 La prueba `native.general_choice_editorial_reader` utiliza un perfil QA
 oculto y una copia temporal U9L13 con dos marcados **diferentes**:
