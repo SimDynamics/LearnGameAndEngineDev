@@ -2173,15 +2173,19 @@ activas pasan a las unidades de la edición actual. Las unidades históricas
 permanecen como recursos existentes, sin entradas activas en ese índice.
 
 El cargador comprueba la coincidencia del descriptor, la identidad y la ruta en
-los tres niveles. En Windows, la carga completa y la proyección de progreso
-verifican además que el archivo de lección y sus índices activos de curso y
-unidad sean archivos físicos, sin enlaces simbólicos ni uniones de directorio
-entre la raíz de contenido y esos recursos. Rechaza también enlaces en carpetas
-intermedias, aunque los bytes de los archivos coincidan con el índice publicado.
-`native.course_edition` contiene una regresión Win32 que reproduce enlaces
-reales de archivo y directorio dentro de un árbol QA aislado: si la cuenta no
-puede crearlos, informa `SKIP` para esos casos, que no quedan acreditados por
-el mero hecho de registrar la prueba. La comprobación del contenido histórico
+los tres niveles. En Windows, la carga completa, la proyección de progreso y
+el catálogo comparten la comprobación física de las rutas de ediciones
+activas: índices de curso y unidad, lecciones y sus carpetas intermedias
+deben estar libres de enlaces simbólicos y uniones de directorio desde la
+raíz de contenido, aunque los bytes coincidan con la publicación original.
+El catálogo comprueba el recurso hijo antes de consultar su identidad
+almacenada en caché; la proyección de progreso también vuelve a comprobar
+la ruta antes de reutilizar metadatos con la misma fecha y tamaño.
+`native.course_edition` reproduce enlaces reales de índice de curso,
+índice de unidad, archivo de lección y carpeta de unidad en árboles QA
+aislados, después de poblar las cachés con rutas originales válidas. Si
+la cuenta Windows no puede crear un enlace, informa `SKIP` para ese caso,
+que no se declara acreditado. La comprobación de los recursos históricos
 durante publicación sigue siendo una obligación separada de la carga nativa.
 Una edición española no toma silenciosamente una unidad o lección inglesa,
 francesa o histórica como respaldo. Los recursos EN/FR anteriores permanecen
