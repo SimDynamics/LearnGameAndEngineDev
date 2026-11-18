@@ -402,7 +402,9 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
                 layout.validate(candidate)
 
     def test_rejects_unreviewed_semantic_or_empty_text_change(self):
-        for value in ("", "   ", self.block["options"][0]):
+        for value in ("", "   ", "\u00a0", "\u0085", "\u2003",
+                      "\u202f", "\u3000", "\u00a0\t\u2003",
+                      self.block["options"][0]):
             with self.subTest(value=value), self.assertRaises(layout.LayoutError):
                 layout.revise_choice_editorial(self.original, OWNER, 0, value)
 
