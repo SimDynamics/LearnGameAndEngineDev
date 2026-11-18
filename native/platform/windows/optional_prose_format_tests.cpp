@@ -4,6 +4,7 @@
 #include "core/lesson_state.hpp"
 
 #include <array>
+#include <cstdint>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -41,7 +42,8 @@ int main(int argc, char** argv) {
             dir / "optional-prose.after.json", "es");
         require(before.id == after.id && after.id == metadata.id &&
             before.pages.size() == 1 && after.pages.size() == 1 &&
-            before.pages[0].blocks.size() == 1 && after.pages[0].blocks.size() == 1,
+            before.pages[0].blocks.size() == 2 && after.pages[0].blocks.size() == 2 &&
+            metadata.pages.size() == 1 && metadata.pages[0].blocks.size() == 2,
             "The lexical/prose review moved or replaced the historical lesson");
         require(before.state_layout.signatures == after.state_layout.signatures &&
                 before.state_layout.lineage == after.state_layout.lineage &&
@@ -94,17 +96,74 @@ int main(int argc, char** argv) {
                 state::string_value(migrated, "learning_progress",
                     curriculum::exercise_key(after, current)) == snapshot,
             "Adding explanation/spacing erased a valid historical answer or its attempts");
-        require(progress == reopened,
-            "Reopening a read-only QA receipt changed its original student data");
+        // The actual U1L4 gap is a drag_fill_code puzzle, not a prediction.
+        // Adding its explanation must preserve every physical hole, choice,
+        // answer index and the old saved response under the same owner.
+        const auto& old_drag = before.pages[0].blocks[1];
+        const auto& new_drag = after.pages[0].blocks[1];
+        const auto& drag_metadata = metadata.pages[0].blocks[1];
+        constexpr std::string_view drag_explanation =
+            "La ficha main identifica la función, << inserta el texto y ; termina la instrucción.";
+        constexpr std::string_view drag_template =
+            "#include <iostream>\nint []() {\n    std::cout [] \"Revision lista\"[]\n    return 0;\n}";
+        require(old_drag.type == curriculum::BlockType::drag_fill_code &&
+                new_drag.type == old_drag.type && old_drag.explanation.empty() &&
+                new_drag.explanation == drag_explanation &&
+                old_drag.code_template == drag_template &&
+                new_drag.code_template == old_drag.code_template &&
+                old_drag.choices == std::vector<std::string>{"main", "<<", ";", "Main", "<"} &&
+                new_drag.choices == old_drag.choices &&
+                old_drag.correct_order == std::vector<std::size_t>{0, 1, 2} &&
+                new_drag.correct_order == old_drag.correct_order &&
+                old_drag.stable_id == new_drag.stable_id &&
+                old_drag.address.page == new_drag.address.page &&
+                old_drag.address.block == new_drag.address.block,
+            "Adding a drag-fill explanation changed holes, distractors, answers or owner");
+        const auto drag_mark = new_drag.text_semantics.find("/explanation");
+        const auto drag_summary = drag_metadata.text_semantics.find("/explanation");
+        require(drag_mark != new_drag.text_semantics.end() &&
+                drag_summary != drag_metadata.text_semantics.end() &&
+                drag_mark->second.source == drag_explanation &&
+                drag_mark->second.spans.empty() &&
+                drag_mark->second == drag_summary->second,
+            "The drag-fill explanation lost its authored semantic descriptor");
+
+        state::Response old_drag_answer;
+        old_drag_answer.correct = true;
+        old_drag_answer.order = {0, 1, 2};
+        old_drag_answer.raw_json = R"({"opaque":{"oldDragAttempts":2}})";
+        state::put_response(progress, before, old_drag, old_drag_answer);
+        const auto drag_snapshot = state::string_value(progress, "learning_progress",
+            curriculum::exercise_key(before, old_drag));
+        const auto drag_reopened = state::decode(state::encode(progress));
+        auto drag_migrated = drag_reopened;
+        state::prepare_lesson_state(drag_migrated, after);
+        state::validate_lesson_state(drag_migrated, after);
+        const auto drag_receipt = state::get_response(drag_migrated, after, new_drag);
+        require(drag_receipt && drag_receipt->correct &&
+                drag_receipt->order == std::vector<std::int64_t>{0, 1, 2} &&
+                curriculum::exercise_key(before, old_drag) ==
+                    curriculum::exercise_key(after, new_drag) &&
+                state::string_value(drag_migrated, "learning_progress",
+                    curriculum::exercise_key(after, new_drag)) == drag_snapshot &&
+                state::get_response(drag_migrated, after, current)->answer == "A",
+            "Optional drag-fill prose lost an old answer, attempts or another puzzle receipt");
+        require(progress == reopened &&
+                drag_reopened == progress,
+            "Reopening an isolated QA receipt modified its prior student state");
 
         for (const auto filename : {
                 "optional-prose.missing-mark.json",
                 "optional-prose.stale-mark.json",
                 "optional-prose.changed-answer.json",
-                "optional-prose.changed-code.json"})
+                "optional-prose.changed-code.json",
+                "optional-prose.missing-drag-mark.json",
+                "optional-prose.stale-drag-mark.json",
+                "optional-prose.changed-drag-answer.json",
+                "optional-prose.changed-drag-template.json"})
             rejected(dir / filename);
-        std::cout << "PASS optional C++ format/prose: published answer, "
-            "authored UTF-16 marker, native progress and four forged revisions rejected\n";
+        std::cout << "PASS optional C++ format/prose and drag-fill: both historical answers, "
+            "two authored semantic markers, native progress and eight forged revisions rejected\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "FAIL optional C++ format/prose: " << error.what() << '\n';
