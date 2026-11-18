@@ -478,7 +478,16 @@ por cambio de escala o DPI; requiere ejecución local en Windows.
 Avanzar, retroceder o saltar a un paso tampoco admite una presentación
 parcial. Si RichEdit rechaza la actualización después de seleccionar otro
 estado, el simulador recupera el paso, la salida, las variables, las barras
-y los puntos de lectura anteriores. Un aviso accesible explica el fallo,
+y los puntos de lectura anteriores. La escritura del texto enriquecido se
+coteja con el contenido que realmente conserva RichEdit, tras las
+transformaciones de presentación, antes de aplicar su formato o dar por
+confirmado el nuevo paso. Un `EM_STREAMIN` que termine sin error, pero
+conserve la explicación anterior, también provoca el rechazo y permite
+reintentar. El sello de formato sólo se conserva tras una actualización
+completa. La regresión Windows
+`silent_richedit_explanation_stream_cannot_commit_step` comprueba la
+recuperación y el reintento; requiere ejecutarse localmente en Windows.
+Un aviso accesible explica el fallo,
 sin propagar la excepción fuera de los controles Win32. La limpieza de un
 aviso transitorio ocurre antes de notificar a los observadores del modelo:
 si un observador inicia otro paso que falla, la notificación exterior no
