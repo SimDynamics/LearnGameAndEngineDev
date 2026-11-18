@@ -357,6 +357,20 @@ publicado y puede diferir de la posición física tras reorganizar las
 páginas; la adición no modifica respuestas ni atribuye una lectura
 anterior al texto nuevo.
 
+La nueva explicación opcional puede incorporarse **en la misma transición**
+que un espaciado físico del código que conserve todos sus tokens. Work prepara
+el código y el texto nuevos con su descriptor explícito de `/explanation`,
+incluidos `spans: []` cuando es prosa sin resaltados, y entrega la edición
+con `prepare_v2`. El generador archiva el bloque previo completo en
+`sourceFormatRevisions` y añade una arista editorial auténtica. El cargador
+Windows exige la nueva marca, no transfiere a esa explicación las pausas
+anteriores y conserva la clave histórica del ejercicio. La regla sólo admite
+una explicación ausente en un ejercicio ordinario: no permite inventar
+`/question`, crear guías nuevas en `compileCheck` o `outputCheck`, añadir
+`reviewFeedback` sin autorización, alterar respuestas ni sustituir tokens.
+La autoría y las regresiones están preparadas; su ejecución nativa en el PC
+Windows autorizado sigue siendo necesaria para acreditarla.
+
 Cuando una actividad está en una página distinta de la original, el
 validador resuelve su propietario mediante el `origin` y el `current`
 autenticados. En las comprobaciones históricas, `(pn, bn)` indica la
