@@ -158,6 +158,78 @@ int main(int argc,char** argv) {
             "An established response-changing revision lost its separate historical selection");
 
         const auto reviewed_file=read_file(std::filesystem::path(argv[2]));
+        // Exercise the NEW authoring contract against the actual Windows
+        // full and metadata loaders. The existing published fixture remains
+        // unchanged and retains its legacy five-field archive.
+        auto explicit_root=JsonObject::Parse(winrt::to_hstring(reviewed_file));
+        const auto revision=explicit_root.GetNamedObject(L"stateLayout")
+            .GetNamedArray(L"choiceRevisions").GetObjectAt(0);
+        const auto revised_text=revision.GetNamedString(L"replacement");
+        const std::wstring_view revised_words(revised_text.c_str());
+        constexpr std::wstring_view selected_words=L"condición";
+        const auto start=revised_words.find(selected_words);
+        require(start!=std::wstring_view::npos,
+            "The real revised option lost its exact UTF-16 semantic selection");
+        JsonObject semantic_span;
+        semantic_span.Insert(L"start",JsonValue::CreateNumberValue(static_cast<double>(start)));
+        semantic_span.Insert(L"end",JsonValue::CreateNumberValue(
+            static_cast<double>(start+selected_words.size())));
+        semantic_span.Insert(L"text",JsonValue::CreateStringValue(winrt::hstring(selected_words)));
+        semantic_span.Insert(L"role",JsonValue::CreateStringValue(L"prose"));
+        semantic_span.Insert(L"reading",JsonValue::CreateStringValue(L"natural"));
+        auto fields=explicit_root.GetNamedObject(L"textSemantics").GetNamedArray(L"fields");
+        bool updated=false;
+        for(unsigned i=0;i<fields.Size();++i) {
+            const auto field=fields.GetObjectAt(i);
+            if(field.GetNamedString(L"block")!=L"block_0007_0002"||
+                    field.GetNamedString(L"path")!=L"/options/0")continue;
+            require(!updated&&field.GetNamedArray(L"spans").Size()==0,
+                "The published legacy fixture unexpectedly has authored option spans");
+            field.GetNamedArray(L"spans").Append(semantic_span);
+            revision.Insert(L"semanticAfter",field);
+            revision.Insert(L"semanticRootBefore",JsonValue::CreateBooleanValue(true));
+            updated=true;
+        }
+        require(updated,"The real choice has no existing semantic owner");
+        const auto explicit_bytes=winrt::to_string(explicit_root.Stringify());
+        const auto explicitly_marked=parse_lesson_json(explicit_bytes,"es");
+        const auto explicitly_metadata=parse_lesson_progress_metadata(explicit_bytes,"es");
+        const auto marked_position=stable_block_position(explicitly_marked,identity);
+        require(marked_position&&*marked_position==*position,
+            "Explicit option semantics changed the published state address");
+        const auto& marked=explicitly_marked.pages[position->page].blocks[position->block];
+        const auto& marked_meta=explicitly_metadata.pages[position->page].blocks[position->block];
+        const auto mark=marked.text_semantics.find("/options/0");
+        require(mark!=marked.text_semantics.end()&&mark->second.spans.size()==1&&
+                mark->second.source==marked.options.front()&&
+                marked_meta.text_semantics==marked.text_semantics,
+            "Windows lost explicit authored option text or its new UTF-16 range");
+        auto marked_state=imported;
+        state::prepare_lesson_state(marked_state,explicitly_marked);
+        const auto marked_receipt=state::get_response(marked_state,explicitly_marked,marked);
+        require(state::response_storage_key(explicitly_marked,marked)==legacy&&
+                marked_receipt&&marked_receipt->correct&&marked_receipt->selected==0,
+            "An explicitly revised text marker erased a valid historical answer");
+        rejected_change(explicit_bytes,[](JsonObject root) {
+            root.GetNamedObject(L"stateLayout").GetNamedArray(L"choiceRevisions")
+                .GetObjectAt(0).GetNamedObject(L"semanticAfter")
+                .Insert(L"sourceSha256",JsonValue::CreateStringValue(
+                    L"0000000000000000000000000000000000000000000000000000000000000000"));
+        },"A forged new semantic archive was accepted");
+        rejected_change(explicit_bytes,[](JsonObject root) {
+            root.GetNamedObject(L"stateLayout").GetNamedArray(L"choiceRevisions")
+                .GetObjectAt(0).Insert(L"semanticRootBefore",
+                    JsonValue::CreateBooleanValue(false));
+        },"A false original semantic-root claim bypassed the previous marker");
+        rejected_change(explicit_bytes,[](JsonObject root) {
+            auto spans=root.GetNamedObject(L"textSemantics").GetNamedArray(L"fields");
+            for(unsigned i=0;i<spans.Size();++i) {
+                const auto field=spans.GetObjectAt(i);
+                if(field.GetNamedString(L"block")==L"block_0007_0002"&&
+                   field.GetNamedString(L"path")==L"/options/0")
+                    field.GetNamedArray(L"spans").Clear();
+            }
+        },"An active option silently lost its archived new emphasis");
         rejected_change(reviewed_file,[](JsonObject root) {
             root.GetNamedArray(L"pages").GetObjectAt(7)
                 .GetNamedArray(L"blocks").GetObjectAt(2)
