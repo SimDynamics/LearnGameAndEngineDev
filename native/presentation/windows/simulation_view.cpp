@@ -863,6 +863,17 @@ struct SimulationView::Impl {
                     simulation_value_display_text(current_value)+
                     (equal?". Son iguales: continúa el grupo.":
                         ". Son diferentes: comienza un grupo nuevo."));
+                // Both neighbors have already been counted. When stable
+                // sorting moved the data, make their original positions as
+                // explicit as those of the newly observed item. Never expose
+                // the next (unobserved) element or fabricate an origin when
+                // the input is already ordered.
+                if(!source_positions.empty())
+                    changes.push_back("Procedencia de la comparación: posición ordenada "+
+                        std::to_string(observed-1)+" ← posición original "+
+                        std::to_string(source_positions.at(observed-1))+
+                        "; posición ordenada "+std::to_string(observed)+
+                        " ← posición original "+std::to_string(source_positions.at(observed))+".");
             }
         }else if(after.phase==SimulationPhase::new_maximum||
                  after.phase==SimulationPhase::tie||
