@@ -538,6 +538,11 @@ function(lgaed_add_general_choice_editorial_tests)
         PRIVATE lgaed_curricular_windows)
     add_dependencies(lgaed_general_choice_editorial_view_tests
         lgaed_general_choice_editorial_fixture)
+    # Focused native QA: compile only the two Windows hosts and the pinned
+    # editorial fixtures, not the application or unrelated test executables.
+    add_custom_target(lgaed_general_choice_editorial_qa_targets
+        DEPENDS lgaed_general_choice_editorial_tests
+                lgaed_general_choice_editorial_view_tests)
     add_test(NAME native.general_choice_editorial_reader
         COMMAND lgaed_general_choice_editorial_view_tests
             "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}"
