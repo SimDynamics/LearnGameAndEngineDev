@@ -406,7 +406,11 @@ class RepositoryGateTest(unittest.TestCase):
             self.assertEqual(m.validate(m.load(path))[0, 0], (2, 0))
 
     def test_tree_without_identity_metadata_keeps_legacy_validation(self):
-        self.assertEqual(m.check_repository(self.root, None)['mapped_lessons'], 0)
+        # Without a base commit there are no edition or identity claims:
+        # retain the complete legacy-only report as its own explicit contract.
+        self.assertEqual(m.check_repository(self.root, None), {
+            'base_commit': None, 'mapped_lessons': 0, 'families': 0,
+        })
 
     def test_adoption_requires_explicit_published_base(self):
         self.adopt()
