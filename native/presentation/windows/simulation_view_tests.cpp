@@ -187,11 +187,15 @@ std::map<int,std::string> rich_edit_fonts(SimulationView& view,int expected_scal
     }
     return result;
 }
-std::string name(HWND window) {
+std::string name(HWND window,bool allow_missing=false) {
     Microsoft::WRL::ComPtr<IAccessible> accessible;
     check(SUCCEEDED(AccessibleObjectFromWindow(window,OBJID_CLIENT,IID_PPV_ARGS(accessible.GetAddressOf()))),"Cannot read the real accessible object");
     VARIANT child{};child.vt=VT_I4;child.lVal=CHILDID_SELF;BSTR value=nullptr;
-    check(SUCCEEDED(accessible->get_accName(child,&value))&&value,"A native control has no accessible name");
+    const auto status=accessible->get_accName(child,&value);
+    // A cleared warning can have no Name property (S_FALSE, null BSTR).
+    // All existing callers still require a nonempty, valid native name.
+    if(allow_missing&&status==S_FALSE&&!value)return {};
+    check(status==S_OK&&value,"A native control has no accessible name");
     const auto result=utf8(value);SysFreeString(value);return result;
 }
 void bounds(SimulationView& view,const char* context="responsive layout") {
@@ -4247,7 +4251,7 @@ void applying_valid_data_is_atomic_after_native_failure(HWND host) {
         view.step_count()!=previous_count&&
         view.reading_regions()[2].key!=prior_identity,
         "A valid retry could not leave the rolled-back model");
-    check(name(warning).empty()&&
+    check(name(warning,true).empty()&&
         std::ranges::none_of(view.reading_regions(),[&](const auto& region){
             return region.target==warning;
         }),"A successful Apply left the earlier rejection in accessible narration");
