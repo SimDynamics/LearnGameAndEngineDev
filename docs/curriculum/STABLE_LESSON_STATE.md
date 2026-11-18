@@ -209,8 +209,13 @@ anterior se usa sólo para comprobar pausas y procedencia de lectura;
 el texto activo exige su propia narración cuando cambian sus palabras.
 Las ocho revisiones cerradas anteriores conservan sus reglas de lectura.
 La prueba `native.general_choice_editorial_reader` utiliza un perfil QA
-oculto y una copia temporal U9L13 con marcado real, comprueba las regiones
-de lectura activa e histórica y las vuelve a comprobar al reabrir.
+oculto y una copia temporal U9L13 con dos marcados **diferentes**:
+`precondición` en la opción publicada y `condición para aceptar la
+transición` en la redacción nueva. Comprueba que el lector reconstruya
+la marca anterior directamente del descriptor `semanticBefore` validado,
+sin trasladarle los nuevos desplazamientos UTF-16. También comprueba
+las regiones de lectura activa e histórica al reabrir y la conservación
+del éxito anterior. Los archivos curriculares de Work no se modifican.
 No sustituye una prueba audible de voz ni acredita escucha humana.
 
 El mecanismo admite exactamente un cambio de texto de opción por
