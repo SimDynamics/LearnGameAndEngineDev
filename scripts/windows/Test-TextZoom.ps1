@@ -56,9 +56,19 @@ try {
     )
     $regex = '^native[.](rich_text|cpp_fill_view|order_code_view|math_puzzle_view|simulation_view|simulation_lesson)$'
 
+    # CTest locates presets relative to the current directory. This script
+    # may be invoked by absolute path from another working folder, so enumerate
+    # from the authorized Codex checkout and always restore the caller's path.
+    Push-Location -LiteralPath $repositoryRoot
+    try {
+        $json = & $ctest --preset $Preset --show-only=json-v1 -R $regex
+        $enumerationExitCode = $LASTEXITCODE
+    }
+    finally {
+        Pop-Location
+    }
     # Do not credit incomplete discovery as a successful regression.
-    $json = & $ctest --preset $Preset --show-only=json-v1 -R $regex
-    if ($LASTEXITCODE -ne 0) {
+    if ($enumerationExitCode -ne 0) {
         throw 'CTest failed to enumerate native zoom regressions.'
     }
     $inventory = ($json -join [Environment]::NewLine) | ConvertFrom-Json
