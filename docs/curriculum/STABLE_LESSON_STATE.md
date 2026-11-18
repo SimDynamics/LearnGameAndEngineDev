@@ -2253,7 +2253,12 @@ edición. `prepare-edition` rechaza volver a preparar una ruta ya publicada.
 Publicar conjuntamente el índice de curso, los índices de unidad y todas las
 lecciones activas de la nueva edición. La frontera de edición exige rutas e IDs
 nuevos y conserva literalmente todos los recursos anteriores del curso bajo su
-directorio, salvo su índice de curso actualizado. El árbol incompleto no es una
+directorio, salvo su índice de curso actualizado. La conservación exige también
+rutas físicas dentro del repositorio: se rechazan enlaces simbólicos y uniones
+de directorio de Windows en cualquier ancestro de los recursos históricos,
+aunque sus bytes coincidan exactamente con la publicación original. La prueba
+de autoría `native.course_edition_authoring` incluye esta regresión sin requerir
+privilegios para crear enlaces simbólicos. El árbol incompleto no es una
 edición aceptada. Tampoco se admite activar una lección de otra unidad, dejar
 una lección nueva fuera de su índice, mezclar descriptores ni activar una unidad
 histórica dentro de la edición actual.
