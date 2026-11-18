@@ -3017,6 +3017,87 @@ void silent_richedit_explanation_stream_cannot_commit_step(HWND host) {
         "After a silent RichEdit rejection, a valid retry did not refresh its explanation");
 }
 
+void silent_richedit_stdout_stream_cannot_commit_step(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    const auto authored=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    check(view.go_to_step(6),
+        "Cannot prepare the completed group boundary for a silent stdout rejection");
+    const auto previous_step=view.step_index(),previous_count=view.step_count();
+    const auto previous_output=text(view,output_id);
+    const auto previous_array=name(GetDlgItem(view.window(),array_id));
+    const auto output=GetDlgItem(view.window(),output_id);
+    const auto warning=GetDlgItem(view.window(),error_id);
+    check(output&&warning&&previous_output=="-8:1\n",
+        "The native stdout rejection needs an already applied line");
+
+    const CHARRANGE selection{0,4};
+    SendMessageW(output,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    struct StreamFault {int streams=0,ignored=0;} fault;
+    const auto skip_once=[](HWND child,UINT message,WPARAM wp,LPARAM lp,
+            UINT_PTR,DWORD_PTR raw)->LRESULT{
+        auto& state=*reinterpret_cast<StreamFault*>(raw);
+        if(message==EM_STREAMIN){
+            ++state.streams;
+            if(!state.ignored){++state.ignored;return 0;}
+        }
+        return DefSubclassProc(child,message,wp,lp);
+    };
+    constexpr UINT_PTR hook_id=0x53534F54;
+    check(SetWindowSubclass(output,skip_once,hook_id,
+        reinterpret_cast<DWORD_PTR>(&fault))!=FALSE,
+        "Cannot inject a silent RichEdit stdout rejection");
+    struct Unhook {
+        HWND window;SUBCLASSPROC proc;UINT_PTR id;
+        ~Unhook(){if(IsWindow(window))RemoveWindowSubclass(window,proc,id);}
+    } guard{output,skip_once,hook_id};
+
+    const bool accepted=view.go_to_step(7);
+    const auto diagnostic=text(view,error_id);
+    CHARRANGE after{};
+    SendMessageW(output,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+    check(!accepted&&fault.ignored==1&&fault.streams==1&&
+        view.step_index()==previous_step&&view.step_count()==previous_count&&
+        text(view,output_id)==previous_output&&
+        name(GetDlgItem(view.window(),array_id))==previous_array&&
+        after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&
+        diagnostic.find("No se pudo cambiar el paso.")!=std::string::npos&&
+        diagnostic.find("RichEdit no conservó la salida calculada.")!=std::string::npos&&
+        spec==authored,
+        "A silent stdout stream committed a false step or re-streamed the intact prior output");
+    check(std::ranges::any_of(view.reading_regions(),[&](const auto& region){
+        return region.target==warning&&region.source_text==diagnostic;
+    }),"A silently rejected stdout update omitted its current accessible warning");
+
+    check(view.go_to_step(7)&&fault.streams==2&&
+        view.step_index()==7&&text(view,output_id)=="-8:1\n3:4\n"&&
+        text(view,error_id).empty()&&spec==authored,
+        "The valid retry did not publish the calculated stdout after a silent rejection");
+}
+
+void calculated_stdout_accepts_crlf_template(HWND host) {
+    auto spec=fixture(SimulationViewMode::summary);
+    spec.output_template="{value}:{frequency}\r\n";
+    const auto authored=spec;
+    const auto expected=build_simulation_trace(spec).frames.back().output;
+    check(expected=="-8:1\r\n\n3:4\r\n\n10:1\r\n\n",
+        "The authored CRLF template was normalized in the calculated core trace");
+    SimulationView view(host,spec,"es");resize(view,820);
+    const auto output=GetDlgItem(view.window(),output_id);
+    check(output&&edit_text(output)=="-8:1\n\n3:4\n\n10:1\n\n"&&
+        view.step_count()==1&&view.step_index()==0&&
+        text(view,error_id).empty()&&spec==authored,
+        "The native readback rejected valid CRLF authored output or changed its source");
+    const auto editor=GetDlgItem(view.window(),input_id);
+    check(editor,"Missing native editor for the CRLF output retry");
+    set_edit_text(editor,"1\n1\n2");
+    click(view,apply_id);
+    check(edit_text(output)=="1:2\n\n2:1\n\n"&&
+        view.step_count()==1&&view.step_index()==0&&
+        text(view,error_id).empty()&&spec==authored,
+        "Applying new data with an authored CRLF template failed the native output check");
+}
+
 void step_navigation_rolls_back_native_presentation_failure(HWND host) {
     auto spec=fixture(SimulationViewMode::walkthrough);
     const auto authored=spec;
@@ -6036,6 +6117,8 @@ int main(int argc,char** argv)try {
     run("repeated_step_explanation_preserves_native_reading",[&]{repeated_step_explanation_preserves_native_reading(host.value);});
     run("editable_data",[&]{editable_data(host.value,captures);});
     run("step_navigation_rolls_back_native_presentation_failure",[&]{step_navigation_rolls_back_native_presentation_failure(host.value);});
+    run("silent_richedit_stdout_stream_cannot_commit_step",[&]{silent_richedit_stdout_stream_cannot_commit_step(host.value);});
+    run("calculated_stdout_accepts_crlf_template",[&]{calculated_stdout_accepts_crlf_template(host.value);});
     run("silent_richedit_explanation_stream_cannot_commit_step",[&]{silent_richedit_explanation_stream_cannot_commit_step(host.value);});
     run("reentrant_navigation_keeps_newer_native_error",[&]{reentrant_navigation_keeps_newer_native_error(host.value);});
     run("navigation_callback_failure_keeps_committed_steps",[&]{navigation_callback_failure_keeps_committed_steps(host.value);});
