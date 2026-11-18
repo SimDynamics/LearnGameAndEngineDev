@@ -168,6 +168,21 @@ int main(int argc,char** argv) {
             auto candidate=JsonObject::Parse(winrt::to_hstring(reviewed_file));
             candidate.GetNamedObject(L"stateLayout").GetNamedArray(L"choiceRevisions")
                 .GetObjectAt(0).Insert(L"replacement",JsonValue::CreateStringValue(blank));
+            // Keep the legacy authored marker internally consistent with the
+            // forged replacement; otherwise an earlier SHA mismatch would
+            // mask the nonblank-contract regression we intend to exercise.
+            const auto digest=state::sha256(winrt::to_string(winrt::hstring(blank)));
+            bool marker_updated=false;
+            for(const auto& entry:candidate.GetNamedObject(L"textSemantics").GetNamedArray(L"fields")) {
+                const auto field=entry.GetObject();
+                if(field.GetNamedString(L"block")!=L"block_0007_0002"||
+                        field.GetNamedString(L"path")!=L"/options/0")continue;
+                require(!marker_updated,"The choice has duplicate authored option markers");
+                field.Insert(L"sourceSha256",
+                    JsonValue::CreateStringValue(winrt::to_hstring(digest)));
+                marker_updated=true;
+            }
+            require(marker_updated,"The reviewed choice lost its authored option marker");
             const auto authored=winrt::to_string(candidate.Stringify());
             for(const bool progress : {false,true}) {
                 std::string diagnostic;
