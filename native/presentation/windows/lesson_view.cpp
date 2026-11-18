@@ -4111,6 +4111,12 @@ struct LessonView {
         const auto tool_diagnostics=[&](std::string_view bytes){
             return utf8(compact_compiler_diagnostic_paths(wide(diagnostic_text(bytes)),diagnostic_roots));
         };
+        // A driver failure can report source/build paths outside its regular
+        // MSVC/CMake channel. Keep the raw error for process evaluation, but
+        // compact its DISPLAY with the same owned-root rules. The compiled
+        // program's stdout and stderr always remain literal and untouched.
+        const auto internal_diagnostic=result->error_utf8.empty()
+            ?std::string{}:tool_diagnostics(result->error_utf8);
         if(block(index).compile_check){
             vm.console_channels={};
             auto diagnostics=tool_diagnostics(result->compilation.stdout_bytes+result->compilation.stderr_bytes);
@@ -4120,7 +4126,7 @@ struct LessonView {
                     +tool_diagnostics(result->diagnostic->control.stdout_bytes+result->diagnostic->control.stderr_bytes)
                     +(diagnostics.empty()?"":"\n"+diagnostics);
             }
-            if(!result->error_utf8.empty())diagnostics+=(diagnostics.empty()?"":"\n")+result->error_utf8;
+            if(!internal_diagnostic.empty())diagnostics+=(diagnostics.empty()?"":"\n")+internal_diagnostic;
             vm.console_channels[2]=std::move(diagnostics);console_present(index,2);
             const bool link_diagnostic=result->diagnostic&&result->diagnostic->candidate_link.status!=windows::CppPhaseStatus::not_started;
             if(vm.status)set_rich_text(vm.status,!control_valid||result->compilation.status!=windows::CppPhaseStatus::completed
@@ -4178,19 +4184,19 @@ struct LessonView {
                 block(index).reduction_probe||block(index).integer_battery_probe||
                  block(index).adjustment_project_probe)
                 ?fresh.execution_completed:*result->execution.exit_code<=255);
-        if(configuration_failed){output=tool_diagnostics(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;}
+        if(configuration_failed){output=tool_diagnostics(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!internal_diagnostic.empty())output+='\n'+internal_diagnostic;}
         else if(cmake&&!executed){const auto& phase=running_action==windows::CppRunRequest::Action::configure?result->configuration:result->compilation;
-            output=tool_diagnostics(phase.stdout_bytes+phase.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;
+            output=tool_diagnostics(phase.stdout_bytes+phase.stderr_bytes);if(!internal_diagnostic.empty())output+='\n'+internal_diagnostic;
         }
         else if (result->compilation.status!=windows::CppPhaseStatus::not_started&&!result->compilation.succeeded()) {
             output = console_label(2) + '\n' + tool_diagnostics(result->compilation.stdout_bytes + result->compilation.stderr_bytes);
-            if (!result->error_utf8.empty()) output += "\n" + result->error_utf8;
+            if (!internal_diagnostic.empty()) output += "\n" + internal_diagnostic;
             if (result->compilation.status == windows::CppPhaseStatus::timed_out) output += '\n' + ui("La compilación superó el tiempo permitido.",
                 "Compilation exceeded the time limit.","La compilation a dépassé le temps autorisé.");
         } else if (!result->execution.succeeded()&&!normal_execution) {
             output = ui("La ejecución no terminó correctamente.\n","Execution did not finish successfully.\n","L'exécution ne s'est pas terminée correctement.\n") + diagnostic_text(result->execution.stdout_bytes);
             output += diagnostic_text(result->execution.stderr_bytes);
-            if (!result->error_utf8.empty()) output += "\n" + result->error_utf8;
+            if (!internal_diagnostic.empty()) output += "\n" + internal_diagnostic;
             if (result->execution.status == windows::CppPhaseStatus::timed_out) output += '\n' + ui("Se detuvo por el límite de tiempo.",
                 "Stopped at the time limit.","Arrêt à la limite de temps.");
             if (result->execution.status == windows::CppPhaseStatus::output_limit) output += '\n' + ui("Se detuvo por el límite de salida.",
@@ -4246,7 +4252,7 @@ struct LessonView {
         if(laboratory()){
             laboratory_exit_code=static_cast<int>((result->execution.exit_code?result->execution.exit_code:result->compilation.exit_code).value_or(static_cast<std::uint32_t>(-1)));
             laboratory_status=!result->compilation.succeeded()?LaboratoryStatus::compilation_failed:result->execution.status==windows::CppPhaseStatus::completed?LaboratoryStatus::finished:LaboratoryStatus::failed;
-            if(!result->error_utf8.empty())vm.console_channels[1]+=(vm.console_channels[1].empty()?"":"\n")+result->error_utf8;
+            if(!internal_diagnostic.empty())vm.console_channels[1]+=(vm.console_channels[1].empty()?"":"\n")+internal_diagnostic;
             refresh_laboratory_status();console_present(index);return;
         }
         int preferred_channel = -1;
