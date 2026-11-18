@@ -116,6 +116,15 @@ def fixtures() -> dict[str, dict]:
             blank_nel_question, OWNER, "/question", []))
     repin_modified_answer(blank_nel_question, OWNER)
 
+    # The U1L4 drag-fill owner has no source-format archive: its semantic
+    # descriptor must independently reject an optional NEL-only explanation.
+    blank_nel_drag_explanation = deepcopy(after)
+    layout._blocks(blank_nel_drag_explanation)[DRAG_OWNER]["explanation"] = "\u0085 \u2003"
+    blank_nel_drag_explanation["textSemantics"]["fields"][1] = (
+        layout.text_semantics.make_field(
+            blank_nel_drag_explanation, DRAG_OWNER, "/explanation", []))
+    repin_modified_answer(blank_nel_drag_explanation, DRAG_OWNER)
+
     examples = {
         "optional-prose.before": before,
         "optional-prose.after": after,
@@ -129,6 +138,7 @@ def fixtures() -> dict[str, dict]:
         "optional-prose.changed-drag-template": changed_drag_template,
         "optional-prose.blank-nel-explanation": blank_nel_explanation,
         "optional-prose.blank-nel-question": blank_nel_question,
+        "optional-prose.blank-nel-drag-explanation": blank_nel_drag_explanation,
     }
     for name, candidate in examples.items():
         if name.endswith((".before", ".after")):
@@ -151,7 +161,7 @@ def main() -> None:
         (args.output_dir / (label + ".json")).write_text(
             json.dumps(document, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8")
-    print("Prepared twelve isolated optional-prose/source-format QA fixtures")
+    print("Prepared thirteen isolated optional-prose/source-format QA fixtures")
 
 
 if __name__ == "__main__":
