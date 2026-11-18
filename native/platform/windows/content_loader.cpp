@@ -3844,6 +3844,12 @@ void resolve_addresses(Lesson& lesson) {
 }
 }
 
+void validate_course_edition_physical_path(
+        const std::filesystem::path& content_root,
+        const std::filesystem::path& resource) {
+    require_physical_course_edition_asset(content_root, resource);
+}
+
 std::optional<curriculum::CourseEdition> parse_course_edition_metadata(
         std::string_view source, std::string_view expected_locale) {
     require(known_locale(expected_locale), "Unsupported asset language");
