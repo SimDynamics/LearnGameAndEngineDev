@@ -15,7 +15,19 @@ Desde la raíz de **cualquiera de las dos copias**, ejecutar:
 Los otros presets son `windows-x64-relwithdebinfo` y `windows-x64-release`.
 El script utiliza el entorno oficial de Visual Studio en un proceso hijo;
 no cambia las variables persistentes del equipo ni sus botones de publicación.
-Configura, compila y ejecuta CTest. Para omitir únicamente las pruebas se puede
+Configura, compila y ejecuta CTest. Si se está verificando una corrección
+concreta, puede compilarse únicamente su ejecutable y ejecutar **sólo su prueba
+registrada**, sin iniciar la batería completa y sin usar GitHub Actions:
+
+```powershell
+& .\scripts\windows\Build-Native.ps1 -Preset windows-x64-debug -Profile Codex -Target lgaed_simulation_view_tests -TestName native.simulation_view
+```
+
+`-TestName` acepta un nombre exacto de CTest (`native.*` o `curriculum.*`),
+no una expresión regular arbitraria. Falla si esa prueba no está registrada,
+y no puede combinarse con `-SkipTests`. Se conserva el perfil, el árbol
+generado y el aislamiento de las pruebas; este comando no modifica el estado
+curricular del estudiante. Para omitir únicamente las pruebas se puede
 añadir `-SkipTests`. `-Fresh` solicita explícitamente a CMake renovar su caché de
 configuración dentro del árbol generado del preset; no borra fuentes ni perfiles.
 `-CleanFirst` limpia únicamente los resultados generados de ese preset antes de
