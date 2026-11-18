@@ -177,10 +177,18 @@ class RetiredStateLayoutTest(unittest.TestCase):
             check_published_stage(intermediate, after)
             self.assertEqual(original, after)
             self.assertTrue(after["compilerPuzzlesRequired"])
-            for field in ("origin", "family", "additions"):
+            for field in ("origin", "family"):
                 self.assertEqual(before["stateLayout"][field], after["stateLayout"][field])
+            # Later Work releases may append new graded activities without
+            # assigning the historical answers to those new storage owners.
+            # A publication cannot shorten or rewrite the earlier additions.
+            old_additions = before["stateLayout"]["additions"]
+            current_additions = after["stateLayout"]["additions"]
+            self.assertEqual(old_additions, current_additions[:len(old_additions)])
+            self.assertEqual(len(current_additions),
+                             len({entry["id"] for entry in current_additions}))
             published, current = layout._all_blocks(before), layout._all_blocks(after)
-            self.assertEqual(published.keys(), current.keys())
+            self.assertLessEqual(published.keys(), current.keys())
             for identity in published:
                 # The two reviewed line refinements display the same original
                 # groups as separate lines; compare their validated historical
