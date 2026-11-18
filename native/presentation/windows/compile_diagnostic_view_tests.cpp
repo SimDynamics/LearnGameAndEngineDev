@@ -154,10 +154,10 @@ void compact_diagnostic_path_cases(){
         L"  Note: including file:  include/dos.hpp\n",
         "MSVC /showIncludes did not preserve nested indentation and known relative include paths");
     expect(L"Note: including file: D:\\SDK\\externo\\stdio.h\r\n"
-           L"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project_extra\\x.h\n"
+           L"Note: including file: C:\\QA\\Código & (espacio)\\run-1_extra\\candidate\\project\\x.h\n"
            L"  const char* msg = \"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project\\x.h\";\n",
         L"Note: including file: D:\\SDK\\externo\\stdio.h\r\n"
-        L"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project_extra\\x.h\n"
+        L"Note: including file: C:\\QA\\Código & (espacio)\\run-1_extra\\candidate\\project\\x.h\n"
         L"  const char* msg = \"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project\\x.h\";\n",
         "MSVC include trace changed an external directory, sibling folder or source literal");
     expect(L"CMake Error at C:/QA/cmake/p/CMakeLists.txt:14 (add_executable):\r\n  No SOURCES given to target.\r\n",
