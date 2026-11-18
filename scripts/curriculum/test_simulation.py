@@ -289,6 +289,44 @@ class SimulationContractTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             simulation.validate_contract(value)
 
+    def test_counted_origin_placeholders_match_native_trace_budget(self):
+        # Both indices are calculated, not authored as answers. Only start
+        # and advance count a new element; completion phases must contribute
+        # no invented source index. The expected byte totals are independent
+        # manual oracles for the trace frame sequence.
+        value = block()
+        spec = value["simulation"]
+        spec.update(values=[7, 3, 7, 2], scenarios=[], outputTemplate="{value}",
+                    explanations={name: "x" for name in simulation.EXPLANATION_FIELDS})
+        spec["explanations"]["start"] = "{countedIndex}:{originIndex}"
+        spec["explanations"]["advance"] = "{countedIndex}:{originIndex}"
+        original = deepcopy(value)
+        simulation.validate_contract(value)
+        self.assertEqual(45, simulation._trace_text_bytes(spec, spec["values"]))
+        self.assertEqual(value, original)
+
+        # In already sorted input, counted position and original position
+        # coincide. A collection with no values must not fabricate an index.
+        spec.update(sort=False, values=[2, 2, 7])
+        simulation.validate_contract(value)
+        self.assertEqual(25, simulation._trace_text_bytes(spec, spec["values"]))
+        spec["values"] = []
+        spec["explanations"]["empty"] = "{countedIndex}|{originIndex}"
+        simulation.validate_contract(value)
+        self.assertEqual(1, simulation._trace_text_bytes(spec, []))
+
+        # Stable UTF-8 ordering repositions the empty string before "patio".
+        # Its real original position is 1; repeated "patio" entries follow
+        # their original indices 0 and 2.
+        spec.update(sort=True, valueType="text", values=["patio", "", "patio"])
+        spec["explanations"]["empty"] = "x"
+        simulation.validate_contract(value)
+        self.assertEqual(30, simulation._trace_text_bytes(spec, spec["values"]))
+        spec["values"] = ["patio", ""]  # Invalid for sort=False
+        spec["sort"] = False
+        with self.assertRaises(ValueError):
+            simulation.validate_contract(value)
+
     def test_trace_budget_counts_every_accumulated_frame_as_native_does(self):
         value = block()
         spec = value["simulation"]
