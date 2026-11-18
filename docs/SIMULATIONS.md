@@ -853,10 +853,25 @@ Las ocho explicaciones y `outputTemplate` permiten estas sustituciones:
 | `{size}` | Cantidad de elementos del array. |
 | `{group}` | Número del grupo actual desde uno; cero antes del primero. |
 | `{groups}` | Cantidad total de grupos de la copia ordenada. |
+| `{processedCount}` | Cantidad de elementos ya contados en la copia ordenada, de cero hasta `{size}`. Coincide con el límite exclusivo `{end}` del rango observado. |
+| `{remainingCount}` | Cantidad que falta por contar: `{size}` menos `{processedCount}`. |
 | `{countedIndex}` | Índice, desde cero, de la casilla **recién contada** en la copia ordenada. |
 | `{originIndex}` | Índice original, desde cero, del mismo elemento recién contado **antes de ordenar**. |
 
-Los dos nuevos índices sólo tienen contenido en `start` y `advance`,
+Los marcadores de cantidades funcionan en **todas las fases**, incluidas
+`initial` y `empty` (cero elementos procesados), `start`, `advance`,
+las decisiones de grupo y `done` (no quedan elementos por contar).
+El motor los calcula a partir del rango realmente observado; una decisión
+sobre el grupo terminado **no vuelve a contar** su último elemento.
+También pueden usarse en `outputTemplate`, que se evalúa al cerrar cada
+grupo. Por ejemplo, `"{value}: {processedCount}/{remainingCount}"`
+genera `"2: 1/2"` si se escribe un espacio literal después de los dos
+puntos y el primer grupo de `[5, 2, 5]` contiene sólo el valor `2`.
+No cambia el dato ni las frecuencias: sólo muestra cuánto recorrido se
+ha completado. Las cantidades se recalculan después de editar, restablecer
+o cambiar de escenario, incluso con etiquetas vacías.
+
+Los dos índices de procedencia sólo tienen contenido en `start` y `advance`,
 que son las fases donde se cuenta un elemento. Durante `initial`, las
 decisiones `newMaximum`, `tie` y `belowMaximum`, `done` y `empty`
 su sustitución es una cadena vacía: **una decisión no vuelve a leer la
@@ -886,6 +901,13 @@ datos iniciales requiere elegir el escenario inicial. La regresión también
 cubre una cadena vacía, repeticiones y una colección sin elementos. Estos
 controles están incorporados a `native.simulation_view` y todavía requieren
 ejecución local Windows para acreditar su resultado.
+
+La regresión `processed_remaining_progress_in_reader` comprueba también
+el recuento acumulado y pendiente en el lector Win32, sus regiones narrables
+y la salida de cada grupo, antes y después de modificar datos, seleccionar un
+escenario vacío y restablecer los valores. Las comprobaciones independientes
+de C++ y Python incluyen intervalos ordenados, textos repetidos, cadenas
+vacías y la suma del tamaño de todas las explicaciones y salidas.
 
 Las sustituciones se aplican una sola vez. Las llaves que formen parte de un
 valor de texto se conservan como datos y no se vuelven a interpretar. No se
