@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
         rejected(dir / "optional-prose.blank-nel-question.json",
             "Combined source/question revision needs nonblank public wording");
         rejected(dir / "optional-prose.blank-nel-drag-explanation.json",
-            "Authored ordinary public prose cannot be blank");
+            "Combined source/explanation revision needs nonblank authored prose");
         rejected(dir / "optional-prose.blank-unmarked-drag-explanation.json",
             "Combined source/explanation revision needs nonblank authored prose");
         std::cout << "PASS optional C++ format/prose and drag-fill: both historical answers, "
