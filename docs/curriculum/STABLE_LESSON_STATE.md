@@ -430,7 +430,7 @@ de procedencia de las revisiones exclusivamente bibliográficas.
 
 La verificación focalizada de autoría y nueva edición se ejecuta **sólo
 en el checkout Windows autorizado de Codex** mediante un script que prepara
-el ejecutable y las fuentes sintéticas necesarias, sin compilar toda la app
+los dos ejecutables y las fuentes sintéticas necesarias, sin compilar toda la app
 ni ejecutar la batería completa:
 
 ~~~powershell
@@ -441,7 +441,7 @@ Si CMake conserva la ruta de un checkout trasladado, añadir `-Fresh` para
 renovar la configuración generada del preset. No modifica fuentes ni datos
 del estudiante y no hace falta repetirlo en las ejecuciones siguientes.
 
-La comprobación exige encontrar y ejecutar exactamente estas tres pruebas
+La comprobación exige encontrar y ejecutar exactamente estas cuatro pruebas
 CTest, de manera secuencial:
 
 `native.ordinary_explanation_authoring` comprueba los seis tipos de
@@ -467,8 +467,12 @@ conservados.
 `native.course_edition` comprueba la carga nativa Windows de esa edición
 con las fuentes sintéticas generadas para QA.
 
+`native.optional_prose_format` comprueba la misma explicación opcional
+junto con el formato físico de C++, sus marcas de autoría, los rechazos
+Unicode y los recibos históricos conservados en ambos cargadores Win32.
+
 El script verifica la rama `Codex` antes de construir, confirma la
-presencia exacta de las tres pruebas, oculta su consola, conserva la
+presencia exacta de las cuatro pruebas, oculta su consola, conserva la
 salida y errores en `out/build/<preset>/logs/curriculum-edition-qa.*.log`
 y restaura las variables de entorno temporales. No toca `main`, los
 perfiles personales ni el currículo de Work. Registrar los resultados
