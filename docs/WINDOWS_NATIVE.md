@@ -755,9 +755,17 @@ reconocidas quedan intactos. Las trazas de inclusión de MSVC
 prefijos documentados en inglés (`Note: including file:`) o español
 (`Nota: inclusión del archivo:`) y por una raíz propia conocida.
 Se conserva su sangría de cabeceras anidadas, sin alterar rutas externas
-ni textos fuente que sólo contienen esas palabras. Esta adaptación es
-solo de presentación; la verificación de sus canales corresponde a las
-pruebas nativas Windows.
+ni textos fuente que sólo contienen esas palabras.
+
+Los fallos de creación y escritura de archivos de ejecución pueden producir
+excepciones internas sin coordenadas, por ejemplo `Cannot create run file:
+C:\\...\\stdin.bin`. Únicamente al presentar `error_utf8` se reconocen los
+dos prefijos exactos `Cannot create run file:` y `Cannot write run file:`,
+si la ruta que sigue pertenece al directorio autorizado. Los mensajes
+desconocidos, los archivos externos y la salida propia del estudiante no
+reciben esta abreviación; el error original sigue intacto para las decisiones
+de ejecución. Esta adaptación es solo de presentación y requiere comprobación
+nativa Windows para acreditarla.
 
 Los editores original y de modificación de la página 5 guardan borradores
 independientes, incluidos espacios, saltos y procedencia de la sangría. TAB físico
