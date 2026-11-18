@@ -130,10 +130,19 @@ int main(int argc, char** argv) {
                 drag_mark->second == drag_summary->second,
             "The drag-fill explanation lost its authored semantic descriptor");
 
+        // CppFillView persists drag-fill selections in JSON "slots";
+        // Response.order belongs to order_code and would be a false QA proxy.
+        const std::array<std::size_t, 3> correct_slots{0, 1, 2};
+        const std::array<std::size_t, 3> incorrect_slots{1, 0, 2};
+        require(curriculum::evaluate_drag_answers(old_drag, correct_slots).correct &&
+                curriculum::evaluate_drag_answers(new_drag, correct_slots).correct &&
+                !curriculum::evaluate_drag_answers(new_drag, incorrect_slots).correct,
+            "The new explanation changed the evaluated drag-fill answer or distractors");
+
         state::Response old_drag_answer;
         old_drag_answer.correct = true;
-        old_drag_answer.order = {0, 1, 2};
-        old_drag_answer.raw_json = R"({"opaque":{"oldDragAttempts":2}})";
+        old_drag_answer.raw_json =
+            R"({"slots":[0,1,2],"incorrectAttempts":2,"selection":7})";
         state::put_response(progress, before, old_drag, old_drag_answer);
         const auto drag_snapshot = state::string_value(progress, "learning_progress",
             curriculum::exercise_key(before, old_drag));
@@ -144,7 +153,11 @@ int main(int argc, char** argv) {
         const auto drag_receipt = state::get_response(drag_migrated, after, new_drag);
         const auto other_receipt = state::get_response(drag_migrated, after, current);
         require(drag_receipt && drag_receipt->correct &&
-                drag_receipt->order == std::vector<std::int64_t>{0, 1, 2} &&
+                drag_receipt->order.empty() &&
+                drag_receipt->raw_json.find(R"("slots":[0,1,2])") != std::string::npos &&
+                drag_receipt->raw_json.find(R"("incorrectAttempts":2)") != std::string::npos &&
+                drag_receipt->raw_json.find(R"("selection":7)") != std::string::npos &&
+                drag_receipt->raw_json == drag_snapshot &&
                 curriculum::exercise_key(before, old_drag) ==
                     curriculum::exercise_key(after, new_drag) &&
                 state::string_value(drag_migrated, "learning_progress",
