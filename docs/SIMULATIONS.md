@@ -478,10 +478,16 @@ formato siguen iguales, la vista conserva el documento RichEdit, su selección
 y el punto donde se estaba leyendo, sin retransmitir el mismo texto al pasar
 de `start` a `advance`. Una explicación diferente sí actualiza el documento.
 Los cambios reales de zoom, DPI y apariencia invalidan la presentación
-anterior sin atribuir esa lectura al contenido nuevo. La regresión Win32
+anterior sin atribuir esa lectura al contenido nuevo. Aunque sea necesario
+volver a formatear el documento, una explicación larga conserva la selección
+y la región del texto que estaba leyendo el estudiante al cambiar la escala,
+el DPI o el ancho. La misma recuperación de lectura se aplica a los paneles
+desplazables de transición y comparación, sin trasladar esa posición a un
+nuevo paso o conjunto de datos. La regresión Win32
 `repeated_step_explanation_preserves_native_reading` comprueba la
 continuidad de lectura, la actualización de un texto distinto y el redibujado
-por cambio de escala o DPI; requiere ejecución local en Windows.
+conservando el contexto tras zoom, DPI y reflujo; requiere ejecución local
+en Windows.
 
 Avanzar, retroceder o saltar a un paso tampoco admite una presentación
 parcial. Si RichEdit rechaza la actualización después de seleccionar otro
