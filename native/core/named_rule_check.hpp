@@ -1136,7 +1136,8 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                 }
             }else {
                 const auto count=uses(initializer+1,last);
-                const auto zero=zero_expression(initializer+1,last);
+                const auto zero=zero_expression(
+                    op(t[initializer],"=")?initializer+1:initializer,last);
                 // A declaration within braces shadows rather than updating
                 // an alias that belongs to the enclosing scope.
                 const auto found=std::ranges::find_if(aliases,
