@@ -424,15 +424,15 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
                 ]}
             ]
         }
-        # Authenticate the unrelated question marker as part of the
-        # initial published family, rather than adding it unproved later.
-        bootstrap = layout.prepare(raw)
-        bootstrap["textSemantics"] = {"version": 1, "fields": [
+        # Author the unrelated marker on the first synthetic v2 source,
+        # before its first publication or any page movement. The semantic
+        # helper requires a real stable identity map, never the v1 bootstrap.
+        original = layout.prepare_v2(raw, "es", {"es": raw})
+        original["textSemantics"] = {"version": 1, "fields": [
             layout.text_semantics.make_field(
-                bootstrap, "block_0001_0000", "/question", [])
+                original, "block_0001_0000", "/question", [])
         ]}
-        layout.validate(bootstrap)
-        original = layout.prepare_v2(bootstrap, "es", {"es": bootstrap})
+        layout.validate(original)
         moved = layout.reorder(original, [
             {"id": "page_0000", "blocks": ["block_0000_0000"]},
             {"id": "page_0001", "blocks": ["block_0001_0000", "block_0000_0001"]}
@@ -768,7 +768,7 @@ class OrdinaryExplanationMainTest(unittest.TestCase):
             (content / "course_cpp_fundamentals.json").write_text(json.dumps({"units": course_units}), encoding="utf-8")
 
             def git_run(command, **kwargs):
-                self.assertEqual(root, Path(kwargs["cwd"]))
+                self.assertTrue(root.samefile(Path(kwargs["cwd"])), "Git transport left the isolated fixture directory")
                 if command == ["git", "rev-parse", "--verify", "--end-of-options", fixtures.COMMIT + "^{commit}"]:
                     output = fixtures.COMMIT + "\n"
                 elif command == ["git", "ls-tree", "-r", "--name-only", "-z", fixtures.COMMIT,
@@ -882,7 +882,7 @@ class OrdinaryExplanationMainTest(unittest.TestCase):
                 encoding="utf-8")
 
             def git_run(command, **kwargs):
-                self.assertEqual(root, Path(kwargs["cwd"]))
+                self.assertTrue(root.samefile(Path(kwargs["cwd"])), "Git transport left the isolated fixture directory")
                 if command == ["git", "rev-parse", "--verify", "--end-of-options",
                                published + "^{commit}"]:
                     output = published + "\n"
