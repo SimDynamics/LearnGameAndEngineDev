@@ -222,14 +222,25 @@ int main(int argc,char** argv) {
         const auto unmarked_progress=parse_lesson_progress_metadata(unmarked_bytes,"es");
         const auto& unmarked_block=unmarked_lesson.pages[position->page].blocks[position->block];
         const auto& unmarked_meta=unmarked_progress.pages[position->page].blocks[position->block];
+        const auto unmarked_marker=unmarked_block.text_semantics.find("/options/0");
+        const auto unmarked_progress_marker=unmarked_meta.text_semantics.find("/options/0");
         require(unmarked_block.choice_revision&&
                 unmarked_block.choice_revision->general_option_index==0&&
                 !unmarked_block.choice_revision->original_option_text_semantics&&
-                unmarked_block.text_semantics==marked.text_semantics&&
-                unmarked_meta.text_semantics==marked.text_semantics&&
+                unmarked_marker!=unmarked_block.text_semantics.end()&&
+                unmarked_marker->second.source==unmarked_block.options.front()&&
+                unmarked_marker->second.spans.size()==1&&
+                unmarked_marker->second.spans.front().text=="condición para aceptar la transición"&&
+                unmarked_progress_marker!=unmarked_meta.text_semantics.end()&&
+                unmarked_progress_marker->second==unmarked_marker->second&&
                 unmarked_meta.choice_revision&&
                 !unmarked_meta.choice_revision->original_option_text_semantics,
-            "An originally unmarked option wrongly inherited the new author's historical spans");
+            "An originally unmarked option borrowed previous highlights or lost its own new selection");
+        // The two independently authored variants intentionally select
+        // different ranges. Comparing their entire maps would reject valid
+        // data despite correct source ownership and read-only progress.
+        require(mark->second.spans.front().text!=unmarked_marker->second.spans.front().text,
+            "The independent QA cases no longer exercise distinct current UTF-16 selections");
         auto unmarked_state=imported;
         state::prepare_lesson_state(unmarked_state,unmarked_lesson);
         const auto unmarked_receipt=state::get_response(
