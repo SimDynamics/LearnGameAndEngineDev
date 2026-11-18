@@ -471,6 +471,7 @@ void physical_edition_long_paths(const Fixture& fixture) {
 }
 
 void physical_edition_catalog_alias_rejected(const Fixture& fixture) {
+    std::size_t verified_aliases = 0;
     // The original fixture and student profile remain untouched. For every
     // target, warm the normal catalog/identity caches, then replace one path
     // with a byte-identical symbolic link. Cached metadata cannot authorize
@@ -515,10 +516,16 @@ void physical_edition_catalog_alias_rejected(const Fixture& fixture) {
             }
         } restore{linked, physical};
         constexpr DWORD permit_unprivileged = 0x2; // Windows 10+ developer-mode flag.
-        const DWORD flags = permit_unprivileged | (directory ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0);
-        if (!CreateSymbolicLinkW(linked.c_str(), physical.c_str(), flags)) {
-            // OS policy can prohibit links even inside an isolated QA profile.
-            // Do not report this particular case as verified when it was skipped.
+        const DWORD type = directory ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0;
+        // Developer Mode permits the unprivileged form; an elevated runner
+        // may instead permit the ordinary Win32 form without Developer Mode.
+        // Try both under the disposable QA tree before recording a SKIP.
+        const bool created =
+            CreateSymbolicLinkW(linked.c_str(), physical.c_str(), type | permit_unprivileged) ||
+            CreateSymbolicLinkW(linked.c_str(), physical.c_str(), type);
+        if (!created) {
+            // OS policy can still prohibit all links in this QA profile.
+            // Do not report this particular case as verified when skipped.
             std::cout << "SKIP native course-edition alias type " << kind
                       << ": Win32 error " << GetLastError() << "\n";
             continue;
@@ -564,7 +571,12 @@ void physical_edition_catalog_alias_rejected(const Fixture& fixture) {
             old_unit.entries.front(), empty_profile); },
             "The catalog credited progress after an edition resource became an alias");
         require(fs::exists(physical), "The QA link check destroyed the original bytes");
+        ++verified_aliases;
+        std::cout << "PASS native course-edition alias type " << kind
+                  << ": loaders and catalog rejected the real reparse point.\n";
     }
+    std::cout << "Real native course-edition aliases verified: " << verified_aliases
+              << "/5; uncreated cases were skipped, not credited.\n";
 }
 
 
