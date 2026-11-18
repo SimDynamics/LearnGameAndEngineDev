@@ -141,7 +141,7 @@ opcionales `retired`, `retirementHistory`, `orderRefinements`,
 | `editorial` | Pruebas encadenadas `{id, beforeSha256, afterSha256}` de los bloques completos cuya prosa cambia. |
 | `retired` | Opcional. Archivo acumulativo de bloques retirados del recorrido, con `{id, page, next, block}`. No sustituye ni modifica `origin`, `family` o `additions`. |
 | `retirementHistory` | Opcional para archivos anteriores. Presentaciones anteriores completas, una por lote nuevo de retiro, para comprobar las identidades y dependencias de lectura publicadas. |
-| `choiceRevisions` | Opcional. Archivo acumulativo de ocho revisiones cerradas españolas con `{id, block}` y de revisiones editoriales compatibles con `{id, block, optionIndex, replacement, semanticBefore}`. En ambos casos `block` conserva el bloque completo anterior; U11L14 token mantiene su revisión cerrada atómica de opción y explicación. No permite alterar arbitrariamente los contratos de respuesta. |
+| `choiceRevisions` | Opcional. Archivo acumulativo de ocho revisiones cerradas españolas con `{id, block}` y de revisiones editoriales compatibles con `{id, block, optionIndex, replacement, semanticBefore}`; la variante con nuevos rangos añade `semanticAfter` y `semanticRootBefore`. En ambos casos `block` conserva el bloque completo anterior; U11L14 token mantiene su revisión cerrada atómica de opción y explicación. No permite alterar arbitrariamente los contratos de respuesta. |
 | `compilerRevisions` | Opcional. Archivo acumulativo de las diez ampliaciones españolas de comprobación autorizadas, con `{id, block}` y el editor publicado anterior íntegro. Las nueve baterías programadas U11L8/L10/L11/L12/L13/L14/L15/L16, incluidos ambos editores U11L15, incluyen obligatoriamente `references: [{id, block}]` con su referencia completa anterior. Sólo el segundo editor U11L15 admite además el inicial ampliado exacto. No permite cambiar otros programas o esperados. |
 | `compilerCaseOrderRevisions` | Opcional. Permutaciones autenticadas de casos completos, con archivo anterior, biyección y procedencia editorial. |
 | `compilerCaseRevisions` | Opcional. Sustituciones autenticadas de los casos, con bloque anterior completo y semántica anterior/posterior explícita. `client` puede cambiar además un archivo compilado existente y su alias. La modalidad excluyente `recipe` cambia sólo un archivo CMake existente y conserva los casos. Ambas abren un objetivo nuevo. |
@@ -177,14 +177,30 @@ se permite sustituir ese archivo por un resumen.
 La propiedad `semanticBefore` archiva el descriptor completo del
 campo `textSemantics` que existía antes de la corrección, con el SHA-256
 real del texto y todos sus segmentos de resaltado. Cuando el campo no
-existía, su valor es `null`. La autoría actualiza sólo la huella
-`sourceSha256` de la opción revisada y conserva los segmentos. Tanto el
-validador como el cargador Windows comprueban que la versión activa
-corresponde al archivo anterior sin que se hayan inventado, desplazado
-o eliminado segmentos. Si los fragmentos anteriores ya no coinciden
-con las nuevas posiciones UTF-16, la revisión se rechaza: Work debe
-revisar el marcado mediante un contrato explícito, no moverlo
-silenciosamente.
+existía, su valor es `null`. Si Work omite el parámetro opcional `spans`,
+la revisión conserva exactamente los segmentos anteriores y sólo actualiza
+su `sourceSha256`. Una nueva redacción que invalide esos rangos se rechaza.
+
+Para cambiar conscientemente las marcas de la opción, Work utiliza
+`revise_choice_editorial(document, identity, option_index, replacement,
+spans=[...])`, declarando los rangos UTF-16 del **nuevo texto**.
+`spans=[]` es una declaración explícita de ausencia de marcas; si
+las anteriores no estaban vacías, no se permite borrarlas todas.
+Esta vía añade `semanticAfter`, el nuevo descriptor completo, y
+`semanticRootBefore`, que registra si el contenedor de marcas ya existía.
+La versión anterior conserva su descriptor real y sus marcas; la
+proyección histórica no le atribuye la lectura de la opción modificada.
+
+El CLI `revise-choice-editorial` acepta `--semantic-spans` con un archivo
+JSON de rangos además de los argumentos de identidad, opción, reemplazo
+y destino. Work obtiene las selecciones mediante `text_semantics.select`
+sobre la redacción nueva, sin inferirlas ni reutilizar posiciones inválidas.
+También se puede añadir el primer descriptor a una opción sin marcas.
+Las revisiones históricas de cinco campos siguen admitidas sin migración.
+Ni una huella nueva ni el descriptor adicional autorizan cambiar otras
+opciones, guías, preguntas, explicaciones o la respuesta correcta.
+Las pruebas de autoría y los comportamientos nativos necesitan ejecución
+en Windows antes de acreditar el cierre técnico.
 
 En una revisión general válida, el lector Windows reconstruye también
 los segmentos del texto anterior, asociándolos a su fuente histórica,
@@ -403,7 +419,7 @@ La revisión completa admite ambos órdenes de preparación; no exige publicar
 cada paso por separado.
 
 El archivo de la opción mantiene su bloque anterior exacto y su
-`semanticBefore`. Sólo cambia la huella de esa opción. Para cada otro propietario
+`semanticBefore`. La variante de rangos explícitos autentica además `semanticAfter` y `semanticRootBefore`, sin modificar otros campos. Para cada otro propietario
 revisado, únicamente pueden cambiar `/question` y/o `/explanation`, con texto
 existente y no vacío en ambas versiones y su descriptor actual explícito.
 Código, opciones, respuesta, guías y demás campos de ese propietario deben
