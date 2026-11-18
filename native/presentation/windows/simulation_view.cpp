@@ -321,19 +321,30 @@ struct SimulationView::Impl {
         const auto offset=MulDiv(saved->row_offset,sp(138),saved->pitch);
         scroll_frequencies(sp(8)+row*sp(138)+offset);
     }
-    // Restore every independent reading surface, including if a late RichEdit
-    // zoom/reflow throws. Histogram scroll follows a group, not old pixels.
+    // Restore every independent scrollable reading surface after font, DPI
+    // and width reflow, including a rejected RichEdit update. The explanation,
+    // transition and results can be longer than the viewport just like stdout.
+    // This restorer is used for presentation changes, never to carry reading
+    // positions across a new data/scenario session or a different model step.
+    // Histogram scroll follows a group, not old pixels.
     struct SimulationReadingRestorer {
         Impl& view;
         std::optional<OutputReadingAnchor> output,original_order;
+        std::optional<OutputReadingAnchor> explanation,transition,comparison;
         std::optional<HistogramReadingAnchor> histogram;
         explicit SimulationReadingRestorer(Impl& owner)
             :view(owner),output(owner.capture_output_reading_anchor()),
              original_order(owner.capture_output_reading_anchor(original_order_id)),
+             explanation(owner.capture_output_reading_anchor(explanation_id)),
+             transition(owner.capture_output_reading_anchor(transition_id)),
+             comparison(owner.capture_output_reading_anchor(result_comparison_id)),
              histogram(owner.capture_histogram_anchor()){}
         ~SimulationReadingRestorer(){
             view.restore_output_reading_anchor(output);
             view.restore_output_reading_anchor(original_order,original_order_id);
+            view.restore_output_reading_anchor(explanation,explanation_id);
+            view.restore_output_reading_anchor(transition,transition_id);
+            view.restore_output_reading_anchor(comparison,result_comparison_id);
             view.restore_histogram_anchor(histogram);
         }
         SimulationReadingRestorer(const SimulationReadingRestorer&)=delete;
