@@ -153,6 +153,12 @@ void compact_diagnostic_path_cases(){
         L"Note: including file: include\\uno.hpp\r\n"
         L"  Note: including file:  include/dos.hpp\n",
         "MSVC /showIncludes did not preserve nested indentation and known relative include paths");
+
+    expect(L"Nota: inclusión del archivo: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project\\include\\primero.hpp\r\n"
+           L"    Nota: inclusión del archivo:  \\\\?\\C:\\QA\\Código & (espacio)\\run-1\\control\\project\\include\\segundo.hpp\n",
+        L"Nota: inclusión del archivo: include\\primero.hpp\r\n"
+        L"    Nota: inclusión del archivo:  include\\segundo.hpp\n",
+        "Localized Spanish MSVC include traces lost exact prefix, nesting or extended-path ownership");
     expect(L"Note: including file: D:\\SDK\\externo\\stdio.h\r\n"
            L"Note: including file: C:\\QA\\Código & (espacio)\\run-1_extra\\candidate\\project\\x.h\n"
            L"  const char* msg = \"Note: including file: C:\\QA\\Código & (espacio)\\run-1\\candidate\\project\\x.h\";\n",
