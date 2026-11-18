@@ -25,7 +25,8 @@ REVISED = (
     "La operación incumple la condición para aceptar la transición, "
     "aunque conserve una cantidad válida."
 )
-EXPORT_MODES = ("--write-original", "--write-reviewed", "--write-reviewed-marked")
+EXPORT_MODES = ("--write-original", "--write-reviewed", "--write-reviewed-marked",
+                "--write-reviewed-new-mark-from-unmarked")
 
 
 def fixture_bytes(mode: str) -> bytes:
@@ -45,6 +46,18 @@ def fixture_bytes(mode: str) -> bytes:
         marker["spans"] = [layout.text_semantics.select(
             layout._blocks(published)[OWNER]["options"][0],
             "precondición", "data", reading="technical")]
+        new_spans = [layout.text_semantics.select(
+            REVISED, "condición para aceptar la transición", "prose", reading="natural")]
+        revised = layout.revise_choice_editorial(
+            published, OWNER, 0, REVISED, spans=new_spans)
+    elif mode == "--write-reviewed-new-mark-from-unmarked":
+        # Synthetic QA predecessor, derived from the authenticated pinned U9
+        # source: deliberately remove only its prior option marker BEFORE
+        # authoring a new option. This is not a published historical lesson.
+        published["textSemantics"]["fields"] = [
+            field for field in published["textSemantics"]["fields"]
+            if (field["block"], field["path"]) != (OWNER, "/options/0")
+        ]
         new_spans = [layout.text_semantics.select(
             REVISED, "condición para aceptar la transición", "prose", reading="natural")]
         revised = layout.revise_choice_editorial(
@@ -80,6 +93,28 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
                 patch.object(Path, "read_bytes", side_effect=AssertionError("Live fallback")):
             with self.assertRaises(subprocess.CalledProcessError):
                 history.historical_bytes("es/" + RELATIVE)
+
+    def test_native_fixture_with_new_option_marks_has_genuine_synthetic_predecessor(self):
+        authored = json.loads(fixture_bytes("--write-reviewed-new-mark-from-unmarked"))
+        active = layout._blocks(authored)[OWNER]
+        entry = authored["stateLayout"]["choiceRevisions"][0]
+        self.assertEqual(entry["replacement"], REVISED)
+        self.assertIsNone(entry["semanticBefore"])
+        self.assertTrue(entry["semanticRootBefore"])
+        self.assertEqual(
+            entry["semanticAfter"],
+            layout.text_semantics.make_field(authored, OWNER, "/options/0",
+                [layout.text_semantics.select(
+                    REVISED, "condición para aceptar la transición", "prose",
+                    reading="natural")]))
+        self.assertEqual(active["options"][0], REVISED)
+        self.assertEqual(active["correctIndex"], self.block["correctIndex"])
+        self.assertNotIn(
+            (OWNER, "/options/0"),
+            {(field["block"], field["path"])
+             for field in layout.original_projection(authored)["textSemantics"]["fields"]})
+        self.assertEqual(layout.original_projection(authored)["pages"],
+                         self.original["pages"])
 
     def test_live_lesson_preserves_origin_and_historical_provenance(self):
         current = json.loads(SOURCE.read_text(encoding="utf-8"))
