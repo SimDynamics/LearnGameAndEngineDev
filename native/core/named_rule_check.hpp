@@ -947,7 +947,31 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                 op(token,"<<=")||op(token,">>=")||
                 op(token,"++")||op(token,"--");
         };
+        // Calls may mutate an int through a reference or pointer even when
+        // no assignment operator is visible in this branch. Track enclosing
+        // argument lists once, instead of rescanning the complete body for
+        // every occurrence of a result alias.
+        std::vector<bool> parentheses;
+        std::size_t active_calls=0;
+        const auto unevaluated=[&](std::size_t at) {
+            return id(t[at],"sizeof")||id(t[at],"decltype")||
+                id(t[at],"noexcept")||id(t[at],"typeid");
+        };
         for(auto at=statement;at<=*last;++at) {
+            if(op(t[at],"(")) {
+                const bool call=at>statement&&
+                    ((t[at-1].starts_with("id:")&&!unevaluated(at-1))||
+                     op(t[at-1],")")||op(t[at-1],"]"));
+                parentheses.push_back(call);
+                if(call)++active_calls;
+                continue;
+            }
+            if(op(t[at],")")) {
+                if(parentheses.empty())return {};
+                if(parentheses.back())--active_calls;
+                parentheses.pop_back();
+                continue;
+            }
             if(op(t[at],"{")){++depth;continue;}
             if(op(t[at],"}")) {
                 std::erase_if(shadows,[&](const Shadow& shadow){
@@ -977,10 +1001,33 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             const auto shadowed=std::ranges::any_of(shadows,
                 [&](const Shadow& shadow){return id(t[at],shadow.name);});
             if(!known||shadowed)continue;
+            // std::swap(result, other), mutate(result), a forwarded
+            // reference, an address-taking expression or an extraction can
+            // change an outer variable without spelling "result =".
+            if(active_calls||(at>statement&&
+                    (op(t[at-1],"&")||op(t[at-1],">>"))))
+                return {};
+            // int& alias=result and auto&& alias=result can later change
+            // the outer result, even if that write uses a different name.
+            auto begin=at;
+            while(begin>statement&&!op(t[begin-1],";")&&
+                  !op(t[begin-1],"{")&&!op(t[begin-1],"}"))
+                --begin;
+            for(auto cursor=begin;cursor+2<at;++cursor) {
+                if(!(op(t[cursor],"&")||op(t[cursor],"&&"))||
+                   !t[cursor+1].starts_with("id:")||
+                   !op(t[cursor+2],"="))continue;
+                if(std::ranges::any_of(t.begin()+static_cast<std::ptrdiff_t>(begin),
+                        t.begin()+static_cast<std::ptrdiff_t>(cursor),
+                        [&](const std::string& token) {
+                            return id(token,"int")||id(token,"auto");
+                        }))return {};
+            }
             if((at+1<=*last&&assignment(t[at+1]))||
                (at>statement&&(op(t[at-1],"++")||
                                op(t[at-1],"--"))))return {};
         }
+        if(!parentheses.empty())return {};
         return last;
     };
     for(auto i=bounds.open+1;i<bounds.close;++i) {
