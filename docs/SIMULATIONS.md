@@ -364,8 +364,16 @@ rechaza el cambio, se restauran las fracciones anteriores de cada RichEdit,
 incluido el zoom local del editor de datos, y se descartan las mediciones
 intermedias de altura. La prueba nativa fuerza ese rechazo en un panel
 tardío y comprueba que otro simulador y los datos del estudiante no cambien.
-Las comprobaciones de foco y rueda son parte de `native.simulation_view`
-y requieren ejecución nativa Windows.
+La transacción también cubre el fallo **posterior** a la confirmación de
+las fuentes: si un RichEdit rechaza el nuevo texto o su escala mientras
+la vista se actualiza, se recuperan el porcentaje de lectura anterior,
+la fracción nativa independiente del editor y el recorrido ya calculado.
+El aviso conserva la causa original del rechazo. La regresión Windows
+`late_reader_zoom_update_failure_restores_native_scale` simula un fallo
+en la segunda solicitud de zoom, después de que la primera fue aceptada,
+y comprueba la selección, el foco, los textos y la posibilidad de volver
+a ampliar normalmente. Las comprobaciones de foco y rueda son parte de
+`native.simulation_view` y requieren ejecución nativa Windows.
 
 Hay como máximo ocho escenarios. Cada uno declara exclusivamente `id`, `label`
 y `values`. Su identificador es único, tiene de uno a 64 caracteres ASCII,
