@@ -515,8 +515,14 @@ JsonObject general_choice_projection(const JsonObject& current,
     const auto position=integer(revision.GetNamedValue(L"optionIndex"),
         static_cast<std::size_t>(earlier.Size()-1));
     const auto replacement=text(revision,"replacement");
-    require(!replacement.empty()&&
-            replacement.find_first_not_of(" \t\r\n")!=std::string::npos&&
+    // The Python authoring contract rejects Unicode whitespace-only edits.
+    // Narrow ASCII trimming would accept NBSP, em spaces and NEL in Windows.
+    const auto authored=key(replacement);
+    const std::wstring_view letters(authored.c_str(),authored.size());
+    const bool meaningful=std::ranges::any_of(letters,[](wchar_t character) {
+        return character!=0x85&&!narration_space(character);
+    });
+    require(meaningful&&
             replacement!=utf8(earlier.GetStringAt(static_cast<unsigned>(position))),
         "A general choice review must revise one nonblank option");
     if(fingerprint(current)==fingerprint(original)) {
