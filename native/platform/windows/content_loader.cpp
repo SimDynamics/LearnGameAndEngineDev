@@ -526,24 +526,17 @@ void validate_general_choice_semantic_archive(
         static_cast<std::size_t>(options.Size()-1));
     const auto owner=text(revision,"id");
     const auto path="/options/"+std::to_string(at);
-    const auto archived_value=revision.GetNamedValue(L"semanticBefore");
-    std::optional<JsonObject> archived;
-    if(archived_value.ValueType()!=JsonValueType::Null) {
-        require(archived_value.ValueType()==JsonValueType::Object,
-            "The previous semantic marker must be an object or null");
-        archived=archived_value.GetObject();
-        allowed_keys(*archived,{"block","path","sourceSha256","spans"},true);
-        require(text(*archived,"block")==owner&&
-                text(*archived,"path")==path&&
-                text(*archived,"sourceSha256")==
-                    sha256(utf8(options.GetStringAt(static_cast<unsigned>(at)))),
-            "The archived semantic marker is not the original choice's source");
-        // The new option's current markers are validated by the regular
-        // loader. Validate the PREVIOUS source too, before the reader can
-        // reconstruct its historical UTF-16 highlights.
-        TextSemantics previous;
-        previous.source=utf8(options.GetStringAt(static_cast<unsigned>(at)));
-        for(const auto& value:array(*archived,"spans")) {
+
+    // The source and UTF-16 selection belong to the ORIGINAL or the NEW
+    // wording explicitly, never to a different option or its adjacent prose.
+    const auto check_marker=[&](const JsonObject& field,std::string_view source) {
+        allowed_keys(field,{"block","path","sourceSha256","spans"},true);
+        require(text(field,"block")==owner&&text(field,"path")==path&&
+                text(field,"sourceSha256")==sha256(source),
+            "A choice semantic marker has the wrong option owner or source");
+        TextSemantics semantics;
+        semantics.source=std::string(source);
+        for(const auto& value:array(field,"spans")) {
             const auto span=value.GetObject();
             allowed_keys(span,{"start","end","text","role","reading"});
             SemanticSpan part;
@@ -553,10 +546,22 @@ void validate_general_choice_semantic_archive(
             part.role=parse_semantic_role(text(span,"role"));
             if(span.HasKey(L"reading"))
                 part.reading=parse_semantic_reading(text(span,"reading"));
-            previous.spans.push_back(std::move(part));
+            semantics.spans.push_back(std::move(part));
         }
-        validate_text_semantics(previous);
+        validate_text_semantics(semantics);
+        return semantics.spans.size();
+    };
+    const auto archived_value=revision.GetNamedValue(L"semanticBefore");
+    std::optional<JsonObject> archived;
+    std::size_t old_spans=0;
+    if(archived_value.ValueType()!=JsonValueType::Null) {
+        require(archived_value.ValueType()==JsonValueType::Object,
+            "The previous semantic marker must be an object or null");
+        archived=archived_value.GetObject();
+        old_spans=check_marker(*archived,
+            utf8(options.GetStringAt(static_cast<unsigned>(at))));
     }
+
     std::optional<JsonObject> active;
     if(root.HasKey(L"textSemantics")) {
         const auto metadata=root.GetNamedObject(L"textSemantics");
@@ -567,14 +572,33 @@ void validate_general_choice_semantic_archive(
             active=field;
         }
     }
-    require(static_cast<bool>(archived)==static_cast<bool>(active),
-        "A revised option invented or discarded its original semantic marker");
-    if(active) {
-        auto expected=JsonObject::Parse(archived->Stringify());
-        expected.Insert(L"sourceSha256",JsonValue::CreateStringValue(
-            key(sha256(text(revision,"replacement")))));
-        require(fingerprint(*active)==fingerprint(expected),
-            "A general choice revision altered a historic semantic span");
+    if(revision.HasKey(L"semanticAfter")) {
+        require(revision.HasKey(L"semanticRootBefore")&&
+                revision.GetNamedValue(L"semanticRootBefore").ValueType()==JsonValueType::Boolean,
+            "An explicit choice revision must declare its previous semantic root");
+        const bool old_root=revision.GetNamedValue(L"semanticRootBefore").GetBoolean();
+        require(old_root||!archived,
+            "A choice without a previous semantic root cannot archive an old marker");
+        require(revision.GetNamedValue(L"semanticAfter").ValueType()==JsonValueType::Object,
+            "An explicit choice descriptor must be an object");
+        const auto authored=revision.GetNamedObject(L"semanticAfter");
+        const auto authored_spans=check_marker(authored,text(revision,"replacement"));
+        require(!old_spans||authored_spans,
+            "A marked choice cannot silently lose all its highlights");
+        require(active&&fingerprint(*active)==fingerprint(authored),
+            "The active choice semantic marker differs from its authenticated revision");
+    }else{
+        require(!revision.HasKey(L"semanticRootBefore"),
+            "The legacy choice revision cannot invent a semantic-root flag");
+        require(static_cast<bool>(archived)==static_cast<bool>(active),
+            "A revised option invented or discarded its original semantic marker");
+        if(active) {
+            auto expected=JsonObject::Parse(archived->Stringify());
+            expected.Insert(L"sourceSha256",JsonValue::CreateStringValue(
+                key(sha256(text(revision,"replacement")))));
+            require(fingerprint(*active)==fingerprint(expected),
+                "A general choice revision altered a historic semantic span");
+        }
     }
 }
 
@@ -2293,7 +2317,10 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             const auto* reviewed=reviewed_choice_owner(lesson_id,id);
             const auto snapshot=item.GetNamedObject(L"block");
             if(item.HasKey(L"optionIndex")) {
-                allowed_keys(item,{"id","block","optionIndex","replacement","semanticBefore"},true);
+                if(item.HasKey(L"semanticAfter"))
+                    allowed_keys(item,{"id","block","optionIndex","replacement","semanticBefore",
+                        "semanticAfter","semanticRootBefore"},true);
+                else allowed_keys(item,{"id","block","optionIndex","replacement","semanticBefore"},true);
                 validate_general_choice_semantic_archive(root,item);
                 require(!reviewed&&text(snapshot,"type")=="multiple_choice"&&
                         state_fingerprint(snapshot)==result.signatures.at(id),
