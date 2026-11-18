@@ -2674,7 +2674,7 @@ void processed_remaining_progress_in_reader(HWND host) {
     spec.explanations.initial="Contados {processedCount}; quedan {remainingCount}.";
     spec.explanations.start="Contados {processedCount}; quedan {remainingCount}.";
     spec.explanations.advance="Contados {processedCount}; quedan {remainingCount}.";
-    spec.explanations.new_maximum="Decisión: contados {processedCount}; quedan {remainingCount}.";
+    spec.explanations.new_maximum="Decisión: contados {processedCount}; quedan {remainingCount}; máximo previo {previousMaximum}.";
     spec.explanations.tie=spec.explanations.new_maximum;
     spec.explanations.below_maximum=spec.explanations.new_maximum;
     spec.explanations.done="Fin: contados {processedCount}; quedan {remainingCount}.";
@@ -2702,10 +2702,10 @@ void processed_remaining_progress_in_reader(HWND host) {
         "The three-element dataset lost its count and decision frames");
     check_step(0,"Contados 0; quedan 3.","");
     check_step(1,"Contados 1; quedan 2.","");
-    check_step(2,"Decisión: contados 1; quedan 2.","2:1/2\n");
+    check_step(2,"Decisión: contados 1; quedan 2; máximo previo 0.","2:1/2\n");
     check_step(3,"Contados 2; quedan 1.","2:1/2\n");
     check_step(4,"Contados 3; quedan 0.","2:1/2\n");
-    check_step(5,"Decisión: contados 3; quedan 0.","2:1/2\n5:3/0\n");
+    check_step(5,"Decisión: contados 3; quedan 0; máximo previo 1.","2:1/2\n5:3/0\n");
     check_step(6,"Fin: contados 3; quedan 0.","2:1/2\n5:3/0\n");
     click(view,previous_id);
     check(view.step_index()==5,"Previous did not recover the completed group");
@@ -2735,7 +2735,7 @@ void processed_remaining_progress_in_reader(HWND host) {
         "Applying a smaller dataset retained the previous group count");
     check_step(1,"Contados 1; quedan 1.","");
     check_step(2,"Contados 2; quedan 0.","");
-    check_step(3,"Decisión: contados 2; quedan 0.","4:2/0\n");
+    check_step(3,"Decisión: contados 2; quedan 0; máximo previo 0.","4:2/0\n");
     check_step(4,"Fin: contados 2; quedan 0.","4:2/0\n");
     click(view,restore_id);
     check(view.step_index()==0&&view.step_count()==7&&spec==authored,
