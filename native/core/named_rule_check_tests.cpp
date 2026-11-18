@@ -1399,6 +1399,50 @@ void conditional_assignment_branches() {
             return resultado;
         })cpp",rules,true,
         "Two authentic results survive a conditional reassignment without an else");
+
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado;
+            if (piezas == 0)
+                resultado = 0;
+            else
+                resultado = (piezas + capacidad - 1) / capacidad;
+            return resultado;
+        })cpp",rules,true,
+        "An uninitialized local assigned on both paths can return a valid result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado;
+            if (piezas % 2 == 0) {
+                resultado = (piezas + capacidad - 1) / capacidad;
+            } else {
+                resultado = (piezas - 1 + capacidad) / capacidad;
+            }
+            return resultado;
+        })cpp",rules,true,
+        "A local without initializer may be assigned two independently named results");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado;
+            if (piezas > 0)
+                resultado = (piezas + capacidad - 1) / capacidad;
+            return resultado;
+        })cpp",rules,false,
+        "An uninitialized local with a missing branch cannot earn source credit");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado;
+            if (piezas > 10)
+                resultado = (piezas + capacidad - 1) / capacidad;
+            else
+                resultado = (piezas + 3) / 4;
+            return resultado;
+        })cpp",rules,false,
+        "A declared result may not borrow the agreement from only one branch");
 }
 
 void separate_rules() {
