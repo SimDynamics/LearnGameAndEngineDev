@@ -144,6 +144,9 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         self.assertEqual(changed["stateLayout"]["origin"], self.original["stateLayout"]["origin"])
         self.assertEqual(changed["stateLayout"]["current"], self.original["stateLayout"]["current"])
         self.assertEqual(layout.original_projection(changed), layout.original_projection(self.original))
+        aligned = layout.align_for_previous_validation(self.original, changed)
+        self.assertEqual(aligned["textSemantics"], self.original["textSemantics"])
+        layout.text_semantics.validate(aligned)
         layout.validate_transition(self.original, changed)
         self.assertEqual(len(changed["stateLayout"]["choiceRevisions"]), 1)
         archived = changed["stateLayout"]["choiceRevisions"][0]
@@ -223,6 +226,9 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         self.assertEqual(current["spans"], revised_spans)
         self.assertEqual(layout.original_projection(reviewed)["textSemantics"],
                          authored["textSemantics"])
+        aligned = layout.align_for_previous_validation(authored, reviewed)
+        self.assertEqual(aligned["textSemantics"], authored["textSemantics"])
+        layout.text_semantics.validate(aligned)
         self.assertEqual(layout._blocks(reviewed)[OWNER]["correctIndex"],
                          self.block["correctIndex"])
         layout.validate_transition(authored, reviewed)
@@ -267,6 +273,9 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         layout.validate_transition(original, changed)
         self.assertEqual(layout.original_projection(changed)["textSemantics"],
                          original["textSemantics"])
+        aligned = layout.align_for_previous_validation(original, changed)
+        self.assertEqual(aligned["textSemantics"], original["textSemantics"])
+        layout.text_semantics.validate(aligned)
 
     def test_new_semantic_root_is_authored_and_removed_from_historical_projection(self):
         original = deepcopy(self.original)
@@ -276,6 +285,9 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         self.assertFalse(changed["stateLayout"]["choiceRevisions"][0]["semanticRootBefore"])
         self.assertIn("textSemantics", changed)
         self.assertNotIn("textSemantics", layout.original_projection(changed))
+        aligned = layout.align_for_previous_validation(original, changed)
+        self.assertNotIn("textSemantics", aligned)
+        self.assertEqual(layout.text_semantics.validate(aligned), {})
         layout.validate_transition(original, changed)
         # A later, independently authored descriptor belongs to the current
         # reading, never to a publication that had no semantic root at all.
@@ -507,7 +519,10 @@ class GeneralChoiceCompositionTests(unittest.TestCase):
         aligned = layout.align_for_previous_validation(original, current)
         self.assertEqual(original["pages"][7]["blocks"][2],
                          aligned["pages"][7]["blocks"][2])
+        self.assertEqual(self.marker(aligned, OWNER, "/options/0"),
+                         self.marker(original, OWNER, "/options/0"))
         self.assertEqual(self.QUESTION, aligned["pages"][6]["blocks"][1]["question"])
+        layout.text_semantics.validate(aligned)
         path = "app/src/main/assets/content/es/" + RELATIVE
         old, new = layout._blocks(original)[self.OTHER], layout._blocks(current)[self.OTHER]
         self.assertTrue(contract.preserves_ordinary_explanation_revision(
