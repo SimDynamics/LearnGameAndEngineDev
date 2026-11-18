@@ -1443,6 +1443,93 @@ void conditional_assignment_branches() {
             return resultado;
         })cpp",rules,false,
         "A declared result may not borrow the agreement from only one branch");
+    // A branch-local result named like the outer result does not modify
+    // the calculated value. Both declarations and assignments stay scoped.
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                int resultado = 3;
+                resultado = 4;
+            }
+            return resultado;
+        })cpp",rules,true,
+        "A branch-local same-name result must not erase a valid outer calculation");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                const int resultado = 123;
+                (void)resultado;
+            } else {
+                auto resultado = 5;
+                (void)resultado;
+            }
+            return resultado;
+        })cpp",rules,true,
+        "Two harmless branches may shadow the outer name without changing it");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                int otro = 1;
+                resultado = (piezas + 3) / 4;
+            }
+            return resultado;
+        })cpp",rules,false,
+        "An actual outer assignment inside a multi-statement branch must be rejected");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + 3) / 4;
+            if (piezas > 0) {
+                int resultado = (piezas + capacidad - 1) / capacidad;
+            } else {
+                int resultado = (piezas + capacidad - 1) / capacidad;
+            }
+            return resultado;
+        })cpp",rules,false,
+        "Named calculations in shadowed locals do not repair an outer hardcoded result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                int otro = 1;
+                return (piezas + 3) / 4;
+            }
+            return resultado;
+        })cpp",rules,false,
+        "A hidden early return cannot borrow the named calculation from fallthrough");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (true) {
+                int resultado = 8;
+                (void)resultado;
+            } else {
+                resultado = (piezas + 3) / 4;
+            }
+            return resultado;
+        })cpp",rules,true,
+        "An always-true harmless shadow ignores the dead outer overwrite");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            if (piezas > 0) {
+                int resultado = 8;
+                (void)resultado;
+            } else {
+                resultado = (piezas + 3) / 4;
+            }
+            return resultado;
+        })cpp",rules,false,
+        "A live else branch must not be treated as unconditional harmless code");
 }
 
 void separate_rules() {
