@@ -37,12 +37,20 @@ def fixture_bytes(mode: str) -> bytes:
     if mode == "--write-original":
         return raw
     if mode == "--write-reviewed-marked":
+        # The native reader MUST restore the old descriptor, not transfer the
+        # new option's UTF-16 positions onto a different historical sentence.
+        # Both precise selections come from a real, pinned U9 source.
         marker = next(field for field in published["textSemantics"]["fields"]
                       if field["block"] == OWNER and field["path"] == "/options/0")
         marker["spans"] = [layout.text_semantics.select(
             layout._blocks(published)[OWNER]["options"][0],
-            "La operación", "prose", reading="natural")]
-    revised = layout.revise_choice_editorial(published, OWNER, 0, REVISED)
+            "precondición", "data", reading="technical")]
+        new_spans = [layout.text_semantics.select(
+            REVISED, "condición para aceptar la transición", "prose", reading="natural")]
+        revised = layout.revise_choice_editorial(
+            published, OWNER, 0, REVISED, spans=new_spans)
+    else:
+        revised = layout.revise_choice_editorial(published, OWNER, 0, REVISED)
     layout.validate_transition(published, revised)
     return (json.dumps(revised, ensure_ascii=False, indent=2, allow_nan=False)
             + "\n").encode("utf-8")
