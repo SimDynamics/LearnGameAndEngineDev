@@ -68,6 +68,31 @@ struct SimulationTrace {
     bool operator==(const SimulationTrace&) const = default;
 };
 
+// A native simulation view owns a single validated snapshot of the authored
+// contract. Editing or choosing a scenario checks the NEW data and constructs
+// only its trace, without revalidating/rebuilding every unchanged authored
+// scenario for each interaction. The original specification is private and
+// immutable to callers; the public stateless APIs below remain fully strict.
+class SimulationSession {
+public:
+    explicit SimulationSession(SimulationSpec authored);
+    SimulationSession(const SimulationSession&) = delete;
+    SimulationSession& operator=(const SimulationSession&) = delete;
+
+    [[nodiscard]] const SimulationSpec& specification() const noexcept { return authored_; }
+    // Transfer the already-validated initial trace without copying up to 8 MiB.
+    // This operation is deliberately single-use.
+    [[nodiscard]] SimulationTrace take_initial_trace();
+    [[nodiscard]] SimulationTrace build_trace(std::vector<SimulationValue> values) const;
+    [[nodiscard]] std::vector<SimulationValue> parse_values(
+        std::string_view input, SimulationInputFormat format = SimulationInputFormat::lines) const;
+    [[nodiscard]] SimulationTrace parse_trace(
+        std::string_view input, SimulationInputFormat format = SimulationInputFormat::lines) const;
+private:
+    SimulationSpec authored_;
+    SimulationTrace initial_;
+};
+
 // A deterministic model of runs in an ordered copy; it never interprets C++.
 // Text sorting compares UTF-8 bytes, without locale/case/accent folding.
 // All rejected contracts/inputs throw std::invalid_argument before publication.
