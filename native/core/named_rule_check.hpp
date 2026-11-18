@@ -872,6 +872,43 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         if(semicolon+1!=*end)return {};
         return std::pair{return_uses(at+1),*end};
     };
+    // Some valid solutions assign the calculated answer in both branches
+    // and return it only after the if/else. Treat this as one assignment
+    // whose evidence is the weakest nontrivial branch. A literal zero is a
+    // permitted domain guard, just as for the direct-return form above.
+    // Only one direct assignment per branch is recognized: arbitrary blocks
+    // and calls remain outside this conservative source-side proof.
+    struct BranchAssignment {
+        std::string name;
+        std::size_t count, end;
+        bool zero;
+    };
+    const auto direct_assignment=[&](std::size_t statement)
+            ->std::optional<BranchAssignment> {
+        if(statement>=bounds.close)return {};
+        auto at=statement;
+        std::optional<std::size_t> block_end;
+        if(op(t[at],"{")) {
+            block_end=closing(t,at,"{","}");
+            if(!block_end||*block_end>=bounds.close)return {};
+            ++at;
+        }
+        if(at+2>=bounds.close||!t[at].starts_with("id:")||
+           !op(t[at+1],"="))return {};
+        const auto local=t[at].substr(3);
+        if(std::ranges::find_if(aliases,[&](const Alias& alias) {
+            return alias.name==local;
+        })==aliases.end())return {};
+        auto semicolon=at+2;
+        while(semicolon<bounds.close&&!op(t[semicolon],";"))++semicolon;
+        if(semicolon>=bounds.close||semicolon==at+2)return {};
+        if(block_end&&semicolon+1!=*block_end)return {};
+        const auto literal=arithmetic_constant(t,at+2,semicolon);
+        const bool zero=(literal&&*literal==0)||
+            (at+3==semicolon&&id(t[at+2],"false"));
+        return BranchAssignment{local,uses(at+2,semicolon),
+            block_end?*block_end:semicolon,zero};
+    };
     for(auto i=bounds.open+1;i<bounds.close;++i) {
         if(op(t[i],"{")){++nesting;continue;}
         if(op(t[i],"}")){
@@ -964,6 +1001,31 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                         // rather than crediting it a second time.
                         i=branch->second;
                         continue;
+                    }
+                    // Unconditional branches are handled separately above.
+                    // For a runtime condition, both simple assignments must
+                    // target the same already-known result variable.
+                    if(!literal&&nesting==0) {
+                        if(const auto first=direct_assignment(statement)) {
+                            const auto else_at=first->end+1;
+                            if(else_at<bounds.close&&id(t[else_at],"else")) {
+                                const auto other=direct_assignment(else_at+1);
+                                if(other&&first->name==other->name) {
+                                    const auto count=first->zero?other->count:
+                                        other->zero?first->count:
+                                        std::min(first->count,other->count);
+                                    const auto found=std::find_if(
+                                        aliases.rbegin(),aliases.rend(),
+                                        [&](const Alias& alias){
+                                            return alias.name==first->name;
+                                        });
+                                    if(found==aliases.rend())return 0;
+                                    found->count=count;
+                                    i=other->end;
+                                    continue;
+                                }
+                            }
+                        }
                     }
                 }
             }
