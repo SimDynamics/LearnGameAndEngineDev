@@ -3276,12 +3276,14 @@ void repeated_invalid_draft_diagnostic_preserves_reading(HWND host) {
         fallback_warning!=replacement_warning&&
         name(error_window)==fallback_warning&&spec==authored,
         "The direct native warning failed to preserve the original input diagnosis");
-    SendMessageW(error_window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
-    check(view.go_to_step(7)&&streams==3,
+    check(view.go_to_step(7)&&streams==3&&text(view,error_id)==fallback_warning,
         "The direct Win32 fallback retained a stale rich-text formatting stamp");
-    unchanged("The first RichEdit redraw changed the recovered warning",fallback_warning);
+    // This first redraw deliberately formats a NEW diagnostic, so it may
+    // reset the selection. Once formatted, identical feedback must not do so.
+    SendMessageW(error_window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
     check(view.go_to_step(6)&&streams==3,
         "The formatted fallback warning was unnecessarily re-streamed again");
+    unchanged("The recovered warning lost its selection on a later step",fallback_warning);
     set_edit_text(editor,"1\n2\n3");
     click(view,apply_id);
     check(text(view,error_id).empty()&&spec==authored,
