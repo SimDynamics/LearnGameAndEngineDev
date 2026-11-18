@@ -273,8 +273,18 @@ void check_reading(HiddenView& view) {
     const auto marked=choice.text_semantics.find("/options/0");
     require(marked!=choice.text_semantics.end()&&
             marked->second.source==newer&&marked->second.spans.size()==1&&
-            marked->second.spans.front().text=="La operación",
-        "The active reviewed choice lost its genuine UTF-16 highlight");
+            marked->second.spans.front().text=="condición para aceptar la transición"&&
+            marked->second.spans.front().role==SemanticRole::prose,
+        "The active reviewed choice lost its reselected new UTF-16 highlight");
+    require(choice.choice_revision&&choice.choice_revision->general_option_index==0&&
+            choice.choice_revision->original_option_text_semantics,
+        "The revised choice lost its distinct historic semantic descriptor");
+    const auto& old_marks=*choice.choice_revision->original_option_text_semantics;
+    require(old_marks.source==earlier&&old_marks.spans.size()==1&&
+            old_marks.spans.front().text=="precondición"&&
+            old_marks.spans.front().role==SemanticRole::data&&
+            old_marks.spans!=marked->second.spans,
+        "The original speech selection was overwritten with the revised prose");
     const auto actual=lesson_reading_regions(view.view);
     const auto selected=std::ranges::find_if(actual,[&](const auto& region){
         return region.block_index==2&&!region.feedback&&region.source_text==newer;
@@ -294,8 +304,9 @@ void check_reading(HiddenView& view) {
                region.source_text!=earlier)continue;
             require(region.key==selected->key&&region.text_semantics&&
                     region.text_semantics->source==earlier&&
-                    region.text_semantics->spans==marked->second.spans,
-                "The historical option lost its authenticated original highlight");
+                    region.text_semantics->spans==old_marks.spans&&
+                    region.text_semantics->spans!=marked->second.spans,
+                "The historical option reused current UTF-16 spans instead of its genuine old marks");
             require(std::ranges::find(archive.revised_regions,region.key)!=
                     archive.revised_regions.end(),
                 "The revised wording did not identify its changed audio segment");
@@ -340,7 +351,7 @@ int main(int argc,char** argv) {
         const auto reopened=read_lesson_state(view.view);
         require(state::string_value(reopened,"learning_progress",key)==original_receipt,
             "Reopening the reviewed reading changed a successful historical response");
-        std::cout<<"PASS general choice reading: original/current semantic spans, "
+        std::cout<<"PASS general choice reading: differing original/current UTF-16 semantic spans, "
             "authenticated reading archives and original success across reopening; "
             "isolated prerequisite models: five compilers and one math activity\n";
     } catch(const std::exception& error) {
