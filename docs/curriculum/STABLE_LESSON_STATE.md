@@ -365,8 +365,12 @@ del **validador curricular completo**, con las tres fuentes de idioma
 ancladas al commit publicado de U1L4: acepta la nueva explicación de
 `piezas_estructura` bajo su propietario estable `block_0004_0001`,
 aunque esté en otra página, y rechaza modificar su `correctOrder`
-incluso si se recalcula la huella editorial. La prueba usa archivos
-temporales y no incorpora la propuesta al currículo de Work.
+incluso si se recalcula la huella editorial. La propuesta de prueba
+incluye rangos semánticos explícitos para `main`, `<<`, `std::cout`
+y el resultado mostrado; el validador debe rechazar además una huella
+semántica alterada aunque el contrato de respuesta siga intacto.
+La prueba usa archivos temporales y no incorpora la propuesta al
+currículo de Work.
 
 `native.course_edition_authoring` comprueba la publicación autenticada
 de una edición de curso con nuevas identidades y recursos históricos
