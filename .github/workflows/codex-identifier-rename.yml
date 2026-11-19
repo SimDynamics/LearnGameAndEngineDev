@@ -7,7 +7,9 @@ on:
       - .github/workflows/codex-identifier-rename.yml
       - scripts/curriculum/identifier_rename_compat.py
       - scripts/curriculum/test_identifier_rename_compat.py
+      - scripts/curriculum/test_identifier_rename_execution.py
       - scripts/curriculum/code_format_compat.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/colecciones_y_recorridos/lesson_contar_frecuencias_y_conservar_empates.json
   workflow_dispatch:
 
 permissions:
@@ -28,3 +30,8 @@ jobs:
           python3 -B -m unittest discover
           -s scripts/curriculum
           -p test_identifier_rename_compat.py -v
+      - name: Compile and run published frequency programs before and after renaming
+        run: >-
+          python3 -B -m unittest discover
+          -s scripts/curriculum
+          -p test_identifier_rename_execution.py -v
