@@ -96,13 +96,17 @@ jobs:
         shell: cmd
         run: >
           cl /nologo /std:c++latest /EHsc /W4 /permissive-
-          /Zc:__cplusplus /utf-8 /I native /c
+          /Zc:__cplusplus /utf-8 /I native
+          /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX
+          /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
           native\presentation\windows\simulation_view.cpp
           /Fo:"%RUNNER_TEMP%\lgaed_simulation_view.obj"
       - name: Compile actual Win32 interaction regression source
         shell: cmd
         run: >
           cl /nologo /std:c++latest /EHsc /W4 /permissive-
-          /Zc:__cplusplus /utf-8 /I native /c
+          /Zc:__cplusplus /utf-8 /I native
+          /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX
+          /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
           native\presentation\windows\simulation_view_tests.cpp
           /Fo:"%RUNNER_TEMP%\lgaed_simulation_view_tests.obj"
