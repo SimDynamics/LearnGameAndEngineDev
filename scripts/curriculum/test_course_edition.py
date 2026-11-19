@@ -210,6 +210,50 @@ class CourseEditionAuthoringTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "active or an unchanged historical"):
             self.check_tree(prior, after)
 
+    def test_new_edition_cannot_alias_prior_git_resource_by_letter_case(self):
+        # Git can contain two spellings even when NTFS resolves them to one
+        # physical pathname. An old resource must not become a new lesson.
+        before = current_documents()
+        edition_files = current_documents(descriptor())
+        active_lesson = next(path for path in edition_files if "/lesson_" in path)
+        archived_alias = active_lesson.replace("/lesson_", "/Lesson_")
+        self.assertNotEqual(archived_alias, active_lesson)
+        self.assertEqual(archived_alias.casefold(), active_lesson.casefold())
+        before[archived_alias] = {"id": "unrelated_historical_asset",
+                                  "title": "Archivo previo"}
+        after = {**deepcopy(before), **edition_files}
+        with self.assertRaisesRegex(edition.CourseEditionError,
+                                    "case-insensitive edition path collision"):
+            self.check_tree(before, after)
+
+    def test_two_active_units_cannot_collide_by_letter_case_on_windows(self):
+        before = current_documents()
+        value = descriptor()
+        after = {**deepcopy(before), **current_documents(value)}
+        course_path = f"{CONTENT}/es/programming/{COURSE}/course_{COURSE}.json"
+        original_unit_id = edition.unit_prefix(value) + "inicio"
+        original_slug = original_unit_id[len(COURSE) + 2:]
+        alternative_slug = original_slug.replace("inicio", "Inicio")
+        alternative_unit_id = edition.unit_prefix(value) + "Inicio"
+        alternative_lesson_id = alternative_unit_id + "__primera"
+        self.assertNotEqual(original_slug, alternative_slug)
+        self.assertEqual(original_slug.casefold(), alternative_slug.casefold())
+        original_unit_path = (f"{CONTENT}/es/programming/{COURSE}/"
+                              f"{original_slug}/unit_{original_slug}.json")
+        alternate_unit = deepcopy(after[original_unit_path])
+        alternate_unit["unitId"] = alternative_unit_id
+        alternate_unit["lessons"][0]["id"] = alternative_lesson_id
+        alternate_lesson = edition.prepare_edition_lesson(
+            dict(lesson_source(value), id=alternative_lesson_id), value)
+        prefix = f"{CONTENT}/es/programming/{COURSE}/{alternative_slug}"
+        after[f"{prefix}/unit_{alternative_slug}.json"] = alternate_unit
+        after[f"{prefix}/lesson_primera.json"] = alternate_lesson
+        after[course_path]["units"].append(
+            {"id": alternative_unit_id, "number": 2, "title": "Otra unidad"})
+        with self.assertRaisesRegex(edition.CourseEditionError,
+                                    "case-insensitive edition path collision"):
+            self.check_tree(before, after)
+
     def test_edition_file_paths_are_portable_and_cannot_escape_on_windows(self):
         # PurePosixPath alone treats backslash and drive-qualified names as
         # harmless relative text; Windows would resolve them differently.

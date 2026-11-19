@@ -308,6 +308,17 @@ def _active_documents(repository, course_relative, course):
     return units, lessons, paths
 
 
+def _reject_windows_case_aliases(paths):
+    """A Git spelling is not a new resource if Windows resolves it to an old one."""
+    exact_by_folded = {}
+    for spelling in sorted(paths):
+        folded = spelling.casefold()
+        previous = exact_by_folded.setdefault(folded, spelling)
+        require(previous == spelling,
+                "Windows case-insensitive edition path collision: "
+                + previous + " / " + spelling)
+
+
 def check_repository(repository, commit, *, documents=None):
     """Publication gate for index boundaries; ordinary state guards still run separately."""
     repository = Path(repository).resolve()
@@ -345,6 +356,14 @@ def check_repository(repository, commit, *, documents=None):
                 "The courseEdition must match its physical course and locale")
         advanced = validate_transition(previous, current)
         units, lessons, paths = _active_documents(repository, relative, current)
+        # Git may track Foo.json and foo.json separately. Windows may open
+        # both names as the same file, so the candidate is not an independent
+        # new edition resource and cannot safely preserve both generations.
+        prefix = PurePosixPath(relative).parent.as_posix() + "/"
+        _reject_windows_case_aliases(
+            [*(p for p in previous_paths
+               if p.casefold().startswith(prefix.casefold())),
+             *paths.values()])
         if advanced:
             for path in paths.values():
                 require(path not in previous_paths, "A new edition must use genuinely new unit and lesson resources")
@@ -357,7 +376,6 @@ def check_repository(repository, commit, *, documents=None):
                 previous_unit = _parse(_git_bytes(repository, commit, paths[unit_id]).decode("utf-8-sig"))
                 require(set(_entries(previous_unit, "lessons")) <= set(_entries(units[unit_id], "lessons")),
                         "A published edition lesson cannot leave its active index")
-        prefix = PurePosixPath(relative).parent.as_posix() + "/"
         for path in sorted(previous_paths):
             if path.startswith(prefix) and path != relative and (advanced or path not in paths.values()):
                 # The bytes alone do not prove preservation if an ancestor is
