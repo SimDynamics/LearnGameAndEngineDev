@@ -28,6 +28,7 @@ nullptr operator or or_eq private protected public register reinterpret_cast
 requires return short signed sizeof static static_assert static_cast struct
 switch template this thread_local throw true try typedef typeid typename union
 unsigned using virtual void volatile wchar_t while xor xor_eq
+import module final override
 """.split())
 
 
@@ -73,6 +74,41 @@ def require_declared_cpp_renames(
 
     if not renames.keys() <= old_slots.keys():
         raise IdentifierRenameError("The rename declares an unknown code slot")
+
+    # Cross-source protection: a macro defined in an unchanged header or
+    # project file can capture a replacement in another code slot. Checking
+    # only the edited slot would silently accept that different expansion.
+    # Existing destination identifiers anywhere in the same authored block
+    # are also ambiguous without binding/linkage analysis.
+    if any(type(mapping) is not dict or not mapping for mapping in renames.values()):
+        raise IdentifierRenameError("Each source slot needs a nonempty name mapping")
+    protected_names = {
+        name for mapping in renames.values() for name in mapping
+    } | {
+        name for mapping in renames.values() for name in mapping.values()
+    }
+    destinations = {
+        name for mapping in renames.values() for name in mapping.values()
+    }
+    for source_slot, (language, source) in old_slots.items():
+        if language != "cpp":
+            continue
+        try:
+            tokens = source_format._cpp_tokens(source)
+        except source_format.SourceFormatError as error:
+            raise IdentifierRenameError(
+                f"Cannot verify cross-file C++ macros in {source_slot}: {error}") from error
+        for token in tokens:
+            if token.startswith("directive:") and any(
+                re.search(r"(?<![A-Za-z0-9_])" + re.escape(name)
+                          + r"(?![A-Za-z0-9_])", token)
+                for name in protected_names
+            ):
+                raise IdentifierRenameError(
+                    f"Preprocessor directive refers to a renamed C++ identifier: {source_slot}")
+            if source_slot not in renames and token.startswith("id:") and token[3:] in destinations:
+                raise IdentifierRenameError(
+                    f"A destination is already used in another C++ source: {source_slot}")
 
     confirmed: dict[str, dict[str, int]] = {}
     for slot, (language, before) in old_slots.items():
