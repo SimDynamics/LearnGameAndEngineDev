@@ -183,6 +183,70 @@ class FormattedOwnerRenamePreview(unittest.TestCase):
                         self.lesson, altered, revised)
         self.assertEqual(PATH.read_bytes(), self.original_bytes)
 
+    def draft_for_all_six_owners(self):
+        proposed, records = {}, []
+        for identity, target in OWNERS:
+            _, block, names, counts = self.candidate(self.blocks[identity], target)
+            proposed[identity] = block
+            records.append(preview.preview_published_rename(
+                self.lesson, identity, block, names, counts))
+        return preview.build_read_only_rename_draft(
+            self.lesson, proposed, records)
+
+    def test_six_owner_draft_roundtrips_exact_published_lesson(self):
+        original_document = deepcopy(self.lesson)
+        draft = self.draft_for_all_six_owners()
+        report = preview.validate_read_only_rename_draft(self.lesson, draft)
+        self.assertTrue(report["publishedStateUnchanged"])
+        self.assertFalse(report["runtimeLoadSupported"])
+        self.assertEqual(report["lessonId"], self.lesson["id"])
+        self.assertEqual(len(report["owners"]), 6)
+        self.assertEqual(
+            {item["id"] for item in report["owners"]},
+            {owner for owner, _ in OWNERS})
+        self.assertEqual(len(draft["stateLayout"]["identifierRenameRevisions"]), 6)
+        self.assertEqual(len(draft["stateLayout"]["editorial"]),
+                         len(self.lesson["stateLayout"]["editorial"]) + 6)
+        # The document is deliberately not accepted by the current Python or
+        # native production validators. No historical migration is enabled.
+        with self.assertRaises(state.LayoutError):
+            state.validate(draft)
+        self.assertTrue(preview.verify_exact_published_rename_packet(
+            self.lesson, draft["stateLayout"]["identifierRenameRevisions"][0],
+            state._blocks(draft)[OWNERS[0][0]]))
+        self.assertEqual(self.lesson, original_document)
+        self.assertEqual(PATH.read_bytes(), self.original_bytes)
+
+    def test_draft_rejects_unrelated_edits_or_editorial_omissions(self):
+        draft = self.draft_for_all_six_owners()
+        self.assertTrue(preview.validate_read_only_rename_draft(self.lesson, draft))
+        tamper = [
+            ("response", lambda d: d["pages"][7]["blocks"][2]["answers"].append(
+                "invented")),
+            ("locale", lambda d: d["stateLayout"].update({"locale": "fr"})),
+            ("family", lambda d: d["stateLayout"]["family"]["es"].update(
+                {"sha256": "0" * 64})),
+            ("editorial", lambda d: d["stateLayout"]["editorial"].pop()),
+            ("editorial order", lambda d: d["stateLayout"]["editorial"].reverse()),
+            ("stable positions", lambda d: d["stateLayout"]["current"][0]["blocks"].reverse()),
+            ("duplicate owner", lambda d: d["stateLayout"][
+                "identifierRenameRevisions"].append(deepcopy(
+                    d["stateLayout"]["identifierRenameRevisions"][0]))),
+            ("extra metadata", lambda d: d.update({"forgedField": 1})),
+            ("missing receipt", lambda d: d["stateLayout"][
+                "identifierRenameRevisions"][0].pop("originalStateSha256")),
+            ("forged code", lambda d: d["pages"][6]["blocks"][2].update({
+                "code": "int main(){ return 3; }\n"})),
+        ]
+        for label, change in tamper:
+            with self.subTest(tamper=label):
+                wrong = deepcopy(draft)
+                change(wrong)
+                with self.assertRaises((preview.RenamePreviewError,
+                                        state.LayoutError, KeyError, TypeError)):
+                    preview.validate_read_only_rename_draft(self.lesson, wrong)
+        self.assertEqual(PATH.read_bytes(), self.original_bytes)
+
     def test_wrong_operator_literal_or_archival_change_cannot_be_previewed(self):
         identity, target = OWNERS[0]
         source = self.blocks[identity]
