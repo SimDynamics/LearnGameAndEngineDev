@@ -106,6 +106,58 @@ class FormattedOwnerRenamePreview(unittest.TestCase):
         self.assertEqual(self.lesson, before)
         self.assertEqual(PATH.read_bytes(), self.original_bytes)
 
+    def test_historical_packets_are_recomputed_from_six_published_owners(self):
+        for identity, target in OWNERS:
+            with self.subTest(owner=identity):
+                original = self.blocks[identity]
+                _, changed, names, counts = self.candidate(original, target)
+                packet = preview.preview_published_rename(
+                    self.lesson, identity, changed, names, counts)
+                self.assertTrue(preview.verify_exact_published_rename_packet(
+                    self.lesson, packet, changed))
+        self.assertEqual(PATH.read_bytes(), self.original_bytes)
+
+    def test_forged_or_borrowed_provenance_is_rejected(self):
+        identity, target = OWNERS[0]
+        _, candidate, names, counts = self.candidate(self.blocks[identity], target)
+        packet = preview.preview_published_rename(
+            self.lesson, identity, candidate, names, counts)
+        substitutions = {
+            "lessonId": "different-lesson",
+            "locale": "fr",
+            "historicalFamilySha256": "0" * 64,
+            "originalStateSha256": "0" * 64,
+            "stableStorage": {"page": 999, "block": 999},
+            "editorialPrefixSha256": "0" * 64,
+            "beforeSha256": "0" * 64,
+            "afterSha256": "0" * 64,
+            "priorSourceFormatSha256": "0" * 64,
+            "block": {"type": "code", "code": "forged"},
+            "confirmed": {"code": {"maxima": 1}},
+        }
+        for field, value in substitutions.items():
+            with self.subTest(field=field):
+                forged = deepcopy(packet)
+                forged[field] = value
+                with self.assertRaises(preview.RenamePreviewError):
+                    preview.verify_exact_published_rename_packet(
+                        self.lesson, forged, candidate)
+        for change in ("missing", "extra"):
+            forged = deepcopy(packet)
+            if change == "missing":
+                del forged["editorialPrefixSha256"]
+            else:
+                forged["inventedMetadata"] = "forged"
+            with self.subTest(change=change):
+                with self.assertRaises(preview.RenamePreviewError):
+                    preview.verify_exact_published_rename_packet(
+                        self.lesson, forged, candidate)
+        wrong = deepcopy(candidate)
+        wrong["code"] = wrong["code"].replace("Maxima:", "Mayor:", 1)
+        with self.assertRaises(preview.RenamePreviewError):
+            preview.verify_exact_published_rename_packet(self.lesson, packet, wrong)
+        self.assertEqual(PATH.read_bytes(), self.original_bytes)
+
     def test_wrong_operator_literal_or_archival_change_cannot_be_previewed(self):
         identity, target = OWNERS[0]
         source = self.blocks[identity]
