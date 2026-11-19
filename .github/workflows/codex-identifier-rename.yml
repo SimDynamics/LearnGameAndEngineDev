@@ -30,7 +30,8 @@ jobs:
           persist-credentials: false
       - name: Compile the real C++ lexical validator without WinRT
         run: >-
-          g++ -std=c++23 -O0 -Wall -Wextra -pedantic -I native
+          g++ -std=c++23 -O0 -Wall -Wextra -pedantic
+          -finput-charset=UTF-8 -fexec-charset=UTF-8 -I native
           native/core/identifier_rename_compat_tests.cpp
           -o /tmp/lgaed-identifier-rename-native
       - name: Exercise the native identifier-rename contract
