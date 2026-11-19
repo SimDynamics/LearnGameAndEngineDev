@@ -113,6 +113,53 @@ void accepted_reset_keeps_foreign_state_and_is_idempotent() {
         "Repeating a completed reset changed its previous result");
 }
 
+void malformed_or_cross_course_scope_is_atomic() {
+    for (int variant = 0; variant < 9; ++variant) {
+        Fixture fixture;
+        auto scope = fixture.scope;
+        switch (variant) {
+        case 0: scope.courses.push_back("cpp_fundamentals"); break;
+        case 1: scope.units.push_back("cpp_fundamentals__unit"); break;
+        case 2: scope.lessons.push_back(scope.lessons.front()); break;
+        case 3: scope.courses = {"other_course"}; break;
+        case 4: scope.units.push_back("other_course__unit"); break;
+        case 5: scope.lessons.push_back("other_course__unit__first"); break;
+        case 6: scope.lessons = {"cpp_fundamentals__another_unit__first"}; break;
+        case 7: scope.courses.push_back("../another_course"); break;
+        case 8: scope.units = {"cpp_fundamentals__unknown"};
+                scope.lessons = {fixture.scope.lessons.front()};
+                break;
+        }
+        const auto original = fixture.state;
+        const auto original_bytes = lgaed::state::encode(original);
+        bool rejected = false;
+        try { (void)reset_catalog_progress(fixture.state, scope); }
+        catch (const std::invalid_argument&) { rejected = true; }
+        check(rejected, "An invalid, duplicate or cross-course reset scope was accepted");
+        check(fixture.state == original &&
+              lgaed::state::encode(fixture.state) == original_bytes,
+              "A rejected reset changed serialized student progress or unrelated preferences");
+    }
+
+    // A legitimate route-wide reset can include more than one course. The
+    // other course's deliberately corrupt receipt is replaced only in this
+    // isolated fixture; real student state is never touched.
+    Fixture fixture;
+    fixture.scope.courses.push_back("other_course");
+    fixture.scope.units.push_back("other_course__unit");
+    fixture.scope.lessons.push_back("other_course__unit__first");
+    fixture.state.preferences["learning_progress"][
+        "lesson_other_course__unit__first_read_pages_v2_es"] =
+            std::vector<std::string>{};
+    const auto drafts = fixture.state.preferences.at("cpp_lesson_drafts");
+    check(reset_catalog_progress(fixture.state, fixture.scope) == 11,
+        "Valid two-course reset failed to clear its own selected records");
+    check(!fixture.state.preferences.at("learning_progress").contains(
+              "lesson_other_course__unit__first_completed") &&
+          fixture.state.preferences.at("cpp_lesson_drafts") == drafts,
+        "A valid multi-course reset did not preserve unrelated drafts");
+}
+
 void foreign_corruption_does_not_block_selected_course() {
     Fixture fixture;
     check(reset_catalog_progress(fixture.state, fixture.scope) == 10,
@@ -127,9 +174,10 @@ void foreign_corruption_does_not_block_selected_course() {
 int main() {
     try {
         invalid_selected_coverage_is_atomic();
+        malformed_or_cross_course_scope_is_atomic();
         accepted_reset_keeps_foreign_state_and_is_idempotent();
         foreign_corruption_does_not_block_selected_course();
-        std::cout << "PASS catalog reset: 8 malformed coverage slots rejected atomically; "
+        std::cout << "PASS catalog reset: 8 malformed coverage slots and 9 invalid scopes rejected atomically; "
                      "exact scope, drafts, provenance and binary state preserved\n";
         return 0;
     } catch (const std::exception& error) {

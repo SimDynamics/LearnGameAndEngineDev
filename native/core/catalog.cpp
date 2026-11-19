@@ -18,6 +18,42 @@ std::string slug(std::string_view id, std::string_view owner) {
         throw std::invalid_argument("El identificador del catálogo no pertenece a su índice padre.");
     return std::string(id.substr(prefix.size()));
 }
+// Scoped progress resets may target one lesson, one course or a whole route.
+// Check every explicit parent-child relation before changing any stored key.
+// A malformed mixed-course scope must not erase another course's progress.
+void validate_reset_scope(const CatalogScope& scope) {
+    const auto unique_safe = [](const std::vector<std::string>& ids) {
+        std::set<std::string_view> seen;
+        for (const auto& id : ids)
+            if (!identifier(id) || !seen.insert(id).second)
+                throw std::invalid_argument(
+                    "El reinicio contiene identidades inválidas o repetidas.");
+    };
+    unique_safe(scope.courses);
+    unique_safe(scope.units);
+    unique_safe(scope.lessons);
+    const auto belongs_to = [](std::string_view id,
+                               const std::vector<std::string>& parents) {
+        return std::ranges::any_of(parents, [&](const std::string& parent) {
+            const auto prefix = std::string_view(parent);
+            return id.size() > prefix.size() + 2 && id.starts_with(prefix) &&
+                id.substr(prefix.size(), 2) == "__";
+        });
+    };
+    if (!scope.courses.empty())
+        for (const auto& unit : scope.units)
+            if (!belongs_to(unit, scope.courses))
+                throw std::invalid_argument(
+                    "Una unidad del reinicio no pertenece al curso autorizado.");
+    for (const auto& lesson : scope.lessons) {
+        if (!scope.units.empty() && !belongs_to(lesson, scope.units))
+            throw std::invalid_argument(
+                "Una lección del reinicio no pertenece a las unidades autorizadas.");
+        if (!scope.courses.empty() && !belongs_to(lesson, scope.courses))
+            throw std::invalid_argument(
+                "Una lección del reinicio no pertenece al curso autorizado.");
+    }
+}
 }
 void validate_catalog_location(const CatalogLocation& location) {
     if (location.locale != "es" && location.locale != "en" && location.locale != "fr")
@@ -183,6 +219,7 @@ CatalogProgress catalog_unit_learning_progress(const state::StateData& data,cons
     return result;
 }
 std::size_t reset_catalog_progress(state::StateData& data,const CatalogScope& scope) {
+    validate_reset_scope(scope);
     // Preflight every selected read-coverage receipt before erasing any
     // response, page frontier, native bookmark or coverage from the state.
     // A corrupt historical receipt must reject the entire scoped reset,
