@@ -1031,6 +1031,105 @@ class GeneralQuestionEditorialTests(unittest.TestCase):
             previous_document=before, current_document=repainted))
 
 
+
+class InitialLessonOptionalExplanationTests(unittest.TestCase):
+    """The actual U1L4 drag-fill contract may gain its first explanation.
+
+    Read an immutable published ancestor rather than treating a future Work
+    edit as our reference. No curriculum JSON or learner state is mutated.
+    """
+    COMMIT = "8a41d518799d14afe0d957743b5de6c04de86edd"
+    RELATIVE = ("programming/cpp_fundamentals/programas_y_ejecucion/"
+                "lesson_fuente_compilacion_y_diagnostico.json")
+    FILE = "app/src/main/assets/content/es/" + RELATIVE
+    OWNER = "block_0004_0001"
+    WORDING = (
+        "La ficha main completa el nombre de la función donde comienza el "
+        "programa. El operador << envía Revision lista a la salida, y el "
+        "punto y coma termina esa instrucción. Las otras fichas no cumplen "
+        "esas funciones en el fragmento."
+    )
+
+    @classmethod
+    def setUpClass(cls):
+        raw = subprocess.check_output(
+            ["git", "--no-optional-locks", "-c", f"safe.directory={history.ROOT}",
+             "show", f"{cls.COMMIT}:{cls.FILE}"],
+            cwd=history.ROOT, stderr=subprocess.PIPE)
+        cls.original = json.loads(raw)
+        layout.validate(cls.original)
+        cls.page, cls.position = 5, 8
+        assert cls.original["stateLayout"]["current"][cls.page]["blocks"][cls.position] == cls.OWNER
+        cls.block = cls.original["pages"][cls.page]["blocks"][cls.position]
+        assert cls.block["type"] == "drag_fill_code"
+        assert cls.block["id"] == "piezas_estructura"
+        assert "explanation" not in cls.block
+        assert cls.block["correctOrder"] == [0, 1, 2]
+
+    def revised(self):
+        return layout.revise_ordinary_editorial(self.original, self.OWNER, {
+            "explanation": {"text": self.WORDING, "spans": []}})
+
+    def test_add_first_explanation_under_the_original_owner_and_answer(self):
+        import validar_json_programacion as contract
+
+        after = self.revised()
+        layout.validate_transition(self.original, after)
+        self.assertEqual(layout.validate(self.original), layout.validate(after))
+        self.assertEqual(self.original["stateLayout"]["origin"],
+                         after["stateLayout"]["origin"])
+        for field in ("current", "family", "additions"):
+            self.assertEqual(self.original["stateLayout"][field],
+                             after["stateLayout"][field])
+        current = after["pages"][self.page]["blocks"][self.position]
+        self.assertEqual({key: value for key, value in current.items()
+                          if key != "explanation"}, self.block)
+        self.assertEqual(self.WORDING, current["explanation"])
+        self.assertEqual(("explanation",), layout.ordinary_editorial_fields(
+            self.block, current))
+        self.assertEqual(layout.state_fingerprint(self.block),
+                         layout.state_fingerprint(current))
+        self.assertEqual(self.original["stateLayout"]["editorial"],
+                         after["stateLayout"]["editorial"][:-1])
+        descriptor = next(field for field in after["textSemantics"]["fields"]
+                          if field["block"] == self.OWNER and
+                          field["path"] == "/explanation")
+        self.assertEqual([], descriptor["spans"])
+        self.assertTrue(contract.preserves_ordinary_explanation_revision(
+            self.FILE, self.page, self.position, self.block, current, self.original, after))
+        self.assertTrue(contract.preserves_previous_exercise(
+            self.FILE, self.page, self.position, self.block, current,
+            previous_document=self.original, current_document=after))
+
+    def test_unproven_new_prose_and_tampered_answer_are_rejected(self):
+        invalid = deepcopy(self.original)
+        invalid["pages"][self.page]["blocks"][self.position]["explanation"] = self.WORDING
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(self.original, invalid)
+        valid = self.revised()
+        for mutation in ("answers", "source", "choice", "proof", "marker", "stale-marker"):
+            invalid = deepcopy(valid)
+            block = invalid["pages"][self.page]["blocks"][self.position]
+            if mutation == "answers":
+                block["correctOrder"] = [1, 0, 2]
+            elif mutation == "source":
+                block["template"] += "\n"
+            elif mutation == "choice":
+                block["choices"][0] = "other"
+            elif mutation == "proof":
+                invalid["stateLayout"]["editorial"][-1]["afterSha256"] = "0" * 64
+            else:
+                marker = next(field for field in invalid["textSemantics"]["fields"]
+                              if field["block"] == self.OWNER and
+                              field["path"] == "/explanation")
+                if mutation == "marker":
+                    invalid["textSemantics"]["fields"].remove(marker)
+                else:
+                    marker["sourceSha256"] = "0" * 64
+            with self.subTest(mutation=mutation), self.assertRaises(layout.LayoutError):
+                layout.validate_transition(self.original, invalid)
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] in EXPORT_MODES:
         output = Path(sys.argv[2])
