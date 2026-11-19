@@ -647,6 +647,11 @@ int identifier_rename_live_windows(const std::filesystem::path& content,
     require(compiler_puzzle_completed(data,baseline,old_editor),
         "A successful original frequency run was not credited");
     const auto prior_receipts=receipts(data);
+    narration::History audible;
+    audible.entries.push_back({"u5l13-original-reading","u5l13-original-owner",
+        {3,149,0,false},"page_0006"});
+    narration::write_history(data,audible);
+    const auto previous_audio=narration::read_history(data);
     data.preferences["qa-independent"]["unchanged"]=std::string("opaque");
     store.save(data);
     data=reopen(store);
@@ -661,14 +666,16 @@ int identifier_rename_live_windows(const std::filesystem::path& content,
         state::string_value(data,"qa-independent","unchanged")=="opaque"&&
         compiler_puzzle_completed(data,changed,new_editor)&&
         compiler_puzzle_completed(data,metadata,editor(metadata,editor_id))&&
-        receipts(data)==prior_receipts,
-        "Renaming changed a learner's saved draft, earned receipt or independent state");
+        receipts(data)==prior_receipts&&
+        narration::read_history(data)==previous_audio,
+        "Renaming changed a learner's saved draft, receipt or audio bookmark");
     store.save(data);
     const auto persisted=reopen(store);
     state::validate_lesson_state(persisted,changed);
     require(persisted==data&&compiler_puzzle_completed(persisted,changed,new_editor)&&
-        receipts(persisted)==prior_receipts,
-        "Renaming changed an original achievement or receipt after durable reopen");
+        receipts(persisted)==prior_receipts&&
+        narration::read_history(persisted)==previous_audio,
+        "Renaming changed an original achievement or reading marker after durable reopen");
 
     const auto rejects=[&](std::string_view cause,const auto& mutation) {
         const auto forged=JsonObject::Parse(winrt::to_hstring(serialized));
