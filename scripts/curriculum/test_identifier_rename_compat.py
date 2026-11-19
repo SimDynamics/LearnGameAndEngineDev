@@ -333,6 +333,64 @@ class DeclaredIdentifierRenames(unittest.TestCase):
                 {"initialCode": {"maxima": 2}}),
             {"initialCode": {"maxima": 2}})
 
+    def test_function_name_introspection_breaks_identifier_only_equivalence(self):
+        for observer in ("__func__", "__FUNCTION__", "__PRETTY_FUNCTION__",
+                         "__FUNCSIG__", "__FUNCDNAME__", "typeid"):
+            with self.subTest(observer=observer):
+                before = deepcopy(ORIGINAL)
+                before["initialCode"] = (
+                    "const char* maxima() {\n"
+                    "    return " + observer + ";\n"
+                    "}\n"
+                )
+                after = deepcopy(before)
+                after["initialCode"] = before["initialCode"].replace(
+                    "maxima()", "frecuencia_maxima_encontrada()")
+                with self.assertRaisesRegex(
+                        renaming.IdentifierRenameError,
+                        "observe renamed C\+\+ symbol spelling"):
+                    renaming.require_declared_cpp_renames(
+                        before, after,
+                        {"initialCode": {"maxima": "frecuencia_maxima_encontrada"}},
+                        {"initialCode": {"maxima": 1}})
+
+    def test_unchanged_preprocessor_stringize_and_paste_are_not_safe(self):
+        for directive in ("#define STRINGIFY(x) #x",
+                          "#define CONCAT(a,b) a##b"):
+            with self.subTest(directive=directive):
+                before = deepcopy(ORIGINAL)
+                before["initialCode"] = (
+                    directive + "\n"
+                    "int maxima = 4;\n"
+                    "int main() { return maxima; }\n"
+                )
+                after = deepcopy(before)
+                after["initialCode"] = before["initialCode"].replace(
+                    "maxima", "frecuencia_maxima_encontrada")
+                with self.assertRaisesRegex(
+                        renaming.IdentifierRenameError,
+                        "observe renamed C\+\+ symbol spelling"):
+                    renaming.require_declared_cpp_renames(
+                        before, after,
+                        {"initialCode": {"maxima": "frecuencia_maxima_encontrada"}},
+                        {"initialCode": {"maxima": 2}})
+
+    def test_inert_mentions_of_function_name_macros_remain_lexical(self):
+        before = deepcopy(ORIGINAL)
+        before["initialCode"] += (
+            '// __func__ is only a comment\n'
+            'const char* unaffected = "__PRETTY_FUNCTION__";\n'
+        )
+        after = deepcopy(before)
+        after["initialCode"] = before["initialCode"].replace(
+            "int maxima = 4;", "int frecuencia_maxima_encontrada = 4;").replace(
+            "<< maxima <<", "<< frecuencia_maxima_encontrada <<")
+        self.assertEqual(
+            renaming.require_declared_cpp_renames(before, after,
+                {"initialCode": {"maxima": "frecuencia_maxima_encontrada"}},
+                {"initialCode": {"maxima": 2}}),
+            {"initialCode": {"maxima": 2}})
+
     def test_real_frequency_lesson_covers_examples_editors_and_predictions(self):
         # Author proposals only in memory, from the real immutable published
         # owners in P1 U5L13. Work alone can edit this curricular JSON.
