@@ -78,6 +78,33 @@ class RealChoiceEditorialRevision(unittest.TestCase):
         self.assertEqual(owner_block(self.after)["explanation"],
                          owner_block(self.before)["explanation"])
 
+    def test_reopened_revision_retains_storage_and_passes_curricular_guard(self) -> None:
+        # Reload the *published-format* JSON. Keep every original state owner
+        # and verify the same guard used when comparing earlier curricular
+        # publications, not merely the choice-specific helper.
+        reopened = json.loads(json.dumps(self.after, ensure_ascii=False))
+        old_storage = state.validate(self.before)
+        self.assertEqual(state.validate(reopened), old_storage)
+        state.validate_transition(self.before, reopened)
+        self.assertTrue(curriculum.preserves_previous_exercise(
+            RELATIVE, *self.origin, owner_block(self.before), owner_block(reopened),
+            previous_document=self.before, current_document=reopened,
+            course_id="cpp_fundamentals"))
+        aligned = state.align_for_previous_validation(self.before, reopened)
+        self.assertEqual(owner_block(aligned), owner_block(self.before))
+        # The archived option and its original UTF-16 marker must both be
+        # restored to the immediately preceding publication during comparison.
+        baseline_marker = next(field for field in self.before["textSemantics"]["fields"]
+                               if (field["block"], field["path"]) == (OWNER, "/options/0"))
+        aligned_marker = next(field for field in aligned["textSemantics"]["fields"]
+                              if (field["block"], field["path"]) == (OWNER, "/options/0"))
+        self.assertEqual(aligned_marker, baseline_marker)
+
+    def test_second_revision_of_an_already_archived_option_is_rejected(self) -> None:
+        with self.assertRaisesRegex(state.LayoutError, "cannot be revised twice"):
+            state.revise_choice_editorial(
+                self.after, OWNER, 0, OLD_TEXT, spans=[])
+
     def test_history_and_other_course_activities_are_untouched(self) -> None:
         old, new = self.before["stateLayout"], self.after["stateLayout"]
         for field in ("origin", "current", "family", "additions", "retired",
