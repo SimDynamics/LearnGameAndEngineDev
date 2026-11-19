@@ -3,6 +3,7 @@
 #include "core/lesson_state.hpp"
 #include "core/lesson.hpp"
 #include <algorithm>
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -48,6 +49,11 @@ void validate_catalog_location(const CatalogLocation&);
 // New editions cannot reuse the old unit-list ordinal. Existing historical
 // catalog keys remain unchanged for courses without an edition.
 [[nodiscard]] std::string catalog_position_key(const CatalogPage&);
+// Persist stable entry identity alongside legacy list indices. An authored
+// reorder must not silently select a different unit in the same edition.
+[[nodiscard]] std::string catalog_saved_entry_id(const CatalogPage&, std::int64_t index);
+[[nodiscard]] std::size_t catalog_restore_entry_index(const CatalogPage&,
+    std::string_view saved_id, std::int64_t saved_index, std::size_t total_count);
 [[nodiscard]] bool catalog_lesson_completed(const state::StateData&, std::string_view lesson_id);
 [[nodiscard]] bool catalog_lesson_started(const state::StateData&, std::string_view lesson_id);
 [[nodiscard]] CatalogProgress catalog_progress(const state::StateData&,const CatalogScope&);

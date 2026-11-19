@@ -134,6 +134,25 @@ std::string catalog_position_key(const CatalogPage& page) {
     // Keep the same key if the author reorders units within one generation.
     return key+"/edition/"+entry.asset_locale+"_"+std::string(generation);
 }
+std::string catalog_saved_entry_id(const CatalogPage& page, std::int64_t index) {
+    if(index<0||static_cast<std::size_t>(index)>=page.entries.size())return {};
+    return page.entries[static_cast<std::size_t>(index)].id;
+}
+std::size_t catalog_restore_entry_index(const CatalogPage& page,
+        std::string_view saved_id, std::int64_t saved_index, std::size_t total_count) {
+    if(total_count==0)return 0;
+    if(!saved_id.empty()) {
+        const auto entry=std::ranges::find(page.entries,saved_id,&CatalogEntry::id);
+        // A retired entry has no successor with its identity: start at the
+        // first real item instead of reusing its former numerical position.
+        if(entry==page.entries.end())return 0;
+        return static_cast<std::size_t>(entry-page.entries.begin());
+    }
+    // Older profiles and auxiliary home actions still use their stored
+    // index. No existing saved key is deleted or interpreted differently.
+    return saved_index<0?0:
+        std::min(static_cast<std::size_t>(saved_index),total_count-1);
+}
 bool catalog_lesson_completed(const state::StateData& data, std::string_view id) {
     const auto value = state::find(data,"learning_progress","lesson_" + std::string(id) + "_completed");
     const auto completed = value ? std::get_if<bool>(value) : nullptr; return completed && *completed;

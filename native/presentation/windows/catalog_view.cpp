@@ -106,8 +106,18 @@ struct CatalogView {
         auto& prefs = data.preferences["native_windows"];
         const auto key = catalog_position_key(page);
         const auto selection = SendMessageW(list,LB_GETCURSEL,0,0), top = SendMessageW(list,LB_GETTOPINDEX,0,0);
-        if (selection != LB_ERR) prefs[key + "/selection"] = static_cast<std::int64_t>(selection);
-        if (top != LB_ERR) prefs[key + "/top"] = static_cast<std::int64_t>(top);
+        if (selection != LB_ERR) {
+            prefs[key + "/selection"] = static_cast<std::int64_t>(selection);
+            const auto id=catalog_saved_entry_id(page,selection);
+            if(id.empty())prefs.erase(key + "/selection_id");
+            else prefs[key + "/selection_id"]=id;
+        }
+        if (top != LB_ERR) {
+            prefs[key + "/top"] = static_cast<std::int64_t>(top);
+            const auto id=catalog_saved_entry_id(page,top);
+            if(id.empty())prefs.erase(key + "/top_id");
+            else prefs[key + "/top_id"]=id;
+        }
         prefs[key+"/scroll"]=static_cast<std::int64_t>(card_list_scroll_offset(list));
         if (include_current) {
             prefs["catalog/locale"] = page.location.locale; prefs["catalog/route"] = page.location.route;
@@ -251,8 +261,12 @@ struct CatalogView {
         const auto selection = state::integer_value(progress,"native_windows",key + "/selection");
         const auto top = state::integer_value(progress,"native_windows",key + "/top");
         const auto count = page.entries.size() + home_actions.size();
-        if (count) SendMessageW(list,LB_SETCURSEL,static_cast<WPARAM>(std::clamp(selection,std::int64_t{0},static_cast<std::int64_t>(count - 1))),0);
-        if (count) SendMessageW(list,LB_SETTOPINDEX,static_cast<WPARAM>(std::clamp(top,std::int64_t{0},static_cast<std::int64_t>(count - 1))),0);
+        if (count) SendMessageW(list,LB_SETCURSEL,static_cast<WPARAM>(
+            catalog_restore_entry_index(page,state::string_value(
+                progress,"native_windows",key+"/selection_id"),selection,count)),0);
+        if (count) SendMessageW(list,LB_SETTOPINDEX,static_cast<WPARAM>(
+            catalog_restore_entry_index(page,state::string_value(
+                progress,"native_windows",key+"/top_id"),top,count)),0);
         const auto locale = location.locale == "en" ? 1 : location.locale == "fr" ? 2 : 0;
         SendMessageW(language,CB_SETCURSEL,locale,0);
         EnableWindow(back,catalog_level(location) != CatalogLevel::routes);

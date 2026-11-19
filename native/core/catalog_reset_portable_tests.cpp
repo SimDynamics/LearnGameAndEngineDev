@@ -152,6 +152,51 @@ void catalog_unit_selection_is_scoped_to_published_edition() {
           "A lesson list acquired an unrelated second epoch key");
 }
 
+void catalog_entry_identity_survives_reordering_and_retirement() {
+    using namespace lgaed::curriculum;
+    CatalogPage page;
+    page.location={"es","programming","cpp_fundamentals","",""};
+    const auto prefix=std::string("cpp_fundamentals__edition_es_1__");
+    for(const auto* slug : {"primera","segunda","tercera"}) {
+        CatalogEntry entry;
+        entry.id=prefix+slug; entry.asset_locale="es";
+        page.entries.push_back(entry);
+    }
+    const auto edition_key=catalog_position_key(page);
+    const auto selected=catalog_saved_entry_id(page,2);
+    const auto top=catalog_saved_entry_id(page,1);
+    check(selected==prefix+"tercera"&&top==prefix+"segunda",
+        "A real unit was not saved under its stable edition identity");
+    std::swap(page.entries[0],page.entries[2]);
+    check(catalog_position_key(page)==edition_key &&
+          catalog_restore_entry_index(page,selected,2,3)==0 &&
+          catalog_restore_entry_index(page,top,1,3)==1,
+        "Reordering one edition selected a different unit from its old ordinal");
+    std::swap(page.entries[1],page.entries[2]);
+    check(catalog_restore_entry_index(page,top,1,3)==2 &&
+          catalog_restore_entry_index(page,selected,2,3)==0,
+        "The first visible unit or restored scroll anchor did not follow its identity");
+    check(catalog_restore_entry_index(page,prefix+"retirada",2,3)==0,
+        "A retired unit inherited the former slot's unrelated unit");
+    check(catalog_restore_entry_index(page,prefix+"otra_edicion",2,3)==0,
+        "An unmatched edition ID silently borrowed another generation");
+    // Old profiles store only positions. Their navigation still works,
+    // including an auxiliary home action beyond the catalog entries.
+    check(catalog_restore_entry_index(page,{},2,5)==2 &&
+          catalog_restore_entry_index(page,{},4,5)==4 &&
+          catalog_restore_entry_index(page,{},99,5)==4 &&
+          catalog_restore_entry_index(page,{},-1,5)==0 &&
+          catalog_restore_entry_index(page,{},2,0)==0,
+        "Old numerical positions, home actions or an empty list regressed");
+    check(catalog_saved_entry_id(page,-1).empty() &&
+          catalog_saved_entry_id(page,3).empty(),
+        "An empty selection or home action borrowed a unit identity");
+    page.entries.clear();
+    check(catalog_restore_entry_index(page,selected,2,3)==0 &&
+          catalog_restore_entry_index(page,{},2,3)==2,
+        "An empty lesson list fabricated a selected entry");
+}
+
 void malformed_or_cross_course_scope_is_atomic() {
     for (int variant = 0; variant < 9; ++variant) {
         Fixture fixture;
@@ -214,6 +259,7 @@ int main() {
     try {
         invalid_selected_coverage_is_atomic();
         catalog_unit_selection_is_scoped_to_published_edition();
+        catalog_entry_identity_survives_reordering_and_retirement();
         malformed_or_cross_course_scope_is_atomic();
         accepted_reset_keeps_foreign_state_and_is_idempotent();
         foreign_corruption_does_not_block_selected_course();
