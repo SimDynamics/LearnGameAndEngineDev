@@ -42,7 +42,8 @@ inline bool identifier(std::string_view name) {
     // Match Python's explicit ASCII regex in every C/C++ locale. std::isalpha
     // is locale-sensitive and can admit non-ASCII bytes on Windows profiles,
     // producing different source-name permissions on the two validators.
-    if(name.empty()||!ascii_alpha(static_cast<unsigned char>(name.front()))||
+    if(name.empty()||name.find("__")!=name.npos||
+       !ascii_alpha(static_cast<unsigned char>(name.front()))||
        !std::all_of(name.begin()+1,name.end(),[](unsigned char c){
             return ascii_alpha(c)||ascii_digit(c)||c=='_';}))return false;
     static const std::set<std::string_view> reserved{
