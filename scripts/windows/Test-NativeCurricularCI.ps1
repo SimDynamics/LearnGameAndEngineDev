@@ -419,7 +419,7 @@ if ($Suite -eq 'ReaderBuild') {
     # historical test translation units. Failed UI iterations retain their
     # native captures and diagnostics without repeating the older suites.
     $qaSimulationPattern = '^native\.(simulation_model|simulation_view|simulation_lesson|simulation_authoring)$'
-    $qaGesturePattern = '^native\.(lesson_menu|lesson_scroll_render)$'
+    $qaGesturePattern = '^native\.(lesson_menu|lesson_scroll_render|lesson_optional_order_help)$'
     $qaCommands += @(
         "`"$qaCMake`" --build `"$qaBuild`" --target lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests --parallel 2",
         'if errorlevel 1 exit /b %errorlevel%',
@@ -527,6 +527,8 @@ if ($Suite -eq 'ReaderBuild') {
         'native.u3_runtime_semantics',
         'native.premium_windows',
         'native.compiler_puzzles',
+        'native.u1_editor_edition',
+        'native.lesson_optional_order_help',
         'native.semantic_retirement_view',
         'native.compiler_case_order_view',
         'native.compiler_case_revision_view',

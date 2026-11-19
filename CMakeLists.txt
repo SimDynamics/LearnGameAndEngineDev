@@ -716,8 +716,14 @@ if(LGAED_READER_BUILD_QA_ONLY)
     add_dependencies(lgaed_lesson_view_tests lgaed_retirement_fixtures)
     add_test(NAME native.lesson_scroll_render COMMAND lgaed_lesson_view_tests --scroll-repaint)
     add_test(NAME native.lesson_menu COMMAND lgaed_lesson_view_tests --lesson-menu)
+    add_test(NAME native.lesson_optional_order_help
+        COMMAND lgaed_lesson_view_tests --order-help)
     set_tests_properties(native.lesson_menu native.lesson_scroll_render
-        PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
+        native.lesson_optional_order_help PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
+    # Retain every original compiler and activate the ninth on Work's edition.
+    add_test(NAME native.u1_editor_edition
+        COMMAND lgaed_lesson_view_tests --u1-compiler-edition)
+    set_tests_properties(native.u1_editor_edition PROPERTIES TIMEOUT 480 RUN_SERIAL TRUE)
     lgaed_add_catalog_test()
     lgaed_add_course_edition_tests()
     lgaed_add_general_choice_editorial_tests()
@@ -2267,6 +2273,12 @@ if(BUILD_TESTING)
     set_tests_properties(native.lesson_navigation_geometry PROPERTIES TIMEOUT 180)
     add_test(NAME native.compiler_puzzles COMMAND lgaed_lesson_view_tests --compiler-puzzles)
     set_tests_properties(native.compiler_puzzles PROPERTIES TIMEOUT 150)
+    add_test(NAME native.u1_editor_edition
+        COMMAND lgaed_lesson_view_tests --u1-compiler-edition)
+    set_tests_properties(native.u1_editor_edition PROPERTIES TIMEOUT 480 RUN_SERIAL TRUE)
+    add_test(NAME native.lesson_optional_order_help
+        COMMAND lgaed_lesson_view_tests --order-help)
+    set_tests_properties(native.lesson_optional_order_help PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
     add_test(NAME native.stderr_objective COMMAND lgaed_lesson_view_tests --stderr-objective)
     set_tests_properties(native.stderr_objective PROPERTIES TIMEOUT 90)
     add_test(NAME native.lesson_menu COMMAND lgaed_lesson_view_tests --lesson-menu)
