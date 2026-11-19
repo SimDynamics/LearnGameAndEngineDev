@@ -1,0 +1,32 @@
+name: Codex compatible mathematical matching public text
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-math-matching-text.yml
+      - scripts/curriculum/math_matching_text_compat.py
+      - scripts/curriculum/test_math_matching_text_compat.py
+      - scripts/curriculum/text_semantics.py
+      - scripts/curriculum/stable_state_layout.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/colecciones_y_recorridos/lesson_contar_frecuencias_y_conservar_empates.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  authoring-matching-text:
+    name: Actual published matching IDs, immutable answers and UTF-16 marks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact Codex publication
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run authored matching text compatibility and negative contracts
+        run: >-
+          python3 -B -m unittest discover
+          -s scripts/curriculum
+          -p test_math_matching_text_compat.py -v
