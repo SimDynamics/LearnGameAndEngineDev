@@ -283,6 +283,7 @@ def _cmake_command_gaps(src: str, tokens: tuple[str, ...]) -> tuple[int, ...]:
     offset = 0
     depth = 0
     previous = ""
+    completed_invocation = False
     for token in tokens:
         literal = token.split(":", 1)[1]
         start = src.find(literal, offset)
@@ -291,14 +292,20 @@ def _cmake_command_gaps(src: str, tokens: tuple[str, ...]) -> tuple[int, ...]:
         line_break = "\n" in src[offset:start]
         if depth == 0 and token == "paren:(" and previous.startswith("word:"):
             gaps.append(1 if line_break else 0)
-        if depth == 0 and token.startswith("word:") and previous == "paren:)":
+        # Comments do not erase the newline required between commands.
+        # Only whitespace after the last comment counts; embedded newlines
+        # within a bracket comment do not separate two commands.
+        if depth == 0 and token.startswith("word:") and completed_invocation:
             gaps.append(3 if line_break else 2)
+            completed_invocation = False
         if token == "paren:(":
             depth += 1
         elif token == "paren:)":
             depth -= 1
             if depth < 0:
                 raise SourceFormatError("Unbalanced CMake command parentheses")
+            if depth == 0:
+                completed_invocation = True
         previous = token
         offset = start + len(literal)
     if depth:

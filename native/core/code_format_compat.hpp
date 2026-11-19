@@ -266,6 +266,7 @@ inline std::optional<std::vector<unsigned char>> cmake_command_gaps(
     std::vector<unsigned char> gaps;
     std::string_view previous;
     std::size_t offset=0,depth=0;
+    bool completed_invocation=false;
     for(const auto& token:tokens) {
         const auto separator=token.find(':');
         if(separator==token.npos)return {};
@@ -275,12 +276,18 @@ inline std::optional<std::vector<unsigned char>> cmake_command_gaps(
         const bool line_break=source.substr(offset,start-offset).find('\n')!=source.npos;
         if(depth==0&&token=="paren:("&&previous.starts_with("word:"))
             gaps.push_back(line_break?1:0);
-        if(depth==0&&token.starts_with("word:")&&previous=="paren:)")
+        // Comments do not erase the newline required between commands.
+        // Only whitespace after the last comment counts; embedded newlines
+        // within a bracket comment do not separate two commands.
+        if(depth==0&&token.starts_with("word:")&&completed_invocation) {
             gaps.push_back(line_break?3:2);
+            completed_invocation=false;
+        }
         if(token=="paren:(")++depth;
         else if(token=="paren:)") {
             if(depth==0)return {};
             --depth;
+            if(depth==0)completed_invocation=true;
         }
         previous=token;
         offset=start+literal.size();

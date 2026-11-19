@@ -405,6 +405,8 @@ class SourceFormatTest(unittest.TestCase):
              'if(\n  TRUE AND (\n    TRUE OR FALSE\n  )\n)\n\nmessage(STATUS "yes")\nendif()'),
             ('message(STATUS "a") # note\nmessage(STATUS "b")',
              'message(STATUS "a")\n# note\nmessage(STATUS "b")'),
+            ('message(STATUS "a") #[[note]]\nmessage(STATUS "b")',
+             'message(STATUS "a")\n#[[note]]\nmessage(STATUS "b")'),
         ]
         for before, after in allowed:
             with self.subTest(safe=before):
@@ -420,6 +422,12 @@ class SourceFormatTest(unittest.TestCase):
              'message(STATUS "a")\tmessage(STATUS "b")'),
             ('message(STATUS "a") message(STATUS "b")',
              'message(STATUS "a")\nmessage(STATUS "b")'),
+            ('message(STATUS "a")\n#[[note]]\nmessage(STATUS "b")',
+             'message(STATUS "a") #[[note]] message(STATUS "b")'),
+            ('message(STATUS "a")\n#[[note]]\nmessage(STATUS "b")',
+             'message(STATUS "a")\n#[[note]] message(STATUS "b")'),
+            ('message(STATUS "a")\n#[[first\nsecond]]\nmessage(STATUS "b")',
+             'message(STATUS "a")\n#[[first\nsecond]] message(STATUS "b")'),
         ]
         for before, after in blocked:
             with self.subTest(blocked=before), self.assertRaises(fmt.SourceFormatError):
