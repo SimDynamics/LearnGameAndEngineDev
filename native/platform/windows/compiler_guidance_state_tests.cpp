@@ -607,7 +607,7 @@ int general_choice_live_windows(const std::filesystem::path& content,
             const auto entry=items.GetObjectAt(i);
             if(entry.GetNamedString(L"block")==winrt::to_hstring(id)&&
                     entry.GetNamedString(L"path")==L"/options/0"){
-                entry.Insert(L"sourceSha256",JsonValue::CreateStringValue(std::wstring(64,L'0')));
+                entry.Insert(L"sourceSha256",JsonValue::CreateStringValue(winrt::to_hstring(std::string(64,'0'))));
                 return;
             }
         }
@@ -620,7 +620,7 @@ int general_choice_live_windows(const std::filesystem::path& content,
     });
     std::cout<<"PASS real U9L13 choice on Windows: native and metadata loaders, "
         "prior receipt, StateStore reopen, exact owner/semantics, four hostile variants; "
-        "no learner data or published lesson changed.\\n";
+        "no learner data or published lesson changed.\n";
     return 0;
 }
 }
