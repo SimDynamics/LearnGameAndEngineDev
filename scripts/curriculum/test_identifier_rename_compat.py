@@ -271,6 +271,39 @@ class DeclaredIdentifierRenames(unittest.TestCase):
             renaming.require_declared_cpp_renames(
                 original, inconsistent, invalid_names, counts)
 
+    def test_unreviewed_source_cannot_retain_the_old_identifier(self):
+        original = deepcopy(ORIGINAL)
+        original["projectFiles"][0]["initialCode"] = (
+            "int observa(int maxima) {\n"
+            "    return maxima;\n"
+            "}\n"
+        )
+        revised = deepcopy(original)
+        revised["initialCode"] = proposal()["initialCode"]
+        # The old code remains in a different translation unit, so a
+        # single-slot patch must not claim a safe cross-file renaming.
+        with self.assertRaisesRegex(
+                renaming.IdentifierRenameError,
+                "unchanged C\+\+ source still refers"):
+            renaming.require_declared_cpp_renames(
+                original, revised,
+                {"initialCode": {"maxima": "frecuencia_maxima_encontrada"}},
+                {"initialCode": {"maxima": 2}})
+
+        # Only literal text mentions the old name: it is not a code reference
+        # and must not be rewritten as part of this lexical operation.
+        original["projectFiles"][0]["initialCode"] = (
+            'const char* letrero = "maxima";\n'
+        )
+        revised = deepcopy(original)
+        revised["initialCode"] = proposal()["initialCode"]
+        self.assertEqual(
+            renaming.require_declared_cpp_renames(
+                original, revised,
+                {"initialCode": {"maxima": "frecuencia_maxima_encontrada"}},
+                {"initialCode": {"maxima": 2}}),
+            {"initialCode": {"maxima": 2}})
+
     def test_real_frequency_lesson_covers_examples_editors_and_predictions(self):
         # Author proposals only in memory, from the real immutable published
         # owners in P1 U5L13. Work alone can edit this curricular JSON.
