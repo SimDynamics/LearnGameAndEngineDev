@@ -7,7 +7,8 @@ param(
     [string] $CompilerHistoryGroup = 'All',
     [ValidateSet('All', 'Remainder', 'AssignmentP3')]
     [string] $EditorialGroup = 'All',
-    [switch] $VirtualAudio
+    [switch] $VirtualAudio,
+    [switch] $MsvcPreflightOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -26,6 +27,9 @@ if ($CompilerHistoryGroup -ne 'All' -and $Suite -ne 'CompilerHistoricalReader') 
 }
 if ($EditorialGroup -ne 'All' -and $Suite -ne 'U11EditorialReader') {
     throw 'An editorial selection requires the U11EditorialReader suite.'
+}
+if ($MsvcPreflightOnly -and $Suite -ne 'WasiRunner') {
+    throw 'The early MSVC preflight is reserved for the hosted WASI suite.'
 }
 
 $qaRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -282,8 +286,18 @@ if (-not $qaVsRoot) {
     throw "The image lacks MSVC $($qaManifest.visualStudio.msvcToolset) with cl.exe $($qaManifest.visualStudio.compilerVersion). No alternate toolset will be selected."
 }
 $qaVcVars = Join-Path $qaVsRoot 'VC\Auxiliary\Build\vcvarsall.bat'
+if (-not (Test-Path -LiteralPath $qaVcVars -PathType Leaf)) {
+    throw 'The verified MSVC toolset has no x64 environment initializer.'
+}
 Write-Host "Image: $env:ImageOS $env:ImageVersion"
 Write-Host "Verified MSVC: $($qaManifest.visualStudio.msvcToolset); cl.exe $($qaManifest.visualStudio.compilerVersion)"
+if ($MsvcPreflightOnly) {
+    # The real WASI suite invokes this exact check again before CMake/CTest.
+    # This early read-only step prevents downloading dependencies on an image
+    # that cannot compile the native Windows runner with the pinned compiler.
+    Write-Host 'Pinned MSVC preflight passed. No WASI tools, native build or CTest execution were performed.'
+    return
+}
 
 $qaSdkRoot = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Windows Kits\10'
 $qaSdkVersion = $qaManifest.visualStudio.windowsSdk
