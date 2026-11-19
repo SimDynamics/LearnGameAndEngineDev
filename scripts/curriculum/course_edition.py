@@ -247,14 +247,26 @@ def _edition_file(repository, relative, role):
     under the same repository tree. A symlink or Windows junction through an
     ancestor is not equivalent to retaining that published resource.
     """
-    relative = PurePosixPath(relative)
+    requested = str(relative)
+    relative = PurePosixPath(requested)
     spelling = relative.as_posix()
     windows = PureWindowsPath(spelling)
-    # Git paths use forward slashes. On Windows, backslashes and drive
-    # prefixes would be interpreted as different paths after this guard.
-    # Reject them before any filesystem access, also for old Git assets.
-    require(not relative.is_absolute() and ".." not in relative.parts
-            and "\\" not in spelling and not windows.drive and not windows.root,
+    # Inspect the unnormalized Git spelling. Collapsing '.' or duplicate
+    # separators could make a different historical pathname look authentic.
+    # Windows also interprets colons as alternate data streams and reserves
+    # device names (even when followed by an extension). Never follow them.
+    def invalid_windows_component(part):
+        stem = part.split(".", 1)[0].rstrip(" ").upper()
+        reserved = {"CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$"}
+        device = (len(stem) == 4 and stem[:3] in {"COM", "LPT"}
+                  and stem[3] in "123456789¹²³")
+        return (part[-1] in ". " or stem in reserved or device
+                or any(ord(char) < 32 or char in '<>:"|?*' for char in part))
+
+    require(bool(relative.parts) and requested == spelling
+            and not relative.is_absolute() and ".." not in relative.parts
+            and "\\" not in requested and not windows.drive and not windows.root
+            and not any(invalid_windows_component(part) for part in relative.parts),
             "Unsafe edition asset path")
     path = repository
     for part in relative.parts:

@@ -228,6 +228,16 @@ class CourseEditionAuthoringTest(unittest.TestCase):
                 "C:private/course_qa_edition.json",
                 "/absolute/course_qa_edition.json",
                 "app/src/../other.json",
+                "app/src//main/assets/content/es/programming/qa_edition/course_qa_edition.json",
+                "app/src/./main/assets/content/es/programming/qa_edition/course_qa_edition.json",
+                f"{CONTENT}/es/programming/{COURSE}/course_{COURSE}.json:stream",
+                f"{CONTENT}/es/programming/{COURSE}/CON.txt",
+                f"{CONTENT}/es/programming/{COURSE}/AuX.json",
+                f"{CONTENT}/es/programming/{COURSE}/COM¹.data",
+                f"{CONTENT}/es/programming/{COURSE}/LPT9.data",
+                f"{CONTENT}/es/programming/{COURSE}/directory./file.json",
+                f"{CONTENT}/es/programming/{COURSE}/directory /file.json",
+                f"{CONTENT}/es/programming/{COURSE}/name?.json",
             )
             for alias in invalid:
                 with self.subTest(alias=alias), self.assertRaisesRegex(
