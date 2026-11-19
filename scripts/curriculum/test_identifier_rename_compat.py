@@ -224,12 +224,52 @@ class DeclaredIdentifierRenames(unittest.TestCase):
                 "valores_mas_frecuentes", merged))
         with self.assertRaisesRegex(
                 renaming.IdentifierRenameError,
-                "reuse a C\\+\\+ destination across slots"):
+                "Distinct C\\+\\+ identifiers reuse a destination across slots"):
             renaming.require_declared_cpp_renames(
                 original, revised,
                 {"initialCode": {"maxima": merged},
                  "projectFiles/0/initialCode": {"mayores": merged}},
                 COUNTS)
+
+    def test_same_original_identifier_can_be_renamed_in_several_sources(self):
+        original = deepcopy(ORIGINAL)
+        original["projectFiles"][0]["initialCode"] = (
+            "int cuenta(int maxima) {\\n"
+            "    return maxima;\\n"
+            "}\\n"
+        )
+        revised = deepcopy(original)
+        revised["initialCode"] = proposal()["initialCode"]
+        revised["projectFiles"][0]["initialCode"] = (
+            original["projectFiles"][0]["initialCode"].replace(
+                "maxima", "frecuencia_maxima_encontrada"))
+        names = {
+            "initialCode": {"maxima": "frecuencia_maxima_encontrada"},
+            "projectFiles/0/initialCode": {"maxima": "frecuencia_maxima_encontrada"},
+        }
+        counts = {
+            "initialCode": {"maxima": 2},
+            "projectFiles/0/initialCode": {"maxima": 2},
+        }
+        self.assertEqual(
+            renaming.require_declared_cpp_renames(original, revised, names, counts),
+            counts)
+        self.assertEqual(original["outputCheck"], revised["outputCheck"])
+        self.assertIn('"Maxima:"', revised["initialCode"])
+
+        # Inconsistent replacements of the same old name across TUs cannot
+        # claim a binding-preserving rename without a verified scope map.
+        inconsistent = deepcopy(revised)
+        inconsistent["projectFiles"][0]["initialCode"] = (
+            inconsistent["projectFiles"][0]["initialCode"].replace(
+                "frecuencia_maxima_encontrada", "otra_frecuencia"))
+        invalid_names = deepcopy(names)
+        invalid_names["projectFiles/0/initialCode"]["maxima"] = "otra_frecuencia"
+        with self.assertRaisesRegex(
+                renaming.IdentifierRenameError,
+                "inconsistent cross-file replacements"):
+            renaming.require_declared_cpp_renames(
+                original, inconsistent, invalid_names, counts)
 
     def test_real_frequency_lesson_covers_examples_editors_and_predictions(self):
         # Author proposals only in memory, from the real immutable published
