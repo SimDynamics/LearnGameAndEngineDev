@@ -1679,6 +1679,16 @@ void inline_feedback_optional_contract_tests() {
 }
 int main(int argc,char** argv) {
     try {
+        if(argc==2&&std::string_view(argv[1])=="--u1-editor-contracts"){
+            // Run the published U1 identity and draft contracts without the
+            // unrelated historical/editorial fixtures used by the full suite.
+            // Codex still has eight until the new Work U1L5 is synchronized.
+            const auto first=lgaed::test::load_pre_retirement_lesson(
+                "lesson_primer_programa_y_salida.json");
+            retirement_contract_tests(first);
+            integrated_retirement_contract_tests();
+            return 0;
+        }
         if(argc==2&&std::string_view(argv[1])=="--compiler-recheck"){
             compiler_recheck_contract();return 0;
         }

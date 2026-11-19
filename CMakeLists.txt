@@ -714,6 +714,13 @@ if(LGAED_READER_BUILD_QA_ONLY)
         native/presentation/windows/lesson_view_tests.cpp)
     target_link_libraries(lgaed_lesson_view_tests PRIVATE lgaed_curricular_windows)
     add_dependencies(lgaed_lesson_view_tests lgaed_retirement_fixtures)
+    # The core U1 tests verify that every active editor has independent
+    # response and draft storage, including Work's new edition additions.
+    add_executable(lgaed_lesson_tests native/core/lesson_tests.cpp)
+    target_link_libraries(lgaed_lesson_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_lesson_tests lgaed_retirement_fixtures)
+    add_test(NAME native.u1_editor_contracts COMMAND lgaed_lesson_tests --u1-editor-contracts)
+    set_tests_properties(native.u1_editor_contracts PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     add_test(NAME native.lesson_scroll_render COMMAND lgaed_lesson_view_tests --scroll-repaint)
     add_test(NAME native.lesson_menu COMMAND lgaed_lesson_view_tests --lesson-menu)
     add_test(NAME native.lesson_optional_order_help
@@ -2129,6 +2136,8 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_lesson_tests lgaed_u12_composed_output_fixtures)
     add_dependencies(lgaed_lesson_tests lgaed_u12_composed_output_current_fixtures)
     add_dependencies(lgaed_lesson_tests lgaed_u12_composed_feedback_fixtures)
+    add_test(NAME native.u1_editor_contracts COMMAND lgaed_lesson_tests --u1-editor-contracts)
+    set_tests_properties(native.u1_editor_contracts PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     add_test(NAME native.u12_composed_feedback_contract COMMAND lgaed_lesson_tests --u12-composed-feedback
         "${LGAED_U12_COMPOSED_FEEDBACK_DIR}/before.json" "${LGAED_U12_COMPOSED_FEEDBACK_DIR}/after.json")
     set_tests_properties(native.u12_composed_feedback_contract PROPERTIES TIMEOUT 60)

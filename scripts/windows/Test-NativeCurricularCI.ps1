@@ -77,6 +77,7 @@ $qaSuiteConfig = switch ($Suite) {
             Targets = @(
                 'lgaed_lesson_reader_tests',
                 'lgaed_lesson_view_tests',
+                'lgaed_lesson_tests',
                 'lgaed_code_gutter_wheel_tests',
                 'lgaed_lesson_scroll_tests',
                 'lgaed_diagnostic_path_tests',
@@ -528,6 +529,7 @@ if ($Suite -eq 'ReaderBuild') {
         'native.premium_windows',
         'native.compiler_puzzles',
         'native.u1_editor_edition',
+        'native.u1_editor_contracts',
         'native.lesson_optional_order_help',
         'native.semantic_retirement_view',
         'native.compiler_case_order_view',
