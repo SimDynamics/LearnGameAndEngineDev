@@ -1,0 +1,60 @@
+name: Codex portable source-format safety (GCC, Clang and MSVC)
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-source-format-portable.yml
+      - native/core/code_format_compat.hpp
+      - native/core/code_format_portable_tests.cpp
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: C++23 header format checks (${{ matrix.compiler }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - name: Checkout the exact Codex source revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Compile native formatter in strict C++23
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          "$CXX" --version
+          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/code_format_portable_tests.cpp \
+            -o "${RUNNER_TEMP}/lgaed_source_format_portable"
+      - name: Verify C++23 context, header unit protection and CMake gaps
+        run: "${RUNNER_TEMP}/lgaed_source_format_portable"
+
+  msvc:
+    name: C++23 header format checks (MSVC)
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Checkout the exact Codex source revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Activate Visual C++ x64 on the test runner
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile the native formatter in strict MSVC
+        shell: cmd
+        run: >-
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive-
+          /Zc:__cplusplus /utf-8 /I native
+          native\core\code_format_portable_tests.cpp
+          /Fe:"%RUNNER_TEMP%\lgaed_source_format_portable.exe"
+      - name: Verify genuine MSVC lexical rules
+        shell: cmd
+        run: '"%RUNNER_TEMP%\lgaed_source_format_portable.exe"'
