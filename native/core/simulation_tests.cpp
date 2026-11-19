@@ -844,6 +844,11 @@ void unicode_invisible_labels_remain_distinct_and_reversible() {
         {std::string("\xC2\x85"), R"("\u0085")"},
         {std::string("\xC2\xA0"), R"("\u00a0")"},
         {std::string("\xC2\xAD"), R"("\u00ad")"},
+        {std::string("\xE1\x85\x9F"), R"("\u115f")"},
+        {std::string("\xE1\x85\xA0"), R"("\u1160")"},
+        {std::string("\xE2\xA0\x80"), R"("\u2800")"},
+        {std::string("\xE3\x85\xA4"), R"("\u3164")"},
+        {std::string("\xEF\xBE\xA0"), R"("\uffa0")"},
         {std::string("\xE2\x80\x8B"), R"("\u200b")"},
         {std::string("\xE2\x80\xA8"), R"("\u2028")"},
         {std::string("\xE2\x80\xA9"), R"("\u2029")"},
@@ -863,6 +868,7 @@ void unicode_invisible_labels_remain_distinct_and_reversible() {
         check(simulation_value_display_text(raw) == label &&
             simulation_value_text(raw) == raw &&
             input == "[" + label + "]" &&
+            simulation_prefer_quoted_text_input({raw}) &&
             simulation_parse_input(spec, input, json) == std::vector<SimulationValue>{raw} &&
             trace.groups.size() == 1 && trace.groups[0].value == SimulationValue{raw} &&
             trace.frames.back().output == raw + ":1\n" &&

@@ -5517,6 +5517,45 @@ void empty_text_values(HWND host,const std::filesystem::path& captures) {
     }
 
     {
+        // Visually blank glyphs are not empty strings and not ASCII spaces.
+        // A real native editor must show their reversible scalar values rather
+        // than presenting five apparently empty rows.
+        auto blank_glyphs=grouped;blank_glyphs.view=SimulationViewMode::walkthrough;
+        const std::array<std::string,5> raw{
+            "\xE1\x85\x9F", "\xE1\x85\xA0", "\xE2\xA0\x80",
+            "\xE3\x85\xA4", "\xEF\xBE\xA0"};
+        blank_glyphs.values.assign(raw.begin(),raw.end());
+        blank_glyphs.scenarios.clear();
+        const auto published=blank_glyphs;
+        SimulationView view(host,blank_glyphs,"es");resize(view,820);
+        const auto input=GetDlgItem(view.window(),input_id);
+        const auto format=GetDlgItem(view.window(),input_format_id);
+        const auto initial=R"(["\u115f", "\u1160", "\u2800", "\u3164", "\uffa0"])";
+        const auto accessible_array=name(GetDlgItem(view.window(),array_id));
+        check(format&&SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+            text(view,input_id)==initial&&
+            accessible_array.find(R"("\u115f")")!=std::string::npos&&
+            accessible_array.find(R"("\u1160")")!=std::string::npos&&
+            accessible_array.find(R"("\u2800")")!=std::string::npos&&
+            accessible_array.find(R"("\u3164")")!=std::string::npos&&
+            accessible_array.find(R"("\uffa0")")!=std::string::npos&&
+            blank_glyphs==published,
+            "Blank-looking Unicode glyphs were hidden rather than shown as scalars");
+        const auto edited=R"(["\u2800", "\u3164"])";
+        set_edit_text(input,edited);click(view,apply_id);
+        check(text(view,error_id).empty()&&text(view,input_id)==edited&&
+            SendMessageW(format,CB_GETCURSEL,0,0)==1,
+            "Applying escaped blank glyphs changed the editor's JSON mode");
+        while(view.step_index()+1<view.step_count())click(view,next_id);
+        check(text(view,output_id)==raw[2]+":1\n"+raw[3]+":1\n",
+            "Applying blank glyphs changed their byte-exact calculated output");
+        click(view,restore_id);
+        check(text(view,error_id).empty()&&text(view,input_id)==initial&&
+            SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+            blank_glyphs==published,
+            "Restoring blank-looking authored values lost their JSON representation");
+    }
+    {
         // No empty string: the last version opened invisible-only authored
         // values in line mode despite having a reversible JSON spelling.
         auto invisible_only=grouped;

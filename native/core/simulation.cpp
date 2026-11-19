@@ -155,6 +155,10 @@ void validate_contract(const SimulationSpec& spec) {
 bool invisible_text_codepoint(std::uint32_t point) {
     return (point >= 0x7f && point <= 0xa0) || point == 0xad ||
         point == 0x34f || point == 0x61c || point == 0x1680 || point == 0x180e ||
+        // These glyphs have blank-looking cells but are real Unicode values.
+        // They must not look identical to an absent array element in RichEdit.
+        point == 0x115f || point == 0x1160 || point == 0x2800 ||
+        point == 0x3164 || point == 0xffa0 ||
         (point >= 0x2000 && point <= 0x200f) ||
         (point >= 0x2028 && point <= 0x202f) ||
         point == 0x205f || (point >= 0x2060 && point <= 0x206f) ||
