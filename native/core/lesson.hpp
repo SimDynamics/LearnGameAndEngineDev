@@ -16,6 +16,7 @@
 #include "core/image_resource.hpp"
 #include "core/simulation.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -422,7 +423,13 @@ struct Lesson {
 void validate_reference_relationships(const Lesson&);
 void validate_activity_relationships(const Lesson&);
 [[nodiscard]] std::optional<StatePosition> stable_block_position(const Lesson&, std::string_view stable_id);
-[[nodiscard]] bool retired_block(const Lesson&, std::string_view stable_id);
+// Pure lookup used by catalog progress and lesson navigation alike. Keep it
+// adjacent to the state-layout definition so small portable catalog binaries
+// do not need to link the unrelated compiler-evaluation lesson component.
+[[nodiscard]] inline bool retired_block(const Lesson& lesson, std::string_view stable_id) {
+    return std::ranges::any_of(lesson.state_layout.retired,
+        [&](const auto& entry) { return entry.id == stable_id; });
+}
 // Resolve an archived reader anchor without rewriting its historical bookmark.
 [[nodiscard]] std::optional<StatePosition> active_block_successor(const Lesson&, std::string_view stable_id);
 [[nodiscard]] std::optional<StatePosition> reference_activity(const Lesson&, const Block& reference);

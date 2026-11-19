@@ -188,10 +188,6 @@ std::optional<StatePosition> stable_block_position(const Lesson& lesson, std::st
             if (lesson.pages[page].blocks[block].stable_id == identity) return StatePosition{page,block};
     return {};
 }
-bool retired_block(const Lesson& lesson, std::string_view identity) {
-    return std::ranges::any_of(lesson.state_layout.retired,
-        [&](const auto& item) { return item.id == identity; });
-}
 std::optional<StatePosition> active_block_successor(const Lesson& lesson, std::string_view identity) {
     if (auto active = stable_block_position(lesson,identity)) return active;
     const StateRetirement* retired = nullptr;
