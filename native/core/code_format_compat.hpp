@@ -231,7 +231,8 @@ inline std::optional<std::vector<unsigned char>> cmake_command_gaps(
 // preprocessing can move the point where its replacement is expanded.
 inline bool cpp_position_sensitive_tokens(const std::vector<std::string>& tokens) {
     constexpr std::string_view names[]{
-        "__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN"
+        "__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN",
+        "__builtin_source_location"
     };
     for(const auto& token:tokens) {
         // An unrecognized # or %: may still introduce a directive after

@@ -225,6 +225,20 @@ class SourceFormatTest(unittest.TestCase):
         self.assertEqual(original["stateLayout"]["origin"],
                          layout.prepare_v2(published_source, "es", family)["stateLayout"]["origin"])
 
+    def test_source_location_builtin_does_not_enter_a_format_archive(self):
+        original_source = fixture()
+        original_source["pages"][0]["blocks"][0]["code"] = (
+            "int main(){return __builtin_source_location() ? 1 : 0;}")
+        family = {"es": deepcopy(original_source)}
+        published = layout.prepare_v2(original_source, "es", family)
+        proposed = deepcopy(published)
+        proposed["pages"][0]["blocks"][0]["code"] = (
+            "int main(){\nreturn __builtin_source_location() ? 1 : 0;\n}")
+        with self.assertRaisesRegex(layout.LayoutError,
+                                    "Source location may depend on physical line numbers"):
+            layout.prepare_v2(proposed, "es", family, published)
+        self.assertNotIn("sourceFormatRevisions", published["stateLayout"])
+
     def test_cpp_preprocessor_digraph_and_comment_preamble_safety(self):
         # %: is the standard alternative token for # in preprocessing directives.
         allowed = [
@@ -257,6 +271,8 @@ class SourceFormatTest(unittest.TestCase):
             'const char* name = "__builtin_COLUMN";\nint main() {}',
             'auto literal = R"tag(__builtin_LINE and source_location)tag";',
             '/* __LINE__ does not expand here */ int main() {}',
+            '// __builtin_source_location() is documentation\nint main() {}',
+            'const char* diagnostic = "__builtin_source_location()";\nint main() {}',
         ]
         for before in allowed:
             with self.subTest(allowed=before):
@@ -268,7 +284,9 @@ class SourceFormatTest(unittest.TestCase):
             'int current = __builtin_LINE();',
             'int current = __builtin_COLUMN();',
             'auto current = std::source_location::current();',
+            'auto current = __builtin_source_location();',
             '#define CURRENT __LINE__\nint main() {}',
+            '#define CAPTURE_LOCATION __builtin_source_location()\nint main() {}',
         ]
         for before in blocked:
             with self.subTest(blocked=before), self.assertRaises(fmt.SourceFormatError):

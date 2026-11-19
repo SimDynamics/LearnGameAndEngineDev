@@ -145,6 +145,22 @@ void lexical_safety(){
             "auto line=\nstd::source_location::current().line();",Language::cpp),
         "std::source_location was affected by an introduced physical line");
     check(!code_format::equivalent(
+            "auto location=__builtin_source_location();",
+            "auto location=\n__builtin_source_location();",Language::cpp),
+        "Compiler source-location builtin was treated as independent of physical lines");
+    check(!code_format::equivalent(
+            "#define LOCATION __builtin_source_location()\nint main(){}",
+            "#define LOCATION __builtin_source_location()\n\nint main() {}",Language::cpp),
+        "A macro containing the source-location builtin accepted new line layout");
+    check(code_format::equivalent(
+            "const char* note=\"__builtin_source_location\";\nint main(){}",
+            "const char* note=\"__builtin_source_location\";\n\nint main(){}",Language::cpp),
+        "A literal mention of the builtin blocked harmless spacing");
+    check(code_format::equivalent(
+            "// __builtin_source_location is documentation\nint main(){}",
+            "// __builtin_source_location is documentation\n\nint main(){}",Language::cpp),
+        "A comment mention of the builtin blocked harmless spacing");
+    check(!code_format::equivalent(
             "int main(){return __builtin_LINE();}",
             "int main(){\nreturn __builtin_LINE();}",Language::cpp),
         "Source __builtin_LINE() changed value after a token-equivalent newline");

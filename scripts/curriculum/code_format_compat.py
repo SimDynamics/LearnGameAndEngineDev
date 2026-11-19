@@ -238,7 +238,8 @@ def _cmake_command_gaps(src: str, tokens: tuple[str, ...]) -> tuple[int, ...]:
 
 def _cpp_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
     """Only executable identifiers and directives can observe source position."""
-    markers = {"__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN"}
+    markers = {"__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN",
+               "__builtin_source_location"}
     for token in tokens:
         # A # or %: following leading block comments can still introduce
         # preprocessing. Refuse unclassified markers in format-only edits.
