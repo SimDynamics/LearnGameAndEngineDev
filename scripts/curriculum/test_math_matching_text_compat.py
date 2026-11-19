@@ -112,13 +112,52 @@ class RealFrequencyMatchingEditorial(unittest.TestCase):
                          len(self.lesson["stateLayout"]["editorial"]) + 1)
         self.assertEqual(PATH.read_bytes(),self.original_bytes)
 
-    def test_current_loaders_still_reject_unpublished_matching_journal(self):
+    def test_python_state_layout_authenticates_matching_text_and_restores_prior_reading(self):
         targets, spans = self.revisions()
         draft, proof = matching.preview_math_matching_text_review(
             self.lesson, OWNER, targets, spans)
-        with self.assertRaises(state.LayoutError):
-            state.validate(draft)
         self.assertTrue(matching.verify_matching_preview(self.lesson,draft,proof))
+        state.validate(draft)
+        state.validate_transition(self.lesson, draft)
+        aligned = state.align_for_previous_validation(self.lesson, draft)
+        self.assertEqual(state._blocks(aligned), state._blocks(self.lesson))
+        self.assertEqual(aligned.get("textSemantics"),
+                         self.lesson.get("textSemantics"))
+        self.assertEqual(state.original_projection(draft),
+                         state.original_projection(self.lesson))
+        no_proof = deepcopy(draft)
+        del no_proof["stateLayout"]["mathMatchingTextRevisions"]
+        with self.assertRaises(state.LayoutError):
+            state.validate(no_proof)
+
+    def test_python_loader_rejects_forged_math_matching_journal(self):
+        targets, spans = self.revisions()
+        draft, proof = matching.preview_math_matching_text_review(
+            self.lesson, OWNER, targets, spans)
+        state.validate(draft)
+        for name, mutate in (
+            ("wrong source",lambda d: d["pages"][7]["blocks"][7][
+                "responses"][0]["sources"][2].update({"id":"forged"})),
+            ("wrong expected",lambda d: d["pages"][7]["blocks"][7][
+                "responses"][0]["validator"]["expected"].update({
+                    "supera_maximo":"conservar_empate"})),
+            ("forged prior hash",lambda d: d["stateLayout"][
+                "mathMatchingTextRevisions"][0].update({"beforeSha256":"0"*64})),
+            ("forged semantic",lambda d: d["stateLayout"][
+                "mathMatchingTextRevisions"][0]["semanticBefore"].update({
+                    PROMPT: None})),
+            ("other owner",lambda d: d["stateLayout"][
+                "mathMatchingTextRevisions"][0].update({"id":"block_0007_0004"})),
+            ("changed marker",lambda d: d["textSemantics"]["fields"][0].update({
+                "spans":[]})),
+            ("missing editorial",lambda d: d["stateLayout"]["editorial"].pop()),
+        ):
+            with self.subTest(name=name):
+                corrupt = deepcopy(draft)
+                mutate(corrupt)
+                with self.assertRaises(state.LayoutError):
+                    state.validate(corrupt)
+        self.assertEqual(PATH.read_bytes(),self.original_bytes)
 
     def test_matching_source_label_must_match_its_text(self):
         targets, _ = self.revisions()
