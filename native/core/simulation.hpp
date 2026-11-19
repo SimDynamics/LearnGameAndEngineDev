@@ -104,6 +104,11 @@ void validate_simulation_spec(const SimulationSpec& spec);
 [[nodiscard]] std::string simulation_value_text(const SimulationValue& value);
 // Text is quoted/escaped; empty and ASCII-space-only values have visible labels.
 [[nodiscard]] std::string simulation_value_display_text(const SimulationValue& value);
+// Prefer the explicit JSON list when a text item is empty or its exact bytes
+// need escaping to be visible unambiguously. This chooses only the initial
+// Windows editor presentation; the legacy lines parser remains available.
+[[nodiscard]] bool simulation_prefer_quoted_text_input(
+    const std::vector<SimulationValue>& values);
 // Derived explanations for a counted element. Computed only from a validated
 // start/advance frame, its already-observed predecessor and original indices.
 // Decision/initial/final frames yield no count statements. This is shared by

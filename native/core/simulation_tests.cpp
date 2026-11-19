@@ -733,6 +733,38 @@ void empty_text_values_and_labels() {
 }
 
 
+
+void explicit_text_input_presentation_is_lossless() {
+    // These are presentation defaults, not a change to accepted input. Data
+    // requiring visible escapes must be initially offered in the JSON list,
+    // even if the collection has no empty-string element.
+    check(!simulation_prefer_quoted_text_input({}) &&
+        !simulation_prefer_quoted_text_input(integers({1, 2})) &&
+        !simulation_prefer_quoted_text_input(words({"patio", "sol"})) &&
+        !simulation_prefer_quoted_text_input(words({" ", "  ", "á", "😀"})),
+        "Ordinary text or integer data unexpectedly switched to JSON input");
+    check(simulation_prefer_quoted_text_input(words({""})) &&
+        simulation_prefer_quoted_text_input(words({"patio", ""})) &&
+        simulation_prefer_quoted_text_input(words({"\t"})) &&
+        simulation_prefer_quoted_text_input(words({"\""})) &&
+        simulation_prefer_quoted_text_input(words({"\\"})) &&
+        simulation_prefer_quoted_text_input(words({"\xC2\xA0"})) &&
+        simulation_prefer_quoted_text_input(words({"\xE2\x80\x8B"})) &&
+        simulation_prefer_quoted_text_input(words({"\xE2\x80\xA8"})),
+        "A hidden, escaped or empty text item would open in ambiguous line input");
+    const auto original=words({"\xE2\x80\x8B","\xE2\x80\xA8"});
+    const auto serialized=simulation_input_text(original,SimulationInputFormat::json);
+    auto spec=example();
+    spec.text_values=true;
+    spec.scenarios.clear();
+    spec.values=original;
+    check(simulation_prefer_quoted_text_input(original) &&
+        serialized==R"(["\u200b", "\u2028"])" &&
+        simulation_parse_input(spec,serialized,SimulationInputFormat::json)==original &&
+        spec.values==original,
+        "The preferred JSON editor format changed invisible source values");
+}
+
 void unicode_invisible_labels_remain_distinct_and_reversible() {
     auto spec = example();
     spec.text_values = true;
@@ -1256,6 +1288,7 @@ int main() {
         replay_inputs_and_accessibility();
         empty_text_values_and_labels();
         unicode_invisible_labels_remain_distinct_and_reversible();
+        explicit_text_input_presentation_is_lossless();
         explicit_text_list_input();
         contract_rejections();
         expansion_bounds_and_modes();

@@ -5487,6 +5487,48 @@ void empty_text_values(HWND host,const std::filesystem::path& captures) {
             invisible==source,
             "Invisible Unicode became an ambiguous native label or a literal editor line break");
     }
+
+    {
+        // No empty string: the last version opened invisible-only authored
+        // values in line mode despite having a reversible JSON spelling.
+        auto invisible_only=grouped;
+        invisible_only.values={std::string("\xE2\x80\x8B"),
+            std::string("\xE2\x80\xA8")};
+        invisible_only.scenarios.clear();
+        const auto authored_invisible=invisible_only;
+        SimulationView view(host,invisible_only,"es");resize(view,820);
+        const auto format=GetDlgItem(view.window(),input_format_id);
+        check(format&&SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+            text(view,input_id)==R"(["\u200b", "\u2028"])"&&
+            name(GetDlgItem(view.window(),array_id)).find(R"("\u200b")")!=std::string::npos&&
+            name(GetDlgItem(view.window(),array_id)).find(R"("\u2028")")!=std::string::npos&&
+            invisible_only==authored_invisible,
+            "Invisible-only text opened as ambiguous lines instead of reversible JSON");
+    }
+    {
+        // Scenario changes start a fresh input session. Their own contents
+        // decide the safe starting format, without reparsing the old draft.
+        auto choices=grouped;
+        choices.values={std::string("patio")};
+        choices.scenarios={{"unicode","Invisibles",{std::string("\xE2\x80\x8B")}}};
+        const auto original_choices=choices;
+        SimulationView view(host,choices,"es");resize(view,820);
+        const auto format=GetDlgItem(view.window(),input_format_id);
+        check(format&&SendMessageW(format,CB_GETCURSEL,0,0)==0&&
+            text(view,input_id)=="patio",
+            "Ordinary authored text unexpectedly started in JSON mode");
+        select(view,scenario_id,1);
+        check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+            text(view,input_id)==R"(["\u200b"])"&&
+            text(view,output_id)==std::string("\xE2\x80\x8B")+":1\n"&&
+            name(GetDlgItem(view.window(),array_id)).find(R"("\u200b")")!=std::string::npos&&
+            choices==original_choices,
+            "Choosing a Unicode scenario failed to change the input format without changing data");
+        click(view,restore_id);
+        check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+            text(view,input_id)==R"(["\u200b"])"&&choices==original_choices,
+            "Restoring the Unicode scenario lost its editable JSON representation");
+    }
     check(grouped==authored,"Exploration mutated the authored text values or scenarios");
 }
 

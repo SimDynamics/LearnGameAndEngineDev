@@ -577,6 +577,17 @@ std::string simulation_value_display_text(const SimulationValue& value) {
     return result;
 }
 
+bool simulation_prefer_quoted_text_input(
+        const std::vector<SimulationValue>& values) {
+    for (const auto& value : values) {
+        const auto* text = std::get_if<std::string>(&value);
+        if (!text) continue;
+        if (text->empty() || quoted_text(*text) != ("\"" + *text + "\""))
+            return true;
+    }
+    return false;
+}
+
 std::vector<std::string> simulation_count_observation_changes(
         const SimulationTrace& trace, const SimulationFrame& frame) {
     if (frame.phase != SimulationPhase::start &&

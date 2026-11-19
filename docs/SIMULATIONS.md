@@ -251,9 +251,15 @@ Si incluso la restauración nativa falla, el motor no afirma que el borrador
 haya quedado intacto: muestra un aviso accesible para que se revise el texto
 visible y se vuelva a introducir lo necesario antes de aplicarlo.
 
-**Aplicar datos** inicia el recorrido con la entrada revisada. Al abrir una simulación, seleccionar un escenario o
-restablecer sus datos, la presencia de una cadena vacía elige **Lista entre
-comillas** para que el dato pueda editarse sin ambigüedad.
+**Aplicar datos** inicia el recorrido con la entrada revisada. Al abrir una
+simulación, seleccionar un escenario o restablecer sus datos, el editor elige
+**Lista entre comillas** cuando existe una cadena vacía o algún texto necesita
+escapes para mostrarse inequívocamente (por ejemplo U+200B, U+2028, tabuladores,
+comillas o barras inversas). Los textos ordinarios siguen comenzando en
+**Un texto por línea**. Esta selección sólo determina la presentación del
+borrador nuevo: la entrada, la salida, los datos originales y sus frecuencias
+no cambian. El estudiante puede escoger manualmente el otro formato; una
+conversión sigue validando íntegramente el contenido antes de aceptarla.
 
 La vista Windows conserva una **sesión de modelo validado** independiente de
 las sesiones de lectura. Al abrir el bloque valida una vez su contrato

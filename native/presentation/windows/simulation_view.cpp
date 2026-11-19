@@ -671,8 +671,7 @@ struct SimulationView::Impl {
             throw std::runtime_error("RichEdit rechazó la escala inicial de los datos.");
         SendMessageW(editor,EM_EXLIMITTEXT,0,65536);
         button(apply_id,"Aplicar datos");button(restore_id,"Restablecer datos");
-        if(spec.text_values&&std::ranges::any_of(trace.original,[](const auto& value){
-            const auto* text=std::get_if<std::string>(&value);return text&&text->empty();}))
+        if(spec.text_values&&simulation_prefer_quoted_text_input(trace.original))
             input_format=SimulationInputFormat::json;
         set_edit_text(editor,simulation_input_text(trace.original,input_format));
         rebuild_groups();rebuild_steps();update();initializing=false;
@@ -1372,8 +1371,7 @@ struct SimulationView::Impl {
         auto next_format=input_format;
         std::optional<std::string> replacement;
         if(replace_editor){
-            if(spec.text_values&&std::ranges::any_of(candidate.original,[](const auto& value){
-                const auto* text=std::get_if<std::string>(&value);return text&&text->empty();}))
+            if(spec.text_values&&simulation_prefer_quoted_text_input(candidate.original))
                 next_format=SimulationInputFormat::json;
             replacement=simulation_input_text(candidate.original,next_format);
         }
