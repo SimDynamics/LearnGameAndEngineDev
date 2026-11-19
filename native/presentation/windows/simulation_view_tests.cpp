@@ -5558,6 +5558,41 @@ void empty_text_values(HWND host,const std::filesystem::path& captures) {
         check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&
             text(view,input_id)==R"(["\u200b"])"&&choices==original_choices,
             "Restoring the Unicode scenario lost its editable JSON representation");
+        // Every new authored-data session chooses its OWN default. The
+        // invisible scenario must not force JSON on a subsequent ordinary one.
+        select(view,scenario_id,0);
+        check(SendMessageW(format,CB_GETCURSEL,0,0)==0&&
+            text(view,input_id)=="patio"&&
+            text(view,output_id)=="patio:1\n"&&
+            text(view,error_id).empty()&&choices==original_choices,
+            "Returning from an invisible scenario retained its unnecessary JSON mode");
+        // A deliberate format change affects the pending draft only.
+        select(view,input_format_id,1);
+        check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+            text(view,input_id)==R"(["patio"])"&&
+            text(view,output_id)=="patio:1\n",
+            "Manually selecting JSON unexpectedly changed the current model");
+        set_edit_text(GetDlgItem(view.window(),input_id),R"(["jardin"])");
+        click(view,apply_id);
+        check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+            text(view,input_id)==R"(["jardin"])"&&
+            text(view,output_id)=="jardin:1\n"&&
+            choices==original_choices,
+            "Applying an edit discarded the student's chosen JSON format");
+        click(view,restore_id);
+        check(SendMessageW(format,CB_GETCURSEL,0,0)==0&&
+            text(view,input_id)=="patio"&&
+            text(view,output_id)=="patio:1\n"&&
+            choices==original_choices,
+            "Restoring ordinary authored text retained the edited session's JSON mode");
+        // A later scenario switch can still select JSON again for data that
+        // genuinely need a visible escape. Neither navigation nor applying
+        // user data permanently changes the authored scenarios.
+        select(view,scenario_id,1);
+        check(SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+            text(view,input_id)==R"(["\u200b"])"&&
+            choices==original_choices,
+            "Returning to Unicode after an ordinary edit failed to choose JSON");
     }
     check(grouped==authored,"Exploration mutated the authored text values or scenarios");
 }

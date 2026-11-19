@@ -1368,11 +1368,16 @@ struct SimulationView::Impl {
         // parsed editor input already had its expansion checked by the core.
         auto next_source_positions=stable_source_positions(candidate);
         auto identity=data_identity(candidate.original);
+        // Applying a pending edit keeps the student's chosen format. A
+        // scenario change or Restore starts a new authored-data session:
+        // choose its reversible default from the NEW values, never retain
+        // JSON merely because the previous scenario required it.
         auto next_format=input_format;
         std::optional<std::string> replacement;
         if(replace_editor){
-            if(spec.text_values&&simulation_prefer_quoted_text_input(candidate.original))
-                next_format=SimulationInputFormat::json;
+            next_format=spec.text_values&&
+                simulation_prefer_quoted_text_input(candidate.original)?
+                    SimulationInputFormat::json:SimulationInputFormat::lines;
             replacement=simulation_input_text(candidate.original,next_format);
         }
         // An accepted model must not escape as "not applied" if a late
