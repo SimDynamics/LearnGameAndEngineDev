@@ -157,6 +157,22 @@ void observable_identifier_spelling() {
     require(declared_tokens_only(before,after,plan),
         "An inert comment or literal was mistaken for an observer");
 }
+void portable_identifier_spellings() {
+    using lgaed::curriculum::identifier_rename::identifier;
+    for(const std::string_view name:{
+            "maxima","frecuencia_maxima_encontrada","Nombre9","a_b_c"})
+        require(identifier(name),"A valid ASCII identifier was rejected");
+    for(const std::string_view name:{
+            "new","import","final","override","__internal","1nombre",
+            "_local","nombre-con-guion","frecuencia_máxima","niño","maximañ"})
+        require(!identifier(name),
+            "A reserved, non-ASCII or invalid source spelling bypassed native validation");
+    // The whole source plan must enforce this invariant, not only its helper.
+    auto before=old_sources(),after=valid_sources(),plan=valid_plan();
+    plan[0].names[0].replacement="frecuencia_máxima";
+    require(!declared_tokens_only(before,after,plan),
+        "Native rename plan accepted a locale-dependent Unicode destination");
+}
 void name_conflicts() {
     auto before=old_sources(),after=valid_sources(),plan=valid_plan();
     plan[1].names[0].replacement="otro_destino";
@@ -182,6 +198,7 @@ int main() try {
     preprocessor_and_other_sources();
     cmake_external_macro_contract();
     observable_identifier_spelling();
+    portable_identifier_spellings();
     name_conflicts();
     std::cout << "PASS native C++ lexical identifier-rename proof, cross-file owner "
               << "consistency, macros, existing names and immutable tokens\n";
