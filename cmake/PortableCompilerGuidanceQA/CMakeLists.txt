@@ -87,6 +87,9 @@ add_test(NAME native.compiler_review_guidance_priority
     COMMAND lgaed_compiler_guidance_portable_qa --review-priority)
 add_test(NAME native.u12l24_authored_compiler_guides
     COMMAND lgaed_compiler_guidance_portable_qa --authored-l24-guides)
+add_test(NAME native.u9l13_general_choice_editorial
+    COMMAND lgaed_compiler_guidance_portable_qa --general-choice-live)
 set_tests_properties(native.compiler_guidance_state
     native.compiler_review_guidance_priority
-    native.u12l24_authored_compiler_guides PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    native.u12l24_authored_compiler_guides
+    native.u9l13_general_choice_editorial PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
