@@ -288,6 +288,48 @@ void malformed_or_cross_course_scope_is_atomic() {
 }
 
 
+void malformed_progress_scopes_never_count_an_edition_twice() {
+    using namespace lgaed::curriculum;
+    const auto first=std::string{"cpp_fundamentals__edition_es_1__inicio__primera"};
+    const auto second=std::string{"cpp_fundamentals__edition_es_1__inicio__segunda"};
+    const auto unit=std::string{"cpp_fundamentals__edition_es_1__inicio"};
+    const CatalogScope good{{"cpp_fundamentals"},{unit},{first,second}};
+    Fixture fixture;
+    fixture.state.preferences["learning_progress"]["lesson_"+first+"_completed"]=true;
+    const auto original=lgaed::state::encode(fixture.state);
+    check(catalog_progress(fixture.state,good).completed==1 &&
+          catalog_progress(fixture.state,good).total==2,
+          "A correct new-edition index lost or duplicated its legitimate credit");
+    for(int variant=0;variant<6;++variant) {
+        auto bad=good;
+        switch(variant) {
+        case 0: bad.lessons.push_back(first); break;
+        case 1: bad.units.push_back(unit); break;
+        case 2: bad.courses.push_back("cpp_fundamentals"); break;
+        case 3: bad.lessons.push_back("other_course__unidad__ajena"); break;
+        case 4: bad.units.push_back("other_course__unidad"); break;
+        case 5: bad.lessons.push_back("cpp_fundamentals__edition_es_2__inicio__ajena"); break;
+        }
+        bool rejected=false;
+        try {(void)catalog_progress(fixture.state,bad);}
+        catch(const std::invalid_argument&) {rejected=true;}
+        check(rejected,"Malformed catalog identities fabricated lesson completion");
+        check(lgaed::state::encode(fixture.state)==original,
+              "Rejected progress validation changed a learner's serialized data");
+    }
+    // A unit's weighted progress also uses the guarded counter. Supplying
+    // plausible percentages must not bypass the invalid owner list.
+    auto duplicated=good;
+    duplicated.lessons.push_back(first);
+    bool rejected=false;
+    try {
+        (void)catalog_unit_learning_progress(fixture.state,duplicated,
+            std::vector<CatalogProgress>{{1,1},{0,1},{1,1}});
+    }catch(const std::invalid_argument&) {rejected=true;}
+    check(rejected&&lgaed::state::encode(fixture.state)==original,
+          "An aggregate unit progress bar accepted duplicate lesson owners");
+}
+
 void new_edition_page_progress_uses_only_its_own_reading_and_answers() {
     using namespace lgaed::curriculum;
     Fixture fixture;
@@ -453,6 +495,7 @@ int main() {
         retired_catalog_location_recovers_nearest_published_parent();
         catalog_unit_selection_is_scoped_to_published_edition();
         catalog_entry_identity_survives_reordering_and_retirement();
+        malformed_progress_scopes_never_count_an_edition_twice();
         new_edition_page_progress_uses_only_its_own_reading_and_answers();
         new_edition_progress_and_reset_preserve_retired_course();
         malformed_or_cross_course_scope_is_atomic();

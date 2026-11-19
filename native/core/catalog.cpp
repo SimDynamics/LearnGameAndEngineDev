@@ -202,6 +202,10 @@ bool catalog_lesson_started(const state::StateData& data, std::string_view id) {
     return (started && *started) || state::saved_page(data,id) != 0;
 }
 CatalogProgress catalog_progress(const state::StateData& data,const CatalogScope& scope) {
+    // Use the same authenticated parent/child and uniqueness contract as a
+    // scoped reset. Without it, a duplicate new-edition lesson can be counted
+    // twice as completed, even though there is only one saved response owner.
+    validate_reset_scope(scope);
     CatalogProgress result{0,scope.lessons.size()};
     for (const auto& id : scope.lessons) if (catalog_lesson_completed(data,id)) ++result.completed;
     return result;
