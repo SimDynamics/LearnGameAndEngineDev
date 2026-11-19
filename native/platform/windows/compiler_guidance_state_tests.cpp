@@ -589,8 +589,27 @@ int general_choice_live_windows(const std::filesystem::path& content,
     data=reopen(store);
     const auto response=state::get_response(data,actual,revised);
     require(response&&response->correct&&response->selected==0&&
-        !response->historical_choice&&data==preserved,
+        !response->historical_choice&&data==preserved&&
+        curriculum::evaluate_choice(revised,0).correct,
         "Reopening failed to preserve the original correct choice, foreign state or storage");
+
+    // An old incorrect selection is just as important as an old achievement:
+    // neither the wording correction nor a binary reopen may re-grade it.
+    state::StateData incorrect_data;
+    state::Response incorrect;
+    incorrect.selected=2;incorrect.correct=false;
+    state::put_response(incorrect_data,original,old,incorrect);
+    const auto incorrect_before=incorrect_data;
+    state::StateStore incorrect_store(qa/"general-choice-incorrect");
+    require(incorrect_store.load().preferences.empty(),
+        "The isolated incorrect-choice QA profile already contains student data");
+    incorrect_store.save(incorrect_data);
+    incorrect_data=reopen(incorrect_store);
+    const auto preserved_incorrect=state::get_response(incorrect_data,actual,revised);
+    require(preserved_incorrect&&preserved_incorrect->selected==2&&
+        !preserved_incorrect->correct&&!preserved_incorrect->historical_choice&&
+        incorrect_data==incorrect_before&&!curriculum::evaluate_choice(revised,2).correct,
+        "Reopening credited a previously incorrect response or changed its storage");
     require(load_lesson(path).raw_json==original.raw_json,
         "The editable QA copy changed the published curricular file");
 
