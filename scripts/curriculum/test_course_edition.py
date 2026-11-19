@@ -248,7 +248,7 @@ class CourseEditionAuthoringTest(unittest.TestCase):
             alias = root / f"{CONTENT}/es/programming/{COURSE.upper()}"
             alias.mkdir(parents=True)
             self.assertFalse(any(alias.iterdir()))
-            with mock.patch.object(edition, "_paths_at", return_value=set(before)), \\
+            with mock.patch.object(edition, "_paths_at", return_value=set(before)), \
                     mock.patch.object(edition, "_git_bytes",
                                       side_effect=lambda _, __, path: before[path]):
                 with self.assertRaisesRegex(edition.CourseEditionError,
