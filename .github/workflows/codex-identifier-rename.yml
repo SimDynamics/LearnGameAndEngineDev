@@ -1,0 +1,30 @@
+name: Codex declared C++ identifier rename contract
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-identifier-rename.yml
+      - scripts/curriculum/identifier_rename_compat.py
+      - scripts/curriculum/test_identifier_rename_compat.py
+      - scripts/curriculum/code_format_compat.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lexical-rename-proof:
+    name: Declared source identifiers, immutable answers and hostile changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Read exact Codex checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Execute independent C++ identifier rename guard
+        run: >-
+          python3 -B -m unittest discover
+          -s scripts/curriculum
+          -p test_identifier_rename_compat.py -v
