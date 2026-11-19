@@ -288,6 +288,83 @@ void malformed_or_cross_course_scope_is_atomic() {
 }
 
 
+void new_edition_page_progress_uses_only_its_own_reading_and_answers() {
+    using namespace lgaed::curriculum;
+    Fixture fixture;
+    const auto old_state=fixture.state;
+    const std::string unit="cpp_fundamentals__edition_es_1__inicio";
+    const std::string lesson_id=unit+"__primera";
+    Lesson lesson;
+    lesson.id=lesson_id;
+    lesson.locale="es";
+    lesson.state_layout.version=2;
+    lesson.state_layout.locale="es";
+    const auto add_page=[&](std::size_t index,BlockType type) {
+        Page page;
+        page.stable_id="page_000"+std::to_string(index);
+        Block block;
+        block.type=type;
+        block.stable_id="block_000"+std::to_string(index)+"_0000";
+        page.blocks.push_back(std::move(block));
+        lesson.state_layout.origin.push_back({page.stable_id,{page.blocks.front().stable_id}});
+        lesson.state_layout.current.push_back({page.stable_id,{page.blocks.front().stable_id}});
+        lesson.pages.push_back(std::move(page));
+    };
+    add_page(0,BlockType::paragraph);
+    add_page(1,BlockType::multiple_choice);
+    add_page(2,BlockType::paragraph);
+    const auto new_base="lesson_"+lesson_id;
+    const auto answer_key="exercise_"+lesson_id+"_page_1_block_0";
+    const auto read_key=new_base+"_read_blocks_v2_es";
+    const CatalogScope scope{{"cpp_fundamentals"},{unit},{lesson_id}};
+    const auto progress_for=[&](const StateData& data) {
+        return catalog_lesson_page_progress(data,lesson,[&](const Block& block) {
+            if(block.type!=BlockType::multiple_choice)return false;
+            const auto evidence=lgaed::state::find(data,"learning_progress",answer_key);
+            return evidence && std::get_if<bool>(evidence) && std::get<bool>(*evidence);
+        });
+    };
+
+    // The previous course is complete, including an answered activity and
+    // historical reading. The new three-page lesson has no new evidence.
+    check(progress_for(fixture.state).completed==0&&progress_for(fixture.state).total==3,
+        "A new edition inherited historical page reading or a graded response");
+    auto& learning=fixture.state.preferences["learning_progress"];
+    learning[new_base+"_started"]=true;
+    learning[read_key]=std::vector<std::string>{
+        "block_0000_0000","block_0002_0000"};
+    lgaed::state::set_saved_page(fixture.state,lesson_id,2);
+    check(progress_for(fixture.state).completed==2&&
+        progress_for(fixture.state).percentage()==66,
+        "New theory pages did not require their own reading receipts");
+    learning[answer_key]=true;
+    learning[new_base+"_completed"]=true;
+    check(progress_for(fixture.state).completed==3&&
+        progress_for(fixture.state).percentage()==100,
+        "The new graded page did not require the new edition's response");
+    const auto encoded=lgaed::state::encode(fixture.state);
+    auto recovered=lgaed::state::decode(encoded);
+    check(recovered==fixture.state&&lgaed::state::encode(recovered)==encoded&&
+        progress_for(recovered).completed==3,
+        "Importing a profile changed its new edition's page evidence");
+    check(reset_catalog_progress(recovered,scope)==5,
+        "Scoped reset did not clear the new reading, page, answer and completion receipts");
+    check(progress_for(recovered).completed==0&&
+        !catalog_lesson_started(recovered,lesson_id)&&
+        lgaed::state::saved_page(recovered,lesson_id)==0&&
+        !recovered.preferences.at("learning_progress").contains(answer_key)&&
+        !recovered.preferences.at("learning_progress").contains(new_base+"_completed")&&
+        std::get<std::vector<std::string>>(recovered.preferences.at("learning_progress").at(read_key)).empty(),
+        "A reset new edition retained old reading or awarded a phantom page");
+    for(const auto& [key,value]:old_state.preferences.at("learning_progress")) {
+        check(recovered.preferences.at("learning_progress").at(key)==value,
+            "A new edition page reset rewrote the previous course's progress");
+    }
+    check(recovered.preferences.at("cpp_lesson_drafts")==old_state.preferences.at("cpp_lesson_drafts")&&
+        recovered.preferences.at("narration_settings")==old_state.preferences.at("narration_settings"),
+        "Edition page reset rewrote the learner's drafts or general preferences");
+}
+
 void new_edition_progress_and_reset_preserve_retired_course() {
     using namespace lgaed::curriculum;
     Fixture fixture;
@@ -376,6 +453,7 @@ int main() {
         retired_catalog_location_recovers_nearest_published_parent();
         catalog_unit_selection_is_scoped_to_published_edition();
         catalog_entry_identity_survives_reordering_and_retirement();
+        new_edition_page_progress_uses_only_its_own_reading_and_answers();
         new_edition_progress_and_reset_preserve_retired_course();
         malformed_or_cross_course_scope_is_atomic();
         accepted_reset_keeps_foreign_state_and_is_idempotent();
