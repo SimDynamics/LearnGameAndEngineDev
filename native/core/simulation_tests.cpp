@@ -844,6 +844,15 @@ void unicode_invisible_labels_remain_distinct_and_reversible() {
         {std::string("\xC2\x85"), R"("\u0085")"},
         {std::string("\xC2\xA0"), R"("\u00a0")"},
         {std::string("\xC2\xAD"), R"("\u00ad")"},
+        {std::string("\xE1\x9E\xB4"), R"("\u17b4")"},
+        {std::string("\xE1\x9E\xB5"), R"("\u17b5")"},
+        {std::string("\xE1\xA0\x8B"), R"("\u180b")"},
+        {std::string("\xE1\xA0\x8E"), R"("\u180e")"},
+        {std::string("\xE1\xA0\x8F"), R"("\u180f")"},
+        {std::string("\xF0\x9B\xB2\xA0"), R"("\ud82f\udca0")"},
+        {std::string("\xF0\x9B\xB2\xA3"), R"("\ud82f\udca3")"},
+        {std::string("\xF0\x9D\x85\xB3"), R"("\ud834\udd73")"},
+        {std::string("\xF0\x9D\x85\xBA"), R"("\ud834\udd7a")"},
         {std::string("\xE1\x85\x9F"), R"("\u115f")"},
         {std::string("\xE1\x85\xA0"), R"("\u1160")"},
         {std::string("\xE2\xA0\x80"), R"("\u2800")"},
@@ -888,6 +897,13 @@ void unicode_invisible_labels_remain_distinct_and_reversible() {
         simulation_parse_input(spec, R"(["A\ufe0f\udb40\udd00"])", json) ==
             std::vector<SimulationValue>{joined},
         "A visible character plus Unicode selectors was not reversible");
+    const std::string khmer = std::string("A") + "\xE1\x9E\xB4" + "B";
+    check(simulation_value_display_text(khmer) == R"("A\u17b4B")" &&
+        simulation_value_text(khmer) == khmer &&
+        simulation_input_text({khmer}, json) == R"(["A\u17b4B"])" &&
+        simulation_parse_input(spec, R"(["A\u17b4B"])", json) ==
+            std::vector<SimulationValue>{khmer},
+        "An invisible character embedded in visible text was not reversible");
     const std::string nbspace = "\xC2\xA0";
     const std::string zero_width = "\xE2\x80\x8B";
     const std::string paragraph = "\xE2\x80\xA9";

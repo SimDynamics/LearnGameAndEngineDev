@@ -149,6 +149,14 @@ escapes JSON visibles, por ejemplo `\u115f` y `\u2800`. Son valores
 distintos de la cadena vacía y de un espacio ASCII. El validador Python
 cuenta la representación escapada de esos cinco caracteres al comprobar
 el límite de 8 MiB de las explicaciones, igual que el motor C++.
+Los caracteres de formato que no ocupan una celda reconocible también se
+representan con escapes: vocales inherentes del jemer U+17B4–U+17B5,
+selectores y separador mongoles U+180B–U+180F, controles de taquigrafía
+U+1BCA0–U+1BCA3 y controles de notación musical U+1D173–U+1D17A.
+Los controles suplementarios usan dos sustitutos JSON; por ejemplo, U+1BCA0
+se representa con la secuencia \ud82f\udca0. También aquí los datos y salidas
+reales conservan sus bytes originales y se cuenta la expansión visual en el
+presupuesto de la traza.
 Los selectores de variante Unicode, como
 U+FE0F, también se hacen visibles: `\ufe0f`. Los selectores
 suplementarios U+E0100–U+E01EF se escriben con la pareja de sustitutos

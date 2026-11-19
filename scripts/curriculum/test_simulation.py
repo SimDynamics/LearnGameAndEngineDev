@@ -542,6 +542,13 @@ class SimulationContractTest(unittest.TestCase):
         cases = [
             ("\x7f", r'"\u007f"'), ("\x85", r'"\u0085"'),
             ("\u00a0", r'"\u00a0"'), ("\u00ad", r'"\u00ad"'),
+            ("\u17b4", r'"\u17b4"'), ("\u17b5", r'"\u17b5"'),
+            ("\u180b", r'"\u180b"'), ("\u180e", r'"\u180e"'),
+            ("\u180f", r'"\u180f"'),
+            ("\U0001bca0", r'"\ud82f\udca0"'),
+            ("\U0001bca3", r'"\ud82f\udca3"'),
+            ("\U0001d173", r'"\ud834\udd73"'),
+            ("\U0001d17a", r'"\ud834\udd7a"'),
             ("\u115f", r'"\u115f"'), ("\u1160", r'"\u1160"'),
             ("\u2800", r'"\u2800"'), ("\u3164", r'"\u3164"'),
             ("\uffa0", r'"\uffa0"'),
@@ -554,6 +561,7 @@ class SimulationContractTest(unittest.TestCase):
         ]
         cases.append(("A\ufe0f\U000e0100", r'"A\ufe0f\udb40\udd00"'))
         cases.append(("A\u2800B", r'"A\u2800B"'))
+        cases.append(("A\u17b4B", r'"A\u17b4B"'))
         for raw, display in cases:
             with self.subTest(codepoint=" ".join(f"U+{ord(ch):04X}" for ch in raw)):
                 spec["values"] = [raw]
