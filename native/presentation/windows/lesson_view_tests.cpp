@@ -3292,6 +3292,20 @@ void text_sequence_application_restoration() {
         std::cout << "PASS actual executable automatic restoration page " << page + 1 << "/8: responsive >2s, normal close, exit 0, no smoke-test\n";
     }
 }
+bool u1l5_revised_compiler_present(const curriculum::Lesson& lesson) {
+    const bool new_edition=curriculum::stable_block_position(lesson,"p1u1l5_un_salto_en_el_codigo").has_value();
+    const auto editor=curriculum::stable_block_position(lesson,"p1u1l5_escribir_linea_intermedia");
+    require(new_edition==editor.has_value(),
+        "The revised U1L5 did not register its intermediate-line editor");
+    if(editor) {
+        const auto& block=lesson.pages[editor->page].blocks[editor->block];
+        require(editor->page==2&&block.type==BlockType::cpp_compiler&&block.output_check&&
+            block.output_check->cases.size()==1&&
+            block.output_check->cases.front().outputs==std::vector<std::string>{"Puesto\nMesa B\nFin"},
+            "The added U1L5 editor lost its own exact three-line outcome");
+    }
+    return new_edition;
+}
 void real_retirement_pages_preserve_all_eight_useful_editors() {
     struct Plan {const char* file;std::size_t page;const char* instruction;const char* editor;};
     const std::array plans{
@@ -3351,26 +3365,36 @@ void real_retirement_pages_preserve_all_eight_useful_editors() {
         require(state::sha256(state::read_bytes(path))==original_hash,"The QA retirement changed an authored lesson asset");
     }
     Fixture final_lesson({},[&](const curriculum::Lesson&){auto model=windows::load_lesson(folder/"lesson_resolver_probar_y_recuperar.json");model.compiler_puzzles_required=true;return model;});
-    for(const auto& p:final_lesson.lesson.pages)for(const auto& block:p.blocks)if(block.type==BlockType::cpp_compiler)++useful_editors;
-    require(useful_editors==8,"The three retirement plans did not retain exactly the eight useful U1 editors");
-    std::cout<<"PASS three actual U1 retirement plans: old bookmarks, archived and independent active drafts, native/narration exclusion and all eight useful editors\n";
+    const auto new_edition=u1l5_revised_compiler_present(final_lesson.lesson);
+    std::size_t final_count=0;
+    std::set<std::string> owners;
+    for(const auto& p:final_lesson.lesson.pages)for(const auto& block:p.blocks)if(block.type==BlockType::cpp_compiler){
+        ++useful_editors;++final_count;
+        require(block.output_check&&owners.insert(curriculum::exercise_key(final_lesson.lesson,block)).second,
+            "An active U1L5 editor has no output goal or shares another editor's response");
+    }
+    require(final_count==(new_edition?3u:2u)&&useful_editors==(new_edition?9u:8u),
+        "The three retirement plans or U1L5 new edition lost a useful editor");
+    std::cout<<"PASS three historical U1 retirement plans: old bookmarks, archived and independent drafts, native/narration exclusion, "
+             <<useful_editors<<" useful editors including "<<(new_edition?1:0)<<" new edition editor\n";
 }
 void integrated_u1_compilers_require_all_eight_real_executions() {
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion";
     struct VerifiedSolution { std::string_view filename,editor,reference; };
     // Work may archive a displayed reference without changing the exercise.
     // Keep this QA plan explicit: a stored expected output is not a program.
-    constexpr std::array<VerifiedSolution,8> solutions{{
+    constexpr std::array<VerifiedSolution,9> solutions{{
         {"lesson_primer_programa_y_salida.json","block_0004_0002","block_0005_0002"},
         {"lesson_primer_programa_y_salida.json","block_0005_0006","block_0005_0008"},
         {"lesson_texto_secuencia_y_formato.json","block_0006_0002","block_0007_0002"},
         {"lesson_texto_secuencia_y_formato.json","block_0006_0006","block_0007_0003"},
         {"lesson_fuente_compilacion_y_diagnostico.json","block_0003_0003","block_0006_0002"},
         {"lesson_fuente_compilacion_y_diagnostico.json","block_0003_0008",""},
+        {"lesson_resolver_probar_y_recuperar.json","p1u1l5_escribir_linea_intermedia","p1u1l5_referencia_linea_intermedia"},
         {"lesson_resolver_probar_y_recuperar.json","block_0003_0002","block_0005_0002"},
         {"lesson_resolver_probar_y_recuperar.json","block_0005_0006","block_0005_0008"}
     }};
-    std::size_t completed=0;
+    std::size_t completed=0,expected=8;
     for(const auto filename:{"lesson_primer_programa_y_salida.json","lesson_texto_secuencia_y_formato.json",
             "lesson_fuente_compilacion_y_diagnostico.json","lesson_resolver_probar_y_recuperar.json"}){
         Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
@@ -3396,23 +3420,57 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
             }
         },[&](const curriculum::Lesson&){return windows::load_lesson(folder/filename);});
         require(f.lesson.compiler_puzzles_required,"An integrated U1 lesson stopped requiring its useful compilers");
+        const bool last_lesson=std::string_view(filename)=="lesson_resolver_probar_y_recuperar.json";
+        const bool new_edition=last_lesson&&u1l5_revised_compiler_present(f.lesson);
+        if(new_edition)++expected;
         std::vector<curriculum::StatePosition> compilers;
         for(std::size_t p=0;p<f.lesson.pages.size();++p)for(std::size_t b=0;b<f.lesson.pages[p].blocks.size();++b)
             if(f.lesson.pages[p].blocks[b].type==BlockType::cpp_compiler)compilers.push_back({p,b});
-        require(compilers.size()==2,"Integrated U1 lost useful practice or retained a redundant compiler");
+        require(compilers.size()==(new_edition?3u:2u),
+            "Integrated U1 lost a useful historical compiler or its new intermediate-line editor");
+        std::set<std::string> owners;
         for(const auto position:compilers){
             const auto& compiler=f.lesson.pages[position.page].blocks[position.block];
-            require(compiler.output_check&&!windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
-                "Opaque old compiler correctness accredited an integrated objective");
+            require(compiler.output_check&&
+                owners.insert(curriculum::exercise_key(f.lesson,compiler)).second&&
+                !windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
+                "An integrated compiler has no independent goal or inherited an earlier achievement");
             if(f.page()!=position.page){require(navigate_lesson_view(f.view,position.page),"A completed earlier objective failed to unlock the next useful page");pump(f.host);}
             require(descendant(f.view,id(position.block,10))&&!lesson_page_state(f.view).can_next,
                 "A current useful compiler was hidden or its own pending goal did not block advancement");
             f.run(position.block);
             require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),"An unchanged initial program falsely completed the requested construction/repair");
+            const bool intermediate=compiler.stable_id=="p1u1l5_escribir_linea_intermedia";
+            if(intermediate) {
+                auto output=f.text(position.block,14);
+                output.erase(std::remove(output.begin(),output.end(),'\r'),output.end());
+                require(output=="Puesto\nFin",
+                    "The first attempt did not reproduce the incomplete two-line program");
+                const auto pending=compiler.initial_code+"// borrador QA de la linea intermedia\n";
+                f.replace(position.block,10,pending);
+                const auto key=curriculum::draft_key("programming",f.lesson,compiler);
+                require(state::get_draft(f.saved(),key,"").source==pending,
+                    "The first intermediate-line draft was not saved independently");
+                f.reopen();
+                require(f.text(position.block,10)==pending&&
+                    !windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
+                    "Reopening lost the unsolved intermediate-line draft or granted completion");
+            }
             const auto plan=std::ranges::find_if(solutions,[&](const auto& item){return item.filename==filename&&item.editor==compiler.stable_id;});
             require(plan!=solutions.end(),"No verified solution plan for "+f.lesson.id+" / "+compiler.stable_id);
             std::string solution;
-            if(plan->reference.empty()){
+            if(intermediate) {
+                const auto reference=curriculum::stable_block_position(f.lesson,plan->reference);
+                require(reference.has_value(),"The new intermediate-line editor lost its authored example");
+                const auto& snippet=f.lesson.pages[reference->page].blocks[reference->block];
+                require(snippet.type==BlockType::code&&snippet.code=="std::cout << \"Mesa B\\n\";",
+                    "The independent line sample no longer matches the taught code");
+                solution=compiler.initial_code;
+                const std::string placeholder="    // Escribe aqui la instruccion que falta.";
+                const auto marker=solution.find(placeholder);
+                require(marker!=solution.npos,"The new editor no longer exposes the line to complete");
+                solution.replace(marker,placeholder.size(),"    "+snippet.code);
+            } else if(plan->reference.empty()){
                 solution=compiler.initial_code;const std::string line="std::cout << \"Revision inicial\"\n";
                 const auto missing=solution.find(line);require(missing!=solution.npos,"The independent repair no longer contains its intended missing semicolon");
                 solution.insert(missing+line.size()-1,";");
@@ -3430,6 +3488,16 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
             f.replace(position.block,10,solution);f.run(position.block);
             require(f.text(position.block,4).starts_with("✓ Correcto")&&windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
                 "A fresh current reference execution did not complete its own required objective");
+            if(intermediate) {
+                auto output=f.text(position.block,14);
+                output.erase(std::remove(output.begin(),output.end(),'\r'),output.end());
+                require(output=="Puesto\nMesa B\nFin",
+                    "The added third line did not produce the exact independent three-line output");
+                for(const auto other:compilers)if(other.page>position.page)
+                    require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,
+                        f.lesson.pages[other.page].blocks[other.block]),
+                        "Correcting the intermediate line automatically accredited a different U1L5 editor");
+            }
             ++completed;f.reopen();require(f.text(position.block,10)==solution&&f.text(position.block,4).starts_with("✓ Correcto"),
                 "Reopening an integrated useful objective lost its independent source or persistent success");
         }
@@ -3439,8 +3507,9 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
             &&windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[last.page].blocks[last.block])
             &&!lesson_page_state(f.view).can_next,"Reset erased another useful objective or failed to restore the first requirement");
     }
-    require(completed==8,"The integrated U1 acceptance did not execute all eight useful compiler objectives");
-    std::cout<<"PASS all eight integrated useful U1 compilers: mandatory gate, independent real execution, authored solutions, opaque history, reopen and scoped Reset\n";
+    require(completed==expected,"The U1 compiler acceptance did not execute all current independent objectives");
+    std::cout<<"PASS "<<completed<<" integrated useful U1 compilers: mandatory gates, independent real execution, "
+             <<"two-line attempt and three-line repair where authored, restored draft, opaque history, reopen and scoped Reset\n";
 }
 void completed_compilers_keep_navigation_after_active_content() {
     const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_resolver_probar_y_recuperar.json";
