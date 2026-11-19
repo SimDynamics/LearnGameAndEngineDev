@@ -65,6 +65,32 @@ def _cpp_spelling_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
     return False
 
 
+def same_json_value_and_types(previous: object, current: object) -> bool:
+    """Compare a protected JSON contract without Python's bool/int coercion.
+
+    Plain dict/list equality silently treats True == 1 and 1 == 1.0, even
+    though these are different JSON payloads and runtime fingerprints. Only
+    identical primitive types and recursively identical values are allowed.
+    """
+    def equal(before: object, after: object, depth: int) -> bool:
+        if depth > 64 or type(before) is not type(after):
+            return False
+        if type(before) is dict:
+            return (all(type(key) is str for key in before)
+                    and before.keys() == after.keys()
+                    and all(equal(before[key], after[key], depth + 1)
+                            for key in before))
+        if type(before) is list:
+            return (len(before) == len(after)
+                    and all(equal(a, b, depth + 1)
+                            for a, b in zip(before, after)))
+        if before is None or type(before) in (str, bool, int, float):
+            return before == after
+        return False
+
+    return equal(previous, current, 0)
+
+
 def _exact_identifier_substitution(
     source: str, tokens: tuple[str, ...], names: dict[str, str],
 ) -> str:
@@ -119,7 +145,8 @@ def require_declared_cpp_renames(
         new_slots = source_format.code_slots(revised)
         if (original.get("type") != revised.get("type")
                 or old_slots.keys() != new_slots.keys()
-                or source_format.source_projection(revised, original) != original):
+                or not same_json_value_and_types(
+                    source_format.source_projection(revised, original), original)):
             raise IdentifierRenameError(
                 "A rename cannot modify answers, metadata, file paths or other fields")
     except (ValueError, KeyError, TypeError, IndexError) as error:
