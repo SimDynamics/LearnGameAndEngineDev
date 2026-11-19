@@ -261,18 +261,27 @@ struct CatalogView {
         const auto selection = state::integer_value(progress,"native_windows",key + "/selection");
         const auto top = state::integer_value(progress,"native_windows",key + "/top");
         const auto count = page.entries.size() + home_actions.size();
-        if (count) SendMessageW(list,LB_SETCURSEL,static_cast<WPARAM>(
-            catalog_restore_entry_index(page,state::string_value(
-                progress,"native_windows",key+"/selection_id"),selection,count)),0);
-        if (count) SendMessageW(list,LB_SETTOPINDEX,static_cast<WPARAM>(
-            catalog_restore_entry_index(page,state::string_value(
-                progress,"native_windows",key+"/top_id"),top,count)),0);
+        const auto selection_id=state::string_value(progress,"native_windows",key+"/selection_id");
+        const auto top_id=state::string_value(progress,"native_windows",key+"/top_id");
+        const auto selected=catalog_restore_entry_index(page,selection_id,selection,count);
+        const bool removed_selection=!selection_id.empty() &&
+            catalog_saved_entry_id(page,static_cast<std::int64_t>(selected))!=selection_id;
+        const auto restored_top=removed_selection?std::size_t{0}:
+            catalog_restore_entry_index(page,top_id,top,count);
+        const bool relocated_top=removed_selection||(!top_id.empty()&&
+            restored_top!=catalog_restore_entry_index(page,{},top,count));
+        if (count) SendMessageW(list,LB_SETCURSEL,static_cast<WPARAM>(selected),0);
+        if (count) SendMessageW(list,LB_SETTOPINDEX,static_cast<WPARAM>(restored_top),0);
         const auto locale = location.locale == "en" ? 1 : location.locale == "fr" ? 2 : 0;
         SendMessageW(language,CB_SETCURSEL,locale,0);
         EnableWindow(back,catalog_level(location) != CatalogLevel::routes);
         updating = false; update_selection(); resize();
         const auto group=progress.preferences.find("native_windows");
-        if(group!=progress.preferences.end()&&group->second.contains(key+"/scroll"))
+        // An absolute saved pixel offset refers to the old row order. After
+        // an edition reorder (or a removed selected unit), restoring those
+        // pixels would undo LB_SETTOPINDEX and hide the correct entry. Keep
+        // precise partial-pixel recovery when the top entry did not move.
+        if(!relocated_top&&group!=progress.preferences.end()&&group->second.contains(key+"/scroll"))
             set_card_list_scroll_offset(list,static_cast<int>(std::clamp(state::integer_value(progress,"native_windows",key+"/scroll"),std::int64_t{0},std::int64_t{INT_MAX/2})));
         if (remember) write_position();
         rendered = true;

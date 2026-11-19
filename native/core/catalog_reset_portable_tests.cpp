@@ -174,7 +174,8 @@ void catalog_entry_identity_survives_reordering_and_retirement() {
         "Reordering one edition selected a different unit from its old ordinal");
     std::swap(page.entries[1],page.entries[2]);
     check(catalog_restore_entry_index(page,top,1,3)==2 &&
-          catalog_restore_entry_index(page,selected,2,3)==0,
+          catalog_restore_entry_index(page,selected,2,3)==0 &&
+          catalog_restore_entry_index(page,{},1,3)==1,
         "The first visible unit or restored scroll anchor did not follow its identity");
     check(catalog_restore_entry_index(page,prefix+"retirada",2,3)==0,
         "A retired unit inherited the former slot's unrelated unit");
