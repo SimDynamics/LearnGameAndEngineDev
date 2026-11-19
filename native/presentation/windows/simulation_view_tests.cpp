@@ -6879,13 +6879,14 @@ void scrollable_text_keyboard(HWND host,const std::filesystem::path& captures) {
 }
 
 int main(int argc,char** argv)try {
-    check(argc<=2,"Expected an optional native capture directory");
+    check(argc<=2,"Expected an optional native capture directory or --blank-label");
+    const bool blank_only=argc==2&&std::string_view(argv[1])=="--blank-label";
     const auto initialized=OleInitialize(nullptr);check(SUCCEEDED(initialized),"Cannot initialize native simulation accessibility");
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};check(InitCommonControlsEx(&common),"Cannot initialize native controls");
     reader_theme::prepare_fonts();
     Window host{CreateWindowExW(WS_EX_CONTROLPARENT|WS_EX_NOACTIVATE,L"STATIC",L"Isolated simulation QA",WS_OVERLAPPEDWINDOW,
         0,0,1200,900,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr)};check(host.value,"Cannot create hidden simulation QA host");
-    const auto captures=argc==2?std::filesystem::path(wide(argv[1])):std::filesystem::path{};
+    const auto captures=argc==2&&!blank_only?std::filesystem::path(wide(argv[1])):std::filesystem::path{};
     failure_captures=captures;
     int failures=0;
     const auto run=[&](const char* label,const auto& scenario){
@@ -6894,6 +6895,14 @@ int main(int argc,char** argv)try {
         catch(...){++failures;std::cerr<<"FAIL simulation scenario "<<label<<": unknown native failure\n";}
         pump(host.value);
     };
+    if(blank_only) {
+        run("explicit_blank_label_button_prepares_but_does_not_apply",[&]{
+            explicit_blank_label_button_prepares_but_does_not_apply(host.value);});
+        run("empty_text_values",[&]{empty_text_values(host.value,captures);});
+        if(failures)return 1;
+        std::cout<<"PASS native simulation: real Win32 empty-label insertion and existing empty-value interactions\n";
+        return 0;
+    }
     run("native_text_control_contract",[&]{native_text_control_contract(host.value);});
     run("current_frequency_decision",[&]{current_frequency_decision(host.value,captures);});
     run("layout_reflow_cancels_pending_histogram_and_array_click",[&]{layout_reflow_cancels_pending_histogram_and_array_click(host.value);});

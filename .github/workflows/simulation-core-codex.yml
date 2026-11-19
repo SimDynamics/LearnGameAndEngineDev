@@ -5,6 +5,7 @@ on:
     branches: [Codex]
     paths:
       - .github/workflows/simulation-core-codex.yml
+      - cmake/PortableSimulationViewQA/CMakeLists.txt
       - native/core/simulation.hpp
       - native/core/simulation.cpp
       - native/core/simulation_tests.cpp
@@ -110,3 +111,33 @@ jobs:
           /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
           native\presentation\windows\simulation_view_tests.cpp
           /Fo:"%RUNNER_TEMP%\lgaed_simulation_view_tests.obj"
+
+
+  portable-win32-view-run:
+    # Real hidden Win32 input controls and model, built with hosted tools.
+    # Does not imply the separately pinned full app was built or run.
+    name: Real Win32 blank-text simulation interactions (MSVC)
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - name: Read exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Activate Visual C++ on disposable runner
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure isolated native UI test using unchanged production sources
+        shell: pwsh
+        run: >
+          cmake -S cmake/PortableSimulationViewQA
+          -B "$env:RUNNER_TEMP/simulation-view-qa"
+          -G Ninja
+      - name: Compile production simulation view and hidden Win32 regression host
+        shell: pwsh
+        run: >
+          cmake --build "$env:RUNNER_TEMP/simulation-view-qa" --parallel 2
+      - name: Execute blank-text button and existing Win32 empty-value scenarios
+        shell: pwsh
+        run: >
+          ctest --test-dir "$env:RUNNER_TEMP/simulation-view-qa"
+          --output-on-failure --no-tests=error -j 1
