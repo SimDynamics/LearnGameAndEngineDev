@@ -2429,7 +2429,46 @@ void optional_separator_help_matches_screen_reader_and_grading() {
         state::get_response(read_lesson_state(fixture.view),
             curriculum::exercise_key(fixture.lesson,fixture.lesson.pages[0].blocks[0]))->correct,
         "Reopening changed the visible help or lost the correct response");
-    std::cout<<"PASS optional code-order help: visible text equals reader, no retired shortcuts, visual blank excluded from graded answer after reopen\n";
+    // Also score the same answer with the optional card left in its default
+    // position. Merely allowing a moved blank does not prove that leaving
+    // it untouched cannot block or alter the student's correct program.
+    fixture.click(0,12);
+    const auto reset_order=fixture.control(0,5);
+    const auto reset_first=GetDlgItem(reset_order,100);
+    const auto reset_second=GetDlgItem(reset_order,101);
+    const auto untouched_blank=GetDlgItem(reset_order,102);
+    require(reset_first&&reset_second&&untouched_blank,
+        "Reset discarded the optional blank card or real code lines");
+    RECT first_bounds{},second_bounds{},blank_bounds{};
+    GetWindowRect(reset_first,&first_bounds);
+    GetWindowRect(reset_second,&second_bounds);
+    GetWindowRect(untouched_blank,&blank_bounds);
+    require(first_bounds.top<second_bounds.top&&second_bounds.top<blank_bounds.top,
+        "Reset did not restore the untouched visual separator after both real code lines");
+    const auto reset_response=state::get_response(read_lesson_state(fixture.view),
+        curriculum::exercise_key(fixture.lesson,fixture.lesson.pages[0].blocks[0]));
+    require(reset_response&&!reset_response->correct,
+        "Reset retained a correct result instead of permitting another independent arrangement");
+    SendMessageW(reset_second,WM_SYSKEYDOWN,VK_UP,LPARAM{1}<<29);pump(fixture.host);
+    require(IsWindowEnabled(fixture.control(0,3)),
+        "The correct order is not checkable when the decorative blank remains untouched");
+    GetWindowRect(untouched_blank,&blank_bounds);
+    GetWindowRect(reset_first,&first_bounds);
+    require(reset_first&&blank_bounds.top>first_bounds.top,
+        "Moving real code unexpectedly relocated the untouched blank");
+    fixture.click(0,3);
+    const auto untouched_response=state::get_response(read_lesson_state(fixture.view),
+        curriculum::exercise_key(fixture.lesson,fixture.lesson.pages[0].blocks[0]));
+    require(fixture.text(0,4).starts_with("✓ Correcto")&&untouched_response&&
+        untouched_response->correct&&untouched_response->order==std::vector<std::int64_t>{1,0},
+        "The default-position blank changed the graded answer or its historical storage");
+    fixture.reopen();
+    const auto persisted=state::get_response(read_lesson_state(fixture.view),
+        curriculum::exercise_key(fixture.lesson,fixture.lesson.pages[0].blocks[0]));
+    require(persisted&&persisted->correct&&persisted->order==std::vector<std::int64_t>{1,0}&&
+        fixture.text(0,37)==instruction,
+        "Reopening lost the correctly ordered code with an unmoved optional blank");
+    std::cout<<"PASS optional code-order help: exact visible/reader instruction, no old shortcuts, blank moved or untouched, same graded order and persisted answer\n";
 }
 
 void lesson_original_math_auto_policy() {
