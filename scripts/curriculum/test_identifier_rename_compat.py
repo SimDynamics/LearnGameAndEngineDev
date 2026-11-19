@@ -428,6 +428,42 @@ class DeclaredIdentifierRenames(unittest.TestCase):
                 RENAMES["projectFiles/0/initialCode"]),
             altered["projectFiles"][0]["initialCode"])
 
+    def test_protected_json_metadata_cannot_change_numeric_types(self):
+        # Equality in Python does not imply equivalence of JSON contracts:
+        # True == 1 and 1.0 == 1, but the native fingerprint distinguishes
+        # boolean, integer and floating-point representations.
+        variants = ((1, True), (1, 1.0), (0, False))
+        for original_number, forged_number in variants:
+            with self.subTest(previous=original_number, forged=forged_number):
+                original = deepcopy(ORIGINAL)
+                original["outputCheck"]["cases"][0]["exitCode"] = original_number
+                revised = proposal()
+                revised["outputCheck"]["cases"][0]["exitCode"] = forged_number
+                self.assertEqual(
+                    original["outputCheck"], revised["outputCheck"],
+                    "The fixture must expose Python's false equivalence")
+                self.assertFalse(
+                    renaming.same_json_value_and_types(
+                        original["outputCheck"], revised["outputCheck"]))
+                with self.assertRaisesRegex(
+                        renaming.IdentifierRenameError,
+                        "A rename cannot modify answers"):
+                    renaming.require_declared_cpp_renames(
+                        original, revised, RENAMES, COUNTS)
+
+    def test_type_aware_json_comparison_checks_all_nested_fields(self):
+        same = {"a": [1, {"b": [True, None, 1.25, "str"]}]}
+        self.assertTrue(renaming.same_json_value_and_types(same, deepcopy(same)))
+        for forged in (
+            {"a": [True, {"b": [True, None, 1.25, "str"]}]},
+            {"a": [1, {"b": [1, None, 1.25, "str"]}]},
+            {"a": [1, {"b": [True, None, 1, "str"]}]},
+            {"a": [1, {"b": [True, None, 1.25, 100]}]},
+            {"a": [1, {"b": [True, None, 1.25]}]},
+        ):
+            with self.subTest(forged=forged):
+                self.assertFalse(renaming.same_json_value_and_types(same, forged))
+
     def test_real_frequency_lesson_covers_examples_editors_and_predictions(self):
         # Author proposals only in memory, from the real immutable published
         # owners in P1 U5L13. Work alone can edit this curricular JSON.
