@@ -613,6 +613,41 @@ int general_choice_live_windows(const std::filesystem::path& content,
     require(data==adopted,
         "Reopening a reviewed choice applied its state migration twice");
 
+    // An imported answer claiming an unearned success must fail closed even
+    // when its historical owner and revision match the current lesson.
+    auto false_positive_data=adopted;
+    state::Response unearned;
+    unearned.selected=2;unearned.correct=true;
+    state::put_response(false_positive_data,
+        state::response_storage_key(actual,revised),unearned);
+    const auto false_positive_snapshot=false_positive_data;
+    bool refused_false_positive=false;
+    try{(void)state::get_response(false_positive_data,actual,revised);}
+    catch(const std::runtime_error& error) {
+        refused_false_positive=std::string_view(error.what()).find(
+            "El acierto guardado no corresponde")!=std::string_view::npos;
+    }
+    require(refused_false_positive&&false_positive_data==false_positive_snapshot,
+        "The revised choice accepted a forged achievement or modified its original bytes");
+
+    // Nor may a resumed profile adopt a fabricated archive entry as its
+    // authentic editorial provenance. Rejection must leave all bytes intact.
+    auto forged_journal=adopted;
+    const auto revision_key="lesson_"+actual.id+"_state_choice_revisions_v1_"+actual.locale;
+    require(state::find(forged_journal,"learning_progress",revision_key)!=nullptr,
+        "The first revised lesson did not adopt its choice history");
+    forged_journal.preferences["learning_progress"][revision_key]=
+        std::string(R"([["forged-owner","forged-hash","forged-representation"]])");
+    const auto journal_snapshot=forged_journal;
+    bool refused_journal=false;
+    try{state::prepare_lesson_state(forged_journal,actual);}
+    catch(const std::runtime_error& error) {
+        refused_journal=std::string_view(error.what()).find(
+            "opción guardada")!=std::string_view::npos;
+    }
+    require(refused_journal&&forged_journal==journal_snapshot,
+        "A forged choice-revision archive mutated the profile or passed adoption");
+
     // An old incorrect selection is just as important as an old achievement:
     // neither the wording correction nor a binary reopen may re-grade it.
     state::StateData incorrect_data;
