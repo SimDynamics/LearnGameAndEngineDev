@@ -1,0 +1,160 @@
+"""Compile real P1 frequency programs before/after an in-memory name revision.
+
+This integration QA is separate from the lexical-proof unit suite. It needs
+a C++23 compiler and never edits a lesson, learner profile or persistent build.
+Compilation and result equivalence are evidence for these specific programs;
+they are not a general proof of C++ binding/scope equivalence.
+"""
+from __future__ import annotations
+
+from copy import deepcopy
+import json
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import tempfile
+import unittest
+
+import identifier_rename_compat as rename
+
+
+ROOT = Path(__file__).resolve().parents[2]
+PATH = (ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+        "colecciones_y_recorridos/lesson_contar_frecuencias_y_conservar_empates.json")
+LESSON_ID = "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates"
+OWNER_CASES = (
+    ("block_0006_0002", "code", "etiquetas_mas_frecuentes"),
+    ("recuperacion_entrada_editor", "cpp_compiler", "etiquetas_mas_frecuentes"),
+    ("block_0006_0009", "cpp_compiler", "etiquetas_mas_frecuentes"),
+    ("block_0007_0002", "output_prediction", "etiquetas_mas_frecuentes"),
+    ("block_0007_0004", "output_prediction", "etiquetas_mas_frecuentes"),
+    ("frecuencias_numericas_referencia_programa", "code", "valores_mas_frecuentes"),
+)
+# Additional reference inputs. Compiler exercises use their exact authored
+# battery; predictions instead use the literal program data and answer oracle.
+EXAMPLE_INPUTS = {
+    "block_0006_0002": ("",),
+    "frecuencias_numericas_referencia_programa": (
+        "0\n", "7\n4 4 1 1 3 3 3\n", "4\n9 4 9 4\n"),
+}
+
+
+def authored_sources(lesson: dict) -> dict[str, dict]:
+    return {
+        identity: block
+        for page, record in zip(
+                lesson["pages"], lesson["stateLayout"]["current"])
+        for identity, block in zip(record["blocks"], page["blocks"])
+    }
+
+
+def propose(original: dict, destination: str) -> dict:
+    revised = deepcopy(original)
+    slot = "initialCode" if original["type"] == "cpp_compiler" else "code"
+    old = original[slot]
+    revised[slot] = re.sub(
+        r"\bmayores\b", destination,
+        re.sub(r"\bmaxima\b", "frecuencia_maxima_encontrada", old))
+    proof = rename.require_declared_cpp_renames(
+        original, revised,
+        {slot: {"maxima": "frecuencia_maxima_encontrada",
+                "mayores": destination}},
+        {slot: {"maxima": 5, "mayores": 5}})
+    if proof != {slot: {"maxima": 5, "mayores": 5}}:
+        raise AssertionError("A renamed owner lost its exact lexical proof")
+    return revised
+
+
+class FrequencyRenameRuntime(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        # Do not silently pass CI because the C++ toolchain is unavailable.
+        cls.compiler = shutil.which("g++") or shutil.which("clang++")
+        if cls.compiler is None:
+            raise RuntimeError("The real frequency regression requires a C++23 compiler")
+        cls.lesson_bytes = PATH.read_bytes()
+        cls.lesson = json.loads(cls.lesson_bytes)
+        if cls.lesson["id"] != LESSON_ID:
+            raise AssertionError("A different publication replaced the pinned frequency lesson")
+        cls.blocks = authored_sources(cls.lesson)
+
+    def _compile(self, source: str, folder: Path, label: str) -> Path:
+        program = folder / (label + ".cpp")
+        executable = folder / (label + ".exe")
+        program.write_text(source, encoding="utf-8")
+        completed = subprocess.run(
+            [self.compiler, "-std=c++23", "-O0", "-Wall", "-Wextra",
+             "-o", str(executable), str(program)],
+            capture_output=True, text=True, timeout=75, check=False)
+        self.assertEqual(
+            completed.returncode, 0,
+            f"Compilation of {label} failed:\n{completed.stdout}\n{completed.stderr}")
+        return executable
+
+    def _execute(self, binary: Path, standard_input: str) -> tuple[int, str, str]:
+        completed = subprocess.run(
+            [str(binary)], input=standard_input,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True, timeout=15, check=False)
+        return completed.returncode, completed.stdout, completed.stderr
+
+    def test_six_real_published_owners_compile_with_identical_outputs(self) -> None:
+        self.assertEqual(len(OWNER_CASES), 6)
+        with tempfile.TemporaryDirectory(prefix="lgaed-frequency-rename-") as temp:
+            directory = Path(temp)
+            for index, (identity, kind, destination) in enumerate(OWNER_CASES):
+                with self.subTest(owner=identity):
+                    self.assertIn(identity, self.blocks)
+                    before = self.blocks[identity]
+                    self.assertEqual(before["type"], kind)
+                    after = propose(before, destination)
+                    slot = "initialCode" if kind == "cpp_compiler" else "code"
+                    self.assertIn('"Maxima:"', before[slot])
+                    self.assertIn('"Maxima:"', after[slot])
+                    self.assertIn("Mayores:", before[slot])
+                    self.assertIn("Mayores:", after[slot])
+                    old_binary = self._compile(
+                        before[slot], directory, f"owner-{index}-old")
+                    new_binary = self._compile(
+                        after[slot], directory, f"owner-{index}-new")
+
+                    if kind == "cpp_compiler":
+                        # The first case is the progression gate; the remaining
+                        # curriculum cases are nonblocking QA observations.
+                        cases = before["outputCheck"]["cases"]
+                        self.assertGreaterEqual(len(cases), 1)
+                        for case_index, case in enumerate(cases):
+                            with self.subTest(case=case_index):
+                                original_result = self._execute(
+                                    old_binary, case.get("standardInput", ""))
+                                revised_result = self._execute(
+                                    new_binary, case.get("standardInput", ""))
+                                self.assertEqual(revised_result, original_result)
+                                self.assertEqual(original_result[0], case.get("exitCode", 0))
+                                self.assertEqual(original_result[2], "")
+                                self.assertIn(original_result[1], case["outputs"])
+                    elif kind == "output_prediction":
+                        original_result = self._execute(old_binary, "")
+                        revised_result = self._execute(new_binary, "")
+                        self.assertEqual(revised_result, original_result)
+                        self.assertEqual(original_result[0], 0)
+                        self.assertEqual(original_result[2], "")
+                        self.assertIn(original_result[1], before["answers"])
+                    else:
+                        for given_input in EXAMPLE_INPUTS.get(identity, ("",)):
+                            with self.subTest(standard_input=given_input):
+                                original_result = self._execute(
+                                    old_binary, given_input)
+                                revised_result = self._execute(
+                                    new_binary, given_input)
+                                self.assertEqual(revised_result, original_result)
+                                self.assertEqual(original_result[0], 0)
+                                self.assertEqual(original_result[2], "")
+                                self.assertIn("Maxima:", original_result[1])
+                                self.assertIn("Mayores:", original_result[1])
+        self.assertEqual(PATH.read_bytes(), self.lesson_bytes)
+
+
+if __name__ == "__main__":
+    unittest.main()
