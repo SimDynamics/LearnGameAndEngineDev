@@ -56,6 +56,37 @@ class FormattedOwnerRenamePreview(unittest.TestCase):
                 result = preview.preview_published_rename(
                     self.lesson, identity, changed, names, counts)
                 self.assertEqual(result["id"], identity)
+                self.assertEqual(result["lessonId"], self.lesson["id"])
+                self.assertEqual(result["locale"], "es")
+                meta = self.lesson["stateLayout"]
+                self.assertEqual(
+                    result["historicalFamilySha256"],
+                    meta["family"]["es"]["sha256"])
+                self.assertEqual(
+                    result["editorialPrefixSha256"],
+                    state.fingerprint({
+                        "lessonId": self.lesson["id"],
+                        "locale": meta["locale"],
+                        "editorial": meta["editorial"],
+                    }))
+                _, original_positions, original_digests = state._origin(meta["origin"])
+                published_additions = [
+                    item for item in meta["additions"] if item["id"] == identity]
+                if published_additions:
+                    self.assertEqual(len(published_additions), 1)
+                    self.assertNotIn(identity, original_positions)
+                    stored = published_additions[0]["storage"]
+                    expected_storage = {
+                        "page": stored["page"], "block": stored["block"]}
+                    expected_original_digest = published_additions[0]["sha256"]
+                else:
+                    self.assertIn(identity, original_positions)
+                    page, position = original_positions[identity]
+                    expected_storage = {"page": page, "block": position}
+                    expected_original_digest = original_digests[identity]
+                self.assertEqual(result["stableStorage"], expected_storage)
+                self.assertEqual(result["originalStateSha256"],
+                                 expected_original_digest)
                 self.assertEqual(result["block"], source)
                 self.assertEqual(result["names"], names)
                 self.assertEqual(result["occurrences"], counts)
