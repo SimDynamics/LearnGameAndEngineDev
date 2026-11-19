@@ -4227,6 +4227,9 @@ void resolve_addresses(Lesson& lesson) {
     };
     std::map<std::string,const MathTextRevision*> math_texts;
     for(const auto& revision:layout.math_text_revisions)math_texts.emplace(revision.id,&revision);
+    std::map<std::string,const MathMatchingTextRevision*> matching_texts;
+    for(const auto& revision:layout.math_matching_text_revisions)
+        matching_texts.emplace(revision.id,&revision);
     const auto apply_math_text=[&](Block& block,bool archived){
         if(const auto found=math_texts.find(block.stable_id);found!=math_texts.end()){
             const auto& revision=*found->second;require(block.type==BlockType::math_puzzle,"A mathematical prompt archive changed its owner type");
@@ -4321,6 +4324,12 @@ void resolve_addresses(Lesson& lesson) {
                 block.order_refinement = *refinement->second;
             }
             apply_math_text(block,false);
+            if(const auto matching=matching_texts.find(block.stable_id);
+                    matching!=matching_texts.end()) {
+                require(block.type==BlockType::math_puzzle,
+                    "A revised mathematical matching evaluation has another owner type");
+                block.math_evaluation_raw_json=matching->second->raw_json;
+            }
             apply_reviewed_order_equivalences(lesson,block);
             if(block.type==BlockType::math_puzzle)if(const auto reviewed=reviewed_math_label(JsonObject::Parse(key(math_evaluation_source(block))))){
                 require(layout.version==2&&lesson.locale=="es"&&lesson.id==reviewed->lesson&&block.stable_id==reviewed->identity,
