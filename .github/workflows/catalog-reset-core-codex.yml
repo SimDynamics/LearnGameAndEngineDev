@@ -42,3 +42,28 @@ jobs:
             -Wl,--gc-sections -o "${RUNNER_TEMP}/lgaed_catalog_reset_tests"
       - name: Prove corrupted coverage rollback preserves bytes and unrelated courses
         run: "${RUNNER_TEMP}/lgaed_catalog_reset_tests"
+
+  scoped-progress-reset-msvc:
+    # Portable native-state assertions only. This is not the full pinned
+    # Win32 application build or a test on the student's computer.
+    name: Atomic catalog reset (Windows MSVC)
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Activate Visual C++ in isolated runner
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile actual catalog and binary-state logic with MSVC
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive-
+          /Zc:__cplusplus /utf-8 /Gy /I native
+          native\core\catalog.cpp native\core\lesson_state.cpp
+          native\core\catalog_reset_portable_tests.cpp
+          /link /OPT:REF /OUT:\"%RUNNER_TEMP%\lgaed_catalog_reset_tests.exe\"
+      - name: Execute atomic reset and edition-provenance regressions on Windows
+        shell: cmd
+        run: '\"%RUNNER_TEMP%\lgaed_catalog_reset_tests.exe\"'
