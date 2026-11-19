@@ -57,6 +57,9 @@ add_library(lgaed_guidance_platform STATIC
     "${LGAED_ROOT}/native/platform/windows/cpp_project_history.cpp"
     "${LGAED_ROOT}/native/platform/windows/profile_migration.cpp"
     "${LGAED_ROOT}/native/platform/windows/android_import.cpp")
+# The production content loader has many authored validation paths. Its
+# large translation unit needs MSVC's extended object section table.
+target_compile_options(lgaed_guidance_platform PRIVATE /bigobj)
 target_link_libraries(lgaed_guidance_platform PUBLIC
     lgaed_guidance_core lgaed_guidance_qa_options
     shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject
