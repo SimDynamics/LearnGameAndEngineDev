@@ -349,6 +349,16 @@ def check_repository(repository, commit, *, documents=None):
                             for document in current_units.values()),
                 "An edition resource requires its explicitly published course index")
         return {"course_edition_boundaries": [], "active_edition_resources": []}
+    # The course-scoped check below cannot see a second course index ADDED
+    # in this publication. On Windows, a new QA_EDITION directory can alias
+    # an existing qa_edition directory even when its index is unversioned.
+    # Reject those paths before activating either edition, including mixed
+    # case spellings in the historical Git index.
+    indexed_course_paths = set(current_courses)
+    indexed_course_paths.update(
+        path for path in previous_courses
+        if path.casefold().startswith(CONTENT_DIRECTORY.casefold() + "/"))
+    _reject_windows_case_aliases(indexed_course_paths)
     boundaries = []
     active_paths = set()
     for relative in sorted(current_courses.keys() | previous_courses.keys()):

@@ -211,6 +211,39 @@ class CourseEditionAuthoringTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "active or an unchanged historical"):
             self.check_tree(prior, after)
 
+
+    def test_new_case_variant_sibling_course_index_cannot_alias_active_edition(self):
+        # Two newly present course indexes may have different case-sensitive
+        # names on Linux but resolve to one file on Windows. The earlier
+        # per-course guard only sees archived paths and paths INSIDE the
+        # active course, so a new sibling course index escaped that check.
+        if os.name == "nt":
+            self.skipTest("Native Windows cannot materialize both course-case variants")
+        previous = current_documents()
+        current = {**deepcopy(previous), **current_documents(descriptor())}
+        alias_id = COURSE.upper()
+        alias = (f"{CONTENT}/es/programming/{alias_id}/"
+                 f"course_{alias_id}.json")
+        self.assertNotIn(alias, previous)
+        self.assertNotIn(alias, current)
+        current[alias] = {"id": alias_id, "title": "Segundo curso de QA",
+                          "units": []}
+        normal = f"{CONTENT}/es/programming/{COURSE}/course_{COURSE}.json"
+        self.assertNotEqual(alias, normal)
+        self.assertEqual(alias.casefold(), normal.casefold())
+        with self.assertRaisesRegex(edition.CourseEditionError,
+                                    "case-insensitive edition path collision"):
+            self.check_tree(previous, current)
+
+    def test_case_variant_course_directory_is_rejected_even_with_other_filename(self):
+        source = f"{CONTENT}/es/programming/{COURSE}/course_{COURSE}.json"
+        alternate = (f"{CONTENT}/es/programming/{COURSE.upper()}/"
+                     "course_different.json")
+        self.assertNotEqual(source.casefold(), alternate.casefold())
+        with self.assertRaisesRegex(edition.CourseEditionError,
+                                    "case-insensitive edition path collision"):
+            edition._reject_windows_case_aliases([source, alternate])
+
     def test_case_alias_guard_checks_intermediate_directories_not_only_files(self):
         # Different leaf names have no casefold collision of their own.
         first = f"{CONTENT}/es/programming/{COURSE}/Edition/lesson_old.json"
