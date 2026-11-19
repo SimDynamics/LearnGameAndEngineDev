@@ -393,6 +393,41 @@ class DeclaredIdentifierRenames(unittest.TestCase):
                 {"initialCode": {"maxima": 2}}),
             {"initialCode": {"maxima": 2}})
 
+    def test_byte_exact_rename_cannot_smuggle_spacing_or_line_ending_edits(self):
+        altered = proposal()
+        cases = (
+            ("int frecuencia_maxima_encontrada",
+             "int   frecuencia_maxima_encontrada"),
+            ("std::cout <<", "std::cout  <<"),
+            ("#include <iostream>\n", "#include <iostream>\r\n"),
+            ("    std::cout <<", "\tstd::cout <<"),
+        )
+        for old, new in cases:
+            with self.subTest(replacement=new):
+                candidate = deepcopy(altered)
+                self.assertIn(old, candidate["initialCode"])
+                candidate["initialCode"] = candidate["initialCode"].replace(
+                    old, new, 1)
+                with self.assertRaisesRegex(
+                        renaming.IdentifierRenameError,
+                        "changed whitespace, line endings or other source bytes"):
+                    self.verify(candidate)
+
+    def test_preserve_exact_comment_literal_and_blank_line_bytes(self):
+        altered = proposal()
+        self.assertEqual(
+            renaming._exact_identifier_substitution(
+                ORIGINAL["initialCode"],
+                source_format._cpp_tokens(ORIGINAL["initialCode"]),
+                RENAMES["initialCode"]),
+            altered["initialCode"])
+        self.assertEqual(
+            renaming._exact_identifier_substitution(
+                ORIGINAL["projectFiles"][0]["initialCode"],
+                source_format._cpp_tokens(ORIGINAL["projectFiles"][0]["initialCode"]),
+                RENAMES["projectFiles/0/initialCode"]),
+            altered["projectFiles"][0]["initialCode"])
+
     def test_real_frequency_lesson_covers_examples_editors_and_predictions(self):
         # Author proposals only in memory, from the real immutable published
         # owners in P1 U5L13. Work alone can edit this curricular JSON.
