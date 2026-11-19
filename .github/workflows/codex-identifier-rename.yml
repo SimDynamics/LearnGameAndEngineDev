@@ -8,6 +8,9 @@ on:
       - scripts/curriculum/identifier_rename_compat.py
       - scripts/curriculum/test_identifier_rename_compat.py
       - scripts/curriculum/test_identifier_rename_execution.py
+      - scripts/curriculum/identifier_rename_archive_preview.py
+      - scripts/curriculum/test_identifier_rename_archive_preview.py
+      - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/code_format_compat.py
       - native/core/code_format_compat.hpp
       - native/core/identifier_rename_compat.hpp
@@ -41,6 +44,11 @@ jobs:
           python3 -B -m unittest discover
           -s scripts/curriculum
           -p test_identifier_rename_compat.py -v
+      - name: Validate read-only historical rename previews on published format
+        run: >-
+          python3 -B -m unittest discover
+          -s scripts/curriculum
+          -p test_identifier_rename_archive_preview.py -v
       - name: Compile and run published frequency programs before and after renaming
         run: >-
           python3 -B -m unittest discover
