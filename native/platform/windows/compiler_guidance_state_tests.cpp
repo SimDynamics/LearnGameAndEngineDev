@@ -612,6 +612,11 @@ int general_choice_live_windows(const std::filesystem::path& content,
     state::prepare_lesson_state(data,actual);
     require(data==adopted,
         "Reopening a reviewed choice applied its state migration twice");
+    // Validate the *actual import/reopen gate*, not just its component
+    // response reader. Import validation must never rewrite the profile.
+    state::validate_lesson_state(data,actual,"programming");
+    require(data==adopted,
+        "Valid revised-choice import changed the saved state");
 
     // An imported answer claiming an unearned success must fail closed even
     // when its historical owner and revision match the current lesson.
@@ -629,6 +634,11 @@ int general_choice_live_windows(const std::filesystem::path& content,
     }
     require(refused_false_positive&&false_positive_data==false_positive_snapshot,
         "The revised choice accepted a forged achievement or modified its original bytes");
+    bool rejected_false_import=false;
+    try{state::validate_lesson_state(false_positive_data,actual,"programming");}
+    catch(const std::runtime_error&){rejected_false_import=true;}
+    require(rejected_false_import&&false_positive_data==false_positive_snapshot,
+        "Native import validation accepted a forged choice achievement");
 
     // Nor may a resumed profile adopt a fabricated archive entry as its
     // authentic editorial provenance. Rejection must leave all bytes intact.
@@ -647,6 +657,11 @@ int general_choice_live_windows(const std::filesystem::path& content,
     }
     require(refused_journal&&forged_journal==journal_snapshot,
         "A forged choice-revision archive mutated the profile or passed adoption");
+    bool rejected_journal_import=false;
+    try{state::validate_lesson_state(forged_journal,actual,"programming");}
+    catch(const std::runtime_error&){rejected_journal_import=true;}
+    require(rejected_journal_import&&forged_journal==journal_snapshot,
+        "Native import validation accepted a forged choice revision journal");
 
     // An old incorrect selection is just as important as an old achievement:
     // neither the wording correction nor a binary reopen may re-grade it.
@@ -675,6 +690,10 @@ int general_choice_live_windows(const std::filesystem::path& content,
                 wrong_receipt&&still_incorrect&&!still_incorrect->correct&&
         still_incorrect->selected==2,
         "Edition adoption regraded an existing incorrect selection");
+    const auto accepted_incorrect=incorrect_data;
+    state::validate_lesson_state(incorrect_data,actual,"programming");
+    require(incorrect_data==accepted_incorrect,
+        "Native import validation altered an honestly incorrect selection");
     require(load_lesson(path).raw_json==original.raw_json,
         "The editable QA copy changed the published curricular file");
 
