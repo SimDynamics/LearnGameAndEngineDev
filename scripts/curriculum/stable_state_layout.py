@@ -46,7 +46,7 @@ class LayoutError(ValueError):
 
 LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
-V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions", "mathTextRevisions", "compilerCaseOrderRevisions", "compilerCaseRevisions", "identifierRenameRevisions"})
+V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions", "mathTextRevisions", "compilerCaseOrderRevisions", "compilerCaseRevisions", "identifierRenameRevisions", "mathMatchingTextRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
@@ -2255,6 +2255,14 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 or bool(semantic_after.get("spans")),
                 "A revised marked prompt cannot silently lose all its authored highlights")
         math_texts[identity] = item
+    # Imported on demand: the matching authoring helper itself uses this
+    # validator to authenticate the unchanged published lesson first.
+    import math_matching_text_compat as matching_compat
+    try:
+        matching_originals = matching_compat.authenticated_matching_text_originals(
+            document, active_blocks, digests)
+    except matching_compat.MatchingTextError as exc:
+        raise LayoutError(f"Unsafe mathematical matching text archive: {exc}") from exc
     for entry in revisions:
         require(type(entry) is dict and set(entry) == {"id", "block"},
                 "A source format revision needs its identity and complete original block")
@@ -2434,7 +2442,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             identity = _identity(identity)
             require(identity in storage, "Unknown block identity")
             math_source = (_math_prompt_projection(math_texts[identity], pages[p]["blocks"][b])
-                           if identity in math_texts else pages[p]["blocks"][b])
+                           if identity in math_texts else
+                           matching_originals.get(identity, pages[p]["blocks"][b]))
             reviewed_math = reviewed_math_label(math_source)
             if reviewed_math is not None:
                 require(meta["locale"] == "es"
@@ -2448,7 +2457,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                         and CHOICE_OPTION_REVISIONS.get((document.get("id"), identity)) == reviewed,
                         "A revised choice requires its exact lesson, identity and original archive")
             ordered_source = _compiler_case_order_projection(
-                document, identity, rename_originals.get(identity, block))
+                document, identity, matching_originals.get(
+                    identity, rename_originals.get(identity, block)))
             source = (code_format.source_projection(ordered_source,
                           _compiler_case_format_origin(document, identity, formatted[identity]))
                       if identity in formatted else ordered_source)
@@ -2479,6 +2489,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     require(choices.keys() <= set(seen_blocks), "Choice revisions must remain active under their existing identities")
     require(rename_originals.keys() <= set(seen_blocks),
             "C++ rename archives cannot belong to retired activities")
+    require(matching_originals.keys() <= set(seen_blocks),
+            "Matching text archives cannot belong to retired activities")
     require(compilers.keys() <= set(seen_blocks), "Compiler revisions must remain active under their existing identities")
     require(compiler_references.keys() <= set(seen_blocks), "Compiler references must remain active under their existing identities")
     retired = meta.get("retired", [])
@@ -6085,6 +6097,28 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                 identifier_rename.same_json_value_and_types(
                     item["block"], before[identity]),
                 "A C++ rename archive must retain its exact previous active owner")
+    old_matching = old_meta.get("mathMatchingTextRevisions", []) if old_v2 else []
+    matching_records = meta.get("mathMatchingTextRevisions", [])
+    require(type(matching_records) is list and (old_v2 or not matching_records)
+            and identifier_rename.same_json_value_and_types(
+                matching_records[:len(old_matching)], old_matching),
+            "Published matching text archives must remain append-only")
+    for item in matching_records[len(old_matching):]:
+        identity = item.get("id")
+        require(type(identity) is str and identity in before and identity in after
+                and identity in _blocks(baseline)
+                and type(item.get("rawJson")) is str
+                and item["rawJson"] == _math_ordered_json(before[identity]),
+                "Matching text history must archive its exact published owner")
+        old_marks = {field["path"]: field for field in baseline.get(
+            text_semantics.ROOT_FIELD, {}).get("fields", [])
+            if field.get("block") == identity}
+        require(identifier_rename.same_json_value_and_types(
+            item["semanticBefore"], {
+                path: old_marks.get(path) for path in item["paths"]}),
+            "A matching text archive changed its published reading marks")
+    matching_before = {item["id"]: parse_json(item["rawJson"])
+                       for item in matching_records}
     old_math = old_meta.get("mathTextRevisions", []) if old_v2 else []
     math_revisions = meta.get("mathTextRevisions", [])
     require(math_revisions[:len(old_math)] == old_math,
@@ -6320,7 +6354,8 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
             require(identity in appended and all("bibliography" in proof for proof in appended[identity]),
                     "A new bibliography-only revision requires its exact authored reading archive")
         protected = _compiler_case_order_projection(
-            current, identity, rename_blocks.get(identity, actual))
+            current, identity, matching_before.get(
+                identity, rename_blocks.get(identity, actual)))
         previous_source = _compiler_case_order_projection(
             baseline, identity, old_rename_blocks.get(identity, block))
         format_original = next((entry["block"] for entry in current_formats if entry["id"] == identity), None)
@@ -6542,6 +6577,15 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
     new_math_ids = _math_text_revisions(current).keys() - _math_text_revisions(old).keys()
     blocks = {identity: _historical_math_text_contract(current, identity, block)
               if identity in new_math_ids else block for identity, block in blocks.items()}
+    new_match = {
+        item["id"]: parse_json(item["rawJson"])
+        for item in current["stateLayout"].get("mathMatchingTextRevisions", [])
+        if item["id"] not in {
+            old_item["id"] for old_item in old["stateLayout"].get("mathMatchingTextRevisions", [])
+        }
+    }
+    blocks = {identity: deepcopy(new_match.get(identity, block))
+              for identity, block in blocks.items()}
     new_renames = {
         item["id"]: item["block"]
         for item in current["stateLayout"].get("identifierRenameRevisions", [])
@@ -6589,6 +6633,12 @@ def original_projection(document: dict) -> dict:
         return document
     validate(document)
     blocks = _all_blocks(document)
+    math_match_before = {
+        item["id"]: parse_json(item["rawJson"])
+        for item in document["stateLayout"].get("mathMatchingTextRevisions", [])
+    }
+    blocks = {identity: math_match_before.get(identity, block)
+              for identity, block in blocks.items()}
     renamed_before = {
         item["id"]: item["block"]
         for item in document["stateLayout"].get("identifierRenameRevisions", [])
