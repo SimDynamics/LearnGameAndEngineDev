@@ -329,7 +329,7 @@ void new_edition_progress_and_reset_preserve_retired_course() {
         !clean.contains("exercise_"+first+"_page_0_block_1")&&
         !clean.contains("unit_"+new_unit+"_completed"),
         "The new edition still had an answer or accomplishment after its reset");
-    for(const auto& key : {
+    for(const auto& key : std::vector<std::string>{
             fixture.completion,
             fixture.answer,
             fixture.first_read,
