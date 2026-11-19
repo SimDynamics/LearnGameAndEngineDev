@@ -124,9 +124,15 @@ def require_declared_cpp_renames(
             ):
                 raise IdentifierRenameError(
                     f"Preprocessor directive refers to a renamed C++ identifier: {source_slot}")
-            if token.startswith("id:") and token[3:] in destinations:
+            if not token.startswith("id:"):
+                continue
+            name = token[3:]
+            if name in destinations:
                 raise IdentifierRenameError(
                     f"A destination already exists in a published C++ source: {source_slot}")
+            if source_slot not in renames and name in original_to_new:
+                raise IdentifierRenameError(
+                    f"An unchanged C++ source still refers to a renamed identifier: {source_slot}")
 
     confirmed: dict[str, dict[str, int]] = {}
     for slot, (language, before) in old_slots.items():
