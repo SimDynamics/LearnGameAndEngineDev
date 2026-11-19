@@ -210,6 +210,32 @@ class CourseEditionAuthoringTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "active or an unchanged historical"):
             self.check_tree(prior, after)
 
+    def test_edition_file_paths_are_portable_and_cannot_escape_on_windows(self):
+        # PurePosixPath alone treats backslash and drive-qualified names as
+        # harmless relative text; Windows would resolve them differently.
+        with tempfile.TemporaryDirectory(prefix="edition-portable-path-qa-") as temporary:
+            root = Path(temporary)
+            safe = f"{CONTENT}/es/programming/{COURSE}/course_{COURSE}.json"
+            target = root / safe
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(b'{"id":"unchanged"}')
+            self.assertEqual(edition._edition_file(root, safe, "historical resource"), target)
+            invalid = (
+                r"app\src\main\assets\content\es\programming\qa_edition\course_qa_edition.json",
+                r"app/src/main/assets/content/es/programming/qa_edition/..\..\..\outside.json",
+                r"\rooted\course_qa_edition.json",
+                "C:/private/course_qa_edition.json",
+                "C:private/course_qa_edition.json",
+                "/absolute/course_qa_edition.json",
+                "app/src/../other.json",
+            )
+            for alias in invalid:
+                with self.subTest(alias=alias), self.assertRaisesRegex(
+                        edition.CourseEditionError, "Unsafe edition asset path"):
+                    edition._edition_file(root, alias, "historical resource")
+            self.assertEqual(target.read_bytes(), b'{"id":"unchanged"}',
+                             "A rejected path modified a retained historical resource")
+
     def test_preserved_history_rejects_ancestor_alias_despite_equal_bytes(self):
         # A historical lesson/unit remains available after the course starts
         # its new edition. An ancestor alias must not pass merely because its

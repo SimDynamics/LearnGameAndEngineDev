@@ -8,7 +8,7 @@ from __future__ import annotations
 from copy import deepcopy
 from importlib import util
 import json
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import subprocess
 
@@ -248,7 +248,13 @@ def _edition_file(repository, relative, role):
     ancestor is not equivalent to retaining that published resource.
     """
     relative = PurePosixPath(relative)
-    require(not relative.is_absolute() and ".." not in relative.parts,
+    spelling = relative.as_posix()
+    windows = PureWindowsPath(spelling)
+    # Git paths use forward slashes. On Windows, backslashes and drive
+    # prefixes would be interpreted as different paths after this guard.
+    # Reject them before any filesystem access, also for old Git assets.
+    require(not relative.is_absolute() and ".." not in relative.parts
+            and "\\" not in spelling and not windows.drive and not windows.root,
             "Unsafe edition asset path")
     path = repository
     for part in relative.parts:
