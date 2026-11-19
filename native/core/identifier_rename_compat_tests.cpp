@@ -173,6 +173,24 @@ void portable_identifier_spellings() {
     require(!declared_tokens_only(before,after,plan),
         "Native rename plan accepted a locale-dependent Unicode destination");
 }
+void byte_exact_rename_does_not_reformat() {
+    const auto before=old_sources(),valid=valid_sources(),plan=valid_plan();
+    require(declared_tokens_only(before,valid,plan),
+        "The original token-only rename stopped matching exact source bytes");
+    auto changed=valid;
+    const auto rewrite=[&](std::string_view old,std::string_view replacement) {
+        changed=valid;
+        const auto offset=changed[0].source.find(old);
+        require(offset!=std::string::npos,"Missing original physical formatting");
+        changed[0].source.replace(offset,old.size(),replacement);
+        require(!declared_tokens_only(before,changed,plan),
+            "A physical source change was accepted as an identifier-only revision");
+    };
+    rewrite("extern int","extern  int");
+    rewrite("std::cout <<","std::cout  <<");
+    rewrite("#include <iostream>\n","#include <iostream>\r\n");
+    rewrite("int main()","int\tmain()");
+}
 void name_conflicts() {
     auto before=old_sources(),after=valid_sources(),plan=valid_plan();
     plan[1].names[0].replacement="otro_destino";
@@ -199,6 +217,7 @@ int main() try {
     cmake_external_macro_contract();
     observable_identifier_spelling();
     portable_identifier_spellings();
+    byte_exact_rename_does_not_reformat();
     name_conflicts();
     std::cout << "PASS native C++ lexical identifier-rename proof, cross-file owner "
               << "consistency, macros, existing names and immutable tokens\n";
