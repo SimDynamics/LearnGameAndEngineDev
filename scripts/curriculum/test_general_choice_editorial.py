@@ -1060,6 +1060,11 @@ class InitialLessonOptionalExplanationTests(unittest.TestCase):
         layout.validate(cls.original)
         cls.page, cls.position = 5, 8
         assert cls.original["stateLayout"]["current"][cls.page]["blocks"][cls.position] == cls.OWNER
+        # The publication moved this owner. Authorizations use the immutable
+        # origin coordinate, never its current visible page and block index.
+        cls.origin_page, cls.origin_position = layout.validate(cls.original)[
+            cls.page, cls.position]
+        assert (cls.origin_page, cls.origin_position) == (4, 1)
         cls.block = cls.original["pages"][cls.page]["blocks"][cls.position]
         assert cls.block["type"] == "drag_fill_code"
         assert cls.block["id"] == "piezas_estructura"
@@ -1096,9 +1101,10 @@ class InitialLessonOptionalExplanationTests(unittest.TestCase):
                           field["path"] == "/explanation")
         self.assertEqual([], descriptor["spans"])
         self.assertTrue(contract.preserves_ordinary_explanation_revision(
-            self.FILE, self.page, self.position, self.block, current, self.original, after))
+            self.FILE, self.origin_page, self.origin_position,
+            self.block, current, self.original, after))
         self.assertTrue(contract.preserves_previous_exercise(
-            self.FILE, self.page, self.position, self.block, current,
+            self.FILE, self.origin_page, self.origin_position, self.block, current,
             previous_document=self.original, current_document=after))
 
     def test_unproven_new_prose_and_tampered_answer_are_rejected(self):
