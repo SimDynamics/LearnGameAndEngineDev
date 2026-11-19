@@ -970,8 +970,15 @@ void retirement_contract_tests(const Lesson& first) {
     check(useful == 6,"U1 retirement lost an independent useful compiler activity");
     const auto final = lgaed::windows::load_lesson(first.source_path.parent_path()/"lesson_resolver_probar_y_recuperar.json");
     for (const auto& page : final.pages) for (const auto& block : page.blocks) if (block.type == BlockType::cpp_compiler) ++useful;
-    check(useful == 8,"The eight useful U1 compiler practices were not preserved");
-    std::cout << "Retired U1 compiler contracts, original slots, active bookmarks and eight useful editors: PASS\n";
+    const bool revised=stable_block_position(final,"p1u1l5_un_salto_en_el_codigo").has_value();
+    const bool added_editor=stable_block_position(final,"p1u1l5_escribir_linea_intermedia").has_value();
+    check(revised==added_editor,
+        "The U1L5 new edition omitted or orphaned its intermediate-line compiler");
+    check(useful == (revised?9u:8u),
+        "U1 retirement lost a historical editor or the newly authored intermediate-line practice");
+    std::cout << "Retired U1 compiler contracts, original slots and active bookmarks: "
+              << useful << " useful editors including "<<(revised?1:0)
+              <<" edition addition(s): PASS\n";
 }
 void integrated_retirement_contract_tests() {
     using namespace winrt::Windows::Data::Json;
@@ -1042,7 +1049,19 @@ void integrated_retirement_contract_tests() {
             check(preserved,"The later reading archive lost the already-refined ordering representation");
         }
         for(const auto& page:current.pages)for(const auto& block:page.blocks){
-            const auto origin=stable_block_position(before,block.stable_id);check(origin.has_value(),"Integrated retirement invented an active identity");
+            const auto origin=stable_block_position(before,block.stable_id);
+            if(!origin){
+                const auto addition=std::ranges::find_if(current.state_layout.additions,[&](const auto& record){
+                    return record.id==block.stable_id;
+                });
+                check(addition!=current.state_layout.additions.end(),
+                    "A current edition activity has neither an original identity nor an authenticated addition");
+                if(block.type==BlockType::cpp_compiler){
+                    ++useful;
+                    check(block.output_check.has_value(),"An added U1 compiler has no own fresh execution objective");
+                }
+                continue;
+            }
             const auto& old=before.pages[origin->page].blocks[origin->block];
             check(exercise_key(current,block)==exercise_key(before,old)&&draft_key("programming",current,block)==draft_key("programming",before,old),
                 "An integrated active block lost its historical response or draft slot");
@@ -1054,11 +1073,32 @@ void integrated_retirement_contract_tests() {
             check(!retired_block(current,required),"A current useful activity still requires a retired execution");
     }
     const auto last=lgaed::windows::load_lesson(folder/"lesson_resolver_probar_y_recuperar.json");
-    check(last.compiler_puzzles_required,"The two final useful U1 compiler objectives stopped being mandatory");
+    check(last.compiler_puzzles_required,"The U1L5 useful compiler objectives stopped being mandatory");
+    const bool revised=stable_block_position(last,"p1u1l5_un_salto_en_el_codigo").has_value();
+    const auto added=stable_block_position(last,"p1u1l5_escribir_linea_intermedia");
+    check(revised==added.has_value(),"A revised U1L5 omitted its new editor or an older edition falsely acquired it");
+    std::set<std::string> distinct_keys;
+    std::size_t final_editors=0;
     for(const auto& page:last.pages)for(const auto& block:page.blocks)if(block.type==BlockType::cpp_compiler){
-        ++useful;check(block.output_check.has_value(),"A final useful U1 compiler lost its objective");}
-    check(useful==8,"Current U1 no longer contains exactly eight useful mandatory compilers");
-    std::cout<<"Integrated U1 assets: exact compiler/reading retirement batches and d1933ed source, preserved ordering provenance/slots, eight mandatory useful objectives and no repeated retirement: PASS\n";
+        ++final_editors;++useful;
+        check(block.output_check.has_value(),"A final useful U1 compiler lost its objective");
+        check(distinct_keys.insert(exercise_key(last,block)).second,
+            "Two U1L5 compilers share a scored response owner");
+    }
+    check(final_editors==(revised?3u:2u)&&useful==(revised?9u:8u),
+        "Current U1 lost historical useful editors or added an unaccounted compiler");
+    if(added){
+        const auto& block=last.pages[added->page].blocks[added->block];
+        check(added->page==2&&block.type==BlockType::cpp_compiler&&
+            block.initial_code.find("std::cout << \"Puesto\\n\";")!=std::string::npos&&
+            block.initial_code.find("std::cout << \"Fin\";")!=std::string::npos&&
+            block.output_check&&block.output_check->cases.size()==1&&
+            block.output_check->cases.front().outputs==std::vector<std::string>{"Puesto\nMesa B\nFin"},
+            "The new intermediate-line objective no longer checks the three independently ordered lines");
+    }
+    std::cout<<"Integrated U1 assets: exact historical retirements, original slots and "
+             <<useful<<" distinct mandatory compiler objectives (including "<<(revised?1:0)
+             <<" authored addition), no repeated retirement: PASS\n";
 }
 void rejection_semantic_contract_tests() {
     using namespace lgaed::curriculum;
