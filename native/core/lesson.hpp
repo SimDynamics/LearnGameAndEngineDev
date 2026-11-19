@@ -387,6 +387,13 @@ struct StatePositionalReadingPage {
 struct SourceFormatRevision {
     std::string id, raw_json, sha256;
 };
+// Authenticated source-only C++ identifier revision. The historical block is
+// kept as a complete archival snapshot, never a second response or draft.
+// Native loading restores its old names before any existing source-format
+// projection when checking the immutable state signature.
+struct IdentifierRenameRevision {
+    std::string id, raw_json, before_sha256, after_sha256;
+};
 struct MathTextRevision {
     std::string id, field, raw_json, sha256;
     std::optional<TextSemantics> semantic_before;
@@ -404,6 +411,7 @@ struct StateLayout {
     std::vector<StateRetirementHistory> retirement_history;
     std::vector<OrderRefinement> order_refinements;
     std::vector<SourceFormatRevision> source_format_revisions;
+    std::vector<IdentifierRenameRevision> identifier_rename_revisions;
     std::vector<MathTextRevision> math_text_revisions;
     std::vector<ChoiceRevision> choice_revisions;
     std::vector<CompilerRevision> compiler_revisions;
