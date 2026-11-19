@@ -24,6 +24,10 @@ bool whitespace(std::uint32_t c) {
         c == 0x2029 || c == 0x202f || c == 0x205f || c == 0x3000;
 }
 
+// Shared with the reversible data-label renderer below: a formatting-only
+// character cannot by itself make an authored UI title or caption visible.
+bool invisible_text_codepoint(std::uint32_t point);
+
 bool valid_utf8(std::string_view text, bool* nonblank = nullptr) {
     bool visible = false;
     for (std::size_t at = 0; at < text.size();) {
@@ -43,7 +47,7 @@ bool valid_utf8(std::string_view text, bool* nonblank = nullptr) {
         }
         if (point < minimum || point > 0x10ffff || (point >= 0xd800 && point <= 0xdfff) || point == 0)
             return false;
-        visible = visible || !whitespace(point);
+        visible = visible || (!whitespace(point) && !invisible_text_codepoint(point));
     }
     if (nonblank) *nonblank = visible;
     return true;

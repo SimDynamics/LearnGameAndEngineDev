@@ -75,7 +75,9 @@ def _text(value, field, maximum, *, nonblank=True, single_line=False, allow_empt
     except UnicodeError as error:
         raise ValueError(f"{field} contiene Unicode no válido") from error
     _require(len(encoded) <= maximum, f"{field} supera {maximum} bytes UTF-8")
-    _require(not nonblank or bool(value.strip()), f"{field} no puede contener sólo espacios")
+    _require(not nonblank or any(not char.isspace() and ord(char) not in _INVISIBLE_TEXT_POINTS
+                                 for char in value),
+             f"{field} necesita al menos un carácter visible, no sólo espacios o controles invisibles")
     _require(not single_line or ("\n" not in value and "\r" not in value),
              f"{field} no admite CR ni LF dentro de un valor")
     return encoded

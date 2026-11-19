@@ -1018,6 +1018,17 @@ void contract_rejections() {
     invalid([](auto& s) { s.description.assign(4001, 'x'); }, "Long description accepted");
     invalid([](auto& s) { s.labels.array.assign(81, 'x'); }, "Long label accepted");
     invalid([](auto& s) { s.labels.array = "\xE3\x80\x80"; }, "Unicode-whitespace label accepted");
+    invalid([](auto& s) { s.title = "\xE2\x80\x8B"; }, "Invisible-only title accepted");
+    invalid([](auto& s) { s.labels.frequency = "\xE2\xA0\x80"; }, "Braille blank accepted as a public label");
+    invalid([](auto& s) { s.description = "\xF3\xA0\x80\xA0"; }, "Supplementary tag accepted as a description");
+    invalid([](auto& s) { s.explanations.done = "\xEF\xB8\x8F"; }, "Standalone variation selector accepted as prose");
+    invalid([](auto& s) { s.scenarios = {{"case", "\xE2\x81\xA0", {}}}; },
+        "Invisible-only scenario label accepted");
+    auto visible_with_format = good;
+    visible_with_format.title += "\xE2\x80\x8B";
+    visible_with_format.text_values = true;
+    visible_with_format.values = {std::string{"\xE2\x80\x8B"}};
+    validate_simulation_spec(visible_with_format);
     invalid([](auto& s) { s.labels.end = ""; }, "Missing label accepted");
     invalid([](auto& s) { s.explanations.empty.assign(2001, 'x'); }, "Long explanation accepted");
     invalid([](auto& s) { s.explanations.tie = ""; }, "Missing explanation accepted");

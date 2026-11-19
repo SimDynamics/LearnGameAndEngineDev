@@ -282,10 +282,18 @@ class SimulationContractTest(unittest.TestCase):
                 target = target[item]
             target[field] = "ñ" * (limit // 2)
             simulation.validate_contract(value)
-            for text in ("ñ" * (limit // 2) + "a", "", " \t\n", "\u2003\u00a0", "\0a", "\ud800"):
+            for text in ("ñ" * (limit // 2) + "a", "", " \t\n", "\u2003\u00a0",
+                         "\u200b", "\u2800", "\ufe0f", "\U000e0020", "\0a", "\ud800"):
                 target[field] = text
                 with self.subTest(path=path, field=field, text=repr(text[:20])), self.assertRaises(ValueError):
                     simulation.validate_contract(value)
+            target[field] = "Dato\u200bvisible"
+            simulation.validate_contract(value)
+        # The rendering rule belongs only to public prose, not student data.
+        value = block()
+        value["simulation"].update(valueType="text", values=["\u200b", "\u2800", "\U000e0020"],
+                                   scenarios=[])
+        simulation.validate_contract(value)
 
     def test_templates_allow_only_declared_names_and_do_not_evaluate_values(self):
         value = block()

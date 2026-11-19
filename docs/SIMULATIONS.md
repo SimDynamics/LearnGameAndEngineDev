@@ -178,7 +178,11 @@ Estas diferencias también se conservan al contar y comparar:
 
 Las mismas reglas se aplican a `values`, a todos los escenarios y a los datos
 editados. Los textos de presentación, como títulos, etiquetas y explicaciones,
-siguen siendo obligatorios y no pueden estar vacíos.
+siguen siendo obligatorios y no pueden estar vacíos ni estar compuestos
+únicamente por espacios o caracteres de formato invisibles. Es válido
+conservar esos caracteres junto a texto realmente visible. Esta restricción
+sólo se aplica a la presentación: no elimina ni sustituye las cadenas
+vacías, los espacios o los caracteres invisibles usados como datos.
 
 Para explorar palabras, adapta el ejemplo completo: cambia `valueType` a
 `"text"`, usa `values: ["luna", "sol", "luna", "nube", "sol"]` y sustituye
