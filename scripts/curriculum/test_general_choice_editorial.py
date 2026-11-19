@@ -202,6 +202,79 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
                                  if field["block"] == OWNER and field["path"] == "/options/0")
         self.assertEqual(archived["semanticBefore"], original_semantic)
 
+    def test_general_option_revision_passes_curricular_published_exercise_guard(self):
+        import validar_json_programacion as contract
+
+        relative = "app/src/main/assets/content/es/" + RELATIVE
+        page, position = next((p, b)
+            for p, group in enumerate(self.original["stateLayout"]["current"])
+            for b, owner in enumerate(group["blocks"]) if owner == OWNER)
+        original = self.block
+        spans = [layout.text_semantics.select(
+            REVISED, "condición para aceptar la transición",
+            "prose", reading="natural")]
+        for authored in (None, spans):
+            with self.subTest(authored=authored):
+                reviewed = layout.revise_choice_editorial(
+                    self.original, OWNER, 0, REVISED, spans=authored)
+                updated = layout._blocks(reviewed)[OWNER]
+                self.assertTrue(contract.preserves_general_choice_option_revision(
+                    relative, page, position, original, updated,
+                    previous_document=self.original, current_document=reviewed))
+                self.assertTrue(contract.preserves_previous_exercise(
+                    relative, page, position, original, updated,
+                    previous_document=self.original, current_document=reviewed))
+                self.assertEqual(original["correctIndex"], updated["correctIndex"])
+                self.assertEqual(original["options"][1:], updated["options"][1:])
+
+    def test_general_option_curricular_guard_rejects_answer_and_history_tampering(self):
+        import validar_json_programacion as contract
+
+        relative = "app/src/main/assets/content/es/" + RELATIVE
+        page, position = next((p, b)
+            for p, group in enumerate(self.original["stateLayout"]["current"])
+            for b, owner in enumerate(group["blocks"]) if owner == OWNER)
+        reviewed = self.revise()
+        original = self.block
+
+        def admitted(document, path=relative):
+            return contract.preserves_general_choice_option_revision(
+                path, page, position, original,
+                layout._blocks(document)[OWNER], previous_document=self.original,
+                current_document=document)
+
+        self.assertTrue(admitted(reviewed))
+        for mutation in ("answer", "another-option", "explanation", "question",
+                         "archive", "missing-editorial-proof", "foreign-lesson"):
+            changed = deepcopy(reviewed)
+            owner = layout._blocks(changed)[OWNER]
+            if mutation == "answer":
+                owner["correctIndex"] = 1
+            elif mutation == "another-option":
+                owner["options"][1] += " No autorizado."
+            elif mutation == "explanation":
+                owner["explanation"] += " Cambio oculto."
+            elif mutation == "question":
+                owner["question"] += " Cambio oculto."
+            elif mutation == "archive":
+                changed["stateLayout"]["choiceRevisions"][0]["block"]["options"][0] = "Origen falsificado"
+            elif mutation == "missing-editorial-proof":
+                changed["stateLayout"]["editorial"].pop()
+            elif mutation == "foreign-lesson":
+                changed["id"] = "cpp_fundamentals__otra_unidad__otra_leccion"
+            with self.subTest(mutation=mutation):
+                self.assertFalse(admitted(changed))
+                self.assertFalse(contract.preserves_previous_exercise(
+                    relative, page, position, original, owner,
+                    previous_document=self.original, current_document=changed))
+        self.assertFalse(admitted(reviewed, path=relative.replace(
+            "lesson_construir_y_comprobar_un_modelo_de_pedidos",
+            "lesson_otra_leccion")))
+        self.assertFalse(contract.preserves_general_choice_option_revision(
+            relative, page, position, original, layout._blocks(reviewed)[OWNER],
+            previous_document=self.original, current_document=reviewed,
+            course_id="programming_practice_tools"))
+
     def test_revised_option_keeps_exact_semantic_spans_and_history(self):
         original_field = next(field for field in self.original["textSemantics"]["fields"]
                               if field["block"] == OWNER and field["path"] == "/options/0")

@@ -1469,6 +1469,66 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
         return False
 
 
+def preserves_general_choice_option_revision(relative, pn, bn, old, current, *,
+                                             previous_document=None, current_document=None,
+                                             course_id="cpp_fundamentals"):
+    """Recognize one authenticated option rewrite under its original owner.
+
+    The curricular validator must accept the generic v2 choice archive, not
+    just the closed historical examples. A revision of visible wording cannot
+    modify the correct choice, other options, guidance or answer contract.
+    """
+    if (not is_structural_course_id(course_id)
+            or type(pn) is not int or type(bn) is not int or pn < 0 or bn < 0
+            or type(old) is not dict or type(current) is not dict
+            or old.get("type") != "multiple_choice"
+            or current.get("type") != "multiple_choice"
+            or type(previous_document) is not dict
+            or type(current_document) is not dict):
+        return False
+    try:
+        prefix = PurePosixPath("app/src/main/assets/content/es/programming") / course_id
+        lesson_path = PurePosixPath(str(relative).replace("\\", "/")).relative_to(prefix)
+        if (len(lesson_path.parts) != 2 or ".." in lesson_path.parts
+                or lesson_path.suffix != ".json"
+                or not lesson_path.stem.startswith("lesson_")
+                or not lesson_path.stem[7:]):
+            return False
+        lesson_id = "__".join((course_id, lesson_path.parent.name, lesson_path.stem[7:]))
+        meta = current_document.get("stateLayout")
+        if (previous_document.get("id") != lesson_id
+                or current_document.get("id") != lesson_id
+                or type(meta) is not dict or meta.get("version") != 2
+                or meta.get("locale") != "es"):
+            return False
+        baseline = _state_layout.prepare(previous_document)
+        origin = _state_layout.validate(baseline)
+        _state_layout.validate_transition(previous_document, current_document)
+        owners = [baseline["stateLayout"]["current"][page]["blocks"][block]
+                  for (page, block), position in origin.items()
+                  if position == (pn, bn)]
+        if len(owners) != 1:
+            return False
+        identity = owners[0]
+        if (_state_layout._blocks(baseline).get(identity) != old
+                or _state_layout._blocks(current_document).get(identity) != current
+                or _state_layout._general_choice_revision(previous_document, identity) is not None):
+            return False
+        archive = _state_layout._general_choice_revision(current_document, identity)
+        if (type(archive) is not dict or archive.get("block") != old
+                or type(archive.get("optionIndex")) is not int
+                or type(archive.get("replacement")) is not str):
+            return False
+        index = archive["optionIndex"]
+        if type(old.get("options")) is not list or index not in range(len(old["options"])):
+            return False
+        expected = copy.deepcopy(old)
+        expected["options"][index] = archive["replacement"]
+        return current == expected
+    except (ValueError, KeyError, TypeError, IndexError, AttributeError, RecursionError):
+        return False
+
+
 def preserves_source_format_revision(relative, pn, bn, old, current, *,
                                      previous_document=None, current_document=None,
                                      course_id="cpp_fundamentals"):
@@ -1603,6 +1663,10 @@ def preserves_previous_exercise(relative, pn, bn, old, current, *,
     if preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
                                                previous_document, current_document,
                                                course_id=course_id):
+        return True
+    if preserves_general_choice_option_revision(
+            relative, pn, bn, old, current, previous_document=previous_document,
+            current_document=current_document, course_id=course_id):
         return True
     # A bibliographic revision is proved on the complete original block,
     # before any older guide/representation projection can hide another edit.
