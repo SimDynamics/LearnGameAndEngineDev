@@ -640,6 +640,13 @@ int identifier_rename_live_windows(const std::filesystem::path& content,
     draft.selection_start=2;draft.selection_end=4;
     const auto original_key=draft_key("programming",baseline,old_editor);
     state::put_draft(data,original_key,draft);
+    const auto capture=request(old_editor);
+    require(record_compiler_puzzle_case(data,baseline,old_editor,capture,
+            execution(old_editor,capture),"Correcto: QA U5L13 histórico"),
+        "The original frequency editor could not save its real-case success receipt");
+    require(compiler_puzzle_completed(data,baseline,old_editor),
+        "A successful original frequency run was not credited");
+    const auto prior_receipts=receipts(data);
     data.preferences["qa-independent"]["unchanged"]=std::string("opaque");
     store.save(data);
     data=reopen(store);
@@ -651,12 +658,17 @@ int identifier_rename_live_windows(const std::filesystem::path& content,
     state::validate_lesson_state(data,metadata);
     require(draft_key("programming",changed,new_editor)==original_key&&
         state::get_draft(data,original_key,new_editor.initial_code).source==draft.source&&
-        state::string_value(data,"qa-independent","unchanged")=="opaque",
-        "Renaming changed a learner's storage key, saved draft or unrelated preferences");
+        state::string_value(data,"qa-independent","unchanged")=="opaque"&&
+        compiler_puzzle_completed(data,changed,new_editor)&&
+        compiler_puzzle_completed(data,metadata,editor(metadata,editor_id))&&
+        receipts(data)==prior_receipts,
+        "Renaming changed a learner's saved draft, earned receipt or independent state");
     store.save(data);
     const auto persisted=reopen(store);
     state::validate_lesson_state(persisted,changed);
-    require(persisted==data,"Renaming changed state during a durable reopen");
+    require(persisted==data&&compiler_puzzle_completed(persisted,changed,new_editor)&&
+        receipts(persisted)==prior_receipts,
+        "Renaming changed an original achievement or receipt after durable reopen");
 
     const auto rejects=[&](std::string_view cause,const auto& mutation) {
         const auto forged=JsonObject::Parse(winrt::to_hstring(serialized));
@@ -694,7 +706,8 @@ int identifier_rename_live_windows(const std::filesystem::path& content,
         "A Windows rename regression wrote to a published curriculum asset");
     std::cout<<"PASS real frequency lesson Windows identifier rename: six exact "
              <<"source/progress owners, native + metadata loader, reopened learner "
-             <<"draft, authenticated original format and four hostile archives.\n";
+             <<"draft and earned receipt, authenticated original format "
+             <<"and four hostile archives.\n";
     return 0;
 }
 
