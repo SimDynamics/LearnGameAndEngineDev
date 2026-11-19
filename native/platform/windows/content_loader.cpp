@@ -1574,6 +1574,35 @@ std::optional<TextSemantics> math_prompt_semantics(const IJsonValue& value,std::
         if(span.HasKey(L"reading"))item.reading=parse_semantic_reading(text(span,"reading"));result.spans.push_back(std::move(item));}
     validate_text_semantics(result);return result;
 }
+std::optional<TextSemantics> matching_field_semantics(
+        const IJsonValue& value,std::string_view owner,
+        std::string_view path,std::string_view authored) {
+    if(value.ValueType()==JsonValueType::Null)return {};
+    const auto field=value.GetObject();
+    allowed_keys(field,{"block","path","sourceSha256","spans"},true);
+    require(text(field,"block")==owner&&text(field,"path")==path,
+        "Matching text semantics belong to a different field or owner");
+    TextSemantics result;result.source=std::string(authored);
+    const auto digest=text(field,"sourceSha256");
+    require(valid_hash(digest)&&sha256(authored)==digest,
+        "A matching text marker uses another source's hash");
+    const auto spans=array(field,"spans");
+    require(spans.Size()<=100000,"Too many mathematical matching text spans");
+    for(const auto& raw:spans) {
+        const auto item=raw.GetObject();
+        allowed_keys(item,{"start","end","text","role","reading"});
+        SemanticSpan selected;
+        selected.start=integer(item.GetNamedValue(L"start"),16*1024*1024);
+        selected.end=integer(item.GetNamedValue(L"end"),16*1024*1024);
+        selected.text=bibliography_string(item.GetNamedString(L"text"));
+        selected.role=parse_semantic_role(text(item,"role"));
+        if(item.HasKey(L"reading"))
+            selected.reading=parse_semantic_reading(text(item,"reading"));
+        result.spans.push_back(std::move(selected));
+    }
+    validate_text_semantics(result);
+    return result;
+}
 void require_math_prompt_semantics(const JsonObject& root,std::string_view owner,const JsonObject& current,bool retain_spans) {
     require(root.HasKey(L"textSemantics"),"A mathematical prompt revision needs explicit current semantics");
     const auto metadata=root.GetNamedObject(L"textSemantics");const auto fields=array(metadata,"fields");
