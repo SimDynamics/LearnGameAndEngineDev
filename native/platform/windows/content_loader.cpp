@@ -1,6 +1,7 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/bibliography_revision.hpp"
 #include "core/code_format_compat.hpp"
+#include "core/identifier_rename_compat.hpp"
 #include "core/cmake_selective_recovery.hpp"
 #include "core/named_rule_battery_check.hpp"
 #include "core/named_rule_constant_variation_check.hpp"
@@ -407,6 +408,95 @@ JsonObject source_format_projection(const JsonObject& active,const JsonObject& s
         projected.Insert(field,snapshot.GetNamedValue(field));
     }
     return projected;
+}
+
+// Identifier-only revisions own a *different* permission from source spacing.
+// Reuse the native production lexer to extract exactly the authored C++ slots;
+// preserve all other JSON fields, file paths, answers and objective metadata.
+curriculum::code_format::Language identifier_slot_language(std::string language) {
+    while(!language.empty()&&std::isspace(static_cast<unsigned char>(language.front())))
+        language.erase(language.begin());
+    while(!language.empty()&&std::isspace(static_cast<unsigned char>(language.back())))
+        language.pop_back();
+    for(auto& c:language)if(c>='A'&&c<='Z')c=static_cast<char>(c-'A'+'a');
+    if(language.empty()||language=="cpp"||language=="c++"||language=="cxx"||
+       language=="c"||language=="h"||language=="hpp")
+        return curriculum::code_format::Language::cpp;
+    if(language=="cmake")return curriculum::code_format::Language::cmake;
+    return curriculum::code_format::Language::immutable;
+}
+curriculum::code_format::Language identifier_file_language(std::string path) {
+    const auto slash=path.find_last_of("/\\");
+    const auto basename=slash==path.npos?path:path.substr(slash+1);
+    if(basename=="CMakeLists.txt"||std::string_view(path).ends_with(".cmake"))
+        return curriculum::code_format::Language::cmake;
+    const auto dot=path.find_last_of('.');
+    if(dot==path.npos)return curriculum::code_format::Language::immutable;
+    auto ext=path.substr(dot);
+    for(auto& c:ext)if(c>='A'&&c<='Z')c=static_cast<char>(c-'A'+'a');
+    constexpr std::array<std::string_view,10> cpp{
+        ".cpp",".cc",".cxx",".c",".h",".hpp",".hh",".hxx",".inl",".ixx"};
+    return std::ranges::find(cpp,ext)!=cpp.end()?
+        curriculum::code_format::Language::cpp:
+        curriculum::code_format::Language::immutable;
+}
+std::vector<curriculum::identifier_rename::SourceSlot>
+    identifier_code_slots(const JsonObject& block) {
+    using namespace curriculum::identifier_rename;
+    std::vector<SourceSlot> out;
+    const auto type=text(block,"type");
+    const auto language=identifier_slot_language(optional_text(block,"language"));
+    if(block.HasKey(L"code"))
+        out.push_back({"code",language,text(block,"code")});
+    if((type=="inline_fill_code"||type=="drag_fill_code")&&
+       block.HasKey(L"template"))
+        out.push_back({"template",language,text(block,"template")});
+    if(type=="cpp_compiler") {
+        if(block.HasKey(L"initialCode"))
+            out.push_back({"initialCode",curriculum::code_format::Language::cpp,
+                           text(block,"initialCode")});
+        if(block.HasKey(L"projectFiles")) {
+            const auto files=array(block,"projectFiles");
+            for(unsigned i=0;i<files.Size();++i) {
+                const auto file=files.GetObjectAt(i);
+                out.push_back({"projectFiles/"+std::to_string(i)+"/initialCode",
+                               identifier_file_language(text(file,"path")),
+                               text(file,"initialCode")});
+            }
+        }
+    }
+    if(type=="order_code"&&block.HasKey(L"fragments")) {
+        const auto fragments=array(block,"fragments");
+        for(unsigned i=0;i<fragments.Size();++i)
+            out.push_back({"fragments/"+std::to_string(i),language,
+                           utf8(fragments.GetStringAt(i))});
+    }
+    if(type=="drag_fill_code"&&block.HasKey(L"choices")) {
+        const auto choices=array(block,"choices");
+        for(unsigned i=0;i<choices.Size();++i)
+            out.push_back({"choices/"+std::to_string(i),language,
+                           utf8(choices.GetStringAt(i))});
+    }
+    return out;
+}
+JsonObject identifier_restore_source(const JsonObject& active,const JsonObject& prior) {
+    auto result=JsonObject::Parse(active.Stringify());
+    for(const auto& entry:identifier_code_slots(prior)) {
+        const auto slash=entry.id.find('/');
+        const auto value=JsonValue::CreateStringValue(key(entry.source));
+        if(slash==std::string::npos) {
+            result.Insert(key(entry.id),value);
+            continue;
+        }
+        const auto ending=entry.id.find('/',slash+1);
+        const auto index=static_cast<unsigned>(std::stoul(
+            entry.id.substr(slash+1,ending==entry.id.npos?
+                std::string::npos:ending-slash-1)));
+        if(ending==entry.id.npos)result.GetNamedArray(key(entry.id.substr(0,slash))).SetAt(index,value);
+        else result.GetNamedArray(L"projectFiles").GetObjectAt(index).Insert(
+            L"initialCode",value);
+    }
+    return result;
 }
 
 // Source formatting can accompany a question correction or an optional
