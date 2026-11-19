@@ -161,7 +161,10 @@ def preview_math_matching_text_review(
         raise MatchingTextError("Every changed narrated field needs authored UTF-16 spans")
     before_marks = _markers(previous, identity)
     for path in marked:
-        if path in before_marks and before_marks[path]["spans"] and not spans[path]:
+        if path not in before_marks:
+            raise MatchingTextError(
+                "This matching review requires a previously authored semantic source")
+        if before_marks[path]["spans"] and not spans[path]:
             raise MatchingTextError("A marked passage cannot silently lose all its highlighting")
     result = deepcopy(previous)
     block = state._blocks(result)[identity]
@@ -370,10 +373,14 @@ def authenticated_matching_text_originals(
                 continue
             if path not in after_public or revised is None:
                 raise MatchingTextError("A changed narrated field needs its current marker")
-            if (earlier is not None and
-                    (type(earlier) is not dict or
-                     set(earlier) != {"block", "path", "sourceSha256", "spans"})):
-                raise MatchingTextError("Malformed original matching source descriptor")
+            # First version requires an existing, authenticated source marker.
+            # Otherwise a standalone document could claim a formerly marked
+            # source had no marker; future first-time annotations need their
+            # own historical evidence before using this journal.
+            if (type(earlier) is not dict or
+                    set(earlier) != {"block", "path", "sourceSha256", "spans"}):
+                raise MatchingTextError(
+                    "A matching text revision needs its original narrated marker")
             if (type(revised) is not dict or
                     set(revised) != {"block", "path", "sourceSha256", "spans"} or
                     current_markers.get(path) != revised):
