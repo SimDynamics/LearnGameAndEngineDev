@@ -33,16 +33,44 @@ jobs:
         shell: cmd
         run: >
           cl /nologo /std:c++latest /EHsc /W4 /permissive-
-          /Zc:__cplusplus /utf-8 /I native
+          /Zc:__cplusplus /utf-8 /I native /I "%RUNNER_TEMP%\guidance-generated"
           /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX
           /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
           native\platform\windows\compiler_completion.cpp
           /Fo:"%RUNNER_TEMP%\compiler_guidance_completion.obj"
+      - name: Generate the existing native QA configuration header for exact checkout
+        shell: pwsh
+        run: |
+          $root = (Get-Location).Path.Replace('\', '/')
+          $destination = Join-Path $env:RUNNER_TEMP 'guidance-generated'
+          [void][System.IO.Directory]::CreateDirectory($destination)
+          $toolchain = $env:VCToolsInstallDir.Replace('\', '/')
+          $sdk = $env:WindowsSdkDir.Replace('\', '/')
+          $template = Get-Content -LiteralPath 'cmake/native_build_config.hpp.in' -Raw -Encoding UTF8
+          $replacements = @{
+            '@LGAED_CPP_STANDARD@' = '23'
+            '@LGAED_CPP_STANDARD_OPTION@' = '/std:c++latest'
+            '@LGAED_DEFAULT_PROFILE@' = 'Codex'
+            '@CMAKE_SOURCE_DIR@' = $root
+            '@LGAED_DEP_ROOT@' = ''
+            '@LGAED_EDUCATIONAL_VC_ROOT@' = $toolchain
+            '@LGAED_EDUCATIONAL_SDK_ROOT@' = $sdk
+            '@CMAKE_COMMAND@' = 'cmake'
+            '@CMAKE_MAKE_PROGRAM@' = 'ninja'
+            '@CMAKE_RC_COMPILER@' = 'rc'
+            '@CMAKE_CURRENT_BINARY_DIR@' = $destination.Replace('\', '/')
+          }
+          foreach ($entry in $replacements.GetEnumerator()) {
+            $template = $template.Replace($entry.Key, $entry.Value)
+          }
+          if ($template -match '@[A-Z_]+@') { throw 'An unresolved native header variable remains.' }
+          [System.IO.File]::WriteAllText((Join-Path $destination 'native_build_config.hpp'),
+            $template, [System.Text.UTF8Encoding]::new($false))
       - name: Compile authentic guidance, archival and receipt regressions
         shell: cmd
         run: >
           cl /nologo /std:c++latest /EHsc /W4 /permissive-
-          /Zc:__cplusplus /utf-8 /I native
+          /Zc:__cplusplus /utf-8 /I native /I "%RUNNER_TEMP%\guidance-generated"
           /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX
           /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
           native\platform\windows\compiler_guidance_state_tests.cpp
