@@ -40,6 +40,20 @@ EXAMPLE_INPUTS = {
 }
 
 
+def prediction_text_without_one_terminal_newline(value: str) -> str:
+    """Normalize only the final line terminator in authored prediction answers.
+
+    The published prediction is entered as text without a terminal newline,
+    while the reference C++ program prints one with std::cout. Internal lines,
+    trailing spaces, and additional blank output lines remain exact.
+    """
+    if value.endswith("\r\n"):
+        return value[:-2]
+    if value.endswith("\n"):
+        return value[:-1]
+    return value
+
+
 def authored_sources(lesson: dict) -> dict[str, dict]:
     return {
         identity: block
@@ -155,6 +169,23 @@ class FrequencyRenameRuntime(unittest.TestCase):
                 results.append(self._execute(binary, ""))
             self.assertEqual(results, [(0, "Maxima:8\n", "")] * 2)
 
+    def test_prediction_normalizes_one_terminal_newline_only(self) -> None:
+        # A published answer need not repeat the final std::cout line ending.
+        correct = "Frecuencias:\n[]=2\nMaxima:2"
+        self.assertEqual(
+            prediction_text_without_one_terminal_newline(correct + "\n"), correct)
+        self.assertEqual(
+            prediction_text_without_one_terminal_newline(correct + "\r\n"), correct)
+        self.assertEqual(
+            prediction_text_without_one_terminal_newline(correct), correct)
+        self.assertNotEqual(
+            prediction_text_without_one_terminal_newline(correct + "\n\n"), correct)
+        self.assertNotEqual(
+            prediction_text_without_one_terminal_newline(correct + " \n"), correct)
+        self.assertNotEqual(
+            prediction_text_without_one_terminal_newline(
+                correct.replace("[]=2", "[]=3") + "\n"), correct)
+
     def test_six_real_published_owners_compile_with_identical_outputs(self) -> None:
         self.assertEqual(len(OWNER_CASES), 6)
         with tempfile.TemporaryDirectory(prefix="lgaed-frequency-rename-") as temp:
@@ -196,7 +227,10 @@ class FrequencyRenameRuntime(unittest.TestCase):
                         self.assertEqual(revised_result, original_result)
                         self.assertEqual(original_result[0], 0)
                         self.assertEqual(original_result[2], "")
-                        self.assertIn(original_result[1], before["answers"])
+                        self.assertIn(
+                            prediction_text_without_one_terminal_newline(original_result[1]),
+                            [prediction_text_without_one_terminal_newline(answer)
+                             for answer in before["answers"]])
                     else:
                         for given_input in EXAMPLE_INPUTS.get(identity, ("",)):
                             with self.subTest(standard_input=given_input):
