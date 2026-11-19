@@ -8,6 +8,8 @@ on:
       - native/core/simulation.hpp
       - native/core/simulation.cpp
       - native/core/simulation_tests.cpp
+      - native/presentation/windows/simulation_view.cpp
+      - native/presentation/windows/simulation_view_tests.cpp
       - scripts/curriculum/simulation.py
       - scripts/curriculum/test_simulation.py
   workflow_dispatch:
@@ -75,3 +77,32 @@ jobs:
       - name: Execute the exact portable model regressions on Windows
         shell: cmd
         run: '"%RUNNER_TEMP%\lgaed_simulation_model_tests.exe"'
+
+  portable-win32-view-compile:
+    # The full GUI/reader integration has separately pinned MSVC/SDK tools.
+    # This independent check catches Win32 view/test compilation errors on
+    # hosted Windows even when that exact full-app toolset is unavailable.
+    name: Win32 simulation view and UI regressions compile (MSVC)
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - name: Read exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Activate Visual C++ on disposable runner
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile real simulation view source
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /permissive-
+          /Zc:__cplusplus /utf-8 /I native /c
+          native\presentation\windows\simulation_view.cpp
+          /Fo:"%RUNNER_TEMP%\lgaed_simulation_view.obj"
+      - name: Compile actual Win32 interaction regression source
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /permissive-
+          /Zc:__cplusplus /utf-8 /I native /c
+          native\presentation\windows\simulation_view_tests.cpp
+          /Fo:"%RUNNER_TEMP%\lgaed_simulation_view_tests.obj"
