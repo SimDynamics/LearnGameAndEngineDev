@@ -3591,7 +3591,11 @@ void completed_compilers_keep_navigation_after_active_content() {
     require(windows::compiler_puzzle_completed(f.saved(),f.lesson,first_goal)&&f.text(first->block,4).starts_with("✓ Correcto"),
         "The actual construction did not execute its preserved authored solution");
     require(!lesson_page_state(f.view).can_next,"Compiler completion bypassed the remaining current multiple choice");
-    f.solve(4);verify("current choice solved");
+    const auto choice=curriculum::stable_block_position(f.lesson,"block_0003_0004");
+    require(choice&&choice->page==f.page()&&
+        f.lesson.pages[choice->page].blocks[choice->block].type==BlockType::multiple_choice,
+        "The current U1L5 choice disappeared or moved to another authored page");
+    f.solve(choice->block);verify("current choice solved");
     require(lesson_page_state(f.view).can_next,"The completed construction and choice did not unlock Continue");
     f.reopen();verify("construction reopened");
     require(f.text(first->block,10)==source_b&&windows::compiler_puzzle_completed(f.saved(),f.lesson,first_goal),
