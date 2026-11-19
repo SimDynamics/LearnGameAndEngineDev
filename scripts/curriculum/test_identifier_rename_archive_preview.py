@@ -207,10 +207,13 @@ class FormattedOwnerRenamePreview(unittest.TestCase):
         self.assertEqual(len(draft["stateLayout"]["identifierRenameRevisions"]), 6)
         self.assertEqual(len(draft["stateLayout"]["editorial"]),
                          len(self.lesson["stateLayout"]["editorial"]) + 6)
-        # The document is deliberately not accepted by the current Python or
-        # native production validators. No historical migration is enabled.
-        with self.assertRaises(state.LayoutError):
-            state.validate(draft)
+        # The Python layout validator now accepts the authenticated draft
+        # and restores the six original response fingerprints and addresses.
+        # The Windows native reader is still not enabled for these archives.
+        state.validate(draft)
+        state.validate_transition(self.lesson, draft)
+        aligned = state.align_for_previous_validation(self.lesson, draft)
+        self.assertEqual(state._blocks(aligned), state._blocks(self.lesson))
         self.assertTrue(preview.verify_exact_published_rename_packet(
             self.lesson, draft["stateLayout"]["identifierRenameRevisions"][0],
             state._blocks(draft)[OWNERS[0][0]]))
@@ -245,6 +248,50 @@ class FormattedOwnerRenamePreview(unittest.TestCase):
                 with self.assertRaises((preview.RenamePreviewError,
                                         state.LayoutError, KeyError, TypeError)):
                     preview.validate_read_only_rename_draft(self.lesson, wrong)
+        self.assertEqual(PATH.read_bytes(), self.original_bytes)
+
+    def test_python_layout_rejects_tampered_published_rename_archive(self):
+        draft = self.draft_for_all_six_owners()
+        state.validate(draft)
+        records = draft["stateLayout"]["identifierRenameRevisions"]
+        for field, value in (
+            ("originalStateSha256", "0" * 64),
+            ("historicalFamilySha256", "0" * 64),
+            ("editorialPrefixSha256", "0" * 64),
+            ("stableStorage", {"page": 999, "block": 999}),
+            ("beforeSha256", "0" * 64),
+            ("afterSha256", "0" * 64),
+            ("priorSourceFormatSha256", "0" * 64),
+            ("confirmed", {"code": {"maxima": 1}}),
+        ):
+            with self.subTest(field=field):
+                forged = deepcopy(draft)
+                forged["stateLayout"]["identifierRenameRevisions"][0][field] = value
+                with self.assertRaises(state.LayoutError):
+                    state.validate(forged)
+        for label, change in (
+            ("delete archive", lambda doc: doc["stateLayout"][
+                "identifierRenameRevisions"].pop()),
+            ("delete editorial", lambda doc: doc["stateLayout"]["editorial"].pop()),
+            ("change answer", lambda doc: doc["pages"][7]["blocks"][2][
+                "answers"].append("forged")),
+        ):
+            with self.subTest(label=label):
+                forged = deepcopy(draft)
+                change(forged)
+                with self.assertRaises(state.LayoutError):
+                    state.validate(forged)
+
+    def test_python_transition_rejects_recycled_historical_block(self):
+        draft = self.draft_for_all_six_owners()
+        state.validate_transition(self.lesson, draft)
+        owner = OWNERS[0][0]
+        forged = deepcopy(draft)
+        target = next(item for item in forged["stateLayout"][
+            "identifierRenameRevisions"] if item["id"] == owner)
+        target["block"] = deepcopy(self.blocks[OWNERS[1][0]])
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.lesson, forged)
         self.assertEqual(PATH.read_bytes(), self.original_bytes)
 
     def test_wrong_operator_literal_or_archival_change_cannot_be_previewed(self):
