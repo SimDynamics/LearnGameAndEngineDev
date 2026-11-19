@@ -51,6 +51,7 @@ target_link_libraries(lgaed_guidance_core PUBLIC lgaed_guidance_qa_options)
 add_library(lgaed_guidance_platform STATIC
     "${LGAED_ROOT}/native/platform/windows/environment.cpp"
     "${LGAED_ROOT}/native/platform/windows/content_loader.cpp"
+    "${LGAED_ROOT}/native/platform/windows/bibliography_revision.cpp"
     "${LGAED_ROOT}/native/platform/windows/state_store.cpp"
     "${LGAED_ROOT}/native/platform/windows/compiler_completion.cpp"
     "${LGAED_ROOT}/native/platform/windows/cpp_runner.cpp"
