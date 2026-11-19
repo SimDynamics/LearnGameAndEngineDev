@@ -306,11 +306,16 @@ void invalid_edition_locations_recover_without_reusing_old_selection() {
         check(rejected,"A malformed edition identity was accepted as catalog navigation");
         // A previously persisted invalid entry must return to its published
         // ancestor, not appear available just because the probe is permissive.
+        const auto original=stale;
+        const auto nearest=stale.unit==valid_unit.unit?valid_unit:active_course;
         auto recovered=catalog_recover_location(std::move(stale),
-            [&](const CatalogLocation& place) {return place==active_course ||
-                !place.unit.empty();});
-        check(recovered==active_course,
-            "An invalid saved edition location reopened an unrelated unit");
+            [&](const CatalogLocation& place) {
+                // A buggy validator would accept the malformed saved leaf.
+                // Only the published unit and course are valid ancestors.
+                return place==original||place==valid_unit||place==active_course;
+            });
+        check(recovered==nearest,
+            "An invalid saved edition location reopened the wrong ancestor");
     };
     for(const auto* bad:{
             "cpp_fundamentals__edition_fr_0__inicio",
