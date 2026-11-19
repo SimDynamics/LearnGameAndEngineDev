@@ -34,7 +34,7 @@ import module final override
 
 def _declared_name(name: object) -> bool:
     return (type(name) is str and _IDENTIFIER.fullmatch(name) is not None
-            and name not in _CPP_KEYWORDS and not name.startswith("__"))
+            and name not in _CPP_KEYWORDS and "__" not in name)
 
 
 _SPELLING_OBSERVERS = frozenset({
