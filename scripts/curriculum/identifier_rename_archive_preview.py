@@ -60,7 +60,36 @@ def preview_published_rename(document: dict, identity: str, proposed_block: dict
     old_hash, new_hash = state.fingerprint(old), state.fingerprint(proposed_block)
     if not history or history[-1]["afterSha256"] != old_hash or old_hash == new_hash:
         raise RenamePreviewError("The current complete owner lacks its exact editorial head")
+
+    # Bind this drafting packet to the ORIGINAL historical storage address,
+    # never to its visual page/block after course reordering or extension.
+    # The immutable v2 origin and authenticated additions are the only
+    # authorities for the learning-progress address and response signature.
+    _, original_storage, original_digests = state._origin(meta["origin"])
+    added = [item for item in meta["additions"] if item["id"] == identity]
+    if len(added) > 1 or (added and identity in original_storage):
+        raise RenamePreviewError("A stable historical owner cannot have two storage origins")
+    if added:
+        storage = added[0]["storage"]
+        origin_digest = added[0]["sha256"]
+        address = {"page": storage["page"], "block": storage["block"]}
+    else:
+        if identity not in original_storage:
+            raise RenamePreviewError("The original stable owner has no storage address")
+        page, position = original_storage[identity]
+        address = {"page": page, "block": position}
+        origin_digest = original_digests[identity]
+
     return {
+        "lessonId": document["id"],
+        "locale": meta["locale"],
+        "historicalFamilySha256": meta["family"][meta["locale"]]["sha256"],
+        "originalStateSha256": origin_digest,
+        "stableStorage": address,
+        "editorialPrefixSha256": state.fingerprint({
+            "lessonId": document["id"], "locale": meta["locale"],
+            "editorial": meta["editorial"],
+        }),
         "id": identity,
         "block": deepcopy(old),
         "names": deepcopy(names),
