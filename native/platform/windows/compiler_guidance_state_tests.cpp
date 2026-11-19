@@ -64,6 +64,17 @@ Lesson retire_heading(const Lesson& source){
         root.HasKey(L"compilerPuzzlesRequired")?root.GetNamedValue(L"compilerPuzzlesRequired"):JsonValue::CreateBooleanValue(false));
     for(const auto name:{L"referenceAfter",L"activityAfter"})snapshot.Insert(name,
         root.HasKey(name)?JsonArray::Parse(root.GetNamedArray(name).Stringify()):JsonArray{});
+    // A retired heading can have real authored semantic spans. Capture the
+    // full former reading overlay before removing its active owner. Leaving a
+    // live text descriptor for a retired block is not a valid publication.
+    if(root.HasKey(L"textSemantics")) {
+        const auto overlay=root.GetNamedObject(L"textSemantics");
+        snapshot.Insert(L"textSemantics",JsonObject::Parse(overlay.Stringify()));
+        const auto fields=overlay.GetNamedArray(L"fields");
+        for(unsigned n=fields.Size();n>0;--n)
+            if(fields.GetObjectAt(n-1).GetNamedString(L"block")==id)
+                fields.RemoveAt(n-1);
+    }
     JsonObject record;record.Insert(L"id",JsonValue::CreateStringValue(id));record.Insert(L"page",positions.GetObjectAt(0).GetNamedValue(L"id"));
     record.Insert(L"next",ids.GetAt(1));record.Insert(L"block",JsonObject::Parse(blocks.GetObjectAt(0).Stringify()));
     if(!layout.HasKey(L"retired"))layout.Insert(L"retired",JsonArray{});layout.GetNamedArray(L"retired").Append(record);
@@ -414,7 +425,13 @@ int authored_l24_guides(const std::filesystem::path& content,const std::filesyst
     for(const auto owner:owners)for(const auto field:{explanation_path,review_path})expected_fields.emplace(owner,field);
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks)if(block.type==BlockType::cpp_compiler)
         for(const auto& [field,value]:block.text_semantics){(void)value;actual_fields.emplace(block.stable_id,field);}
-    require(actual_fields==expected_fields,"The focused L24 compiler guide inventory is no longer exactly four fields");
+    // The current course may legitimately contain additional authored guide
+    // fields or newer compiler exercises. Never discard those to satisfy this
+    // fixture's two selected owners. Validate the four originals exactly,
+    // together with all independently authored fields through the loader.
+    require(std::ranges::all_of(expected_fields,[&](const auto& item){
+        return actual_fields.contains(item);
+    }),"The four focused L24 compiler guide fields no longer exist");
     state::StateStore store(qa/"authored-l24-guides");auto data=store.load();
     require(data.preferences.empty(),"The isolated L24 guide profile contains existing data");
     for(const auto owner:owners){seed(data,lesson,owner);const auto& block=editor(lesson,owner);
@@ -489,8 +506,15 @@ int main(int argc,char** argv)try{
     if(argc==2&&std::string_view(argv[1])=="--authored-l24-guides")return authored_l24_guides(content,qa);
     if(argc!=1)return 2;
     const auto lesson=load_lesson(content/"archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json");
-    sole_output_sequence(lesson,"block_0005_0004",qa);sole_output_sequence(lesson,"block_0009_0002",qa);
-    diagnostic_sequence(content,qa);multicase_isolation(lesson);
+    const auto stage=[&](std::string_view name,const auto& work){
+        try{work();}catch(const std::exception& error){
+            throw std::runtime_error(std::string(name)+": "+error.what());
+        }
+    };
+    stage("L20 original guide", [&]{sole_output_sequence(lesson,"block_0005_0004",qa);});
+    stage("L20 independent owner", [&]{sole_output_sequence(lesson,"block_0009_0002",qa);});
+    stage("U9 diagnostic reading", [&]{diagnostic_sequence(content,qa);});
+    stage("L20 multicase history", [&]{multicase_isolation(lesson);});
     std::cout<<"PASS current V2 compiler guidance: two L20 editors, diagnostic guide, exact reopen, immutable receipts/drafts/three pauses, rejected rechecks, protected contracts and legacy/multicase isolation; model fixtures only.\n";
     return 0;
 }catch(const winrt::hresult_error& error){std::cerr<<winrt::to_string(error.message())<<'\n';return 1;}
