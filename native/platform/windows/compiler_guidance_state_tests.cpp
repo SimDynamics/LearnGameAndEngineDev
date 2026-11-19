@@ -497,6 +497,132 @@ int authored_l24_guides(const std::filesystem::path& content,const std::filesyst
     std::cout<<"PASS four authored U12L24 compiler guides: raw roles/readings/ranges, typed evaluator origins, exact StateStore reopen and native verdict projection; achievements/drafts/three storage-only pauses retained. Adapter models only, no compiler/JVM/UI/audio.\n";
     return 0;
 }
+
+int general_choice_live_windows(const std::filesystem::path& content,
+        const std::filesystem::path& qa) {
+    // The actual published lesson is read only. Authorship and malicious
+    // changes below exist exclusively as in-memory JSON projections.
+    constexpr std::string_view id="block_0007_0002";
+    constexpr std::string_view original_text=
+        "La operación incumple su precondición aunque conserve una cantidad válida.";
+    constexpr std::string_view replacement=
+        "La operación incumple la condición para aceptar la transición, aunque conserve una cantidad válida.";
+    const auto path=content/"datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json";
+    const auto original=load_lesson(path);
+    const auto& old=editor(original,id);
+    require(old.type==BlockType::multiple_choice&&old.correct_index==0&&
+        old.options.size()==3&&old.options.front()==original_text,
+        "The authentic U9L13 option, owner or original correct answer changed");
+    const auto root=JsonObject::Parse(winrt::to_hstring(original.raw_json));
+    const auto block=editor(root,original,id);
+    const auto archived=JsonObject::Parse(block.Stringify());
+    const auto before=test::compile_check_test_fingerprint(archived);
+    const auto overlay=root.GetNamedObject(L"textSemantics");
+    const auto fields=overlay.GetNamedArray(L"fields");
+    JsonObject original_marker, revised_marker;
+    unsigned marker_index=0,found=0;
+    for(unsigned i=0;i<fields.Size();++i) {
+        const auto field=fields.GetObjectAt(i);
+        if(field.GetNamedString(L"block")!=winrt::to_hstring(id)||
+                field.GetNamedString(L"path")!=L"/options/0")continue;
+        original_marker=JsonObject::Parse(field.Stringify());
+        revised_marker=JsonObject::Parse(field.Stringify());
+        marker_index=i;++found;
+    }
+    require(found==1&&original_marker.GetNamedArray(L"spans").Size()==0,
+        "The original unhighlighted option has no unique semantic marker");
+    revised_marker.Insert(L"sourceSha256",
+        JsonValue::CreateStringValue(winrt::to_hstring(state::sha256(replacement))));
+    fields.SetAt(marker_index,revised_marker);
+    block.GetNamedArray(L"options").SetAt(0,
+        JsonValue::CreateStringValue(winrt::to_hstring(replacement)));
+    const auto after=test::compile_check_test_fingerprint(block);
+    require(before!=after,"A true editorial option change was not recorded");
+    const auto layout=root.GetNamedObject(L"stateLayout");
+    const auto existing=layout.HasKey(L"choiceRevisions")?
+        layout.GetNamedArray(L"choiceRevisions"):JsonArray{};
+    JsonObject revision;
+    revision.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(id)));
+    revision.Insert(L"block",archived);
+    revision.Insert(L"optionIndex",JsonValue::CreateNumberValue(0));
+    revision.Insert(L"replacement",JsonValue::CreateStringValue(winrt::to_hstring(replacement)));
+    revision.Insert(L"semanticBefore",original_marker);
+    revision.Insert(L"semanticAfter",revised_marker);
+    revision.Insert(L"semanticRootBefore",JsonValue::CreateBooleanValue(true));
+    existing.Append(revision);
+    layout.Insert(L"choiceRevisions",existing);
+    JsonObject proof;
+    proof.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(id)));
+    proof.Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(before)));
+    proof.Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(after)));
+    layout.GetNamedArray(L"editorial").Append(proof);
+    const auto serialized=winrt::to_string(root.Stringify());
+    const auto actual=parse_lesson_json(serialized,"es");
+    const auto metadata=parse_lesson_progress_metadata(serialized,"es");
+    const auto& revised=editor(actual,id);
+    require(actual.id==original.id&&metadata.id==original.id&&
+        metadata.pages.size()==original.pages.size()&&
+        revised.correct_index==old.correct_index&&
+        revised.options.size()==old.options.size()&&
+        revised.options.front()==replacement&&revised.options[1]==old.options[1]&&
+        revised.options[2]==old.options[2]&&revised.explanation==old.explanation&&
+        revised.review_feedback_options==old.review_feedback_options&&
+        revised.choice_revision&&revised.choice_revision->general_option_index==0&&
+        revised.choice_revision->original_options==old.options,
+        "Native Windows ignored the genuine compatible choice edit or changed its answer");
+    require(state::response_storage_key(original,old)==
+        state::response_storage_key(actual,revised),
+        "A general editorial option created another student's storage key");
+
+    state::StateData data;
+    state::Response completed;completed.selected=0;completed.correct=true;
+    state::put_response(data,original,old,completed);
+    data.preferences["guidance-qa"]["foreign"]=std::string("preserve");
+    const auto preserved=data;
+    state::StateStore store(qa/"general-choice-live");
+    store.save(data);
+    data=reopen(store);
+    const auto response=state::get_response(data,actual,revised);
+    require(response&&response->correct&&response->selected==0&&
+        !response->historical_choice&&data==preserved,
+        "Reopening failed to preserve the original correct choice, foreign state or storage");
+    require(load_lesson(path).raw_json==original.raw_json,
+        "The editable QA copy changed the published curricular file");
+
+    const auto reject_mutation=[&](const auto& mutation) {
+        const auto forged=JsonObject::Parse(winrt::to_hstring(serialized));
+        mutation(forged);
+        rejects_both(forged,"");
+    };
+    reject_mutation([&](const JsonObject& forged){
+        editor(forged,original,id).Insert(L"correctIndex",JsonValue::CreateNumberValue(1));
+    });
+    reject_mutation([&](const JsonObject& forged){
+        editor(forged,original,id).GetNamedArray(L"options").SetAt(1,
+            JsonValue::CreateStringValue(L"Respuesta adulterada"));
+    });
+    reject_mutation([&](const JsonObject& forged){
+        const auto items=forged.GetNamedObject(L"textSemantics").GetNamedArray(L"fields");
+        for(unsigned i=0;i<items.Size();++i) {
+            const auto entry=items.GetObjectAt(i);
+            if(entry.GetNamedString(L"block")==winrt::to_hstring(id)&&
+                    entry.GetNamedString(L"path")==L"/options/0"){
+                entry.Insert(L"sourceSha256",JsonValue::CreateStringValue(std::wstring(64,L'0')));
+                return;
+            }
+        }
+        throw std::runtime_error("The forged semantic-marker fixture lost its owner");
+    });
+    reject_mutation([&](const JsonObject& forged){
+        const auto records=forged.GetNamedObject(L"stateLayout").GetNamedArray(L"choiceRevisions");
+        const auto last=records.GetObjectAt(records.Size()-1);
+        last.GetNamedObject(L"block").Insert(L"correctIndex",JsonValue::CreateNumberValue(2));
+    });
+    std::cout<<"PASS real U9L13 choice on Windows: native and metadata loaders, "
+        "prior receipt, StateStore reopen, exact owner/semantics, four hostile variants; "
+        "no learner data or published lesson changed.\\n";
+    return 0;
+}
 }
 int main(int argc,char** argv)try{
     const auto content=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
@@ -504,6 +630,7 @@ int main(int argc,char** argv)try{
         ("compiler-guidance-"+std::to_string(GetCurrentProcessId())+'-'+std::to_string(GetTickCount64()));
     if(argc==2&&std::string_view(argv[1])=="--review-priority")return review_priority_models(content,qa);
     if(argc==2&&std::string_view(argv[1])=="--authored-l24-guides")return authored_l24_guides(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--general-choice-live")return general_choice_live_windows(content,qa);
     if(argc!=1)return 2;
     const auto lesson=load_lesson(content/"archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json");
     const auto stage=[&](std::string_view name,const auto& work){
