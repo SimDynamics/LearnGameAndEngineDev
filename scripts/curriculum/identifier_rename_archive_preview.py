@@ -52,7 +52,8 @@ def preview_published_rename(document: dict, identity: str, proposed_block: dict
         # Independent verification of the already published reformat. The
         # rename comes AFTER its active, formatted source, never before it.
         source_format.require_source_lexical(predecessor, old)
-        if source_format.source_projection(proposed_block, old) != old:
+        if not rename.same_json_value_and_types(
+                source_format.source_projection(proposed_block, old), old):
             raise RenamePreviewError("Renaming failed to restore the full current owner")
     except (source_format.SourceFormatError, rename.IdentifierRenameError) as exc:
         raise RenamePreviewError(f"Unsafe C++ identifier revision: {exc}") from exc
@@ -126,7 +127,7 @@ def verify_exact_published_rename_packet(
             record["names"], record["occurrences"])
     except (KeyError, TypeError, ValueError) as exc:
         raise RenamePreviewError("Invalid or incompatible rename archival packet") from exc
-    if record != expected:
+    if not rename.same_json_value_and_types(record, expected):
         raise RenamePreviewError(
             "Renaming changed its authenticated owner, source, storage or editorial provenance")
     return True
