@@ -9,6 +9,9 @@ on:
       - scripts/curriculum/test_identifier_rename_compat.py
       - scripts/curriculum/test_identifier_rename_execution.py
       - scripts/curriculum/code_format_compat.py
+      - native/core/code_format_compat.hpp
+      - native/core/identifier_rename_compat.hpp
+      - native/core/identifier_rename_compat_tests.cpp
       - app/src/main/assets/content/es/programming/cpp_fundamentals/colecciones_y_recorridos/lesson_contar_frecuencias_y_conservar_empates.json
   workflow_dispatch:
 
@@ -25,6 +28,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Compile the real C++ lexical validator without WinRT
+        run: >-
+          g++ -std=c++23 -O0 -Wall -Wextra -pedantic -I native
+          native/core/identifier_rename_compat_tests.cpp
+          -o /tmp/lgaed-identifier-rename-native
+      - name: Exercise the native identifier-rename contract
+        run: /tmp/lgaed-identifier-rename-native
       - name: Execute independent C++ identifier rename guard
         run: >-
           python3 -B -m unittest discover
