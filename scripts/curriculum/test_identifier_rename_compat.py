@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
+from pathlib import Path
+import re
 import unittest
 
 import code_format_compat as source_format
@@ -207,6 +210,73 @@ class DeclaredIdentifierRenames(unittest.TestCase):
                 names["initialCode"] = invalid
                 with self.assertRaises(renaming.IdentifierRenameError):
                     self.verify(proposal(), names, COUNTS)
+
+
+
+    def test_real_frequency_lesson_covers_examples_editors_and_predictions(self):
+        # Author proposals only in memory, from the real immutable published
+        # owners in P1 U5L13. Work alone can edit this curricular JSON.
+        path = (Path(__file__).resolve().parents[2] /
+                "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                "colecciones_y_recorridos/lesson_contar_frecuencias_y_conservar_empates.json")
+        original_bytes = path.read_bytes()
+        lesson = json.loads(original_bytes)
+        self.assertEqual(
+            lesson["id"],
+            "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates")
+        cases = (
+            ("block_0006_0002", "code", "etiquetas_mas_frecuentes"),
+            ("recuperacion_entrada_editor", "cpp_compiler", "etiquetas_mas_frecuentes"),
+            ("block_0006_0009", "cpp_compiler", "etiquetas_mas_frecuentes"),
+            ("block_0007_0002", "output_prediction", "etiquetas_mas_frecuentes"),
+            ("block_0007_0004", "output_prediction", "etiquetas_mas_frecuentes"),
+            ("frecuencias_numericas_referencia_programa", "code", "valores_mas_frecuentes"),
+        )
+        owners = {
+            identity: block
+            for page, state_page in zip(
+                    lesson["pages"], lesson["stateLayout"]["current"])
+            for identity, block in zip(state_page["blocks"], page["blocks"])
+        }
+        for identity, kind, new_candidates in cases:
+            with self.subTest(owner=identity):
+                self.assertIn(identity, owners)
+                before = owners[identity]
+                self.assertEqual(before["type"], kind)
+                slot = "initialCode" if kind == "cpp_compiler" else "code"
+                original_source = before[slot]
+                # These are the real historical identifiers and their complete
+                # token counts, not invented sample snippets.
+                self.assertEqual(
+                    len(re.findall(r"\bmaxima\b", original_source)), 5)
+                self.assertEqual(
+                    len(re.findall(r"\bmayores\b", original_source)), 5)
+                self.assertIn('"Maxima:"', original_source)
+                self.assertIn('Mayores:', original_source)
+                after = deepcopy(before)
+                renamed_source = re.sub(
+                    r"\bmaxima\b", "frecuencia_maxima_encontrada", original_source)
+                renamed_source = re.sub(
+                    r"\bmayores\b", new_candidates, renamed_source)
+                after[slot] = renamed_source
+                counts = {slot: {"maxima": 5, "mayores": 5}}
+                declared = {slot: {
+                    "maxima": "frecuencia_maxima_encontrada",
+                    "mayores": new_candidates,
+                }}
+                self.assertEqual(
+                    renaming.require_declared_cpp_renames(
+                        before, after, declared, counts),
+                    counts)
+                self.assertEqual(
+                    source_format.source_projection(after, before), before)
+                self.assertIn('"Maxima:"', renamed_source)
+                self.assertIn('Mayores:', renamed_source)
+                self.assertEqual(
+                    original_source.count("\n"), renamed_source.count("\n"))
+                with self.assertRaises(source_format.SourceFormatError):
+                    source_format.require_source_format(before, after)
+        self.assertEqual(path.read_bytes(), original_bytes)
 
 
 if __name__ == "__main__":
