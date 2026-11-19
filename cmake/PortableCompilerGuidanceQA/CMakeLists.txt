@@ -15,7 +15,16 @@ set(LGAED_DEFAULT_PROFILE "Codex")
 set(LGAED_DEP_ROOT "")
 set(LGAED_EDUCATIONAL_VC_ROOT "")
 set(LGAED_EDUCATIONAL_SDK_ROOT "")
-configure_file("${LGAED_ROOT}/cmake/native_build_config.hpp.in"
+# The root application config embeds CMAKE_SOURCE_DIR as its lesson-data
+# locator. In this standalone subproject CMAKE_SOURCE_DIR points at the QA
+# script directory, so substitute only that placeholder with the actual
+# checkout root; keep every other original build-config field unchanged.
+file(READ "${LGAED_ROOT}/cmake/native_build_config.hpp.in" _lgaed_original_config)
+string(REPLACE "@CMAKE_SOURCE_DIR@" "@LGAED_ROOT@"
+    _lgaed_qa_config "${_lgaed_original_config}")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/native_build_config_qa.hpp.in"
+    "${_lgaed_qa_config}")
+configure_file("${CMAKE_CURRENT_BINARY_DIR}/native_build_config_qa.hpp.in"
     "${CMAKE_CURRENT_BINARY_DIR}/generated/native_build_config.hpp" @ONLY)
 
 add_library(lgaed_guidance_qa_options INTERFACE)
