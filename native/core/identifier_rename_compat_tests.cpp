@@ -41,7 +41,8 @@ std::vector<SourcePlan> valid_plan() {
     };
 }
 void success() {
-    const auto before=old_sources(),after=valid_sources(),plan=valid_plan();
+    const auto before=old_sources(),after=valid_sources();
+    const auto plan=valid_plan();
     require(declared_tokens_only(before,after,plan),
         "The same valid identifier rename must be allowed across two files");
     require(!lgaed::curriculum::code_format::equivalent(
@@ -49,7 +50,8 @@ void success() {
         "Identifier renames must not be misclassified as source formatting");
 }
 void negative_contracts() {
-    const auto before=old_sources(),after=valid_sources(),plan=valid_plan();
+    const auto before=old_sources(),after=valid_sources();
+    const auto plan=valid_plan();
     auto revision=after;
     revision[0].source.replace(revision[0].source.find("\"Maxima:\""),9,"\"Changed:\"");
     require(!declared_tokens_only(before,revision,plan),
@@ -168,13 +170,15 @@ void portable_identifier_spellings() {
         require(!identifier(name),
             "A reserved, non-ASCII or invalid source spelling bypassed native validation");
     // The whole source plan must enforce this invariant, not only its helper.
-    auto before=old_sources(),after=valid_sources(),plan=valid_plan();
+    auto before=old_sources(),after=valid_sources();
+    auto plan=valid_plan();
     plan[0].names[0].replacement="frecuencia_máxima";
     require(!declared_tokens_only(before,after,plan),
         "Native rename plan accepted a locale-dependent Unicode destination");
 }
 void byte_exact_rename_does_not_reformat() {
-    const auto before=old_sources(),valid=valid_sources(),plan=valid_plan();
+    const auto before=old_sources(),valid=valid_sources();
+    const auto plan=valid_plan();
     require(declared_tokens_only(before,valid,plan),
         "The original token-only rename stopped matching exact source bytes");
     auto changed=valid;
@@ -192,7 +196,8 @@ void byte_exact_rename_does_not_reformat() {
     rewrite("int main()","int\tmain()");
 }
 void name_conflicts() {
-    auto before=old_sources(),after=valid_sources(),plan=valid_plan();
+    auto before=old_sources(),after=valid_sources();
+    auto plan=valid_plan();
     plan[1].names[0].replacement="otro_destino";
     after[1].source="int otro_destino = 8; // maxima text stays unchanged\n";
     require(!declared_tokens_only(before,after,plan),
