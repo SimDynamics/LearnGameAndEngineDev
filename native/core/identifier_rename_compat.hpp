@@ -112,6 +112,38 @@ inline bool spelling_sensitive_tokens(const std::vector<std::string>& tokens) {
     }
     return false;
 }
+// Token equivalence alone permits arbitrary spacing alongside a rename.
+// Reconstruct the full physical source using exactly the lexer's token spans,
+// changing only declared identifier tokens and copying all trivia verbatim.
+[[nodiscard]] inline std::optional<std::string> exact_identifier_substitution(
+        std::string_view source,const std::vector<std::string>& tokens,
+        const std::map<std::string,NamedRename>& names) {
+    std::string result;
+    result.reserve(source.size()+tokens.size()*12);
+    std::size_t cursor=0;
+    for(const auto& token:tokens) {
+        const auto colon=token.find(':');
+        if(colon==std::string::npos)return {};
+        const auto value=std::string_view(token).substr(colon+1);
+        const auto found=source.find(value,cursor);
+        if(found==source.npos)return {};
+        const auto gap=source.substr(cursor,found-cursor);
+        if(!std::ranges::all_of(gap,[](char c){return code_format::space(c);}))
+            return {};
+        result.append(gap);
+        if(token.starts_with("id:")) {
+            const auto it=names.find(std::string(value));
+            if(it!=names.end())result.append(it->second.replacement);
+            else result.append(value);
+        }else result.append(value);
+        cursor=found+value.size();
+    }
+    const auto tail=source.substr(cursor);
+    if(!std::ranges::all_of(tail,[](char c){return code_format::space(c);}))
+        return {};
+    result.append(tail);
+    return result;
+}
 // The caller must separately pin the complete block, answer/oracle metadata,
 // stable identity, editorial proof, text semantics and storage lineage.
 // Return true only if every changed C++ token is an explicitly counted
@@ -228,6 +260,8 @@ inline bool spelling_sensitive_tokens(const std::vector<std::string>& tokens) {
         for(const auto& [name,entry]:plan->second)
             if(seen[name]!=entry.occurrences||
                changed[name]!=entry.occurrences)return false;
+        const auto exact=exact_identifier_substitution(before.source,*a,plan->second);
+        if(!exact||*exact!=after.source)return false;
     }
     return true;
 }
