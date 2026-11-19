@@ -181,6 +181,35 @@ class DeclaredIdentifierRenames(unittest.TestCase):
                         original, revised, {"initialCode": RENAMES["initialCode"]},
                         {"initialCode": COUNTS["initialCode"]})
 
+    def test_cmake_compile_definitions_cannot_capture_old_or_new_name(self):
+        for spelling in ("maxima", "frecuencia_maxima_encontrada"):
+            with self.subTest(macro=spelling):
+                original = deepcopy(ORIGINAL)
+                original["projectFiles"][1]["initialCode"] = (
+                    "target_compile_definitions(ejercicio PRIVATE " + spelling + "=7)\n")
+                revised = deepcopy(original)
+                revised["initialCode"] = proposal()["initialCode"]
+                revised["projectFiles"][0]["initialCode"] = (
+                    proposal()["projectFiles"][0]["initialCode"])
+                with self.assertRaisesRegex(
+                        renaming.IdentifierRenameError,
+                        "CMake project arguments mention"):
+                    renaming.require_declared_cpp_renames(
+                        original, revised, RENAMES, COUNTS)
+
+        # Comments are inert and do not silently define a C++ macro.
+        original = deepcopy(ORIGINAL)
+        original["projectFiles"][1]["initialCode"] = (
+            "# maxima and frecuencia_maxima_encontrada are documented\n"
+            "project(unchanged)\n")
+        revised = deepcopy(original)
+        revised["initialCode"] = proposal()["initialCode"]
+        revised["projectFiles"][0]["initialCode"] = (
+            proposal()["projectFiles"][0]["initialCode"])
+        self.assertEqual(
+            renaming.require_declared_cpp_renames(
+                original, revised, RENAMES, COUNTS), COUNTS)
+
     def test_destination_collision_in_another_source_even_when_it_is_edited(self):
         for also_renamed in (False, True):
             with self.subTest(second_source_changed=also_renamed):
