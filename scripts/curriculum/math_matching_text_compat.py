@@ -285,3 +285,110 @@ def verify_matching_preview(previous: dict, draft: dict, proof: dict) -> bool:
             or state._math_ordered_json(restored) != state._math_ordered_json(previous)):
         raise MatchingTextError("A matching review altered other lessons, progress or grader data")
     return True
+
+
+def authenticated_matching_text_originals(
+    document: dict, active: dict[str, dict], digests: dict[str, str],
+) -> dict[str, dict]:
+    """Authenticate recognized text-only archives before grading projection.
+
+    The journal describes one closed editorial revision per active matching
+    owner. It authenticates UTF-16 markers and the prior ordered mathematical
+    payload without introducing a new saved response identity.
+    """
+    metadata = document["stateLayout"]
+    records = metadata.get("mathMatchingTextRevisions", [])
+    if type(records) is not list or len(records) > 64:
+        raise MatchingTextError("Matching text archive count is invalid")
+    if not records:
+        return {}
+    if metadata.get("version") != 2 or metadata.get("locale") != "es":
+        raise MatchingTextError("Matching text archives require Spanish stateLayout v2")
+    archive_keys = {
+        "id", "rawJson", "paths", "semanticBefore", "semanticAfter",
+        "editorialIndex", "historySha256", "beforeSha256", "afterSha256",
+    }
+    other_math = {
+        item["id"] for item in metadata.get("mathTextRevisions", [])
+    }
+    originals = {}
+    for item in records:
+        if type(item) is not dict or set(item) != archive_keys:
+            raise MatchingTextError("Malformed matching text archive")
+        identity = item["id"]
+        if (type(identity) is not str or identity not in active or identity not in digests
+                or identity in originals or identity in other_math):
+            raise MatchingTextError("Matching archive has an unknown, duplicate or incompatible owner")
+        raw = item["rawJson"]
+        if type(raw) is not str or len(raw.encode("utf-8")) > 32 * 1024 * 1024:
+            raise MatchingTextError("Matching archive requires bounded original raw JSON")
+        try:
+            previous = state.parse_json(raw)
+        except (ValueError, TypeError, KeyError) as error:
+            raise MatchingTextError("Matching archive contains invalid original JSON") from error
+        if state._math_ordered_json(previous) != raw:
+            raise MatchingTextError("Matching archive rewrote JSON property order or numbers")
+        if state.state_fingerprint(previous) != digests[identity]:
+            raise MatchingTextError("Matching archive differs from the original answer signature")
+        current = active[identity]
+        require_matching_text_only(previous, current, item["paths"])
+        if (item["beforeSha256"] != state.fingerprint(previous)
+                or item["afterSha256"] != state.fingerprint(current)):
+            raise MatchingTextError("Matching archive hashes do not match its complete block pair")
+        index = item["editorialIndex"]
+        editorial = metadata["editorial"]
+        if type(index) is not int or not 0 <= index < len(editorial):
+            raise MatchingTextError("Matching archive has an invalid editorial position")
+        edge = {
+            "id": identity,
+            "beforeSha256": item["beforeSha256"],
+            "afterSha256": item["afterSha256"],
+        }
+        if (editorial[index] != edge or
+                item["historySha256"] != state.fingerprint({
+                    "lessonId": document["id"], "locale": metadata["locale"],
+                    "editorial": editorial[:index]})):
+            raise MatchingTextError("Matching archive borrowed an unrelated editorial proof")
+        if any(proof["id"] == identity for proof in editorial[index + 1:]):
+            raise MatchingTextError("A reviewed matching owner needs a single final text revision")
+
+        if (type(item["semanticBefore"]) is not dict or
+                type(item["semanticAfter"]) is not dict or
+                set(item["semanticBefore"]) != set(item["paths"]) or
+                set(item["semanticAfter"]) != set(item["paths"])):
+            raise MatchingTextError("Matching archive needs one old/new semantic pair per text path")
+        before_public = text_semantics.public_text_fields(previous)
+        after_public = text_semantics.public_text_fields(current)
+        changed_paths = item["paths"]
+        current_markers = _markers(document, identity)
+        for path in changed_paths:
+            earlier = item["semanticBefore"][path]
+            revised = item["semanticAfter"][path]
+            if path not in before_public:
+                if earlier is not None or revised is not None:
+                    raise MatchingTextError("A Canvas-only card label cannot forge narration marks")
+                continue
+            if path not in after_public or revised is None:
+                raise MatchingTextError("A changed narrated field needs its current marker")
+            if (earlier is not None and
+                    (type(earlier) is not dict or
+                     set(earlier) != {"block", "path", "sourceSha256", "spans"})):
+                raise MatchingTextError("Malformed original matching source descriptor")
+            if (type(revised) is not dict or
+                    set(revised) != {"block", "path", "sourceSha256", "spans"} or
+                    current_markers.get(path) != revised):
+                raise MatchingTextError("Matching archive is missing its authenticated current descriptor")
+            for marker, text in ((earlier, before_public[path]),
+                                 (revised, after_public[path])):
+                if marker is None:
+                    continue
+                if marker["block"] != identity or marker["path"] != path:
+                    raise MatchingTextError("A matching text descriptor belongs to another field")
+                try:
+                    text_semantics._descriptor(marker, text)
+                except (ValueError, TypeError, KeyError) as error:
+                    raise MatchingTextError("A matching field has invalid UTF-16 source marks") from error
+            if earlier is not None and earlier["spans"] and not revised["spans"]:
+                raise MatchingTextError("A matching review cannot discard marked technical spans")
+        originals[identity] = previous
+    return originals
