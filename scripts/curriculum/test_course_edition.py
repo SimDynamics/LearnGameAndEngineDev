@@ -211,6 +211,37 @@ class CourseEditionAuthoringTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "active or an unchanged historical"):
             self.check_tree(prior, after)
 
+    def test_case_alias_guard_checks_intermediate_directories_not_only_files(self):
+        # Different leaf names have no casefold collision of their own.
+        first = f"{CONTENT}/es/programming/{COURSE}/Edition/lesson_old.json"
+        second = f"{CONTENT}/es/programming/{COURSE}/edition/unit_new.json"
+        self.assertNotEqual(first.casefold(), second.casefold())
+        with self.assertRaisesRegex(edition.CourseEditionError,
+                                    "case-insensitive edition path collision"):
+            edition._reject_windows_case_aliases([first, second])
+        # Reusing the very same real directory is legitimate.
+        edition._reject_windows_case_aliases([
+            f"{CONTENT}/es/programming/{COURSE}/Edition/lesson_old.json",
+            f"{CONTENT}/es/programming/{COURSE}/Edition/unit_new.json"])
+
+    def test_historical_directory_case_alias_cannot_mask_a_new_edition(self):
+        # The source tree can be created on POSIX, but not with separate
+        # physical directories on typical Windows volumes.
+        if os.name == "nt":
+            self.skipTest("Windows cannot store both directory case variants separately")
+        before = current_documents()
+        edition_files = current_documents(descriptor())
+        unit = next(path for path in edition_files if "/unit_" in path)
+        parent = unit.rsplit("/", 1)[0]
+        historical = parent.replace("__inicio", "__Inicio") + "/lesson_historico.json"
+        self.assertNotEqual(parent, historical.rsplit("/", 1)[0])
+        self.assertEqual(parent.casefold(), historical.rsplit("/", 1)[0].casefold())
+        before[historical] = {"id": "qa_historical_record", "title": "Archivo anterior"}
+        after = {**deepcopy(before), **edition_files}
+        with self.assertRaisesRegex(edition.CourseEditionError,
+                                    "case-insensitive edition path collision"):
+            self.check_tree(before, after)
+
     def test_new_edition_cannot_alias_prior_git_resource_by_letter_case(self):
         # Git can contain two spellings even when NTFS resolves them to one
         # physical pathname. An old resource must not become a new lesson.

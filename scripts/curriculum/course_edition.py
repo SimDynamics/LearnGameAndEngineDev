@@ -309,14 +309,21 @@ def _active_documents(repository, course_relative, course):
 
 
 def _reject_windows_case_aliases(paths):
-    """A Git spelling is not a new resource if Windows resolves it to an old one."""
+    """Protect every directory component, not only equal final file names.
+
+    NTFS can combine Git paths like Unit/old.json and unit/new.json in one
+    directory. Full-file casefold comparisons miss that collision, and a
+    later author could incorrectly treat two unit directories as distinct.
+    """
     exact_by_folded = {}
     for spelling in sorted(paths):
-        folded = spelling.casefold()
-        previous = exact_by_folded.setdefault(folded, spelling)
-        require(previous == spelling,
-                "Windows case-insensitive edition path collision: "
-                + previous + " / " + spelling)
+        parts = PurePosixPath(spelling).parts
+        for length in range(1, len(parts) + 1):
+            prefix = "/".join(parts[:length])
+            previous = exact_by_folded.setdefault(prefix.casefold(), prefix)
+            require(previous == prefix,
+                    "Windows case-insensitive edition path collision: "
+                    + previous + " / " + prefix)
 
 
 def check_repository(repository, commit, *, documents=None):
