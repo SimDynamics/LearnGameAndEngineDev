@@ -99,3 +99,34 @@ def preview_published_rename(document: dict, identity: str, proposed_block: dict
         "priorSourceFormatSha256": state.fingerprint(predecessor),
         "confirmed": changed,
     }
+
+def verify_exact_published_rename_packet(
+    published_document: dict, record: dict, proposed_block: dict,
+) -> bool:
+    """Fail closed on a forged or incomplete archival authoring packet.
+
+    Recompute the entire record from the authenticated PREVIOUS lesson
+    publication, then compare every historical field. Do not trust a caller's
+    owner name, storage position, family, editorial chain, source bytes or
+    proposed digest merely because those values are well-formed hashes.
+    The proposed revision is not accepted by the runtime yet.
+    """
+    if type(record) is not dict:
+        raise RenamePreviewError("A rename archival packet must be a complete object")
+    if set(record) != {
+        "lessonId", "locale", "historicalFamilySha256", "originalStateSha256",
+        "stableStorage", "editorialPrefixSha256", "id", "block",
+        "names", "occurrences", "beforeSha256", "afterSha256",
+        "priorSourceFormatSha256", "confirmed",
+    }:
+        raise RenamePreviewError("The rename archival packet has missing or extra fields")
+    try:
+        expected = preview_published_rename(
+            published_document, record["id"], proposed_block,
+            record["names"], record["occurrences"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise RenamePreviewError("Invalid or incompatible rename archival packet") from exc
+    if record != expected:
+        raise RenamePreviewError(
+            "Renaming changed its authenticated owner, source, storage or editorial provenance")
+    return True
