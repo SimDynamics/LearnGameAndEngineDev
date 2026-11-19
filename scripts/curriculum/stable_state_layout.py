@@ -6072,7 +6072,7 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     before, after = _all_blocks(baseline), _all_blocks(current)
     old_renames = old_meta.get("identifierRenameRevisions", []) if old_v2 else []
     renamed = meta.get("identifierRenameRevisions", [])
-    require(type(renamed) is list and old_v2 and
+    require(type(renamed) is list and (old_v2 or not renamed) and
             identifier_rename.same_json_value_and_types(
                 renamed[:len(old_renames)], old_renames),
             "Published C++ rename archives are append-only")
