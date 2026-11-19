@@ -508,9 +508,9 @@ struct LessonView {
     std::string secondary_instruction(BlockType type,bool optional_separators=false)const{
         if(type==BlockType::order_code){
             if(optional_separators)return ui(
-                "Ordena las instrucciones. Los bloques vacíos son opcionales: puedes arrastrarlos, ocultarlos con doble clic o Supr y recuperarlos con Insert.",
-                "Order the instructions. Blank cards are optional: drag them, hide with double-click or Delete, restore with Insert.",
-                "Ordonnez les instructions. Les cartes vides sont facultatives : déplacez-les, masquez-les par double-clic ou Suppr, restaurez-les avec Inser.");
+                "Arrastra las líneas de código para ordenarlas. Puedes mover las tarjetas vacías si quieres dejar una línea en blanco",
+                "Drag the code lines to put them in order. You can move blank cards if you want to leave an empty line.",
+                "Faites glisser les lignes de code pour les mettre dans l’ordre. Vous pouvez déplacer les cartes vides pour laisser une ligne blanche.");
             return ui("Mantén pulsado un bloque y arrástralo hasta la posición correcta.",
             "Press and hold a block, then drag it to the correct position.","Maintenez le doigt sur un bloc, puis faites-le glisser jusqu’à la bonne position.");
         }
