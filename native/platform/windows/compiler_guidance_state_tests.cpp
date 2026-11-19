@@ -715,19 +715,21 @@ int general_choice_live_windows(const std::filesystem::path& content,
     require(load_lesson(path).raw_json==original.raw_json,
         "The editable QA copy changed the published curricular file");
 
-    const auto reject_mutation=[&](const auto& mutation) {
+    const auto reject_mutation=[&](std::string_view expected_error,const auto& mutation) {
         const auto forged=JsonObject::Parse(winrt::to_hstring(serialized));
         mutation(forged);
-        rejects_both(forged,"");
+        // A rejection for unrelated parsing/metadata failures is not proof
+        // that the protected choice or semantic contract was enforced.
+        rejects_both(forged,expected_error);
     };
-    reject_mutation([&](const JsonObject& forged){
+    reject_mutation("general choice revision changed another answer",[&](const JsonObject& forged){
         editor(forged,original,id).Insert(L"correctIndex",JsonValue::CreateNumberValue(1));
     });
-    reject_mutation([&](const JsonObject& forged){
+    reject_mutation("general choice revision changed another answer",[&](const JsonObject& forged){
         editor(forged,original,id).GetNamedArray(L"options").SetAt(1,
             JsonValue::CreateStringValue(L"Respuesta adulterada"));
     });
-    reject_mutation([&](const JsonObject& forged){
+    reject_mutation("active choice semantic marker differs",[&](const JsonObject& forged){
         const auto items=forged.GetNamedObject(L"textSemantics").GetNamedArray(L"fields");
         for(unsigned i=0;i<items.Size();++i) {
             const auto entry=items.GetObjectAt(i);
@@ -739,7 +741,7 @@ int general_choice_live_windows(const std::filesystem::path& content,
         }
         throw std::runtime_error("The forged semantic-marker fixture lost its owner");
     });
-    reject_mutation([&](const JsonObject& forged){
+    reject_mutation("General choice archive must belong",[&](const JsonObject& forged){
         const auto records=forged.GetNamedObject(L"stateLayout").GetNamedArray(L"choiceRevisions");
         const auto last=records.GetObjectAt(records.Size()-1);
         last.GetNamedObject(L"block").Insert(L"correctIndex",JsonValue::CreateNumberValue(2));
