@@ -17,6 +17,7 @@
 #include "core/simulation.hpp"
 
 #include <algorithm>
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -81,7 +82,25 @@ struct Emphasis {
 };
 struct EmphasisRange { std::size_t start = 0, end = 0; std::string style; };
 // Offsets address UTF-8 source bytes. Presentation converts them to UTF-16 positions.
-[[nodiscard]] std::vector<EmphasisRange> emphasis_ranges(std::string_view text, std::span<const Emphasis> entries);
+// Pure, presentation-only search. Keep it independent of the compiler and
+// lesson-evaluation translation unit so the native reader can reuse exactly
+// the same ranges in a focused Win32 QA binary.
+[[nodiscard]] inline std::vector<EmphasisRange> emphasis_ranges(std::string_view text, std::span<const Emphasis> entries) {
+    std::vector<EmphasisRange> result;
+    for (const auto& entry : entries) {
+        if (entry.text.empty() || (entry.style != "bold" && entry.style != "italic" && entry.style != "bold_italic")) continue;
+        std::vector<std::size_t> matches;
+        auto offset = text.find(entry.text);
+        while (offset != text.npos) { matches.push_back(offset); offset = text.find(entry.text, offset + 1); }
+        std::optional<std::size_t> start;
+        if (entry.occurrence && entry.occurrence <= matches.size()) start = matches[entry.occurrence - 1];
+        else if (!entry.occurrence && matches.size() == 1) start = matches.front();
+        if (start) result.push_back({*start, *start + entry.text.size(), entry.style});
+    }
+    std::ranges::sort(result, [](const auto& left, const auto& right) { return left.start < right.start || (left.start == right.start && left.end < right.end); });
+    return result;
+}
+
 struct OutputReviewFeedback { std::vector<std::string> outputs; std::string text; };
 enum class StandardErrorExpectation { ignored, non_blank };
 struct OutputCase {

@@ -645,21 +645,6 @@ std::string exercise_key(const Lesson& lesson, const Block& block) {
     return "exercise_" + lesson.id + (address.addition_namespace.empty() ? "" : "_state_v2_" + address.addition_namespace) +
         "_page_" + std::to_string(address.page) + "_block_" + std::to_string(address.block);
 }
-std::vector<EmphasisRange> emphasis_ranges(std::string_view text, std::span<const Emphasis> entries) {
-    std::vector<EmphasisRange> result;
-    for (const auto& entry : entries) {
-        if (entry.text.empty() || (entry.style != "bold" && entry.style != "italic" && entry.style != "bold_italic")) continue;
-        std::vector<std::size_t> matches;
-        auto offset = text.find(entry.text);
-        while (offset != text.npos) { matches.push_back(offset); offset = text.find(entry.text, offset + 1); }
-        std::optional<std::size_t> start;
-        if (entry.occurrence && entry.occurrence <= matches.size()) start = matches[entry.occurrence - 1];
-        else if (!entry.occurrence && matches.size() == 1) start = matches.front();
-        if (start) result.push_back({*start, *start + entry.text.size(), entry.style});
-    }
-    std::ranges::sort(result, [](const auto& left, const auto& right) { return left.start < right.start || (left.start == right.start && left.end < right.end); });
-    return result;
-}
 std::string draft_key(std::string_view route_id, const Lesson& lesson, const Block& block) {
     const auto& address = block.address;
     return std::string(route_id) + "/" + lesson.id + "/" +

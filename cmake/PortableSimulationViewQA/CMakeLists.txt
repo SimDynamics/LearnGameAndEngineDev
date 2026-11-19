@@ -23,7 +23,8 @@ add_executable(lgaed_simulation_view_portable_qa
     "${LGAED_ROOT}/native/presentation/windows/reader_theme.cpp"
     "${LGAED_ROOT}/native/presentation/windows/rich_text.cpp"
     "${LGAED_ROOT}/native/presentation/windows/simulation_view.cpp"
-    "${LGAED_ROOT}/native/presentation/windows/simulation_view_tests.cpp")
+    "${LGAED_ROOT}/native/presentation/windows/simulation_view_tests.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/accessibility_guids.cpp")
 target_include_directories(lgaed_simulation_view_portable_qa PRIVATE
     "${LGAED_ROOT}/native"
     "${CMAKE_CURRENT_BINARY_DIR}/generated")
