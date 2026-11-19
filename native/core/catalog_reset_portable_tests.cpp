@@ -113,6 +113,45 @@ void accepted_reset_keeps_foreign_state_and_is_idempotent() {
         "Repeating a completed reset changed its previous result");
 }
 
+void catalog_unit_selection_is_scoped_to_published_edition() {
+    using namespace lgaed::curriculum;
+    CatalogPage page;
+    page.location={"es","programming","cpp_fundamentals","",""};
+    page.entries.resize(1);
+    const auto historical=catalog_position_key(page.location);
+    page.entries[0].id="cpp_fundamentals__original";
+    page.entries[0].asset_locale="es";
+    check(catalog_position_key(page)==historical,
+          "An original course changed its historical list position key");
+
+    page.entries[0].id="cpp_fundamentals__edition_es_1__inicio";
+    const auto first=catalog_position_key(page);
+    check(first==historical+"/edition/es_1"&&first!=historical,
+          "A new edition reused a retired course unit's ordinal");
+    page.entries[0].id="cpp_fundamentals__edition_es_2__inicio";
+    const auto second=catalog_position_key(page);
+    check(second==historical+"/edition/es_2"&&second!=first,
+          "A second edition reused the first edition's saved unit position");
+    page.entries[0].id="cpp_fundamentals__edition_es_2__otra_unidad";
+    check(catalog_position_key(page)==second,
+          "A compatible unit reordering erased navigation within the same edition");
+    page.location.locale="fr";
+    check(catalog_position_key(page)==
+              catalog_position_key(page.location)+"/edition/es_2",
+          "The UI language was mistaken for the new edition's asset locale");
+    page.entries.clear();
+    check(catalog_position_key(page)==catalog_position_key(page.location),
+          "An empty unit index fabricated an edition key");
+
+    // Lesson-list position keys already include the new unit identity.
+    page.location.locale="es";
+    page.location.unit="cpp_fundamentals__edition_es_2__otra_unidad";
+    page.entries.resize(1);
+    page.entries[0].id=page.location.unit+"__primera";
+    check(catalog_position_key(page)==catalog_position_key(page.location),
+          "A lesson list acquired an unrelated second epoch key");
+}
+
 void malformed_or_cross_course_scope_is_atomic() {
     for (int variant = 0; variant < 9; ++variant) {
         Fixture fixture;
@@ -174,6 +213,7 @@ void foreign_corruption_does_not_block_selected_course() {
 int main() {
     try {
         invalid_selected_coverage_is_atomic();
+        catalog_unit_selection_is_scoped_to_published_edition();
         malformed_or_cross_course_scope_is_atomic();
         accepted_reset_keeps_foreign_state_and_is_idempotent();
         foreign_corruption_does_not_block_selected_course();

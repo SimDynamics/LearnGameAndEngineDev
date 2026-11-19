@@ -104,7 +104,7 @@ struct CatalogView {
     void write_position(bool include_current = true) {
         state::StateStore store(environment.paths.root); auto data = store.load();
         auto& prefs = data.preferences["native_windows"];
-        const auto key = catalog_position_key(page.location);
+        const auto key = catalog_position_key(page);
         const auto selection = SendMessageW(list,LB_GETCURSEL,0,0), top = SendMessageW(list,LB_GETTOPINDEX,0,0);
         if (selection != LB_ERR) prefs[key + "/selection"] = static_cast<std::int64_t>(selection);
         if (top != LB_ERR) prefs[key + "/top"] = static_cast<std::int64_t>(top);
@@ -247,7 +247,7 @@ struct CatalogView {
         for (const auto action : home_actions) {
             const auto caption = wide(action_label(action)); SendMessageW(list,LB_ADDSTRING,0,reinterpret_cast<LPARAM>(caption.c_str()));
         }
-        const auto key = catalog_position_key(location);
+        const auto key = catalog_position_key(page);
         const auto selection = state::integer_value(progress,"native_windows",key + "/selection");
         const auto top = state::integer_value(progress,"native_windows",key + "/top");
         const auto count = page.entries.size() + home_actions.size();

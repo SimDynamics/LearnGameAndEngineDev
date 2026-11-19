@@ -115,6 +115,25 @@ std::string catalog_position_key(const CatalogLocation& location) {
     validate_catalog_location(location);
     return "catalog/v1/" + location.locale + '/' + location.route + '/' + location.course + '/' + location.unit + '/' + location.lesson;
 }
+std::string catalog_position_key(const CatalogPage& page) {
+    auto key=catalog_position_key(page.location);
+    if(catalog_level(page.location)!=CatalogLevel::units||page.entries.empty())return key;
+    // load_catalog already authenticates the edition identity and the unit
+    // index. Its asset language may differ from the requested UI language.
+    const auto& entry=page.entries.front();
+    const auto prefix=page.location.course+"__edition_"+entry.asset_locale+"_";
+    const auto id=std::string_view(entry.id);
+    if(!id.starts_with(prefix))return key;
+    const auto tail=id.substr(prefix.size());
+    const auto separator=tail.find("__");
+    if(separator==tail.npos||separator==0||separator+2==tail.size())return key;
+    const auto generation=tail.substr(0,separator);
+    if(!std::ranges::all_of(generation,[](char c){return c>='0'&&c<='9';}))
+        return key;
+    // Do not reuse the numeric list position from another course generation.
+    // Keep the same key if the author reorders units within one generation.
+    return key+"/edition/"+entry.asset_locale+"_"+std::string(generation);
+}
 bool catalog_lesson_completed(const state::StateData& data, std::string_view id) {
     const auto value = state::find(data,"learning_progress","lesson_" + std::string(id) + "_completed");
     const auto completed = value ? std::get_if<bool>(value) : nullptr; return completed && *completed;

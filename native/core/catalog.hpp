@@ -45,6 +45,9 @@ void validate_catalog_location(const CatalogLocation&);
 [[nodiscard]] std::filesystem::path catalog_index_path(const CatalogLocation&);
 [[nodiscard]] std::filesystem::path catalog_lesson_path(const CatalogLocation&, std::string_view id);
 [[nodiscard]] std::string catalog_position_key(const CatalogLocation&);
+// New editions cannot reuse the old unit-list ordinal. Existing historical
+// catalog keys remain unchanged for courses without an edition.
+[[nodiscard]] std::string catalog_position_key(const CatalogPage&);
 [[nodiscard]] bool catalog_lesson_completed(const state::StateData&, std::string_view lesson_id);
 [[nodiscard]] bool catalog_lesson_started(const state::StateData&, std::string_view lesson_id);
 [[nodiscard]] CatalogProgress catalog_progress(const state::StateData&,const CatalogScope&);
