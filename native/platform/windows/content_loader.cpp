@@ -2394,7 +2394,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     require(result.version == 1 || result.version == 2, "Unsupported state layout version");
     if (result.version == 1) allowed_keys(metadata, {"version", "origin", "current"}, true);
     else {
-        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "compilerCaseOrderRevisions", "compilerCaseRevisions", "sourceFormatRevisions", "mathTextRevisions"});
+        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "compilerCaseOrderRevisions", "compilerCaseRevisions", "sourceFormatRevisions", "mathTextRevisions", "identifierRenameRevisions"});
         for (const auto field : {L"version",L"locale",L"origin",L"current",L"family",L"additions",L"editorial"})
             require(metadata.HasKey(field),"Incomplete state-layout contract");
     }
@@ -2943,6 +2943,13 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     // pre-format source, never an unreviewed hash of freshly spaced code.
     const auto protected_source=[&](const std::string& owner,const JsonObject& current,bool historical=false) {
         auto projected=case_order_source(owner,current,historical);
+        // Names are restored only for the *exact* signed revised endpoint.
+        // Earlier archived readers and saved drafts retain their own source.
+        if(const auto revision=std::ranges::find_if(result.identifier_rename_revisions,
+                [&](const auto& item){return item.id==owner;});
+                revision!=result.identifier_rename_revisions.end()&&
+                fingerprint(projected)==revision->after_sha256)
+            projected=JsonObject::Parse(key(revision->raw_json));
         if(const auto it=source_format_originals.find(owner);it!=source_format_originals.end())
             projected=source_format_projection(projected,it->second);
         if(const auto it=math_text_originals.find(owner);it!=math_text_originals.end())
