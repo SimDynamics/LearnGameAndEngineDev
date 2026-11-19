@@ -545,9 +545,13 @@ class SimulationContractTest(unittest.TestCase):
             ("\u200b", r'"\u200b"'), ("\u2028", r'"\u2028"'),
             ("\u2029", r'"\u2029"'), ("\u2060", r'"\u2060"'),
             ("\u3000", r'"\u3000"'), ("\ufeff", r'"\ufeff"'),
+            ("\ufe00", r'"\ufe00"'), ("\ufe0f", r'"\ufe0f"'),
+            ("\U000e0100", r'"\udb40\udd00"'),
+            ("\U000e01ef", r'"\udb40\uddef"'),
         ]
+        cases.append(("A\ufe0f\U000e0100", r'"A\ufe0f\udb40\udd00"'))
         for raw, display in cases:
-            with self.subTest(codepoint=f"U+{ord(raw):04X}"):
+            with self.subTest(codepoint=" ".join(f"U+{ord(ch):04X}" for ch in raw)):
                 spec["values"] = [raw]
                 before = deepcopy(block_value)
                 simulation.validate_contract(block_value)

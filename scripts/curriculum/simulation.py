@@ -37,8 +37,19 @@ _INVISIBLE_TEXT_POINTS = frozenset(
     set(range(0x7f, 0xa0)) | {0xad, 0x34f, 0x61c, 0x1680, 0x180e, 0x205f, 0x3000, 0xfeff}
     | set(range(0x2000, 0x2010)) | set(range(0x2028, 0x2030))
     | set(range(0x2060, 0x2070))
+    | set(range(0xfe00, 0xfe10)) | set(range(0xe0100, 0xe01f0))
 )
-_INVISIBLE_TEXT_ESCAPES = {point: f"\\u{point:04x}" for point in _INVISIBLE_TEXT_POINTS}
+
+
+def _json_invisible_escape(point):
+    if point > 0xffff:
+        offset = point - 0x10000
+        return f"\\u{0xd800 + (offset >> 10):04x}\\u{0xdc00 + (offset & 0x3ff):04x}"
+    return f"\\u{point:04x}"
+
+
+_INVISIBLE_TEXT_ESCAPES = {point: _json_invisible_escape(point)
+                           for point in _INVISIBLE_TEXT_POINTS}
 
 
 

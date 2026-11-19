@@ -5493,15 +5493,18 @@ void empty_text_values(HWND host,const std::filesystem::path& captures) {
         // values in line mode despite having a reversible JSON spelling.
         auto invisible_only=grouped;
         invisible_only.values={std::string("\xE2\x80\x8B"),
-            std::string("\xE2\x80\xA8")};
+            std::string("\xE2\x80\xA8"),std::string("\xEF\xB8\x8F"),
+            std::string("\xF3\xA0\x84\x80")};
         invisible_only.scenarios.clear();
         const auto authored_invisible=invisible_only;
         SimulationView view(host,invisible_only,"es");resize(view,820);
         const auto format=GetDlgItem(view.window(),input_format_id);
         check(format&&SendMessageW(format,CB_GETCURSEL,0,0)==1&&
-            text(view,input_id)==R"(["\u200b", "\u2028"])"&&
+            text(view,input_id)==R"(["\u200b", "\u2028", "\ufe0f", "\udb40\udd00"])"&&
             name(GetDlgItem(view.window(),array_id)).find(R"("\u200b")")!=std::string::npos&&
             name(GetDlgItem(view.window(),array_id)).find(R"("\u2028")")!=std::string::npos&&
+            name(GetDlgItem(view.window(),array_id)).find(R"("\ufe0f")")!=std::string::npos&&
+            name(GetDlgItem(view.window(),array_id)).find(R"("\udb40\udd00")")!=std::string::npos&&
             invisible_only==authored_invisible,
             "Invisible-only text opened as ambiguous lines instead of reversible JSON");
     }

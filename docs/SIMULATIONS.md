@@ -143,7 +143,12 @@ etiquetas, la narración y el editor **Lista entre comillas**. Es una escritura
 JSON reversible: el dato real, su ordenación UTF-8, la frecuencia, los
 candidatos y la salida cruda calculada por `outputTemplate` no cambian.
 La cadena vacía sigue mostrando `(cadena vacía)` y los espacios ASCII
-mantienen su cuenta explícita.
+mantienen su cuenta explícita. Los selectores de variante Unicode, como
+U+FE0F, también se hacen visibles: `\ufe0f`. Los selectores
+suplementarios U+E0100–U+E01EF se escriben con la pareja de sustitutos
+JSON correspondiente (por ejemplo `\udb40\udd00` para U+E0100), y
+el lector recupera exactamente los cuatro bytes UTF-8 originales.
+No se cambia la presentación de letras normales ni de emojis ordinarios.
 
 Estas diferencias también se conservan al contar y comparar:
 

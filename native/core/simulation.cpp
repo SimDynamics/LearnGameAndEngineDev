@@ -158,7 +158,8 @@ bool invisible_text_codepoint(std::uint32_t point) {
         (point >= 0x2000 && point <= 0x200f) ||
         (point >= 0x2028 && point <= 0x202f) ||
         point == 0x205f || (point >= 0x2060 && point <= 0x206f) ||
-        point == 0x3000 || point == 0xfeff;
+        point == 0x3000 || (point >= 0xfe00 && point <= 0xfe0f) ||
+        point == 0xfeff || (point >= 0xe0100 && point <= 0xe01ef);
 }
 
 std::string quoted_text(std::string_view text) {
@@ -178,9 +179,18 @@ std::string quoted_text(std::string_view text) {
             else point = (point << 6) | (next & 0x3f);
         }
         if (complete && invisible_text_codepoint(point)) {
-            result += "\\u";
-            for (int shift = 12; shift >= 0; shift -= 4)
-                result += hex[(point >> shift) & 0x0f];
+            const auto append_hex4 = [&](std::uint32_t unit) {
+                result += "\\u";
+                for (int shift = 12; shift >= 0; shift -= 4)
+                    result += hex[(unit >> shift) & 0x0f];
+            };
+            // Supplementary variation selectors need two UTF-16 surrogate
+            // escapes. Truncating the scalar to 16 bits changes the datum.
+            if (point > 0xffff) {
+                const auto offset = point - 0x10000;
+                append_hex4(0xd800 + (offset >> 10));
+                append_hex4(0xdc00 + (offset & 0x3ff));
+            } else append_hex4(point);
             at += width;
             continue;
         }

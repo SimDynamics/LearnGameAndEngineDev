@@ -750,7 +750,9 @@ void explicit_text_input_presentation_is_lossless() {
         simulation_prefer_quoted_text_input(words({"\\"})) &&
         simulation_prefer_quoted_text_input(words({"\xC2\xA0"})) &&
         simulation_prefer_quoted_text_input(words({"\xE2\x80\x8B"})) &&
-        simulation_prefer_quoted_text_input(words({"\xE2\x80\xA8"})),
+        simulation_prefer_quoted_text_input(words({"\xE2\x80\xA8"})) &&
+        simulation_prefer_quoted_text_input(words({"\xEF\xB8\x8F"})) &&
+        simulation_prefer_quoted_text_input(words({"\xF3\xA0\x84\x80"})),
         "A hidden, escaped or empty text item would open in ambiguous line input");
     const auto original=words({"\xE2\x80\x8B","\xE2\x80\xA8"});
     const auto serialized=simulation_input_text(original,SimulationInputFormat::json);
@@ -781,6 +783,10 @@ void unicode_invisible_labels_remain_distinct_and_reversible() {
         {std::string("\xE2\x81\xA0"), R"("\u2060")"},
         {std::string("\xE3\x80\x80"), R"("\u3000")"},
         {std::string("\xEF\xBB\xBF"), R"("\ufeff")"},
+        {std::string("\xEF\xB8\x80"), R"("\ufe00")"},
+        {std::string("\xEF\xB8\x8F"), R"("\ufe0f")"},
+        {std::string("\xF3\xA0\x84\x80"), R"("\udb40\udd00")"},
+        {std::string("\xF3\xA0\x87\xAF"), R"("\udb40\uddef")"},
     };
     for (const auto& [raw, label] : cases) {
         spec.values = {raw};
@@ -796,6 +802,19 @@ void unicode_invisible_labels_remain_distinct_and_reversible() {
             trace.frames[1].explanation.find(label) != std::string::npos,
             "An invisible Unicode label changed identity, output or its reversible JSON spelling");
     }
+    // Even when appended to a visible character, a variation selector must
+    // be narrated explicitly rather than altering the text's glyph.
+    const std::string selector_bmp = "\xEF\xB8\x8F";
+    const std::string selector_supplementary = "\xF3\xA0\x84\x80";
+    const auto joined = std::string("A") + selector_bmp + selector_supplementary;
+    check(simulation_value_display_text(joined) ==
+            R"("A\ufe0f\udb40\udd00")" &&
+        simulation_value_text(joined) == joined &&
+        simulation_input_text({joined},json) ==
+            R"(["A\ufe0f\udb40\udd00"])" &&
+        simulation_parse_input(spec, R"(["A\ufe0f\udb40\udd00"])", json) ==
+            std::vector<SimulationValue>{joined},
+        "A visible character plus Unicode selectors was not reversible");
     const std::string nbspace = "\xC2\xA0";
     const std::string zero_width = "\xE2\x80\x8B";
     const std::string paragraph = "\xE2\x80\xA9";
