@@ -694,6 +694,24 @@ int general_choice_live_windows(const std::filesystem::path& content,
     state::validate_lesson_state(incorrect_data,actual,"programming");
     require(incorrect_data==accepted_incorrect,
         "Native import validation altered an honestly incorrect selection");
+
+    // The revised edition must also survive a *second* durable save/reopen,
+    // not merely the first reopen of its original, unreviewed response.
+    incorrect_store.save(incorrect_data);
+    incorrect_data=reopen(incorrect_store);
+    require(incorrect_data==accepted_incorrect,
+        "Reopening after editorial adoption changed the prior incorrect receipt");
+    state::prepare_lesson_state(incorrect_data,actual);
+    const auto reopened_incorrect=state::get_response(incorrect_data,actual,revised);
+    require(incorrect_data==accepted_incorrect&&reopened_incorrect&&
+        reopened_incorrect->selected==2&&!reopened_incorrect->correct&&
+        !reopened_incorrect->historical_choice&&
+        state::string_value(incorrect_data,"learning_progress",
+            state::response_storage_key(actual,revised))==wrong_receipt,
+        "A second reviewed-choice reopen regraded the error or changed its stored owner");
+    state::validate_lesson_state(incorrect_data,actual,"programming");
+    require(incorrect_data==accepted_incorrect,
+        "Native import validation mutated the reopened incorrect choice");
     require(load_lesson(path).raw_json==original.raw_json,
         "The editable QA copy changed the published curricular file");
 
