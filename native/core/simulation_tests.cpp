@@ -797,7 +797,7 @@ void all_unicode_variation_selectors_round_trip() {
     spec.values={};
     spec.scenarios.clear();
     const auto json=SimulationInputFormat::json;
-    for(const auto [first,last] : {
+    for(const auto& [first,last] : {
             std::pair<std::uint32_t,std::uint32_t>{0xfe00,0xfe0f},
             {0xe0100,0xe01ef}}) {
         for(auto point=first;point<=last;++point) {

@@ -34,7 +34,7 @@ _SCENARIO_ID = re.compile(r"[A-Za-z_][A-Za-z0-9_-]{0,63}\Z")
 # labels escape Unicode separators and invisible formatting characters.
 # This table mirrors invisible_text_codepoint in native/core/simulation.cpp.
 _INVISIBLE_TEXT_POINTS = frozenset(
-    set(range(0x7f, 0xa0)) | {0xad, 0x34f, 0x61c, 0x1680, 0x180e, 0x205f, 0x3000, 0xfeff}
+    set(range(0x7f, 0xa1)) | {0xad, 0x34f, 0x61c, 0x1680, 0x180e, 0x205f, 0x3000, 0xfeff}
     | set(range(0x2000, 0x2010)) | set(range(0x2028, 0x2030))
     | set(range(0x2060, 0x2070))
     | set(range(0xfe00, 0xfe10)) | set(range(0xe0100, 0xe01f0))

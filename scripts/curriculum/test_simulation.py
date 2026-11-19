@@ -581,12 +581,21 @@ class SimulationContractTest(unittest.TestCase):
                 expected = (f"\\u{0xd800 + (offset >> 10):04x}"
                             f"\\u{0xdc00 + (offset & 0x3ff):04x}")
             with self.subTest(codepoint=f"U+{point:06X}"):
-                self.assertEqual(simulation.value_text(raw, display=True),
-                                 '"' + expected + '"')
-                self.assertEqual(simulation.value_text(raw, display=False), raw)
+                # The renderer lives inside the trace-budget function.
+                # Observe it through the calculated byte count, not through a
+                # non-existent module-level value_text API.
+                self.assertEqual(simulation._json_invisible_escape(point), expected)
                 spec["values"] = [raw]
+                before = deepcopy(block_value)
                 simulation.validate_contract(block_value)
-                self.assertGreater(simulation._trace_text_bytes(spec, [raw]), 0)
+                # initial: no value, start/decision: the visible label,
+                # decision/done: the accumulated raw output and newline.
+                label = '"' + expected + '"'
+                output = raw + "\n"
+                expected_size = (2 * len(label.encode("utf-8")) +
+                                 2 * len(output.encode("utf-8")))
+                self.assertEqual(simulation._trace_text_bytes(spec, [raw]), expected_size)
+                self.assertEqual(block_value, before)
 
     def test_trace_expansion_limit_covers_default_and_each_scenario(self):
         value = block()
