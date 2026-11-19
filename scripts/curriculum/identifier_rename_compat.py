@@ -109,6 +109,30 @@ def require_declared_cpp_renames(
             new_to_original[after] = before
     destinations = set(new_to_original)
     for source_slot, (language, source) in old_slots.items():
+        if language == "cmake":
+            # An untouched CMake project can still inject a C++ macro through
+            # target_compile_definitions/add_compile_definitions, configure
+            # templates, flags or an indirect variable. Fail closed on a live
+            # argument mentioning either renamed spelling; inert comments
+            # are not executable macro definitions.
+            try:
+                cmake_tokens = source_format._cmake_tokens(source)
+            except source_format.SourceFormatError as error:
+                raise IdentifierRenameError(
+                    f"Cannot verify CMake macro provenance in {source_slot}: {error}") from error
+            if any(
+                token.startswith(("word:", "quoted:", "bracket:"))
+                and not token.startswith("bracket:#")
+                and any(
+                    re.search(r"(?<![A-Za-z0-9_])" + re.escape(name)
+                              + r"(?![A-Za-z0-9_])", token)
+                    for name in protected_names
+                )
+                for token in cmake_tokens
+            ):
+                raise IdentifierRenameError(
+                    f"CMake project arguments mention a renamed C++ symbol: {source_slot}")
+            continue
         if language != "cpp":
             continue
         try:
