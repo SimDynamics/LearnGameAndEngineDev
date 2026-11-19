@@ -94,6 +94,23 @@ void preprocessor_and_other_sources() {
     require(declared_tokens_only(before,after,plan),
         "An unrelated string literal incorrectly counts as a C++ reference");
 }
+void cmake_external_macro_contract() {
+    auto before=old_sources(),after=valid_sources();
+    const auto plan=valid_plan();
+    for(const std::string_view symbol:{"maxima","frecuencia_maxima_encontrada"}) {
+        before[2].source="target_compile_definitions(ejercicio PRIVATE "+
+            std::string(symbol)+"=7)\n";
+        after[2].source=before[2].source;
+        require(!declared_tokens_only(before,after,plan),
+            "A macro defined by CMake was incorrectly accepted");
+    }
+    before[2].source=
+        "# maxima and frecuencia_maxima_encontrada are inert comments\n"
+        "project(original)\n";
+    after[2].source=before[2].source;
+    require(declared_tokens_only(before,after,plan),
+        "A comment in CMake was mistaken for an executable macro definition");
+}
 void name_conflicts() {
     auto before=old_sources(),after=valid_sources(),plan=valid_plan();
     plan[1].names[0].replacement="otro_destino";
@@ -117,6 +134,7 @@ int main() try {
     success();
     negative_contracts();
     preprocessor_and_other_sources();
+    cmake_external_macro_contract();
     name_conflicts();
     std::cout << "PASS native C++ lexical identifier-rename proof, cross-file owner "
               << "consistency, macros, existing names and immutable tokens\n";
