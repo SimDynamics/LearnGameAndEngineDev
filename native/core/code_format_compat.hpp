@@ -74,6 +74,37 @@ inline bool cpp_import_starts_directive(std::string_view source,std::size_t at) 
     return true;
 }
 
+
+inline bool cpp_import_has_semicolon(std::string_view source,std::size_t after_header) {
+    // Protect ambiguous/incomplete imports. A definite expression operand
+    // directly after '>' (on the same physical line) proves that a contextual
+    // 'import' is not a C++23 header-unit declaration.
+    bool crossed_line=false;
+    for(auto pos=after_header;pos<source.size();) {
+        if(space(source[pos])) {
+            crossed_line=crossed_line||source[pos]=='\r'||source[pos]=='\n';
+            ++pos;continue;
+        }
+        if(source.substr(pos).starts_with("/*")) {
+            const auto close=source.find("*/",pos+2);
+            if(close==source.npos)return true;
+            crossed_line=crossed_line||
+                source.substr(pos,close+2-pos).find('\n')!=source.npos;
+            pos=close+2;continue;
+        }
+        if(source.substr(pos).starts_with("//")) {
+            const auto close=source.find('\n',pos+2);
+            if(close==source.npos)return true;
+            crossed_line=true;pos=close+1;continue;
+        }
+        if(source[pos]==';'||crossed_line)return true;
+        const auto c=static_cast<unsigned char>(source[pos]);
+        return !(identifier_part(c)||c=='('||c=='\''||c=='"'||
+            c=='+'||c=='-'||c=='!'||c=='~');
+    }
+    return true;
+}
+
 inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view source) {
     std::vector<std::string> result;
     std::optional<std::size_t> pending_import_end;
@@ -116,7 +147,8 @@ inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view sourc
             if(gap.find_first_of("\r\n")!=gap.npos)return {};
             const auto close=source.find('>',i+1);
             if(close!=source.npos&&
-               source.substr(i,close-i).find_first_of("\r\n")==source.npos) {
+               source.substr(i,close-i).find_first_of("\r\n")==source.npos&&
+               cpp_import_has_semicolon(source,close+1)) {
                 push(result,"header:",source.substr(i,close-i+1));
                 i=close+1;pending_import_end.reset();continue;
             }

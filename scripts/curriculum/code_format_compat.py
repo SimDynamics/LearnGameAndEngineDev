@@ -75,6 +75,42 @@ def _cpp_import_starts_directive(src: str, at: int) -> bool:
             return False
     return True
 
+
+def _cpp_import_has_semicolon(src: str, after_header: int) -> bool:
+    """Keep ambiguous header names protected; recognize definite expressions.
+
+    A complete import ends with ';' after optional trivia. When another
+    expression operand immediately follows '>' on the same physical line,
+    import is an identifier in comparisons such as import<4>1. Missing
+    semicolons and multiline continuations remain protected conservatively.
+    """
+    position = after_header
+    crossed_line = False
+    while position < len(src):
+        if src[position] in _WS:
+            crossed_line |= src[position] in "\r\n"
+            position += 1
+        elif src.startswith("/*", position):
+            close = src.find("*/", position + 2)
+            if close < 0:
+                return True
+            crossed_line |= "\n" in src[position:close + 2]
+            position = close + 2
+        elif src.startswith("//", position):
+            close = src.find("\n", position + 2)
+            if close < 0:
+                return True
+            crossed_line = True
+            position = close + 1
+        else:
+            if src[position] == ";" or crossed_line:
+                return True
+            next_character = src[position]
+            return not (next_character.isalnum() or next_character == "_"
+                        or next_character in "('\"+-!~")
+    return True
+
+
 def _cpp_tokens(src: str) -> tuple[str, ...]:
     tokens: list[str] = []
     i = 0
@@ -119,7 +155,8 @@ def _cpp_tokens(src: str) -> tuple[str, ...]:
             if "\n" in gap or "\r" in gap:
                 raise SourceFormatError("Header-unit import cannot cross a physical line")
             close = src.find(">", i + 1)
-            if close >= 0 and not any(c in "\r\n" for c in src[i:close]):
+            if (close >= 0 and not any(c in "\r\n" for c in src[i:close])
+                    and _cpp_import_has_semicolon(src, close + 1)):
                 tokens.append("header:" + src[i:close + 1])
                 i = close + 1
                 pending_import_end = None

@@ -225,6 +225,35 @@ class SourceFormatTest(unittest.TestCase):
             {"type": "code", "code": other_before},
             {"type": "code", "code": other_after}))
 
+
+        # Both forms are valid C++23 when 'import' is a contextual identifier.
+        # A physical line break before that word does not turn comparisons
+        # into a header-unit declaration.
+        line_initial_before = (
+            "int main(){int import=3;return (\n"
+            "import<4>1\n"
+            ");}")
+        line_initial_after = (
+            "int main() {\n    int import = 3;\n    return (\n"
+            "        import < 4 > 1\n"
+            "    );\n}")
+        self.assertTrue(fmt.require_source_format(
+            {"type": "code", "code": line_initial_before},
+            {"type": "code", "code": line_initial_after}))
+        # Unfinished imports must stay protected, even without ';'.
+        # Comments after a real header name must not bypass protection.
+        for original, altered in (
+            ("import <vector> /* note */ ;",
+             "import < vector > /* note */ ;"),
+            ("export import <project/local.hpp> // note\n;",
+             "export import <project/ local.hpp> // note\n;"),
+            ("import <vector>", "import < vector >"),
+        ):
+            with self.subTest(import_source=original), self.assertRaises(fmt.SourceFormatError):
+                fmt.require_source_format(
+                    {"type": "code", "code": original},
+                    {"type": "code", "code": altered})
+
         source = fixture()
         source["pages"][0]["blocks"][0]["code"] = before
         family = {"es": deepcopy(source)}

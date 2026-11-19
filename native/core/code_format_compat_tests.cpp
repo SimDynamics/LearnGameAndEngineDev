@@ -26,6 +26,23 @@ void lexical_safety(){
         "int main() {int import = 3; return (import < 4 > 1);}",
         Language::cpp),
         "A parenthesized comparison used as a return value became a header name");
+
+    check(code_format::equivalent(
+        "int main(){int import=3;return (\nimport<4>1\n);}",
+        "int main() {\n    int import = 3;\n    return (\n"
+        "        import < 4 > 1\n    );\n}",Language::cpp),
+        "Line-initial import comparison became a fake C++23 header unit");
+    check(!code_format::equivalent(
+        "import <vector> /* note */ ;",
+        "import < vector > /* note */ ;",Language::cpp),
+        "Trailing block comment bypassed a header-name spelling guard");
+    check(!code_format::equivalent(
+        "export import <project/local.hpp> // note\n;",
+        "export import <project/ local.hpp> // note\n;",Language::cpp),
+        "Trailing line comment bypassed an exported header-name guard");
+    check(!code_format::equivalent(
+        "import <vector>", "import < vector >",Language::cpp),
+        "An incomplete header-unit import lost its conservative protection");
     check(!code_format::equivalent(
         "/* comment */ import <vector>;",
         "/* comment */ import < vector >;",Language::cpp),
