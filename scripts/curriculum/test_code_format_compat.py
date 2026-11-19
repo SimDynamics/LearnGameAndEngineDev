@@ -176,6 +176,55 @@ class SourceFormatTest(unittest.TestCase):
         self.assertEqual(previous, unchanged)
         self.assertNotIn("sourceFormatRevisions", previous["stateLayout"])
 
+    def test_cpp_header_unit_import_keeps_exact_header_name(self):
+        # C++23 header imports preserve the spelling inside <...>, including
+        # spaces. Ordinary indentation outside that token is still editable.
+        allowed = [
+            ("import <vector>;\nint main(){return 0;}\n",
+             "import <vector>;\n\nint main() {\n    return 0;\n}\n"),
+            ("export import <local/header.hpp>;\nint main(){return 0;}",
+             "export import <local/header.hpp>;\n\nint main() { return 0; }"),
+            ('const char* example = "import <vector>";\nint main(){}',
+             'const char* example = "import <vector>";\n\nint main() {}'),
+        ]
+        for before, after in allowed:
+            with self.subTest(before=before):
+                self.assertTrue(fmt.require_source_format(
+                    {"type": "code", "code": before},
+                    {"type": "code", "code": after}))
+        unsafe = [
+            ("import <vector>;", "import < vector >;"),
+            ("export import <local/header.hpp>;", "export import <local/ header.hpp>;"),
+            ("import/* note */<vector>;", "import/* note */<vector >;"),
+            ("import <vector>;", "import\n<vector>;"),
+            ("import <vector>;", "import <vector\n>;"),
+        ]
+        for before, after in unsafe:
+            with self.subTest(before=before, after=after):
+                with self.assertRaises(fmt.SourceFormatError):
+                    fmt.require_source_format(
+                        {"type": "code", "code": before},
+                        {"type": "code", "code": after})
+        # The physical #include directive stays unchanged, as before.
+        self.assertTrue(fmt.require_source_format(
+            {"type": "code", "code": "#include <vector>\nint main() {}"},
+            {"type": "code", "code": "#include <vector>\n\nint main() {}"}))
+
+    def test_header_import_spelling_cannot_enter_a_format_archive(self):
+        published_source = fixture()
+        published_source["pages"][0]["blocks"][0]["code"] = (
+            "import <vector>;\nint main(){return 0;}\n")
+        family = {"es": deepcopy(published_source)}
+        original = layout.prepare_v2(published_source, "es", family)
+        current = deepcopy(original)
+        current["pages"][0]["blocks"][0]["code"] = (
+            "import < vector >;\nint main(){return 0;}\n")
+        with self.assertRaises(layout.LayoutError):
+            layout.prepare_v2(current, "es", family, original)
+        self.assertNotIn("sourceFormatRevisions", original["stateLayout"])
+        self.assertEqual(original["stateLayout"]["origin"],
+                         layout.prepare_v2(published_source, "es", family)["stateLayout"]["origin"])
+
     def test_cpp_preprocessor_digraph_and_comment_preamble_safety(self):
         # %: is the standard alternative token for # in preprocessing directives.
         allowed = [

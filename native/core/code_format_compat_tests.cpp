@@ -17,6 +17,30 @@ void check(bool ok,std::string_view message){
 }
 void lexical_safety(){
     check(code_format::equivalent(
+        "import <vector>;\nint main(){return 0;}",
+        "import <vector>;\n\nint main() { return 0; }",Language::cpp),
+        "Safe formatting outside a C++23 header-unit name was rejected");
+    check(code_format::equivalent(
+        "export import <local/header.hpp>;\nint main(){return 0;}",
+        "export import <local/header.hpp>;\n\nint main() {return 0;}",Language::cpp),
+        "Safe formatting of an exported header-unit import was rejected");
+    check(!code_format::equivalent(
+        "import <vector>;", "import < vector >;",Language::cpp),
+        "Spaces inside a header-unit name were treated as cosmetic C++ formatting");
+    check(!code_format::equivalent(
+        "export import <local/header.hpp>;",
+        "export import <local/ header.hpp>;",Language::cpp),
+        "An exported header-unit import silently changed its header name");
+    check(!code_format::equivalent(
+        "import/* note */<vector>;", "import/* note */<vector >;",Language::cpp),
+        "A header-unit name following a comment was reformatted unsafely");
+    check(!code_format::equivalent(
+        "import <vector>;", "import\n<vector>;",Language::cpp),
+        "Breaking a header import between import and < was accepted");
+    check(!code_format::equivalent(
+        "import <vector>;", "import <vector\n>;",Language::cpp),
+        "Breaking a header name across physical lines was accepted");
+    check(code_format::equivalent(
         "int main(){int number=2;return number;}",
         "int main() {\n    int number = 2;\n\n    return number;\n}\n",Language::cpp),
         "Safe semantic C++ whitespace was rejected");

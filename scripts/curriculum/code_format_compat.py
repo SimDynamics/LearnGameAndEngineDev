@@ -46,6 +46,7 @@ def _cpp_literal_suffix_end(src: str, end: int) -> int:
 def _cpp_tokens(src: str) -> tuple[str, ...]:
     tokens: list[str] = []
     i = 0
+    pending_import_end = None
     while i < len(src):
         if src[i] in _WS:
             i += 1
@@ -64,6 +65,7 @@ def _cpp_tokens(src: str) -> tuple[str, ...]:
                 end = newline + 1
                 if not physical.endswith("\\"): break
             tokens.append("directive:" + src[i:end].rstrip("\r\n"))
+            pending_import_end = None
             i = end
             continue
         if src.startswith("//", i):
@@ -78,6 +80,19 @@ def _cpp_tokens(src: str) -> tuple[str, ...]:
             tokens.append("comment:" + src[i:end + 2])
             i = end + 2
             continue
+        # C++20/23 treats <...> following an import as a single header name.
+        # Whitespace inside the name changes which file is imported.
+        if src[i] == "<" and pending_import_end is not None:
+            gap = src[pending_import_end:i]
+            if "\n" in gap or "\r" in gap:
+                raise SourceFormatError("Header-unit import cannot cross a physical line")
+            close = src.find(">", i + 1)
+            if close >= 0 and not any(c in "\r\n" for c in src[i:close]):
+                tokens.append("header:" + src[i:close + 1])
+                i = close + 1
+                pending_import_end = None
+                continue
+        pending_import_end = None
         matched = False
         for prefix in _RAW_PREFIX:
             if src.startswith(prefix, i):
@@ -102,7 +117,11 @@ def _cpp_tokens(src: str) -> tuple[str, ...]:
             end = i + 1
             while end < len(src) and (src[end].isalnum() or src[end] == "_" or ord(src[end]) >= 128):
                 end += 1
-            tokens.append("id:" + src[i:end]); i = end; continue
+            word = src[i:end]
+            tokens.append("id:" + word)
+            pending_import_end = end if word == "import" else None
+            i = end
+            continue
         if ch.isdigit() or (ch == "." and i + 1 < len(src) and src[i+1].isdigit()):
             end = i + 1
             while end < len(src):

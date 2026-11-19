@@ -45,6 +45,7 @@ inline std::size_t literal_suffix_end(std::string_view source,std::size_t end) {
 }
 inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view source) {
     std::vector<std::string> result;
+    std::optional<std::size_t> pending_import_end;
     constexpr std::string_view raw_prefixes[]={"u8R\"","uR\"","UR\"","LR\"","R\""};
     constexpr std::string_view string_prefixes[]={"u8\"","u\"","U\"","L\"","\"","u8'","u'","U'","L'","'"};
     constexpr std::string_view operators[]={"%:%:","<<=",">>=","<=>","->*","...","##","::","->",".*","++","--",
@@ -66,7 +67,7 @@ inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view sourc
             }
             auto part=source.substr(i,end-i);
             while(!part.empty()&&(part.back()=='\n'||part.back()=='\r'))part.remove_suffix(1);
-            push(result,"directive:",part);i=end;continue;
+            push(result,"directive:",part);pending_import_end.reset();i=end;continue;
         }
         if(source.substr(i).starts_with("//")) {
             auto end=source.find('\n',i+2);if(end==source.npos)end=source.size();
@@ -77,6 +78,19 @@ inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view sourc
             auto end=source.find("*/",i+2);if(end==source.npos)return {};
             end+=2;push(result,"comment:",source.substr(i,end-i));i=end;continue;
         }
+        // A C++20/23 <...> header import is a single header-name token.
+        // Spaces inside that name change the selected header.
+        if(source[i]=='<'&&pending_import_end) {
+            const auto gap=source.substr(*pending_import_end,i-*pending_import_end);
+            if(gap.find_first_of("\r\n")!=gap.npos)return {};
+            const auto close=source.find('>',i+1);
+            if(close!=source.npos&&
+               source.substr(i,close-i).find_first_of("\r\n")==source.npos) {
+                push(result,"header:",source.substr(i,close-i+1));
+                i=close+1;pending_import_end.reset();continue;
+            }
+        }
+        pending_import_end.reset();
         bool matched=false;
         for(const auto prefix:raw_prefixes)if(source.substr(i).starts_with(prefix)){
             const auto start=i+prefix.size(),opening=source.find('(',start);
@@ -101,7 +115,10 @@ inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view sourc
         if(identifier_start(ch)) {
             auto end=i+1;
             while(end<source.size()&&identifier_part(static_cast<unsigned char>(source[end])))++end;
-            push(result,"id:",source.substr(i,end-i));i=end;continue;
+            const auto word=source.substr(i,end-i);
+            push(result,"id:",word);
+            if(word=="import")pending_import_end=end;
+            i=end;continue;
         }
         if((ch>='0'&&ch<='9')||(ch=='.'&&i+1<source.size()&&source[i+1]>='0'&&source[i+1]<='9')) {
             auto end=i+1;
