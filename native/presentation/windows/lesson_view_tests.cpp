@@ -3306,6 +3306,22 @@ bool u1l5_revised_compiler_present(const curriculum::Lesson& lesson) {
     }
     return new_edition;
 }
+std::string u1l5_intermediate_line_solution(const curriculum::Lesson& lesson,
+    const curriculum::Block& compiler) {
+    require(compiler.stable_id=="p1u1l5_escribir_linea_intermedia",
+        "An unrelated compiler requested the intermediate-line solution");
+    const auto reference=curriculum::stable_block_position(lesson,"p1u1l5_referencia_linea_intermedia");
+    require(reference.has_value(),"The intermediate-line editor lost its authored source example");
+    const auto& sample=lesson.pages[reference->page].blocks[reference->block];
+    require(sample.type==BlockType::code&&sample.code=="std::cout << \"Mesa B\\n\";",
+        "The new line sample no longer matches its published solution");
+    auto source=compiler.initial_code;
+    const std::string placeholder="    // Escribe aqui la instruccion que falta.";
+    const auto marker=source.find(placeholder);
+    require(marker!=source.npos,"The new editor lost its documented insertion point");
+    source.replace(marker,placeholder.size(),"    "+sample.code);
+    return source;
+}
 void real_retirement_pages_preserve_all_eight_useful_editors() {
     struct Plan {const char* file;std::size_t page;const char* instruction;const char* editor;};
     const std::array plans{
@@ -3460,16 +3476,7 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
             require(plan!=solutions.end(),"No verified solution plan for "+f.lesson.id+" / "+compiler.stable_id);
             std::string solution;
             if(intermediate) {
-                const auto reference=curriculum::stable_block_position(f.lesson,plan->reference);
-                require(reference.has_value(),"The new intermediate-line editor lost its authored example");
-                const auto& snippet=f.lesson.pages[reference->page].blocks[reference->block];
-                require(snippet.type==BlockType::code&&snippet.code=="std::cout << \"Mesa B\\n\";",
-                    "The independent line sample no longer matches the taught code");
-                solution=compiler.initial_code;
-                const std::string placeholder="    // Escribe aqui la instruccion que falta.";
-                const auto marker=solution.find(placeholder);
-                require(marker!=solution.npos,"The new editor no longer exposes the line to complete");
-                solution.replace(marker,placeholder.size(),"    "+snippet.code);
+                solution=u1l5_intermediate_line_solution(f.lesson,compiler);
             } else if(plan->reference.empty()){
                 solution=compiler.initial_code;const std::string line="std::cout << \"Revision inicial\"\n";
                 const auto missing=solution.find(line);require(missing!=solution.npos,"The independent repair no longer contains its intended missing semicolon");
@@ -3528,6 +3535,22 @@ void completed_compilers_keep_navigation_after_active_content() {
         }
     },[&](const curriculum::Lesson&){return windows::load_lesson(path);},true);
     require(!IsWindowVisible(f.host),"Navigation geometry QA exposed or activated the desktop");
+    const bool new_edition=u1l5_revised_compiler_present(f.lesson);
+    if(new_edition){
+        const auto intermediate=curriculum::stable_block_position(f.lesson,"p1u1l5_escribir_linea_intermedia");
+        require(intermediate&&f.page()==intermediate->page,
+            "The newer U1L5 edition allowed an old bookmark to bypass the intermediate-line editor");
+        const auto& goal=f.lesson.pages[intermediate->page].blocks[intermediate->block];
+        require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,goal)&&
+            !lesson_page_state(f.view).can_next,
+            "A pending new U1L5 editor was not blocking forward navigation");
+        f.replace(intermediate->block,10,u1l5_intermediate_line_solution(f.lesson,goal));
+        f.run(intermediate->block);
+        require(windows::compiler_puzzle_completed(f.saved(),f.lesson,goal)&&
+            lesson_page_state(f.view).can_next,
+            "The new U1L5 editor could not unlock the following historical construction");
+        f.next();
+    }
     require(f.page()==3,"Navigation geometry QA did not restore the actual U1L5 construction");
     const auto first=curriculum::stable_block_position(f.lesson,"block_0003_0002");
     const auto last=curriculum::stable_block_position(f.lesson,"block_0005_0006");
@@ -3590,8 +3613,15 @@ void completed_compilers_keep_navigation_after_active_content() {
     require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,last_goal)&&!IsWindowEnabled(f.control(117))
         &&windows::compiler_puzzle_completed(f.saved(),f.lesson,first_goal)&&f.text(last->block,10)==last_goal.initial_code,
         "Reset changed another compiler achievement or failed to restore the final pending goal");
+    if(new_edition){
+        const auto earlier=curriculum::stable_block_position(f.lesson,"p1u1l5_escribir_linea_intermedia");
+        require(earlier&&windows::compiler_puzzle_completed(f.saved(),f.lesson,
+            f.lesson.pages[earlier->page].blocks[earlier->block]),
+            "Resetting the final card discarded the new editor's independent earlier achievement");
+    }
     require(state::sha256(state::read_bytes(path))==original_hash,"Navigation QA changed an authored lesson asset");
-    std::cout<<"PASS actual U1L5 p4/p6: hidden owned host, real authored compile/error/success, revealed note/choice/explanation, Continue/Finish after all content, source/achievements retained on reopen, scoped Reset and original unrelated preferences/assets\n";
+    std::cout<<"PASS actual U1L5: new intermediate-line gate where authored, preserved historical p4/p6 flow, "
+             <<"native compile/error/success, Continue/Finish, reopen, scoped Reset and original unrelated preferences/assets\n";
 }
 void retired_reading_regions_are_empty_during_import_and_return_after_cancel() {
     // A presentation-only retirement on a copy of page zero exercises the
