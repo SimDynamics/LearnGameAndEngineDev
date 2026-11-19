@@ -282,6 +282,27 @@ class SourceFormatU4L7(unittest.TestCase):
                         continue
                     self.assertEqual(original.get(key), self.owners(revised)[0][owner].get(key))
 
+    def test_current_cmake_contract_changes_are_not_source_format(self):
+        """Formatting may reflow CMake, not weaken linkage or the C++ standard."""
+        original, _ = self.owners(self.doc)
+        original_cmake = original[CMAKE]
+        changes = (
+            ("PRIVATE assetcheck_estadisticas assetcheck_manifiesto",
+             "PUBLIC assetcheck_estadisticas assetcheck_manifiesto"),
+            ("PUBLIC cxx_std_23", "PUBLIC cxx_std_20"),
+        )
+        for before, after in changes:
+            with self.subTest(replacement=after):
+                proposal = deepcopy(self.doc)
+                blocks, _ = self.owners(proposal)
+                source = blocks[CMAKE]["code"]
+                self.assertEqual(source.count(before), 1)
+                blocks[CMAKE]["code"] = source.replace(before, after, 1)
+                with self.assertRaises(source_format.SourceFormatError):
+                    source_format.require_source_lexical(original_cmake, blocks[CMAKE])
+                with self.assertRaisesRegex(state.LayoutError, "Unsafe source formatting"):
+                    self.publish(self.doc, proposal)
+
     def test_logic_change_is_rejected_with_generated_editorial_proof(self):
         proposal = deepcopy(self.doc)
         blocks, _ = self.owners(proposal)
