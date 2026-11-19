@@ -80,8 +80,11 @@ def require_declared_cpp_renames(
     # only the edited slot would silently accept that different expansion.
     # Existing destination identifiers anywhere in the same authored block
     # are also ambiguous without binding/linkage analysis.
-    if any(type(mapping) is not dict or not mapping for mapping in renames.values()):
-        raise IdentifierRenameError("Each source slot needs a nonempty name mapping")
+    if any(type(mapping) is not dict or not mapping or not all(
+            _declared_name(name) and _declared_name(target)
+            for name, target in mapping.items()) for mapping in renames.values()):
+        raise IdentifierRenameError(
+            "Each source slot needs valid declared C++ identifier names")
     protected_names = {
         name for mapping in renames.values() for name in mapping
     } | {
@@ -106,9 +109,9 @@ def require_declared_cpp_renames(
             ):
                 raise IdentifierRenameError(
                     f"Preprocessor directive refers to a renamed C++ identifier: {source_slot}")
-            if source_slot not in renames and token.startswith("id:") and token[3:] in destinations:
+            if token.startswith("id:") and token[3:] in destinations:
                 raise IdentifierRenameError(
-                    f"A destination is already used in another C++ source: {source_slot}")
+                    f"A destination already exists in a published C++ source: {source_slot}")
 
     confirmed: dict[str, dict[str, int]] = {}
     for slot, (language, before) in old_slots.items():
