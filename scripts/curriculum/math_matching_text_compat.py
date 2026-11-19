@@ -392,3 +392,42 @@ def authenticated_matching_text_originals(
                 raise MatchingTextError("A matching review cannot discard marked technical spans")
         originals[identity] = previous
     return originals
+
+
+def historical_matching_text_semantics(
+    document: dict, overlay: dict | None,
+    *, identities: set[str] | None = None,
+) -> dict | None:
+    """Restore only fields described by authenticated matching-text revisions.
+
+    A historical reader must retain the original audible emphasis and reading
+    ranges, not assign already-read coverage to newly edited passages. Card
+    labels unsupported by the narrator have no textSemantics descriptors.
+    """
+    result = deepcopy(overlay)
+    if result is None:
+        return None
+    if type(result) is not dict or type(result.get("fields")) is not list:
+        raise MatchingTextError("Historical matching text overlay is invalid")
+    for journal in document.get("stateLayout", {}).get("mathMatchingTextRevisions", []):
+        if identities is not None and journal["id"] not in identities:
+            continue
+        for path in journal["paths"]:
+            old = journal["semanticBefore"][path]
+            new = journal["semanticAfter"][path]
+            if old is None and new is None:
+                continue
+            matches = [i for i, entry in enumerate(result["fields"])
+                       if entry.get("block") == journal["id"]
+                       and entry.get("path") == path]
+            if len(matches) > 1:
+                raise MatchingTextError("Historical matching text has duplicate public owners")
+            if matches:
+                index = matches[0]
+                if old is None:
+                    result["fields"].pop(index)
+                else:
+                    result["fields"][index] = deepcopy(old)
+            elif old is not None:
+                result["fields"].append(deepcopy(old))
+    return result if result["fields"] or result.get("rootFields") else None
