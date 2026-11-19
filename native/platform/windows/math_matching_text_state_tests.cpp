@@ -254,10 +254,31 @@ int math_matching_text_live_windows(const std::filesystem::path& content,
     auto data=store.load();
     state::prepare_lesson_state(data,baseline);
     const auto stable=state::response_storage_key(baseline,previous);
+    state::Response earned;
+    earned.correct=true;
+    earned.raw_json=R"({"responses":{"relaciones":{"acceso":"proteger_acceso","mismo_grupo":"agrupar_observaciones","supera_maximo":"reemplazar_candidatos","iguala_maximo":"conservar_empate"}},"opaque":"historic-matching-receipt"})";
+    state::put_response(data,baseline,previous,earned);
+    const auto old_receipt=state::string_value(data,"learning_progress",stable);
+    const auto expected=JsonObject::Parse(wide(previous.raw_json)).
+        GetNamedArray(L"responses").GetObjectAt(0).
+        GetNamedObject(L"validator").GetNamedObject(L"expected");
+    const auto saved_pairs=JsonObject::Parse(wide(old_receipt)).
+        GetNamedObject(L"responses").GetNamedObject(L"relaciones");
+    check(fingerprint(saved_pairs)==fingerprint(expected),
+        "The saved historical matching receipt is not the exact correct ID mapping");
+    const auto original_prompt=pointer_text(original,"/prompt");
+    const auto revised_prompt=pointer_text(current,"/prompt");
+    const auto old_audible_hash=state::sha256(original_prompt);
+    const auto new_audible_hash=state::sha256(revised_prompt);
+    check(old_audible_hash!=new_audible_hash,
+        "A renamed matching prompt did not change its narration source hash");
     data.preferences["matching-qa"]["foreign"]=std::string("unchanged");
     narration::History before_audio;
-    before_audio.entries.push_back({"old-math-matching","block_0007_0007",
-        {4,170,0,false},"page_0007"});
+    narration::Position old_heard{4,170,0,false};
+    old_heard.heard_prefix=narration::HeardPrefix{
+        old_audible_hash,500000,1000000};
+    before_audio.entries.push_back({
+        "old-math-matching","block_0007_0007",old_heard,"page_0007"});
     narration::write_history(data,before_audio);
     const auto saved_audio=narration::read_history(data);
     store.save(data);
@@ -267,18 +288,29 @@ int math_matching_text_live_windows(const std::filesystem::path& content,
     state::prepare_lesson_state(data,revised);
     state::validate_lesson_state(data,revised);
     state::validate_lesson_state(data,metadata);
+    const auto current_receipt=state::get_response(data,revised,now);
+    const auto compact_receipt=state::get_response(data,metadata,compact);
+    const auto heard=saved_audio.entries.front().position;
     check(state::response_storage_key(revised,now)==stable&&
         state::response_storage_key(metadata,compact)==stable&&
+        state::string_value(data,"learning_progress",stable)==old_receipt&&
+        current_receipt&&compact_receipt&&
+        current_receipt->correct&&compact_receipt->correct&&
+        current_receipt->raw_json==old_receipt&&
+        compact_receipt->raw_json==old_receipt&&
         narration::read_history(data)==saved_audio&&
+        narration::heard_prefix_matches(heard,old_audible_hash,1000000)&&
+        !narration::heard_prefix_matches(heard,new_audible_hash,1000000)&&
         state::string_value(data,"matching-qa","foreign")=="unchanged",
-        "Matching text created a new response owner or modified a reading marker");
+        "Matching text changed an earned receipt, owner or old narration evidence");
     loaded.save(data);
     state::StateStore reopened(loaded.root().parent_path());
     const auto persisted=reopened.load();
     state::validate_lesson_state(persisted,revised);
     check(persisted==data&&narration::read_history(persisted)==saved_audio&&
+        state::string_value(persisted,"learning_progress",stable)==old_receipt&&
         data==old_data,
-        "Matching review mutated an existing learner profile or its historical audio");
+        "Matching review mutated a learner's successful answer, old audio or profile");
 
     const auto rejects=[&](std::string_view reason,const auto& mutate) {
         const auto forged=JsonObject::Parse(wide(serialized));
@@ -318,7 +350,7 @@ int math_matching_text_live_windows(const std::filesystem::path& content,
         "A matching text regression wrote to the real curricular source");
     std::cout<<"PASS native U5L13 matching public text: six reviewed paths, "
              <<"unaltered grading/IDs, exact UTF-16 spans, source-history SHA, "
-             <<"stable response, reopened learner audio and three hostile variants.\n";
+             <<"stable correct receipt, old-only audio prefix and three hostile variants.\n";
     return 0;
 }
 } // namespace lgaed::test
