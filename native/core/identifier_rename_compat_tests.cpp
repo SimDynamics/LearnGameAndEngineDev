@@ -111,6 +111,52 @@ void cmake_external_macro_contract() {
     require(declared_tokens_only(before,after,plan),
         "A comment in CMake was mistaken for an executable macro definition");
 }
+void observable_identifier_spelling() {
+    auto before=old_sources(),after=valid_sources();
+    auto plan=valid_plan();
+    before[0].source="const char* maxima() { return __func__; }\n";
+    after[0].source=
+        "const char* frecuencia_maxima_encontrada() { return __func__; }\n";
+    before[1].source="int unrelated = 8;\n";
+    after[1]=before[1];
+    plan.pop_back();plan[0].names[0].occurrences=1;
+    require(!declared_tokens_only(before,after,plan),
+        "__func__ observes the renamed function name despite identical other tokens");
+
+    for(const std::string_view observer:{
+            "__FUNCTION__", "__PRETTY_FUNCTION__", "__FUNCSIG__",
+            "__FUNCDNAME__", "typeid"}) {
+        before[0].source="const char* maxima() { return "+
+            std::string(observer)+"; }\n";
+        after[0].source="const char* frecuencia_maxima_encontrada() { return "+
+            std::string(observer)+"; }\n";
+        require(!declared_tokens_only(before,after,plan),
+            "C++ function/type spelling observer passed identifier-only validation");
+    }
+
+    for(const std::string_view macro:{
+            "#define STRINGIFY(x) #x",
+            "#define CONCAT(a,b) a##b"}) {
+        before[0].source=std::string(macro)+
+            "\nint maxima = 4;\nint main(){return maxima;}\n";
+        after[0].source=std::string(macro)+
+            "\nint frecuencia_maxima_encontrada = 4;"
+            "\nint main(){return frecuencia_maxima_encontrada;}\n";
+        plan[0].names[0].occurrences=2;
+        require(!declared_tokens_only(before,after,plan),
+            "An unchanged macro could stringify or paste the new identifier");
+    }
+
+    before[0].source=
+        "int maxima = 4; // __func__ only in this comment\n"
+        "const char* note=\"__PRETTY_FUNCTION__\";\n";
+    after[0].source=
+        "int frecuencia_maxima_encontrada = 4; // __func__ only in this comment\n"
+        "const char* note=\"__PRETTY_FUNCTION__\";\n";
+    plan[0].names[0].occurrences=1;
+    require(declared_tokens_only(before,after,plan),
+        "An inert comment or literal was mistaken for an observer");
+}
 void name_conflicts() {
     auto before=old_sources(),after=valid_sources(),plan=valid_plan();
     plan[1].names[0].replacement="otro_destino";
@@ -135,6 +181,7 @@ int main() try {
     negative_contracts();
     preprocessor_and_other_sources();
     cmake_external_macro_contract();
+    observable_identifier_spelling();
     name_conflicts();
     std::cout << "PASS native C++ lexical identifier-rename proof, cross-file owner "
               << "consistency, macros, existing names and immutable tokens\n";
