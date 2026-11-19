@@ -580,6 +580,11 @@ int general_choice_live_windows(const std::filesystem::path& content,
     data.preferences["guidance-qa"]["foreign"]=std::string("preserve");
     const auto preserved=data;
     state::StateStore store(qa/"general-choice-live");
+    // StateStore deliberately forbids a write until this instance has loaded
+    // the profile generation. Reproduce the real first-use sequence in QA.
+    const auto empty=store.load();
+    require(empty.preferences.empty(),
+        "The isolated general-choice QA profile already contains student data");
     store.save(data);
     data=reopen(store);
     const auto response=state::get_response(data,actual,revised);
