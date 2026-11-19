@@ -37,6 +37,34 @@ def _declared_name(name: object) -> bool:
             and name not in _CPP_KEYWORDS and not name.startswith("__"))
 
 
+_SPELLING_OBSERVERS = frozenset({
+    "__func__", "__FUNCTION__", "__PRETTY_FUNCTION__", "__FUNCSIG__",
+    "__FUNCDNAME__", "typeid",
+})
+
+
+def _cpp_spelling_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
+    """Reject observable function/type spelling and macro stringize/paste.
+
+    A name-only token diff is insufficient if the program can print a renamed
+    function's name, or a macro can stringify/paste its argument into data.
+    """
+    for token in tokens:
+        if token.startswith("id:") and token[3:] in _SPELLING_OBSERVERS:
+            return True
+        if token.startswith("directive:"):
+            directive = token[len("directive:"):]
+            if directive.startswith("#"):
+                directive = directive[1:]
+            elif directive.startswith("%:"):
+                directive = directive[2:]
+            match = re.match(r"\s*define\b", directive)
+            if match and ("#" in directive[match.end():]
+                          or "%:" in directive[match.end():]):
+                return True
+    return False
+
+
 def require_declared_cpp_renames(
     original: dict, revised: dict,
     renames: dict[str, dict[str, str]],
@@ -140,6 +168,9 @@ def require_declared_cpp_renames(
         except source_format.SourceFormatError as error:
             raise IdentifierRenameError(
                 f"Cannot verify cross-file C++ macros in {source_slot}: {error}") from error
+        if _cpp_spelling_sensitive_tokens(tokens):
+            raise IdentifierRenameError(
+                f"Source may observe renamed C++ symbol spelling: {source_slot}")
         for token in tokens:
             if token.startswith("directive:") and any(
                 re.search(r"(?<![A-Za-z0-9_])" + re.escape(name)
