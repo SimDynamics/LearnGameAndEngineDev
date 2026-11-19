@@ -767,6 +767,61 @@ void explicit_text_input_presentation_is_lossless() {
         "The preferred JSON editor format changed invisible source values");
 }
 
+
+void all_unicode_variation_selectors_round_trip() {
+    // All 16 BMP and 240 supplementary selectors must keep their scalar
+    // identity. The high surrogate is not a standalone value in JSON.
+    const auto encode = [](std::uint32_t point) {
+        std::string raw;
+        if(point <= 0xffff) {
+            raw += static_cast<char>(0xe0 | (point >> 12));
+            raw += static_cast<char>(0x80 | ((point >> 6) & 0x3f));
+            raw += static_cast<char>(0x80 | (point & 0x3f));
+        } else {
+            raw += static_cast<char>(0xf0 | (point >> 18));
+            raw += static_cast<char>(0x80 | ((point >> 12) & 0x3f));
+            raw += static_cast<char>(0x80 | ((point >> 6) & 0x3f));
+            raw += static_cast<char>(0x80 | (point & 0x3f));
+        }
+        return raw;
+    };
+    const auto hex4=[](std::uint32_t unit) {
+        constexpr char digits[]="0123456789abcdef";
+        std::string result="\\u";
+        for(int shift=12;shift>=0;shift-=4)
+            result+=digits[(unit >> shift) & 0x0f];
+        return result;
+    };
+    auto spec=example();
+    spec.text_values=true;
+    spec.values={};
+    spec.scenarios.clear();
+    const auto json=SimulationInputFormat::json;
+    for(const auto [first,last] : {
+            std::pair<std::uint32_t,std::uint32_t>{0xfe00,0xfe0f},
+            {0xe0100,0xe01ef}}) {
+        for(auto point=first;point<=last;++point) {
+            const auto raw=encode(point);
+            std::string expected;
+            if(point<=0xffff)expected=hex4(point);
+            else {
+                const auto offset=point-0x10000;
+                expected=hex4(0xd800+(offset>>10))+
+                    hex4(0xdc00+(offset&0x3ff));
+            }
+            const auto displayed=simulation_value_display_text(raw);
+            const auto serialized=simulation_input_text({raw},json);
+            const auto decoded=simulation_parse_input(spec,serialized,json);
+            check(displayed=="\""+expected+"\"" &&
+                serialized=="[\""+expected+"\"]" &&
+                decoded==std::vector<SimulationValue>{raw} &&
+                simulation_value_text(decoded.front())==raw &&
+                simulation_prefer_quoted_text_input(decoded),
+                "A Unicode variation selector was not encoded and decoded exactly");
+        }
+    }
+}
+
 void unicode_invisible_labels_remain_distinct_and_reversible() {
     auto spec = example();
     spec.text_values = true;
@@ -1307,6 +1362,7 @@ int main() {
         replay_inputs_and_accessibility();
         empty_text_values_and_labels();
         unicode_invisible_labels_remain_distinct_and_reversible();
+        all_unicode_variation_selectors_round_trip();
         explicit_text_input_presentation_is_lossless();
         explicit_text_list_input();
         contract_rejections();

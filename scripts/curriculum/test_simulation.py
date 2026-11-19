@@ -563,6 +563,31 @@ class SimulationContractTest(unittest.TestCase):
                 self.assertEqual(simulation._trace_text_bytes(spec, [raw]), total)
                 self.assertEqual(block_value, before)
 
+    def test_all_256_variation_selectors_match_json_utf16_escapes(self):
+        block_value = block()
+        spec = block_value["simulation"]
+        spec.update(valueType="text", values=[], scenarios=[],
+                    outputTemplate="{value}",
+                    explanations={name: "{value}"
+                                  for name in simulation.EXPLANATION_FIELDS})
+        points = tuple(range(0xfe00, 0xfe10)) + tuple(range(0xe0100, 0xe01f0))
+        self.assertEqual(len(points), 256)
+        for point in points:
+            raw = chr(point)
+            if point <= 0xffff:
+                expected = f"\\u{point:04x}"
+            else:
+                offset = point - 0x10000
+                expected = (f"\\u{0xd800 + (offset >> 10):04x}"
+                            f"\\u{0xdc00 + (offset & 0x3ff):04x}")
+            with self.subTest(codepoint=f"U+{point:06X}"):
+                self.assertEqual(simulation.value_text(raw, display=True),
+                                 '"' + expected + '"')
+                self.assertEqual(simulation.value_text(raw, display=False), raw)
+                spec["values"] = [raw]
+                simulation.validate_contract(block_value)
+                self.assertGreater(simulation._trace_text_bytes(spec, [raw]), 0)
+
     def test_trace_expansion_limit_covers_default_and_each_scenario(self):
         value = block()
         spec = value["simulation"]

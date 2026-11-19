@@ -5507,6 +5507,33 @@ void empty_text_values(HWND host,const std::filesystem::path& captures) {
             name(GetDlgItem(view.window(),array_id)).find(R"("\udb40\udd00")")!=std::string::npos&&
             invisible_only==authored_invisible,
             "Invisible-only text opened as ambiguous lines instead of reversible JSON");
+        // Apply an edited pair of supplementary selectors, inspect the
+        // untouched raw output and then restore the authored invisible set.
+        // This exercises the real RichEdit JSON path, not a model-only parse.
+        const auto selector=GetDlgItem(view.window(),group_first_id+1);
+        check(selector!=nullptr,"The original Unicode group selector was lost");
+        const std::string earliest="\xF3\xA0\x84\x80";
+        const std::string latest="\xF3\xA0\x87\xAF";
+        const auto edited=R"(["\udb40\udd00", "\udb40\uddef"])";
+        set_edit_text(GetDlgItem(view.window(),input_id),edited);
+        click(view,apply_id);
+        check(text(view,error_id).empty() &&
+            text(view,input_id)==edited &&
+            SendMessageW(format,CB_GETCURSEL,0,0)==1 &&
+            name(GetDlgItem(view.window(),array_id)).find(
+                R"("\udb40\udd00")")!=std::string::npos &&
+            name(GetDlgItem(view.window(),array_id)).find(
+                R"("\udb40\uddef")")!=std::string::npos,
+            "Applying supplementary selectors lost their reversible JSON identities");
+        click(view,group_first_id+1);
+        check(text(view,output_id)==earliest+":1\n"+latest+":1\n",
+            "Applying Unicode edits changed the actual byte-exact model output");
+        click(view,restore_id);
+        check(text(view,error_id).empty() &&
+            text(view,input_id)==R"(["\u200b", "\u2028", "\ufe0f", "\udb40\udd00"])" &&
+            SendMessageW(format,CB_GETCURSEL,0,0)==1 &&
+            invisible_only==authored_invisible,
+            "Restoring Unicode data lost the original JSON editor or authored values");
     }
     {
         // Scenario changes start a fresh input session. Their own contents
