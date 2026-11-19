@@ -1260,6 +1260,158 @@ void validate_course_edition_file(const std::filesystem::path& path, const Lesso
     }
 }
 
+// A mathematical matching review may change *public text only*, never the
+// source/target IDs, matching expected pairs, numeric JSON, array order or
+// response ownership. Compare the exact original JSON order with the listed
+// string slices omitted; do not rely on WinRT's unordered Stringify output.
+bool matching_text_path(std::string_view path) {
+    if(path=="/prompt"||path=="/feedback/correct"||
+       path=="/feedback/incorrect")return true;
+    static const std::regex card(
+        R"(^/responses/(0|[1-9][0-9]*)/(sources|targets)/(0|[1-9][0-9]*)/(label|content/(0|[1-9][0-9]*)/text)$)");
+    static const std::regex response(
+        R"(^/responses/(0|[1-9][0-9]*)/label$)");
+    const auto value=std::string(path);
+    return std::regex_match(value,card)||std::regex_match(value,response);
+}
+std::vector<std::string> matching_segments(std::string_view path) {
+    require(matching_text_path(path),"A matching review names an unsupported public text field");
+    std::vector<std::string> segments;
+    std::size_t start=1;
+    while(start<path.size()) {
+        const auto end=path.find('/',start);
+        segments.emplace_back(path.substr(start,end==path.npos?
+            std::string_view::npos:end-start));
+        if(end==path.npos)break;
+        start=end+1;
+    }
+    return segments;
+}
+OriginalJson::Slice matching_text_slice(const OriginalJson& json,
+        OriginalJson::Slice root,std::string_view path) {
+    auto slice=root;
+    for(const auto& segment:matching_segments(path)) {
+        const auto raw=json.text(slice);
+        if(raw.starts_with("{"))slice=json.member(slice,segment);
+        else if(raw.starts_with("[")) {
+            require(!segment.empty()&&std::ranges::all_of(segment,[](unsigned char c){
+                return c>='0'&&c<='9';}),"Matching path must use a canonical list index");
+            const auto n=std::stoull(segment);
+            const auto items=json.elements(slice);
+            require(n<items.size(),"Matching review refers to another source card");
+            slice=items[static_cast<std::size_t>(n)];
+        } else invalid("A matching review traverses a non-object field");
+    }
+    const auto field=JsonValue::Parse(key(json.text(slice)));
+    require(field.ValueType()==JsonValueType::String&&
+            authored_nonblank(utf8(field.GetString())),
+        "A revised matching field must contain nonblank authored text");
+    return slice;
+}
+std::string matching_path_text(const JsonObject& block,std::string_view path) {
+    IJsonValue node=block;
+    for(const auto& segment:matching_segments(path)) {
+        if(node.ValueType()==JsonValueType::Object) {
+            const auto object=node.GetObject();
+            require(object.HasKey(key(segment)),
+                "A matching review refers to a missing public field");
+            node=object.GetNamedValue(key(segment));
+        } else if(node.ValueType()==JsonValueType::Array) {
+            require(!segment.empty()&&std::ranges::all_of(segment,[](unsigned char c){
+                return c>='0'&&c<='9';}),"Matching path must contain a number");
+            const auto elements=node.GetArray();
+            const auto n=std::stoull(segment);
+            require(n<elements.Size(),"A matching review changed its source-card count");
+            node=elements.GetAt(static_cast<unsigned>(n));
+        } else invalid("A matching review traverses an invalid field");
+    }
+    require(node.ValueType()==JsonValueType::String,
+        "A revised matching field must remain a string");
+    const auto value=utf8(node.GetString());
+    require(authored_nonblank(value),"A revised matching string cannot be blank");
+    return value;
+}
+bool matching_narrated_path(const JsonObject& previous,std::string_view path) {
+    if(path=="/prompt"||path.starts_with("/feedback/"))return true;
+    if(path.ends_with("/text")||path.starts_with("/responses/")&&
+       path.ends_with("/label")&&path.find("/sources/")==path.npos&&
+       path.find("/targets/")==path.npos)return true;
+    // Cards with rich content narrate that content, not an auxiliary label.
+    if(path.ends_with("/label")) {
+        const auto enclosing=path.substr(0,path.size()-6);
+        const auto card=matching_segments(std::string(enclosing)+"/label");
+        IJsonValue node=previous;
+        for(std::size_t i=0;i+1<card.size();++i) {
+            const auto& segment=card[i];
+            if(node.ValueType()==JsonValueType::Object)
+                node=node.GetObject().GetNamedValue(key(segment));
+            else if(node.ValueType()==JsonValueType::Array) {
+                const auto n=std::stoull(segment);
+                require(n<node.GetArray().Size(),
+                    "Matching author changed a card index");
+                node=node.GetArray().GetAt(static_cast<unsigned>(n));
+            } else invalid("Invalid matching label owner");
+        }
+        const auto source=node.GetObject();
+        return !source.HasKey(L"content")||
+            source.GetNamedArray(L"content").Size()==0;
+    }
+    return false;
+}
+void require_matching_text_only(std::string_view active,
+        std::string_view previous,const std::vector<std::string>& paths) {
+    const OriginalJson original(previous),current(active);
+    auto before=original.root(),after=current.root();
+    const auto old=JsonObject::Parse(key(previous));
+    const auto now=JsonObject::Parse(key(active));
+    require(text(old,"type")=="math_puzzle"&&text(now,"type")=="math_puzzle",
+        "Matching text archives require mathematical puzzle owners");
+    const auto responses=array(old,"responses"),revised=array(now,"responses");
+    require(responses.Size()>0&&responses.Size()==revised.Size(),
+        "Matching text cannot add, remove or reorder responses");
+    for(unsigned r=0;r<responses.Size();++r)
+        require(text(responses.GetObjectAt(r),"type")=="math_matching_drag"&&
+                text(revised.GetObjectAt(r),"type")=="math_matching_drag",
+            "Matching text revision cannot change answer type");
+    require(!paths.empty()&&paths.size()<=128,
+        "Matching text archives require 1..128 explicit text fields");
+    std::set<std::string> unique;
+    std::vector<OriginalJson::Slice> old_ignored,changed_ignored;
+    for(const auto& path:paths) {
+        require(unique.insert(path).second&&
+                matching_text_path(path),
+            "Matching text paths must be unique public fields");
+        const auto prior=matching_path_text(old,path);
+        const auto newer=matching_path_text(now,path);
+        require(prior!=newer,"A matching text archive must change each declared field");
+        old_ignored.push_back(matching_text_slice(original,before,path));
+        changed_ignored.push_back(matching_text_slice(current,after,path));
+    }
+    require(original.ordered_frame(before,old_ignored)==
+            current.ordered_frame(after,changed_ignored),
+        "A matching text archive changed IDs, pairs, grading or JSON order");
+    // A source label originally synchronized to its actual text must remain
+    // synchronized after a prose-only clarification.
+    for(unsigned r=0;r<responses.Size();++r)for(const auto group:{
+            std::string_view("sources"),std::string_view("targets")}) {
+        const auto old_cards=array(responses.GetObjectAt(r),group);
+        const auto cards=array(revised.GetObjectAt(r),group);
+        require(old_cards.Size()==cards.Size(),"A matching review changed card count");
+        for(unsigned i=0;i<old_cards.Size();++i) {
+            const auto source=old_cards.GetObjectAt(i);
+            const auto shown=cards.GetObjectAt(i);
+            if(!source.HasKey(L"label")||!source.HasKey(L"content")||
+                array(source,"content").Size()!=1)continue;
+            const auto fragment=array(source,"content").GetObjectAt(0);
+            if(text(fragment,"type")!="text"||!fragment.HasKey(L"text")||
+                text(source,"label")!=text(fragment,"text"))continue;
+            const auto visible=array(shown,"content").GetObjectAt(0);
+            require(text(shown,"label")==text(visible,"text"),
+                "Matching card label and source text no longer agree");
+        }
+    }
+}
+
 void require_math_prompt_contract(std::string_view current,std::string_view previous,bool historical=false) {
     const OriginalJson live(current),original(previous);
     const auto live_root=live.root(),old_root=original.root();
