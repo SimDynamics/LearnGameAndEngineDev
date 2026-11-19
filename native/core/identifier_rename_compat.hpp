@@ -72,6 +72,37 @@ inline bool directive_mentions(std::string_view directive,std::string_view name)
     }
     return false;
 }
+// A lexical identifier-only change can alter observable output through
+// __func__/compiler function-name intrinsics or macro argument stringization.
+// Guard both active and unaffected source slots: macros from another file may
+// receive changed identifiers across the project.
+inline bool spelling_sensitive_tokens(const std::vector<std::string>& tokens) {
+    static constexpr std::string_view observers[]{
+        "__func__", "__FUNCTION__", "__PRETTY_FUNCTION__",
+        "__FUNCSIG__", "__FUNCDNAME__", "typeid"
+    };
+    for(const auto& token:tokens) {
+        if(token.starts_with("id:")) {
+            const auto name=std::string_view(token).substr(3);
+            if(std::ranges::find(observers,name)!=std::end(observers))
+                return true;
+        }
+        if(!token.starts_with("directive:"))continue;
+        auto directive=std::string_view(token).substr(10);
+        if(directive.starts_with("#"))directive.remove_prefix(1);
+        else if(directive.starts_with("%:"))directive.remove_prefix(2);
+        while(!directive.empty()&&(directive.front()==' '||
+              directive.front()=='\t'))directive.remove_prefix(1);
+        if(!directive.starts_with("define")||
+           (directive.size()>6&&identifier_char(
+                static_cast<unsigned char>(directive[6]))))
+            continue;
+        directive.remove_prefix(6);
+        if(directive.find('#')!=directive.npos||
+           directive.find("%:")!=directive.npos)return true;
+    }
+    return false;
+}
 // The caller must separately pin the complete block, answer/oracle metadata,
 // stable identity, editorial proof, text semantics and storage lineage.
 // Return true only if every changed C++ token is an explicitly counted
@@ -137,7 +168,7 @@ inline bool directive_mentions(std::string_view directive,std::string_view name)
         }
         if(slot.language!=code_format::Language::cpp)continue;
         const auto tokens=code_format::cpp_tokens(slot.source);
-        if(!tokens)return false;
+        if(!tokens||spelling_sensitive_tokens(*tokens))return false;
         for(const auto& token:*tokens) {
             if(token.starts_with("directive:")) {
                 for(const auto& [before,after]:old_to_new)
