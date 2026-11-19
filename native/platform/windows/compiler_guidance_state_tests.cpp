@@ -634,10 +634,11 @@ int general_choice_live_windows(const std::filesystem::path& content,
     const auto wrong_receipt=state::string_value(
         incorrect_data,"learning_progress",state::response_storage_key(original,old));
     state::prepare_lesson_state(incorrect_data,actual);
+    const auto still_incorrect=state::get_response(incorrect_data,actual,revised);
     require(state::string_value(
             incorrect_data,"learning_progress",state::response_storage_key(actual,revised))==
-                wrong_receipt&&
-        !state::get_response(incorrect_data,actual,revised)->correct,
+                wrong_receipt&&still_incorrect&&!still_incorrect->correct&&
+        still_incorrect->selected==2,
         "Edition adoption regraded an existing incorrect selection");
     require(load_lesson(path).raw_json==original.raw_json,
         "The editable QA copy changed the published curricular file");
