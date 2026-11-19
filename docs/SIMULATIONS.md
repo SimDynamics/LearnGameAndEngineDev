@@ -143,7 +143,13 @@ etiquetas, la narración y el editor **Lista entre comillas**. Es una escritura
 JSON reversible: el dato real, su ordenación UTF-8, la frecuencia, los
 candidatos y la salida cruda calculada por `outputTemplate` no cambian.
 La cadena vacía sigue mostrando `(cadena vacía)` y los espacios ASCII
-mantienen su cuenta explícita. Los selectores de variante Unicode, como
+mantienen su cuenta explícita. Los rellenos Hangul U+115F, U+1160,
+U+3164 y U+FFA0, y el espacio Braille U+2800, también se presentan con
+escapes JSON visibles, por ejemplo `\u115f` y `\u2800`. Son valores
+distintos de la cadena vacía y de un espacio ASCII. El validador Python
+cuenta la representación escapada de esos cinco caracteres al comprobar
+el límite de 8 MiB de las explicaciones, igual que el motor C++.
+Los selectores de variante Unicode, como
 U+FE0F, también se hacen visibles: `\ufe0f`. Los selectores
 suplementarios U+E0100–U+E01EF se escriben con la pareja de sustitutos
 JSON correspondiente (por ejemplo `\udb40\udd00` para U+E0100), y
@@ -258,9 +264,10 @@ visible y se vuelva a introducir lo necesario antes de aplicarlo.
 
 **Aplicar datos** inicia el recorrido con la entrada revisada. Al abrir una
 simulación, seleccionar un escenario o restablecer sus datos, el editor elige
-**Lista entre comillas** cuando existe una cadena vacía o algún texto necesita
-escapes para mostrarse inequívocamente (por ejemplo U+200B, U+2028, tabuladores,
-comillas o barras inversas). Los textos ordinarios siguen comenzando en
+**Lista entre comillas** cuando existe una cadena vacía, una cadena formada
+únicamente por espacios ASCII, o algún texto necesita escapes para mostrarse
+inequívocamente (por ejemplo U+200B, U+2028, U+2800, tabuladores, comillas
+o barras inversas). Los textos ordinarios siguen comenzando en
 **Un texto por línea**. Esta selección sólo determina la presentación del
 borrador nuevo: la entrada, la salida, los datos originales y sus frecuencias
 no cambian. El estudiante puede escoger manualmente el otro formato; una
