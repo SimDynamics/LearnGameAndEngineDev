@@ -6119,6 +6119,38 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
             "A matching text archive changed its published reading marks")
     matching_before = {item["id"]: parse_json(item["rawJson"])
                        for item in matching_records}
+    new_matching = matching_records[len(old_matching):]
+    if new_matching:
+        # A matching-text review can update only the narrator descriptors of
+        # its declared changed paths. Unrelated reading and highlight intent
+        # belongs to the former published lesson, not the new wording.
+        overlay = deepcopy(baseline.get(text_semantics.ROOT_FIELD))
+        if overlay is None:
+            overlay = {"version": 1, "fields": []}
+        for item in new_matching:
+            for path in item["paths"]:
+                original = item["semanticBefore"][path]
+                updated = item["semanticAfter"][path]
+                if original is None and updated is None:
+                    continue
+                indices = [i for i, field in enumerate(overlay["fields"])
+                           if field["block"] == item["id"] and field["path"] == path]
+                require(len(indices) <= 1,
+                        "The former matching text has duplicate public markers")
+                if original is None:
+                    require(not indices,
+                            "Matching review invented an earlier authored marker")
+                    overlay["fields"].append(deepcopy(updated))
+                else:
+                    require(len(indices) == 1 and
+                            identifier_rename.same_json_value_and_types(
+                                overlay["fields"][indices[0]], original),
+                            "Matching review borrowed a foreign published UTF-16 marker")
+                    overlay["fields"][indices[0]] = deepcopy(updated)
+        expected_overlay = overlay if (overlay["fields"] or overlay.get("rootFields")) else None
+        require(identifier_rename.same_json_value_and_types(
+                    expected_overlay, current.get(text_semantics.ROOT_FIELD)),
+                "Matching review changed another public text marker or narration role")
     old_math = old_meta.get("mathTextRevisions", []) if old_v2 else []
     math_revisions = meta.get("mathTextRevisions", [])
     require(math_revisions[:len(old_math)] == old_math,
@@ -6617,6 +6649,14 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
             result.pop(text_semantics.ROOT_FIELD)
         else:
             result[text_semantics.ROOT_FIELD] = overlay
+    if new_match and text_semantics.ROOT_FIELD in result:
+        import math_matching_text_compat as matching_compat
+        overlay = matching_compat.historical_matching_text_semantics(
+            current, result[text_semantics.ROOT_FIELD], identities=set(new_match))
+        if overlay is None:
+            result.pop(text_semantics.ROOT_FIELD)
+        else:
+            result[text_semantics.ROOT_FIELD] = overlay
     result["pages"] = [{**deepcopy(page_by_id[record["id"]]),
                         "blocks": [deepcopy(blocks[i]) for i in record["blocks"]]}
                        for record in old["stateLayout"]["current"]]
@@ -6655,6 +6695,9 @@ def original_projection(document: dict) -> dict:
     result = deepcopy(_without_layout(document))
     if text_semantics.ROOT_FIELD in result:
         overlay = _math_prompt_semantic_projection(document, _general_choice_semantic_projection(document))
+        if math_match_before and overlay is not None:
+            import math_matching_text_compat as matching_compat
+            overlay = matching_compat.historical_matching_text_semantics(document, overlay)
         if overlay is None:
             result.pop(text_semantics.ROOT_FIELD)
         else:
