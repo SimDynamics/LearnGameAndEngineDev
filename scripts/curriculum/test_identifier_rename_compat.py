@@ -315,7 +315,7 @@ class DeclaredIdentifierRenames(unittest.TestCase):
         # single-slot patch must not claim a safe cross-file renaming.
         with self.assertRaisesRegex(
                 renaming.IdentifierRenameError,
-                "unchanged C\+\+ source still refers"):
+                r"unchanged C\+\+ source still refers"):
             renaming.require_declared_cpp_renames(
                 original, revised,
                 {"initialCode": {"maxima": "frecuencia_maxima_encontrada"}},
@@ -350,7 +350,7 @@ class DeclaredIdentifierRenames(unittest.TestCase):
                     "maxima()", "frecuencia_maxima_encontrada()")
                 with self.assertRaisesRegex(
                         renaming.IdentifierRenameError,
-                        "observe renamed C\+\+ symbol spelling"):
+                        r"observe renamed C\+\+ symbol spelling"):
                     renaming.require_declared_cpp_renames(
                         before, after,
                         {"initialCode": {"maxima": "frecuencia_maxima_encontrada"}},
@@ -371,7 +371,7 @@ class DeclaredIdentifierRenames(unittest.TestCase):
                     "maxima", "frecuencia_maxima_encontrada")
                 with self.assertRaisesRegex(
                         renaming.IdentifierRenameError,
-                        "observe renamed C\+\+ symbol spelling"):
+                        r"observe renamed C\+\+ symbol spelling"):
                     renaming.require_declared_cpp_renames(
                         before, after,
                         {"initialCode": {"maxima": "frecuencia_maxima_encontrada"}},
