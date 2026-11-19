@@ -5385,6 +5385,34 @@ void empty_text_values(HWND host,const std::filesystem::path& captures) {
         if(!captures.empty())capture(view.window(),captures/"empty-label-groups-narrow-150.bmp");
     }
     {
+        // A label of one or two spaces must not begin as an invisible line
+        // when the learner opens a new authored array-runs simulation.
+        auto spaces=grouped;spaces.view=SimulationViewMode::walkthrough;
+        spaces.values={std::string(" "),std::string("  ")};spaces.scenarios.clear();
+        const auto authored_spaces=spaces;
+        SimulationView view(host,spaces,"es");resize(view,820);
+        const auto editor=GetDlgItem(view.window(),input_id);
+        const auto format=GetDlgItem(view.window(),input_format_id);
+        const auto visible=name(GetDlgItem(view.window(),array_id));
+        check(format&&SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+            text(view,input_id)==R"([" ", "  "])"&&
+            visible.find("\" \" (1 espacio)")!=std::string::npos&&
+            visible.find("\"  \" (2 espacios)")!=std::string::npos&&
+            spaces==authored_spaces,
+            "Whitespace-only authored labels opened as invisible lines");
+        set_edit_text(editor,R"(["", " "])");click(view,apply_id);
+        check(text(view,error_id).empty()&&
+            text(view,input_id)==R"(["", " "])"&&
+            SendMessageW(format,CB_GETCURSEL,0,0)==1,
+            "Applying empty and one-space values changed the explicit input format");
+        click(view,restore_id);
+        check(text(view,error_id).empty()&&
+            text(view,input_id)==R"([" ", "  "])"&&
+            SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+            spaces==authored_spaces,
+            "Restoring whitespace-only authored data lost its JSON editor representation");
+    }
+    {
         auto candidates=grouped;candidates.view=SimulationViewMode::candidates;
         candidates.values={std::string(""),std::string(" ")};candidates.scenarios.clear();
         SimulationView view(host,candidates,"es");resize(view,820);

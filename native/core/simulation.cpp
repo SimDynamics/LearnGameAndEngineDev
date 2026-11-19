@@ -592,7 +592,10 @@ bool simulation_prefer_quoted_text_input(
     for (const auto& value : values) {
         const auto* text = std::get_if<std::string>(&value);
         if (!text) continue;
-        if (text->empty() || quoted_text(*text) != ("\"" + *text + "\""))
+        // An array element containing only spaces looks like an empty line
+        // in RichEdit. Select the explicit quoted form without changing the
+        // underlying text, its frequency or the optional manual line mode.
+        if (text->find_first_not_of(' ') == std::string::npos || quoted_text(*text) != ("\"" + *text + "\""))
             return true;
     }
     return false;

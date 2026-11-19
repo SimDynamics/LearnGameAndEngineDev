@@ -741,10 +741,13 @@ void explicit_text_input_presentation_is_lossless() {
     check(!simulation_prefer_quoted_text_input({}) &&
         !simulation_prefer_quoted_text_input(integers({1, 2})) &&
         !simulation_prefer_quoted_text_input(words({"patio", "sol"})) &&
-        !simulation_prefer_quoted_text_input(words({" ", "  ", "á", "😀"})),
+        !simulation_prefer_quoted_text_input(words({"á", "😀"})),
         "Ordinary text or integer data unexpectedly switched to JSON input");
     check(simulation_prefer_quoted_text_input(words({""})) &&
         simulation_prefer_quoted_text_input(words({"patio", ""})) &&
+        simulation_prefer_quoted_text_input(words({" "})) &&
+        simulation_prefer_quoted_text_input(words({" ", "  ", "á", "😀"})) &&
+        simulation_prefer_quoted_text_input(words({"patio", " "})) &&
         simulation_prefer_quoted_text_input(words({"\t"})) &&
         simulation_prefer_quoted_text_input(words({"\""})) &&
         simulation_prefer_quoted_text_input(words({"\\"})) &&
@@ -754,6 +757,15 @@ void explicit_text_input_presentation_is_lossless() {
         simulation_prefer_quoted_text_input(words({"\xEF\xB8\x8F"})) &&
         simulation_prefer_quoted_text_input(words({"\xF3\xA0\x84\x80"})),
         "A hidden, escaped or empty text item would open in ambiguous line input");
+    const auto spaces=words({" ", "  "});
+    auto spaced_spec=example();
+    spaced_spec.text_values=true;spaced_spec.values=spaces;
+    const auto encoded_spaces=simulation_input_text(spaces,SimulationInputFormat::json);
+    check(encoded_spaces==R"([" ", "  "])" &&
+        simulation_parse_input(spaced_spec,encoded_spaces,SimulationInputFormat::json)==spaces &&
+        simulation_value_display_text(spaces[0])=="\" \" (1 espacio)" &&
+        simulation_value_display_text(spaces[1])=="\"  \" (2 espacios)",
+        "The explicit space-only editor changed source values or their visible counts");
     const auto original=words({"\xE2\x80\x8B","\xE2\x80\xA8"});
     const auto serialized=simulation_input_text(original,SimulationInputFormat::json);
     auto spec=example();
