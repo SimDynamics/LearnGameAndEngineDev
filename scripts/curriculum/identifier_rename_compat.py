@@ -90,9 +90,16 @@ def require_declared_cpp_renames(
     } | {
         name for mapping in renames.values() for name in mapping.values()
     }
-    destinations = {
+    proposed_destinations = [
         name for mapping in renames.values() for name in mapping.values()
-    }
+    ]
+    # A shared destination across distinct source slots may silently merge
+    # two formerly different symbols if the files are compiled/linked together.
+    # Only a compiler plus an authored binding map can establish exceptions.
+    if len(set(proposed_destinations)) != len(proposed_destinations):
+        raise IdentifierRenameError(
+            "Two declared source renames reuse a C++ destination across slots")
+    destinations = set(proposed_destinations)
     for source_slot, (language, source) in old_slots.items():
         if language != "cpp":
             continue
