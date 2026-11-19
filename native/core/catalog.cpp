@@ -183,6 +183,24 @@ CatalogProgress catalog_unit_learning_progress(const state::StateData& data,cons
     return result;
 }
 std::size_t reset_catalog_progress(state::StateData& data,const CatalogScope& scope) {
+    // Preflight every selected read-coverage receipt before erasing any
+    // response, page frontier, native bookmark or coverage from the state.
+    // A corrupt historical receipt must reject the entire scoped reset,
+    // rather than leaving the first lessons partially erased.
+    if (const auto found = data.preferences.find("learning_progress");
+            found != data.preferences.end()) {
+        const auto& values = found->second;
+        for (const auto& id : scope.lessons) {
+            const auto base = "lesson_" + id;
+            for (const auto suffix : {"v1", "v2_es", "v2_en", "v2_fr"})
+                for (const auto field : {"_read_pages_", "_read_blocks_"}) {
+                    const auto coverage = values.find(base + field + suffix);
+                    if (coverage != values.end() &&
+                            !std::holds_alternative<std::vector<std::string>>(coverage->second))
+                        throw std::runtime_error("Cobertura de lectura no válida; no se reinicia el estado.");
+                }
+        }
+    }
     std::size_t erased = 0;
     for (auto& [domain,values] : data.preferences) {
         for (auto item = values.begin(); item != values.end();) {

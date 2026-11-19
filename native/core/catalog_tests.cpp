@@ -349,6 +349,72 @@ void choice_revision_reset_keeps_exact_scope_and_provenance(){
     check(!state::get_response(data,revised,block),"Catalog reset restored a historical choice achievement");
     std::cout<<"PASS choice revision catalog reset: current/original/locales removed, exact scope, archive pins, drafts and unknown keys retained\n";
 }
+
+void invalid_scoped_coverage_cannot_partially_reset_student_progress() {
+    using namespace lgaed;
+    curriculum::CatalogScope scope;
+    scope.courses = {"qa_course"};
+    scope.units = {"qa_course__unit"};
+    scope.lessons = {"qa_course__unit__first", "qa_course__unit__second"};
+    state::StateData data;
+    auto& progress = data.preferences["learning_progress"];
+    const auto first = scope.lessons.front(), second = scope.lessons.back();
+    const auto completion = "lesson_" + first + "_completed";
+    const auto answer = "exercise_" + first + "_page_0_block_1";
+    const auto valid_read = "lesson_" + first + "_read_pages_v2_es";
+    const auto invalid_read = "lesson_" + second + "_read_blocks_v2_fr";
+    progress[completion] = true;
+    progress["lesson_" + second + "_started"] = true;
+    progress[answer] = std::string("answered");
+    progress[valid_read] = std::vector<std::string>{"page_0000"};
+    progress[invalid_read] = std::int64_t{2};
+    progress["unit_" + scope.units.front() + "_completed"] = true;
+    progress["course_" + scope.courses.front() + "_completed"] = true;
+    progress["lesson_" + first + "_state_lineage_v2_es"] = std::string("historic source");
+    progress["lesson_qa_other__unit__first_completed"] = true;
+    data.preferences["native_windows"]["scroll/" + first + "/reader"] = std::int64_t{4};
+    data.preferences["cpp_lesson_drafts"]["programming/" + first + "/0/1/source"] =
+        std::string("unsent source");
+    data.preferences["narration_settings"]["voice"] = std::string("ef_dora");
+    const auto before = data;
+    rejects([&] { (void)curriculum::reset_catalog_progress(data,scope); },
+        "A malformed selected coverage was not rejected");
+    check(data == before,
+        "A rejected course reset removed answers, bookmarks or coverage before discovering corrupted state");
+
+    // An unrelated course's malformed coverage must not block the authorized
+    // scope. Fix only the selected receipt and retry the same reset.
+    data.preferences["learning_progress"][invalid_read] =
+        std::vector<std::string>{"block_0000"};
+    data.preferences["learning_progress"]["lesson_qa_other__unit__first_read_pages_v2_es"] =
+        std::int64_t{99};
+    const auto corrected = data;
+    const auto count = curriculum::reset_catalog_progress(data,scope);
+    check(count == 8 && !state::find(data,"learning_progress",completion) &&
+        !state::find(data,"learning_progress","lesson_" + second + "_started") &&
+        !state::find(data,"learning_progress",answer) &&
+        !state::find(data,"learning_progress","unit_" + scope.units.front() + "_completed") &&
+        !state::find(data,"learning_progress","course_" + scope.courses.front() + "_completed") &&
+        !state::find(data,"native_windows","scroll/" + first + "/reader") &&
+        std::get<std::vector<std::string>>(*state::find(data,"learning_progress",valid_read)).empty() &&
+        std::get<std::vector<std::string>>(*state::find(data,"learning_progress",invalid_read)).empty(),
+        "An accepted scoped reset kept stale learning data or discarded its empty coverage slots");
+    for (const auto& [domain,records] : corrected.preferences)
+        for (const auto& [key,value] : records)
+            if (domain != "learning_progress" && domain != "native_windows")
+                check(state::find(data,domain,key) &&
+                    *state::find(data,domain,key) == value,
+                    "Reset changed a pending draft or a general preference");
+    check(state::find(data,"learning_progress","lesson_qa_other__unit__first_completed") &&
+        state::find(data,"learning_progress","lesson_qa_other__unit__first_read_pages_v2_es") &&
+        state::string_value(data,"learning_progress","lesson_" + first + "_state_lineage_v2_es") ==
+            "historic source",
+        "A course reset crossed its scope or removed original edition provenance");
+    const auto accepted = data;
+    check(curriculum::reset_catalog_progress(data,scope) == 0 && data == accepted,
+        "A repeated successful reset changed its earlier result");
+    std::cout << "PASS atomic malformed-coverage preflight: no partial reset, exact course scope, drafts and lineage preserved\n";
+}
 void reached_page_reset_removes_only_selected_legacy_frontiers(){
     using namespace lgaed;
     state::StateData data;
@@ -694,6 +760,7 @@ int main() {
         catalog_metadata_does_not_claim_cmake_execution_or_round_math_payloads();
         choice_revision_reset_keeps_exact_scope_and_provenance();
         reached_page_reset_removes_only_selected_legacy_frontiers();
+        invalid_scoped_coverage_cannot_partially_reset_student_progress();
         const auto root = std::filesystem::path(build::source_root) / "app/src/main/assets/content";
         CatalogLocation location;
         const auto routes = windows::load_catalog(root,location);
