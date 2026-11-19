@@ -130,10 +130,23 @@ void validate_catalog_location(const CatalogLocation& location) {
     if (!location.unit.empty()) {
         if (location.course.empty()) throw std::invalid_argument("La unidad necesita su curso padre.");
         (void)slug(location.unit,location.course);
+        // Validate a saved edition name before probing a catalog index. The
+        // reader must never treat "es_01", an invalid slug or an out-of-range
+        // generation as a real user-selected edition, even with a permissive
+        // availability callback during location recovery.
+        if(uses_course_edition_namespace(location.unit)&&
+           !edition_unit_of_course(location.unit,location.course))
+            throw std::invalid_argument("La unidad pertenece a una edición curricular inválida.");
     }
     if (!location.lesson.empty()) {
         if (location.unit.empty()) throw std::invalid_argument("La lección necesita su unidad padre.");
-        (void)slug(location.lesson,location.unit);
+        const auto suffix=slug(location.lesson,location.unit);
+        if(uses_course_edition_namespace(location.unit)) {
+            if(!course_edition_slug(suffix))
+                throw std::invalid_argument("La lección tiene un nombre de edición inválido.");
+        }else if(uses_course_edition_namespace(location.lesson)) {
+            throw std::invalid_argument("Una lección histórica no puede utilizar el espacio de una edición.");
+        }
     }
 }
 CatalogLevel catalog_level(const CatalogLocation& location) {

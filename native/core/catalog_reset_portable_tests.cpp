@@ -289,6 +289,54 @@ void malformed_or_cross_course_scope_is_atomic() {
 
 
 
+void invalid_edition_locations_recover_without_reusing_old_selection() {
+    using namespace lgaed::curriculum;
+    const CatalogLocation active_course{"fr","programming","cpp_fundamentals",{},{}};
+    const CatalogLocation valid_unit{"fr","programming","cpp_fundamentals",
+        "cpp_fundamentals__edition_fr_1__inicio",{}};
+    const CatalogLocation valid_lesson{"fr","programming","cpp_fundamentals",
+        valid_unit.unit,valid_unit.unit+"__primera"};
+    validate_catalog_location(active_course);
+    validate_catalog_location(valid_unit);
+    validate_catalog_location(valid_lesson);
+    const auto invalid=[&](CatalogLocation stale) {
+        bool rejected=false;
+        try {validate_catalog_location(stale);}
+        catch(const std::invalid_argument&) {rejected=true;}
+        check(rejected,"A malformed edition identity was accepted as catalog navigation");
+        // A previously persisted invalid entry must return to its published
+        // ancestor, not appear available just because the probe is permissive.
+        auto recovered=catalog_recover_location(std::move(stale),
+            [&](const CatalogLocation& place) {return place==active_course ||
+                !place.unit.empty();});
+        check(recovered==active_course,
+            "An invalid saved edition location reopened an unrelated unit");
+    };
+    for(const auto* bad:{
+            "cpp_fundamentals__edition_fr_0__inicio",
+            "cpp_fundamentals__edition_fr_01__inicio",
+            "cpp_fundamentals__edition_fr_1000001__inicio",
+            "cpp_fundamentals__edition_de_1__inicio",
+            "cpp_fundamentals__edition_fr_1__inicio__parte",
+            "cpp_fundamentals__edition_fr_1__-inicio",
+            "cpp_fundamentals__edition_fr_1__inicio_"}) {
+        auto stale=valid_unit;
+        stale.unit=bad;
+        invalid(stale);
+    }
+    for(const auto* bad:{
+            "cpp_fundamentals__edition_fr_1__inicio__-parte",
+            "cpp_fundamentals__edition_fr_1__inicio__parte_",
+            "cpp_fundamentals__edition_fr_1__inicio__parte__extra"}) {
+        auto stale=valid_lesson;
+        stale.lesson=bad;
+        invalid(stale);
+    }
+    invalid({"fr","programming","cpp_fundamentals",
+        "cpp_fundamentals__legado",
+        "cpp_fundamentals__legado__edition_fr_1__primera"});
+}
+
 void malformed_or_cross_edition_scope_is_atomic() {
     const std::string course="cpp_fundamentals";
     const std::string first_unit=course+"__edition_es_1__inicio";
@@ -560,6 +608,7 @@ int main() {
     try {
         invalid_selected_coverage_is_atomic();
         retired_catalog_location_recovers_nearest_published_parent();
+        invalid_edition_locations_recover_without_reusing_old_selection();
         catalog_unit_selection_is_scoped_to_published_edition();
         catalog_entry_identity_survives_reordering_and_retirement();
         malformed_or_cross_edition_scope_is_atomic();

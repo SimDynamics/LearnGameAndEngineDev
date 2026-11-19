@@ -2215,6 +2215,12 @@ de las cinco variantes se ejecutaron realmente. Si ninguno de los dos modos
 permite crear el enlace, informa `SKIP` para ese caso y no lo declara acreditado.
 La comprobación de los recursos históricos
 durante publicación sigue siendo una obligación separada de la carga nativa.
+La navegación también valida las identidades de edición antes de
+consultar el recurso. Si una ubicación guardada contiene una generación
+malformada, un idioma inexistente o un nombre de unidad o lección inválido,
+se recupera el ancestro publicado más cercano sin reutilizar el índice
+numérico anterior ni modificar el progreso.
+
 Una edición española no toma silenciosamente una unidad o lección inglesa,
 francesa o histórica como respaldo. Los recursos EN/FR anteriores permanecen
 sin editar; sus familias y su edición no se atribuyen a las lecciones españolas
