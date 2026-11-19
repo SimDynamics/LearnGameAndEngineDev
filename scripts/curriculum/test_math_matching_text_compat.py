@@ -4,6 +4,7 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 from pathlib import Path
+import re
 import unittest
 
 import math_matching_text_compat as matching
@@ -63,14 +64,22 @@ class RealFrequencyMatchingEditorial(unittest.TestCase):
                 continue
             source = text_semantics.public_text_fields(desired)[path]
             previous = self.original_marks[path]["spans"]
-            # These are explicit positions selected from each *new* text.
-            # This fixture does not authorize Work to rewrite its real marks.
-            spans[path] = [
-                text_semantics.select(
+            original_text = text_semantics.public_text_fields(before)[path]
+            # Map every original UTF-16 marker by its *authored occurrence*.
+            # A repeated technical word cannot silently acquire a different
+            # selection just because a new identifier expanded nearby.
+            selected = []
+            for entry in previous:
+                original_prefix = (
+                    original_text.encode("utf-16-le")[:entry["start"] * 2]
+                    .decode("utf-16-le"))
+                occurrence = 1 + len(list(re.finditer(
+                    re.escape(entry["text"]), original_prefix)))
+                selected.append(text_semantics.select(
                     source, entry["text"].replace(OLD, NEW),
-                    entry["role"], reading=entry.get("reading", "auto"))
-                for entry in previous
-            ]
+                    entry["role"], occurrence=occurrence,
+                    reading=entry.get("reading", "auto")))
+            spans[path] = selected
         return targets, spans
 
     def test_real_matching_review_preserves_card_and_grading_owners(self):
