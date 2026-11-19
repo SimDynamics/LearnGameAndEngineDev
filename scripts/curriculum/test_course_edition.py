@@ -212,6 +212,53 @@ class CourseEditionAuthoringTest(unittest.TestCase):
             self.check_tree(prior, after)
 
 
+    def test_unindexed_sibling_folder_cannot_alias_a_published_course(self):
+        # A sibling that contains no course_*.json is invisible to the
+        # index-only gate. On NTFS it is actually the same course folder.
+        if os.name == "nt":
+            self.skipTest("Windows cannot keep two case-variant course folders separate")
+        previous = current_documents()
+        current = {**deepcopy(previous), **current_documents(descriptor())}
+        sibling_note = (f"{CONTENT}/es/programming/{COURSE.upper()}/"
+                        "qa_unindexed_note.json")
+        current[sibling_note] = {"title": "Not a published course index"}
+        self.assertNotIn(sibling_note, previous)
+        with self.assertRaisesRegex(edition.CourseEditionError,
+                                    "case-insensitive edition path collision"):
+            self.check_tree(previous, current)
+
+    def test_empty_case_variant_folder_cannot_alias_a_published_course(self):
+        if os.name == "nt":
+            # Independently exercise the filesystem-independent rule here.
+            folder = f"{CONTENT}/es/programming/{COURSE}"
+            with self.assertRaisesRegex(edition.CourseEditionError,
+                                        "case-insensitive edition path collision"):
+                edition._reject_windows_case_aliases([folder, folder.upper()])
+            return
+        previous = current_documents()
+        current = {**deepcopy(previous), **current_documents(descriptor())}
+        before = encoded(previous)
+        with tempfile.TemporaryDirectory(prefix="course-empty-alias-qa-",
+                                         dir=Path.cwd()) as temporary:
+            root = Path(temporary)
+            for relative, raw in encoded(current).items():
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(raw)
+            alias = root / f"{CONTENT}/es/programming/{COURSE.upper()}"
+            alias.mkdir(parents=True)
+            self.assertFalse(any(alias.iterdir()))
+            with mock.patch.object(edition, "_paths_at", return_value=set(before)), \\
+                    mock.patch.object(edition, "_git_bytes",
+                                      side_effect=lambda _, __, path: before[path]):
+                with self.assertRaisesRegex(edition.CourseEditionError,
+                                            "case-insensitive edition path collision"):
+                    edition.check_repository(root, "0" * 40)
+            self.assertEqual(encoded(current), {
+                path.relative_to(root).as_posix(): path.read_bytes()
+                for path in root.rglob("*.json")
+            }, "A rejected empty-folder alias modified previously authored assets")
+
     def test_new_case_variant_sibling_course_index_cannot_alias_active_edition(self):
         # Two newly present course indexes may have different case-sensitive
         # names on Linux but resolve to one file on Windows. The earlier

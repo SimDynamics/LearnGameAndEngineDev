@@ -349,16 +349,24 @@ def check_repository(repository, commit, *, documents=None):
                             for document in current_units.values()),
                 "An edition resource requires its explicitly published course index")
         return {"course_edition_boundaries": [], "active_edition_resources": []}
-    # The course-scoped check below cannot see a second course index ADDED
-    # in this publication. On Windows, a new QA_EDITION directory can alias
-    # an existing qa_edition directory even when its index is unversioned.
-    # Reject those paths before activating either edition, including mixed
-    # case spellings in the historical Git index.
-    indexed_course_paths = set(current_courses)
-    indexed_course_paths.update(
-        path for path in previous_courses
-        if path.casefold().startswith(CONTENT_DIRECTORY.casefold() + "/"))
-    _reject_windows_case_aliases(indexed_course_paths)
+    # Check all physical content path spellings before accepting an edition.
+    # A new case-variant sibling can be unindexed (e.g. QA_EDITION/notes.json)
+    # or even empty; neither its name nor its parent would appear among the
+    # course_*.json indexes or a scan limited to the active course. A Windows
+    # checkout aliases that folder to an existing published course directory.
+    # Include history as well as present files and directories, so deleting
+    # one spelling at the same time cannot mask an unsafe transition.
+    content_prefix = CONTENT_DIRECTORY.casefold() + "/"
+    historical_content = [
+        path for path in previous_paths
+        if path.casefold().startswith(content_prefix)
+    ]
+    physical_content = [
+        path.relative_to(repository).as_posix()
+        for path in content.rglob("*")
+        if path.is_file() or path.is_dir() or path.is_symlink()
+    ]
+    _reject_windows_case_aliases([*historical_content, *physical_content])
     boundaries = []
     active_paths = set()
     for relative in sorted(current_courses.keys() | previous_courses.keys()):
