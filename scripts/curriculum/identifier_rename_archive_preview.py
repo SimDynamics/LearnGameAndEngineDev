@@ -131,3 +131,131 @@ def verify_exact_published_rename_packet(
         raise RenamePreviewError(
             "Renaming changed its authenticated owner, source, storage or editorial provenance")
     return True
+
+
+def validate_read_only_rename_draft(previous: dict, draft: dict) -> dict:
+    """Preflight a complete lesson publication containing proposed C++ renames.
+
+    This is deliberately NOT stable_state_layout.validate(draft): production
+    loaders do not recognize identifierRenameRevisions yet. Instead restore
+    the whole previous publication, including all editorial proof prefixes,
+    published source formats, family, answers, storage and text semantics.
+    Only exact authenticated identifier substitutions may differ.
+
+    The returned report is evidence for authoring, not permission for Windows
+    to open the candidate or rewrite learner drafts and receipts.
+    """
+    state.validate(previous)
+    if type(draft) is not dict or type(draft.get("stateLayout")) is not dict:
+        raise RenamePreviewError("A rename draft needs complete v2 state metadata")
+    source_meta = previous["stateLayout"]
+    candidate_meta = draft["stateLayout"]
+    records = candidate_meta.get("identifierRenameRevisions")
+    if type(records) is not list or not (1 <= len(records) <= 64):
+        raise RenamePreviewError("A rename draft needs 1 to 64 authenticated records")
+    old_editorial = source_meta["editorial"]
+    new_editorial = candidate_meta.get("editorial")
+    if (type(new_editorial) is not list
+            or len(new_editorial) != len(old_editorial) + len(records)
+            or not rename.same_json_value_and_types(
+                new_editorial[:len(old_editorial)], old_editorial)):
+        raise RenamePreviewError("A rename draft changed its published editorial prefix")
+
+    original_blocks = state._blocks(previous)
+    proposed_blocks = state._blocks(draft)
+    if original_blocks.keys() != proposed_blocks.keys():
+        raise RenamePreviewError("A rename draft added or removed a stable block identity")
+
+    # Build the authenticated positional lookup without trusting current
+    # ordinal positions of old historical storage. Only the stable ID maps
+    # the displayed block; its saved address comes from the signed packet.
+    positions = {
+        identity: (p, b)
+        for p, page in enumerate(source_meta["current"])
+        for b, identity in enumerate(page["blocks"])
+    }
+    confirmed = []
+    seen = set()
+    restored = deepcopy(draft)
+    for ordinal, packet in enumerate(records):
+        if type(packet) is not dict:
+            raise RenamePreviewError("A rename draft contains a malformed packet")
+        identity = packet.get("id")
+        if (type(identity) is not str or identity not in positions
+                or identity in seen):
+            raise RenamePreviewError("A rename draft repeats or borrows a stable identity")
+        seen.add(identity)
+        current_block = proposed_blocks[identity]
+        verify_exact_published_rename_packet(previous, packet, current_block)
+        expected_edge = {
+            "id": identity,
+            "beforeSha256": packet["beforeSha256"],
+            "afterSha256": packet["afterSha256"],
+        }
+        if not rename.same_json_value_and_types(
+                new_editorial[len(old_editorial) + ordinal], expected_edge):
+            raise RenamePreviewError(
+                "A renamed source needs its own exact, appended editorial edge")
+        p, b = positions[identity]
+        restored["pages"][p]["blocks"][b] = deepcopy(packet["block"])
+        confirmed.append({
+            "id": identity,
+            "originalStateSha256": packet["originalStateSha256"],
+            "storage": deepcopy(packet["stableStorage"]),
+            "beforeSha256": packet["beforeSha256"],
+            "afterSha256": packet["afterSha256"],
+        })
+
+    for identity in original_blocks:
+        if identity not in seen and not rename.same_json_value_and_types(
+                original_blocks[identity], proposed_blocks[identity]):
+            raise RenamePreviewError(
+                "A rename draft altered a different lesson block: " + identity)
+
+    del restored["stateLayout"]["identifierRenameRevisions"]
+    restored["stateLayout"]["editorial"] = deepcopy(old_editorial)
+    if not rename.same_json_value_and_types(restored, previous):
+        raise RenamePreviewError(
+            "A rename draft changed other lesson metadata, positions, answers or resources")
+    # This exact published document has already passed validate(previous).
+    # Its restoration proves it retains the same state addresses and progress
+    # contract, without importing either draft into a learner profile.
+    return {"lessonId": previous["id"], "locale": source_meta["locale"],
+            "owners": confirmed, "publishedStateUnchanged": True,
+            "runtimeLoadSupported": False}
+
+
+def build_read_only_rename_draft(
+    previous: dict, proposed_blocks: dict[str, dict],
+    records: list[dict],
+) -> dict:
+    """Construct a complete in-memory draft without publishing it anywhere."""
+    state.validate(previous)
+    if (type(proposed_blocks) is not dict or type(records) is not list
+            or not records or set(proposed_blocks) != {
+                item.get("id") for item in records if type(item) is dict}):
+        raise RenamePreviewError("The draft needs one proposed source per signed owner")
+    candidate = deepcopy(previous)
+    positions = {
+        identity: (p, b)
+        for p, page in enumerate(previous["stateLayout"]["current"])
+        for b, identity in enumerate(page["blocks"])
+    }
+    if "identifierRenameRevisions" in candidate["stateLayout"]:
+        raise RenamePreviewError("A published rename archive cannot be replaced")
+    for packet in records:
+        identity = packet["id"]
+        if identity not in positions:
+            raise RenamePreviewError("Unknown stable owner in rename draft")
+        current_block = proposed_blocks[identity]
+        verify_exact_published_rename_packet(previous, packet, current_block)
+        page, index = positions[identity]
+        candidate["pages"][page]["blocks"][index] = deepcopy(current_block)
+        candidate["stateLayout"]["editorial"].append({
+            "id": identity,
+            "beforeSha256": packet["beforeSha256"],
+            "afterSha256": packet["afterSha256"],
+        })
+    candidate["stateLayout"]["identifierRenameRevisions"] = deepcopy(records)
+    validate_read_only_rename_draft(previous, candidate)
+    return candidate
