@@ -210,6 +210,50 @@ class SourceFormatTest(unittest.TestCase):
             {"type": "code", "code": "#include <vector>\nint main() {}"},
             {"type": "code", "code": "#include <vector>\n\nint main() {}"}))
 
+    def test_contextual_import_identifier_remains_a_comparison(self):
+        # C++23 permits 'import' as an identifier outside the line-initial
+        # preprocessing import context. Header-name tokens must never swallow
+        # a valid pair of comparison operators.
+        before = "int main(){int import=3;return import<4>1;}"
+        after = "int main() {\n    int import = 3;\n    return import < 4 > 1;\n}"
+        self.assertTrue(fmt.require_source_format(
+            {"type": "code", "code": before},
+            {"type": "code", "code": after}))
+        other_before = "int main(){int import=3;return (import<4>1);}"
+        other_after = "int main() {int import = 3; return (import < 4 > 1);}"
+        self.assertTrue(fmt.require_source_format(
+            {"type": "code", "code": other_before},
+            {"type": "code", "code": other_after}))
+
+        source = fixture()
+        source["pages"][0]["blocks"][0]["code"] = before
+        family = {"es": deepcopy(source)}
+        original = layout.prepare_v2(source, "es", family)
+        proposed = deepcopy(original)
+        proposed["pages"][0]["blocks"][0]["code"] = after
+        revised = layout.prepare_v2(proposed, "es", family, original)
+        layout.validate_transition(original, revised)
+        self.assertEqual(original["stateLayout"]["origin"],
+                         revised["stateLayout"]["origin"])
+        self.assertEqual(original["stateLayout"]["family"],
+                         revised["stateLayout"]["family"])
+        self.assertEqual(1, len(revised["stateLayout"]["sourceFormatRevisions"]))
+        self.assertEqual(before, revised["stateLayout"]["sourceFormatRevisions"][0]["block"]["code"])
+
+    def test_header_import_comment_prefix_is_still_protected(self):
+        for before, after in (
+            ("/* comentario */ import <vector>;",
+             "/* comentario */ import < vector >;"),
+            ("export/* comentario */import <vector>;",
+             "export/* comentario */import < vector >;"),
+            ("/* ejemplo\n comentario */ import <vector>;",
+             "/* ejemplo\n comentario */ import < vector >;"),
+        ):
+            with self.subTest(before=before), self.assertRaises(fmt.SourceFormatError):
+                fmt.require_source_format(
+                    {"type": "code", "code": before},
+                    {"type": "code", "code": after})
+
     def test_header_import_spelling_cannot_enter_a_format_archive(self):
         published_source = fixture()
         published_source["pages"][0]["blocks"][0]["code"] = (

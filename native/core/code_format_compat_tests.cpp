@@ -17,6 +17,28 @@ void check(bool ok,std::string_view message){
 }
 void lexical_safety(){
     check(code_format::equivalent(
+        "int main(){int import=3;return import<4>1;}",
+        "int main() {\n    int import = 3;\n    return import < 4 > 1;\n}",
+        Language::cpp),
+        "A contextual import identifier was confused with a header-unit import");
+    check(code_format::equivalent(
+        "int main(){int import=3;return (import<4>1);}",
+        "int main() {int import = 3; return (import < 4 > 1);}",
+        Language::cpp),
+        "A parenthesized comparison used as a return value became a header name");
+    check(!code_format::equivalent(
+        "/* comment */ import <vector>;",
+        "/* comment */ import < vector >;",Language::cpp),
+        "A comment before an import weakened header-name protection");
+    check(!code_format::equivalent(
+        "export/* comment */import <vector>;",
+        "export/* comment */import < vector >;",Language::cpp),
+        "Exported import with a comment permitted a changed header");
+    check(!code_format::equivalent(
+        "/* before\n after */ import <vector>;",
+        "/* before\n after */ import < vector >;",Language::cpp),
+        "A multiline comment before a header unit permitted a changed name");
+    check(code_format::equivalent(
         "import <vector>;\nint main(){return 0;}",
         "import <vector>;\n\nint main() { return 0; }",Language::cpp),
         "Safe formatting outside a C++23 header-unit name was rejected");

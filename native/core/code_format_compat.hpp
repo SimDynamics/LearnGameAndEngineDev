@@ -43,6 +43,37 @@ inline std::size_t literal_suffix_end(std::string_view source,std::size_t end) {
     }
     return end;
 }
+
+inline bool cpp_import_starts_directive(std::string_view source,std::size_t at) {
+    // An import followed by <...> is a header-name only at the beginning of
+    // a logical line (also after the optional export). Else 'import' may be a
+    // normal identifier: return import<4>1; contains two comparisons.
+    const auto newline=source.rfind('\n',at);
+    const auto start=newline==source.npos?0:newline+1;
+    const auto prefix=source.substr(start,at-start);
+    // The last line of a multiline comment can start before our line slice.
+    // Keep the source protected if we cannot identify that comment's start.
+    if(prefix.find("*/")!=prefix.npos&&prefix.find("/*")==prefix.npos)return true;
+    std::size_t pos=0;
+    bool exported=false;
+    while(pos<prefix.size()) {
+        if(space(prefix[pos])){++pos;continue;}
+        if(prefix.substr(pos).starts_with("/*")) {
+            const auto close=prefix.find("*/",pos+2);
+            if(close==prefix.npos)return true;
+            pos=close+2;
+            continue;
+        }
+        if(!exported&&prefix.substr(pos).starts_with("export")&&
+           (pos+6==prefix.size()||
+            !identifier_part(static_cast<unsigned char>(prefix[pos+6])))) {
+            exported=true;pos+=6;continue;
+        }
+        return false;
+    }
+    return true;
+}
+
 inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view source) {
     std::vector<std::string> result;
     std::optional<std::size_t> pending_import_end;
@@ -117,7 +148,7 @@ inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view sourc
             while(end<source.size()&&identifier_part(static_cast<unsigned char>(source[end])))++end;
             const auto word=source.substr(i,end-i);
             push(result,"id:",word);
-            if(word=="import")pending_import_end=end;
+            if(word=="import"&&cpp_import_starts_directive(source,i))pending_import_end=end;
             i=end;continue;
         }
         if((ch>='0'&&ch<='9')||(ch=='.'&&i+1<source.size()&&source[i+1]>='0'&&source[i+1]<='9')) {

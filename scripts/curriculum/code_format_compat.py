@@ -43,6 +43,38 @@ def _cpp_literal_suffix_end(src: str, end: int) -> int:
             end += 1
     return end
 
+
+def _cpp_import_starts_directive(src: str, at: int) -> bool:
+    """Only a line-initial import (optionally exported) takes a header-name.
+
+    Otherwise 'import' may be an ordinary identifier in comparisons. Comments
+    are preprocessing whitespace; an open comment from the previous line is
+    conservatively treated as a directive prefix rather than permitting an
+    unproved header-name edit.
+    """
+    prefix = src[src.rfind("\n", 0, at) + 1:at]
+    if "*/" in prefix and "/*" not in prefix:
+        return True
+    position = 0
+    exported = False
+    while position < len(prefix):
+        if prefix[position] in " \t\r\v\f":
+            position += 1
+        elif prefix.startswith("/*", position):
+            close = prefix.find("*/", position + 2)
+            if close < 0:
+                return True
+            position = close + 2
+        elif (not exported and prefix.startswith("export", position)
+              and (position + 6 == len(prefix) or
+                   not (prefix[position + 6].isalnum() or
+                        prefix[position + 6] == "_"))):
+            exported = True
+            position += 6
+        else:
+            return False
+    return True
+
 def _cpp_tokens(src: str) -> tuple[str, ...]:
     tokens: list[str] = []
     i = 0
@@ -119,7 +151,7 @@ def _cpp_tokens(src: str) -> tuple[str, ...]:
                 end += 1
             word = src[i:end]
             tokens.append("id:" + word)
-            pending_import_end = end if word == "import" else None
+            pending_import_end = end if word == "import" and _cpp_import_starts_directive(src, i) else None
             i = end
             continue
         if ch.isdigit() or (ch == "." and i + 1 < len(src) and src[i+1].isdigit()):
