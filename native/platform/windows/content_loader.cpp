@@ -2674,6 +2674,171 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             result.source_format_revisions.push_back({id,utf8(previous.Stringify()),fingerprint(previous)});
         }
     }
+    // A renaming is not formatting: restore the authenticated prior C++
+    // spelling *first*, then apply the existing source-format predecessor.
+    // All source bytes remain visible/compilable in their newer spelling.
+    std::map<std::string,JsonObject> identifier_rename_originals;
+    if(metadata.HasKey(L"identifierRenameRevisions")) {
+        require(result.version==2&&result.locale=="es",
+            "C++ rename archives require an authenticated Spanish stateLayout v2");
+        const auto records=array(metadata,"identifierRenameRevisions");
+        require(records.Size()<=64,"Too many C++ identifier rename archives");
+        std::map<std::string,JsonObject> active;
+        for(std::size_t p=0;p<result.current.size();++p) {
+            const auto blocks=array(pages.GetObjectAt(static_cast<unsigned>(p)),"blocks");
+            require(blocks.Size()==result.current[p].blocks.size(),
+                "C++ rename owner positions disagree with current pages");
+            for(unsigned b=0;b<blocks.Size();++b)
+                require(active.emplace(result.current[p].blocks[b],blocks.GetObjectAt(b)).second,
+                    "C++ rename has a duplicated visible stable owner");
+        }
+        const OriginalJson source_document(document_source);
+        const auto raw_meta=source_document.member(
+            source_document.root(),"stateLayout");
+        const auto raw_records=source_document.elements(
+            source_document.member(raw_meta,"identifierRenameRevisions"));
+        require(raw_records.size()==records.Size(),
+            "C++ rename archive changed its original JSON array");
+        struct RenameEdge {std::string id,before,after,history;};
+        std::vector<RenameEdge> edges;
+        for(unsigned index=0;index<records.Size();++index) {
+            const auto entry=records.GetObjectAt(index);
+            allowed_keys(entry,{"lessonId","locale","historicalFamilySha256",
+                "originalStateSha256","stableStorage","editorialPrefixSha256",
+                "id","block","names","occurrences","beforeSha256",
+                "afterSha256","priorSourceFormatSha256","confirmed"},true);
+            const auto owner=text(entry,"id");
+            require(valid_id(owner)&&active.contains(owner)&&
+                result.signatures.contains(owner)&&
+                !identifier_rename_originals.contains(owner)&&
+                source_format_originals.contains(owner),
+                "C++ rename archive needs a unique active formatted owner");
+            const auto old=entry.GetNamedObject(L"block"),current=active.at(owner);
+            const auto before=fingerprint(old),after=fingerprint(current);
+            require(text(entry,"lessonId")==lesson_id&&text(entry,"locale")==locale&&
+                text(entry,"historicalFamilySha256")==result.family.at(result.locale).sha256&&
+                text(entry,"originalStateSha256")==result.signatures.at(owner)&&
+                text(entry,"beforeSha256")==before&&text(entry,"afterSha256")==after&&
+                before!=after&&
+                text(entry,"priorSourceFormatSha256")==
+                    fingerprint(source_format_originals.at(owner)),
+                "C++ rename archive changed its lesson, source or format provenance");
+            std::optional<std::pair<std::size_t,std::size_t>> address;
+            for(std::size_t p=0;p<result.origin.size();++p)
+                for(std::size_t b=0;b<result.origin[p].blocks.size();++b)
+                    if(result.origin[p].blocks[b]==owner) {
+                        require(!address,"C++ rename has a duplicate original address");
+                        address=std::pair{p,b};
+                    }
+            for(const auto& added:result.additions)
+                if(added.id==owner) {
+                    require(!address,"C++ rename has a duplicate addition address");
+                    address=std::pair{added.storage.page,added.storage.block};
+                }
+            require(address.has_value(),"C++ rename lacks historical storage");
+            const auto storage=entry.GetNamedObject(L"stableStorage");
+            allowed_keys(storage,{"page","block"},true);
+            const auto position=source_document.member(raw_records[index],"stableStorage");
+            require_integer_json_numbers(source_document.text(position));
+            require(integer(storage.GetNamedValue(L"page"))==address->first&&
+                integer(storage.GetNamedValue(L"block"))==address->second,
+                "C++ rename belongs to another stable response address");
+            const auto names=entry.GetNamedObject(L"names");
+            const auto occurrences=entry.GetNamedObject(L"occurrences");
+            const auto confirmed=entry.GetNamedObject(L"confirmed");
+            require_integer_json_numbers(source_document.text(
+                source_document.member(raw_records[index],"occurrences")));
+            require_integer_json_numbers(source_document.text(
+                source_document.member(raw_records[index],"confirmed")));
+            require(names.Size()>0&&names.Size()==occurrences.Size()&&
+                names.Size()==confirmed.Size(),
+                "C++ rename needs matching source slots and exact counted names");
+            std::vector<curriculum::identifier_rename::SourcePlan> plan;
+            for(const auto& named_slot:names) {
+                const auto slot=utf8(named_slot.Key());
+                require(occurrences.HasKey(named_slot.Key())&&
+                        confirmed.HasKey(named_slot.Key())&&
+                        named_slot.Value().ValueType()==JsonValueType::Object,
+                    "C++ rename source slot is absent from its counted proof");
+                const auto replacements=named_slot.Value().GetObject();
+                const auto counts=occurrences.GetNamedObject(named_slot.Key());
+                const auto proof=confirmed.GetNamedObject(named_slot.Key());
+                require(replacements.Size()>0&&counts.Size()==replacements.Size()&&
+                        proof.Size()==replacements.Size(),
+                    "C++ rename proof has missing or excessive identifier counts");
+                curriculum::identifier_rename::SourcePlan source_plan;
+                source_plan.slot=slot;
+                for(const auto& token:replacements) {
+                    const auto name=utf8(token.Key());
+                    require(token.Value().ValueType()==JsonValueType::String&&
+                            counts.HasKey(token.Key())&&proof.HasKey(token.Key()),
+                        "C++ rename needs a declared identifier and count");
+                    const auto number=integer(counts.GetNamedValue(token.Key()),100000);
+                    require(number>0&&integer(proof.GetNamedValue(token.Key()),100000)==number,
+                        "C++ rename changed its authenticated occurrence count");
+                    source_plan.names.push_back({
+                        name,utf8(token.Value().GetString()),number});
+                }
+                plan.push_back(std::move(source_plan));
+            }
+            require(curriculum::identifier_rename::declared_tokens_only(
+                    identifier_code_slots(old),identifier_code_slots(current),plan),
+                "C++ rename changed tokens, source bytes or unreviewed project files");
+            const auto restored=identifier_restore_source(current,old);
+            require(fingerprint(restored)==before,
+                "C++ rename changed answers, activity type or non-code metadata");
+            // Source formatting belongs to an older, *independently* verified
+            // operation. The archived, formatted C++ source must still be
+            // equivalent to that already authenticated predecessor.
+            const auto historical=source_format_projection(
+                old,source_format_originals.at(owner));
+            const auto expected=revised_compiler_references.contains(owner)?
+                std::string(revised_compiler_references.at(owner)->reference_after):
+                revised_compilers.contains(owner)?
+                    std::string(revised_compilers.at(owner)->after):
+                revised_choices.contains(owner)?
+                    std::string(revised_choices.at(owner)->after_payload):
+                refined_order_signatures.contains(owner)?
+                    refined_order_signatures.at(owner):result.signatures.at(owner);
+            require(state_fingerprint(historical)==expected,
+                "C++ rename cannot replace the prior source-format contract");
+            edges.push_back({owner,before,after,text(entry,"editorialPrefixSha256")});
+            identifier_rename_originals.emplace(owner,old);
+            result.identifier_rename_revisions.push_back({
+                owner,utf8(old.Stringify()),before,after});
+        }
+        if(!edges.empty()) {
+            const auto editorial=array(metadata,"editorial");
+            require(editorial.Size()>=edges.size(),
+                "C++ rename needs complete appended editorial edges");
+            unsigned matches=0;
+            for(unsigned start=0;start+edges.size()<=editorial.Size();++start) {
+                bool exact=true;
+                for(std::size_t j=0;j<edges.size();++j) {
+                    const auto proof=editorial.GetObjectAt(start+static_cast<unsigned>(j));
+                    if(proof.Size()!=3||
+                        text(proof,"id")!=edges[j].id||
+                        text(proof,"beforeSha256")!=edges[j].before||
+                        text(proof,"afterSha256")!=edges[j].after)
+                        exact=false;
+                }
+                if(!exact)continue;
+                JsonArray prefix;
+                for(unsigned n=0;n<start;++n)prefix.Append(editorial.GetAt(n));
+                JsonObject provenance;
+                provenance.Insert(L"lessonId",JsonValue::CreateStringValue(key(lesson_id)));
+                provenance.Insert(L"locale",JsonValue::CreateStringValue(key(locale)));
+                provenance.Insert(L"editorial",prefix);
+                const auto digest=fingerprint(provenance);
+                require(std::ranges::all_of(edges,[&](const RenameEdge& edge) {
+                    return edge.history==digest;
+                }),"C++ rename borrowed a foreign editorial prefix");
+                ++matches;
+            }
+            require(matches==1,"C++ rename needs its unique original-to-revised editorial segment");
+        }
+    }
+
     // The full original string preserves the mathematical worker's insertion
     // order and exact numbers. It never substitutes the visible authored block.
     std::map<std::string,JsonObject> math_text_originals;
