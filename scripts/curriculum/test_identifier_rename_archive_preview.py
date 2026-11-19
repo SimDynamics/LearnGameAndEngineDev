@@ -83,7 +83,7 @@ class FormattedOwnerRenamePreview(unittest.TestCase):
             ("frecuencia > frecuencia_maxima_encontrada",
              "frecuencia >= frecuencia_maxima_encontrada"),
             ('"Maxima:"', '"Mayor:"'),
-            ("mayores", "invented_token"),
+            ("frecuencia_maxima_encontrada", "maxima"),
         ):
             with self.subTest(change=after):
                 proposal = deepcopy(candidate)
