@@ -65,6 +65,33 @@ def _cpp_spelling_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
     return False
 
 
+def _exact_identifier_substitution(
+    source: str, tokens: tuple[str, ...], names: dict[str, str],
+) -> str:
+    """Reassemble the unchanged physical source, replacing only id tokens.
+
+    The shared C++ lexer owns the token boundaries. Recover each complete
+    token from the exact source, retaining all spaces, comments, literals,
+    line endings and directives verbatim. Token-equivalence alone would allow
+    a hidden simultaneous reformat, which belongs to another signed archive.
+    """
+    chunks: list[str] = []
+    position = 0
+    for token in tokens:
+        kind, literal = token.split(":", 1)
+        start = source.find(literal, position)
+        if start < position or any(c not in source_format._WS
+                                   for c in source[position:start]):
+            raise IdentifierRenameError("The C++ token cannot be located in its source")
+        chunks.append(source[position:start])
+        chunks.append(names.get(literal, literal) if kind == "id" else literal)
+        position = start + len(literal)
+    chunks.append(source[position:])
+    if any(c not in source_format._WS for c in source[position:]):
+        raise IdentifierRenameError("Unclassified trailing C++ token data")
+    return "".join(chunks)
+
+
 def require_declared_cpp_renames(
     original: dict, revised: dict,
     renames: dict[str, dict[str, str]],
@@ -253,5 +280,8 @@ def require_declared_cpp_renames(
             expected[name] = number
         if dict(changed) != expected:
             raise IdentifierRenameError(f"Only part of a declared rename was applied: {slot}")
+        if _exact_identifier_substitution(before, old_tokens, names) != after:
+            raise IdentifierRenameError(
+                f"A declared rename changed whitespace, line endings or other source bytes: {slot}")
         confirmed[slot] = dict(changed)
     return confirmed
