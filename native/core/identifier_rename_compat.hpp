@@ -118,6 +118,23 @@ inline bool directive_mentions(std::string_view directive,std::string_view name)
     // An unchanged project file can contain a macro or a reference to a
     // renamed identifier from another translation unit. It cannot be skipped.
     for(const auto& [id,slot]:old_slots) {
+        if(slot.language==code_format::Language::cmake) {
+            // An unchanged CMake file may define macros for renamed C++
+            // identifiers. Only live arguments are checked; a CMake comment
+            // cannot expand into the compiler command line.
+            const auto tokens=code_format::cmake_tokens(slot.source);
+            if(!tokens)return false;
+            for(const auto& token:*tokens) {
+                if(!(token.starts_with("word:")||
+                     token.starts_with("quoted:")||
+                     (token.starts_with("bracket:")&&
+                      !token.starts_with("bracket:#"))))continue;
+                for(const auto& [before,after]:old_to_new)
+                    if(directive_mentions(token,before)||
+                       directive_mentions(token,after))return false;
+            }
+            continue;
+        }
         if(slot.language!=code_format::Language::cpp)continue;
         const auto tokens=code_format::cpp_tokens(slot.source);
         if(!tokens)return false;
