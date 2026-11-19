@@ -6,6 +6,7 @@ Temporary fixture trees are created under the caller's QA working directory.
 from copy import deepcopy
 from importlib import util
 import json
+import os
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -250,6 +251,23 @@ class CourseEditionAuthoringTest(unittest.TestCase):
         after[f"{prefix}/lesson_primera.json"] = alternate_lesson
         after[course_path]["units"].append(
             {"id": alternative_unit_id, "number": 2, "title": "Otra unidad"})
+        with self.assertRaisesRegex(edition.CourseEditionError,
+                                    "case-insensitive edition path collision"):
+            self.check_tree(before, after)
+
+    def test_unindexed_new_file_cannot_alias_an_active_edition_lesson(self):
+        # POSIX checkouts can hold both spellings; Windows already aliases
+        # them, so preflighting the indexed units is tested separately.
+        if os.name == "nt":
+            self.skipTest("Windows cannot store both case variants as separate files")
+        before = current_documents()
+        after = {**deepcopy(before), **current_documents(descriptor())}
+        active = next(path for path in after
+                      if "/edition_es_1__" in path and "/lesson_" in path)
+        alias = active.replace("/lesson_", "/Lesson_")
+        self.assertNotEqual(active, alias)
+        self.assertEqual(active.casefold(), alias.casefold())
+        after[alias] = {"id": "qa_unindexed_asset", "title": "Unindexed case alias"}
         with self.assertRaisesRegex(edition.CourseEditionError,
                                     "case-insensitive edition path collision"):
             self.check_tree(before, after)

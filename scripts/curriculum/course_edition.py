@@ -354,16 +354,31 @@ def check_repository(repository, commit, *, documents=None):
         locale, _, course_id = _course_path_parts(relative)
         require(after is not None and (after["locale"], after["courseId"]) == (locale, course_id),
                 "The courseEdition must match its physical course and locale")
+        # Check unit paths declared in the course index before loading any
+        # file. A case-insensitive checkout may already have overwritten the
+        # first unit with a differently cased name.
+        folder = PurePosixPath(relative).parent
+        prefix = folder.as_posix() + "/"
+        historical = [p for p in previous_paths
+                      if p.casefold().startswith(prefix.casefold())]
+        declared_units = []
+        for unit_id in _entries(current, "units"):
+            require(unit_id.startswith(course_id + "__"),
+                    "A unit index belongs to another course")
+            slug = unit_id[len(course_id) + 2:]
+            require(_safe(slug, 256), "Unsafe unit folder")
+            declared_units.append((folder / slug / f"unit_{slug}.json").as_posix())
+        _reject_windows_case_aliases([*historical, *declared_units])
+
         advanced = validate_transition(previous, current)
         units, lessons, paths = _active_documents(repository, relative, current)
-        # Git may track Foo.json and foo.json separately. Windows may open
-        # both names as the same file, so the candidate is not an independent
-        # new edition resource and cannot safely preserve both generations.
-        prefix = PurePosixPath(relative).parent.as_posix() + "/"
-        _reject_windows_case_aliases(
-            [*(p for p in previous_paths
-               if p.casefold().startswith(prefix.casefold())),
-             *paths.values()])
+        # An unindexed Lesson_x.json may alias an active lesson_x.json.
+        # Scan the actual course folder as well as the indexed and archived
+        # names, without reading or modifying the unindexed file.
+        physical_course = repository / folder
+        physical_files = [item.relative_to(repository).as_posix()
+                          for item in physical_course.rglob("*") if item.is_file()]
+        _reject_windows_case_aliases([*historical, *paths.values(), *physical_files])
         if advanced:
             for path in paths.values():
                 require(path not in previous_paths, "A new edition must use genuinely new unit and lesson resources")
