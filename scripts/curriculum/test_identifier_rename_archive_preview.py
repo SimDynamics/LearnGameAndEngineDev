@@ -158,6 +158,31 @@ class FormattedOwnerRenamePreview(unittest.TestCase):
             preview.verify_exact_published_rename_packet(self.lesson, packet, wrong)
         self.assertEqual(PATH.read_bytes(), self.original_bytes)
 
+    def test_historical_packet_rejects_numeric_type_forgery(self):
+        identity, target = OWNERS[0]
+        slot, revised, names, counts = self.candidate(self.blocks[identity], target)
+        packet = preview.preview_published_rename(
+            self.lesson, identity, revised, names, counts)
+
+        # All these are equal under Python's ordinary dict comparison.
+        # A historical JSON packet may not exchange integers and floats.
+        for label, forged in (
+            ("storage page", lambda row: row["stableStorage"].update({
+                "page": float(row["stableStorage"]["page"])})),
+            ("storage block", lambda row: row["stableStorage"].update({
+                "block": float(row["stableStorage"]["block"])})),
+            ("confirmed occurrence", lambda row: row["confirmed"][slot].update({
+                "maxima": float(row["confirmed"][slot]["maxima"])})),
+        ):
+            with self.subTest(field=label):
+                altered = deepcopy(packet)
+                forged(altered)
+                self.assertEqual(altered, packet)
+                with self.assertRaises(preview.RenamePreviewError):
+                    preview.verify_exact_published_rename_packet(
+                        self.lesson, altered, revised)
+        self.assertEqual(PATH.read_bytes(), self.original_bytes)
+
     def test_wrong_operator_literal_or_archival_change_cannot_be_previewed(self):
         identity, target = OWNERS[0]
         source = self.blocks[identity]
