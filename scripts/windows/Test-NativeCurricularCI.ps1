@@ -28,8 +28,8 @@ if ($CompilerHistoryGroup -ne 'All' -and $Suite -ne 'CompilerHistoricalReader') 
 if ($EditorialGroup -ne 'All' -and $Suite -ne 'U11EditorialReader') {
     throw 'An editorial selection requires the U11EditorialReader suite.'
 }
-if ($MsvcPreflightOnly -and $Suite -ne 'WasiRunner') {
-    throw 'The early MSVC preflight is reserved for the hosted WASI suite.'
+if ($MsvcPreflightOnly -and $Suite -notin @('WasiRunner', 'StateImport', 'ReaderBuild')) {
+    throw 'The early MSVC preflight is available only for hosted WASI, StateImport and ReaderBuild suites.'
 }
 
 $qaRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -292,10 +292,11 @@ if (-not (Test-Path -LiteralPath $qaVcVars -PathType Leaf)) {
 Write-Host "Image: $env:ImageOS $env:ImageVersion"
 Write-Host "Verified MSVC: $($qaManifest.visualStudio.msvcToolset); cl.exe $($qaManifest.visualStudio.compilerVersion)"
 if ($MsvcPreflightOnly) {
-    # The real WASI suite invokes this exact check again before CMake/CTest.
-    # This early read-only step prevents downloading dependencies on an image
-    # that cannot compile the native Windows runner with the pinned compiler.
-    Write-Host 'Pinned MSVC preflight passed. No WASI tools, native build or CTest execution were performed.'
+    # The full suite independently repeats this exact check before CMake/CTest.
+    # A read-only initial pass avoids running lengthy source tests or obtaining
+    # tools that cannot be used with the declared compiler. It neither changes
+    # the toolchain pin nor selects a different MSVC installed on the runner.
+    Write-Host 'Pinned MSVC preflight passed. No tools were installed and no native build or CTest execution was performed.'
     return
 }
 
