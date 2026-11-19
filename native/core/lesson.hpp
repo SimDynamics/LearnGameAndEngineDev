@@ -398,6 +398,14 @@ struct MathTextRevision {
     std::string id, field, raw_json, sha256;
     std::optional<TextSemantics> semantic_before;
 };
+// Text-only review of an existing math_matching_drag response. Grading,
+// source/target IDs, card counts and historical response address stay fixed.
+// The current authored strings remain visible; the raw original is used for
+// exact matching evaluation and old text-semantic reading origins.
+struct MathMatchingTextRevision {
+    std::string id, raw_json, before_sha256, after_sha256;
+    std::size_t editorial_index = 0;
+};
 struct StateLayout {
     int version = 0;
     std::string locale;
@@ -413,6 +421,7 @@ struct StateLayout {
     std::vector<SourceFormatRevision> source_format_revisions;
     std::vector<IdentifierRenameRevision> identifier_rename_revisions;
     std::vector<MathTextRevision> math_text_revisions;
+    std::vector<MathMatchingTextRevision> math_matching_text_revisions;
     std::vector<ChoiceRevision> choice_revisions;
     std::vector<CompilerRevision> compiler_revisions;
     std::vector<CompilerCaseOrderRevision> compiler_case_order_revisions;
