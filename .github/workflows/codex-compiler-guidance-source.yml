@@ -9,7 +9,17 @@ on:
       - native/platform/windows/compiler_completion.cpp
       - native/platform/windows/compiler_completion.hpp
       - native/platform/windows/compiler_guidance_state_tests.cpp
+      - native/platform/windows/content_loader.cpp
+      - native/platform/windows/content_loader.hpp
+      - native/platform/windows/state_store.cpp
+      - native/platform/windows/state_store.hpp
+      - native/core/lesson.cpp
       - native/core/lesson.hpp
+      - native/core/lesson_state.cpp
+      - native/core/lesson_state.hpp
+      - native/core/compile_check_test_fixture.hpp
+      - cmake/native_build_config.hpp.in
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json
   workflow_dispatch:
 
 permissions:
@@ -30,15 +40,6 @@ jobs:
           persist-credentials: false
       - name: Activate Visual C++ in disposable runner
         uses: ilammy/msvc-dev-cmd@v1
-      - name: Compile actual C++ compiler-completion module
-        shell: cmd
-        run: >
-          cl /nologo /std:c++latest /EHsc /W4 /permissive-
-          /Zc:__cplusplus /utf-8 /I native /I "%RUNNER_TEMP%\guidance-generated"
-          /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX
-          /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
-          native\platform\windows\compiler_completion.cpp
-          /Fo:"%RUNNER_TEMP%\compiler_guidance_completion.obj"
       - name: Generate the existing native QA configuration header for exact checkout
         shell: pwsh
         run: |
@@ -67,6 +68,15 @@ jobs:
           if ($template -match '@[A-Z_]+@') { throw 'An unresolved native header variable remains.' }
           [System.IO.File]::WriteAllText((Join-Path $destination 'native_build_config.hpp'),
             $template, [System.Text.UTF8Encoding]::new($false))
+      - name: Compile actual C++ compiler-completion module
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /permissive-
+          /Zc:__cplusplus /utf-8 /I native /I "%RUNNER_TEMP%\guidance-generated"
+          /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX
+          /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
+          native\platform\windows\compiler_completion.cpp
+          /Fo:"%RUNNER_TEMP%\compiler_guidance_completion.obj"
       - name: Compile authentic guidance, archival and receipt regressions
         shell: cmd
         run: >
