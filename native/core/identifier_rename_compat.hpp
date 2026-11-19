@@ -32,11 +32,19 @@ struct SourcePlan {
     std::vector<NamedRename> names;
 };
 
+inline bool ascii_alpha(unsigned char c) noexcept {
+    return (c>='A'&&c<='Z')||(c>='a'&&c<='z');
+}
+inline bool ascii_digit(unsigned char c) noexcept {
+    return c>='0'&&c<='9';
+}
 inline bool identifier(std::string_view name) {
-    // Restrict author-declared names to an unambiguous portable ASCII subset.
-    if(name.empty()||!std::isalpha(static_cast<unsigned char>(name.front()))||
+    // Match Python's explicit ASCII regex in every C/C++ locale. std::isalpha
+    // is locale-sensitive and can admit non-ASCII bytes on Windows profiles,
+    // producing different source-name permissions on the two validators.
+    if(name.empty()||!ascii_alpha(static_cast<unsigned char>(name.front()))||
        !std::all_of(name.begin()+1,name.end(),[](unsigned char c){
-            return std::isalnum(c)||c=='_';}))return false;
+            return ascii_alpha(c)||ascii_digit(c)||c=='_';}))return false;
     static const std::set<std::string_view> reserved{
         "alignas","alignof","and","and_eq","asm","auto","bitand","bitor",
         "bool","break","case","catch","char","char8_t","char16_t",
@@ -57,8 +65,8 @@ inline bool identifier(std::string_view name) {
     };
     return !reserved.contains(name);
 }
-inline bool identifier_char(unsigned char c) {
-    return std::isalnum(c)||c=='_';
+inline bool identifier_char(unsigned char c) noexcept {
+    return ascii_alpha(c)||ascii_digit(c)||c=='_';
 }
 inline bool directive_mentions(std::string_view directive,std::string_view name) {
     for(auto start=directive.find(name);start!=directive.npos;
