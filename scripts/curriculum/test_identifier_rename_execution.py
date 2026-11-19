@@ -99,6 +99,62 @@ class FrequencyRenameRuntime(unittest.TestCase):
             text=True, timeout=15, check=False)
         return completed.returncode, completed.stdout, completed.stderr
 
+    def test_cross_file_declared_symbol_remains_linkable_after_rename(self) -> None:
+        # A single external C++ symbol is declared in main and defined in a
+        # separate translation unit. The lexical proof must permit its same
+        # historic-to-current mapping in both sources, then the actual linker
+        # must establish that the new program still behaves identically.
+        original = {
+            "type": "cpp_compiler",
+            "initialCode": (
+                '#include <iostream>\n'
+                'extern int maxima;\n'
+                'int main() {\n'
+                '    std::cout << "Maxima:" << maxima << "\\n";\n'
+                '}\n'
+            ),
+            "projectFiles": [
+                {"path": "src/valor.cpp", "initialCode": "int maxima = 8;\n"},
+            ],
+            "outputCheck": {"cases": [{"outputs": ["Maxima:8\n"]}]},
+        }
+        after = deepcopy(original)
+        after["initialCode"] = original["initialCode"].replace(
+            "maxima", "frecuencia_maxima_encontrada")
+        after["projectFiles"][0]["initialCode"] = (
+            original["projectFiles"][0]["initialCode"].replace(
+                "maxima", "frecuencia_maxima_encontrada"))
+        rename_map = {
+            "initialCode": {"maxima": "frecuencia_maxima_encontrada"},
+            "projectFiles/0/initialCode": {"maxima": "frecuencia_maxima_encontrada"},
+        }
+        counts = {
+            "initialCode": {"maxima": 2},
+            "projectFiles/0/initialCode": {"maxima": 1},
+        }
+        self.assertEqual(
+            rename.require_declared_cpp_renames(original, after, rename_map, counts),
+            counts)
+        with tempfile.TemporaryDirectory(prefix="lgaed-linked-rename-") as tmp:
+            directory = Path(tmp)
+            results = []
+            for version, project in (("old", original), ("new", after)):
+                main = directory / (version + "-main.cpp")
+                other = directory / (version + "-valor.cpp")
+                binary = directory / (version + ".exe")
+                main.write_text(project["initialCode"], encoding="utf-8")
+                other.write_text(
+                    project["projectFiles"][0]["initialCode"], encoding="utf-8")
+                built = subprocess.run(
+                    [self.compiler, "-std=c++23", "-O0", "-Wall", "-Wextra",
+                     str(main), str(other), "-o", str(binary)],
+                    capture_output=True, text=True, timeout=75, check=False)
+                self.assertEqual(
+                    built.returncode, 0,
+                    f"Cross-file {version} C++ link failed:\n{built.stderr}")
+                results.append(self._execute(binary, ""))
+            self.assertEqual(results, [(0, "Maxima:8\n", "")] * 2)
+
     def test_six_real_published_owners_compile_with_identical_outputs(self) -> None:
         self.assertEqual(len(OWNER_CASES), 6)
         with tempfile.TemporaryDirectory(prefix="lgaed-frequency-rename-") as temp:
