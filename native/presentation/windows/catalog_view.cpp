@@ -134,9 +134,10 @@ struct CatalogView {
         result.route = state::string_value(progress,"native_windows","catalog/route");
         result.course = state::string_value(progress,"native_windows","catalog/course");
         result.unit = state::string_value(progress,"native_windows","catalog/unit");
-        try { validate_catalog_location(result); (void)windows::load_catalog(root,result); }
-        catch (...) { result = {}; }
-        return result;
+        return catalog_recover_location(result, [&](const CatalogLocation& location) {
+            (void)windows::load_catalog(root,location);
+            return true;
+        });
     }
     std::optional<std::size_t> selected() const {
         const auto index = SendMessageW(list,LB_GETCURSEL,0,0);

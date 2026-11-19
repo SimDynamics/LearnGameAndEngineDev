@@ -42,6 +42,11 @@ using CatalogExerciseCompletion = std::function<bool(const Block&)>;
 void validate_catalog_location(const CatalogLocation&);
 [[nodiscard]] CatalogLevel catalog_level(const CatalogLocation&);
 [[nodiscard]] CatalogLocation catalog_parent(CatalogLocation);
+// A saved unit can disappear when Work publishes a replacement course
+// edition. Reopen the nearest still-published ancestor instead of losing
+// the course and language. The supplied availability probe is read-only.
+[[nodiscard]] CatalogLocation catalog_recover_location(
+    CatalogLocation saved, const std::function<bool(const CatalogLocation&)>& available);
 [[nodiscard]] CatalogLocation catalog_child(CatalogLocation, std::string_view id);
 [[nodiscard]] std::filesystem::path catalog_index_path(const CatalogLocation&);
 [[nodiscard]] std::filesystem::path catalog_lesson_path(const CatalogLocation&, std::string_view id);

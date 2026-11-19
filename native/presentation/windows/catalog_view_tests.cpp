@@ -566,6 +566,50 @@ int main() {
             state::StateStore verify(environment.paths.root);check(rejected&&verify.load()==external,"The catalogue fix bypassed rejection of a real stale external writer");
             DestroyWindow(reader);
         }
+        {
+            // The old edition's unit has been retired from the active course.
+            // Reopening must retain the nearest still-installed course and
+            // the requested reading language. This is an isolated QA profile,
+            // never a real learner's progress or preferences.
+            state::StateStore store(environment.paths.root);
+            auto saved=store.load();
+            auto& prefs=saved.preferences["native_windows"];
+            prefs["content_language"]=std::string("fr");
+            prefs["catalog/locale"]=std::string("fr");
+            prefs["catalog/route"]=std::string("programming");
+            prefs["catalog/course"]=std::string("cpp_fundamentals");
+            prefs["catalog/unit"]=std::string(
+                "cpp_fundamentals__edition_fr_1__retired");
+            store.save(saved);
+            DestroyWindow(view);view=create();pump();
+            check(catalog_location(view)==CatalogLocation{
+                    "fr","programming","cpp_fundamentals",{}},
+                "A retired edition unit reopened at home instead of its active course");
+            check(store.load()==saved,
+                "Recovering a retired course edition changed the learner's saved state");
+
+            auto missing_course=store.load();
+            missing_course.preferences["native_windows"]["catalog/course"]=
+                std::string("missing_course");
+            missing_course.preferences["native_windows"]["catalog/unit"]=std::string{};
+            store.save(missing_course);
+            DestroyWindow(view);view=create();pump();
+            check(catalog_location(view)==CatalogLocation{"fr","programming",{},{}},
+                "A missing course did not recover the published programming route");
+            check(store.load()==missing_course,
+                "Recovering a removed course rewrote the original saved position");
+
+            auto missing_route=store.load();
+            missing_route.preferences["native_windows"]["catalog/route"]=
+                std::string("not_published");
+            missing_route.preferences["native_windows"]["catalog/course"]=std::string{};
+            store.save(missing_route);
+            DestroyWindow(view);view=create();pump();
+            check(catalog_location(view)==CatalogLocation{"fr",{},{},{}},
+                "A missing route discarded a valid French content language");
+            check(store.load()==missing_route,
+                "Recovering the route erased original navigation evidence");
+        }
         DestroyWindow(view);location_notifications(host,root);
         DestroyWindow(host); UnregisterClassW(type.lpszClassName,type.hInstance);
         std::cout << "Native catalog: real home/actions, indices, keyboard/card ownership, mouse wheel/drag, list restoration, profile state and independent UI language: PASS\n";

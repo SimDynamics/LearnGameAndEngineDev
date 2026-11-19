@@ -113,6 +113,48 @@ void accepted_reset_keeps_foreign_state_and_is_idempotent() {
         "Repeating a completed reset changed its previous result");
 }
 
+void retired_catalog_location_recovers_nearest_published_parent() {
+    using namespace lgaed::curriculum;
+    const CatalogLocation active_course{"fr","programming","cpp_fundamentals",{},{}};
+    const CatalogLocation stale_unit{"fr","programming","cpp_fundamentals",
+        "cpp_fundamentals__edition_fr_1__retired",{}};
+    std::vector<CatalogLocation> attempted;
+    const auto published=[&](const CatalogLocation& location) {
+        attempted.push_back(location);
+        return location == active_course;
+    };
+    check(catalog_recover_location(stale_unit,published)==active_course &&
+          attempted==std::vector<CatalogLocation>{stale_unit,active_course},
+          "Retired edition reset the entire saved course instead of reopening its parent");
+    attempted.clear();
+    check(catalog_recover_location(active_course,published)==active_course &&
+          attempted==std::vector<CatalogLocation>{active_course},
+          "An active course was unnecessarily redirected on restoration");
+
+    const CatalogLocation active_route{"fr","programming",{},{},{}};
+    const auto route_only=[&](const CatalogLocation& location) {
+        return location==active_route;
+    };
+    check(catalog_recover_location(stale_unit,route_only)==active_route,
+          "Missing course did not retain its still-published route and language");
+    const CatalogLocation french_home{"fr",{},{},{},{}};
+    check(catalog_recover_location(stale_unit,[&](const CatalogLocation& location) {
+        return location==french_home;
+    })==french_home,"Missing route changed a valid reading language");
+    check(catalog_recover_location(
+            CatalogLocation{"invalid","other_route","other_course","other_unit",{}},
+            [](const CatalogLocation& location) { return location==CatalogLocation{}; })
+          ==CatalogLocation{},"Corrupted saved location did not recover the safe home");
+    check(catalog_recover_location(active_course,[](const CatalogLocation&) -> bool {
+        throw std::runtime_error("An index is not available");
+    })==CatalogLocation{},"Repeated index errors did not have a bounded fallback");
+    Fixture fixture;
+    const auto immutable=lgaed::state::encode(fixture.state);
+    (void)catalog_recover_location(stale_unit,published);
+    check(lgaed::state::encode(fixture.state)==immutable,
+          "Recovering a new edition rewrote real or unrelated saved progress");
+}
+
 void catalog_unit_selection_is_scoped_to_published_edition() {
     using namespace lgaed::curriculum;
     CatalogPage page;
@@ -259,6 +301,7 @@ void foreign_corruption_does_not_block_selected_course() {
 int main() {
     try {
         invalid_selected_coverage_is_atomic();
+        retired_catalog_location_recovers_nearest_published_parent();
         catalog_unit_selection_is_scoped_to_published_edition();
         catalog_entry_identity_survives_reordering_and_retirement();
         malformed_or_cross_course_scope_is_atomic();

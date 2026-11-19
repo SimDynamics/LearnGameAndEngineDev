@@ -85,6 +85,28 @@ CatalogLocation catalog_parent(CatalogLocation location) {
     else location.route.clear();
     return location;
 }
+CatalogLocation catalog_recover_location(
+        CatalogLocation saved, const std::function<bool(const CatalogLocation&)>& available) {
+    // A selected unit in a retired edition no longer belongs to the current
+    // course index. Keep the surviving course, route, and requested language.
+    // Missing indexes or a malformed saved location must not cause a new
+    // profile, progress reset, or an unrelated course to be opened.
+    for (int level=0; level<6; ++level) {
+        try {
+            validate_catalog_location(saved);
+            if (available(saved)) return saved;
+        } catch (const std::exception&) {
+            // A damaged/stale descendant is not a reason to discard parents.
+        }
+        if (!saved.lesson.empty()) saved.lesson.clear();
+        else if (!saved.unit.empty()) saved.unit.clear();
+        else if (!saved.course.empty()) saved.course.clear();
+        else if (!saved.route.empty()) saved.route.clear();
+        else if (saved.locale != "es") saved.locale = "es";
+        else return {};
+    }
+    return {};
+}
 CatalogLocation catalog_child(CatalogLocation location, std::string_view id) {
     if (!identifier(id)) throw std::invalid_argument("Identificador curricular vacío o no seguro.");
     switch (catalog_level(location)) {
