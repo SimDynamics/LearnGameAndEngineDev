@@ -90,16 +90,24 @@ def require_declared_cpp_renames(
     } | {
         name for mapping in renames.values() for name in mapping.values()
     }
-    proposed_destinations = [
-        name for mapping in renames.values() for name in mapping.values()
-    ]
-    # A shared destination across distinct source slots may silently merge
-    # two formerly different symbols if the files are compiled/linked together.
-    # Only a compiler plus an authored binding map can establish exceptions.
-    if len(set(proposed_destinations)) != len(proposed_destinations):
-        raise IdentifierRenameError(
-            "Two declared source renames reuse a C++ destination across slots")
-    destinations = set(proposed_destinations)
+    # The same old identifier may legitimately be renamed consistently in
+    # several translation units (declaration, definition, and callers).
+    # Conversely, mapping two DIFFERENT old names onto one new name silently
+    # merges symbols; inconsistent renaming of one old name also lacks a
+    # trustworthy binding contract. Do not forbid repeated identical pairs.
+    original_to_new: dict[str, str] = {}
+    new_to_original: dict[str, str] = {}
+    for names in renames.values():
+        for before, after in names.items():
+            if before in original_to_new and original_to_new[before] != after:
+                raise IdentifierRenameError(
+                    "An old C++ identifier has inconsistent cross-file replacements")
+            if after in new_to_original and new_to_original[after] != before:
+                raise IdentifierRenameError(
+                    "Distinct C++ identifiers reuse a destination across slots")
+            original_to_new[before] = after
+            new_to_original[after] = before
+    destinations = set(new_to_original)
     for source_slot, (language, source) in old_slots.items():
         if language != "cpp":
             continue
