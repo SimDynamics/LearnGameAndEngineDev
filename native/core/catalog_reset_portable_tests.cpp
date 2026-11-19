@@ -287,6 +287,78 @@ void malformed_or_cross_course_scope_is_atomic() {
         "A valid multi-course reset did not preserve unrelated drafts");
 }
 
+
+void new_edition_progress_and_reset_preserve_retired_course() {
+    using namespace lgaed::curriculum;
+    Fixture fixture;
+    const auto original=fixture.state;
+    const std::string new_unit="cpp_fundamentals__edition_es_1__inicio";
+    const std::string first=new_unit+"__primera";
+    const std::string second=new_unit+"__segunda";
+    const CatalogScope new_edition{{"cpp_fundamentals"},{new_unit},{first,second}};
+
+    // The original course is complete, but its replacement has not been
+    // studied. Do not reuse a completed flag, draft or page from its ancestor.
+    const auto initial=catalog_progress(fixture.state,new_edition);
+    check(initial.completed==0&&initial.total==2&&
+        !catalog_lesson_completed(fixture.state,first)&&
+        !catalog_lesson_started(fixture.state,first)&&
+        !catalog_lesson_started(fixture.state,second),
+        "A published new edition inherited the original course's successes");
+    auto& progress=fixture.state.preferences["learning_progress"];
+    progress["lesson_"+first+"_started"]=true;
+    progress["lesson_"+first+"_completed"]=true;
+    progress["exercise_"+first+"_page_0_block_1"]=std::string{"edition-specific answer"};
+    progress["unit_"+new_unit+"_completed"]=true;
+    check(catalog_progress(fixture.state,new_edition).completed==1&&
+        catalog_lesson_started(fixture.state,first)&&
+        !catalog_lesson_started(fixture.state,second),
+        "The replacement's own receipts did not advance independently");
+
+    const auto saved=lgaed::state::encode(fixture.state);
+    auto restored=lgaed::state::decode(saved);
+    check(restored==fixture.state&&
+        lgaed::state::encode(restored)==saved&&
+        catalog_progress(restored,new_edition).completed==1,
+        "Saving and importing a replacement edition lost its independent progress");
+    check(reset_catalog_progress(restored,new_edition)==4,
+        "Reset of the new edition did not remove exactly its four new receipts");
+    const auto& clean=restored.preferences.at("learning_progress");
+    check(catalog_progress(restored,new_edition).completed==0&&
+        !catalog_lesson_started(restored,first)&&
+        !clean.contains("exercise_"+first+"_page_0_block_1")&&
+        !clean.contains("unit_"+new_unit+"_completed"),
+        "The new edition still had an answer or accomplishment after its reset");
+    for(const auto& key : {
+            fixture.completion,
+            fixture.answer,
+            fixture.first_read,
+            fixture.second_read,
+            "unit_cpp_fundamentals__unit_completed",
+            "course_cpp_fundamentals_completed",
+            "lesson_other_course__unit__first_completed"}) {
+        check(clean.at(key)==original.preferences.at("learning_progress").at(key),
+            "An edition-only reset deleted a retired course or unrelated history");
+    }
+    for(const auto& domain:{"cpp_lesson_drafts","narration_settings"})
+        check(restored.preferences.at(domain)==original.preferences.at(domain),
+            "An edition-only reset modified drafts or global preferences");
+    check(reset_catalog_progress(restored,new_edition)==0,
+        "A repeat edition-only reset changed preserved historical history");
+
+    // An explicitly mixed scope, in contrast, really includes legacy units.
+    // It must still clear the selected historical course completion.
+    auto mixed=fixture.state;
+    CatalogScope selected_legacy=new_edition;
+    selected_legacy.units.push_back(fixture.scope.units.front());
+    selected_legacy.lessons.push_back(fixture.scope.lessons.front());
+    (void)reset_catalog_progress(mixed,selected_legacy);
+    check(!mixed.preferences.at("learning_progress").contains(
+                "course_cpp_fundamentals_completed")&&
+        !mixed.preferences.at("learning_progress").contains(fixture.completion),
+        "Explicitly selecting the historical unit failed to reset its completion");
+}
+
 void foreign_corruption_does_not_block_selected_course() {
     Fixture fixture;
     check(reset_catalog_progress(fixture.state, fixture.scope) == 10,
@@ -304,10 +376,11 @@ int main() {
         retired_catalog_location_recovers_nearest_published_parent();
         catalog_unit_selection_is_scoped_to_published_edition();
         catalog_entry_identity_survives_reordering_and_retirement();
+        new_edition_progress_and_reset_preserve_retired_course();
         malformed_or_cross_course_scope_is_atomic();
         accepted_reset_keeps_foreign_state_and_is_idempotent();
         foreign_corruption_does_not_block_selected_course();
-        std::cout << "PASS catalog reset: 8 malformed coverage slots and 9 invalid scopes rejected atomically; "
+        std::cout << "PASS catalog reset: 8 malformed coverage slots and 9 invalid scopes rejected atomically; new-edition receipts isolated; "
                      "exact scope, drafts, provenance and binary state preserved\n";
         return 0;
     } catch (const std::exception& error) {

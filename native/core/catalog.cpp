@@ -21,6 +21,22 @@ std::string slug(std::string_view id, std::string_view owner) {
 // Scoped progress resets may target one lesson, one course or a whole route.
 // Check every explicit parent-child relation before changing any stored key.
 // A malformed mixed-course scope must not erase another course's progress.
+// A new edition has distinct unit and lesson IDs but reuses its catalog course
+// ID. Its historical course-level completion receipt must not be interpreted
+// as a result achieved by the new edition or erased by an edition-only reset.
+bool edition_unit_of_course(std::string_view unit, std::string_view course) {
+    const auto prefix = std::string(course) + "__edition_";
+    if(!unit.starts_with(prefix))return false;
+    auto suffix=unit.substr(prefix.size());
+    if(!(suffix.starts_with("es_")||suffix.starts_with("en_")||suffix.starts_with("fr_")))
+        return false;
+    suffix.remove_prefix(3);
+    const auto delimiter=suffix.find("__");
+    if(delimiter==suffix.npos||delimiter==0||delimiter+2==suffix.size())return false;
+    const auto generation=suffix.substr(0,delimiter);
+    return generation.front()!='0' &&
+        std::ranges::all_of(generation,[](char c){return c>='0'&&c<='9';});
+}
 void validate_reset_scope(const CatalogScope& scope) {
     const auto unique_safe = [](const std::vector<std::string>& ids) {
         std::set<std::string_view> seen;
@@ -298,6 +314,21 @@ std::size_t reset_catalog_progress(state::StateData& data,const CatalogScope& sc
                 }
         }
     }
+    // If every indexed unit of a selected course belongs to a new edition,
+    // the old course_<id>_completed flag is a retired-edition receipt. The
+    // new progress is computed from the new lesson IDs, not from that flag.
+    // A mixed/legacy course reset still removes its original course receipt.
+    std::set<std::string> preserved_legacy_course_completion;
+    for(const auto& course:scope.courses) {
+        const auto prefix=course+"__";
+        bool selected_units=false, edition_only=true;
+        for(const auto& unit:scope.units) if(unit.starts_with(prefix)) {
+            selected_units=true;
+            if(!edition_unit_of_course(unit,course))edition_only=false;
+        }
+        if(selected_units&&edition_only)
+            preserved_legacy_course_completion.insert("course_"+course+"_completed");
+    }
     std::size_t erased = 0;
     for (auto& [domain,values] : data.preferences) {
         for (auto item = values.begin(); item != values.end();) {
@@ -342,7 +373,8 @@ std::size_t reset_catalog_progress(state::StateData& data,const CatalogScope& sc
                     if (split != tail.npos && digits(tail.substr(0,split)) && digits(tail.substr(split + 7))) matches = true;
                 }
                 for (const auto& id : scope.units) if (key == "unit_" + id + "_completed") matches = true;
-                for (const auto& id : scope.courses) if (key == "course_" + id + "_completed") matches = true;
+                for (const auto& id : scope.courses) if (key == "course_" + id + "_completed" &&
+                    !preserved_legacy_course_completion.contains(key)) matches = true;
             } else if (domain == "native_windows") {
                 for (const auto& id : scope.lessons) {
                     if (key.starts_with("scroll/" + id + '/')) matches = true;
