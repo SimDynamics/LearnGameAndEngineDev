@@ -16,6 +16,8 @@ from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import sys
+
+import identifier_rename_compat as identifier_rename
 from importlib import util as import_util
 
 _semantics_spec = import_util.spec_from_file_location("lgaed_text_semantics", Path(__file__).with_name("text_semantics.py"))
@@ -44,7 +46,7 @@ class LayoutError(ValueError):
 
 LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
-V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions", "mathTextRevisions", "compilerCaseOrderRevisions", "compilerCaseRevisions"})
+V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions", "mathTextRevisions", "compilerCaseOrderRevisions", "compilerCaseRevisions", "identifierRenameRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
@@ -2003,6 +2005,99 @@ def _all_blocks(document: dict) -> dict[str, dict]:
                                   for item in document["stateLayout"].get("retired", [])}}
 
 
+def _authenticated_identifier_renames(
+        document: dict, active: dict[str, dict],
+        storage: dict[str, tuple[int, int]],
+        original_digests: dict[str, str]) -> dict[str, dict]:
+    """Authenticate source-only C++ renames before restoring published format.
+
+    A rename packet is bound to the exact v2 owner, its immutable storage
+    address and original response digest, plus one authenticated editorial
+    segment. This deliberately permits only ONE revision of each active owner
+    and no later changes to that owner's code in this initial contract.
+    """
+    meta = document["stateLayout"]
+    records = meta.get("identifierRenameRevisions", [])
+    require(type(records) is list and len(records) <= 64,
+            "Invalid C++ identifier rename history")
+    if not records:
+        return {}
+    require(meta["locale"] == "es" and meta["version"] == 2,
+            "C++ rename history requires an authenticated Spanish v2 source")
+    fields = {
+        "lessonId", "locale", "historicalFamilySha256", "originalStateSha256",
+        "stableStorage", "editorialPrefixSha256", "id", "block", "names",
+        "occurrences", "beforeSha256", "afterSha256",
+        "priorSourceFormatSha256", "confirmed",
+    }
+    formats = {
+        entry["id"]: entry["block"] for entry in
+        meta.get("sourceFormatRevisions", [])
+    }
+    editorial = meta["editorial"]
+    require(type(editorial) is list and len(editorial) >= len(records),
+            "C++ rename history needs its complete editorial publication")
+    predecessor = []
+    original_blocks = {}
+    for record in records:
+        require(type(record) is dict and set(record) == fields,
+                "Invalid or incomplete C++ rename provenance")
+        identity = _identity(record["id"])
+        require(identity in active and identity in storage and
+                identity not in original_blocks and identity in formats,
+                "C++ rename archive needs a unique active formatted owner")
+        old, now = record["block"], active[identity]
+        require(type(old) is dict and type(now) is dict,
+                "C++ rename history needs full historical and current blocks")
+        address = storage[identity]
+        require(record["lessonId"] == document["id"]
+                and record["locale"] == meta["locale"]
+                and record["historicalFamilySha256"] ==
+                    meta["family"][meta["locale"]]["sha256"]
+                and record["originalStateSha256"] == original_digests[identity]
+                and identifier_rename.same_json_value_and_types(
+                    record["stableStorage"], {"page": address[0], "block": address[1]}),
+                "C++ rename belongs to another lesson, family or storage owner")
+        before, after = fingerprint(old), fingerprint(now)
+        require(record["beforeSha256"] == before and
+                record["afterSha256"] == after and before != after and
+                record["priorSourceFormatSha256"] == fingerprint(formats[identity]),
+                "C++ rename changed the exact published source or its format archive")
+        try:
+            confirmed = identifier_rename.require_declared_cpp_renames(
+                old, now, record["names"], record["occurrences"])
+            code_format.require_source_lexical(formats[identity], old)
+        except (identifier_rename.IdentifierRenameError,
+                code_format.SourceFormatError) as exc:
+            raise LayoutError(f"Unsafe C++ rename for {identity}: {exc}") from exc
+        require(identifier_rename.same_json_value_and_types(
+                    confirmed, record["confirmed"]),
+                "C++ rename falsified its declared token counts")
+        predecessor.append({"id": identity, "beforeSha256": before,
+                            "afterSha256": after})
+        original_blocks[identity] = old
+
+    # An authenticated publication inserts all rename edges consecutively,
+    # immediately after the editorial prefix whose digest it carries. A later
+    # publication may append other owners' prose proofs without erasing them.
+    starts = [
+        index for index in range(len(editorial) - len(records) + 1)
+        if identifier_rename.same_json_value_and_types(
+            editorial[index:index + len(records)], predecessor)
+    ]
+    require(len(starts) == 1,
+            "C++ rename archives need their exact consecutive editorial edges")
+    prefix = editorial[:starts[0]]
+    digest = fingerprint({
+        "lessonId": document["id"], "locale": meta["locale"],
+        "editorial": prefix,
+    })
+    require(all(record["editorialPrefixSha256"] == digest
+                for record in records),
+            "C++ rename archives cannot borrow another editorial history")
+    return original_blocks
+
+
 def _describe_locale_origin_difference(own: list[dict], family: list[dict],
                                        locale: str, limit: int = 8) -> str:
     """Report concrete historical map disagreements, never reconcile them.
@@ -2110,6 +2205,9 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     # keep their existing immutable identity. Validate these references before
     # using them, without accepting an unknown or duplicated historical owner.
     format_sources = dict(active_blocks)
+    rename_originals = _authenticated_identifier_renames(
+        document, active_blocks, storage, digests)
+    format_sources.update(rename_originals)
     if revisions:
         format_retired = meta.get("retired", [])
         require(type(format_retired) is list and len(format_retired) <= 100_000,
@@ -2349,7 +2447,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 require(meta["locale"] == "es" and identity in choices
                         and CHOICE_OPTION_REVISIONS.get((document.get("id"), identity)) == reviewed,
                         "A revised choice requires its exact lesson, identity and original archive")
-            ordered_source = _compiler_case_order_projection(document, identity, block)
+            ordered_source = _compiler_case_order_projection(
+                document, identity, rename_originals.get(identity, block))
             source = (code_format.source_projection(ordered_source,
                           _compiler_case_format_origin(document, identity, formatted[identity]))
                       if identity in formatted else ordered_source)
@@ -2378,6 +2477,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     require(len(set(seen_pages)) == len(seen_pages) and set(seen_pages) == set(page_ids), "Page identities changed")
     require(refined.keys() <= set(seen_blocks), "Order refinements must remain active under their existing identities")
     require(choices.keys() <= set(seen_blocks), "Choice revisions must remain active under their existing identities")
+    require(rename_originals.keys() <= set(seen_blocks),
+            "C++ rename archives cannot belong to retired activities")
     require(compilers.keys() <= set(seen_blocks), "Compiler revisions must remain active under their existing identities")
     require(compiler_references.keys() <= set(seen_blocks), "Compiler references must remain active under their existing identities")
     retired = meta.get("retired", [])
