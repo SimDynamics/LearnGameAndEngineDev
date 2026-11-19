@@ -164,7 +164,7 @@ void portable_identifier_spellings() {
         require(identifier(name),"A valid ASCII identifier was rejected");
     for(const std::string_view name:{
             "new","import","final","override","__internal","1nombre",
-            "_local","nombre-con-guion","frecuencia_máxima","niño","maximañ"})
+            "_local","nombre-con-guion","frecuencia_máxima","niño","maximañ","mi__variable"})
         require(!identifier(name),
             "A reserved, non-ASCII or invalid source spelling bypassed native validation");
     // The whole source plan must enforce this invariant, not only its helper.
