@@ -18,6 +18,7 @@
 #include <fstream>
 #include <iostream>
 #include <numeric>
+#include <set>
 #include <stdexcept>
 
 namespace {
@@ -998,6 +999,9 @@ void integrated_retirement_contract_tests() {
         {"lesson_fuente_compilacion_y_diagnostico.json",{"ejecucion_original_fuente_compilacion_y_diagnostico_consigna","ejecucion_original_fuente_compilacion_y_diagnostico_editor"},{},{}}
     }};
     std::size_t useful=0;
+    // Each editor must keep separate progress AND drafts. Checking only the
+    // response owner would miss a collision that overwrites an earlier source.
+    std::set<std::string> active_response_keys,active_draft_keys;
     for(const auto& plan:plans){
         const auto before=lgaed::test::load_pre_retirement_lesson(plan.filename);
         const auto current=lgaed::windows::load_lesson(folder/plan.filename);
@@ -1059,6 +1063,9 @@ void integrated_retirement_contract_tests() {
                 if(block.type==BlockType::cpp_compiler){
                     ++useful;
                     check(block.output_check.has_value(),"An added U1 compiler has no own fresh execution objective");
+                    check(active_response_keys.insert(exercise_key(current,block)).second
+                          &&active_draft_keys.insert(draft_key("programming",current,block)).second,
+                        "An added U1 editor reuses a response or draft owned by an existing editor");
                 }
                 continue;
             }
@@ -1067,7 +1074,11 @@ void integrated_retirement_contract_tests() {
                 "An integrated active block lost its historical response or draft slot");
             if(block.type==BlockType::cpp_compiler){++useful;check(block.output_check.has_value()
                 &&reference_objective_frame(current,block)==reference_objective_frame(before,old),
-                "A useful integrated compiler changed its program, answer or fresh-execution objective");}
+                "A useful integrated compiler changed its program, answer or fresh-execution objective");
+                check(active_response_keys.insert(exercise_key(current,block)).second
+                      &&active_draft_keys.insert(draft_key("programming",current,block)).second,
+                    "A retained U1 editor shares another editor's answer or saved source");
+            }
         }
         for(const auto& relation:current.activity_after)for(const auto& required:relation.prerequisites)
             check(!retired_block(current,required),"A current useful activity still requires a retired execution");
@@ -1077,14 +1088,16 @@ void integrated_retirement_contract_tests() {
     const bool revised=stable_block_position(last,"p1u1l5_un_salto_en_el_codigo").has_value();
     const auto added=stable_block_position(last,"p1u1l5_escribir_linea_intermedia");
     check(revised==added.has_value(),"A revised U1L5 omitted its new editor or an older edition falsely acquired it");
-    std::set<std::string> distinct_keys;
     std::size_t final_editors=0;
     for(const auto& page:last.pages)for(const auto& block:page.blocks)if(block.type==BlockType::cpp_compiler){
         ++final_editors;++useful;
         check(block.output_check.has_value(),"A final useful U1 compiler lost its objective");
-        check(distinct_keys.insert(exercise_key(last,block)).second,
-            "Two U1L5 compilers share a scored response owner");
+        check(active_response_keys.insert(exercise_key(last,block)).second
+              &&active_draft_keys.insert(draft_key("programming",last,block)).second,
+            "An active U1L5 editor shares an existing response or draft owner");
     }
+    check(active_response_keys.size()==useful&&active_draft_keys.size()==useful,
+        "Useful U1 editors do not have independently addressable achievements and drafts");
     check(final_editors==(revised?3u:2u)&&useful==(revised?9u:8u),
         "Current U1 lost historical useful editors or added an unaccounted compiler");
     if(added){
