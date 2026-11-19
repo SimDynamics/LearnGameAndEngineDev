@@ -2120,6 +2120,13 @@ aciertos de objetivos nuevos. Los demás cursos, preferencias generales,
 proyectos y grabaciones conservan sus ubicaciones. Un audio compatible puede
 reutilizarse sin acreditar la escucha del nuevo curso.
 
+Al comprobar o reiniciar un conjunto de lecciones de la edición activa, el
+catálogo rechaza identidades incompletas y combinaciones de generaciones o
+idiomas distintos del mismo curso. La validación se realiza antes de modificar
+el estado; dos unidades de una misma edición sí pueden comprobarse juntas.
+Los recibos históricos del curso no se borran al reiniciar solamente la nueva
+edición.
+
 ### Descriptor y nombres
 
 El índice de curso, cada índice de unidad activo y cada lección activa llevan

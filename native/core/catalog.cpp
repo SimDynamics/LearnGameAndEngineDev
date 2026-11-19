@@ -1,6 +1,7 @@
 #include "core/catalog.hpp"
 
 #include <algorithm>
+#include <charconv>
 #include <map>
 #include <set>
 #include <stdexcept>
@@ -18,25 +19,41 @@ std::string slug(std::string_view id, std::string_view owner) {
         throw std::invalid_argument("El identificador del catálogo no pertenece a su índice padre.");
     return std::string(id.substr(prefix.size()));
 }
+// A reset scope is generated from one published course index. Reject forged
+// edition names and mixed generations before touching the learner's progress.
+// Match the actual course-edition naming contract, including its bounded
+// generation and single unit slug, not just a familiar-looking prefix.
+std::optional<std::string> edition_unit_epoch(std::string_view unit,std::string_view course) {
+    if(!course_edition_identifier(course,256)||uses_course_edition_namespace(course))
+        return std::nullopt;
+    const auto prefix=std::string(course)+"__edition_";
+    if(!unit.starts_with(prefix))return std::nullopt;
+    auto remainder=unit.substr(prefix.size());
+    if(remainder.size()<4)return std::nullopt;
+    const auto locale=remainder.substr(0,2);
+    if((locale!="es"&&locale!="en"&&locale!="fr")||remainder[2]!='_')
+        return std::nullopt;
+    remainder.remove_prefix(3);
+    const auto split=remainder.find("__");
+    if(split==std::string_view::npos||split==0)return std::nullopt;
+    const auto digits=remainder.substr(0,split);
+    if(digits.front()=='0')return std::nullopt;
+    std::size_t generation=0;
+    const auto [end,error]=std::from_chars(
+        digits.data(),digits.data()+digits.size(),generation);
+    if(error!=std::errc{}||end!=digits.data()+digits.size()||
+       generation==0||generation>1000000)return std::nullopt;
+    const CourseEdition edition{std::string(course),std::string(locale),
+                                "scope-validation",generation};
+    if(!course_edition_unit_id(edition,unit))return std::nullopt;
+    return std::string(locale)+"/"+std::to_string(generation);
+}
+bool edition_unit_of_course(std::string_view unit,std::string_view course) {
+    return edition_unit_epoch(unit,course).has_value();
+}
 // Scoped progress resets may target one lesson, one course or a whole route.
 // Check every explicit parent-child relation before changing any stored key.
-// A malformed mixed-course scope must not erase another course's progress.
-// A new edition has distinct unit and lesson IDs but reuses its catalog course
-// ID. Its historical course-level completion receipt must not be interpreted
-// as a result achieved by the new edition or erased by an edition-only reset.
-bool edition_unit_of_course(std::string_view unit, std::string_view course) {
-    const auto prefix = std::string(course) + "__edition_";
-    if(!unit.starts_with(prefix))return false;
-    auto suffix=unit.substr(prefix.size());
-    if(!(suffix.starts_with("es_")||suffix.starts_with("en_")||suffix.starts_with("fr_")))
-        return false;
-    suffix.remove_prefix(3);
-    const auto delimiter=suffix.find("__");
-    if(delimiter==suffix.npos||delimiter==0||delimiter+2==suffix.size())return false;
-    const auto generation=suffix.substr(0,delimiter);
-    return generation.front()!='0' &&
-        std::ranges::all_of(generation,[](char c){return c>='0'&&c<='9';});
-}
+// A malformed mixed-course or cross-edition scope must not erase old progress.
 void validate_reset_scope(const CatalogScope& scope) {
     const auto unique_safe = [](const std::vector<std::string>& ids) {
         std::set<std::string_view> seen;
@@ -48,6 +65,38 @@ void validate_reset_scope(const CatalogScope& scope) {
     unique_safe(scope.courses);
     unique_safe(scope.units);
     unique_safe(scope.lessons);
+    std::map<std::string_view,std::string> selected_epochs;
+    const auto require_epoch=[&](std::string_view course,
+                                 const std::optional<std::string>& epoch) {
+        if(!epoch)throw std::invalid_argument(
+            "Una identidad de edición del reinicio es inválida.");
+        const auto [entry,inserted]=selected_epochs.emplace(course,*epoch);
+        if(!inserted&&entry->second!=*epoch)
+            throw std::invalid_argument(
+                "Un reinicio no puede mezclar generaciones o idiomas de una misma edición.");
+    };
+    for(const auto& unit:scope.units) {
+        const auto position=unit.find("__edition_");
+        if(position==std::string::npos)continue;
+        const auto course=std::string_view(unit).substr(0,position);
+        require_epoch(course,edition_unit_epoch(unit,course));
+    }
+    for(const auto& lesson:scope.lessons) {
+        const auto position=lesson.find("__edition_");
+        if(position==std::string::npos)continue;
+        const auto course=std::string_view(lesson).substr(0,position);
+        const auto boundary=lesson.rfind("__");
+        if(boundary==std::string::npos||
+           !course_edition_slug(std::string_view(lesson).substr(boundary+2)))
+            throw std::invalid_argument(
+                "Una lección de edición tiene un identificador inválido.");
+        const auto unit=std::string_view(lesson).substr(0,boundary);
+        require_epoch(course,edition_unit_epoch(unit,course));
+        if(!scope.units.empty()&&
+           std::ranges::find(scope.units,unit)==scope.units.end())
+            throw std::invalid_argument(
+                "Una lección de edición no pertenece a la unidad seleccionada.");
+    }
     const auto belongs_to = [](std::string_view id,
                                const std::vector<std::string>& parents) {
         return std::ranges::any_of(parents, [&](const std::string& parent) {

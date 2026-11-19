@@ -288,6 +288,73 @@ void malformed_or_cross_course_scope_is_atomic() {
 }
 
 
+
+void malformed_or_cross_edition_scope_is_atomic() {
+    const std::string course="cpp_fundamentals";
+    const std::string first_unit=course+"__edition_es_1__inicio";
+    const std::string first_lesson=first_unit+"__primera";
+    const CatalogScope original_scope{{course},{first_unit},{first_lesson}};
+
+    const std::vector<std::string> invalid_units{
+        course+"__edition_es_0__otra",
+        course+"__edition_es_01__otra",
+        course+"__edition_es_1000001__otra",
+        course+"__edition_de_1__otra",
+        course+"__edition_es_1__otra__subunidad",
+        course+"__edition_es_1__",
+        course+"__edition_es_1__otra_",
+        course+"__edition_es_2__otra",
+        course+"__edition_fr_1__otra"
+    };
+    for(const auto& invalid:invalid_units) {
+        Fixture fixture;
+        auto scope=original_scope;
+        scope.units.push_back(invalid);
+        const auto prior=lgaed::state::encode(fixture.state);
+        bool reset_rejected=false,progress_rejected=false;
+        try {(void)reset_catalog_progress(fixture.state,scope);}
+        catch(const std::invalid_argument&) {reset_rejected=true;}
+        try {(void)lgaed::curriculum::catalog_progress(fixture.state,scope);}
+        catch(const std::invalid_argument&) {progress_rejected=true;}
+        check(reset_rejected&&progress_rejected&&
+              lgaed::state::encode(fixture.state)==prior,
+              "A malformed or cross-generation unit altered historical progress");
+    }
+    for(const auto& invalid_lesson:{
+            course+"__edition_es_1__inicio__primera__anexo",
+            course+"__edition_es_1__inicio__",
+            course+"__edition_es_2__inicio__primera"}) {
+        Fixture fixture;
+        auto scope=original_scope;
+        scope.lessons.push_back(invalid_lesson);
+        const auto prior=lgaed::state::encode(fixture.state);
+        bool rejected=false;
+        try {(void)reset_catalog_progress(fixture.state,scope);}
+        catch(const std::invalid_argument&) {rejected=true;}
+        check(rejected&&lgaed::state::encode(fixture.state)==prior,
+              "An invalid edition lesson was permitted to erase saved receipts");
+    }
+
+    // More than one unit is legal when both belong to the SAME active
+    // generation. Their new successes may be reset, not the legacy course.
+    Fixture fixture;
+    const auto next_unit=course+"__edition_es_1__siguiente";
+    const auto next_lesson=next_unit+"__primera";
+    auto valid=original_scope;
+    valid.units.push_back(next_unit);
+    valid.lessons.push_back(next_lesson);
+    auto& progress=fixture.state.preferences["learning_progress"];
+    progress["lesson_"+first_lesson+"_completed"]=true;
+    progress["lesson_"+next_lesson+"_completed"]=true;
+    check(lgaed::curriculum::catalog_progress(fixture.state,valid).completed==2,
+          "Two valid units of the same edition did not retain their own progress");
+    check(reset_catalog_progress(fixture.state,valid)==2&&
+          !progress.contains("lesson_"+first_lesson+"_completed")&&
+          !progress.contains("lesson_"+next_lesson+"_completed")&&
+          progress.contains("course_cpp_fundamentals_completed"),
+          "An edition-only reset deleted the historic course or retained new answers");
+}
+
 void malformed_progress_scopes_never_count_an_edition_twice() {
     using namespace lgaed::curriculum;
     const auto first=std::string{"cpp_fundamentals__edition_es_1__inicio__primera"};
@@ -495,6 +562,7 @@ int main() {
         retired_catalog_location_recovers_nearest_published_parent();
         catalog_unit_selection_is_scoped_to_published_edition();
         catalog_entry_identity_survives_reordering_and_retirement();
+        malformed_or_cross_edition_scope_is_atomic();
         malformed_progress_scopes_never_count_an_edition_twice();
         new_edition_page_progress_uses_only_its_own_reading_and_answers();
         new_edition_progress_and_reset_preserve_retired_course();
