@@ -223,6 +223,65 @@ class SourceFormatU4L7(unittest.TestCase):
         state.validate_transition(self.formatted, revised)
         self.assert_sources_and_history(revised)
 
+    def test_current_relocated_owners_accept_another_lexical_reflow(self):
+        """Format the *current* enlarged lesson without moving owners back.
+
+        Unlike the original six-format publication, this transition must
+        retain all intervening text, retirement and editorial history.
+        Both fewer and more empty physical lines are legitimate when the
+        lexer proves the C++ or CMake token sequence is unchanged.
+        """
+        all_blocks, positions = self.owners(self.doc)
+        old_archives = deepcopy(self.doc["stateLayout"]["sourceFormatRevisions"])
+        old_proofs = deepcopy(self.doc["stateLayout"]["editorial"])
+        for owner, field in ((COMPILER, "initialCode"), (CMAKE, "code")):
+            with self.subTest(owner=owner):
+                proposal = deepcopy(self.doc)
+                blocks, projected_positions = self.owners(proposal)
+                self.assertEqual(positions[owner], projected_positions[owner])
+                original = all_blocks[owner]
+                candidate = blocks[owner]
+                self.assertIn(field, candidate)
+                before_text = original[field]
+                self.assertIn("\n", before_text)
+                # Take away one superfluous blank line when present, or add
+                # a separation at an existing line break, never alter tokens.
+                if "\n\n" in before_text:
+                    after_text = before_text.replace("\n\n", "\n", 1)
+                else:
+                    after_text = before_text.replace("\n", "\n\n", 1)
+                self.assertNotEqual(before_text, after_text)
+                candidate[field] = after_text
+                if candidate["type"] == "cpp_compiler":
+                    linked = [file for file in candidate.get("projectFiles", [])
+                              if file["initialCode"] == before_text]
+                    for file in linked:
+                        file["initialCode"] = after_text
+                self.assertTrue(source_format.require_source_lexical(original, candidate))
+                revised = self.publish(self.doc, proposal)
+                self.assertEqual(state.validate(self.doc), state.validate(revised))
+                state.validate_transition(self.doc, revised)
+                self.assert_sources_and_history(revised)
+                self.assertEqual(revised["stateLayout"]["sourceFormatRevisions"], old_archives)
+                self.assertEqual(revised["stateLayout"]["editorial"][:len(old_proofs)],
+                                 old_proofs)
+                self.assertEqual(revised["stateLayout"]["origin"],
+                                 self.doc["stateLayout"]["origin"])
+                self.assertEqual(revised["stateLayout"]["current"],
+                                 self.doc["stateLayout"]["current"])
+                self.assertEqual(revised["stateLayout"]["family"],
+                                 self.doc["stateLayout"]["family"])
+                self.assertEqual(revised["stateLayout"].get("retirementHistory", []),
+                                 self.doc["stateLayout"].get("retirementHistory", []))
+                self.assertEqual(
+                    self.owners(revised)[0][owner][field], after_text)
+                for key in ("outputCheck", "sourceFiles", "projectFiles", "cmake"):
+                    if key == "projectFiles":
+                        # The original source file itself may be reformatted,
+                        # but not its paths, source selection or objective.
+                        continue
+                    self.assertEqual(original.get(key), self.owners(revised)[0][owner].get(key))
+
     def test_logic_change_is_rejected_with_generated_editorial_proof(self):
         proposal = deepcopy(self.doc)
         blocks, _ = self.owners(proposal)

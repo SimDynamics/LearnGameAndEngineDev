@@ -1,0 +1,32 @@
+name: Codex AssetCheck U4L7 authentic format and history
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-assetcheck-u4l7-format.yml
+      - scripts/curriculum/test_assetcheck_u4l7_source_format.py
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/code_format_compat.py
+      - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_disenar_probar_y_presentar_variante_propia.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-assetcheck-history:
+    name: Real owners, archived formats and current lesson (Python)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Read full published history in exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test all pinned publications, real current owners and rejected mutations
+        run: >
+          python3 -B -m unittest discover
+          -s scripts/curriculum
+          -p test_assetcheck_u4l7_source_format.py -v
