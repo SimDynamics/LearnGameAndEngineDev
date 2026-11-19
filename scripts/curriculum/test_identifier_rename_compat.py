@@ -145,7 +145,8 @@ class DeclaredIdentifierRenames(unittest.TestCase):
                 {"initialCode": {"maxima": 1}})
 
     def test_unsafe_new_name_or_existing_name_collision_is_rejected(self):
-        for bad in ("new", "__internal", "1digit", "maxima"):
+        for bad in ("new", "__internal", "1digit", "maxima",
+                    "module", "import", "final", "override"):
             with self.subTest(replacement=bad):
                 with self.assertRaises(renaming.IdentifierRenameError):
                     self.verify(
@@ -158,6 +159,54 @@ class DeclaredIdentifierRenames(unittest.TestCase):
                 proposal(), {"initialCode": {"maxima": "label"},
                              "projectFiles/0/initialCode": RENAMES["projectFiles/0/initialCode"]},
                 COUNTS)
+
+
+
+    def test_macro_in_an_unchanged_project_file_blocks_a_rename(self):
+        for defined_name in ("maxima", "frecuencia_maxima_encontrada"):
+            with self.subTest(preprocessor=defined_name):
+                original = deepcopy(ORIGINAL)
+                original["projectFiles"][0]["initialCode"] = (
+                    "#define " + defined_name + " 7\n"
+                    + original["projectFiles"][0]["initialCode"]
+                )
+                revised = deepcopy(original)
+                revised["initialCode"] = proposal()["initialCode"]
+                with self.assertRaisesRegex(
+                    renaming.IdentifierRenameError, "Preprocessor directive"):
+                    renaming.require_declared_cpp_renames(
+                        original, revised, {"initialCode": RENAMES["initialCode"]},
+                        {"initialCode": COUNTS["initialCode"]})
+
+    def test_destination_collision_in_another_source_even_when_it_is_edited(self):
+        for also_renamed in (False, True):
+            with self.subTest(second_source_changed=also_renamed):
+                original = deepcopy(ORIGINAL)
+                original["projectFiles"][0]["initialCode"] = (
+                    "int frecuencia_maxima_encontrada = 1;\n"
+                    + original["projectFiles"][0]["initialCode"]
+                )
+                revised = deepcopy(original)
+                revised["initialCode"] = proposal()["initialCode"]
+                names = {"initialCode": RENAMES["initialCode"]}
+                counts = {"initialCode": COUNTS["initialCode"]}
+                if also_renamed:
+                    revised["projectFiles"][0]["initialCode"] = (
+                        original["projectFiles"][0]["initialCode"].replace(
+                            "mayores", "valores_mas_frecuentes"))
+                    names["projectFiles/0/initialCode"] = RENAMES["projectFiles/0/initialCode"]
+                    counts["projectFiles/0/initialCode"] = COUNTS["projectFiles/0/initialCode"]
+                with self.assertRaisesRegex(
+                    renaming.IdentifierRenameError, "destination already exists"):
+                    renaming.require_declared_cpp_renames(original, revised, names, counts)
+
+    def test_malformed_names_fail_closed_before_scanning_directives(self):
+        for invalid in (None, 12, [], {"maxima": 12}, {12: "variable"}):
+            with self.subTest(invalid=invalid):
+                names = deepcopy(RENAMES)
+                names["initialCode"] = invalid
+                with self.assertRaises(renaming.IdentifierRenameError):
+                    self.verify(proposal(), names, COUNTS)
 
 
 if __name__ == "__main__":
