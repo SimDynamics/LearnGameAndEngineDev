@@ -109,6 +109,12 @@ void validate_simulation_spec(const SimulationSpec& spec);
 // Windows editor presentation; the legacy lines parser remains available.
 [[nodiscard]] bool simulation_prefer_quoted_text_input(
     const std::vector<SimulationValue>& values);
+// Prepare one empty STRING element in an editable text draft, without
+// applying it to the current trace. The result is always a reversible JSON
+// text-list. Invalid drafts, numeric or read-only models, the 64-item limit
+// and excessive trace expansion are rejected before changing the editor.
+[[nodiscard]] std::string simulation_append_empty_text_draft(
+    const SimulationSession& session, std::string_view input, SimulationInputFormat format);
 // Derived explanations for a counted element. Computed only from a validated
 // start/advance frame, its already-observed predecessor and original indices.
 // Decision/initial/final frames yield no count statements. This is shared by

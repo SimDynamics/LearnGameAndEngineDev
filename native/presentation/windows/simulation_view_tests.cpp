@@ -26,7 +26,7 @@ constexpr int scenario_id=103,array_label_id=104,array_id=105,step_id=106,explan
     input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
     previous_decision_id=124,next_decision_id=125,result_comparison_id=126,
     frequencies_id=127,frequencies_label_id=128,frequency_filter_id=129,
-    progress_label_id=130,progress_id=131,group_first_id=200;
+    progress_label_id=130,progress_id=131,add_empty_id=132,group_first_id=200;
 std::filesystem::path failure_captures;
 void capture(HWND window,const std::filesystem::path& path);
 void fitted_text(SimulationView& view);
@@ -5342,6 +5342,50 @@ void input_format_conversion_reports_unrecoverable_draft(HWND host) {
         "Manual draft recovery did not allow the next format conversion");
 }
 
+void explicit_blank_label_button_prepares_but_does_not_apply(HWND host) {
+    auto spec=fixture(SimulationViewMode::walkthrough);
+    spec.text_values=true;spec.sort=false;spec.scenarios.clear();
+    spec.values={std::string("patio"),std::string("sol")};
+    const auto published=spec;
+    SimulationView view(host,spec,"es");resize(view,820);
+    const auto editor=GetDlgItem(view.window(),input_id);
+    const auto format=GetDlgItem(view.window(),input_format_id);
+    const auto insert=GetDlgItem(view.window(),add_empty_id);
+    check(insert&&control_shown(insert)&&
+          text(view,input_id)=="patio\nsol"&&
+          SendMessageW(format,CB_GETCURSEL,0,0)==0,
+        "The empty-label action is missing from a normal text editor");
+    check(view.go_to_step(2),"The old traversal cannot be inspected");
+    const auto prior_step=view.step_index(),prior_count=view.step_count();
+    const auto prior_output=text(view,output_id);
+    click(view,add_empty_id);
+    check(text(view,input_id)=="[\"\", \"patio\", \"sol\"]"&&
+          SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+          text(view,error_id).empty()&&
+          view.step_index()==prior_step&&view.step_count()==prior_count&&
+          text(view,output_id)==prior_output,
+        "Preparing an empty label unexpectedly applied data or changed traversal");
+    click(view,apply_id);
+    check(view.step_index()==0&&view.step_count()>prior_count&&
+          text(view,error_id).empty(),
+        "Explicitly applying a prepared empty label did not create its own trace");
+    const auto current_count=view.step_count();
+    set_edit_text(editor,"[\"\",]");
+    click(view,add_empty_id);
+    check(text(view,input_id)=="[\"\",]"&&
+          SendMessageW(format,CB_GETCURSEL,0,0)==1&&
+          !text(view,error_id).empty()&&view.step_count()==current_count,
+        "A rejected empty-label insertion erased invalid input or replaced the trace");
+    click(view,restore_id);
+    check(view.step_index()==0&&text(view,input_id)=="patio\nsol"&&
+          SendMessageW(format,CB_GETCURSEL,0,0)==0&&spec==published,
+        "Restoring after a blank-label edit corrupted the original authored data");
+    auto numbers=fixture(SimulationViewMode::walkthrough);
+    SimulationView numeric(host,numbers,"es");resize(numeric,820);
+    check(!control_shown(GetDlgItem(numeric.window(),add_empty_id)),
+        "A numeric editor exposed the text-only insertion action");
+}
+
 void empty_text_values(HWND host,const std::filesystem::path& captures) {
     const std::string empty_label="\"\" (cadena vacía)",space_label="\" \" (1 espacio)";
     const auto select=[](SimulationView& view,int id,int index) {
@@ -6911,6 +6955,8 @@ int main(int argc,char** argv)try {
     run("input_format_callback_failure_keeps_converted_draft",[&]{input_format_callback_failure_keeps_converted_draft(host.value);});
     run("input_format_conversion_reports_unrecoverable_draft",[&]{input_format_conversion_reports_unrecoverable_draft(host.value);});
     run("empty_text_values",[&]{empty_text_values(host.value,captures);});
+    run("explicit_blank_label_button_prepares_but_does_not_apply",[&]{
+        explicit_blank_label_button_prepares_but_does_not_apply(host.value);});
     run("interactive_simulation_feedback_narration_ids",[&]{interactive_simulation_feedback_narration_ids(host.value);});
     run("editable_input_keyboard_focus",[&]{editable_input_keyboard_focus(host.value);});
     run("scale_limits_and_local_control_wheel",[&]{scale_limits_and_local_control_wheel(host.value);});

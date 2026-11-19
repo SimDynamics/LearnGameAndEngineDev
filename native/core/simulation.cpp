@@ -616,6 +616,22 @@ bool simulation_prefer_quoted_text_input(
     return false;
 }
 
+std::string simulation_append_empty_text_draft(
+        const SimulationSession& session, std::string_view input, SimulationInputFormat format) {
+    const auto& spec=session.specification();
+    require(spec.editable&&spec.text_values,
+        "Agregar una cadena vacía requiere una simulación de textos editable.");
+    auto values=session.parse_values(input,format);
+    require(values.size()<item_limit,
+        "La simulación admite como máximo 64 valores; no se añadió una cadena vacía.");
+    // An authored preordered array must stay sorted. The empty string is
+    // less than every nonempty UTF-8 string; other models keep draft order.
+    if(spec.sort)values.emplace_back(std::string{});
+    else values.insert(values.begin(),SimulationValue{std::string{}});
+    (void)session.build_trace(values);
+    return simulation_input_text(values,SimulationInputFormat::json);
+}
+
 std::vector<std::string> simulation_count_observation_changes(
         const SimulationTrace& trace, const SimulationFrame& frame) {
     if (frame.phase != SimulationPhase::start &&

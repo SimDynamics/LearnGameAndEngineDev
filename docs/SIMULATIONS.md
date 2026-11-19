@@ -277,6 +277,18 @@ Si incluso la restauración nativa falla, el motor no afirma que el borrador
 haya quedado intacto: muestra un aviso accesible para que se revise el texto
 visible y se vuelva a introducir lo necesario antes de aplicarlo.
 
+**Añadir cadena vacía** está disponible únicamente en las simulaciones de
+texto editables. Convierte primero un borrador válido a **Lista entre comillas**
+y añade un elemento `""` inequívoco; cuando `sort: false` exige datos
+ordenados, inserta la cadena vacía al principio. Si la entrada era inválida,
+ya contenía 64 valores o el recorrido resultante supera su límite, conserva
+el borrador, el formato, el recorrido y muestra el diagnóstico. La inserción
+no aplica datos automáticamente, no altera un escenario ni consume un
+intento: se confirma después con el botón habitual. La prueba portátil
+`explicit_blank_text_button_preserves_draft_data` verifica el contrato;
+la prueba Win32 `explicit_blank_label_button_prepares_but_does_not_apply`
+comprueba el botón y su interacción con RichEdit.
+
 **Aplicar datos** inicia el recorrido con la entrada revisada. Al abrir una
 simulación, seleccionar un escenario o restablecer sus datos, el editor elige
 **Lista entre comillas** cuando existe una cadena vacía, una cadena formada

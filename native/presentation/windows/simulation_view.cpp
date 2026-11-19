@@ -32,7 +32,7 @@ constexpr int title_id=100,description_id=101,scenario_label_id=102,scenario_id=
     groups_label_id=119,input_format_id=120,step_selector_id=121,original_order_id=122,transition_id=123,
     previous_decision_id=124,next_decision_id=125,result_comparison_id=126,
     frequencies_id=127,frequencies_label_id=128,frequency_filter_id=129,
-    progress_label_id=130,progress_id=131,group_first_id=200;
+    progress_label_id=130,progress_id=131,add_empty_id=132,group_first_id=200;
 // A child with a real scrollbar consumes a wheel gesture only while it can
 // move in that direction. At either edge the lesson must continue scrolling.
 int vertical_scroll_end(HWND child,const SCROLLINFO& range) {
@@ -671,6 +671,7 @@ struct SimulationView::Impl {
             throw std::runtime_error("RichEdit rechazó la escala inicial de los datos.");
         SendMessageW(editor,EM_EXLIMITTEXT,0,65536);
         button(apply_id,"Aplicar datos");button(restore_id,"Restablecer datos");
+        button(add_empty_id,"Añadir cadena vacía");
         if(spec.text_values&&simulation_prefer_quoted_text_input(trace.original))
             input_format=SimulationInputFormat::json;
         set_edit_text(editor,simulation_input_text(trace.original,input_format));
@@ -1035,7 +1036,7 @@ struct SimulationView::Impl {
         const auto input_help=!spec.text_values?std::string("Datos editables: un entero por línea."):
             input_format==SimulationInputFormat::json?
                 std::string(R"(Datos editables: una lista de textos entre comillas. Ejemplo: ["", "patio", " "]. [] no contiene elementos; "" es una cadena vacía y " " contiene un espacio.)"):
-                std::string("Datos editables: un texto por línea; los espacios se conservan. Un campo vacío no contiene elementos. Para introducir una cadena vacía, elige Lista entre comillas.");
+                std::string("Datos editables: un texto por línea; los espacios se conservan. Un campo vacío no contiene elementos. Para agregar una cadena vacía, pulsa Añadir cadena vacía o elige Lista entre comillas.");
         set_label(input_label_id,input_help);accessible(item(input_id),input_help);
         SendMessageW(item(input_format_id),CB_SETCURSEL,input_format==SimulationInputFormat::json?1:0,0);
         // A successfully rendered warning must have the same native
@@ -1531,8 +1532,8 @@ struct SimulationView::Impl {
             }
         }
     }
-    void change_input_format(SimulationInputFormat requested) {
-        if(requested==input_format)return;
+    void change_input_format(SimulationInputFormat requested,bool add_empty=false) {
+        if(requested==input_format&&!add_empty)return;
         ++interaction_epoch;
         // A format change edits only a pending draft. The applied simulation
         // trace, traversal step and previous reading sessions never change.
@@ -1545,8 +1546,9 @@ struct SimulationView::Impl {
         std::optional<std::string> previous_text;
         try {
             previous_text=edit_text(editor);
-            const auto values=model.parse_values(*previous_text,previous_format);
-            const auto converted=simulation_input_text(values,requested);
+            const auto converted=add_empty?
+                simulation_append_empty_text_draft(model,*previous_text,previous_format):
+                simulation_input_text(model.parse_values(*previous_text,previous_format),requested);
             set_edit_text(editor,converted);
             // EM_STREAMIN is allowed to report zero dwError even when the
             // control has not accepted the requested document.
@@ -1560,6 +1562,8 @@ struct SimulationView::Impl {
             update();
         }catch(const std::exception& failure){
             const auto reason=std::string(failure.what());
+            const std::string prefix=add_empty?
+                "No se añadió una cadena vacía; ":"No se cambió el formato; ";
             input_format=previous_format;input_wheel_delta=previous_wheel;
             navigation_error=previous_navigation;
             previous_navigation_error=previous_navigation_previous;
@@ -1574,13 +1578,12 @@ struct SimulationView::Impl {
             // A native control can reject all recovery routes. Do not tell
             // the learner that the draft was preserved without evidence.
             if(!previous_text)
-                error="No se cambió el formato; no fue posible leer el borrador. "+
-                    reason;
+                error=prefix+"no fue posible leer el borrador. "+reason;
             else if(!restored)
-                error="No se cambió el formato; no se pudo restaurar el borrador anterior. "+
+                error=prefix+"no se pudo restaurar el borrador anterior. "+
                     std::string("Revisa el texto visible antes de aplicar datos. ")+reason;
             else
-                error="No se cambió el formato; se conservaron los datos escritos. "+reason;
+                error=prefix+"se conservaron los datos escritos. "+reason;
             // Failure reporting is itself a native presentation operation.
             // If RichEdit rejects both the conversion and the following
             // error redraw, retain the original conversion failure and
@@ -1891,7 +1894,9 @@ struct SimulationView::Impl {
         const bool text_format=spec.editable&&spec.text_values;
         place(input_format_id,margin,top,available,sp(150),text_format);if(text_format)top+=sp(38)+px(8);
         place(input_id,margin,top,available,sp(116),spec.editable);if(spec.editable)top+=sp(116)+px(8);
-        buttons({apply_id,restore_id},spec.editable);text_row(error_id,!error.empty());
+        if(spec.text_values)buttons({apply_id,restore_id,add_empty_id},spec.editable);
+        else {buttons({apply_id,restore_id},spec.editable);place(add_empty_id,0,0,1,1,false);}
+        text_row(error_id,!error.empty());
         height=top+px(8);layout_valid=move;return height;
     }
     int measured_height(int requested) {
@@ -2173,6 +2178,8 @@ struct SimulationView::Impl {
         else if(id==previous_decision_id){if(const auto target=previous_decision())go(*target,true);}
         else if(id==next_decision_id){if(const auto target=next_decision())go(*target,true);}
         else if(id==apply_id&&spec.editable)apply_input();
+        else if(id==add_empty_id&&spec.editable&&spec.text_values)
+            change_input_format(SimulationInputFormat::json,true);
         else if(id==restore_id&&spec.editable)replace_data(original_data(),true);
         else if(id>=group_first_id&&static_cast<std::size_t>(id-group_first_id)<group_buttons.size())go(id-group_first_id);
         return 0;

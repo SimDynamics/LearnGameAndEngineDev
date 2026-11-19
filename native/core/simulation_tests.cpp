@@ -734,6 +734,63 @@ void empty_text_values_and_labels() {
 
 
 
+void explicit_blank_text_button_preserves_draft_data() {
+    auto authored=example();
+    authored.text_values=true;authored.editable=true;authored.scenarios.clear();
+    authored.values=words({"patio","sol"});
+    const auto original=authored;
+    SimulationSession session(authored);
+    const auto draft=simulation_append_empty_text_draft(
+        session,"patio\nsol",SimulationInputFormat::lines);
+    check(session.parse_values(draft,SimulationInputFormat::json)==
+          words({"patio","sol",""}) &&
+          simulation_prefer_quoted_text_input(
+              session.parse_values(draft,SimulationInputFormat::json)),
+        "A blank-label edit was not a visible, reversible third text value");
+    const auto one=simulation_append_empty_text_draft(
+        session,"[]",SimulationInputFormat::json);
+    check(one=="[\"\"]"&&session.parse_values(one,SimulationInputFormat::json)==
+          words({""}),"A blank value was mistaken for an empty array");
+    const auto repeated=simulation_append_empty_text_draft(
+        session,one,SimulationInputFormat::json);
+    const auto trace=session.parse_trace(repeated,SimulationInputFormat::json);
+    check(trace.groups.size()==1&&trace.frames.back().maximum==2&&
+          trace.frames.back().leaders==words({""}),
+        "Repeated empty labels did not retain their frequency and identity");
+    auto ordered=authored;ordered.sort=false;
+    SimulationSession preordered(ordered);
+    const auto sorted=simulation_append_empty_text_draft(
+        preordered,"patio\nsol",SimulationInputFormat::lines);
+    check(preordered.parse_values(sorted,SimulationInputFormat::json)==
+          words({"","patio","sol"}),
+        "Inserting an empty label violated the authored ascending-order contract");
+    auto many=authored;many.values=words({"patio"});
+    SimulationSession bounded(many);
+    std::string list;
+    for(int i=0;i<64;++i){if(i)list+=',';list+="\"x\"";}
+    list="["+list+"]";
+    rejected([&]{(void)simulation_append_empty_text_draft(
+        bounded,list,SimulationInputFormat::json);},
+        "A sixty-fifth text value was appended to a valid draft");
+    for(const auto bad:{"[\"\",]","[false]","[1]","[\"a\",\"a\"] trailing"}) {
+        rejected([&]{(void)simulation_append_empty_text_draft(
+            session,bad,SimulationInputFormat::json);},
+            "An invalid draft was silently rewritten when inserting an empty label");
+    }
+    auto numeric=example();numeric.editable=true;
+    SimulationSession number_session(numeric);
+    rejected([&]{(void)simulation_append_empty_text_draft(
+        number_session,"1",SimulationInputFormat::lines);},
+        "A numeric simulation offered a string-valued insertion");
+    auto locked=authored;locked.editable=false;
+    SimulationSession read_only(locked);
+    rejected([&]{(void)simulation_append_empty_text_draft(
+        read_only,"patio",SimulationInputFormat::lines);},
+        "A read-only simulation allowed an editable blank-text insertion");
+    check(session.specification()==original&&authored==original,
+        "Preparing a blank label altered published authoring or session data");
+}
+
 void explicit_text_input_presentation_is_lossless() {
     // These are presentation defaults, not a change to accepted input. Data
     // requiring visible escapes must be initially offered in the JSON list,
@@ -1420,6 +1477,7 @@ int main() {
         unicode_invisible_labels_remain_distinct_and_reversible();
         all_unicode_variation_selectors_and_tags_round_trip();
         explicit_text_input_presentation_is_lossless();
+        explicit_blank_text_button_preserves_draft_data();
         explicit_text_list_input();
         contract_rejections();
         expansion_bounds_and_modes();
