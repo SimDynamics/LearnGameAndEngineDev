@@ -213,6 +213,24 @@ class DeclaredIdentifierRenames(unittest.TestCase):
 
 
 
+    def test_distinct_project_sources_cannot_merge_at_one_new_identifier(self):
+        original = deepcopy(ORIGINAL)
+        revised = proposal()
+        merged = "identificador_fusionado"
+        revised["initialCode"] = revised["initialCode"].replace(
+            "frecuencia_maxima_encontrada", merged)
+        revised["projectFiles"][0]["initialCode"] = (
+            revised["projectFiles"][0]["initialCode"].replace(
+                "valores_mas_frecuentes", merged))
+        with self.assertRaisesRegex(
+                renaming.IdentifierRenameError,
+                "reuse a C\\+\\+ destination across slots"):
+            renaming.require_declared_cpp_renames(
+                original, revised,
+                {"initialCode": {"maxima": merged},
+                 "projectFiles/0/initialCode": {"mayores": merged}},
+                COUNTS)
+
     def test_real_frequency_lesson_covers_examples_editors_and_predictions(self):
         # Author proposals only in memory, from the real immutable published
         # owners in P1 U5L13. Work alone can edit this curricular JSON.
