@@ -234,9 +234,9 @@ class DeclaredIdentifierRenames(unittest.TestCase):
     def test_same_original_identifier_can_be_renamed_in_several_sources(self):
         original = deepcopy(ORIGINAL)
         original["projectFiles"][0]["initialCode"] = (
-            "int cuenta(int maxima) {\\n"
-            "    return maxima;\\n"
-            "}\\n"
+            "int cuenta(int maxima) {\n"
+            "    return maxima;\n"
+            "}\n"
         )
         revised = deepcopy(original)
         revised["initialCode"] = proposal()["initialCode"]
