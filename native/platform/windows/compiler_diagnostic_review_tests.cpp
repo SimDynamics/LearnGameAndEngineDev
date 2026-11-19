@@ -107,6 +107,65 @@ void check_sequence(state::StateStore& store,const Lesson& lesson,const Block& b
     require(compiler_puzzle_review(data,lesson,block,accepted).empty()&&compiler_puzzle_completed(data,lesson,block),
         "A tampered review phase was trusted or damaged the original achievement");
 }
+
+void malformed_diagnostic_receipts_preserve_review() {
+    // Synthetic Win32 diagnostic captures. No MSVC process or user profile
+    // is involved; the test exercises native execution-proof persistence.
+    const auto lesson=single_lesson();
+    const auto& block=editor(lesson,"block_0006_0006");
+    const auto accepted=single_request(block,false);
+    const auto correct=single_request(block,true);
+    const auto correct_result=correct_capture(correct);
+    const auto rejected_result=accepted_capture(accepted);
+    state::StateData data;
+    seed_independent_state(data);
+    require(record_compiler_diagnostic_case(data,lesson,block,correct,correct_result,
+        "Correcto\nOriginal diagnostic QA"),
+        "Cannot seed the original successful diagnostic receipt");
+    require(record_compiler_diagnostic_review(data,lesson,block,accepted,rejected_result,
+        "Incorrecto\nQA rejected candidate"),
+        "Cannot seed a subsequent rejected diagnostic attempt");
+    const auto base="compiler-puzzle/v1/"+lesson.locale+'/'+lesson.id+'/'+
+        exercise_key(lesson,block)+'/'+state::sha256(reference_objective_frame(lesson,block))+'/';
+    const auto latest_review=base+"review/feedback";
+    require(state::find(data,"native_windows",latest_review)!=nullptr &&
+        compiler_puzzle_completed(data,lesson,block),
+        "The test fixture lost the last rejected review or historical achievement");
+    const auto healthy=data;
+    for(const std::string_view field:{"cases","program","completed","feedback"}) {
+        auto invalid=healthy;
+        const auto key=base+std::string(field);
+        require(state::find(invalid,"native_windows",key)!=nullptr,
+            "The diagnostic receipt field under test was not saved");
+        invalid.preferences["native_windows"][key]=std::int64_t{42};
+        const auto before=invalid;
+        bool rejected_correct=false;
+        try {
+            (void)record_compiler_diagnostic_case(invalid,lesson,block,correct,correct_result,
+                "Correcto\nRepeat diagnostic QA");
+        }catch(const std::exception&){rejected_correct=true;}
+        require(rejected_correct && invalid==before &&
+            state::find(invalid,"native_windows",latest_review)!=nullptr,
+            "Corrupt diagnostic receipts erased the latest rejected attempt");
+        if(field!="feedback") {
+            auto changed=accepted;changed.stdin_utf8="different unsubmitted QA input";
+            bool rejected_edit=false;
+            try {
+                invalidate_compiler_puzzle_attempt(invalid,lesson,block,changed);
+            }catch(const std::exception&){rejected_edit=true;}
+            require(rejected_edit && invalid==before,
+                "Editing after a corrupt diagnostic receipt partially changed saved feedback");
+        }
+    }
+    auto restored=healthy;
+    require(record_compiler_diagnostic_case(restored,lesson,block,correct,correct_result,
+        "Correcto\nValid later diagnostic QA") &&
+        compiler_puzzle_completed(restored,lesson,block) &&
+        !state::find(restored,"native_windows",latest_review),
+        "A valid later diagnostic success did not clear the last rejected review");
+    std::cout<<"PASS diagnostic receipt atomicity: invalid cases, program, completion and feedback "
+        "preserve the last rejected attempt; a valid recheck clears it\n";
+}
 void model_tests(const WindowsEnvironment& environment){
     const auto lesson=single_lesson();const auto& block=editor(lesson,"block_0006_0006");
     const auto correct=single_request(block,true),accepted=single_request(block,false);
@@ -114,6 +173,7 @@ void model_tests(const WindowsEnvironment& environment){
     require(expected_compile_diagnostic(correct,correct_result)&&accepted_compile_diagnostic(accepted,accepted_result),
         "The model phase fixtures do not satisfy the production predicates");
     state::StateStore store(environment.paths.root/L"model");check_sequence(store,lesson,block,correct,correct_result,accepted,accepted_result);
+    malformed_diagnostic_receipts_preserve_review();
     state::StateData untouched;
     const auto reject=[&](const CppRunRequest& request,const CppRunResult& result){auto data=untouched;
         require(!accepted_compile_diagnostic(request,result)&&

@@ -1088,7 +1088,9 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
                 compiler_cmake_initial_observation_prerequisite(data,lesson,block,captured))))))return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
-    clear_compiler_puzzle_review(data,lesson,block);
+    // Validate the saved execution receipt before changing a previous
+    // rejection. A malformed case vector, program or completion type must
+    // not erase that review on the way to throwing an exception.
     const auto key=base(lesson,block),program=compiler_program_frame(captured);
     const bool previously_completed=stdout_or_diagnostic_completed(data,lesson,block);
     auto proofs=case_proofs(data,key);
@@ -1101,7 +1103,12 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
         state::string_value(data,"native_windows",key+"completed")==
             first_case_complete_seal(key,program,proofs);
     if(previously_completed&&!first_only){
-        record_feedback_origin(data,key,block,evaluation.feedback_path,state::string_value(data,"native_windows",key+"feedback"),state::string_value(data,"native_windows",key+"completed"));
+        // A corrupted feedback field must be rejected before the old review
+        // is removed. Rechecking an earned objective never rewrites its seal.
+        const auto old_feedback=state::string_value(data,"native_windows",key+"feedback");
+        const auto old_seal=state::string_value(data,"native_windows",key+"completed");
+        clear_compiler_puzzle_review(data,lesson,block);
+        record_feedback_origin(data,key,block,evaluation.feedback_path,old_feedback,old_seal);
         return true;
     }
     if(stored_program!=program)proofs.clear();
@@ -1115,9 +1122,12 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
                 :item.standard_input==execution.standard_input;
         if(input&&(!item.executable||item.executable==execution.executable))proofs[index]=proof(key,program,index,item);
     }
-    auto& values=data.preferences["native_windows"];values[key+"program"]=program;values[key+"cases"]=proofs;
     const bool all=std::ranges::all_of(proofs,[](const auto& item){return !item.empty();});
     const bool first=!proofs.empty()&&!proofs.front().empty();
+    // All case comparisons and receipt reads have now succeeded. Only then
+    // replace the latest rejected-attempt feedback with the successful run.
+    clear_compiler_puzzle_review(data,lesson,block);
+    auto& values=data.preferences["native_windows"];values[key+"program"]=program;values[key+"cases"]=proofs;
     if(first_only)return true; // Optional cases do not rewrite an earned seal or its feedback.
     if(all||first){
         values[key+"completed"]=all?complete_seal(key,program,proofs):
@@ -1238,13 +1248,21 @@ bool record_compiler_diagnostic_case(state::StateData& data,const curriculum::Le
         const CppRunRequest& captured,const CppRunResult& result,std::string_view feedback) {
     if(!block.compile_check||!captured.diagnostic||!expected_compile_diagnostic(captured,result))return false;
     if(*captured.diagnostic!=prepare_cpp_diagnostic_request(block,captured))return false;
-    clear_compiler_puzzle_review(data,lesson,block);
     const auto key=base(lesson,block),program=compiler_program_frame(captured);
-    if(compiler_puzzle_completed(data,lesson,block)){
-        record_feedback_origin(data,key,block,"/compileCheck/explanation",state::string_value(data,"native_windows",key+"feedback"),state::string_value(data,"native_windows",key+"completed"));
-        return true;
+    // The same ordering applies to intentional compiler diagnostics. Read
+    // all saved receipts before clearing a later rejected-attempt message.
+    const bool previously_completed=compiler_puzzle_completed(data,lesson,block);
+    std::string old_feedback,old_seal;
+    if(previously_completed){
+        old_feedback=state::string_value(data,"native_windows",key+"feedback");
+        old_seal=state::string_value(data,"native_windows",key+"completed");
     }
     const std::vector<std::string> proofs{diagnostic_proof(key,program,block)};
+    clear_compiler_puzzle_review(data,lesson,block);
+    if(previously_completed){
+        record_feedback_origin(data,key,block,"/compileCheck/explanation",old_feedback,old_seal);
+        return true;
+    }
     auto& values=data.preferences["native_windows"];
     values[key+"program"]=program;values[key+"cases"]=proofs;
     values[key+"completed"]=complete_seal(key,program,proofs);values[key+"feedback"]=std::string(feedback);
@@ -1261,9 +1279,13 @@ void invalidate_compiler_puzzle_attempt(state::StateData& data,const curriculum:
     if(!curriculum::has_compiler_objective(block))return;
     // A rejected attempt is specific to stdin and target as well as source.
     // Partial success deliberately remains reusable across authored inputs.
-    if(compiler_puzzle_review(data,lesson,block,current).empty())clear_compiler_puzzle_review(data,lesson,block);
-    if(curriculum::has_compiler_objective(block)&&!stdout_or_diagnostic_completed(data,lesson,block)
-        &&state::string_value(data,"native_windows",base(lesson,block)+"program")!=compiler_program_frame(current)) {
+    // An invalid saved receipt cannot cost the student the last feedback.
+    // Decide both effects before touching any state, including the review.
+    const bool has_current_review=!compiler_puzzle_review(data,lesson,block,current).empty();
+    const bool drop_unearned=!stdout_or_diagnostic_completed(data,lesson,block)
+        &&state::string_value(data,"native_windows",base(lesson,block)+"program")!=compiler_program_frame(current);
+    if(!has_current_review)clear_compiler_puzzle_review(data,lesson,block);
+    if(drop_unearned) {
         // Editing revokes only an incomplete attempt of this exact objective.
         // Older objectives remain historical data when an authored requirement
         // grows (for example, stdout plus a runtime stderr diagnostic).

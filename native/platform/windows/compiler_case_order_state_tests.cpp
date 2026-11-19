@@ -544,6 +544,83 @@ void empty_draft(const Fixture& fixture) {
         && !compiler_puzzle_completed(data, fixture.after, after),
         "A new case order invented an untouched draft or first-case execution");
 }
+
+void malformed_execution_receipt_never_clears_last_review(const Fixture& fixture) {
+    // Authenticated, multi-case curricular owner. Phase captures here are
+    // synthetic and never masquerade as a real MSVC compile/run result.
+    const auto& block=editor(fixture.before,fixture.id);
+    require(block.output_check && block.output_check->cases.size()>1 &&
+        !block.compile_check,
+        "The atomic receipt QA needs a real multi-case output editor");
+    const auto program=personal_program(block,"atomic-qa");
+    auto request=model_request(block,program);
+    request.stdin_utf8=block.output_check->cases.front().standard_input;
+    if(request.cmake && block.output_check->cases.front().executable)
+        request.cmake->target=*block.output_check->cases.front().executable;
+    const auto accepted=model_execution(block,request,0);
+    require(evaluate_cpp_output_check(*block.output_check,accepted,request.revision).verdict==
+        OutputVerdict::correct,
+        "The recorded source is not an authentic first-case QA model");
+
+    auto data=seeded_state(fixture.before,fixture.id);
+    require(record_compiler_puzzle_case(data,fixture.before,block,request,accepted,
+        "Correcto\nInitial QA result"),
+        "Could not establish the original authenticated first-case receipt");
+    auto rejected=accepted;
+    rejected.standard_output="QA: intentionally wrong, not a successful result";
+    require(evaluate_cpp_output_check(*block.output_check,rejected,request.revision).verdict==
+        OutputVerdict::incorrect &&
+        record_compiler_puzzle_review(data,fixture.before,block,request,rejected,
+            "Incorrecto\nLatest evaluated QA attempt"),
+        "Could not establish the latest rejected attempt alongside the achievement");
+    const auto prefix=receipt_base(fixture.before,block);
+    const auto feedback_key=prefix+"review/feedback";
+    require(find(data,"native_windows",feedback_key)!=nullptr &&
+        compiler_puzzle_completed(data,fixture.before,block),
+        "The authentic receipt or the last reviewed attempt was not preserved");
+    const auto valid_state=data;
+
+    // A damaged receipt is not evidence of a failed edit. Neither retrying
+    // a correct run nor visiting an edited draft may erase the last review.
+    for(const std::string_view field:{"cases","program","completed","feedback"}) {
+        auto corrupt=valid_state;
+        const auto key=prefix+std::string(field);
+        require(find(corrupt,"native_windows",key)!=nullptr,
+            "The expected original receipt field is not stored");
+        corrupt.preferences["native_windows"][key]=std::int64_t{42};
+        const auto before=corrupt;
+        auto candidate=request;
+        if(field=="feedback") {
+            candidate=model_request(block,personal_program(block,"alternate-program"));
+            candidate.stdin_utf8=request.stdin_utf8;
+            if(candidate.cmake && block.output_check->cases.front().executable)
+                candidate.cmake->target=*block.output_check->cases.front().executable;
+        }
+        const auto result=model_execution(block,candidate,0);
+        rejects([&] {
+            (void)record_compiler_puzzle_case(corrupt,fixture.before,block,candidate,
+                result,"Correcto\nRetry of QA model");
+        }, "A malformed stored execution receipt did not reject a later success");
+        require(corrupt==before && find(corrupt,"native_windows",feedback_key)!=nullptr,
+            "A rejected successful recheck erased the review or changed the old achievement");
+        if(field!="feedback") {
+            auto edited=request;edited.source_utf8+="\n// another unsent QA draft";
+            rejects([&] { invalidate_compiler_puzzle_attempt(corrupt,fixture.before,block,edited); },
+                "An edit ignored a malformed saved program, cases or completion proof");
+            require(corrupt==before,
+                "An edit discarded a rejected attempt before discovering corrupted state");
+        }
+    }
+    auto recovered=valid_state;
+    require(record_compiler_puzzle_case(recovered,fixture.before,block,request,accepted,
+        "Correcto\nValid QA recheck"),
+        "A genuine recheck was blocked by the previous malformed receipt tests");
+    require(!find(recovered,"native_windows",feedback_key) &&
+        compiler_puzzle_completed(recovered,fixture.before,block),
+        "A valid later success failed to clear the last rejection or changed the achievement");
+    std::cout<<"PASS compiler receipt atomicity: damaged cases, program, completion and feedback "
+        "do not erase latest review; valid recheck clears review and preserves first-case completion\n";
+}
 void actual_reference_runs(const Fixture& fixture, const std::filesystem::path& directory) {
     const auto& before = editor(fixture.before, fixture.id);
     const auto& after = editor(fixture.after, fixture.id);
@@ -717,6 +794,10 @@ int main(int argc, char** argv) try {
     run("untouched draft", [&] {
         require(real != cases.end(), "Case-order QA omitted the complete real U11L7 22-case publication");
         empty_draft(*real);
+    });
+    run("atomic malformed execution receipt", [&] {
+        require(real != cases.end(), "Atomic QA needs the complete original U11L7 publication");
+        malformed_execution_receipt_never_clears_last_review(*real);
     });
     const auto returned = std::ranges::find(cases, "real-u11-return", &Fixture::name);
     run("explicit return", [&] {
