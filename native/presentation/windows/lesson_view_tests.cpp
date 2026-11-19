@@ -2379,6 +2379,59 @@ void simulated_exercise_code_cards(bool caret_only=false) {
     std::cout<<"PASS All five simulated C++ response headers, real menus, same-HWND fullscreen, isolated reset, Enter, order/holes/drag and source preservation\n";
 }
 
+void optional_separator_help_matches_screen_reader_and_grading() {
+    // Presentation-only blanks are not answer fragments, and retired hide
+    // shortcuts must not be announced by either the visible help or the reader.
+    const std::string instruction=
+        "Arrastra las líneas de código para ordenarlas. Puedes mover las tarjetas vacías si quieres dejar una línea en blanco";
+    Fixture fixture({},[](const curriculum::Lesson&) {
+        auto lesson=windows::parse_lesson_json(R"json({
+          "id":"qa_optional_order_help","title":"Tarjetas vacías",
+          "pages":[{"blocks":[{
+            "type":"order_code","question":"Ordena dos líneas.",
+            "fragments":["return 0;","int main() {"],"correctOrder":[1,0]
+          }]}]
+        })json");
+        // Root metadata and its historical compatibility are checked in the
+        // independent OrderCodeView tests. Exercise the rendered common helper.
+        lesson.pages[0].blocks[0].optional_order_separators=1;
+        return lesson;
+    });
+    const auto help=fixture.control(0,37),order=fixture.control(0,5);
+    require(fixture.text(0,37)==instruction,
+        "The visible blank-card help still advertises retired shortcuts");
+    const auto reading=lesson_reading_regions(fixture.view);
+    require(std::ranges::count_if(reading,[&](const auto& region) {
+        return region.target==help&&region.source_text==instruction;
+    })==1,"The reader does not use the exact visible optional-card instruction");
+    require(std::ranges::none_of(reading,[](const auto& region) {
+        return region.source_text.find("Insert")!=std::string::npos||
+            region.source_text.find("Supr")!=std::string::npos;
+    }),"The current reader announced retired blank-card keyboard shortcuts");
+    const auto first=GetDlgItem(order,100),second=GetDlgItem(order,101),blank=GetDlgItem(order,102);
+    require(first&&second&&blank&&edit_text(blank).empty(),
+        "The presentation-only blank card is not rendered separately");
+    // Leave the visual separator before both code lines, not in the answer.
+    SendMessageW(blank,WM_SYSKEYDOWN,VK_UP,LPARAM{1}<<29);pump(fixture.host);
+    SendMessageW(blank,WM_SYSKEYDOWN,VK_UP,LPARAM{1}<<29);pump(fixture.host);
+    SendMessageW(second,WM_SYSKEYDOWN,VK_UP,LPARAM{1}<<29);pump(fixture.host);
+    require(IsWindowEnabled(fixture.control(0,3)),
+        "Moving the real code card did not make the puzzle checkable");
+    fixture.click(0,3);
+    require(fixture.text(0,4).starts_with("✓ Correcto"),
+        "A correctly ordered program was rejected because the blank stayed at the start");
+    const auto response=state::get_response(read_lesson_state(fixture.view),
+        curriculum::exercise_key(fixture.lesson,fixture.lesson.pages[0].blocks[0]));
+    require(response&&response->correct&&response->order==std::vector<std::int64_t>{1,0},
+        "The visual blank changed the persisted scored order");
+    fixture.reopen();
+    require(fixture.text(0,37)==instruction&&
+        state::get_response(read_lesson_state(fixture.view),
+            curriculum::exercise_key(fixture.lesson,fixture.lesson.pages[0].blocks[0]))->correct,
+        "Reopening changed the visible help or lost the correct response");
+    std::cout<<"PASS optional code-order help: visible text equals reader, no retired shortcuts, visual blank excluded from graded answer after reopen\n";
+}
+
 void lesson_original_math_auto_policy() {
     Fixture fixture({},[](const curriculum::Lesson&){
         auto lesson=windows::parse_lesson_json(R"json({"id":"qa_math_original_auto","title":"6 × 100 = 600","pages":[{"blocks":[
@@ -5189,7 +5242,8 @@ int main(int argc,char* argv[]) {
     const bool navigation_geometry_only=argc==2&&std::string_view(argv[1])=="--navigation-geometry";
     const bool inline_feedback_only=argc==2&&std::string_view(argv[1])=="--inline-feedback";
     const bool lesson_menu_only=argc==2&&std::string_view(argv[1])=="--lesson-menu";
-    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only)return 2;
+    const bool order_help_only=argc==2&&std::string_view(argv[1])=="--order-help";
+    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only&&!order_help_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -5198,6 +5252,7 @@ int main(int argc,char* argv[]) {
     if (!RegisterClassW(&host)) return 2;
     try {
         if(lesson_menu_only){lesson_menu_retains_import_pages_and_settings_with_hooks();return 0;}
+        if(order_help_only){optional_separator_help_matches_screen_reader_and_grading();return 0;}
         if(inline_feedback_only){current_inline_feedback_uses_authored_controls_and_restores_each_attempt();return 0;}
         if(navigation_geometry_only){completed_compilers_keep_navigation_after_active_content();return 0;}
         if(scroll_repaint_only){console_fullscreen_zoom_escape();console_zoom_bottom_viewport();simulated_code_and_choice_cards();Fixture fixture;fixture.viewport_layout();fixture.scroll_repaint();return 0;}
@@ -5227,6 +5282,7 @@ int main(int argc,char* argv[]) {
         initial_readonly_source_layout();
         native_page_progress_theme();
         simulated_exercise_code_cards();
+        optional_separator_help_matches_screen_reader_and_grading();
         lesson_original_math_auto_policy();
         fixed_programming_header_and_spoken_labels();
         simulated_code_and_choice_cards();
