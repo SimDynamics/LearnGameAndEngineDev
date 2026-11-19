@@ -30,6 +30,17 @@ MAX_SCENARIOS = 8
 MAX_TRACE_BYTES = 8 * 1024 * 1024
 _SCENARIO_ID = re.compile(r"[A-Za-z_][A-Za-z0-9_-]{0,63}\Z")
 
+# Keep the source bytes unchanged. Only the JSON editor and counted/narrated
+# labels escape Unicode separators and invisible formatting characters.
+# This table mirrors invisible_text_codepoint in native/core/simulation.cpp.
+_INVISIBLE_TEXT_POINTS = frozenset(
+    set(range(0x7f, 0xa0)) | {0xad, 0x34f, 0x61c, 0x1680, 0x180e, 0x205f, 0x3000, 0xfeff}
+    | set(range(0x2000, 0x2010)) | set(range(0x2028, 0x2030))
+    | set(range(0x2060, 0x2070))
+)
+_INVISIBLE_TEXT_ESCAPES = {point: f"\\u{point:04x}" for point in _INVISIBLE_TEXT_POINTS}
+
+
 
 def _require(condition, message):
     if not condition:
@@ -118,7 +129,7 @@ def _trace_text_bytes(spec, values):
             return str(int(value))
         if not display:
             return value
-        rendered = json.dumps(value, ensure_ascii=False)
+        rendered = json.dumps(value, ensure_ascii=False).translate(_INVISIBLE_TEXT_ESCAPES)
         if not value:
             return rendered + " (cadena vacía)"
         if all(character == " " for character in value):

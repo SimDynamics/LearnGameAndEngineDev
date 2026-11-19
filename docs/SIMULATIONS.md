@@ -132,8 +132,18 @@ de los dos casos.
 `valueType: "text"` utiliza entre cero y 64 cadenas UTF-8 de cero a 128 bytes
 cada una. La cadena vacía `""` es un dato válido. Los espacios se conservan
 exactamente: `""`, `" "` y `"  "` son tres valores diferentes. Un valor no
-puede contener NUL, retorno de carro ni salto de línea. No se mezclan textos y
+puede contener NUL, retorno de carro (CR) ni salto de línea LF. No se mezclan textos y
 números dentro de una simulación o de sus escenarios.
+
+Los caracteres Unicode que pueden resultar invisibles o interpretarse como
+saltos de línea visuales, como U+00A0 (espacio no separable), U+200B (ancho
+cero), U+2028 (separador de línea) y U+2029 (separador de párrafo), aparecen
+como `\u00a0`, `\u200b`, `\u2028` y `\u2029` en las
+etiquetas, la narración y el editor **Lista entre comillas**. Es una escritura
+JSON reversible: el dato real, su ordenación UTF-8, la frecuencia, los
+candidatos y la salida cruda calculada por `outputTemplate` no cambian.
+La cadena vacía sigue mostrando `(cadena vacía)` y los espacios ASCII
+mantienen su cuenta explícita.
 
 Estas diferencias también se conservan al contar y comparar:
 

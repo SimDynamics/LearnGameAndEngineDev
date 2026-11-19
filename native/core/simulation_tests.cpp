@@ -732,6 +732,59 @@ void empty_text_values_and_labels() {
     rejected([&] { validate_simulation_spec(spec); }, "Unsorted empty text passed sort=false");
 }
 
+
+void unicode_invisible_labels_remain_distinct_and_reversible() {
+    auto spec = example();
+    spec.text_values = true;
+    spec.scenarios.clear();
+    const auto json = SimulationInputFormat::json;
+    const std::vector<std::pair<std::string, std::string>> cases{
+        {std::string("\x7f"), R"("\u007f")"},
+        {std::string("\xC2\x85"), R"("\u0085")"},
+        {std::string("\xC2\xA0"), R"("\u00a0")"},
+        {std::string("\xC2\xAD"), R"("\u00ad")"},
+        {std::string("\xE2\x80\x8B"), R"("\u200b")"},
+        {std::string("\xE2\x80\xA8"), R"("\u2028")"},
+        {std::string("\xE2\x80\xA9"), R"("\u2029")"},
+        {std::string("\xE2\x81\xA0"), R"("\u2060")"},
+        {std::string("\xE3\x80\x80"), R"("\u3000")"},
+        {std::string("\xEF\xBB\xBF"), R"("\ufeff")"},
+    };
+    for (const auto& [raw, label] : cases) {
+        spec.values = {raw};
+        validate_simulation_spec(spec);
+        const auto trace = build_simulation_trace(spec);
+        const auto input = simulation_input_text({raw}, json);
+        check(simulation_value_display_text(raw) == label &&
+            simulation_value_text(raw) == raw &&
+            input == "[" + label + "]" &&
+            simulation_parse_input(spec, input, json) == std::vector<SimulationValue>{raw} &&
+            trace.groups.size() == 1 && trace.groups[0].value == SimulationValue{raw} &&
+            trace.frames.back().output == raw + ":1\n" &&
+            trace.frames[1].explanation.find(label) != std::string::npos,
+            "An invisible Unicode label changed identity, output or its reversible JSON spelling");
+    }
+    const std::string nbspace = "\xC2\xA0";
+    const std::string zero_width = "\xE2\x80\x8B";
+    const std::string paragraph = "\xE2\x80\xA9";
+    spec.values = {std::string{}, std::string{" "}, nbspace, zero_width, paragraph};
+    const auto original = spec;
+    const auto trace = build_simulation_trace(spec);
+    const auto readable = simulation_frame_text(spec, trace, trace.frames.back());
+    check(trace.groups.size() == 5 && trace.frames.back().maximum == 1 &&
+        trace.frames.back().leaders == spec.values &&
+        readable.find(R"("" (cadena vacía))") != std::string::npos &&
+        readable.find(R"(" " (1 espacio))") != std::string::npos &&
+        readable.find(R"("\u00a0")") != std::string::npos &&
+        readable.find(R"("\u200b")") != std::string::npos &&
+        readable.find(R"("\u2029")") != std::string::npos &&
+        trace.frames.back().output.find(nbspace + ":1\n") != std::string::npos &&
+        trace.frames.back().output.find(zero_width + ":1\n") != std::string::npos &&
+        trace.frames.back().output.find(paragraph + ":1\n") != std::string::npos &&
+        spec == original,
+        "Unicode invisible labels became indistinguishable or entered the raw output");
+}
+
 void explicit_text_list_input() {
     auto spec = example();
     spec.text_values = true;
@@ -1202,6 +1255,7 @@ int main() {
         boundary_states();
         replay_inputs_and_accessibility();
         empty_text_values_and_labels();
+        unicode_invisible_labels_remain_distinct_and_reversible();
         explicit_text_list_input();
         contract_rejections();
         expansion_bounds_and_modes();

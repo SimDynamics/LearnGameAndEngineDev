@@ -531,6 +531,34 @@ class SimulationContractTest(unittest.TestCase):
                              for explanation, printed in expected))
         self.assertEqual(simulation._trace_text_bytes(spec, []), 1)
 
+    def test_invisible_unicode_labels_have_reversible_visible_spelling(self):
+        # Python's 8 MiB trace estimator must count the same escaped labels
+        # that the Windows model narrates, not raw byte lengths of separators.
+        block_value = block()
+        spec = block_value["simulation"]
+        spec.update(valueType="text", values=[], scenarios=[], outputTemplate="{value}|{leaders}",
+                    explanations={name: "{value}|{leaders}"
+                                  for name in simulation.EXPLANATION_FIELDS})
+        cases = [
+            ("\x7f", r'"\u007f"'), ("\x85", r'"\u0085"'),
+            ("\u00a0", r'"\u00a0"'), ("\u00ad", r'"\u00ad"'),
+            ("\u200b", r'"\u200b"'), ("\u2028", r'"\u2028"'),
+            ("\u2029", r'"\u2029"'), ("\u2060", r'"\u2060"'),
+            ("\u3000", r'"\u3000"'), ("\ufeff", r'"\ufeff"'),
+        ]
+        for raw, display in cases:
+            with self.subTest(codepoint=f"U+{ord(raw):04X}"):
+                spec["values"] = [raw]
+                before = deepcopy(block_value)
+                simulation.validate_contract(block_value)
+                output = raw + "|" + raw + "\n"
+                steps = [("|", ""), (display + "|", ""),
+                         (display + "|" + display, output), ("|" + display, output)]
+                total = sum(len((explanation + stdout).encode("utf-8"))
+                            for explanation, stdout in steps)
+                self.assertEqual(simulation._trace_text_bytes(spec, [raw]), total)
+                self.assertEqual(block_value, before)
+
     def test_trace_expansion_limit_covers_default_and_each_scenario(self):
         value = block()
         spec = value["simulation"]

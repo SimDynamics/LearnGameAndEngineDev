@@ -149,11 +149,42 @@ void validate_contract(const SimulationSpec& spec) {
     }
 }
 
+// Values remain byte-exact in grouping, comparisons and output. Only the
+// reversible JSON spelling and explanatory labels escape Unicode spaces,
+// separators and invisible format controls that are ambiguous in RichEdit.
+bool invisible_text_codepoint(std::uint32_t point) {
+    return (point >= 0x7f && point <= 0x9f) || point == 0xad ||
+        point == 0x34f || point == 0x61c || point == 0x1680 || point == 0x180e ||
+        (point >= 0x2000 && point <= 0x200f) ||
+        (point >= 0x2028 && point <= 0x202f) ||
+        point == 0x205f || (point >= 0x2060 && point <= 0x206f) ||
+        point == 0x3000 || point == 0xfeff;
+}
+
 std::string quoted_text(std::string_view text) {
     constexpr char hex[] = "0123456789abcdef";
     std::string result = "\"";
-    for (const unsigned char value : text) {
-        switch (value) {
+    for (std::size_t at = 0; at < text.size();) {
+        const auto first = static_cast<unsigned char>(text[at]);
+        std::uint32_t point = first;
+        std::size_t width = 1;
+        if (first >= 0xc2 && first <= 0xdf) { width = 2; point &= 0x1f; }
+        else if (first >= 0xe0 && first <= 0xef) { width = 3; point &= 0x0f; }
+        else if (first >= 0xf0 && first <= 0xf4) { width = 4; point &= 0x07; }
+        bool complete = width == 1 ? first < 0x80 : width <= text.size() - at;
+        for (std::size_t n = 1; complete && n < width; ++n) {
+            const auto next = static_cast<unsigned char>(text[at + n]);
+            if ((next & 0xc0) != 0x80) complete = false;
+            else point = (point << 6) | (next & 0x3f);
+        }
+        if (complete && invisible_text_codepoint(point)) {
+            result += "\\u";
+            for (int shift = 12; shift >= 0; shift -= 4)
+                result += hex[(point >> shift) & 0x0f];
+            at += width;
+            continue;
+        }
+        switch (first) {
         case '"': result += "\\\""; break;
         case '\\': result += "\\\\"; break;
         case '\b': result += "\\b"; break;
@@ -162,12 +193,13 @@ std::string quoted_text(std::string_view text) {
         case '\r': result += "\\r"; break;
         case '\t': result += "\\t"; break;
         default:
-            if (value < 0x20) {
+            if (first < 0x20) {
                 result += "\\u00";
-                result += hex[value >> 4];
-                result += hex[value & 0x0f];
-            } else result += static_cast<char>(value);
+                result += hex[first >> 4];
+                result += hex[first & 0x0f];
+            } else result += static_cast<char>(first);
         }
+        ++at;
     }
     result += '"';
     return result;

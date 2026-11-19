@@ -5464,6 +5464,29 @@ void empty_text_values(HWND host,const std::filesystem::path& captures) {
             "Restore did not recover the authored empty label with a lossless editor format");
         finish();check(text(view,output_id)==":1\n","Restore retained edited data instead of the original empty label");
     }
+    {
+        // U+00A0 and zero-width/break controls are data, not empty strings.
+        // Their visible names must survive Win32 accessible labels and the
+        // editor's JSON round trip without applying a new candidate value.
+        auto invisible=grouped;
+        invisible.values={std::string{},std::string("\xC2\xA0"),
+            std::string("\xE2\x80\x8B"),std::string("\xE2\x80\xA8")};
+        invisible.scenarios.clear();
+        const auto source=invisible;
+        SimulationView view(host,invisible,"es");resize(view,820);
+        const auto array_name=name(GetDlgItem(view.window(),array_id));
+        const auto editable=text(view,input_id);
+        check(array_name.find(R"("" (cadena vacía))")!=std::string::npos&&
+            array_name.find(R"("\u00a0")")!=std::string::npos&&
+            array_name.find(R"("\u200b")")!=std::string::npos&&
+            array_name.find(R"("\u2028")")!=std::string::npos&&
+            editable.find(R"("\u00a0")")!=std::string::npos&&
+            editable.find(R"("\u200b")")!=std::string::npos&&
+            editable.find(R"("\u2028")")!=std::string::npos&&
+            name(GetDlgItem(view.window(),group_first_id+1)).find(R"("\u00a0")")!=std::string::npos&&
+            invisible==source,
+            "Invisible Unicode became an ambiguous native label or a literal editor line break");
+    }
     check(grouped==authored,"Exploration mutated the authored text values or scenarios");
 }
 
