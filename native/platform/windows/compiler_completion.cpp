@@ -806,19 +806,15 @@ std::string compiler_puzzle_feedback(const state::StateData& data,const curricul
     auto stored=state::string_value(data,"native_windows",base(lesson,block)+"feedback");
     if(!stored.empty())if(const auto current=current_crt_feedback_case(lesson,block);current&&!current->explanation.empty())
         return stored.substr(0,stored.find_first_of("\r\n"))+'\n'+current->explanation;
-    // This authenticated text-only review retains the very same successful
-    // execution objective. Present its new explanation without rewriting the
-    // original receipt, running another program or inventing listening credit.
-    if(!stored.empty()&&lesson.locale=="es"
-        &&lesson.id=="cpp_fundamentals__archivos_y_programa_completo__componer_salida_sin_imprimirla"
-        &&block.stable_id=="block_0002_0003"&&block.output_check&&block.output_check->cases.size()==1
-        &&std::ranges::any_of(lesson.state_layout.reading_revisions,[](const auto& revision){
-            return revision.editorial_prefix==15&&!revision.positional_page_identity&&revision.previous_blocks.size()==2
-                &&revision.previous_blocks.contains("block_0002_0003")&&revision.previous_blocks.contains("block_0004_0001");
-        })){
-        const auto& explanation=block.output_check->cases.front().explanation;
-        if(!explanation.empty())return stored.substr(0,stored.find_first_of("\r\n"))+'\n'+explanation;
-    }
+    // The same authenticated, active-owner v2 rule already used by the
+    // detailed feedback API also applies to callers of this text-only getter.
+    // The reader may show revised guidance without replaying the execution or
+    // rewriting its saved receipt. Archived copies and independent multicase
+    // goals are deliberately excluded by current_v2_guidance().
+    if(!stored.empty())if(const auto guidance=current_v2_guidance(lesson,block);
+        guidance&&!guidance->explanation.empty())
+        return stored.substr(0,stored.find_first_of("\r\n"))+'\n'+
+            std::string(guidance->explanation);
     return stored;
 }
 std::string compiler_puzzle_review(const state::StateData& data,const curriculum::Lesson& lesson,

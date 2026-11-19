@@ -138,6 +138,9 @@ void sole_output_sequence(const Lesson& actual,std::string_view id,const std::fi
         auto feedback=compiler_puzzle_current_feedback(data,revised,current,captured);
         require((feedback.has_value()==earned)&&(!earned||(feedback->correct&&feedback->text=="Correcto\nQA current guide N=1"&&
             feedback->source_path==explanation_path)),"A reopened sole-case goal lost its current typed guide");
+        require(compiler_puzzle_feedback(data,revised,current)==
+                (earned?std::string("Correcto\nQA current guide N=1"):std::string{}),
+            "The direct feedback getter did not honor authenticated current guidance");
         require(data==unchanged,"The current presentation getter mutated an original receipt");
         if(!earned)continue;
         auto second=guidance(revised,id,"QA next guide N=2");const auto& latest=editor(second,id);
@@ -145,6 +148,8 @@ void sole_output_sequence(const Lesson& actual,std::string_view id,const std::fi
         feedback=compiler_puzzle_current_feedback(data,second,latest,captured);
         require(feedback&&feedback->text=="Correcto\nQA next guide N=2"&&feedback->source_path==explanation_path&&
             receipts(data)==saved_receipts&&narration::read_history(data)==saved_markers,"A second guide revision lost immutable state");
+        require(compiler_puzzle_feedback(data,second,latest)=="Correcto\nQA next guide N=2",
+            "A second authenticated guide revision retained stale direct feedback");
         auto rejected=accepted;rejected.standard_output="QA output that cannot satisfy the exact report";
         require(record_compiler_puzzle_review(data,second,latest,captured,rejected,"Incorrecto\nQA latest rejection"),"Could not seed exact rejected recheck");
         store.save(data);data=reopen(store);feedback=compiler_puzzle_current_feedback(data,second,latest,captured);
@@ -167,11 +172,13 @@ void sole_output_sequence(const Lesson& actual,std::string_view id,const std::fi
                 "A changed source/input/output/count/status/target/stderr borrowed an old success");
         }
         auto legacy=second;legacy.state_layout={};feedback=compiler_puzzle_current_feedback(data,legacy,editor(legacy,id),captured);
-        require(feedback&&feedback->text=="Correcto\nQA historical body"&&feedback->source_path.empty(),
-            "An unvalidated legacy model acquired the new V2 source path");
+        require(feedback&&feedback->text=="Correcto\nQA historical body"&&feedback->source_path.empty()&&
+            compiler_puzzle_feedback(data,legacy,editor(legacy,id))=="Correcto\nQA historical body",
+            "An unvalidated legacy model borrowed current-authored direct feedback");
         if(id=="block_0009_0002"){auto copy=latest;feedback=compiler_puzzle_current_feedback(data,second,copy,captured);
-            require(feedback&&feedback->text=="Correcto\nQA historical body"&&feedback->source_path.empty(),
-                "An unbound block copy acquired an authoring source path");}
+            require(feedback&&feedback->text=="Correcto\nQA historical body"&&feedback->source_path.empty()&&
+                compiler_puzzle_feedback(data,second,copy)=="Correcto\nQA historical body",
+                "An unbound block copy acquired active-author feedback");}
     }
 }
 CppRunRequest diagnostic_request(const Block& block){auto captured=request(block);const auto at=captured.source_utf8.rfind("    return 0;");
@@ -220,6 +227,8 @@ void diagnostic_sequence(const std::filesystem::path& content,const std::filesys
     const auto before=data;const auto feedback=compiler_puzzle_current_feedback(data,revised,current,capture);
     require(feedback&&feedback->correct&&feedback->text=="Correcto\nQA current diagnostic guide"&&feedback->source_path=="/compileCheck/explanation"&&
         receipts(data)==saved_receipts&&narration::read_history(data)==markers&&data==before,"A diagnostic guide failed exact immutable restoration");
+    require(compiler_puzzle_feedback(data,revised,current)=="Correcto\nQA current diagnostic guide",
+        "An authenticated compiler diagnostic guide retained its old direct feedback");
     auto hostile=revised;editor(hostile,id).compile_check->diagnostic="other-diagnostic";
     require(!compiler_puzzle_current_feedback(data,hostile,editor(hostile,id),capture),"A changed diagnostic borrowed an earned explanation");
 }
