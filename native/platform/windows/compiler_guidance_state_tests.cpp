@@ -5,6 +5,7 @@
 #include <array>
 #include <functional>
 #include <iostream>
+#include <regex>
 #include <set>
 
 namespace {
@@ -498,6 +499,205 @@ int authored_l24_guides(const std::filesystem::path& content,const std::filesyst
     return 0;
 }
 
+int identifier_rename_live_windows(const std::filesystem::path& content,
+        const std::filesystem::path& qa) {
+    // The Spanish curriculum stays unchanged. Generate six proofs only in
+    // memory from its actual final formatted C++ owners.
+    constexpr std::array<std::pair<std::string_view,std::string_view>,6> owners{{
+        {"block_0006_0002","etiquetas_mas_frecuentes"},
+        {"recuperacion_entrada_editor","etiquetas_mas_frecuentes"},
+        {"block_0006_0009","etiquetas_mas_frecuentes"},
+        {"block_0007_0002","etiquetas_mas_frecuentes"},
+        {"block_0007_0004","etiquetas_mas_frecuentes"},
+        {"frecuencias_numericas_referencia_programa","valores_mas_frecuentes"}
+    }};
+    const auto path=content/
+        "colecciones_y_recorridos/lesson_contar_frecuencias_y_conservar_empates.json";
+    const auto baseline=load_lesson(path);
+    const auto root=JsonObject::Parse(winrt::to_hstring(baseline.raw_json));
+    const auto layout=root.GetNamedObject(L"stateLayout");
+    JsonObject prefix;
+    prefix.Insert(L"lessonId",JsonValue::CreateStringValue(winrt::to_hstring(baseline.id)));
+    prefix.Insert(L"locale",JsonValue::CreateStringValue(L"es"));
+    prefix.Insert(L"editorial",JsonArray::Parse(layout.GetNamedArray(L"editorial").Stringify()));
+    const auto history_sha=test::compile_check_test_fingerprint(prefix);
+    JsonArray records;
+    const auto replace_word=[](std::string code,std::string_view old,std::string_view newer) {
+        return std::regex_replace(code,
+            std::regex("\\b"+std::string(old)+"\\b"),std::string(newer));
+    };
+    for(const auto& [identity,destination]:owners) {
+        const auto& old=editor(baseline,identity);
+        const auto block=editor(root,baseline,identity);
+        const auto snapshot=JsonObject::Parse(block.Stringify());
+        const auto slot=old.type==BlockType::cpp_compiler?L"initialCode":L"code";
+        const auto source=winrt::to_string(block.GetNamedString(slot));
+        const auto old_hash=test::compile_check_test_fingerprint(snapshot);
+        const auto count_word=[&](std::string_view name) {
+            const std::regex pattern("\\b"+std::string(name)+"\\b");
+            return static_cast<unsigned>(
+                std::distance(std::sregex_iterator(source.begin(),source.end(),pattern),
+                              std::sregex_iterator{}));
+        };
+        require(count_word("maxima")==5&&count_word("mayores")==5,
+            "A published frequency example lost its five distinct identifier occurrences");
+        const auto revised=replace_word(
+            replace_word(source,"maxima","frecuencia_maxima_encontrada"),
+            "mayores",destination);
+        block.Insert(slot,JsonValue::CreateStringValue(winrt::to_hstring(revised)));
+        const auto after=test::compile_check_test_fingerprint(block);
+        require(old_hash!=after&&revised.find("Maxima:")!=revised.npos&&
+            revised.find("Mayores:")!=revised.npos,
+            "A native C++ rename changed a published output label");
+
+        const auto format=std::ranges::find(
+            baseline.state_layout.source_format_revisions,identity,&SourceFormatRevision::id);
+        require(format!=baseline.state_layout.source_format_revisions.end(),
+            "The real frequency owner lost its original formatted source");
+        JsonObject replacements,counts,affirmed,names,occurrences,confirmed;
+        replacements.Insert(L"maxima",
+            JsonValue::CreateStringValue(L"frecuencia_maxima_encontrada"));
+        replacements.Insert(L"mayores",
+            JsonValue::CreateStringValue(winrt::to_hstring(destination)));
+        for(const auto field:{L"maxima",L"mayores"}) {
+            counts.Insert(field,JsonValue::CreateNumberValue(5));
+            affirmed.Insert(field,JsonValue::CreateNumberValue(5));
+        }
+        names.Insert(slot,replacements);
+        occurrences.Insert(slot,counts);
+        confirmed.Insert(slot,affirmed);
+        JsonObject storage;
+        storage.Insert(L"page",JsonValue::CreateNumberValue(old.address.page));
+        storage.Insert(L"block",JsonValue::CreateNumberValue(old.address.block));
+        JsonObject item;
+        const auto string_field=[&](const wchar_t* field,std::string_view value) {
+            item.Insert(field,JsonValue::CreateStringValue(winrt::to_hstring(value)));
+        };
+        string_field(L"lessonId",baseline.id);
+        string_field(L"locale","es");
+        string_field(L"historicalFamilySha256",
+            baseline.state_layout.family.at("es").sha256);
+        string_field(L"originalStateSha256",
+            baseline.state_layout.signatures.at(std::string(identity)));
+        string_field(L"editorialPrefixSha256",history_sha);
+        string_field(L"id",identity);
+        item.Insert(L"stableStorage",storage);
+        item.Insert(L"block",snapshot);
+        item.Insert(L"names",names);
+        item.Insert(L"occurrences",occurrences);
+        item.Insert(L"confirmed",confirmed);
+        string_field(L"beforeSha256",old_hash);
+        string_field(L"afterSha256",after);
+        string_field(L"priorSourceFormatSha256",format->sha256);
+        records.Append(item);
+        JsonObject edge;
+        edge.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(identity)));
+        edge.Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(old_hash)));
+        edge.Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(after)));
+        layout.GetNamedArray(L"editorial").Append(edge);
+    }
+    layout.Insert(L"identifierRenameRevisions",records);
+    const auto serialized=winrt::to_string(root.Stringify());
+    const auto changed=parse_lesson_json(serialized,"es");
+    const auto metadata=parse_lesson_progress_metadata(serialized,"es");
+    require(changed.state_layout.identifier_rename_revisions.size()==6&&
+        metadata.state_layout.identifier_rename_revisions.size()==6&&
+        changed.state_layout.signatures==baseline.state_layout.signatures&&
+        metadata.state_layout.signatures==baseline.state_layout.signatures&&
+        changed.state_layout.origin.size()==baseline.state_layout.origin.size()&&
+        changed.state_layout.additions.size()==baseline.state_layout.additions.size(),
+        "Renaming C++ sources changed historical signatures, owners or storage");
+    for(const auto& [identity,destination]:owners) {
+        const auto& old=editor(baseline,identity);
+        const auto& current=editor(changed,identity);
+        const auto& progress=editor(metadata,identity);
+        const auto& previous_source=old.type==BlockType::cpp_compiler?
+            old.initial_code:old.code;
+        const auto& new_source=current.type==BlockType::cpp_compiler?
+            current.initial_code:current.code;
+        require(current.address.page==old.address.page&&
+            current.address.block==old.address.block&&
+            progress.address.page==old.address.page&&
+            progress.address.block==old.address.block&&
+            new_source!=previous_source&&
+            new_source.find("frecuencia_maxima_encontrada")!=new_source.npos&&
+            new_source.find(std::string(destination))!=new_source.npos&&
+            new_source.find("Maxima:")!=new_source.npos&&
+            new_source.find("Mayores:")!=new_source.npos,
+            "Authentic Windows rename changed storage or missed current code");
+    }
+
+    // Exercise a real draft and a foreign preference through persistent
+    // StateStore reopening. A new name is not another learner achievement.
+    constexpr std::string_view editor_id="recuperacion_entrada_editor";
+    const auto& old_editor=editor(baseline,editor_id);
+    const auto& new_editor=editor(changed,editor_id);
+    state::StateStore store(qa/"identifier-rename-live");
+    auto data=store.load();
+    state::prepare_lesson_state(data,baseline);
+    state::Draft draft;draft.source=old_editor.initial_code+"\n// Historical learner draft";
+    draft.input="6 patio sala patio faro sala patio";
+    draft.selection_start=2;draft.selection_end=4;
+    const auto original_key=draft_key("programming",baseline,old_editor);
+    state::put_draft(data,original_key,draft);
+    data.preferences["qa-independent"]["unchanged"]=std::string("opaque");
+    store.save(data);
+    data=reopen(store);
+    const auto stored=state::get_draft(data,original_key,old_editor.initial_code);
+    require(stored.source==draft.source&&stored.input==draft.input,
+        "Original C++ renamed-owner draft could not reopen");
+    state::prepare_lesson_state(data,changed);
+    state::validate_lesson_state(data,changed);
+    state::validate_lesson_state(data,metadata);
+    require(draft_key("programming",changed,new_editor)==original_key&&
+        state::get_draft(data,original_key,new_editor.initial_code).source==draft.source&&
+        state::string_value(data,"qa-independent","unchanged")=="opaque",
+        "Renaming changed a learner's storage key, saved draft or unrelated preferences");
+    store.save(data);
+    const auto persisted=reopen(store);
+    state::validate_lesson_state(persisted,changed);
+    require(persisted==data,"Renaming changed state during a durable reopen");
+
+    const auto rejects=[&](std::string_view cause,const auto& mutation) {
+        const auto forged=JsonObject::Parse(winrt::to_hstring(serialized));
+        mutation(forged);
+        rejects_both(forged,cause);
+    };
+    rejects("C++ rename belongs to another stable response address",
+        [](const JsonObject& forged) {
+            const auto record=forged.GetNamedObject(L"stateLayout").
+                GetNamedArray(L"identifierRenameRevisions").GetObjectAt(0);
+            record.GetNamedObject(L"stableStorage").Insert(
+                L"page",JsonValue::CreateNumberValue(999));
+        });
+    rejects("C++ rename changed its authenticated occurrence count",
+        [](const JsonObject& forged) {
+            const auto record=forged.GetNamedObject(L"stateLayout").
+                GetNamedArray(L"identifierRenameRevisions").GetObjectAt(0);
+            record.GetNamedObject(L"occurrences").GetNamedObject(L"code").Insert(
+                L"maxima",JsonValue::CreateNumberValue(4));
+        });
+    rejects("C++ rename archive changed its lesson, source or format provenance",
+        [](const JsonObject& forged) {
+            const auto record=forged.GetNamedObject(L"stateLayout").
+                GetNamedArray(L"identifierRenameRevisions").GetObjectAt(0);
+            record.GetNamedObject(L"block").Insert(
+                L"code",JsonValue::CreateStringValue(L"int main() { return 9; }\n"));
+        });
+    rejects("C++ rename needs its unique original-to-revised editorial segment",
+        [](const JsonObject& forged) {
+            const auto proofs=forged.GetNamedObject(L"stateLayout").
+                GetNamedArray(L"editorial");
+            proofs.RemoveAt(proofs.Size()-1);
+        });
+    require(load_lesson(path).raw_json==baseline.raw_json,
+        "A Windows rename regression wrote to a published curriculum asset");
+    std::cout<<"PASS real frequency lesson Windows identifier rename: six exact "
+             <<"source/progress owners, native + metadata loader, reopened learner "
+             <<"draft, authenticated original format and four hostile archives.\n";
+    return 0;
+}
+
 int general_choice_live_windows(const std::filesystem::path& content,
         const std::filesystem::path& qa) {
     // The actual published lesson is read only. Authorship and malicious
@@ -759,6 +959,7 @@ int main(int argc,char** argv)try{
     if(argc==2&&std::string_view(argv[1])=="--review-priority")return review_priority_models(content,qa);
     if(argc==2&&std::string_view(argv[1])=="--authored-l24-guides")return authored_l24_guides(content,qa);
     if(argc==2&&std::string_view(argv[1])=="--general-choice-live")return general_choice_live_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--identifier-rename-live")return identifier_rename_live_windows(content,qa);
     if(argc!=1)return 2;
     const auto lesson=load_lesson(content/"archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json");
     const auto stage=[&](std::string_view name,const auto& work){
