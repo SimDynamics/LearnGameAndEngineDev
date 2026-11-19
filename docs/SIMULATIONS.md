@@ -156,7 +156,10 @@ U+1BCA0–U+1BCA3 y controles de notación musical U+1D173–U+1D17A.
 Los controles suplementarios usan dos sustitutos JSON; por ejemplo, U+1BCA0
 se representa con la secuencia \ud82f\udca0. También aquí los datos y salidas
 reales conservan sus bytes originales y se cuenta la expansión visual en el
-presupuesto de la traza.
+presupuesto de la traza. Los caracteres Unicode de etiqueta, U+E0001 y
+U+E0020–U+E007F, también aparecen como escapes reversibles; U+E0020 se
+representa como \udb40\udc20. Esas etiquetas pueden ser invisibles aunque
+formen parte de un texto visible, y no se eliminan ni se normalizan.
 Los selectores de variante Unicode, como
 U+FE0F, también se hacen visibles: `\ufe0f`. Los selectores
 suplementarios U+E0100–U+E01EF se escriben con la pareja de sustitutos

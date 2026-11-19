@@ -780,9 +780,9 @@ void explicit_text_input_presentation_is_lossless() {
 }
 
 
-void all_unicode_variation_selectors_round_trip() {
-    // All 16 BMP and 240 supplementary selectors must keep their scalar
-    // identity. The high surrogate is not a standalone value in JSON.
+void all_unicode_variation_selectors_and_tags_round_trip() {
+    // All 256 variation selectors and 97 tag characters must retain their
+    // scalar identity. A high surrogate alone is never a valid JSON value.
     const auto encode = [](std::uint32_t point) {
         std::string raw;
         if(point <= 0xffff) {
@@ -811,7 +811,8 @@ void all_unicode_variation_selectors_round_trip() {
     const auto json=SimulationInputFormat::json;
     for(const auto& [first,last] : {
             std::pair<std::uint32_t,std::uint32_t>{0xfe00,0xfe0f},
-            {0xe0100,0xe01ef}}) {
+            {0xe0100,0xe01ef},
+            {0xe0001,0xe0001}, {0xe0020,0xe007f}}) {
         for(auto point=first;point<=last;++point) {
             const auto raw=encode(point);
             std::string expected;
@@ -829,7 +830,7 @@ void all_unicode_variation_selectors_round_trip() {
                 decoded==std::vector<SimulationValue>{raw} &&
                 simulation_value_text(decoded.front())==raw &&
                 simulation_prefer_quoted_text_input(decoded),
-                "A Unicode variation selector was not encoded and decoded exactly");
+                "A Unicode variation selector or tag was not encoded and decoded exactly");
         }
     }
 }
@@ -853,6 +854,9 @@ void unicode_invisible_labels_remain_distinct_and_reversible() {
         {std::string("\xF0\x9B\xB2\xA3"), R"("\ud82f\udca3")"},
         {std::string("\xF0\x9D\x85\xB3"), R"("\ud834\udd73")"},
         {std::string("\xF0\x9D\x85\xBA"), R"("\ud834\udd7a")"},
+        {std::string("\xF3\xA0\x80\x81"), R"("\udb40\udc01")"},
+        {std::string("\xF3\xA0\x80\xA0"), R"("\udb40\udc20")"},
+        {std::string("\xF3\xA0\x81\xBF"), R"("\udb40\udc7f")"},
         {std::string("\xE1\x85\x9F"), R"("\u115f")"},
         {std::string("\xE1\x85\xA0"), R"("\u1160")"},
         {std::string("\xE2\xA0\x80"), R"("\u2800")"},
@@ -904,6 +908,13 @@ void unicode_invisible_labels_remain_distinct_and_reversible() {
         simulation_parse_input(spec, R"(["A\u17b4B"])", json) ==
             std::vector<SimulationValue>{khmer},
         "An invisible character embedded in visible text was not reversible");
+    const std::string tag = std::string("A") + "\xF3\xA0\x80\xA0" + "B";
+    check(simulation_value_display_text(tag) == R"("A\udb40\udc20B")" &&
+        simulation_value_text(tag) == tag &&
+        simulation_input_text({tag}, json) == R"(["A\udb40\udc20B"])" &&
+        simulation_parse_input(spec, R"(["A\udb40\udc20B"])", json) ==
+            std::vector<SimulationValue>{tag},
+        "A Unicode tag embedded in visible text was not reversible");
     const std::string nbspace = "\xC2\xA0";
     const std::string zero_width = "\xE2\x80\x8B";
     const std::string paragraph = "\xE2\x80\xA9";
@@ -1396,7 +1407,7 @@ int main() {
         replay_inputs_and_accessibility();
         empty_text_values_and_labels();
         unicode_invisible_labels_remain_distinct_and_reversible();
-        all_unicode_variation_selectors_round_trip();
+        all_unicode_variation_selectors_and_tags_round_trip();
         explicit_text_input_presentation_is_lossless();
         explicit_text_list_input();
         contract_rejections();

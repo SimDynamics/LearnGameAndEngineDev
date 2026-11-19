@@ -168,7 +168,9 @@ bool invisible_text_codepoint(std::uint32_t point) {
         (point >= 0x2028 && point <= 0x202f) ||
         point == 0x205f || (point >= 0x2060 && point <= 0x206f) ||
         point == 0x3000 || (point >= 0xfe00 && point <= 0xfe0f) ||
-        point == 0xfeff || (point >= 0xe0100 && point <= 0xe01ef);
+        point == 0xfeff || point == 0xe0001 ||
+        (point >= 0xe0020 && point <= 0xe007f) ||
+        (point >= 0xe0100 && point <= 0xe01ef);
 }
 
 std::string quoted_text(std::string_view text) {

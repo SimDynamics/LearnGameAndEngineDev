@@ -549,6 +549,9 @@ class SimulationContractTest(unittest.TestCase):
             ("\U0001bca3", r'"\ud82f\udca3"'),
             ("\U0001d173", r'"\ud834\udd73"'),
             ("\U0001d17a", r'"\ud834\udd7a"'),
+            ("\U000e0001", r'"\udb40\udc01"'),
+            ("\U000e0020", r'"\udb40\udc20"'),
+            ("\U000e007f", r'"\udb40\udc7f"'),
             ("\u115f", r'"\u115f"'), ("\u1160", r'"\u1160"'),
             ("\u2800", r'"\u2800"'), ("\u3164", r'"\u3164"'),
             ("\uffa0", r'"\uffa0"'),
@@ -562,6 +565,7 @@ class SimulationContractTest(unittest.TestCase):
         cases.append(("A\ufe0f\U000e0100", r'"A\ufe0f\udb40\udd00"'))
         cases.append(("A\u2800B", r'"A\u2800B"'))
         cases.append(("A\u17b4B", r'"A\u17b4B"'))
+        cases.append(("A\U000e0020B", r'"A\udb40\udc20B"'))
         for raw, display in cases:
             with self.subTest(codepoint=" ".join(f"U+{ord(ch):04X}" for ch in raw)):
                 spec["values"] = [raw]
@@ -575,15 +579,16 @@ class SimulationContractTest(unittest.TestCase):
                 self.assertEqual(simulation._trace_text_bytes(spec, [raw]), total)
                 self.assertEqual(block_value, before)
 
-    def test_all_256_variation_selectors_match_json_utf16_escapes(self):
+    def test_all_353_variation_selectors_and_tags_match_json_utf16_escapes(self):
         block_value = block()
         spec = block_value["simulation"]
         spec.update(valueType="text", values=[], scenarios=[],
                     outputTemplate="{value}",
                     explanations={name: "{value}"
                                   for name in simulation.EXPLANATION_FIELDS})
-        points = tuple(range(0xfe00, 0xfe10)) + tuple(range(0xe0100, 0xe01f0))
-        self.assertEqual(len(points), 256)
+        points = (tuple(range(0xfe00, 0xfe10)) + tuple(range(0xe0100, 0xe01f0))
+                  + (0xe0001,) + tuple(range(0xe0020, 0xe0080)))
+        self.assertEqual(len(points), 353)
         for point in points:
             raw = chr(point)
             if point <= 0xffff:
