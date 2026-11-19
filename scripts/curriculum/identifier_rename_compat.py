@@ -92,11 +92,9 @@ def require_declared_cpp_renames(
                     and name != new for name, new in names.items())
                 or len(set(names.values())) != len(names)):
             raise IdentifierRenameError(f"Invalid, reserved or colliding rename: {slot}")
-        if (before == after or before.count("\n") != after.count("\n")
-                or source_format._cpp_position_sensitive_tokens(
-                    source_format._cpp_tokens(before))):
+        if before == after or before.count("\n") != after.count("\n"):
             raise IdentifierRenameError(
-                f"Rename missing, changed physical lines or uses location-sensitive source: {slot}")
+                f"Rename missing or changed the physical source lines: {slot}")
         if any(piece in before or piece in after for piece in ("\\\n", "\\\r\n")):
             raise IdentifierRenameError(f"Cannot rename a physically spliced C++ source: {slot}")
         try:
@@ -104,6 +102,10 @@ def require_declared_cpp_renames(
             new_tokens = source_format._cpp_tokens(after)
         except source_format.SourceFormatError as error:
             raise IdentifierRenameError(f"Invalid C++ tokenization in {slot}: {error}") from error
+        if (source_format._cpp_position_sensitive_tokens(old_tokens)
+                or source_format._cpp_position_sensitive_tokens(new_tokens)):
+            raise IdentifierRenameError(
+                f"A position-sensitive source cannot receive a lexical rename: {slot}")
         if ("op:\\" in old_tokens or "op:\\" in new_tokens
                 or len(old_tokens) != len(new_tokens)):
             raise IdentifierRenameError(f"Unsafe C++ token boundaries: {slot}")
