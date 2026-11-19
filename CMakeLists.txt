@@ -136,6 +136,11 @@ add_library(lgaed_platform_windows STATIC
     native/platform/windows/cpp_project_history.cpp
     native/platform/windows/cpp_runner.cpp
     native/platform/windows/compiler_completion.cpp)
+# The curricular loader is a large C++23 translation unit. Without /bigobj,
+# MSVC can exhaust the classic COFF section limit (C1128) in Debug builds.
+# Scope the flag to this source, not the whole project or student programs.
+set_source_files_properties(native/platform/windows/content_loader.cpp
+    PROPERTIES COMPILE_OPTIONS "/bigobj")
 target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
 add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
