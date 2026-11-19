@@ -148,8 +148,6 @@ class RealFrequencyMatchingEditorial(unittest.TestCase):
                     PROMPT: None})),
             ("other owner",lambda d: d["stateLayout"][
                 "mathMatchingTextRevisions"][0].update({"id":"block_0007_0004"})),
-            ("changed marker",lambda d: d["textSemantics"]["fields"][0].update({
-                "spans":[]})),
             ("missing editorial",lambda d: d["stateLayout"]["editorial"].pop()),
         ):
             with self.subTest(name=name):
@@ -157,6 +155,16 @@ class RealFrequencyMatchingEditorial(unittest.TestCase):
                 mutate(corrupt)
                 with self.assertRaises(state.LayoutError):
                     state.validate(corrupt)
+        # An unrelated yet well-formed marker cannot be disproved by the
+        # current document alone. The *published predecessor* authenticates
+        # it as part of the transition, not a guessed marker allowlist.
+        other_marker=deepcopy(draft)
+        marker=next(field for field in other_marker["textSemantics"]["fields"]
+                    if field["block"] != OWNER and field["spans"])
+        marker["spans"]=[]
+        state.validate(other_marker)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.lesson,other_marker)
         self.assertEqual(PATH.read_bytes(),self.original_bytes)
 
     def test_matching_source_label_must_match_its_text(self):
