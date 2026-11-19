@@ -2575,7 +2575,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     require(result.version == 1 || result.version == 2, "Unsupported state layout version");
     if (result.version == 1) allowed_keys(metadata, {"version", "origin", "current"}, true);
     else {
-        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "compilerCaseOrderRevisions", "compilerCaseRevisions", "sourceFormatRevisions", "mathTextRevisions", "identifierRenameRevisions"});
+        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "compilerCaseOrderRevisions", "compilerCaseRevisions", "sourceFormatRevisions", "mathTextRevisions", "identifierRenameRevisions", "mathMatchingTextRevisions"});
         for (const auto field : {L"version",L"locale",L"origin",L"current",L"family",L"additions",L"editorial"})
             require(metadata.HasKey(field),"Incomplete state-layout contract");
     }
@@ -3049,6 +3049,148 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         math_text_raw.emplace(revision.id,revision.raw_json);
         if(revision.semantic_before&&!revision.semantic_before->spans.empty())math_marked_prompts.insert(revision.id);
     }
+    // A matching-card text review preserves the mathematical evaluation JSON.
+    // String-only paths are authenticated against the original ordered bytes,
+    // the immutable state signature, narrated UTF-16 markers and one exact
+    // editorial edge. It creates no new activity, answer or progress address.
+    std::map<std::string,JsonObject> math_matching_text_originals;
+    if(metadata.HasKey(L"mathMatchingTextRevisions")) {
+        require(result.version==2&&result.locale=="es",
+            "Mathematical matching text archives require Spanish stateLayout v2");
+        const auto records=array(metadata,"mathMatchingTextRevisions");
+        require(records.Size()<=64,"Too many matching text archives");
+        const OriginalJson authored(document_source);
+        const auto raw_root=authored.root();
+        const auto raw_meta=authored.member(raw_root,"stateLayout");
+        const auto raw_records=authored.elements(
+            authored.member(raw_meta,"mathMatchingTextRevisions"));
+        const auto raw_pages=authored.elements(authored.member(raw_root,"pages"));
+        require(raw_records.size()==records.Size(),
+            "Mathematical matching archive count changed in raw JSON");
+        const auto editorial=array(metadata,"editorial");
+        for(unsigned index=0;index<records.Size();++index) {
+            const auto record=records.GetObjectAt(index);
+            allowed_keys(record,{"id","rawJson","paths","semanticBefore",
+                "semanticAfter","editorialIndex","historySha256",
+                "beforeSha256","afterSha256"},true);
+            (void)authored.ordered_frame(raw_records[index]); // duplicate keys
+            const auto identity=text(record,"id");
+            require(valid_id(identity)&&current_blocks.contains(identity)&&
+                result.signatures.contains(identity)&&
+                !math_matching_text_originals.contains(identity)&&
+                !math_text_originals.contains(identity),
+                "Matching text archive needs a unique active mathematical owner");
+            std::optional<std::pair<std::size_t,unsigned>> position;
+            for(std::size_t p=0;p<result.current.size();++p)
+                for(unsigned i=0;i<result.current[p].blocks.size();++i)
+                    if(result.current[p].blocks[i]==identity) {
+                        require(!position,"Duplicated matching text owner");
+                        position=std::pair{p,i};
+                    }
+            require(position.has_value(),"Missing matching text owner position");
+            const auto [page,slot]=*position;
+            const auto current=array(pages.GetObjectAt(static_cast<unsigned>(page)),"blocks").GetObjectAt(slot);
+            const auto source_blocks=authored.elements(
+                authored.member(raw_pages.at(page),"blocks"));
+            require(slot<source_blocks.size(),
+                "Matching text archive belongs to a missing raw source");
+            const auto current_raw=authored.text(source_blocks.at(slot));
+            const auto original_raw=text(record,"rawJson");
+            require(!original_raw.empty()&&original_raw.size()<=32*1024*1024,
+                "Invalid matching text original source size");
+            require_integer_json_numbers(original_raw);
+            const auto previous=JsonObject::Parse(key(original_raw));
+            const OriginalJson original_source(original_raw);
+            (void)original_source.ordered_frame(original_source.root());
+            (void)read_block(previous,original_raw);
+            const auto old_sha=fingerprint(previous),new_sha=fingerprint(current);
+            require(old_sha!=new_sha&&text(record,"beforeSha256")==old_sha&&
+                text(record,"afterSha256")==new_sha&&
+                state_fingerprint(previous)==result.signatures.at(identity),
+                "Matching text archive changed its original answer or block fingerprint");
+            const auto raw_paths=array(record,"paths");
+            std::vector<std::string> paths;
+            require(raw_paths.Size()>0&&raw_paths.Size()<=128,
+                "Matching review must name 1..128 public strings");
+            for(const auto& value:raw_paths) {
+                require(value.ValueType()==JsonValueType::String,
+                    "Matching review paths must be literal strings");
+                const auto path=utf8(value.GetString());
+                require(matching_text_path(path)&&
+                    (paths.empty()||paths.back()<path),
+                    "Matching review paths must be canonical and sorted");
+                paths.push_back(path);
+            }
+            require_matching_text_only(current_raw,original_raw,paths);
+            const auto before_marks=record.GetNamedObject(L"semanticBefore");
+            const auto after_marks=record.GetNamedObject(L"semanticAfter");
+            require(before_marks.Size()==paths.size()&&
+                after_marks.Size()==paths.size(),
+                "Matching review marker paths differ from the changed strings");
+            for(const auto& path:paths) {
+                require(before_marks.HasKey(key(path))&&after_marks.HasKey(key(path)),
+                    "Matching review lacks its declared source descriptors");
+                const auto before_field=before_marks.GetNamedValue(key(path));
+                const auto after_field=after_marks.GetNamedValue(key(path));
+                const bool narrated=matching_narrated_path(previous,path);
+                if(!narrated) {
+                    require(before_field.ValueType()==JsonValueType::Null&&
+                        after_field.ValueType()==JsonValueType::Null,
+                        "Matching card label cannot forge a narrated text marker");
+                    continue;
+                }
+                require(before_field.ValueType()==JsonValueType::Object&&
+                    after_field.ValueType()==JsonValueType::Object,
+                    "Matching text requires a real historical and current semantic marker");
+                const auto before=matching_field_semantics(
+                    before_field,identity,path,matching_path_text(previous,path));
+                const auto after=matching_field_semantics(
+                    after_field,identity,path,matching_path_text(current,path));
+                require(before&&after&&
+                    (before->spans.empty()||!after->spans.empty()),
+                    "Matching text cannot erase its technical reading highlights");
+                require(root.HasKey(L"textSemantics"),
+                    "Matching revision requires a current public-text overlay");
+                std::size_t matches=0;
+                for(const auto& value:array(root.GetNamedObject(L"textSemantics"),"fields")) {
+                    const auto field=value.GetObject();
+                    if(text(field,"block")==identity&&text(field,"path")==path) {
+                        require(fingerprint(field)==fingerprint(after_field),
+                            "Matching text archive differs from its current authored marker");
+                        ++matches;
+                    }
+                }
+                require(matches==1,
+                    "Matching text has missing or duplicate current source descriptors");
+            }
+            const auto editorial_index=integer(record.GetNamedValue(L"editorialIndex"),100000);
+            require_integer_json_numbers(authored.text(
+                authored.member(raw_records[index],"editorialIndex")));
+            require(editorial_index<editorial.Size(),
+                "Matching text editorial edge is outside the published chain");
+            const auto edge=editorial.GetObjectAt(static_cast<unsigned>(editorial_index));
+            allowed_keys(edge,{"id","beforeSha256","afterSha256"},true);
+            require(text(edge,"id")==identity&&
+                text(edge,"beforeSha256")==old_sha&&
+                text(edge,"afterSha256")==new_sha,
+                "Matching text archive lacks its exact original-to-current editorial edge");
+            JsonArray prefix;
+            for(unsigned i=0;i<editorial_index;++i)
+                prefix.Append(editorial.GetAt(i));
+            JsonObject history;
+            history.Insert(L"lessonId",JsonValue::CreateStringValue(key(lesson_id)));
+            history.Insert(L"locale",JsonValue::CreateStringValue(key(result.locale)));
+            history.Insert(L"editorial",prefix);
+            require(text(record,"historySha256")==fingerprint(history),
+                "Matching text archive borrowed a foreign editorial prefix");
+            for(unsigned i=static_cast<unsigned>(editorial_index+1);i<editorial.Size();++i)
+                require(text(editorial.GetObjectAt(i),"id")!=identity,
+                    "A matching owner cannot acquire an unauthenticated later text revision");
+            math_matching_text_originals.emplace(identity,previous);
+            result.math_matching_text_revisions.push_back({
+                identity,original_raw,old_sha,new_sha,editorial_index});
+        }
+    }
     const OriginalJson original_document(document_source);
     std::vector<OriginalJson::Slice> original_editorial;
     std::optional<OriginalJson::Slice> original_metadata;
@@ -3133,6 +3275,12 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             projected=JsonObject::Parse(key(revision->raw_json));
         if(const auto it=source_format_originals.find(owner);it!=source_format_originals.end())
             projected=source_format_projection(projected,it->second);
+        if(const auto it=math_matching_text_originals.find(owner);
+                it!=math_matching_text_originals.end()&&
+                fingerprint(projected)==std::ranges::find_if(
+                    result.math_matching_text_revisions,
+                    [&](const auto& item){return item.id==owner;})->after_sha256)
+            projected=it->second;
         if(const auto it=math_text_originals.find(owner);it!=math_text_originals.end())
             projected=math_prompt_projection(projected,it->second,historical);
         return projected;
