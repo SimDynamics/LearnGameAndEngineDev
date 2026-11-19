@@ -150,7 +150,7 @@ class DeclaredIdentifierRenames(unittest.TestCase):
     def test_unsafe_new_name_or_existing_name_collision_is_rejected(self):
         for bad in ("new", "__internal", "1digit", "maxima",
                     "module", "import", "final", "override",
-                    "frecuencia_máxima", "niño", "maximañ",
+                    "frecuencia_máxima", "niño", "maximañ", "mi__variable",
                     "nombre-con-guion", "_local"):
             with self.subTest(replacement=bad):
                 with self.assertRaises(renaming.IdentifierRenameError):
