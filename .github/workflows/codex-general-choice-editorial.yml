@@ -1,0 +1,32 @@
+name: Codex general choice editorial regression on published course
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-general-choice-editorial.yml
+      - scripts/curriculum/test_general_choice_revision_live.py
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/validar_json_programacion.py
+      - scripts/curriculum/text_semantics.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-editorial-choice:
+    name: Exact owner, preserved history and rejected false revisions (Python)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Read exact Codex publication
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test real course against shared authoring and curricular validators
+        run: >-
+          python3 -B -m unittest discover
+          -s scripts/curriculum
+          -p test_general_choice_revision_live.py -v
