@@ -5,6 +5,7 @@ on:
     branches: [Codex]
     paths:
       - .github/workflows/codex-compiler-guidance-source.yml
+      - cmake/PortableCompilerGuidanceQA/CMakeLists.txt
       - native/platform/windows/compiler_completion.cpp
       - native/platform/windows/compiler_completion.hpp
       - native/platform/windows/compiler_guidance_state_tests.cpp
@@ -75,3 +76,30 @@ jobs:
           /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
           native\platform\windows\compiler_guidance_state_tests.cpp
           /Fo:"%RUNNER_TEMP%\compiler_guidance_state_tests.obj"
+
+
+  native-guidance-reopen:
+    name: Real Windows compiler guide, StateStore and U12 reader fixtures (MSVC)
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - name: Read exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Activate Visual C++ in disposable runner
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure standalone authentic compiler-guidance QA
+        shell: pwsh
+        run: >
+          cmake -S cmake/PortableCompilerGuidanceQA
+          -B "$env:RUNNER_TEMP/compiler-guidance-qa" -G Ninja
+      - name: Compile actual lesson parser, native StateStore and feedback regressions
+        shell: pwsh
+        run: >
+          cmake --build "$env:RUNNER_TEMP/compiler-guidance-qa" --parallel 2
+      - name: Execute saved progress reopen and authenticated guidance checks
+        shell: pwsh
+        run: >
+          ctest --test-dir "$env:RUNNER_TEMP/compiler-guidance-qa"
+          --output-on-failure --no-tests=error -j 1
