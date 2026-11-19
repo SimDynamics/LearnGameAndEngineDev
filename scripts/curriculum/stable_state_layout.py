@@ -6070,6 +6070,21 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(retired[:len(old_retired)] == old_retired,
             "Retired activity archives are append-only and cannot be restored or rewritten")
     before, after = _all_blocks(baseline), _all_blocks(current)
+    old_renames = old_meta.get("identifierRenameRevisions", []) if old_v2 else []
+    renamed = meta.get("identifierRenameRevisions", [])
+    require(type(renamed) is list and old_v2 and
+            identifier_rename.same_json_value_and_types(
+                renamed[:len(old_renames)], old_renames),
+            "Published C++ rename archives are append-only")
+    old_rename_blocks = {item["id"]: item["block"] for item in old_renames}
+    rename_blocks = {item["id"]: item["block"] for item in renamed}
+    for item in renamed[len(old_renames):]:
+        identity = item["id"]
+        require(identity in before and identity in after
+                and identity not in old_rename_blocks and
+                identifier_rename.same_json_value_and_types(
+                    item["block"], before[identity]),
+                "A C++ rename archive must retain its exact previous active owner")
     old_math = old_meta.get("mathTextRevisions", []) if old_v2 else []
     math_revisions = meta.get("mathTextRevisions", [])
     require(math_revisions[:len(old_math)] == old_math,
@@ -6207,7 +6222,9 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         archived.add(identity)
     for identity in archived:
         if identity not in before or identity not in after: continue
-        published_source = new_closed_sources.get(identity, before[identity])
+        published_source = new_closed_sources.get(
+            identity, old_rename_blocks.get(identity, before[identity]))
+        formatted_current = rename_blocks.get(identity, after[identity])
         try:
             if _compiler_case_has_client(current, identity):
                 initial = (_compiler_case_order_projection(
@@ -6215,9 +6232,9 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     if identity in new_closed_sources else
                     _compiler_case_order_projection(baseline, identity, published_source))
                 code_format.require_source_lexical(
-                    initial, _compiler_case_order_projection(current, identity, after[identity]))
+                    initial, _compiler_case_order_projection(current, identity, formatted_current))
             else:
-                code_format.require_source_lexical(published_source, after[identity])
+                code_format.require_source_lexical(published_source, formatted_current)
         except code_format.SourceFormatError as exc:
             raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
     old_positions = {identity: (record["id"], index, record["blocks"])
@@ -6302,8 +6319,10 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         if bibliography_only:
             require(identity in appended and all("bibliography" in proof for proof in appended[identity]),
                     "A new bibliography-only revision requires its exact authored reading archive")
-        protected = _compiler_case_order_projection(current, identity, actual)
-        previous_source = _compiler_case_order_projection(baseline, identity, block)
+        protected = _compiler_case_order_projection(
+            current, identity, rename_blocks.get(identity, actual))
+        previous_source = _compiler_case_order_projection(
+            baseline, identity, old_rename_blocks.get(identity, block))
         format_original = next((entry["block"] for entry in current_formats if entry["id"] == identity), None)
         if format_original is not None:
             if identity in new_closed_sources:
@@ -6523,6 +6542,15 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
     new_math_ids = _math_text_revisions(current).keys() - _math_text_revisions(old).keys()
     blocks = {identity: _historical_math_text_contract(current, identity, block)
               if identity in new_math_ids else block for identity, block in blocks.items()}
+    new_renames = {
+        item["id"]: item["block"]
+        for item in current["stateLayout"].get("identifierRenameRevisions", [])
+        if item["id"] not in {
+            old_item["id"] for old_item in old["stateLayout"].get("identifierRenameRevisions", [])
+        }
+    }
+    blocks = {identity: deepcopy(new_renames.get(identity, block))
+              for identity, block in blocks.items()}
     page_by_id = {record["id"]: page for page, record in zip(current["pages"], current["stateLayout"]["current"])}
     result = deepcopy(current)
     new_choices = _choice_revisions(current).keys() - old_choices.keys()
@@ -6561,7 +6589,12 @@ def original_projection(document: dict) -> dict:
         return document
     validate(document)
     blocks = _all_blocks(document)
-    blocks = {identity: _compiler_case_order_projection(document, identity, block)
+    renamed_before = {
+        item["id"]: item["block"]
+        for item in document["stateLayout"].get("identifierRenameRevisions", [])
+    }
+    blocks = {identity: _compiler_case_order_projection(
+        document, identity, renamed_before.get(identity, block))
               for identity, block in blocks.items()}
     blocks = {identity: _historical_order_contract(document, identity, block) for identity, block in blocks.items()}
     blocks = {identity: _historical_choice_contract(document, identity, block) for identity, block in blocks.items()}
