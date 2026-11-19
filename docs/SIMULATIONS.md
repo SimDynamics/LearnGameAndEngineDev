@@ -300,6 +300,15 @@ borrador nuevo: la entrada, la salida, los datos originales y sus frecuencias
 no cambian. El estudiante puede escoger manualmente el otro formato; una
 conversión sigue validando íntegramente el contenido antes de aceptarla.
 
+La integración se comprueba también con el ejecutable real de la vista de
+simulación Win32 en un árbol QA independiente. El objetivo
+`native.simulation_view_full` ejecuta toda la batería existente de navegación,
+escenarios, lecturas accesibles, zoom, manejo de entradas inválidas y
+recuperación nativa, mientras `native.simulation_blank_button` verifica el
+camino abreviado de los valores vacíos. Ambos usan los mismos controles y
+modelo de producción. El ejecutor aislado no reemplaza la compilación completa
+de la app con las versiones de herramientas fijadas para el PC del usuario.
+
 La vista Windows conserva una **sesión de modelo validado** independiente de
 las sesiones de lectura. Al abrir el bloque valida una vez su contrato
 completo, sus datos iniciales y todos los escenarios, y transfiere la traza

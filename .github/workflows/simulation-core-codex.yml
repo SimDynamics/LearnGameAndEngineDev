@@ -118,7 +118,7 @@ jobs:
   portable-win32-view-run:
     # Real hidden Win32 input controls and model, built with hosted tools.
     # Does not imply the separately pinned full app was built or run.
-    name: Real Win32 blank-text simulation interactions (MSVC)
+    name: Full Win32 simulation controls and blank-text regressions (MSVC)
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
@@ -138,7 +138,7 @@ jobs:
         shell: pwsh
         run: >
           cmake --build "$env:RUNNER_TEMP/simulation-view-qa" --parallel 2
-      - name: Execute blank-text button and existing Win32 empty-value scenarios
+      - name: Execute blank-text button and all original Win32 interaction scenarios
         shell: pwsh
         run: >
           ctest --test-dir "$env:RUNNER_TEMP/simulation-view-qa"

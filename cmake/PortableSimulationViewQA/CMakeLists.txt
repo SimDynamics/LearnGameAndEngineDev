@@ -43,3 +43,9 @@ enable_testing()
 add_test(NAME native.simulation_blank_button
     COMMAND lgaed_simulation_view_portable_qa --blank-label)
 set_tests_properties(native.simulation_blank_button PROPERTIES TIMEOUT 60)
+
+# The full original native-view suite uses the same host and source files.
+# No test fixtures, account settings or installed programs are touched.
+add_test(NAME native.simulation_view_full
+    COMMAND lgaed_simulation_view_portable_qa)
+set_tests_properties(native.simulation_view_full PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
