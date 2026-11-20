@@ -241,11 +241,11 @@ int main() {
                 auto* b=dynamic_cast<@IDENTIFIED@*>(copies[i].get());
                 if(!a||!b||a->@CODE@()!=b->@CODE@())return 12;
             }
-            originals[i]->@CHANGE@(i*37+1);
+            originals[i]->@CHANGE@(static_cast<int>(i)*37+1);
             if(copies[i]->@NUMBER@()==originals[i]->@NUMBER@())
                 return 13;
-            copies[i]->@CHANGE@(i*37+2);
-            if(originals[i]->@NUMBER@()!=i*37+1)return 14;
+            copies[i]->@CHANGE@(static_cast<int>(i)*37+2);
+            if(originals[i]->@NUMBER@()!=static_cast<int>(i)*37+1)return 14;
         }
         originals.clear();
         for(std::size_t i=0;i<copies.size();++i)
