@@ -9,6 +9,9 @@ on:
       - native/core/cpp_indexed_unique_transfer_probe.hpp
       - native/core/cpp_indexed_unique_transfer_probe_tests.cpp
       - scripts/curriculum/test_cpp_indexed_unique_transfer_probe.py
+      - scripts/curriculum/test_cpp_indexed_unique_transfer_authoring.py
+      - scripts/curriculum/stable_state_layout.py
+      - native/platform/windows/content_loader.cpp
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_transferir_propiedad_entre_unique_ptr.json
       - .github/workflows/codex-cpp-member-body.yml
   workflow_dispatch:
@@ -34,6 +37,8 @@ jobs:
             python3 -B scripts/curriculum/test_cpp_indexed_unique_transfer_probe.py \
               --compiler "$compiler"
           done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_indexed_unique_transfer_authoring.py -v
 
   windows-msvc:
     name: Independently compile and test U6L5 on MSVC C++23
