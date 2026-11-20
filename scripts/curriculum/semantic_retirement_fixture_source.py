@@ -328,15 +328,13 @@ def build_fixtures() -> tuple[dict[str, dict], dict]:
     manifest["cases"][-1]["stateSource"] = put("semantic-choice-original-state", base)
     manifest["cases"][-1]["compilerCases"] = [{"id": COMPILER, "case": 0}]
 
-    # The general option contract deliberately protects every other field.
-    # A subsequent explanation rewrite is a rejection, not an expanded waiver.
+    # A choice's later explanation is allowed only with its own editorial
+    # edge and exact authored reading marker. This deliberately rewrites the
+    # phrase and its marker WITHOUT that edge: it must remain invalid, even
+    # though the earlier answer-option revision and retirement were valid.
     invalid_choice = deepcopy(documents[manifest["cases"][-1]["after"]])
-    original_choice = deepcopy(layout._blocks(invalid_choice)[CHOICE])
     layout._blocks(invalid_choice)[CHOICE]["explanation"] = "El resultado sigue siendo N=7 después de comparar."
     mark(invalid_choice, CHOICE, "/explanation", [("N=7", "output", "natural")])
-    invalid_choice["stateLayout"]["editorial"].append({"id": CHOICE,
-        "beforeSha256": layout.fingerprint(original_choice),
-        "afterSha256": layout.fingerprint(layout._blocks(invalid_choice)[CHOICE])})
 
     for name, (bad, message) in negative_documents(batch).items():
         item = {"name": name, "file": put("invalid-" + name, bad)}

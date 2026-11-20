@@ -260,7 +260,7 @@ class SemanticRetirementTests(unittest.TestCase):
         with self.assertRaisesRegex(layout.LayoutError, "complete previous published presentation"):
             layout.validate_transition(before, missing)
 
-    def test_choice_before_retirement_keeps_unchanged_feedback_authorship(self):
+    def test_choice_before_retirement_preserves_old_marks_and_authenticates_new_prose(self):
         before, after = self.pair("semantic-choice-before-retirement")
         source = self.documents[self.cases["semantic-choice-before-retirement"]["stateSource"]]
         old = self.marker(source, fixtures.CHOICE, "/explanation")
@@ -268,10 +268,45 @@ class SemanticRetirementTests(unittest.TestCase):
         self.assertEqual(old, self.marker(fixtures.history_view(after), fixtures.CHOICE, "/explanation"))
         self.assertNotEqual(layout._blocks(source)[fixtures.CHOICE]["options"],
                             layout._blocks(before)[fixtures.CHOICE]["options"])
+
+        # The option was already corrected. A second, independently signed
+        # editorial step may clarify its explanation without recycling the
+        # earlier source marker, answer or historical state address.
         text = "El resultado sigue siendo N=7 después de comparar."
-        with self.assertRaisesRegex(layout.LayoutError, "General choice review changed another"):
-            layout.revise_ordinary_editorial(before, fixtures.CHOICE, {"explanation": {
-                "text": text, "spans": [semantics.select(text, "N=7", "output", reading="natural")]}})
+        edited = layout.revise_ordinary_editorial(before, fixtures.CHOICE, {"explanation": {
+            "text": text, "spans": [semantics.select(text, "N=7", "output", reading="natural")]}})
+        layout.validate_transition(before, edited)
+        revised = self.marker(edited, fixtures.CHOICE, "/explanation")
+        self.assertNotEqual(old["sourceSha256"], revised["sourceSha256"])
+        self.assertEqual(revised["spans"][0]["text"], "N=7")
+        self.assertEqual(layout._blocks(edited)[fixtures.CHOICE]["options"],
+                         layout._blocks(before)[fixtures.CHOICE]["options"])
+        self.assertEqual(layout._blocks(edited)[fixtures.CHOICE]["correctIndex"], 0)
+        self.assertEqual(edited["stateLayout"]["origin"], before["stateLayout"]["origin"])
+        self.assertEqual(edited["stateLayout"]["choiceRevisions"],
+                         before["stateLayout"]["choiceRevisions"])
+
+        retired = layout.retire(edited, [fixtures.NOTE_A])
+        layout.validate_transition(edited, retired)
+        self.assertEqual(retired["stateLayout"]["retirementHistory"][0]["textSemantics"],
+                         edited["textSemantics"])
+        self.assertEqual(self.marker(fixtures.history_view(retired),
+                                     fixtures.CHOICE, "/explanation"), revised)
+        self.assertEqual(self.marker(fixtures.history_view(after),
+                                     fixtures.CHOICE, "/explanation"), old)
+
+        # The optional prose mechanism must not accept an unproven wording or
+        # a fabricated new response contract under the same choice owner.
+        without_edge = deepcopy(edited)
+        without_edge["stateLayout"]["editorial"].pop()
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(without_edge)
+        changed_answer = deepcopy(edited)
+        layout._blocks(changed_answer)[fixtures.CHOICE]["correctIndex"] = 1
+        changed_answer["stateLayout"]["editorial"][-1]["afterSha256"] = layout.fingerprint(
+            layout._blocks(changed_answer)[fixtures.CHOICE])
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(changed_answer)
 
     def test_shared_manifest_histories_are_complete_authentic_publications(self):
         for case in self.manifest["cases"]:
