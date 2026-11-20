@@ -104,6 +104,19 @@ inline std::optional<std::size_t> closing_brace(std::string_view text,
             i = *end;
             continue;
         }
+        // C++ digraphs <% and %> are braces, including when mixed with
+        // literal { and }. An early %> must not escape the editable member.
+        if(c == '<' && i + 1 < text.size() && text[i+1] == '%') {
+            ++depth;
+            i += 2;
+            continue;
+        }
+        if(c == '%' && i + 1 < text.size() && text[i+1] == '>') {
+            if(depth == 0) return {};
+            if(--depth == 0) return i;
+            i += 2;
+            continue;
+        }
         if(c == '{') ++depth;
         if(c == '}') {
             if(depth == 0) return {};
@@ -163,7 +176,10 @@ inline bool cpp_member_body_preserves_source(const CppMemberBodyCheck& check,
     if (!closing || *closing != close) return false;
     const auto body = candidate.substr(prefix.size(), close - prefix.size());
     const auto tokens = code_format::cpp_tokens(body);
-    return tokens && !code_format::cpp_process_termination_tokens(*tokens);
+    // The source-level scanner also has a separate lexical guard. Both
+    // must agree that no original or alternative brace closes this function.
+    return tokens && code_format::confined_function_body_edit(body) &&
+        !code_format::cpp_process_termination_tokens(*tokens);
 }
 
 } // namespace lgaed::curriculum

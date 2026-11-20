@@ -56,6 +56,15 @@ int main() { return 0; }
  (void)text;
  return false;
 )cpp")), "Raw string or comment braces were misread");
+        require(cpp_member_body_preserves_source(check,update(R"cpp(
+    if (origen == destino) <%
+        return false;
+    }
+    if (origen < 0) {
+        return false;
+    %>
+    return true;
+)cpp")), "Balanced mixed C++ brace digraphs were rejected");
         auto changed=good;
         changed.replace(changed.find("std::unique_ptr<int> primero_"),
                         std::string("std::unique_ptr<int> primero_").size(),"int primero_");
@@ -79,6 +88,9 @@ int main() { return 0; }
         require(!cpp_member_body_preserves_source(check,update(
             "\nreturn false; }\n// escaped owner\n")),
                 "Closing the method early was accepted");
+        require(!cpp_member_body_preserves_source(check,update(
+            "\nreturn false; %>\nint unexpected() { return 1; }\n<%\n")),
+                "C++ brace digraph escaped the editable method");
         require(!cpp_member_body_preserves_source(check,update(
             "\nconst char* a = \"unterminated;\nreturn false;\n")),
                 "Unterminated code string was accepted");
