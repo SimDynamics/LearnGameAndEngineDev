@@ -1143,18 +1143,24 @@ def _general_choice_semantic_projection(
 
 
 def _general_choice_projection(item: dict, block: dict) -> dict:
-    """Only the declared option text may differ from the exact archived choice.
+    """Restore the archived response, while retaining later authenticated prose.
 
-    The complete predecessor, response position and other options remain
-    immutable. No arbitrary choice/answer contract is normalized.
+    A corrected choice can subsequently receive an ordinary question or
+    explanation revision on the SAME stable owner. The earlier option edit
+    must never authorize changing a different option, index, answer or guide.
+    An editorial step still needs its own signed edge and text-semantics
+    descriptor in the complete lesson transition.
     """
     original = item["block"]
     expected = deepcopy(original)
     index = item["optionIndex"]
     expected["options"][index] = item["replacement"]
-    require(block == original or block == expected,
-            "General choice review changed another option, answer or authored field")
-    return deepcopy(original)
+    if block != original and block != expected:
+        require(bool(ordinary_editorial_fields(expected, block)),
+                "General choice review changed another option, answer or authored field")
+    result = deepcopy(block)
+    result["options"][index] = original["options"][index]
+    return result
 
 
 def _historical_choice_contract(document: dict, identity: str, block: dict) -> dict:
@@ -2352,6 +2358,20 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             require(type(active) is dict,
                     "General choice review must keep its original activity active")
             _general_choice_projection(item, active)
+            # A later question/explanation edit on the SAME option owner is
+            # a separate publication. Do not inherit the original narration
+            # of a changed sentence or authorize an unmarked wording change.
+            option_only = deepcopy(original)
+            option_only["options"][index] = item["replacement"]
+            for field in ordinary_editorial_fields(option_only, active):
+                overlay = document.get(text_semantics.ROOT_FIELD) or {}
+                require(type(overlay) is dict and type(overlay.get("fields")) is list,
+                        "A later choice-owner prose revision needs authored text semantics")
+                markers = [marker for marker in overlay["fields"]
+                           if type(marker) is dict and marker.get("block") == identity
+                           and marker.get("path") == "/" + field]
+                require(len(markers) == 1,
+                        "A later choice-owner prose revision needs its own text descriptor")
             semantic_before = item["semanticBefore"]
             selected_before = original["options"][index]
             if semantic_before is not None:

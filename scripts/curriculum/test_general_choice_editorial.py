@@ -227,6 +227,76 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
                 self.assertEqual(original["correctIndex"], updated["correctIndex"])
                 self.assertEqual(original["options"][1:], updated["options"][1:])
 
+    def test_choice_option_then_question_uses_independent_editorial_proofs(self):
+        """Correcting a choice must not prevent refining that owner's question.
+
+        This is a sequential review of a real U9L13 owner, not an exception for
+        either Spanish sentence. Its response remains exactly the publication.
+        """
+        import validar_json_programacion as contract
+
+        option_revision = self.revise()
+        former = layout._blocks(option_revision)[OWNER]
+        revised_question = former["question"].replace(
+            "¿Qué falta?", "¿Qué condición debe corregirse?")
+        self.assertNotEqual(former["question"], revised_question)
+        spans = [layout.text_semantics.select(
+            revised_question, "enviar", "cpp", reading="technical")]
+        updated = layout.revise_ordinary_editorial(
+            option_revision, OWNER,
+            {"question": {"text": revised_question, "spans": spans}})
+        layout.validate_transition(option_revision, updated)
+        reopened = json.loads(json.dumps(updated, ensure_ascii=False))
+        layout.validate(reopened)
+        self.assertEqual(layout._blocks(updated)[OWNER]["question"],
+                         revised_question)
+        self.assertEqual(layout._blocks(updated)[OWNER]["options"][0], REVISED)
+        self.assertEqual(layout._blocks(updated)[OWNER]["correctIndex"], 0)
+        self.assertEqual(layout.validate(self.original), layout.validate(updated))
+        self.assertEqual(self.original["stateLayout"]["origin"],
+                         updated["stateLayout"]["origin"])
+        self.assertEqual(len(updated["stateLayout"]["choiceRevisions"]), 1)
+        self.assertEqual(len(updated["stateLayout"]["editorial"]),
+                         len(self.original["stateLayout"]["editorial"]) + 2)
+        previous_block=layout._blocks(option_revision)[OWNER]
+        changed_block=layout._blocks(updated)[OWNER]
+        relative="app/src/main/assets/content/es/" + RELATIVE
+        origin=layout.validate(self.original)
+        location=next(value for (page, pos), value in origin.items()
+                      if self.original["stateLayout"]["current"][page]["blocks"][pos] == OWNER)
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *location, previous_block, changed_block,
+            previous_document=option_revision, current_document=updated))
+        restored=layout.original_projection(updated)
+        original_choice=layout._blocks(restored)[OWNER]
+        self.assertEqual(original_choice["options"], self.block["options"])
+        # Its *current* question marker stays bound to its revised prose.
+        # Only the corrected answer-option text and its mark rewind.
+        self.assertEqual(original_choice["question"], revised_question)
+        self.assertEqual(changed_block["explanation"], self.block["explanation"])
+
+        for altered in ("answer", "another-option", "missing-question-mark",
+                        "wrong-question-mark", "missing-editorial-edge"):
+            bad=deepcopy(updated)
+            owner=layout._blocks(bad)[OWNER]
+            if altered=="answer":
+                owner["correctIndex"]=1
+            elif altered=="another-option":
+                owner["options"][1]+=" Versión falsa."
+            elif altered in ("missing-question-mark","wrong-question-mark"):
+                marker=next(marker for marker in bad["textSemantics"]["fields"]
+                            if marker["block"]==OWNER and marker["path"]=="/question")
+                if altered=="missing-question-mark":
+                    bad["textSemantics"]["fields"].remove(marker)
+                else:
+                    marker["sourceSha256"]="0"*64
+            else:
+                bad["stateLayout"]["editorial"].pop()
+            if altered in ("answer","another-option"):
+                bad["stateLayout"]["editorial"][-1]["afterSha256"]=layout.fingerprint(owner)
+            with self.subTest(altered=altered), self.assertRaises(ValueError):
+                layout.validate_transition(option_revision, bad)
+
     def test_general_option_curricular_guard_rejects_answer_and_history_tampering(self):
         import validar_json_programacion as contract
 
