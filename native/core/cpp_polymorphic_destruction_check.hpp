@@ -61,8 +61,25 @@ inline bool valid(const CppPolymorphicDestructionPolicy& p) {
        bodies[2].signature.find("std::unique_ptr<"+p.base_class+"> "+
           p.factory_function+"(")!=0)
         return false;
+    // Keep the declared names bound to actual source objects. Otherwise
+    // well-formed but misspelled author metadata would make every valid
+    // student solution fail the private C++ check after the first case.
+    const auto owned_type=source.find("class "+p.owned_class+" {")!=std::string::npos||
+        source.find("struct "+p.owned_class+" {")!=std::string::npos;
+    const auto write_operation=source.find("void "+p.write_method+"(")!=std::string::npos;
+    const auto cycle_at=source.find("struct "+p.cycle_class+" {");
+    const auto cycle_end=cycle_at==std::string::npos
+        ?std::string::npos:source.find("};",cycle_at);
+    if(!owned_type||!write_operation||cycle_end==std::string::npos)return false;
+    const auto cycle=std::string_view(source).substr(cycle_at,cycle_end-cycle_at);
+    for(std::string_view field:{std::string_view(p.base_alive),
+            std::string_view(p.derived_alive),std::string_view(p.owned_alive),
+            std::string_view(p.base_destroyed),
+            std::string_view(p.derived_destroyed),
+            std::string_view(p.owned_destroyed)})
+        if(cycle.find("int "+std::string(field))==cycle.npos)return false;
     // The actual base virtuality and single-owner member are immutable.
-    // The driver verifies the real derived dynamic type and complete cleanup.
+    // The private driver verifies real derived identity and complete cleanup.
     return source.find("virtual ~"+p.base_class+"() noexcept;")!=std::string::npos&&
         source.find("~"+p.derived_class+"() noexcept override;")!=std::string::npos&&
         source.find("std::unique_ptr<"+p.owned_class+"> "+p.owned_member+";")!=
