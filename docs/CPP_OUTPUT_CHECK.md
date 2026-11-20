@@ -89,8 +89,9 @@ incompleto o una salida fabricada no acreditan ese contrato.
 La regresión Windows `native.u6l5_indexed_unique_transfer_state` comprueba
 cargador, estado histórico y recibo independiente. La ejecución
 `scripts/curriculum/test_cpp_indexed_unique_transfer_runtime.py` compila
-y ejecuta tres soluciones equivalentes y seis variantes rechazadas (una
-por contaminar stdout) con GCC, Clang
+y ejecuta tres soluciones equivalentes y siete variantes rechazadas (una
+por contaminar stdout y otra por copiar un entero cuando los valores de ambos
+propietarios coinciden) con GCC, Clang
 y MSVC disponible en CI. El comprobador privado exige stdout vacío y que stderr sea exactamente
 el marcador final emitido tras todas las verificaciones; una coincidencia
 parcial del marcador no demuestra éxito. Estas pruebas **no publican** el campo en el JSON.
