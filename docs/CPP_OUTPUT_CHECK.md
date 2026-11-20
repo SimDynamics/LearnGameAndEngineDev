@@ -659,6 +659,88 @@ La prueba independiente de C++ y la conservación de StateStore no
 constituyen, por sí mismas, una aceptación de la app nativa completa
 en el Windows del usuario.
 
+## Dos interfaces independientes sobre un único objeto vivo
+
+Programación 3, **U10L1**, dispone de la declaración opcional
+`compilerDualInterfaceChecks` para una lección española
+`stateLayout` v2. Work la incorpora en la raíz de
+`lesson_reunir_dos_bases_independientes_en_un_objeto.json`,
+sin cambiar el código inicial, los tres casos, las respuestas ni el
+propietario estable del editor. Ejemplo exacto de autoría:
+
+```json
+"compilerDualInterfaceChecks": [
+  {
+    "activity": "block_0007_0011",
+    "valueInterface": "ConValor",
+    "reportInterface": "ConInforme",
+    "concreteClass": "Muestra",
+    "valueMethod": "valor",
+    "writeMethod": "escribir",
+    "changeMethod": "cambiar",
+    "streamParameter": "salida",
+    "changeParameter": "nuevo",
+    "codeMember": "codigo_",
+    "valueMember": "valor_",
+    "constructorCodeParameter": "codigo",
+    "constructorValueParameter": "valor",
+    "reportSeparator": "="
+  }
+]
+```
+
+El objetivo autoriza editar **solo dos cuerpos** del código C++
+publicado: `Muestra::valor() const` y
+`Muestra::escribir(std::ostream&) const`. Ambas
+interfaces abstractas, sus destructores virtuales, la herencia pública
+múltiple, las firmas, los campos, la construcción, `cambiar`,
+`mostrar` y `main` permanecen exactamente
+iguales. El motor contrasta los intervalos protegidos byte a byte,
+rechaza directivas y no depende de que el estudiante copie literalmente
+un único cuerpo de referencia.
+
+La sonda semántica se compila a partir del **programa editado realmente
+entregado**, más un controlador interno independiente del comprobador
+visible de salida. Construye objetos con códigos y valores cero,
+negativos, extremos y repetidos. Consulta dos referencias, una
+`ConValor` y otra `ConInforme`, y
+comprueba que ambas corresponden al **mismo objeto vivo**. Después de
+`cambiar`, la primera debe devolver el valor actualizado
+y la segunda escribir `código=valor` en **cada uno de
+dos flujos independientes**. También se prueba escribir dos veces
+seguidas sin modificar el objeto: no se admiten valores constantes,
+informes desactualizados ni escribir siempre en `std::cout`
+para imitar el primer resultado.
+
+La primera ejecución visible correcta sigue siendo la **única
+obligatoria**. Su entrada publicada es `7 3 -2`; las
+otras dos entradas, `0 0 0` y `-4 -8 5`,
+continúan como pruebas opcionales. La comprobación semántica privada
+no exige repetir esas entradas manualmente. La evidencia nueva usa
+el recibo `dual-interface/v1`, vinculado a fuente,
+declaración, solicitud, revisión y resultado de la sonda. Un logro
+histórico por `stdout` no recibe ese sello
+automáticamente. El estado de otros cursos, los intentos y los
+borradores no se convierten ni se borran.
+
+Para comprobar la semántica y la autoría por separado desde la raíz
+de `Codex`:
+
+```text
+python -B scripts/curriculum/test_cpp_dual_interface.py --compiler cl --windows
+python -B -m unittest discover -s scripts/curriculum -p test_cpp_dual_interface_authoring.py -v
+```
+
+El workflow `.github/workflows/codex-dual-interface.yml`
+compila el núcleo semántico con GCC, Clang y MSVC desechables.
+`native.dual_interface_state_live` comprueba además
+el lector completo y ligero, los tres casos originales y la
+persistencia de recibos válidos, ausentes y adulterados en StateStore
+aislado. Las comprobaciones de núcleo y StateStore no sustituyen la
+ejecución visual de la app ni la aceptación en el Windows personal
+del estudiante. Un ejecutor Windows alojado utiliza su propio
+toolchain; solo acredita el alcance y la versión que realmente ejecuta.
+
 ## Clonar sin perder la clase concreta ni duplicar propietarios
 
 Para Programación 3, **U8L10**, la raíz de una lección española con
