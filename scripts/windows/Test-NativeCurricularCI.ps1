@@ -530,6 +530,8 @@ if ($Suite -eq 'ReaderBuild') {
         'native.compiler_puzzles',
         'native.u1_editor_edition',
         'native.u1_editor_contracts',
+        'native.u1_main_editor_execution',
+        'native.u1_main_editor_contracts',
         'native.lesson_optional_order_help',
         'native.semantic_retirement_view',
         'native.compiler_case_order_view',

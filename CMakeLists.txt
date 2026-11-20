@@ -416,6 +416,22 @@ function(lgaed_add_catalog_history_fixtures)
         COMMENT "Verifying immutable pre-retirement U1 test fixtures from local d1933ed"
         VERBATIM)
     add_custom_target(lgaed_retirement_fixtures DEPENDS ${LGAED_RETIREMENT_FIXTURES})
+    # Read-only fixture of the latest Work/main edition at its pinned commit.
+    # No published curriculum or profile is modified or silently synchronized.
+    set(LGAED_MAIN_U1_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u1-main-befa8bf9")
+    set(LGAED_MAIN_U1_FILES
+        "${LGAED_MAIN_U1_DIR}/lesson_primer_programa_y_salida.json"
+        "${LGAED_MAIN_U1_DIR}/lesson_texto_secuencia_y_formato.json"
+        "${LGAED_MAIN_U1_DIR}/lesson_fuente_compilacion_y_diagnostico.json"
+        "${LGAED_MAIN_U1_DIR}/lesson_resolver_probar_y_recuperar.json")
+    add_custom_command(OUTPUT ${LGAED_MAIN_U1_FILES}
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/u1_main_edition_fixture_source.py"
+            --output-dir "${LGAED_MAIN_U1_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u1_main_edition_fixture_source.py"
+        COMMENT "Verify immutable U1 edition at Work/main befa8bf9"
+        VERBATIM)
+    add_custom_target(lgaed_main_u1_fixtures DEPENDS ${LGAED_MAIN_U1_FILES})
     set(LGAED_DIAGNOSTIC_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/diagnostics-7862f10")
     set(LGAED_DIAGNOSTIC_FIXTURES
         "${LGAED_DIAGNOSTIC_FIXTURE_DIR}/lesson_consultas_const_y_objetos_constantes.json"
@@ -713,14 +729,17 @@ if(LGAED_READER_BUILD_QA_ONLY)
     add_executable(lgaed_lesson_view_tests
         native/presentation/windows/lesson_view_tests.cpp)
     target_link_libraries(lgaed_lesson_view_tests PRIVATE lgaed_curricular_windows)
-    add_dependencies(lgaed_lesson_view_tests lgaed_retirement_fixtures)
+    add_dependencies(lgaed_lesson_view_tests lgaed_retirement_fixtures lgaed_main_u1_fixtures)
     # The core U1 tests verify that every active editor has independent
     # response and draft storage, including Work's new edition additions.
     add_executable(lgaed_lesson_tests native/core/lesson_tests.cpp)
     target_link_libraries(lgaed_lesson_tests PRIVATE lgaed_platform_windows lgaed_host_options)
-    add_dependencies(lgaed_lesson_tests lgaed_retirement_fixtures)
+    add_dependencies(lgaed_lesson_tests lgaed_retirement_fixtures lgaed_main_u1_fixtures)
     add_test(NAME native.u1_editor_contracts COMMAND lgaed_lesson_tests --u1-editor-contracts)
     set_tests_properties(native.u1_editor_contracts PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+    add_test(NAME native.u1_main_editor_contracts
+        COMMAND lgaed_lesson_tests --u1-main-editor-contracts)
+    set_tests_properties(native.u1_main_editor_contracts PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     add_test(NAME native.lesson_scroll_render COMMAND lgaed_lesson_view_tests --scroll-repaint)
     add_test(NAME native.lesson_menu COMMAND lgaed_lesson_view_tests --lesson-menu)
     add_test(NAME native.lesson_optional_order_help
@@ -731,6 +750,9 @@ if(LGAED_READER_BUILD_QA_ONLY)
     add_test(NAME native.u1_editor_edition
         COMMAND lgaed_lesson_view_tests --u1-compiler-edition)
     set_tests_properties(native.u1_editor_edition PROPERTIES TIMEOUT 480 RUN_SERIAL TRUE)
+    add_test(NAME native.u1_main_editor_execution
+        COMMAND lgaed_lesson_view_tests --u1-main-compiler-edition)
+    set_tests_properties(native.u1_main_editor_execution PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     lgaed_add_catalog_test()
     lgaed_add_course_edition_tests()
     lgaed_add_general_choice_editorial_tests()

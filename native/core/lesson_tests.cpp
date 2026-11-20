@@ -1708,8 +1708,68 @@ void inline_feedback_optional_contract_tests() {
     }
     std::cout<<"PASS optional inline feedback rejects only present Kotlin-blank fields before evaluation\n";
 }
+void pinned_main_u1_editor_contracts() {
+    // Read original Work assets only from the authenticated Git-object fixture.
+    std::array<wchar_t,32768> executable{};
+    const auto length=GetModuleFileNameW(nullptr,executable.data(),
+        static_cast<DWORD>(executable.size()));
+    check(length&&length<executable.size(),
+        "Cannot locate pinned Work/main U1 edition fixtures");
+    const auto folder=std::filesystem::path(std::wstring_view(executable.data(),length))
+        .parent_path()/"test-fixtures/u1-main-befa8bf9";
+    struct Plan {const char* filename;std::set<std::string> ids;};
+    const std::array<Plan,4> plans{{
+        {"lesson_primer_programa_y_salida.json",
+            {"p1u1l2_construir_salida","p1u1l2_reparar_salida"}},
+        {"lesson_texto_secuencia_y_formato.json",
+            {"p1u1l3_construir_informe","p1u1l3_reparar_informe"}},
+        {"lesson_fuente_compilacion_y_diagnostico.json",
+            {"p1u1l4_reparar_nombre_editor","p1u1l4_reparar_orden_editor"}},
+        {"lesson_resolver_probar_y_recuperar.json",
+            {"p1u1l5_escribir_linea_intermedia","block_0003_0002","block_0005_0006"}}
+    }};
+    std::set<std::string> response_owners,draft_owners;
+    std::size_t count=0;
+    for(const auto& plan:plans){
+        const auto lesson=lgaed::windows::load_lesson(folder/plan.filename);
+        const auto catalog=lgaed::windows::load_lesson_progress_metadata(folder/plan.filename);
+        check(lesson.compiler_puzzles_required&&lesson.pages.size()==catalog.pages.size(),
+            "A pinned main lesson lacks its mandatory compiler or catalog page");
+        std::set<std::string> found;
+        for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
+            if(block.type!=lgaed::curriculum::BlockType::cpp_compiler)continue;
+            check(plan.ids.contains(block.stable_id)&&found.insert(block.stable_id).second,
+                "A Work/main lesson has a duplicate, missing or unaccounted editor");
+            const auto projected=lgaed::curriculum::stable_block_position(catalog,block.stable_id);
+            check(projected&&catalog.pages[projected->page].blocks[projected->block].type==lgaed::curriculum::BlockType::cpp_compiler,
+                "Catalog metadata dropped the pinned main editor");
+            check(block.output_check&&block.output_check->cases.size()>=1,
+                "The current main editor has no distinct first-case output goal");
+            check(response_owners.insert(lgaed::curriculum::exercise_key(lesson,block)).second&&
+                draft_owners.insert(lgaed::curriculum::draft_key("programming",lesson,block)).second,
+                "Two current main editors share a saved response or C++ draft");
+            ++count;
+        }
+        check(found==plan.ids,"The main lesson lost an independently named editor");
+    }
+    check(count==9&&response_owners.size()==9&&draft_owners.size()==9,
+        "The pinned Work/main U1 edition does not contain nine independent editors");
+    const auto last=lgaed::windows::load_lesson(folder/"lesson_resolver_probar_y_recuperar.json");
+    const auto position=lgaed::curriculum::stable_block_position(last,"p1u1l5_escribir_linea_intermedia");
+    check(position&&position->page==2,"The ninth main editor moved away from its authenticated address");
+    const auto& compiler=last.pages[position->page].blocks[position->block];
+    check(compiler.initial_code.find("std::cout << \"Puesto\\n\";")!=std::string::npos&&
+        compiler.initial_code.find("std::cout << \"Fin\";")!=std::string::npos&&
+        compiler.output_check->cases.front().outputs==std::vector<std::string>{"Puesto\nMesa B\nFin"},
+        "The ninth editor lost its two-line start or three-line acceptance goal");
+    std::cout<<"PASS pinned Work/main befa8bf9: nine U1 editors, independent drafts, "
+             <<"separate objective receipts, catalog projection and exact ninth goal\n";
+}
 int main(int argc,char** argv) {
     try {
+        if(argc==2&&std::string_view(argv[1])=="--u1-main-editor-contracts"){
+            pinned_main_u1_editor_contracts();return 0;
+        }
         if(argc==2&&std::string_view(argv[1])=="--u1-editor-contracts"){
             // Run the published U1 identity and draft contracts without the
             // unrelated historical/editorial fixtures used by the full suite.

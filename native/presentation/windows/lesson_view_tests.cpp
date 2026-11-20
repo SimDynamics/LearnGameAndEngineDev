@@ -3361,6 +3361,88 @@ std::string u1l5_intermediate_line_solution(const curriculum::Lesson& lesson,
     source.replace(marker,placeholder.size(),"    "+sample.code);
     return source;
 }
+void pinned_main_u1l5_intermediate_editor_execution() {
+    std::array<wchar_t,32768> executable{};
+    const auto length=GetModuleFileNameW(nullptr,executable.data(),
+        static_cast<DWORD>(executable.size()));
+    require(length&&length<executable.size(),"Cannot locate immutable main U1 fixture");
+    const auto path=std::filesystem::path(std::wstring_view(executable.data(),length))
+        .parent_path()/"test-fixtures/u1-main-befa8bf9/lesson_resolver_probar_y_recuperar.json";
+    const auto original_hash=state::sha256(state::read_bytes(path));
+    Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
+        state::prepare_lesson_state(data,lesson);
+        // Older ordinary quizzes can be solved while the newly introduced
+        // ninth compiler still has NO execution proof or inherited receipt.
+        for(std::size_t page=0;page<=2;++page){
+            for(const auto& block:lesson.pages[page].blocks){
+                if(block.type!=BlockType::multiple_choice&&block.type!=BlockType::fill_code&&
+                    block.type!=BlockType::output_prediction&&block.type!=BlockType::order_code&&
+                    block.type!=BlockType::inline_fill_code&&block.type!=BlockType::drag_fill_code)
+                    continue;
+                state::Response answer;answer.correct=true;
+                if(block.correct_index)answer.selected=static_cast<std::int64_t>(*block.correct_index);
+                answer.order.assign(block.correct_order.begin(),block.correct_order.end());
+                if(!block.answers.empty())answer.answer=block.answers.front();
+                if(block.type==BlockType::inline_fill_code||block.type==BlockType::drag_fill_code){
+                    winrt::Windows::Data::Json::JsonObject submitted;
+                    winrt::Windows::Data::Json::JsonArray values;
+                    if(block.type==BlockType::inline_fill_code){
+                        for(const auto& expected:block.answers)
+                            values.Append(winrt::Windows::Data::Json::JsonValue::CreateStringValue(winrt::to_hstring(expected)));
+                    }else for(const auto slot:block.correct_order)
+                        values.Append(winrt::Windows::Data::Json::JsonValue::CreateNumberValue(static_cast<double>(slot)));
+                    submitted.Insert(block.type==BlockType::inline_fill_code?L"answers":L"slots",values);
+                    answer.raw_json=winrt::to_string(submitted.Stringify());
+                }
+                state::put_response(data,lesson,block,answer);
+            }
+            (void)state::mark_page_reached(data,lesson,page);
+        }
+        state::save_current_page(data,lesson,2);
+    },[&](const curriculum::Lesson&){return windows::load_lesson(path);},true);
+    const auto where=curriculum::stable_block_position(f.lesson,"p1u1l5_escribir_linea_intermedia");
+    require(where&&where->page==2&&f.page()==2,"The pinned main ninth editor changed page or was bypassed");
+    const auto& compiler=f.lesson.pages[where->page].blocks[where->block];
+    require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler)&&
+        !lesson_page_state(f.view).can_next,
+        "A historical quiz receipt falsely completed the ninth C++ objective");
+    f.run(where->block);
+    auto output=f.text(where->block,14);
+    output.erase(std::remove(output.begin(),output.end(),'\r'),output.end());
+    require(output=="Puesto\nFin"&&!windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
+        "The incomplete original two-line program was wrongly accepted");
+    const auto pending=compiler.initial_code+"// borrador pendiente de la linea intermedia QA\n";
+    f.replace(where->block,10,pending);
+    require(state::get_draft(f.saved(),curriculum::draft_key("programming",f.lesson,compiler),"").source==pending,
+        "The ninth editor did not save its independent pending draft");
+    f.reopen();
+    require(f.text(where->block,10)==pending&&
+        !windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
+        "Reopening the pinned ninth editor lost its draft or granted completion");
+    const auto solution=u1l5_intermediate_line_solution(f.lesson,compiler);
+    f.replace(where->block,10,solution);f.run(where->block);
+    output=f.text(where->block,14);
+    output.erase(std::remove(output.begin(),output.end(),'\r'),output.end());
+    require(output=="Puesto\nMesa B\nFin"&&
+        windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler)&&
+        f.text(where->block,4).starts_with("✓ Correcto")&&lesson_page_state(f.view).can_next,
+        "The corrected pinned main editor did not produce its exact three-line goal");
+    for(const auto& page:f.lesson.pages)for(const auto& other:page.blocks)
+        if(other.type==BlockType::cpp_compiler&&other.stable_id!=compiler.stable_id)
+            require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,other),
+                "Finishing the ninth editor accredited an unrelated editor");
+    f.reopen();
+    require(f.text(where->block,10)==solution&&
+        windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
+        "Reopening lost the pinned ninth editor's source or receipt");
+    f.click(where->block,12);f.reopen();
+    require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler)&&
+        !lesson_page_state(f.view).can_next&&
+        state::sha256(state::read_bytes(path))==original_hash,
+        "Scoped reset did not restore the ninth objective or rewrote Work's fixture");
+    std::cout<<"PASS real pinned main U1L5 ninth editor: initial two-line mismatch, "
+             <<"draft persistence, three-line execution, isolated achievement, reopen/Reset\n";
+}
 void real_retirement_pages_preserve_all_eight_useful_editors() {
     struct Plan {const char* file;std::size_t page;const char* instruction;const char* editor;};
     const std::array plans{
@@ -5449,7 +5531,8 @@ int main(int argc,char* argv[]) {
     const bool lesson_menu_only=argc==2&&std::string_view(argv[1])=="--lesson-menu";
     const bool order_help_only=argc==2&&std::string_view(argv[1])=="--order-help";
     const bool u1_editor_only=argc==2&&std::string_view(argv[1])=="--u1-compiler-edition";
-    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only&&!order_help_only&&!u1_editor_only)return 2;
+    const bool main_u1_editor_only=argc==2&&std::string_view(argv[1])=="--u1-main-compiler-edition";
+    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only&&!order_help_only&&!u1_editor_only&&!main_u1_editor_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -5459,6 +5542,7 @@ int main(int argc,char* argv[]) {
     try {
         if(lesson_menu_only){lesson_menu_retains_import_pages_and_settings_with_hooks();return 0;}
         if(order_help_only){optional_separator_help_matches_screen_reader_and_grading();return 0;}
+        if(main_u1_editor_only){pinned_main_u1l5_intermediate_editor_execution();return 0;}
         if(u1_editor_only){
             real_retirement_pages_preserve_all_eight_useful_editors();
             integrated_u1_compilers_require_all_eight_real_executions();
