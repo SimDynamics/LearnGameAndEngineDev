@@ -119,6 +119,72 @@ la lección y validarla. Los ensayos de CI con metadatos temporales no
 publican por sí solos la declaración en el currículo.
 
 
+## Invariantes de asignación por movimiento y propiedad única
+
+El campo raíz español `compilerMoveAssignmentInvariantChecks` puede asociarse
+a un editor `cpp_compiler` ya publicado, con `stateLayout` v2, un único
+fuente y `outputCheck` original. Su propósito es acreditar la asignación
+por movimiento de una clase con `std::unique_ptr<int>` y una etiqueta
+que indica el estado. No modifica el código, los casos, los identificadores
+ni la posición histórica del bloque.
+
+Declaración concreta para Programación 3, U6L8:
+
+```json
+"compilerMoveAssignmentInvariantChecks": [
+  {
+    "activity": "block_0014_0002",
+    "className": "Muestra",
+    "memberName": "dato_",
+    "labelMember": "etiqueta_",
+    "parameterName": "otra",
+    "hasMethod": "hay",
+    "valueMethod": "valor",
+    "labelMethod": "etiqueta",
+    "accessMethod": "acceso",
+    "invariantMethod": "coherente",
+    "putMethod": "poner",
+    "changeMethod": "cambiar",
+    "retagMethod": "reetiquetar",
+    "clearMethod": "vaciar"
+  }
+]
+```
+
+El motor obtiene la definición original de
+`Muestra& Muestra::operator=(Muestra&& otra)` desde el editor auténtico
+y admite soluciones distintas **dentro de su cuerpo**. Conserva sin
+alteraciones los caracteres del fuente proporcionado fuera del cuerpo
+editable, incluidos las declaraciones, el constructor de movimiento,
+miembros y `main`. No se permite modificar el preprocesador en el cuerpo,
+cerrar la función antes de tiempo ni utilizar otra comprobación privada
+sobre la misma actividad.
+
+Una pulsación conserva el caso visible y ejecuta automáticamente otra
+compilación privada. Esta segunda ejecución prueba que mover entre
+objetos distintos transfiere el mismo entero sin reservar otro, libera
+el entero anterior del destino y deja vacío el origen con etiqueta cero.
+Comprueba directamente las funciones, sin depender de que el programa
+principal muestre esa transición. Verifica origen vacío, destinos con
+valores iguales y etiquetas distintas, cero como valor válido, automovimiento
+ocupado o vacío, referencia retornada, rechazos que conservan el estado,
+reutilización del origen y destrucción normal o durante el desenrollado
+de una excepción. Se vigilan las reservas reales; el movimiento no necesita
+pedir memoria. Nunca se accede a un objeto ya destruido.
+
+La prueba privada tiene su propia huella de código, fuente auténtico,
+parámetros, solicitud, revisión y compilación. Un acierto anterior de
+`outputCheck` no concede este nuevo objetivo. La acreditación añade
+el comprobante `move-invariant/v1` únicamente tras ejecutar correctamente
+los contratos de salida y semántica, conservando el recibo histórico
+y los borradores. No se piden pruebas manuales adicionales al estudiante.
+
+Esta variante concreta cubre la clase y la política descritas. No se
+extiende por sí sola a arrays, copias o jerarquías. Work debe añadir
+la declaración al JSON original de la lección y verificar su integración;
+los archivos de prueba con metadatos temporales no publican dicha autoría.
+
+
 ## Baterías abiertas de una función booleana con dos enteros
 
 Windows admite la variante `boolean-pair-v1` dentro de la lista raíz
