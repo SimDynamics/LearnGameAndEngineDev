@@ -6613,8 +6613,10 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
             require(type(outputs) is list and 1 <= len(outputs) <= 4 and
                     all(type(o) is str and o and "\x00" not in o and
                         len(o.encode("utf-8")) <= 4096 and
-                        o not in case["outputs"] for o in outputs) and
-                    len(set(outputs)) == len(outputs),
+                        o.replace("\r\n", "\n") not in {
+                            visible.replace("\r\n", "\n")
+                            for visible in case["outputs"]} for o in outputs) and
+                    len({o.replace("\r\n", "\n") for o in outputs}) == len(outputs),
                     "Hidden outputs must be distinct, bounded and differ from visible output")
 
 

@@ -30,6 +30,19 @@ struct CppLocalIntCheck {
     bool operator==(const CppLocalIntCheck&) const = default;
 };
 
+// A console may spell one line ending as LF or CRLF. Normalize those
+// spellings before deciding whether two expected observations really differ.
+[[nodiscard]] inline std::string cpp_local_int_canonical_stdout(
+        std::string_view bytes) {
+    std::string canonical;
+    canonical.reserve(bytes.size());
+    for(std::size_t i=0;i<bytes.size();++i) {
+        if(bytes[i]=='\r'&&i+1<bytes.size()&&bytes[i+1]=='\n')continue;
+        canonical+=bytes[i];
+    }
+    return canonical;
+}
+
 inline bool cpp_local_int_check_valid(const CppLocalIntCheck& check) {
     if(check.probes.empty() || check.probes.size()>8)return false;
     for(std::size_t index=0;index<check.probes.size();++index) {
@@ -41,7 +54,7 @@ inline bool cpp_local_int_check_valid(const CppLocalIntCheck& check) {
         for(const auto& output:probe.expected_stdout)
             if(output.empty()||output.size()>4096||
                output.find('\0')!=std::string::npos||
-               !distinct.insert(output).second)return false;
+               !distinct.insert(cpp_local_int_canonical_stdout(output)).second)return false;
         for(std::size_t prior=0;prior<index;++prior)
             if(check.probes[prior].variable==probe.variable&&
                check.probes[prior].replacement==probe.replacement)return false;
@@ -51,19 +64,9 @@ inline bool cpp_local_int_check_valid(const CppLocalIntCheck& check) {
 
 inline bool cpp_local_int_expected_output(const CppLocalIntProbe& probe,
                                            std::string_view observed) {
-    for(const auto& expected:probe.expected_stdout) {
-        if(observed==expected)return true;
-        // CRLF from a native std::ostream is an alternative spelling only
-        // when the authored expectation contains LF but no literal CR.
-        if(expected.find('\r')!=expected.npos||expected.find('\n')==expected.npos)continue;
-        std::string native;
-        native.reserve(expected.size()+std::count(expected.begin(),expected.end(),'\n'));
-        for(const char c:expected) {
-            if(c=='\n')native+='\r';
-            native+=c;
-        }
-        if(observed==native)return true;
-    }
+    const auto canonical=cpp_local_int_canonical_stdout(observed);
+    for(const auto& expected:probe.expected_stdout)
+        if(canonical==cpp_local_int_canonical_stdout(expected))return true;
     return false;
 }
 

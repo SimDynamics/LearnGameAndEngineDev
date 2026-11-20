@@ -350,6 +350,13 @@ void run() {
     wrong=JsonObject::Parse(winrt::to_hstring(raw.Stringify()));
     first=wrong.GetNamedArray(L"compilerLocalIntChecks").GetObjectAt(0)
         .GetNamedArray(L"probes").GetObjectAt(0);
+    JsonArray disguised_newline;
+    disguised_newline.Append(JsonValue::CreateStringValue(L"Llaves: 7\r\n"));
+    first.Insert(L"outputs",disguised_newline);
+    rejects(wrong);
+    wrong=JsonObject::Parse(winrt::to_hstring(raw.Stringify()));
+    first=wrong.GetNamedArray(L"compilerLocalIntChecks").GetObjectAt(0)
+        .GetNamedArray(L"probes").GetObjectAt(0);
     first.Insert(L"variable",JsonValue::CreateStringValue(L"llaves_no_existentes"));
     // A declared identifier must also be present in a submitted program;
     // native authoring alone does not claim a specific student's solution.

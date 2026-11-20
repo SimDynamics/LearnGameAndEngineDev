@@ -4607,8 +4607,10 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
             // A variant with the same permitted output as the published
             // unchanged program could never distinguish a hard-coded value.
             for(const auto& expected:next.expected_stdout)
-                require(std::ranges::find(first.outputs,expected)==first.outputs.end(),
-                    "An integer variation must distinguish its original output.");
+                require(!std::ranges::any_of(first.outputs,[&](const auto& visible) {
+                    return cpp_local_int_canonical_stdout(visible)==
+                           cpp_local_int_canonical_stdout(expected);
+                }),"An integer variation must distinguish its original output.");
             spec.probes.push_back(std::move(next));
         }
         require(cpp_local_int_check_valid(spec),

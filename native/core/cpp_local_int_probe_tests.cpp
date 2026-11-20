@@ -162,6 +162,12 @@ void expected_outputs_are_independent_and_reversible() {
     check.probes.pop_back();
     check.probes[0].expected_stdout = {"Llaves: 13", "Llaves: 13"};
     require(!cpp_local_int_check_valid(check), "Duplicate output spelling was admitted");
+    check.probes[0].expected_stdout = {"Llaves: 13\n", "Llaves: 13\r\n"};
+    require(!cpp_local_int_check_valid(check),
+        "Equivalent native CRLF/LF spellings were counted as two observations");
+    check.probes[0].expected_stdout = {"Llaves: 13\n"};
+    require(cpp_local_int_expected_output(check.probes[0], "Llaves: 13\r\n"),
+        "Native CRLF must remain equivalent to the authored LF spelling");
     check.probes[0].expected_stdout = {};
     require(!cpp_local_int_check_valid(check), "Missing independent output was admitted");
 }
