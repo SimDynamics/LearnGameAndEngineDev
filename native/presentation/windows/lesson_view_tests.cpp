@@ -3373,7 +3373,35 @@ void real_retirement_pages_preserve_all_eight_useful_editors() {
     for(const auto& plan:plans){
         const auto path=folder/plan.file;const auto original_hash=state::sha256(state::read_bytes(path));
         Fixture f([&](state::StateData& data,const curriculum::Lesson& lesson){
-            state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,plan.page);
+            state::prepare_lesson_state(data,lesson);
+            // This bookmark is reachable only after the earlier required exercises.
+            // Seed their historical answers, never a compiler execution receipt.
+            for(std::size_t page=0;page<plan.page;++page)
+                for(const auto& block:lesson.pages.at(page).blocks){
+                    if(block.type==BlockType::heading||block.type==BlockType::paragraph||
+                       block.type==BlockType::note||block.type==BlockType::code||
+                       block.type==BlockType::cpp_compiler)continue;
+                    state::Response answer;answer.correct=true;answer.answer="avance QA historico";
+                    if(block.correct_index)answer.selected=static_cast<std::int64_t>(*block.correct_index);
+                    answer.order.assign(block.correct_order.begin(),block.correct_order.end());
+                    if((block.type==BlockType::output_prediction||block.type==BlockType::fill_code)&&
+                       !block.answers.empty())answer.answer=block.answers.front();
+                    if(block.type==BlockType::inline_fill_code||block.type==BlockType::drag_fill_code){
+                        winrt::Windows::Data::Json::JsonObject submitted;
+                        winrt::Windows::Data::Json::JsonArray values;
+                        if(block.type==BlockType::inline_fill_code){
+                            for(const auto& expected:block.answers)
+                                values.Append(winrt::Windows::Data::Json::JsonValue::CreateStringValue(winrt::to_hstring(expected)));
+                        }else{
+                            for(const auto slot:block.correct_order)
+                                values.Append(winrt::Windows::Data::Json::JsonValue::CreateNumberValue(static_cast<double>(slot)));
+                        }
+                        submitted.Insert(block.type==BlockType::inline_fill_code?L"answers":L"slots",values);
+                        answer.raw_json=winrt::to_string(submitted.Stringify());
+                    }
+                    state::put_response(data,lesson,block,answer);
+                }
+            state::save_current_page(data,lesson,plan.page);
             for(const auto& p:lesson.pages)for(const auto& block:p.blocks)if(block.type==BlockType::cpp_compiler){
                 state::Draft draft;draft.source=block.initial_code+"// borrador QA independiente: "+block.stable_id+"\n";
                 state::put_draft(data,curriculum::draft_key("programming",lesson,block),draft);
