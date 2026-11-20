@@ -1,0 +1,48 @@
+name: Codex U6L6 authenticated defaulted move policy
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-defaulted-move-policy.yml
+      - native/core/cpp_defaulted_move_policy_check.hpp
+      - native/core/cpp_defaulted_move_policy_check_tests.cpp
+      - scripts/curriculum/test_cpp_defaulted_move_policy.py
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_elegir_copia_y_movimiento_de_una_clase.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Genuine U6L6 defaulted policy with GCC and Clang C++23
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify source conservation, unique_ptr identity and rejected copies
+        run: |
+          for compiler in g++ clang++; do
+            python3 -B scripts/curriculum/test_cpp_defaulted_move_policy.py \
+              --compiler "$compiler"
+          done
+
+  windows-msvc:
+    name: Genuine U6L6 generated moves and rejected copies with MSVC C++23
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Verify the real original U6L6 program and forbidden copies
+        shell: cmd
+        run: |
+          python -B scripts\curriculum\test_cpp_defaulted_move_policy.py --compiler cl --windows
