@@ -19,16 +19,21 @@ namespace lgaed::curriculum {
 struct CppInterfaceCollectionPolicy {
     std::string original_source;
     std::string base_class;
+    std::string simple_class;
+    std::string identified_class;
     std::string vector_alias;
     std::string add_function;
     std::string report_function;
     std::string write_method;
+    std::string number_method;
     std::string destination_parameter;
     std::string source_parameter;
     std::string data_parameter;
     std::string stream_parameter;
     std::string count_label;
     std::string index_separator;
+    std::string number_label;
+    std::string code_label;
     bool operator==(const CppInterfaceCollectionPolicy&) const = default;
 };
 
@@ -73,16 +78,20 @@ inline std::vector<CppEditableBody> bodies(
 inline bool valid(const CppInterfaceCollectionPolicy& policy) {
     for(std::string_view name:{
             std::string_view(policy.base_class),
+            std::string_view(policy.simple_class),
+            std::string_view(policy.identified_class),
             std::string_view(policy.vector_alias),
             std::string_view(policy.add_function),
             std::string_view(policy.report_function),
             std::string_view(policy.write_method),
+            std::string_view(policy.number_method),
             std::string_view(policy.destination_parameter),
             std::string_view(policy.source_parameter),
             std::string_view(policy.data_parameter),
             std::string_view(policy.stream_parameter)})
         if(!identifier(name))return false;
-    if(!literal(policy.count_label)||!literal(policy.index_separator))
+    if(!literal(policy.count_label)||!literal(policy.index_separator)||
+       !literal(policy.number_label)||!literal(policy.code_label))
         return false;
     const auto& source=policy.original_source;
     if(!cpp_multi_body_detail::valid_source(source) ||
@@ -91,8 +100,14 @@ inline bool valid(const CppInterfaceCollectionPolicy& policy) {
     // Prove that an actual polymorphic vector of unique owners is present.
     // The immutable source gate then prevents the candidate from changing it.
     return source.find("class "+policy.base_class+" {")!=source.npos &&
+        source.find("class "+policy.simple_class+" : public "+
+            policy.base_class+" {")!=source.npos &&
+        source.find("class "+policy.identified_class+" : public "+
+            policy.base_class+" {")!=source.npos &&
         source.find("virtual ~"+policy.base_class+"() = default;")!=
             source.npos &&
+        source.find("virtual int "+policy.number_method+
+            "() const noexcept = 0;")!=source.npos &&
         source.find("virtual void "+policy.write_method+
             "(std::ostream& "+policy.stream_parameter+") const = 0;")!=
             source.npos &&
@@ -142,7 +157,7 @@ public:
     LgaedOtherSample(int number,int extra,int& destroyed,int& written)
       : number_{number},extra_{extra},destroyed_{destroyed},written_{written} {}
     ~LgaedOtherSample() override { ++destroyed_; }
-    int numero() const noexcept override { return number_; }
+    int @NUMBER@() const noexcept override { return number_; }
     void @WRITE@(std::ostream& output) const override {
         ++written_;
         output << "Adicional:" << extra_;
@@ -165,8 +180,8 @@ int main() {
         const int code=index%5==0?0:index%5==1?INT_MIN:
                        index%5==2?INT_MAX:index%5==3?-9:11;
         std::unique_ptr<@BASE@> source;
-        if(kind==0) source=std::make_unique<MuestraSimple>(number);
-        else source=std::make_unique<MuestraIdentificada>(number,code);
+        if(kind==0) source=std::make_unique<@SIMPLE@>(number);
+        else source=std::make_unique<@IDENTIFIED@>(number,code);
         const auto* address=source.get();
         const auto previous=collection.size();
         if(!@ADD@(collection,source)||source||
@@ -175,9 +190,9 @@ int main() {
         identities.push_back(address);
         for(std::size_t i=0;i<previous;++i)
             if(collection[i].get()!=identities[i])return 3;
-        lines+=std::to_string(index)+"@SEPARATOR@Numero:"+
+        lines+=std::to_string(index)+"@SEPARATOR@@NUMBER_LABEL@"+
                std::to_string(number);
-        if(kind)lines+=";Codigo:"+std::to_string(code);
+        if(kind)lines+="@CODE_LABEL@"+std::to_string(code);
         lines+="\n";
     }
     {
@@ -235,14 +250,19 @@ int main() {
 )lgaed";
     std::string witness(driver);
     for(const auto& [name,value]:
-            std::array<std::pair<std::string_view,std::string_view>,7>{{
+            std::array<std::pair<std::string_view,std::string_view>,12>{{
         {"@BASE@",policy.base_class},
+        {"@SIMPLE@",policy.simple_class},
+        {"@IDENTIFIED@",policy.identified_class},
+        {"@NUMBER@",policy.number_method},
         {"@VECTOR@",policy.vector_alias},
         {"@ADD@",policy.add_function},
         {"@REPORT@",policy.report_function},
         {"@WRITE@",policy.write_method},
         {"@COUNT_LABEL@",policy.count_label},
-        {"@SEPARATOR@",policy.index_separator}
+        {"@SEPARATOR@",policy.index_separator},
+        {"@NUMBER_LABEL@",policy.number_label},
+        {"@CODE_LABEL@",policy.code_label}
     }})cpp_interface_collection_detail::substitute(witness,name,value);
     return std::string(prelude)+std::string(candidate)+witness;
 }
