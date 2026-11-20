@@ -15,6 +15,48 @@ void verify(std::string_view source,std::span<const NamedRuleRequirement> requir
     if(result.source_evidence!=expected)
         throw std::runtime_error(std::string(context)+": "+result.reason);
 }
+void alternative_logical_tokens() {
+    using named_rule_detail::canonical_rule_token;
+    for(const auto& equivalent:std::array{
+            std::pair{"id:and","op:&&"},std::pair{"id:or","op:||"},
+            std::pair{"id:not","op:!"},std::pair{"op:<%","op:{"},
+            std::pair{"op:%>","op:}"}}) {
+        if(canonical_rule_token(equivalent.first)!=equivalent.second)
+            throw std::runtime_error("A standard C++ alternate token lost its operator meaning");
+    }
+    if(canonical_rule_token("literal:\"and or not\"")!="literal:\"and or not\"")
+        throw std::runtime_error("A quoted explanation became an executable operator");
+    const std::array rules{NamedRuleRequirement{"cajas_para",4,
+        {"capacidad","plaza","cupo"},2}};
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (false and capacidad and capacidad);
+        })cpp",rules,false,
+        "A dead 'and' expression cannot fake two capacity dependencies");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (true or capacidad or capacidad) - 1;
+        })cpp",rules,false,
+        "A true 'or' expression cannot fake two capacity dependencies");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (false and capacidad and capacidad);
+        })cpp",rules,true,
+        "Dead alternate-operator terms cannot remove real calculated dependencies");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (true or capacidad or capacidad) - 1;
+        })cpp",rules,true,
+        "A constant true 'or' expression preserves a separately valid result");
+}
 void capacity() {
     const std::array rules{NamedRuleRequirement{"cajas_para",4,
         {"capacidad","plaza","cupo"},2}};
@@ -2676,6 +2718,7 @@ int main() { return 0; }
         "A copy-list variation preserves its braces, trailing comma and surrounding CRLF bytes");
     for(const auto body:{
             "return piezas / capacidad + (piezas % capacidad != 0);",
+            "return (piezas + capacidad - 1) / capacidad + (false and capacidad and capacidad);",
             "const auto ajuste = capacidad - 1; return (piezas + ajuste) / capacidad;",
             "if (piezas == 0) return 0; return (piezas + capacidad - 1) / capacidad;"}) {
         const auto original=constant_variation_candidate("const int capacidad{4};",body);
@@ -2760,7 +2803,7 @@ int main() { return 0; }
 
 int main() {
     try {
-        capacity();conditional_assignment_branches();compound_assignment_evidence();stream_extraction_and_shift_evidence();separate_rules();price_and_minimum();
+        alternative_logical_tokens();capacity();conditional_assignment_branches();compound_assignment_evidence();stream_extraction_and_shift_evidence();separate_rules();price_and_minimum();
         comment_only_header_changes();independently_generated_probe();
         real_battery_contract_and_sources();real_battery_traces_and_verdicts();
         constant_variation_contract();constant_variation_source_identity();

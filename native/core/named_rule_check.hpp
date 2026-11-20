@@ -93,12 +93,15 @@ struct NamedRuleSourceCheck {
 namespace named_rule_detail {
 using Tokens = std::vector<std::string>;
 
-// C++ digraph braces are the same tokens as { and }. Canonicalize only
-// the internal lexical view: keep the original UTF-8 bytes and positioned
-// source offsets unchanged for authored source/variation preservation.
-inline std::string canonical_brace_token(std::string_view token) {
+// C++ offers brace digraphs and the keyword operators "and", "or" and
+// "not". Normalize these only for proof analysis. Source bytes, authored
+// responses, UTF-8 offsets and lexical-format revision rules remain unchanged.
+inline std::string canonical_rule_token(std::string_view token) {
     if(token=="op:<%")return "op:{";
     if(token=="op:%>")return "op:}";
+    if(token=="id:and")return "op:&&";
+    if(token=="id:or")return "op:||";
+    if(token=="id:not")return "op:!";
     return std::string(token);
 }
 struct Bounds { std::size_t open, close; };
@@ -1535,7 +1538,7 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
     // would manufacture a valid single-element list with a trailing comma.
     for(const auto& token:*scanned)
         if(!token.starts_with("comment:")&&!token.starts_with("directive:"))
-            t.push_back(named_rule_detail::canonical_brace_token(token));
+            t.push_back(named_rule_detail::canonical_rule_token(token));
     for(const auto& rule:requirements) {
         if(rule.function.empty()||rule.purpose_words.empty()||!rule.min_uses)
             return {false,"La declaracion de la regla esta incompleta."};

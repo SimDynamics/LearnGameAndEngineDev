@@ -122,9 +122,9 @@ inline std::optional<Tokens> tokens(std::string_view source, bool generated = fa
                     return {};
             }
         }
-        // Normalize digraph braces for all source analysis and private
-        // counterfactual phases, but retain the exact original byte spans.
-        result.push_back({named_rule_detail::canonical_brace_token(token),
+        // Normalize C++ alternate tokens for source analysis and private
+        // counterfactual phases, retaining exact original byte spans.
+        result.push_back({named_rule_detail::canonical_rule_token(token),
                           begin, offset});
     }
     if(!generated) {
