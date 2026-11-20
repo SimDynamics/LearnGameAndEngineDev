@@ -155,7 +155,8 @@ function(lgaed_add_compiler_guidance_state_target)
     endif()
     add_executable(lgaed_compiler_guidance_state_tests
         native/platform/windows/compiler_guidance_state_tests.cpp
-        native/platform/windows/math_matching_text_state_tests.cpp)
+        native/platform/windows/math_matching_text_state_tests.cpp
+        native/platform/windows/indexed_unique_transfer_state_tests.cpp)
     target_link_libraries(lgaed_compiler_guidance_state_tests
         PRIVATE lgaed_platform_windows lgaed_host_options)
 endfunction()
@@ -230,8 +231,11 @@ if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
             COMMAND lgaed_compiler_guidance_state_tests --general-choice-live)
         add_test(NAME native.identifier_rename_live
             COMMAND lgaed_compiler_guidance_state_tests --identifier-rename-live)
+        add_test(NAME native.indexed_unique_transfer_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --indexed-unique-transfer-state-live)
         set_tests_properties(native.math_matching_text_live
             native.general_choice_live native.identifier_rename_live
+            native.indexed_unique_transfer_state_live
             PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
         # The remaining guidance modes still require fixtures from the full
         # native configuration; the StateImport profile does not run those modes.
@@ -803,7 +807,10 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_compiler_guidance_state_tests --general-choice-live)
     add_test(NAME native.identifier_rename_live
         COMMAND lgaed_compiler_guidance_state_tests --identifier-rename-live)
+    add_test(NAME native.indexed_unique_transfer_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --indexed-unique-transfer-state-live)
     set_tests_properties(native.general_choice_live native.identifier_rename_live
+        native.indexed_unique_transfer_state_live
         PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     # Run the real Win32 compiler view against thirteen authored inputs.
     # Exactly the first must unlock navigation; all others remain optional.
@@ -1182,7 +1189,10 @@ if(BUILD_TESTING)
         COMMAND lgaed_compiler_guidance_state_tests --general-choice-live)
     add_test(NAME native.identifier_rename_live
         COMMAND lgaed_compiler_guidance_state_tests --identifier-rename-live)
+    add_test(NAME native.indexed_unique_transfer_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --indexed-unique-transfer-state-live)
     set_tests_properties(native.general_choice_live native.identifier_rename_live
+        native.indexed_unique_transfer_state_live
         PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     add_test(NAME curriculum.compiler_guidance_projection COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_compiler_guidance_projection.py)

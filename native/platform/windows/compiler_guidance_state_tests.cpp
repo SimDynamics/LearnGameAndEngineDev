@@ -11,6 +11,8 @@
 namespace lgaed::test {
 int math_matching_text_live_windows(
     const std::filesystem::path& content,const std::filesystem::path& qa);
+int indexed_unique_transfer_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
 }
 
 namespace {
@@ -987,6 +989,8 @@ int main(int argc,char** argv)try{
     if(argc==2&&std::string_view(argv[1])=="--identifier-rename-live")return identifier_rename_live_windows(content,qa);
     if(argc==2&&std::string_view(argv[1])=="--math-matching-text-live")
         return test::math_matching_text_live_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--indexed-unique-transfer-state-live")
+        return test::indexed_unique_transfer_state_windows(content,qa);
     if(argc!=1)return 2;
     const auto lesson=load_lesson(content/"archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json");
     const auto stage=[&](std::string_view name,const auto& work){
