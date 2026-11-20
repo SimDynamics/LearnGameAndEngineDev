@@ -44,7 +44,7 @@ int main(int argc,char** argv) try {
     const auto candidate=[&](std::string_view replacement) {
         return original.substr(0,body->begin)+std::string(replacement)+original.substr(body->end);
     };
-    const std::array<Version,7> versions{{
+    const std::array<Version,9> versions{{
         {"correct_move",R"cpp(
     if (!indice_valido(origen) || !indice_valido(destino) || origen == destino ||
         !elegir(origen)) return false;
@@ -58,6 +58,14 @@ int main(int argc,char** argv) try {
     auto& hacia = elegir(destino);
     hacia.swap(desde);
     desde.reset();
+    return true;
+)cpp",true},
+        {"correct_release_reset",R"cpp(
+    if (!indice_valido(origen) || !indice_valido(destino) || origen == destino)
+        return false;
+    auto& desde = elegir(origen);
+    if (!desde) return false;
+    elegir(destino).reset(desde.release());
     return true;
 )cpp",true},
         {"original_no_transfer",R"cpp(
@@ -98,6 +106,13 @@ int main(int argc,char** argv) try {
     const int value=*desde;
     desde.reset();
     *hacia=value;
+    return true;
+)cpp",false},
+        {"correct_transfer_extra_stdout",R"cpp(
+    if (!indice_valido(origen) || !indice_valido(destino) || origen == destino ||
+        !elegir(origen)) return false;
+    elegir(destino) = std::move(elegir(origen));
+    std::fputs("unexpected output from transfer", stdout);
     return true;
 )cpp",false}
     }};
@@ -155,7 +170,7 @@ int main(int argc,char** argv) try {
     return false;
 )cpp")).has_value(),
         "Harmless source text mentioning a forbidden identifier was rejected");
-    std::cout<<"PASS seven real-lesson independent transfer probes generated; source tampering refused.\n";
+    std::cout<<"PASS nine real-lesson independent transfer probes generated; source tampering refused.\n";
     return 0;
 }catch(const std::exception& e){
     std::cerr<<"FAIL independent transfer probe generation: "<<e.what()<<'\n';
