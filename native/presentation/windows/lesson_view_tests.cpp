@@ -181,6 +181,9 @@ struct Fixture {
     state::StateData initial_data;
     std::filesystem::path content;
     bool supplied_model = false;
+    // Keep this isolated native test's real evaluation hook across reopen.
+    // Production uses its own verified mathematics worker, not this fixture.
+    LessonViewHooks persisted_hooks;
     HWND host = nullptr, view = nullptr;
     explicit Fixture(const std::function<void(state::StateData&, const curriculum::Lesson&)>& initialize = {},
         const std::function<curriculum::Lesson(const curriculum::Lesson&)>& load_model = {},bool hidden=false)
@@ -211,7 +214,8 @@ struct Fixture {
     }
     void open() {
         require(!view, "Lesson view already open");
-        view = supplied_model ? create_lesson_view(host,environment,lesson) : create_lesson_view(host, environment, content);
+        view = supplied_model ? create_lesson_view(host,environment,lesson,persisted_hooks)
+                              : create_lesson_view(host, environment, content);
         require(view != nullptr, "Cannot create real lesson view");
         RECT area{}; GetClientRect(host, &area);
         MoveWindow(view, 0, 0, area.right, area.bottom, TRUE); pump(host);
@@ -3550,6 +3554,75 @@ void real_retirement_pages_preserve_all_eight_useful_editors() {
     std::cout<<"PASS three historical U1 retirement plans: old bookmarks, archived and independent drafts, native/narration exclusion, "
              <<useful_editors<<" useful editors including "<<(new_edition?1:0)<<" new edition editor\n";
 }
+// Source-bound U1 matching exercises are additional prerequisites before
+// navigating to the next C++ editor. This QA-only oracle checks the authored
+// matching relationship, never a forged "correct" flag or unrelated output.
+// No narration runtime or new student exercise is installed by this test.
+std::string u1_matching_saved_answer(const curriculum::Block& block) {
+    using namespace winrt::Windows::Data::Json;
+    require(block.type==BlockType::math_puzzle,
+        "U1 math fixture received a non-math block");
+    const auto source=std::string(curriculum::math_evaluation_source(block));
+    const auto authored=JsonObject::Parse(winrt::to_hstring(source));
+    const auto declarations=authored.GetNamedArray(L"responses");
+    require(declarations.Size()==1&&
+        declarations.GetAt(0).GetObject().GetNamedString(L"type")==L"math_matching_drag",
+        "U1 matching fixture requires one real matching response");
+    const auto specification=declarations.GetAt(0).GetObject();
+    const auto expected=specification.GetNamedObject(L"validator").GetNamedObject(L"expected");
+    require(expected.Size()>=2,"U1 matching fixture has no independent pairs");
+    JsonObject answer, response, responses, stored;
+    answer.Insert(L"type",JsonValue::CreateStringValue(L"matching"));
+    answer.Insert(L"pairs",expected);
+    responses.Insert(specification.GetNamedString(L"id"),answer);
+    stored.Insert(L"responses",responses);
+    stored.Insert(L"correct",JsonValue::CreateBooleanValue(true));
+    stored.Insert(L"contentFingerprint",JsonValue::CreateStringValue(
+        winrt::to_hstring(state::sha256(source))));
+    return winrt::to_string(stored.Stringify());
+}
+LessonViewHooks u1_matching_qa_hooks() {
+    using namespace winrt::Windows::Data::Json;
+    LessonViewHooks hooks;
+    hooks.validate_math=[](std::string_view original,std::string_view answers,
+            std::string_view language,std::stop_token stop) -> std::string {
+        require(language=="es"&&!stop.stop_requested(),
+            "U1 QA matching evaluation was cancelled or changed locale");
+        const auto source=JsonObject::Parse(winrt::to_hstring(original));
+        const auto submitted=JsonObject::Parse(winrt::to_hstring(answers));
+        const auto specifications=source.GetNamedArray(L"responses");
+        require(specifications.Size()==1,"U1 QA must not accredit unknown math tasks");
+        const auto specification=specifications.GetAt(0).GetObject();
+        require(specification.GetNamedString(L"type")==L"math_matching_drag",
+            "U1 QA must validate matching semantics only");
+        const auto identifier=specification.GetNamedString(L"id");
+        const auto expected=specification.GetNamedObject(L"validator").GetNamedObject(L"expected");
+        bool correct=submitted.Size()==1&&submitted.HasKey(identifier);
+        if(correct){
+            const auto candidate=submitted.GetNamedObject(identifier);
+            correct=candidate.GetNamedString(L"type",L"") == L"matching"&&
+                candidate.HasKey(L"pairs");
+            if(correct){
+                const auto pairs=candidate.GetNamedObject(L"pairs");
+                correct=pairs.Size()==expected.Size();
+                for(const auto& pair:expected) {
+                    if(!pairs.HasKey(pair.Key())||
+                       pairs.GetNamedString(pair.Key(),L"")!=pair.Value().GetString())
+                        correct=false;
+                }
+            }
+        }
+        JsonObject result;
+        result.Insert(L"evaluable",JsonValue::CreateBooleanValue(true));
+        result.Insert(L"correct",JsonValue::CreateBooleanValue(correct));
+        result.Insert(L"contentFingerprint",JsonValue::CreateStringValue(
+            winrt::to_hstring(state::sha256(original))));
+        result.Insert(L"feedback",JsonValue::CreateStringValue(
+            correct?L"Relaciones verificadas.":L"Revisa las relaciones."));
+        return winrt::to_string(result.Stringify());
+    };
+    return hooks;
+}
 void integrated_u1_compilers_require_all_eight_real_executions() {
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion";
     struct VerifiedSolution { std::string_view filename,editor,reference; };
@@ -3592,6 +3665,8 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
                 }
                 if(block.type==BlockType::heading||block.type==BlockType::paragraph||block.type==BlockType::note||block.type==BlockType::code)continue;
                 state::Response old;old.correct=true;old.answer="progreso QA anterior";
+                if(block.type==BlockType::math_puzzle)
+                    old.raw_json=u1_matching_saved_answer(block);
                 if(block.correct_index)old.selected=static_cast<std::int64_t>(*block.correct_index);
                 old.order.assign(block.correct_order.begin(),block.correct_order.end());
                 if(block.type==BlockType::output_prediction||block.type==BlockType::fill_code)old.answer=block.answers.at(0);
@@ -3606,6 +3681,13 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
                 state::put_response(data,lesson,block,old);
             }
         },[&](const curriculum::Lesson&){return windows::load_lesson(folder/filename);});
+        if(std::string_view(filename)=="lesson_fuente_compilacion_y_diagnostico.json"){
+            // The same real math gate used in a normal lesson must revalidate
+            // both restored matching answers, including after reopening.
+            // No fake compiler proof or blanket "math correct" hook is used.
+            f.persisted_hooks=u1_matching_qa_hooks();
+            set_lesson_view_hooks(f.view,f.persisted_hooks);
+        }
         require(f.lesson.compiler_puzzles_required,"An integrated U1 lesson stopped requiring its useful compilers");
         const bool last_lesson=std::string_view(filename)=="lesson_resolver_probar_y_recuperar.json";
         const bool new_edition=last_lesson&&u1l5_revised_compiler_present(f.lesson);
@@ -3626,8 +3708,14 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
             // New editions can place the second editor several pages later.
             // Visit every intervening page so the test cannot bypass page
             // reachability or an unsolved current prerequisite.
-            while(f.page()<position.page)
+            while(f.page()<position.page) {
+                if(std::string_view(filename)=="lesson_fuente_compilacion_y_diagnostico.json"&&
+                   f.page()==4) {
+                    wait_for(f.host,[&]{return lesson_page_state(f.view).can_next;},
+                        "The genuine U1L4 matching relationships were not revalidated",20000);
+                }
                 f.next();
+            }
             require(descendant(f.view,id(position.block,10))&&!lesson_page_state(f.view).can_next,
                 "A current useful compiler was hidden or its own pending goal did not block advancement");
             f.run(position.block);
