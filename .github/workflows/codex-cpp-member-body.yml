@@ -1,0 +1,45 @@
+name: Codex portable C++ member body preservation
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - native/core/cpp_member_body_check.hpp
+      - native/core/cpp_member_body_check_tests.cpp
+      - .github/workflows/codex-cpp-member-body.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Guard a single member body without modifying surrounding C++
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Compile and run the standalone C++23 guard with GCC and Clang
+        run: |
+          for compiler in g++ clang++; do
+            "$compiler" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+              native/core/cpp_member_body_check_tests.cpp -o "$RUNNER_TEMP/member_guard"
+            "$RUNNER_TEMP/member_guard"
+          done
+
+  windows-msvc:
+    name: Guard an original method using MSVC C++23
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile and execute the standalone C++23 source guard
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative native\core\cpp_member_body_check_tests.cpp /Fe:"%RUNNER_TEMP%\member_guard.exe"
+          "%RUNNER_TEMP%\member_guard.exe"
