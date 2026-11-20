@@ -276,7 +276,7 @@ int main() {
         {"@CREATE@",p.create_function},{"@PRESENT@",p.present_function},
         {"@NUMBER@",p.number_method},{"@CODE@",p.code_method},
         {"@WRITE@",p.write_method}
-    }})d::substitute(witness,key,value);
+    }})cpp_abstract_interface_detail::substitute(witness,key,value);
     return std::string(prelude)+std::string(candidate)+witness;
 }
 
