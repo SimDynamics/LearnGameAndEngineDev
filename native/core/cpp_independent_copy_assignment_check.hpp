@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace lgaed::curriculum {
@@ -275,14 +276,16 @@ int main() {
     return 0;
 }
 )copy";
-    auto output=std::string(prelude)+std::string(candidate)+std::string(driver);
+    // Replace placeholders exclusively in the trusted test harness. Never
+    // rewrite student literals or comments that happen to contain @CLASS@.
+    auto private_driver=std::string(driver);
     namespace d=cpp_independent_copy_detail;
     for(const auto& [key,value]:std::array<std::pair<std::string_view,std::string_view>,7>{{
             {"@CLASS@",spec.class_name},{"@HAS@",spec.has_method},
             {"@VALUE@",spec.value_method},{"@ACCESS@",spec.access_method},
             {"@PUT@",spec.put_method},{"@CHANGE@",spec.change_method},
             {"@CLEAR@",spec.clear_method}}})
-        d::substitute(output,key,value);
-    return output;
+        d::substitute(private_driver,key,value);
+    return std::string(prelude)+std::string(candidate)+private_driver;
 }
 } // namespace lgaed::curriculum
