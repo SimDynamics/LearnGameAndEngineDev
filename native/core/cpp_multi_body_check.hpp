@@ -50,22 +50,20 @@ inline std::optional<CppMemberBodySpan> find_body(
         signature.find(')') == signature.npos ||
         (declared.qualified && signature.find("::") == signature.npos))
         return {};
-    const auto at = code.find(signature);
-    if (at == code.npos || code.find(signature, at + 1) != code.npos)
-        return {};
-    const auto line_break = code.rfind('\n', at);
-    const auto line_start = line_break == code.npos ? 0 : line_break + 1;
-    for (auto i = line_start; i < at; ++i)
-        if (!cpp_member_body_detail::horizontal_space(code[i])) return {};
-    auto opening = at + signature.size();
-    while (opening < code.size() &&
-           (cpp_member_body_detail::horizontal_space(code[opening]) ||
-            code[opening] == '\n' || code[opening] == '\r'))
-        ++opening;
-    if (opening >= code.size() || code[opening] != '{') return {};
-    const auto closing = cpp_member_body_detail::closing_brace(code, opening);
-    if (!closing || *closing <= opening) return {};
-    return CppMemberBodySpan{opening + 1, *closing};
+    // Reuse the lexical source scanner also used for the single-member
+    // protected-body contract. A signature in a comment, character/string
+    // literal or raw string is not another real definition. Ordinary C++
+    // comments between the signature and its brace are preprocessing space;
+    // both { and the <% digraph may open the real body.
+    const auto at=cpp_member_body_detail::definition_start(code,signature);
+    if(!at)return {};
+    const auto opening=cpp_member_body_detail::definition_opening(
+        code,*at+signature.size());
+    if(!opening)return {};
+    const auto closing=cpp_member_body_detail::closing_brace(
+        code,opening->position);
+    if(!closing || *closing<=opening->position)return {};
+    return CppMemberBodySpan{opening->position+opening->length,*closing};
 }
 
 inline bool safe_body(std::string_view source, CppMemberBodySpan body) {

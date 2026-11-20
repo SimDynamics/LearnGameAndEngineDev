@@ -44,6 +44,12 @@ def main() -> None:
                 qa.MOVE["move_and_exchange"].replace(
                     "cantidad_ = std::exchange(otra.cantidad_, 0);",
                     "cantidad_ = std::exchange (otra.cantidad_, 0);")),
+            "quoted_probe_names":(
+                '\n    // __FILE__, Watch, std::exit(0) are comments only.\n'
+                '    const char* info=R"memo(lgaed_array_copy_move_qa::Watch '
+                '__COUNTER__ std::printf())memo";\n    (void)info;\n' +
+                qa.COPY["candidate_swap"],
+                qa.MOVE["move_and_exchange"]),
         }
         faulty={
             **{name:(bad,qa.MOVE["move_and_exchange"])
@@ -111,6 +117,26 @@ def main() -> None:
                 original,"\n}\n"+qa.COPY["candidate_swap"],
                 qa.MOVE["move_and_exchange"]),
         }
+        # No malicious candidate is executed. Both operator bodies must
+        # preserve the private driver's allocation and completion evidence.
+        attacks={
+            "exit": "std::exit(0);",
+            "exit_alias": "auto stop=&std::exit; stop(0);",
+            "fake_marker": 'std::fputs("'+qa.MARKER+'",stderr);',
+            "tamper_watch": "lgaed_array_copy_move_qa::Watch::array_allocs=0;",
+            "position": "const auto name=__FILE__; (void)name;",
+            "count": "const auto n=__COUNTER__; (void)n;",
+            "redirect": 'std::freopen("a.txt","w",stderr);',
+            "jump": "std::longjmp(context,1);",
+            "macro_digraph": "%:define OVERWRITE 1",
+        }
+        for key,body in attacks.items():
+            changed_sources["copy_"+key]=qa.compose(
+                original,"\n    "+body+"\n"+qa.COPY["candidate_swap"],
+                qa.MOVE["move_and_exchange"])
+            changed_sources["move_"+key]=qa.compose(
+                original,qa.COPY["candidate_swap"],
+                "\n    "+body+"\n"+qa.MOVE["move_and_exchange"])
         for name,modified in changed_sources.items():
             assert modified!=correct,name
             file=directory/(name+"-student.cpp")

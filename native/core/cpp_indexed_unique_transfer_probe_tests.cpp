@@ -115,6 +115,7 @@ int main(int argc,char** argv) try {
     for(const auto& attacked:{
             candidate("\n#define private public\nreturn false;\n"),
             candidate("\nreturn false; }\nvoid extra(){}\n"),
+            candidate("\nreturn false; %>\nint extra() { return 7; }\n<%\n"),
             candidate("\nreturn false;\\\nreturn true;\n"),
             original+"\nint forged_owner=1;\n"})
         require(!cpp_indexed_unique_transfer_probe_source(spec,attacked),

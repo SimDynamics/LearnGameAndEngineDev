@@ -42,7 +42,12 @@ def main():
         positive={**qa.VALID,"comment_format_equivalent":
                   qa.VALID["exchange_label"].replace(
                       "dato_ = std::move(otra.dato_);",
-                      "dato_   = std::move(otra.dato_); // Transfer exactly once")}
+                      "dato_   = std::move(otra.dato_); // Transfer exactly once"),
+                  "quoted_probe_names": (
+                      '    // Watch, __FILE__ and std::exit(0) are explanations.\n'
+                      '    const char* note=R"memo(lgaed_move_invariant_qa::Watch '
+                      '__COUNTER__ std::exit(0))memo";\n'
+                      '    (void)note;\n' + qa.VALID["exchange_label"])}
         variants={**positive,**qa.REJECT}
         for name,body in variants.items():
             candidate=prefix+body+suffix
@@ -83,6 +88,39 @@ def main():
             "early_closing_brace":prefix+"\n}\n"+
                 qa.VALID["exchange_label"]+suffix,
         }
+        # Do not execute malicious operations to prove the negative path.
+        # The original published operator remains the only editable region,
+        # and a private test witness must not be controlled by the student.
+        hostile={
+            "terminate_test": "std::exit(0);",
+            "exit_via_alias": "auto stop=&std::exit; stop(0);",
+            "quick_exit_test": "::quick_exit(0);",
+            "forge_completion_output":
+                'std::fputs("'+qa.MARKER+'",stderr);',
+            "forge_stdout":
+                'std::printf("'+qa.MARKER+'");',
+            "mutate_private_counter":
+                "lgaed_move_invariant_qa::Watch::created=0;",
+            "disable_private_watch":
+                "lgaed_move_invariant_qa::Watch::active=false;",
+            "skip_allocation_failure":
+                "lgaed_move_invariant_qa::Watch::fail_next=false;",
+            "redirect_output":
+                'std::freopen("trace.txt","w",stderr);',
+            "observe_private_build":
+                "const auto position=__FILE__; (void)position;",
+            "observe_private_counter":
+                "const auto counter=__COUNTER__; (void)counter;",
+            "force_jump":
+                "std::longjmp(saved,1);",
+            "manual_free":
+                "std::free(nullptr);",
+            "preprocessor_digraph": "%:define OVERRIDE 1",
+        }
+        tampered.update({
+            name:prefix+"\n    "+body+"\n"+qa.VALID["exchange_label"]+suffix
+            for name,body in hostile.items()
+        })
         for name,code in tampered.items():
             assert code!=original_correct,name
             candidate=root/(name+"-student.cpp")
@@ -94,8 +132,8 @@ def main():
                 raise AssertionError((name,"forged source passed protected owner",
                                       tested.stdout,tested.stderr))
             print(f"{options.compiler}: protected {name}: REJECT",flush=True)
-    print("PASS U6L8 native class/method authoring: three valid solutions, "
-          "seven behavioral decoys, seven forbidden source changes, "
+    print("PASS U6L8 native class/method authoring: equivalent correct bodies, "
+          "behavioral decoys, and protected private-witness/source changes; "
           "independent C++ ownership and invariant proof.")
 
 

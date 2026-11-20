@@ -50,7 +50,12 @@ def main() -> None:
         original_path = directory / "published-original.cpp"
         original_path.write_bytes(original.encode("utf-8"))
         correct = {**qa.VARIANTS,
-                   "equivalent_formatting": qa.VARIANTS["candidate_swap"]}
+                   "equivalent_formatting": qa.VARIANTS["candidate_swap"],
+                   "quoted_guard_examples": (
+                       '\n    // std::exit(0), __FILE__, stderr and Watch are only comments.\n'
+                       '    const char* text = R"memo(lgaed_copy_qa::Watch '
+                       'std::terminate() __COUNTER__)memo";\n'
+                       '    (void)text;\n' + qa.VARIANTS["candidate_swap"])}
         candidates = {**correct, **qa.REJECTIONS}
         for name, body in candidates.items():
             candidate = prefix + body + suffix
@@ -100,6 +105,25 @@ def main() -> None:
                 prefix + "\n#define private public\n" +
                 qa.VARIANTS["candidate_swap"] + suffix),
         }
+        # Source-side spoofing must fail before a private binary is compiled.
+        # Do not execute intentionally hostile student code or read freed memory.
+        hostile_body = {
+            "spoof_exit": 'std::fputs("' + qa.MARKER +
+                          '",stderr); std::exit(0);',
+            "spoof_quick_exit": "::quick_exit(0);",
+            "spoof_function_pointer": "auto done=&std::exit; done(0);",
+            "spoof_counter_reset": "lgaed_copy_qa::Watch::created=0;",
+            "spoof_failure_suppression": "lgaed_copy_qa::Watch::fail_next=false;",
+            "spoof_stderr": 'std::cerr << "' + qa.MARKER + '";',
+            "spoof_stdout": 'std::printf("' + qa.MARKER + '");',
+            "spoof_stdout_redirect": 'std::freopen("out.txt","w",stderr);',
+            "spoof_longjmp": "std::longjmp(jump,1);",
+            "spoof_position": "const auto where=__FILE__; (void)where;",
+            "spoof_build_counter": "const auto n=__COUNTER__; (void)n;",
+            "spoof_preprocessor_digraph": "%:define OVERRIDE 1",
+        }
+        for name, body in hostile_body.items():
+            protected_rejections[name] = prefix + "\n    " + body + "\n" + suffix
         for name, candidate in protected_rejections.items():
             assert candidate != positive, name
             path = directory / (name + "-student.cpp")
@@ -115,8 +139,8 @@ def main() -> None:
             print(f"{args.compiler}: native {name}: PROTECTED", flush=True)
 
     print("PASS U6L7 reusable lexical owner, independent C++ compiler probe, "
-          "three equivalent variants, five defective variants and five "
-          "forbidden source changes. Published lesson unchanged.")
+          "four equivalent variants, five defective variants and "
+          "blocked private witness/source edits. Published lesson unchanged.")
 
 
 if __name__ == "__main__":

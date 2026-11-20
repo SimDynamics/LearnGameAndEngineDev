@@ -97,12 +97,55 @@ inline void substitute(std::string& text,std::string_view key,std::string_view v
 }
 } // namespace cpp_move_invariant_detail
 
+// Private execution is meaningful only if the student's method cannot
+// terminate the driver, forge its completion marker or edit the private
+// allocation counters. Inspect the authorized body, never the immutable
+// main/class declarations. Comment and literal tokens are not executable.
+inline bool cpp_move_invariant_probe_neutral(
+        const CppMemberBodyCheck& owner,std::string_view candidate) {
+    const auto span=cpp_member_body_span(owner);
+    if(!span || !cpp_member_body_preserves_source(owner,candidate))return false;
+    const auto preserved_suffix=owner.original_source.size()-span->end;
+    const auto body=candidate.substr(
+        span->begin,candidate.size()-preserved_suffix-span->begin);
+    const auto parsed=code_format::cpp_tokens(body);
+    if(!parsed || code_format::cpp_position_sensitive_tokens(*parsed) ||
+       code_format::cpp_process_termination_tokens(*parsed))return false;
+    constexpr std::string_view forbidden[]{
+        "lgaed_move_invariant_qa","Watch","fail_next",
+        "created","deleted","deleted_replaced",
+        "__FILE__","__FILEW__","__BASE_FILE__",
+        "__COUNTER__","__INCLUDE_LEVEL__","__DATE__","__TIME__",
+        "__TIMESTAMP__","__PRETTY_FUNCTION__","__FUNCSIG__",
+        "__FUNCDNAME__","__builtin_FILE","__builtin_FUNCTION",
+        "__builtin_source_location","source_location",
+        "longjmp","_longjmp","siglongjmp","setjmp","sigsetjmp",
+        "asm","__asm","__asm__","__pragma","_Pragma",
+        "malloc","calloc","realloc","free","_aligned_malloc","_aligned_free",
+        "fputs","puts","printf","fprintf","fwrite","putchar",
+        "freopen","freopen_s","fclose","stdout","stderr",
+        "cout","cerr","clog","wcout","wcerr","wclog",
+        "dup2","_dup2","SetStdHandle","WriteFile","WriteConsoleA",
+        "WriteConsoleW","CreateProcessA","CreateProcessW","WinExec",
+        "system","popen","_popen"
+    };
+    for(const auto& token:*parsed) {
+        if(token.starts_with("directive:")||token=="op:#"||token=="op:##"||
+           token=="op:%:"||token=="op:%:%:")return false;
+        if(!token.starts_with("id:"))continue;
+        const auto name=std::string_view(token).substr(3);
+        if(std::ranges::find(forbidden,name)!=std::end(forbidden))
+            return false;
+    }
+    return true;
+}
+
 inline bool cpp_move_invariant_matches(
         const CppMoveAssignmentInvariantPolicy& p,std::string_view candidate) {
-    return cpp_move_invariant_detail::spec_valid(p)&&
-        cpp_member_body_preserves_source(
-            CppMemberBodyCheck{p.original_source,
-                cpp_move_invariant_detail::signature(p)},candidate);
+    if(!cpp_move_invariant_detail::spec_valid(p))return false;
+    const CppMemberBodyCheck owner{
+        p.original_source,cpp_move_invariant_detail::signature(p)};
+    return cpp_move_invariant_probe_neutral(owner,candidate);
 }
 
 inline std::optional<std::string> cpp_move_invariant_private_driver(

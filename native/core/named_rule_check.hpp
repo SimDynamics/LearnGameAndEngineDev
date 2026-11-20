@@ -92,6 +92,29 @@ struct NamedRuleSourceCheck {
 
 namespace named_rule_detail {
 using Tokens = std::vector<std::string>;
+
+// C++ offers brace/bracket digraphs and reserved alternative operator words.
+// Normalize these only for proof analysis. Source bytes, authored
+// responses, UTF-8 offsets and lexical-format revision rules remain unchanged.
+inline std::string canonical_rule_token(std::string_view token) {
+    if(token=="op:<%")return "op:{";
+    if(token=="op:%>")return "op:}";
+    if(token=="op:<:")return "op:[";
+    if(token=="op::>")return "op:]";
+    // These are reserved operator keywords in C++, never identifier names.
+    // Keep %: and %:%: unnormalized: they denote preprocessor operators
+    // and must still be rejected by the source-authentication gate.
+    constexpr std::pair<std::string_view,std::string_view> alternatives[]{
+        {"id:and", "op:&&"}, {"id:or", "op:||"}, {"id:not", "op:!"},
+        {"id:and_eq", "op:&="}, {"id:or_eq", "op:|="},
+        {"id:xor_eq", "op:^="}, {"id:bitand", "op:&"},
+        {"id:bitor", "op:|"}, {"id:xor", "op:^"},
+        {"id:compl", "op:~"}, {"id:not_eq", "op:!="}
+    };
+    for(const auto& [before,after]:alternatives)
+        if(token==before)return std::string(after);
+    return std::string(token);
+}
 struct Bounds { std::size_t open, close; };
 struct LocalRule {
     std::string name;
@@ -1526,7 +1549,7 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
     // would manufacture a valid single-element list with a trailing comma.
     for(const auto& token:*scanned)
         if(!token.starts_with("comment:")&&!token.starts_with("directive:"))
-            t.push_back(token);
+            t.push_back(named_rule_detail::canonical_rule_token(token));
     for(const auto& rule:requirements) {
         if(rule.function.empty()||rule.purpose_words.empty()||!rule.min_uses)
             return {false,"La declaracion de la regla esta incompleta."};

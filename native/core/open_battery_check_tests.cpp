@@ -93,6 +93,124 @@ void generated() {
         std::string(library)+std::string(library),
         "intentar_ajuste",OpenBatteryMutation::baseline),
         "Ambiguous original function definitions passed");
+    // Formatting is not part of the authored function contract. Preserve
+    // quoted signature examples, inline documentation and all original body
+    // bytes, replacing only the real definition name in the private variant.
+    const std::string source_signature=
+        "bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {";
+    auto formatted=std::string(library);
+    const auto at=formatted.find(source_signature);
+    verify(at!=std::string::npos,"The original adjustment signature was lost");
+    const std::string revised_signature=R"cpp(bool /* guide */ intentar_ajuste(
+    int valor, /* lower bound */ int inferior,
+    int superior, int & ajuste
+) <% )cpp";
+    formatted.replace(at,source_signature.size(),revised_signature);
+    // The tutorial's documentation can legitimately quote the original
+    // signature. Neither a comment nor a raw string is a second definition.
+    formatted=std::string(R"cpp(
+/* bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {} */
+[[maybe_unused]] constexpr const char* signature_example =
+    R"memo(bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {})memo";
+)cpp")+formatted;
+    // The source still uses the original closing brace; the opening digraph
+    // is its C++ equivalent, not a change of control flow.
+    const auto formatted_baseline=open_battery_mutated_library(
+        formatted,"intentar_ajuste",OpenBatteryMutation::baseline);
+    verify(formatted_baseline &&
+        formatted_baseline->find("bool /* guide */ lgaed_open_battery_original_intentar_ajuste(")
+            !=std::string::npos &&
+        formatted_baseline->find(") <% ")!=std::string::npos &&
+        formatted_baseline->find("signature_example")!=std::string::npos &&
+        formatted_baseline->find("LGAED_OPEN_BATTERY_CALL:")!=std::string::npos,
+        "A valid multiline signature or quoted sample was rejected");
+    const auto formatted_mutant=open_battery_mutated_library(
+        formatted,"intentar_ajuste",OpenBatteryMutation::corrupt_destination,
+        OpenBatteryCall{3,3,7,59});
+    verify(formatted_mutant &&
+        formatted_mutant->find("ajuste == 0 ? 1 : 0")!=std::string::npos,
+        "The formatted definition lost its independent destination mutation");
+    auto duplicate_formatted=formatted;
+    duplicate_formatted+="\nbool intentar_ajuste(int valor,int inferior,int superior,int& ajuste) { return false; }\n";
+    verify(!open_battery_mutated_library(
+        duplicate_formatted,"intentar_ajuste",OpenBatteryMutation::baseline),
+        "Two genuine definitions with different spacing were accepted");
+    auto bad_type=formatted;
+    const auto param=bad_type.find("int valor, /* lower bound */");
+    verify(param!=std::string::npos,"Parameter mutation fixture missing");
+    bad_type.replace(param,3,"long");
+    verify(!open_battery_mutated_library(
+        bad_type,"intentar_ajuste",OpenBatteryMutation::baseline),
+        "An incompatible parameter type was treated as a formatting edit");
+    // The C++ contract names four argument *types*, not particular parameter
+    // identifiers. A learner may choose clear names and by-value const.
+    const std::string renamed=R"cpp(
+bool intentar_ajuste(const int dato, int const minimo, const int maximo, int& salida) {
+    if(dato<-20||dato>20||minimo<-20||minimo>20||
+       maximo<-20||maximo>20||minimo>maximo)return false;
+    salida=dato<minimo?minimo-dato:dato>maximo?maximo-dato:0;
+    return true;
+}
+)cpp";
+    const auto named=open_battery_mutated_library(
+        renamed,"intentar_ajuste",OpenBatteryMutation::baseline);
+    verify(named&&named->find(
+        "lgaed_open_battery_original_intentar_ajuste(const int dato, int const minimo, const int maximo, int& salida)")
+            !=std::string::npos &&
+        named->find("salida=dato<minimo?minimo-dato:")!=std::string::npos &&
+        named->find("LGAED_OPEN_BATTERY_CALL:")!=std::string::npos,
+        "A valid parameter rename or by-value const was not accepted");
+    const auto renamed_mutant=open_battery_mutated_library(
+        renamed,"intentar_ajuste",OpenBatteryMutation::corrupt_nonzero_destination,
+        OpenBatteryCall{1,3,7,59});
+    verify(renamed_mutant&&renamed_mutant->find(
+        "ajuste == 1 ? 2 : 1")!=std::string::npos,
+        "The renamed library lost its independent destination mutation");
+    const auto invalid_named=[&](std::string_view old_value,std::string_view new_value) {
+        auto changed=renamed;
+        const auto at=changed.find(old_value);
+        verify(at!=changed.npos,"A parameter counterexample lost its fixture");
+        changed.replace(at,old_value.size(),new_value);
+        return !open_battery_mutated_library(
+            changed,"intentar_ajuste",OpenBatteryMutation::baseline);
+    };
+    verify(invalid_named("int const minimo","long minimo") &&
+           invalid_named("int& salida","const int& salida") &&
+           invalid_named("int& salida","int const& salida") &&
+           invalid_named("const int maximo","const int& maximo") &&
+           invalid_named("int& salida","int salida") &&
+           invalid_named("int& salida","int& dato") &&
+           invalid_named("const int dato","const auto dato"),
+        "A different function type or duplicated parameter identity earned credit");
+    // A private recompilation adds includes and a second definition. Compile
+    // metadata and early process termination must not be accepted as evidence
+    // of the original library's behavior under the student's own project.
+    const auto first_brace=renamed.find('{');
+    verify(first_brace!=std::string::npos,"The real library fixture has no body");
+    for(const auto suspicious:{
+            "__LINE__", "__FILE__", "__FILEW__", "__BASE_FILE__",
+            "__COUNTER__", "__INCLUDE_LEVEL__", "__DATE__", "__TIME__",
+            "__TIMESTAMP__", "__PRETTY_FUNCTION__", "__FUNCSIG__",
+            "__FUNCDNAME__", "__builtin_LINE", "__builtin_COLUMN",
+            "__builtin_FILE", "__builtin_FUNCTION", "source_location",
+            "std::exit(0)", "std::abort()", "std::terminate()"}) {
+        auto candidate=renamed;
+        candidate.insert(first_brace+1,
+            "\n    (void)"+std::string(suspicious)+";\n");
+        verify(!open_battery_mutated_library(
+            candidate,"intentar_ajuste",OpenBatteryMutation::baseline),
+            "An observable private build or early exit gained source credit");
+    }
+    auto prose=renamed;
+    prose.insert(first_brace+1,R"cpp(
+    // __LINE__, __FILE__, std::exit(0) and source_location are documentation.
+    const char* description=R"memo(__COUNTER__ __DATE__ std::terminate())memo";
+    (void)description;
+)cpp");
+    verify(open_battery_mutated_library(
+        prose,"intentar_ajuste",OpenBatteryMutation::baseline).has_value(),
+        "Harmless documentation was mistaken for a private build observer");
+
 }
 void parsing() {
     const auto witness=open_battery_parse_calls(

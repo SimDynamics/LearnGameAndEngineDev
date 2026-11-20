@@ -15,9 +15,101 @@ void verify(std::string_view source,std::span<const NamedRuleRequirement> requir
     if(result.source_evidence!=expected)
         throw std::runtime_error(std::string(context)+": "+result.reason);
 }
+void alternative_logical_tokens() {
+    using named_rule_detail::canonical_rule_token;
+    for(const auto& equivalent:std::array{
+            std::pair{"id:and","op:&&"},std::pair{"id:or","op:||"},
+            std::pair{"id:not","op:!"},std::pair{"id:not_eq","op:!="},
+            std::pair{"id:and_eq","op:&="},std::pair{"id:or_eq","op:|="},
+            std::pair{"id:xor_eq","op:^="},std::pair{"id:bitand","op:&"},
+            std::pair{"id:bitor","op:|"},std::pair{"id:xor","op:^"},
+            std::pair{"id:compl","op:~"},std::pair{"op:<%","op:{"},
+            std::pair{"op:%>","op:}"},std::pair{"op:<:","op:["},
+            std::pair{"op::>","op:]"}}) {
+        if(canonical_rule_token(equivalent.first)!=equivalent.second)
+            throw std::runtime_error("A standard C++ alternate token lost its operator meaning");
+    }
+    if(canonical_rule_token("literal:\"and or not\"")!="literal:\"and or not\"" ||
+       canonical_rule_token("op:%:")!="op:%:" ||
+       canonical_rule_token("op:%:%:")!="op:%:%:")
+        throw std::runtime_error("A quoted explanation or macro digraph was reinterpreted");
+    const std::array rules{NamedRuleRequirement{"cajas_para",4,
+        {"capacidad","plaza","cupo"},2}};
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (false and capacidad and capacidad);
+        })cpp",rules,false,
+        "A dead 'and' expression cannot fake two capacity dependencies");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (true or capacidad or capacidad) - 1;
+        })cpp",rules,false,
+        "A true 'or' expression cannot fake two capacity dependencies");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (false and capacidad and capacidad);
+        })cpp",rules,true,
+        "Dead alternate-operator terms cannot remove real calculated dependencies");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (true or capacidad or capacidad) - 1;
+        })cpp",rules,true,
+        "A constant true 'or' expression preserves a separately valid result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return piezas / capacidad + (piezas % capacidad not_eq 0);
+        })cpp",rules,true,
+        "A valid not_eq comparison preserves the two calculated uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            resultado and_eq 0;
+            return resultado + (piezas + 3) / 4;
+        })cpp",rules,false,
+        "An and_eq overwrite must revoke earlier named-rule evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            resultado or_eq 0;
+            return resultado;
+        })cpp",rules,true,
+        "A neutral or_eq zero must preserve actual result dependencies");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            resultado xor_eq 0;
+            return resultado;
+        })cpp",rules,true,
+        "A neutral xor_eq zero must preserve actual result dependencies");
+}
 void capacity() {
     const std::array rules{NamedRuleRequirement{"cajas_para",4,
         {"capacidad","plaza","cupo"},2}};
+    verify(R"cpp(
+        int cajas_para(int piezas) <%
+            const int capacidad<%4%>;
+            return (piezas + capacidad - 1) / capacidad;
+        %>)cpp",rules,true,
+        "C++ digraph braces keep an independently named four-place rule");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad = <% /* dato */ 4, %>;
+            if (piezas == 0) <% return 0; %>
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "Mixed C++ brace spellings preserve the local rule and a zero guard");
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
@@ -2613,13 +2705,39 @@ void constant_variation_source_identity() {
         {"static const int capacidad = -(-4);","static const int capacidad = (3);"},
         {"const int capacidad{ /* antes 4 */ 0x4 /* después 4 */ };",
          "const int capacidad{ /* antes 4 */ (3) /* después 4 */ };"},
-        {"const int capacidad = 04;","const int capacidad = (3);"}};
+        {"const int capacidad = 04;","const int capacidad = (3);"},
+        {"const int capacidad<%4%>;","const int capacidad<%(3)%>;"},
+        {"const int capacidad = <% /* valor */ 4, %>;",
+         "const int capacidad = <% /* valor */ (3), %>;"}};
     for(const auto& spelling:spellings) {
         const auto original=constant_variation_candidate(spelling.before);
         const auto varied=named_rule_constant_variation_source(original,probe,0);
         require(varied&&*varied==constant_variation_candidate(spelling.after),
             "Only the genuine initializer changes across equivalent declarations, comments and literals");
     }
+    const auto genuine_digraph=R"cpp(int cajas_para(int piezas) <%
+    const int capacidad<%4%>;
+    return (piezas + capacidad - 1) / capacidad;
+%>
+bool llega_a_tiempo(int dias) {
+    const int plazo{4};
+    return dias <= plazo;
+}
+int main() { return 0; }
+)cpp";
+    const auto varied_digraph=named_rule_constant_variation_source(genuine_digraph,probe,0);
+    const std::string expected_digraph=R"cpp(int cajas_para(int piezas) <%
+    const int capacidad<%(3)%>;
+    return (piezas + capacidad - 1) / capacidad;
+%>
+bool llega_a_tiempo(int dias) {
+    const int plazo{4};
+    return dias <= plazo;
+}
+int main() { return 0; }
+)cpp";
+    require(varied_digraph && *varied_digraph==expected_digraph,
+        "A valid digraph body and list initializer vary without changing any protected bytes");
     const auto crlf=[](std::string text) {
         std::string result;
         for(const auto c:text){if(c=='\n')result+='\r';result+=c;}
@@ -2637,6 +2755,7 @@ void constant_variation_source_identity() {
         "A copy-list variation preserves its braces, trailing comma and surrounding CRLF bytes");
     for(const auto body:{
             "return piezas / capacidad + (piezas % capacidad != 0);",
+            "return (piezas + capacidad - 1) / capacidad + (false and capacidad and capacidad);",
             "const auto ajuste = capacidad - 1; return (piezas + ajuste) / capacidad;",
             "if (piezas == 0) return 0; return (piezas + capacidad - 1) / capacidad;"}) {
         const auto original=constant_variation_candidate("const int capacidad{4};",body);
@@ -2721,7 +2840,7 @@ void constant_variation_source_identity() {
 
 int main() {
     try {
-        capacity();conditional_assignment_branches();compound_assignment_evidence();stream_extraction_and_shift_evidence();separate_rules();price_and_minimum();
+        alternative_logical_tokens();capacity();conditional_assignment_branches();compound_assignment_evidence();stream_extraction_and_shift_evidence();separate_rules();price_and_minimum();
         comment_only_header_changes();independently_generated_probe();
         real_battery_contract_and_sources();real_battery_traces_and_verdicts();
         constant_variation_contract();constant_variation_source_identity();

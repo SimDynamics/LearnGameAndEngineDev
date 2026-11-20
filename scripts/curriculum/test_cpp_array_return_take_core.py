@@ -44,6 +44,12 @@ def main():
                 qa.TAKE["check_then_assign"].replace(
                     "destino = std::move(origen);",
                     "destino = std::move (origen);")),
+            "quoted_probe_names":(
+                '\n    // __FILE__, Watch, std::exit(0) are inert text.\n'
+                '    const char* info=R"memo(lgaed_return_take_qa::Watch '
+                '__COUNTER__ std::fputs())memo";\n    (void)info;\n' +
+                qa.COPY["copy_then_edit"],
+                qa.TAKE["check_then_assign"]),
         }
         invalid={
             **{name:(body,qa.TAKE["check_then_assign"])
@@ -106,6 +112,26 @@ def main():
                 "int Tramo::sumar() const noexcept {",
                 "int Tramo::sumar() const {",1),
         }
+        # Only lexically trustworthy method bodies reach the compiled
+        # private owner verifier. Do not execute the hostile counterexamples.
+        attacks={
+            "exit": "std::exit(0);",
+            "exit_alias": "auto stop=&std::exit; stop(0);",
+            "fake_marker": 'std::fputs("'+qa.MARKER+'",stderr);',
+            "tamper_watch": "lgaed_return_take_qa::Watch::allocated=0;",
+            "observe_file": "const auto path=__FILE__; (void)path;",
+            "observe_count": "const auto n=__COUNTER__; (void)n;",
+            "redirect": 'std::freopen("a.txt","w",stderr);',
+            "jump": "std::longjmp(context,1);",
+            "macro_digraph": "%:define OVERWRITE 1",
+        }
+        for key,body in attacks.items():
+            protected_changes["copy_"+key]=qa.compose(
+                original,"\n    "+body+"\n"+qa.COPY["copy_then_edit"],
+                qa.TAKE["check_then_assign"])
+            protected_changes["take_"+key]=qa.compose(
+                original,qa.COPY["copy_then_edit"],
+                "\n    "+body+"\n"+qa.TAKE["check_then_assign"])
         for name,modified in protected_changes.items():
             assert modified!=correct,name
             candidate=root/(name+"-student.cpp")

@@ -122,7 +122,10 @@ inline std::optional<Tokens> tokens(std::string_view source, bool generated = fa
                     return {};
             }
         }
-        result.push_back({token, begin, offset});
+        // Normalize C++ alternate tokens for source analysis and private
+        // counterfactual phases, retaining exact original byte spans.
+        result.push_back({named_rule_detail::canonical_rule_token(token),
+                          begin, offset});
     }
     if(!generated) {
         std::size_t depth = 0;
