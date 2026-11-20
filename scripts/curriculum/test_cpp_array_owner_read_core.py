@@ -45,6 +45,12 @@ def main():
                 qa.READ["bounds_first"].replace(
                     "resultado = datos_[indice];",
                     "resultado=datos_[indice];")),
+            "quoted_probe_names":(
+                '\n    // __FILE__, Watch, std::exit(0) are documentation only.\n'
+                '    const char* info=R"memo(lgaed_array_qa::Watch __COUNTER__ '
+                'std::fputs())memo";\n    (void)info;\n' +
+                qa.CONFIGURE["allocate_then_swap"],
+                qa.READ["bounds_first"]),
         }
         deficient={
             **{name:(body,qa.READ["bounds_first"])
@@ -104,6 +110,27 @@ def main():
                 original,"\n}\n"+qa.CONFIGURE["allocate_then_swap"],
                 qa.READ["bounds_first"]),
         }
+        # Both editable methods must be neutral to independently
+        # compiled evidence. Reject these sources before compiling or running.
+        spoofing = {
+            "exit": "std::exit(0);",
+            "finish_alias": "auto stop=&std::exit; stop(0);",
+            "tamper_watch": "lgaed_array_qa::Watch::arrays_new=0;",
+            "disable_watch": "lgaed_array_qa::Watch::active=false;",
+            "fake_marker": 'std::fputs("'+qa.MARKER+'",stderr);',
+            "redirect_stderr": 'std::freopen("report.txt","w",stderr);',
+            "line_observer": "const auto n=__FILE__; (void)n;",
+            "build_counter": "const auto n=__COUNTER__; (void)n;",
+            "jump": "std::longjmp(saved,1);",
+            "macro_digraph": "%:define OVERWRITE 1",
+        }
+        for name,body in spoofing.items():
+            bad_sources["configure_"+name] = qa.compose(
+                original,"\n    "+body+"\n"+qa.CONFIGURE["allocate_then_swap"],
+                qa.READ["bounds_first"])
+            bad_sources["read_"+name] = qa.compose(
+                original,qa.CONFIGURE["allocate_then_swap"],
+                "\n    "+body+"\n"+qa.READ["bounds_first"])
         for label,changed in bad_sources.items():
             assert changed!=correct,label
             path=root/(label+"-student.cpp")

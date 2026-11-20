@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/code_format_compat.hpp"
+#include "core/cpp_private_probe_neutral.hpp"
 #include "core/cpp_member_body_check.hpp"
 
 #include <algorithm>
@@ -117,10 +118,7 @@ inline bool safe_body(std::string_view source,const CppMemberBodySpan& span) {
     if(code_format::physical_splice(body))return false;
     const auto parsed=code_format::cpp_tokens(body);
     if(!parsed)return false;
-    for(const auto& token:*parsed)
-        if(token.starts_with("directive:")||token=="op:#"||token=="op:##"||
-           token=="op:%:"||token=="op:%:%:")return false;
-    return !code_format::cpp_position_sensitive_tokens(*parsed);
+    return cpp_private_probe_body_neutral(*parsed,"lgaed_array_qa");
 }
 inline void substitute(std::string& text,std::string_view key,std::string_view value) {
     for(std::size_t at=0;(at=text.find(key,at))!=text.npos;) {
