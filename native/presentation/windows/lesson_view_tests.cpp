@@ -3473,13 +3473,22 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
     struct VerifiedSolution { std::string_view filename,editor,reference; };
     // Work may archive a displayed reference without changing the exercise.
     // Keep this QA plan explicit: a stored expected output is not a program.
-    constexpr std::array<VerifiedSolution,9> solutions{{
+    // The historical compiler identities remain valid for pre-restart editions.
+    // The new U1 editions own different exercise/draft slots and must compile
+    // their newly authored references, never the archived old solution.
+    constexpr std::array<VerifiedSolution,15> solutions{{
         {"lesson_primer_programa_y_salida.json","block_0004_0002","block_0005_0002"},
         {"lesson_primer_programa_y_salida.json","block_0005_0006","block_0005_0008"},
+        {"lesson_primer_programa_y_salida.json","p1u1l2_construir_salida","p1u1l2_construir_referencia_codigo"},
+        {"lesson_primer_programa_y_salida.json","p1u1l2_reparar_salida","p1u1l2_reparar_referencia_codigo"},
         {"lesson_texto_secuencia_y_formato.json","block_0006_0002","block_0007_0002"},
         {"lesson_texto_secuencia_y_formato.json","block_0006_0006","block_0007_0003"},
+        {"lesson_texto_secuencia_y_formato.json","p1u1l3_construir_informe","p1u1l3_referencia_informe"},
+        {"lesson_texto_secuencia_y_formato.json","p1u1l3_reparar_informe","p1u1l3_referencia_reparacion"},
         {"lesson_fuente_compilacion_y_diagnostico.json","block_0003_0003","block_0006_0002"},
         {"lesson_fuente_compilacion_y_diagnostico.json","block_0003_0008",""},
+        {"lesson_fuente_compilacion_y_diagnostico.json","p1u1l4_reparar_nombre_editor","p1u1l4_referencia_nombre"},
+        {"lesson_fuente_compilacion_y_diagnostico.json","p1u1l4_reparar_orden_editor","p1u1l4_referencia_logica"},
         {"lesson_resolver_probar_y_recuperar.json","p1u1l5_escribir_linea_intermedia","p1u1l5_referencia_linea_intermedia"},
         {"lesson_resolver_probar_y_recuperar.json","block_0003_0002","block_0005_0002"},
         {"lesson_resolver_probar_y_recuperar.json","block_0005_0006","block_0005_0008"}
@@ -3492,7 +3501,13 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
             // Submitted prior quiz progress isolates the compiler requirement;
             // opaque compiler correctness must never substitute native proof.
             for(std::size_t p=0;p<lesson.pages.size();++p)for(const auto& block:lesson.pages[p].blocks){
-                if(block.type==BlockType::cpp_compiler&&!marked){state::save_current_page(data,lesson,p);marked=true;}
+                if(block.type==BlockType::cpp_compiler&&!marked){
+                    // An earlier real visit has both an answer history and
+                    // stable reading coverage. Do not forge compiler proofs.
+                    for(std::size_t reached=0;reached<=p;++reached)
+                        (void)state::mark_page_reached(data,lesson,reached);
+                    state::save_current_page(data,lesson,p);marked=true;
+                }
                 if(block.type==BlockType::heading||block.type==BlockType::paragraph||block.type==BlockType::note||block.type==BlockType::code)continue;
                 state::Response old;old.correct=true;old.answer="progreso QA anterior";
                 if(block.correct_index)old.selected=static_cast<std::int64_t>(*block.correct_index);
@@ -3525,7 +3540,12 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
                 owners.insert(curriculum::exercise_key(f.lesson,compiler)).second&&
                 !windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
                 "An integrated compiler has no independent goal or inherited an earlier achievement");
-            if(f.page()!=position.page){require(navigate_lesson_view(f.view,position.page),"A completed earlier objective failed to unlock the next useful page");pump(f.host);}
+            require(f.page()<=position.page,"An integrated compiler appeared behind the current test position");
+            // New editions can place the second editor several pages later.
+            // Visit every intervening page so the test cannot bypass page
+            // reachability or an unsolved current prerequisite.
+            while(f.page()<position.page)
+                f.next();
             require(descendant(f.view,id(position.block,10))&&!lesson_page_state(f.view).can_next,
                 "A current useful compiler was hidden or its own pending goal did not block advancement");
             f.run(position.block);
@@ -3596,7 +3616,15 @@ void completed_compilers_keep_navigation_after_active_content() {
     const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_resolver_probar_y_recuperar.json";
     const auto original_hash=state::sha256(state::read_bytes(path));
     Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
-        state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,3);
+        state::prepare_lesson_state(data,lesson);
+        // Reproduce a historical page-four bookmark with real page coverage.
+        // An inserted third-page compiler is not yet reached or completed and
+        // must take precedence over that older bookmark on reopening.
+        const auto inserted=curriculum::stable_block_position(lesson,"p1u1l5_escribir_linea_intermedia");
+        const auto reached_limit=inserted?inserted->page:4u;
+        for(std::size_t reached=0;reached<reached_limit;++reached)
+            (void)state::mark_page_reached(data,lesson,reached);
+        state::save_current_page(data,lesson,3);
         data.preferences["navigation_geometry_qa"]["unchanged"]=std::string(" \t original preference\r\n");
         // Only earlier quiz responses isolate entry to the actual construction.
         // Neither compiler receives synthetic completion or program receipts.
