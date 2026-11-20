@@ -439,6 +439,86 @@ por sí sola nuevos objetivos dentro de las lecciones.
 Esta capacidad no acredita por sí sola las jerarquías posteriores.
 
 
+## Destrucción polimórfica y propiedad de objetos derivados
+
+Programación 3, U8L5, dispone de un comprobador de propiedad
+`compilerPolymorphicDestructionChecks` de carácter general. Work puede
+añadir a la raíz de una lección española `stateLayout` v2 la siguiente
+declaración sin sustituir el editor C++, su programa inicial, sus cinco
+entradas de `outputCheck`, las soluciones originales ni los IDs:
+
+```json
+"compilerPolymorphicDestructionChecks": [
+  {
+    "activity": "block_0020_0002",
+    "baseClass": "Medida",
+    "derivedClass": "MedidaIdentificada",
+    "cycleClass": "Ciclo",
+    "ownedClass": "Ficha",
+    "ownedMember": "ficha_",
+    "factoryFunction": "crear_medida",
+    "writeMethod": "escribir",
+    "numberParameter": "numero",
+    "codeParameter": "codigo",
+    "cycleParameter": "ciclo",
+    "baseAlive": "bases_vivas",
+    "derivedAlive": "derivadas_vivas",
+    "ownedAlive": "fichas_vivas",
+    "baseDestroyed": "bases_destruidas",
+    "derivedDestroyed": "derivadas_destruidas",
+    "ownedDestroyed": "fichas_destruidas"
+  }
+]
+```
+
+La declaración localiza las tres definiciones originales completas,
+que deben permanecer en ese orden:
+
+```cpp
+Medida::~Medida() noexcept
+MedidaIdentificada::~MedidaIdentificada() noexcept
+std::unique_ptr<Medida> crear_medida(int numero, int codigo, Ciclo& ciclo)
+```
+
+Sólo se pueden modificar los **cuerpos** de esas tres funciones,
+conservando byte a byte todo el resto: `struct Ciclo`, la clase base,
+su destructor virtual público, la clase derivada, su `unique_ptr<Ficha>`,
+constructores, miembros, interfaces, declaraciones, `main` y datos
+de salida. La firma, los nombres y las llamadas se identifican por la
+autoría explícita, no por la forma en que stdout mencione la operación.
+Se admiten implementaciones correctas equivalentes. Los cambios
+fuera de los tres cuerpos, las directivas nuevas, los cierres
+anticipados y los textos mal terminados quedan rechazados.
+
+La ejecución del primer caso visible puede acreditar la salida solicitada
+y lanzar una sonda C++ privada que usa **el código verdaderamente entregado**.
+Esta prueba verifica que la fábrica construye un objeto concreto derivado,
+que el propietario de base conserva su identidad tras moverse, que sus
+datos y el miembro `Ficha` son correctos y que la destrucción
+finaliza una vez la derivada, el miembro y la base. Comprueba también
+dos objetos vivos con contadores preexistentes, registros independientes,
+el vaciado explícito repetido y la limpieza automática tras una excepción.
+No ejecuta dobles propietarios ni lecturas posteriores a la destrucción.
+
+Si la salida coincide pero falla el comportamiento real, la app no concede
+el objetivo. La evidencia se sella con el programa completo, el origen,
+la declaración, el controlador privado, el identificador de solicitud y la
+revisión ejecutada. El recibo adicional se llama
+`polymorphic-destruction/v1`. Un acierto antiguo de
+`outputCheck` no se transforma automáticamente en prueba de
+destrucción. Se conservan los recibos históricos, los borradores,
+las respuestas y el progreso de otros cursos. Para avanzar, sólo el
+**primer caso declarado** es obligatorio; los cuatro restantes
+continúan disponibles como ensayos optativos.
+
+Codex prueba el contrato general sin modificar los JSON del currículo.
+Work puede incorporarlo cuando verifique que sus referencias y
+explicaciones corresponden a los campos de origen. La regresión
+independiente de escritorio y las pruebas de StateStore no sustituyen
+la revisión visual de la app durante el estudio.
+
+
+
 ## Baterías abiertas de una función booleana con dos enteros
 
 Windows admite la variante `boolean-pair-v1` dentro de la lista raíz
