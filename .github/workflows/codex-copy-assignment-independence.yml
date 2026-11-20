@@ -7,6 +7,8 @@ on:
       - .github/workflows/codex-copy-assignment-independence.yml
       - scripts/curriculum/test_cpp_copy_assignment_independence.py
       - scripts/curriculum/test_cpp_independent_copy_assignment_core.py
+      - scripts/curriculum/test_cpp_independent_copy_assignment_authoring.py
+      - scripts/curriculum/stable_state_layout.py
       - native/core/cpp_independent_copy_assignment_check.hpp
       - native/core/cpp_independent_copy_assignment_check_tests.cpp
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_definir_copia_independiente_y_conservar_el_destino.json
@@ -32,6 +34,8 @@ jobs:
             python3 -B scripts/curriculum/test_cpp_independent_copy_assignment_core.py \
               --compiler "$compiler"
           done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_independent_copy_assignment_authoring.py -v
 
   windows-msvc:
     name: Original U6L7 strong copy and bad_alloc with MSVC
@@ -50,3 +54,4 @@ jobs:
         run: |
           python -B scripts\curriculum\test_cpp_copy_assignment_independence.py --compiler cl --windows
           python -B scripts\curriculum\test_cpp_independent_copy_assignment_core.py --compiler cl --windows
+          python -B -m unittest discover -s scripts\curriculum -p test_cpp_independent_copy_assignment_authoring.py -v
