@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerPolymorphicDestructionChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -5048,6 +5048,96 @@ def _validate_compiler_array_return_take_checks(document: dict) -> None:
                 "Array return/take requires both original external function signatures")
 
 
+
+def _validate_compiler_polymorphic_destruction_checks(document: dict) -> None:
+    """Authenticate three editable function bodies on a published C++ editor.
+
+    The root contract adds a new semantic goal without changing its original
+    source, cases, state-layout identities or historical output achievements.
+    """
+    field="compilerPolymorphicDestructionChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Polymorphic destruction requires a Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Polymorphic destruction requires 1..32 original editors")
+    required={"activity","baseClass","derivedClass","cycleClass",
+              "ownedClass","ownedMember","factoryFunction","writeMethod",
+              "numberParameter","codeParameter","cycleParameter",
+              "baseAlive","derivedAlive","ownedAlive",
+              "baseDestroyed","derivedDestroyed","ownedDestroyed"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Polymorphic destruction has unknown or missing symbols")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate polymorphic destructor owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Polymorphic destructor proof requires one original C++ editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                      "compilerArrayReturnTakeChecks","compilerNamedRuleChecks",
+                      "compilerOpenBatteryChecks","compilerReductionChecks",
+                      "compilerCmakeGraphChecks","compilerIntegerBatteryChecks"):
+            others=document.get(other,[])
+            require(type(others) is list and not any(
+                    type(x) is dict and x.get("activity")==identity for x in others),
+                    "Polymorphic destruction must not reuse another private editor")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Polymorphic destruction requires the published complete source")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                    "Invalid polymorphic destructor source identifier")
+        base=item["baseClass"]
+        derived=item["derivedClass"]
+        cycle=item["cycleClass"]
+        owner=item["ownedClass"]
+        member=item["ownedMember"]
+        require(len(re.findall(r"\bclass\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(derived)+r"\s*:\s*public\s+"+
+                                   re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bstruct\s+"+re.escape(cycle)+r"\s*\{",source))==1,
+                "Polymorphic destruction must preserve a real published hierarchy")
+        require("virtual ~"+base+"() noexcept;" in source and
+                "~"+derived+"() noexcept override;" in source and
+                re.search(r"\bstd\s*::\s*unique_ptr\s*<\s*"+
+                          re.escape(owner)+r"\s*>\s*"+re.escape(member)+r"\b",
+                          source) is not None,
+                "Original virtual lifetime or derived owner member missing")
+        for property_name in ("baseAlive","derivedAlive","ownedAlive",
+                              "baseDestroyed","derivedDestroyed","ownedDestroyed"):
+            require(len(re.findall(r"\b"+re.escape(item[property_name])+r"\b",
+                                   source))>=2,
+                    "Missing original lifetime counter: "+property_name)
+        factory=("std::unique_ptr<"+base+"> "+item["factoryFunction"]+
+                 "(int "+item["numberParameter"]+
+                 ", int "+item["codeParameter"]+
+                 ", "+cycle+"& "+item["cycleParameter"]+")")
+        require(source.count(base+"::~"+base+"() noexcept {")==1 and
+                source.count(derived+"::~"+derived+"() noexcept {")==1 and
+                source.count(factory+" {")==1,
+                "Polymorphic destruction needs precisely three original bodies")
+
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
@@ -5845,6 +5935,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_array_owner_read_checks(document)
     _validate_compiler_array_copy_move_checks(document)
     _validate_compiler_array_return_take_checks(document)
+    _validate_compiler_polymorphic_destruction_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)
