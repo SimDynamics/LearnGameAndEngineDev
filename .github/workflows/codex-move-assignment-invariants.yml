@@ -9,6 +9,8 @@ on:
       - native/core/cpp_move_assignment_invariant_check.hpp
       - native/core/cpp_move_assignment_invariant_check_tests.cpp
       - scripts/curriculum/test_cpp_move_assignment_invariant_core.py
+      - scripts/curriculum/test_cpp_move_assignment_invariant_authoring.py
+      - scripts/curriculum/stable_state_layout.py
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_conservar_invariantes_al_mover_una_clase.json
   workflow_dispatch:
 
@@ -32,6 +34,8 @@ jobs:
             python3 -B scripts/curriculum/test_cpp_move_assignment_invariant_core.py \
               --compiler "$compiler"
           done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_move_assignment_invariant_authoring.py -v
 
   windows-msvc:
     name: Original U6L8 Muestra semantics with Windows MSVC
@@ -50,3 +54,4 @@ jobs:
         run: |
           python -B scripts\curriculum\test_cpp_move_assignment_invariants.py --compiler cl --windows
           python -B scripts\curriculum\test_cpp_move_assignment_invariant_core.py --compiler cl --windows
+          python -B -m unittest discover -s scripts\curriculum -p test_cpp_move_assignment_invariant_authoring.py -v
