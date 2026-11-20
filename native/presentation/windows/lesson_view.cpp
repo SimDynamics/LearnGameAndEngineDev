@@ -2310,6 +2310,7 @@ struct LessonView {
         request.virtual_lifetime_probe=block(index).virtual_lifetime_probe;
         request.derived_preparation_probe=block(index).derived_preparation_probe;
         request.abstract_interface_probe=block(index).abstract_interface_probe;
+        request.interface_collection_probe=block(index).interface_collection_probe;
         request.open_battery_probe=block(index).open_battery_probe;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
@@ -4310,6 +4311,8 @@ struct LessonView {
                     block(index),running_program);
                 const bool independent=(!block(index).abstract_interface_probe||
                     fresh.abstract_interface_probe_correct)&&
+                    (!block(index).interface_collection_probe||
+                     fresh.interface_collection_probe_correct)&&
                     (!block(index).derived_preparation_probe||
                     fresh.derived_preparation_probe_correct)&&
                     (!block(index).virtual_lifetime_probe||
@@ -4385,6 +4388,12 @@ struct LessonView {
                         "La salida visible coincide, pero la prueba independiente no confirmó que la fábrica cree el tipo concreto solicitado ni que presentar consulte numero y escribir mediante la interfaz, también con otros tipos compatibles. Revisa únicamente las dos operaciones escribir, crear y presentar.",
                         "Output matches, but independent C++ execution did not prove correct concrete factory types or virtual number and report operations on an additional implementation.",
                         "La sortie correspond, mais la preuve indépendante ne confirme pas le type concret demandé ni les appels virtuels pour une autre implémentation conforme.");
+                if(!fresh.interface_collection_probe_correct&&
+                   block(index).interface_collection_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la comprobación independiente no confirmó la transferencia del mismo objeto al vector, el rechazo de propietarios vacíos, la conservación del orden ni la consulta virtual de escribir en el flujo recibido. Revisa únicamente agregar e informar.",
+                        "Output matches, but the independent proof did not confirm original object identity, empty-owner rejection, ordering or virtual reporting into the requested stream.",
+                        "La sortie correspond, mais la vérification indépendante n'a pas confirmé l'identité, le rejet d'un propriétaire vide, l'ordre et l'écriture virtuelle.");
                 if(!fresh.derived_preparation_probe_correct&&
                    block(index).derived_preparation_probe&&preserved_source)
                     text+='\n'+ui(
@@ -4466,7 +4475,8 @@ struct LessonView {
                    !block(index).polymorphic_destruction_probe&&
                    !block(index).virtual_lifetime_probe&&
                    !block(index).derived_preparation_probe&&
-                   !block(index).abstract_interface_probe)
+                   !block(index).abstract_interface_probe&&
+                   !block(index).interface_collection_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
