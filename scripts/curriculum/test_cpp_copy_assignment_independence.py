@@ -251,10 +251,10 @@ def compile_source(compiler: str, source: Path, binary: Path,
     if windows:
         command = [compiler, "/nologo", "/std:c++latest", "/EHsc",
                    "/W4", "/WX", "/permissive-", "/Zc:__cplusplus",
-                   "/utf-8", str(source), "/Fe:" + str(binary)]
+                   "/utf-8", "/Inative", str(source), "/Fe:" + str(binary)]
     else:
         command = [compiler, "-std=c++23", "-Wall", "-Wextra",
-                   "-Werror", "-pedantic", str(source), "-o", str(binary)]
+                   "-Werror", "-pedantic", "-Inative", str(source), "-o", str(binary)]
     return run(command)
 
 
