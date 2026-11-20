@@ -82,7 +82,8 @@ add_executable(lgaed_compiler_guidance_portable_qa
     "${LGAED_ROOT}/native/platform/windows/defaulted_move_policy_state_tests.cpp"
     "${LGAED_ROOT}/native/platform/windows/independent_copy_assignment_state_tests.cpp"
     "${LGAED_ROOT}/native/platform/windows/move_assignment_invariant_state_tests.cpp"
-    "${LGAED_ROOT}/native/platform/windows/array_owner_read_state_tests.cpp")
+    "${LGAED_ROOT}/native/platform/windows/array_owner_read_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/array_copy_move_state_tests.cpp")
 target_link_libraries(lgaed_compiler_guidance_portable_qa PRIVATE
     lgaed_guidance_platform lgaed_guidance_qa_options)
 target_link_options(lgaed_compiler_guidance_portable_qa PRIVATE /OPT:REF)
@@ -109,6 +110,8 @@ add_test(NAME native.u6l8_move_assignment_invariant_state
     COMMAND lgaed_compiler_guidance_portable_qa --move-assignment-invariant-state-live)
 add_test(NAME native.u6l10_array_owner_read_state
     COMMAND lgaed_compiler_guidance_portable_qa --array-owner-read-state-live)
+add_test(NAME native.u6l11_array_copy_move_state
+    COMMAND lgaed_compiler_guidance_portable_qa --array-copy-move-state-live)
 set_tests_properties(native.compiler_guidance_state
     native.compiler_review_guidance_priority
     native.u12l24_authored_compiler_guides
@@ -119,4 +122,5 @@ set_tests_properties(native.compiler_guidance_state
     native.u6l6_defaulted_move_policy_state
     native.u6l7_independent_copy_assignment_state
     native.u6l8_move_assignment_invariant_state
-    native.u6l10_array_owner_read_state PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+    native.u6l10_array_owner_read_state
+    native.u6l11_array_copy_move_state PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
