@@ -57,15 +57,15 @@ curriculares U3L6/U3L8 requiere las verificaciones específicas de Work.
 ## Asignación por copia independiente en una clase
 
 La raíz de una lección española existente con mapa de estado v2 puede declarar
-\`compilerIndependentCopyAssignmentChecks\` para añadir una comprobación
+`compilerIndependentCopyAssignmentChecks` para añadir una comprobación
 semántica de asignación por copia **sin modificar el editor publicado**.
-Se utiliza la identidad actual de un único bloque \`cpp_compiler\` de archivo
-único con \`outputCheck\`; la declaración no crea otro ejercicio ni reescribe
-\`initialCode\`, \`outputCheck\`, direcciones, borradores o resultados anteriores.
+Se utiliza la identidad actual de un único bloque `cpp_compiler` de archivo
+único con `outputCheck`; la declaración no crea otro ejercicio ni reescribe
+`initialCode`, `outputCheck`, direcciones, borradores o resultados anteriores.
 
 Para Programación 3, U6L7, la declaración compatible es:
 
-\`\`\`json
+```json
 "compilerIndependentCopyAssignmentChecks": [
   {
     "activity": "block_0014_0002",
@@ -80,15 +80,15 @@ Para Programación 3, U6L7, la declaración compatible es:
     "clearMethod": "vaciar"
   }
 ]
-\`\`\`
+```
 
 Los nombres describen símbolos **reales del código original**. Debe existir
 exactamente la definición exterior
-\`Celda& Celda::operator=(const Celda& otra)\` y su miembro
-\`std::unique_ptr<int> dato_\`. El motor admite diferentes implementaciones
+`Celda& Celda::operator=(const Celda& otra)` y su miembro
+`std::unique_ptr<int> dato_`. El motor admite diferentes implementaciones
 del cuerpo de ese operador, así como diferencias inocuas de espacios y
 comentarios. No admite que el estudiante cambie las declaraciones, los
-miembros, el constructor de copia, las demás funciones o \`main\`.
+miembros, el constructor de copia, las demás funciones o `main`.
 Tampoco admite otras sondas privadas sobre el mismo propietario.
 
 Una pulsación compila y ejecuta el caso visible elegido. Si se cumple su
@@ -97,20 +97,20 @@ comportamiento de la misma clase. Comprueba que copiar una fuente ocupada
 crea un entero independiente incluso con valores iguales, que se libera el
 destino anterior, que una fuente vacía vacía el destino sin reservar, que
 autocopiar (ocupado o vacío) no cambia la identidad ni solicita memoria,
-y que un \`std::bad_alloc\` inyectado de forma controlada conserva origen
+y que un `std::bad_alloc` inyectado de forma controlada conserva origen
 y destino. También comprueba devolución por referencia, valor cero presente,
 reutilización después de mover y limpieza. No se requiere ejecutar ni
 introducir los casos privados manualmente.
 
 La prueba independiente nunca modifica el fuente que entregó el estudiante:
 genera una unidad de compilación temporal con ese mismo fuente y un
-\`main\` de QA aislado. El resultado se vincula al contenido completo de
+`main` de QA aislado. El resultado se vincula al contenido completo de
 la petición, a su revisión y al hash del driver privado. Un resultado antiguo
 de stdout no acredita automáticamente la nueva semántica. El sello
-\`independent-copy-assignment/v1\` se añade solamente tras una comprobación
+`independent-copy-assignment/v1` se añade solamente tras una comprobación
 correcta, conservando los recibos y borradores históricos.
 
-Esta variante se refiere a **copia con \`unique_ptr<int>\`** y a los métodos
+Esta variante se refiere a **copia con `unique_ptr<int>`** y a los métodos
 declarados arriba. No constituye una prueba general de todos los operadores,
 de propietarios de arrays ni de jerarquías; cada contrato posterior requiere
 su ampliación y validación correspondientes. Para que una nueva declaración
