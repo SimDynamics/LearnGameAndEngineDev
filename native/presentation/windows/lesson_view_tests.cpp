@@ -2315,9 +2315,13 @@ void simulated_exercise_code_cards(bool caret_only=false) {
         return region.target==output_code;
     }),"A simulated header started narrating excluded console code or buttons");
     const auto order_surface=fixture.control(2,5);
-    require(std::ranges::none_of(regions,[&](const auto& region){return IsChild(order_surface,region.target);})&&
-        std::ranges::any_of(regions,[&](const auto& region){return region.target==fixture.control(2,37)&&region.source_text=="Mantén pulsado un bloque y arrástralo hasta la posición correcta.";}),
-        "Code ordering narrated source fragments or omitted the original visible Android instruction");
+    const std::string order_help="Arrastra las líneas de código hasta dejarlas en el orden correcto.";
+    const std::string drag_help="Arrastra cada bloque de código hasta el espacio vacío correspondiente.";
+    require(fixture.text(2,37)==order_help&&fixture.text(4,37)==drag_help&&
+        std::ranges::none_of(regions,[&](const auto& region){return IsChild(order_surface,region.target);})&&
+        std::ranges::any_of(regions,[&](const auto& region){return region.target==fixture.control(2,37)&&region.source_text==order_help;})&&
+        std::ranges::any_of(regions,[&](const auto& region){return region.target==fixture.control(4,37)&&region.source_text==drag_help;}),
+        "The native code ordering/drag help disagrees with its spoken text or narrated hidden source fragments");
     fixture.replace(0,2,"Respuesta personal");fixture.replace(1,2,"<<");
     const auto source_before_fullscreen=fixture.text(0,1),answer_before_fullscreen=fixture.text(0,2);
     const auto script_before_fullscreen=reading_script(fixture.view);
