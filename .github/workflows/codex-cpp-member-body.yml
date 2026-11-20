@@ -6,6 +6,13 @@ on:
     paths:
       - native/core/cpp_member_body_check.hpp
       - native/core/cpp_member_body_check_tests.cpp
+      - native/core/cpp_indexed_unique_transfer_probe.hpp
+      - native/core/cpp_indexed_unique_transfer_probe_tests.cpp
+      - scripts/curriculum/test_cpp_indexed_unique_transfer_probe.py
+      - scripts/curriculum/test_cpp_indexed_unique_transfer_authoring.py
+      - scripts/curriculum/stable_state_layout.py
+      - native/platform/windows/content_loader.cpp
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_transferir_propiedad_entre_unique_ptr.json
       - .github/workflows/codex-cpp-member-body.yml
   workflow_dispatch:
 
@@ -14,32 +21,42 @@ permissions:
 
 jobs:
   portable:
-    name: Guard a single member body without modifying surrounding C++
+    name: Preserve a single member and verify actual U6L5 transfer identity
     runs-on: ubuntu-24.04
-    timeout-minutes: 7
+    timeout-minutes: 9
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Compile and run the standalone C++23 guard with GCC and Clang
+      - name: Check the standalone C++23 source guard and the authentic transfer
         run: |
           for compiler in g++ clang++; do
             "$compiler" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
               native/core/cpp_member_body_check_tests.cpp -o "$RUNNER_TEMP/member_guard"
             "$RUNNER_TEMP/member_guard"
+            python3 -B scripts/curriculum/test_cpp_indexed_unique_transfer_probe.py \
+              --compiler "$compiler"
           done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_indexed_unique_transfer_authoring.py -v
 
   windows-msvc:
-    name: Guard an original method using MSVC C++23
+    name: Independently compile and test U6L5 on MSVC C++23
     runs-on: windows-2022
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: Compile and execute the standalone C++23 source guard
+      - name: Validate member source guard and real U6L5 identity and cleanup
         shell: cmd
         run: |
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative native\core\cpp_member_body_check_tests.cpp /Fe:"%RUNNER_TEMP%\member_guard.exe"
+          if errorlevel 1 exit /b 1
           "%RUNNER_TEMP%\member_guard.exe"
+          if errorlevel 1 exit /b 1
+          python -B scripts\curriculum\test_cpp_indexed_unique_transfer_probe.py --compiler cl --windows

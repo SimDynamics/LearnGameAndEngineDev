@@ -10,6 +10,40 @@ on:
       - native/platform/windows/compiler_completion.hpp
       - native/platform/windows/compiler_guidance_state_tests.cpp
       - native/platform/windows/math_matching_text_state_tests.cpp
+      - native/platform/windows/indexed_unique_transfer_state_tests.cpp
+      - native/platform/windows/defaulted_move_policy_state_tests.cpp
+      - native/platform/windows/independent_copy_assignment_state_tests.cpp
+      - native/platform/windows/move_assignment_invariant_state_tests.cpp
+      - native/platform/windows/array_owner_read_state_tests.cpp
+      - native/platform/windows/array_copy_move_state_tests.cpp
+      - native/platform/windows/array_return_take_state_tests.cpp
+      - native/platform/windows/polymorphic_clone_state_tests.cpp
+      - native/platform/windows/dual_interface_state_tests.cpp
+      - native/core/cpp_dual_interface_check.hpp
+      - native/core/cpp_polymorphic_clone_check.hpp
+      - native/core/cpp_array_return_take_check.hpp
+      - native/core/cpp_array_return_take_check_tests.cpp
+      - scripts/curriculum/test_cpp_array_return_take_authoring.py
+      - native/core/cpp_array_copy_move_check.hpp
+      - native/core/cpp_array_copy_move_check_tests.cpp
+      - scripts/curriculum/test_cpp_array_copy_move_authoring.py
+      - native/core/cpp_array_owner_read_check.hpp
+      - native/core/cpp_array_owner_read_check_tests.cpp
+      - scripts/curriculum/test_cpp_array_owner_read_authoring.py
+      - native/core/cpp_move_assignment_invariant_check.hpp
+      - native/core/cpp_move_assignment_invariant_check_tests.cpp
+      - scripts/curriculum/test_cpp_move_assignment_invariant_authoring.py
+      - native/presentation/windows/lesson_view.cpp
+      - native/core/cpp_independent_copy_assignment_check.hpp
+      - native/core/cpp_independent_copy_assignment_check_tests.cpp
+      - scripts/curriculum/test_cpp_independent_copy_assignment_authoring.py
+      - native/core/cpp_defaulted_move_policy_check.hpp
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_cpp_defaulted_move_policy_authoring.py
+      - native/platform/windows/cpp_runner.cpp
+      - native/platform/windows/cpp_runner.hpp
+      - native/core/cpp_indexed_unique_transfer_probe.hpp
+      - native/core/cpp_member_body_check.hpp
       - native/platform/windows/content_loader.cpp
       - native/platform/windows/content_loader.hpp
       - native/platform/windows/state_store.cpp
@@ -81,6 +115,15 @@ jobs:
           /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
           native\platform\windows\compiler_completion.cpp
           /Fo:"%RUNNER_TEMP%\compiler_guidance_completion.obj"
+      - name: Compile real Win32 curriculum editor presentation
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /permissive- /bigobj
+          /Zc:__cplusplus /utf-8 /I native /I "%RUNNER_TEMP%\guidance-generated"
+          /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX
+          /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
+          native\presentation\windows\lesson_view.cpp
+          /Fo:"%RUNNER_TEMP%\lesson_view_u6l7.obj"
       - name: Compile authentic guidance, archival and receipt regressions
         shell: cmd
         run: >

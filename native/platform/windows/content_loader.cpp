@@ -5407,6 +5407,861 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
 // Root-authored batteries are attached only after the original mapped blocks
 // are loaded. Boolean single-file contracts preserve their published function;
 // historical CMake contracts retain their exact original call verification.
+
+void read_compiler_indexed_unique_transfer_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerIndexedUniqueTransferChecks"))return;
+    const auto entries=array(root,"compilerIndexedUniqueTransferChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Ownership identity checks require mapped Spanish v2 owners");
+    std::set<std::string> owners;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","signature","className","firstMember",
+            "secondMember","transferMethod","putMethod","changeMethod",
+            "clearMethod"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&owners.insert(identity).second,
+            "Ownership identity check has a repeated or unknown owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity){
+                require(!owner,"Ownership identity check has duplicate mapped blocks");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&owner->output_check&&
+                !owner->output_check->cases.empty()&&!owner->compile_check&&
+                !owner->cmake&&owner->project_files.empty()&&
+                owner->source_files.empty()&&!owner->compiler_workflow_check&&
+                !owner->named_rule_source_check&&!owner->open_battery_probe&&
+                !owner->boolean_battery_probe&&!owner->reduction_probe&&
+                !owner->integer_battery_probe&&!owner->adjustment_project_probe&&
+                !owner->cmake_graph_check,
+            "Owner identity requires one original single-file output-check editor");
+        CppIndexedUniqueTransferProbe spec;
+        spec.member.original_source=owner->initial_code;
+        spec.member.signature=text(item,"signature");
+        spec.class_name=text(item,"className");
+        spec.first_member=text(item,"firstMember");
+        spec.second_member=text(item,"secondMember");
+        spec.transfer_method=text(item,"transferMethod");
+        spec.put_method=text(item,"putMethod");
+        spec.change_method=text(item,"changeMethod");
+        spec.clear_method=text(item,"clearMethod");
+        require(cpp_indexed_unique_transfer_probe_source(spec,owner->initial_code).has_value(),
+            "Owner identity declaration cannot bind its original C++ member source");
+        owner->indexed_unique_transfer_probe=std::move(spec);
+    }
+}
+
+void read_compiler_defaulted_move_policy_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerDefaultedMovePolicyChecks"))return;
+    const auto entries=array(root,"compilerDefaultedMovePolicyChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Defaulted move policy requires 1..32 mapped Spanish v2 owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","className","memberName",
+            "putMethod","changeMethod","clearMethod"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&seen.insert(identity).second,
+            "Defaulted move policy owner is repeated or unknown");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate native defaulted move policy owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Defaulted move policy requires an original single-file compiler objective");
+        CppDefaultedMovePolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.class_name=text(item,"className");
+        spec.member_name=text(item,"memberName");
+        spec.put_method=text(item,"putMethod");
+        spec.change_method=text(item,"changeMethod");
+        spec.clear_method=text(item,"clearMethod");
+        require(cpp_defaulted_move_detail::name(spec.class_name)&&
+                cpp_defaulted_move_detail::name(spec.member_name)&&
+                cpp_defaulted_move_detail::name(spec.put_method)&&
+                cpp_defaulted_move_detail::name(spec.change_method)&&
+                cpp_defaulted_move_detail::name(spec.clear_method),
+            "Defaulted move policy has invalid C++ authoring identifiers");
+        const auto tokens=cpp_defaulted_move_detail::tokens(spec.original_source);
+        require(tokens&&
+                cpp_defaulted_move_detail::region(*tokens,spec.class_name),
+            "Defaulted move policy has no authenticated original class");
+        const std::array<std::string,6> member_tokens{{
+            "id:std","op:::","id:unique_ptr","op:<","id:int","op:>"}};
+        bool typed_member=false;
+        for(std::size_t i=0;i+member_tokens.size()<tokens->size();++i) {
+            if(!std::equal(member_tokens.begin(),member_tokens.end(),
+                    tokens->begin()+static_cast<std::ptrdiff_t>(i)))continue;
+            if((*tokens)[i+member_tokens.size()]=="id:"+spec.member_name) {
+                typed_member=true;break;
+            }
+        }
+        require(typed_member,
+            "Defaulted move policy must name an existing unique_ptr<int> member");
+        owner->defaulted_move_policy_probe=std::move(spec);
+    }
+}
+
+void read_compiler_independent_copy_assignment_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerIndependentCopyAssignmentChecks"))return;
+    const auto entries=array(root,"compilerIndependentCopyAssignmentChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Independent copy assignment requires existing Spanish v2 owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","className","memberName","parameterName",
+            "hasMethod","valueMethod","accessMethod","putMethod",
+            "changeMethod","clearMethod"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&seen.insert(identity).second,
+            "Independent copy assignment owner repeated or invalid");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate independent copy assignment owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Independent copy assignment requires a separate original single-file editor");
+        CppIndependentCopyAssignmentPolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.class_name=text(item,"className");
+        spec.member_name=text(item,"memberName");
+        spec.parameter_name=text(item,"parameterName");
+        spec.has_method=text(item,"hasMethod");
+        spec.value_method=text(item,"valueMethod");
+        spec.access_method=text(item,"accessMethod");
+        spec.put_method=text(item,"putMethod");
+        spec.change_method=text(item,"changeMethod");
+        spec.clear_method=text(item,"clearMethod");
+        const auto original=cpp_independent_copy_detail::lex(spec.original_source);
+        require(original&&cpp_independent_copy_detail::method(*original,spec)&&
+                cpp_independent_copy_detail::member_present(*original,spec),
+            "Independent copy assignment cannot bind the original member and function");
+        // The same matcher validates identifiers and prohibits source changes
+        // outside the original copy-assignment body.
+        require(cpp_independent_copy_matches(spec,spec.original_source),
+            "Independent copy assignment declaration has invalid C++ identifiers");
+        owner->independent_copy_assignment_probe=std::move(spec);
+    }
+}
+
+void read_compiler_move_assignment_invariant_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerMoveAssignmentInvariantChecks"))return;
+    const auto entries=array(root,"compilerMoveAssignmentInvariantChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Move-assignment invariant requires a Spanish v2 root with mapped owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","className","memberName","labelMember",
+            "parameterName","hasMethod","valueMethod","labelMethod",
+            "accessMethod","invariantMethod","putMethod","changeMethod",
+            "retagMethod","clearMethod"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&seen.insert(identity).second,
+            "Invalid or repeated move-assignment invariant owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate move-assignment owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Move-assignment invariant requires a separate original single-file editor");
+        CppMoveAssignmentInvariantPolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.class_name=text(item,"className");
+        spec.member_name=text(item,"memberName");
+        spec.label_member=text(item,"labelMember");
+        spec.parameter_name=text(item,"parameterName");
+        spec.has_method=text(item,"hasMethod");
+        spec.value_method=text(item,"valueMethod");
+        spec.label_method=text(item,"labelMethod");
+        spec.access_method=text(item,"accessMethod");
+        spec.invariant_method=text(item,"invariantMethod");
+        spec.put_method=text(item,"putMethod");
+        spec.change_method=text(item,"changeMethod");
+        spec.retag_method=text(item,"retagMethod");
+        spec.clear_method=text(item,"clearMethod");
+        require(cpp_move_invariant_detail::spec_valid(spec)&&
+                cpp_move_invariant_matches(spec,spec.original_source),
+            "Move-assignment invariant has no authentic class, member or operator");
+        owner->move_assignment_invariant_probe=std::move(spec);
+    }
+}
+
+void read_compiler_array_owner_read_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerArrayOwnerReadChecks"))return;
+    const auto entries=array(root,"compilerArrayOwnerReadChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Array owner/read requires a Spanish v2 original compiler owner");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","className","ownerMember","countMember",
+            "quantityParameter","indexParameter","outputParameter",
+            "configureMethod","readMethod","quantityMethod","accessMethod",
+            "writeMethod","clearMethod","sumMethod"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&seen.insert(identity).second,
+            "Array owner/read has invalid or duplicated original activity");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate array owner/read block identity");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Array owner/read requires its own original single-file output objective");
+        CppArrayOwnerReadPolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.class_name=text(item,"className");
+        spec.owner_member=text(item,"ownerMember");
+        spec.count_member=text(item,"countMember");
+        spec.quantity_parameter=text(item,"quantityParameter");
+        spec.index_parameter=text(item,"indexParameter");
+        spec.output_parameter=text(item,"outputParameter");
+        spec.configure_method=text(item,"configureMethod");
+        spec.read_method=text(item,"readMethod");
+        spec.quantity_method=text(item,"quantityMethod");
+        spec.access_method=text(item,"accessMethod");
+        spec.write_method=text(item,"writeMethod");
+        spec.clear_method=text(item,"clearMethod");
+        spec.sum_method=text(item,"sumMethod");
+        require(cpp_array_owner_read_detail::valid(spec)&&
+                cpp_array_owner_read_matches(spec,spec.original_source),
+            "Array owner/read declaration must bind exactly two original method bodies");
+        owner->array_owner_read_probe=std::move(spec);
+    }
+}
+
+void read_compiler_array_copy_move_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerArrayCopyMoveChecks"))return;
+    const auto entries=array(root,"compilerArrayCopyMoveChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Array copy/move requires an existing Spanish v2 compiler owner");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","className","ownerMember","countMember",
+            "copyParameter","moveParameter","quantityMethod","accessMethod",
+            "configureMethod","readMethod","writeMethod","clearMethod","sumMethod"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&seen.insert(identity).second,
+            "Array copy/move has invalid or duplicated original activity");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate original array copy/move owner identity");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Array copy/move requires its own original single-file output objective");
+        CppArrayCopyMovePolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.class_name=text(item,"className");
+        spec.owner_member=text(item,"ownerMember");
+        spec.count_member=text(item,"countMember");
+        spec.copy_parameter=text(item,"copyParameter");
+        spec.move_parameter=text(item,"moveParameter");
+        spec.quantity_method=text(item,"quantityMethod");
+        spec.access_method=text(item,"accessMethod");
+        spec.configure_method=text(item,"configureMethod");
+        spec.read_method=text(item,"readMethod");
+        spec.write_method=text(item,"writeMethod");
+        spec.clear_method=text(item,"clearMethod");
+        spec.sum_method=text(item,"sumMethod");
+        require(cpp_array_copy_move_detail::policy_valid(spec)&&
+                cpp_array_copy_move_matches(spec,spec.original_source),
+            "Array copy/move must bind the original two assignment methods and owner");
+        owner->array_copy_move_probe=std::move(spec);
+    }
+}
+
+void read_compiler_array_return_take_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerArrayReturnTakeChecks"))return;
+    const auto entries=array(root,"compilerArrayReturnTakeChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Array return/take requires original Spanish v2 compiler owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","className","ownerMember","countMember",
+            "copyFunction","takeFunction","sourceParameter","indexParameter",
+            "valueParameter","destinationParameter","offeredParameter",
+            "limitParameter","quantityMethod","accessMethod",
+            "configureMethod","readMethod","writeMethod","clearMethod"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Array return/take has invalid or duplicate original owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated original array return/take owner identity");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Array return/take requires an independent original single-file editor");
+        CppArrayReturnTakePolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.class_name=text(item,"className");
+        spec.owner_member=text(item,"ownerMember");
+        spec.count_member=text(item,"countMember");
+        spec.copy_function=text(item,"copyFunction");
+        spec.take_function=text(item,"takeFunction");
+        spec.source_parameter=text(item,"sourceParameter");
+        spec.index_parameter=text(item,"indexParameter");
+        spec.value_parameter=text(item,"valueParameter");
+        spec.destination_parameter=text(item,"destinationParameter");
+        spec.offered_parameter=text(item,"offeredParameter");
+        spec.limit_parameter=text(item,"limitParameter");
+        spec.quantity_method=text(item,"quantityMethod");
+        spec.access_method=text(item,"accessMethod");
+        spec.configure_method=text(item,"configureMethod");
+        spec.read_method=text(item,"readMethod");
+        spec.write_method=text(item,"writeMethod");
+        spec.clear_method=text(item,"clearMethod");
+        require(cpp_array_return_take_detail::valid(spec)&&
+                cpp_array_return_take_matches(spec,spec.original_source),
+            "Array return/take cannot bind the original class and two free functions");
+        owner->array_return_take_probe=std::move(spec);
+    }
+}
+
+void read_compiler_polymorphic_destruction_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerPolymorphicDestructionChecks"))return;
+    const auto entries=array(root,"compilerPolymorphicDestructionChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Polymorphic destructor checks require a Spanish v2 compiler owner");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","baseClass","derivedClass","cycleClass",
+            "ownedClass","ownedMember","factoryFunction","writeMethod",
+            "numberParameter","codeParameter","cycleParameter",
+            "baseAlive","derivedAlive","ownedAlive",
+            "baseDestroyed","derivedDestroyed","ownedDestroyed"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Polymorphic destructor check has invalid or duplicate owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated original polymorphic destructor owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&!owner->polymorphic_destruction_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Polymorphic destruction must use an independent historical editor");
+        CppPolymorphicDestructionPolicy spec;
+        spec.editable.original_source=owner->initial_code;
+        spec.base_class=text(item,"baseClass");
+        spec.derived_class=text(item,"derivedClass");
+        spec.cycle_class=text(item,"cycleClass");
+        spec.owned_class=text(item,"ownedClass");
+        spec.owned_member=text(item,"ownedMember");
+        spec.factory_function=text(item,"factoryFunction");
+        spec.write_method=text(item,"writeMethod");
+        const auto number=text(item,"numberParameter");
+        const auto code=text(item,"codeParameter");
+        const auto cycle=text(item,"cycleParameter");
+        spec.base_alive=text(item,"baseAlive");
+        spec.derived_alive=text(item,"derivedAlive");
+        spec.owned_alive=text(item,"ownedAlive");
+        spec.base_destroyed=text(item,"baseDestroyed");
+        spec.derived_destroyed=text(item,"derivedDestroyed");
+        spec.owned_destroyed=text(item,"ownedDestroyed");
+        spec.editable.bodies={
+            {spec.base_class+"::~"+spec.base_class+"() noexcept",true},
+            {spec.derived_class+"::~"+spec.derived_class+"() noexcept",true},
+            {"std::unique_ptr<"+spec.base_class+"> "+spec.factory_function+
+                "(int "+number+", int "+code+", "+spec.cycle_class+"& "+cycle+")",false}
+        };
+        require(cpp_polymorphic_destruction_matches(
+                    spec,spec.editable.original_source),
+            "Polymorphic destructor declaration does not bind three original bodies");
+        owner->polymorphic_destruction_probe=std::move(spec);
+    }
+}
+
+void read_compiler_virtual_lifetime_dispatch_checks(const JsonObject& root,
+        Lesson& lesson) {
+    if(!root.HasKey(L"compilerVirtualLifetimeDispatchChecks"))return;
+    const auto entries=array(root,"compilerVirtualLifetimeDispatchChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Virtual lifetime dispatch needs original Spanish v2 compiler owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","baseClass","derivedClass",
+            "registerMethod","writeMethod","phaseParameter",
+            "registerStream","writeStream"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Invalid or repeated virtual lifetime dispatch editor");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated original virtual lifetime editor identity");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&!owner->polymorphic_destruction_probe&&
+                !owner->virtual_lifetime_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Virtual lifetime dispatch requires an independent original C++ editor");
+        CppVirtualLifetimeDispatchPolicy spec;
+        spec.editable.original_source=owner->initial_code;
+        spec.base_class=text(item,"baseClass");
+        spec.derived_class=text(item,"derivedClass");
+        spec.register_method=text(item,"registerMethod");
+        spec.write_method=text(item,"writeMethod");
+        spec.phase_parameter=text(item,"phaseParameter");
+        spec.register_stream=text(item,"registerStream");
+        spec.write_stream=text(item,"writeStream");
+        spec.editable.bodies={{
+                "void "+spec.base_class+"::"+spec.register_method+
+                    "(const char* "+spec.phase_parameter+", std::ostream& "+
+                    spec.register_stream+") const",true},
+            {"void "+spec.derived_class+"::"+spec.write_method+
+                    "(std::ostream& "+spec.write_stream+") const",true}};
+        require(cpp_virtual_lifetime_dispatch_matches(
+                    spec,spec.editable.original_source),
+            "Virtual lifetime dispatch must bind two authentic original members");
+        owner->virtual_lifetime_probe=std::move(spec);
+    }
+}
+
+void read_compiler_derived_preparation_checks(const JsonObject& root,
+        Lesson& lesson) {
+    if(!root.HasKey(L"compilerDerivedPreparationChecks"))return;
+    const auto entries=array(root,"compilerDerivedPreparationChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Derived preparation requires Spanish v2 original compiler owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","baseClass","derivedClass","balanceClass",
+            "resourceClass","replacementFunction","destinationParameter",
+            "numberParameter","codeParameter","modeParameter","balanceParameter",
+            "printMethod","resourceAlive","baseCompleted","derivedCompleted",
+            "resourceCompleted","baseDestroyed","derivedDestroyed",
+            "resourceDestroyed"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Derived preparation has an invalid or repeated original owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated original derived preparation owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&!owner->polymorphic_destruction_probe&&
+                !owner->virtual_lifetime_probe&&!owner->derived_preparation_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Derived preparation needs an independent original single-file editor");
+        CppDerivedPreparationPolicy spec;
+        spec.editable.original_source=owner->initial_code;
+        spec.base_class=text(item,"baseClass");
+        spec.derived_class=text(item,"derivedClass");
+        spec.balance_class=text(item,"balanceClass");
+        spec.resource_class=text(item,"resourceClass");
+        spec.replacement_function=text(item,"replacementFunction");
+        spec.destination_parameter=text(item,"destinationParameter");
+        spec.number_parameter=text(item,"numberParameter");
+        spec.code_parameter=text(item,"codeParameter");
+        spec.mode_parameter=text(item,"modeParameter");
+        spec.balance_parameter=text(item,"balanceParameter");
+        spec.print_method=text(item,"printMethod");
+        spec.resource_alive=text(item,"resourceAlive");
+        spec.base_complete=text(item,"baseCompleted");
+        spec.derived_complete=text(item,"derivedCompleted");
+        spec.resource_complete=text(item,"resourceCompleted");
+        spec.base_destroyed=text(item,"baseDestroyed");
+        spec.derived_destroyed=text(item,"derivedDestroyed");
+        spec.resource_destroyed=text(item,"resourceDestroyed");
+        spec.editable.bodies={{
+            "void "+spec.replacement_function+"(std::unique_ptr<"+
+                spec.base_class+">& "+spec.destination_parameter+", int "+
+                spec.number_parameter+", int "+spec.code_parameter+", int "+
+                spec.mode_parameter+", "+spec.balance_class+"& "+
+                spec.balance_parameter+")",false
+        }};
+        require(cpp_derived_preparation_matches(
+                    spec,spec.editable.original_source),
+            "Derived preparation must bind one original function and real owners");
+        owner->derived_preparation_probe=std::move(spec);
+    }
+}
+
+void read_compiler_abstract_interface_checks(const JsonObject& root,
+        Lesson& lesson) {
+    if(!root.HasKey(L"compilerAbstractInterfaceChecks"))return;
+    const auto entries=array(root,"compilerAbstractInterfaceChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Abstract interface checks require Spanish v2 compiler owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","baseClass","simpleClass","identifiedClass",
+            "createFunction","presentFunction","numberMethod","codeMethod",
+            "writeMethod","streamParameter","typeParameter","numberParameter",
+            "codeParameter","objectParameter"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Invalid or repeated abstract-interface compiler owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated original abstract-interface owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&!owner->polymorphic_destruction_probe&&
+                !owner->virtual_lifetime_probe&&!owner->derived_preparation_probe&&
+                !owner->abstract_interface_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Abstract interface requires an independent original single-file editor");
+        CppAbstractInterfacePolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.base_class=text(item,"baseClass");
+        spec.simple_class=text(item,"simpleClass");
+        spec.identified_class=text(item,"identifiedClass");
+        spec.create_function=text(item,"createFunction");
+        spec.present_function=text(item,"presentFunction");
+        spec.number_method=text(item,"numberMethod");
+        spec.code_method=text(item,"codeMethod");
+        spec.write_method=text(item,"writeMethod");
+        spec.stream_parameter=text(item,"streamParameter");
+        spec.type_parameter=text(item,"typeParameter");
+        spec.number_parameter=text(item,"numberParameter");
+        spec.code_parameter=text(item,"codeParameter");
+        spec.object_parameter=text(item,"objectParameter");
+        require(cpp_abstract_interface_matches(spec,spec.original_source),
+            "Abstract-interface source cannot bind original classes and four bodies");
+        owner->abstract_interface_probe=std::move(spec);
+    }
+}
+
+void read_compiler_interface_collection_checks(const JsonObject& root,
+        Lesson& lesson) {
+    if(!root.HasKey(L"compilerInterfaceCollectionChecks"))return;
+    const auto entries=array(root,"compilerInterfaceCollectionChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Interface collection checks require Spanish v2 compiler owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","baseClass","simpleClass","identifiedClass",
+            "vectorAlias","addFunction","reportFunction","writeMethod",
+            "numberMethod","destinationParameter","sourceParameter",
+            "dataParameter","streamParameter","countLabel","indexSeparator",
+            "numberLabel","codeLabel"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Invalid or repeated interface collection owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated stable interface collection owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&!owner->polymorphic_destruction_probe&&
+                !owner->virtual_lifetime_probe&&!owner->derived_preparation_probe&&
+                !owner->abstract_interface_probe&&!owner->interface_collection_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Interface collection needs independent original single-file owner");
+        CppInterfaceCollectionPolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.base_class=text(item,"baseClass");
+        spec.simple_class=text(item,"simpleClass");
+        spec.identified_class=text(item,"identifiedClass");
+        spec.vector_alias=text(item,"vectorAlias");
+        spec.add_function=text(item,"addFunction");
+        spec.report_function=text(item,"reportFunction");
+        spec.write_method=text(item,"writeMethod");
+        spec.number_method=text(item,"numberMethod");
+        spec.destination_parameter=text(item,"destinationParameter");
+        spec.source_parameter=text(item,"sourceParameter");
+        spec.data_parameter=text(item,"dataParameter");
+        spec.stream_parameter=text(item,"streamParameter");
+        spec.count_label=text(item,"countLabel");
+        spec.index_separator=text(item,"indexSeparator");
+        spec.number_label=text(item,"numberLabel");
+        spec.code_label=text(item,"codeLabel");
+        require(cpp_interface_collection_matches(spec,spec.original_source),
+            "Interface collection source lacks its original types and two bodies");
+        owner->interface_collection_probe=std::move(spec);
+    }
+}
+
+void read_compiler_polymorphic_clone_checks(const JsonObject& root,
+        Lesson& lesson) {
+    if(!root.HasKey(L"compilerPolymorphicCloneChecks"))return;
+    const auto entries=array(root,"compilerPolymorphicCloneChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Polymorphic clone checks require Spanish v2 compiler owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","baseClass","simpleClass","identifiedClass",
+            "vectorAlias","cloneMethod","duplicateFunction","numberMethod",
+            "changeMethod","writeMethod","codeMethod","sourceParameter",
+            "streamParameter"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Invalid or duplicate polymorphic clone owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated stable polymorphic clone owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&!owner->polymorphic_destruction_probe&&
+                !owner->virtual_lifetime_probe&&!owner->derived_preparation_probe&&
+                !owner->abstract_interface_probe&&!owner->interface_collection_probe&&
+                !owner->polymorphic_clone_probe&&!owner->open_battery_probe&&
+                !owner->boolean_battery_probe&&!owner->reduction_probe&&
+                !owner->integer_battery_probe&&!owner->adjustment_project_probe&&
+                !owner->cmake_graph_check,
+            "Polymorphic clone requires independent original single-file editor");
+        CppPolymorphicClonePolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.base_class=text(item,"baseClass");
+        spec.simple_class=text(item,"simpleClass");
+        spec.identified_class=text(item,"identifiedClass");
+        spec.vector_alias=text(item,"vectorAlias");
+        spec.clone_method=text(item,"cloneMethod");
+        spec.duplicate_function=text(item,"duplicateFunction");
+        spec.number_method=text(item,"numberMethod");
+        spec.change_method=text(item,"changeMethod");
+        spec.write_method=text(item,"writeMethod");
+        spec.code_method=text(item,"codeMethod");
+        spec.source_parameter=text(item,"sourceParameter");
+        spec.stream_parameter=text(item,"streamParameter");
+        require(cpp_polymorphic_clone_matches(spec,spec.original_source),
+            "Published C++ lacks original clone bodies or protected interface");
+        owner->polymorphic_clone_probe=std::move(spec);
+    }
+}
+
+void read_compiler_dual_interface_checks(const JsonObject& root,
+        Lesson& lesson) {
+    if(!root.HasKey(L"compilerDualInterfaceChecks"))return;
+    const auto checks=array(root,"compilerDualInterfaceChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            checks.Size()>0&&checks.Size()<=32,
+        "Dual-interface contracts require Spanish v2 compiler owners");
+    std::set<std::string> seen;
+    for(const auto& entry:checks) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","valueInterface","reportInterface",
+            "concreteClass","valueMethod","writeMethod","changeMethod",
+            "streamParameter","changeParameter","codeMember","valueMember",
+            "constructorCodeParameter","constructorValueParameter",
+            "reportSeparator"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Invalid or duplicate dual-interface owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated original dual-interface owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&!owner->polymorphic_destruction_probe&&
+                !owner->virtual_lifetime_probe&&!owner->derived_preparation_probe&&
+                !owner->abstract_interface_probe&&!owner->interface_collection_probe&&
+                !owner->polymorphic_clone_probe&&!owner->dual_interface_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Dual-interface proof requires one original, independent editor");
+        CppDualInterfacePolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.value_interface=text(item,"valueInterface");
+        spec.report_interface=text(item,"reportInterface");
+        spec.concrete_class=text(item,"concreteClass");
+        spec.value_method=text(item,"valueMethod");
+        spec.write_method=text(item,"writeMethod");
+        spec.change_method=text(item,"changeMethod");
+        spec.stream_parameter=text(item,"streamParameter");
+        spec.change_parameter=text(item,"changeParameter");
+        spec.code_member=text(item,"codeMember");
+        spec.value_member=text(item,"valueMember");
+        spec.constructor_code_parameter=text(item,"constructorCodeParameter");
+        spec.constructor_value_parameter=text(item,"constructorValueParameter");
+        spec.report_separator=text(item,"reportSeparator");
+        require(cpp_dual_interface_matches(spec,spec.original_source),
+            "Original dual-interface source does not match two protected bodies");
+        owner->dual_interface_probe=std::move(spec);
+    }
+}
+
 void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerOpenBatteryChecks"))return;
     const auto entries=array(root,"compilerOpenBatteryChecks");
@@ -6183,6 +7038,20 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
+        read_compiler_indexed_unique_transfer_checks(root,lesson);
+        read_compiler_defaulted_move_policy_checks(root,lesson);
+        read_compiler_independent_copy_assignment_checks(root,lesson);
+        read_compiler_move_assignment_invariant_checks(root,lesson);
+        read_compiler_array_owner_read_checks(root,lesson);
+        read_compiler_array_copy_move_checks(root,lesson);
+        read_compiler_array_return_take_checks(root,lesson);
+        read_compiler_polymorphic_destruction_checks(root,lesson);
+        read_compiler_virtual_lifetime_dispatch_checks(root,lesson);
+        read_compiler_derived_preparation_checks(root,lesson);
+        read_compiler_abstract_interface_checks(root,lesson);
+        read_compiler_interface_collection_checks(root,lesson);
+        read_compiler_polymorphic_clone_checks(root,lesson);
+        read_compiler_dual_interface_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
@@ -6309,6 +7178,20 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
+        read_compiler_indexed_unique_transfer_checks(root,lesson);
+        read_compiler_defaulted_move_policy_checks(root,lesson);
+        read_compiler_independent_copy_assignment_checks(root,lesson);
+        read_compiler_move_assignment_invariant_checks(root,lesson);
+        read_compiler_array_owner_read_checks(root,lesson);
+        read_compiler_array_copy_move_checks(root,lesson);
+        read_compiler_array_return_take_checks(root,lesson);
+        read_compiler_polymorphic_destruction_checks(root,lesson);
+        read_compiler_virtual_lifetime_dispatch_checks(root,lesson);
+        read_compiler_derived_preparation_checks(root,lesson);
+        read_compiler_abstract_interface_checks(root,lesson);
+        read_compiler_interface_collection_checks(root,lesson);
+        read_compiler_polymorphic_clone_checks(root,lesson);
+        read_compiler_dual_interface_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);

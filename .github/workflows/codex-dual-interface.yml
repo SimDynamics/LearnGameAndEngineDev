@@ -1,0 +1,57 @@
+name: Codex U10L1 dual-base interface semantics
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-dual-interface.yml
+      - native/core/cpp_dual_interface_check.hpp
+      - native/core/cpp_dual_interface_check_tests.cpp
+      - native/core/cpp_multi_body_check.hpp
+      - native/core/cpp_member_body_check.hpp
+      - native/core/code_format_compat.hpp
+      - scripts/curriculum/test_cpp_dual_interface.py
+      - scripts/curriculum/test_cpp_dual_interface_authoring.py
+      - native/platform/windows/dual_interface_state_tests.cpp
+      - scripts/curriculum/stable_state_layout.py
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/clases_con_varias_bases/lesson_reunir_dos_bases_independientes_en_un_objeto.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gcc-clang:
+    name: U10L1 original dual bases with GCC and Clang
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Compile authentic dual-interface implementations and reject counterexamples
+        run: |
+          for compiler in g++ clang++; do
+            python3 -B scripts/curriculum/test_cpp_dual_interface.py \
+              --compiler "$compiler"
+          done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_dual_interface_authoring.py -v
+
+  windows-msvc:
+    name: U10L1 original dual bases with MSVC
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile actual dual-base interfaces and reject false reports
+        shell: cmd
+        run: |
+          python -B scripts\curriculum\test_cpp_dual_interface.py --compiler cl --windows
+          python -B -m unittest discover -s scripts\curriculum -p test_cpp_dual_interface_authoring.py -v

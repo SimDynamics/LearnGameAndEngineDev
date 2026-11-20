@@ -321,6 +321,25 @@ inline bool cpp_position_sensitive_tokens(const std::vector<std::string>& tokens
     }
     return false;
 }
+
+// Private semantic probes write a completion marker only after checking all
+// cases. An edited function cannot be allowed to forge that marker and then
+// terminate the process with exit status zero. Check executable identifiers,
+// not text in comments, quoted strings or raw literals. Function-pointer
+// aliases still contain the original termination function name.
+inline bool cpp_process_termination_tokens(const std::vector<std::string>& tokens) {
+    constexpr std::string_view terminating[]{
+        "exit", "_Exit", "_exit", "quick_exit", "ExitProcess",
+        "TerminateProcess", "TerminateJobObject", "ExitThread",
+        "_endthread", "_endthreadex", "_c_exit", "abort", "terminate",
+        "raise"
+    };
+    return std::ranges::any_of(tokens, [&](const std::string& token) {
+        if (!token.starts_with("id:")) return false;
+        const std::string_view name(token.data()+3, token.size()-3);
+        return std::ranges::find(terminating, name) != std::end(terminating);
+    });
+}
 // CMake bracket arguments and both forms of comments never expand variables.
 // Ordinary quoted and unquoted arguments can, and conditions can read a bare
 // variable name. Keep those position-dependent expressions protected while

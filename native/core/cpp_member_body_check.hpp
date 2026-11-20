@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/code_format_compat.hpp"
+
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -158,7 +160,10 @@ inline bool cpp_member_body_preserves_source(const CppMemberBodyCheck& check,
     // preprocessor directive or physical line splice can escape the boundary.
     const auto close = candidate.size() - suffix.size();
     const auto closing = cpp_member_body_detail::closing_brace(candidate, prefix.size()-1);
-    return closing && *closing == close;
+    if (!closing || *closing != close) return false;
+    const auto body = candidate.substr(prefix.size(), close - prefix.size());
+    const auto tokens = code_format::cpp_tokens(body);
+    return tokens && !code_format::cpp_process_termination_tokens(*tokens);
 }
 
 } // namespace lgaed::curriculum

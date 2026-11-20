@@ -509,6 +509,303 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(request.dual_interface_probe!=block.dual_interface_probe)
+        return false;
+    if(block.dual_interface_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.abstract_interface_probe||
+           request.interface_collection_probe||request.polymorphic_clone_probe||
+           request.named_rule_probe||request.indexed_unique_transfer_probe||
+           request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||
+           request.move_assignment_invariant_probe||request.array_owner_read_probe||
+           request.array_copy_move_probe||request.array_return_take_probe||
+           request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
+           request.derived_preparation_probe||request.open_battery_probe||
+           request.boolean_battery_probe||request.reduction_probe||
+           request.integer_battery_probe||request.adjustment_project_probe||
+           request.rejection_probe||request.observation_probe||
+           request.assertion_mode||request.cmake_graph_check||
+           request.capture_cmake_graph||
+           !curriculum::cpp_dual_interface_matches(
+               *block.dual_interface_probe,request.source_utf8))
+            return false;
+    }
+    if(request.polymorphic_clone_probe!=block.polymorphic_clone_probe)
+        return false;
+    if(block.polymorphic_clone_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.abstract_interface_probe||
+           request.interface_collection_probe||request.dual_interface_probe||
+           request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||
+           request.move_assignment_invariant_probe||request.array_owner_read_probe||
+           request.array_copy_move_probe||request.array_return_take_probe||
+           request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
+           request.derived_preparation_probe||request.open_battery_probe||
+           request.boolean_battery_probe||request.reduction_probe||
+           request.integer_battery_probe||request.adjustment_project_probe||
+           request.rejection_probe||request.observation_probe||
+           request.assertion_mode||request.cmake_graph_check||
+           request.capture_cmake_graph||
+           !curriculum::cpp_polymorphic_clone_matches(
+               *block.polymorphic_clone_probe,request.source_utf8))
+            return false;
+    }
+    if(request.interface_collection_probe!=block.interface_collection_probe)
+        return false;
+    if(block.interface_collection_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.abstract_interface_probe||
+           request.polymorphic_clone_probe||request.dual_interface_probe||
+           request.named_rule_probe||request.indexed_unique_transfer_probe||
+           request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||
+           request.move_assignment_invariant_probe||request.array_owner_read_probe||
+           request.array_copy_move_probe||request.array_return_take_probe||
+           request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
+           request.derived_preparation_probe||request.open_battery_probe||
+           request.boolean_battery_probe||request.reduction_probe||
+           request.integer_battery_probe||request.adjustment_project_probe||
+           request.rejection_probe||request.observation_probe||
+           request.assertion_mode||request.cmake_graph_check||
+           request.capture_cmake_graph||
+           !curriculum::cpp_interface_collection_matches(
+               *block.interface_collection_probe,request.source_utf8))
+            return false;
+    }
+    if(request.abstract_interface_probe!=block.abstract_interface_probe)
+        return false;
+    if(block.abstract_interface_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||
+           request.move_assignment_invariant_probe||request.array_owner_read_probe||
+           request.array_copy_move_probe||request.array_return_take_probe||
+           request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
+           request.derived_preparation_probe||request.interface_collection_probe||
+           request.polymorphic_clone_probe||request.dual_interface_probe||
+           request.open_battery_probe||request.boolean_battery_probe||
+           request.reduction_probe||request.integer_battery_probe||
+           request.adjustment_project_probe||request.rejection_probe||
+           request.observation_probe||request.assertion_mode||
+           request.cmake_graph_check||request.capture_cmake_graph||
+           !curriculum::cpp_abstract_interface_matches(
+               *block.abstract_interface_probe,request.source_utf8))
+            return false;
+    }
+    if(request.derived_preparation_probe!=block.derived_preparation_probe)
+        return false;
+    if(block.derived_preparation_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||
+           request.move_assignment_invariant_probe||request.array_owner_read_probe||
+           request.array_copy_move_probe||request.array_return_take_probe||
+           request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
+           request.open_battery_probe||request.boolean_battery_probe||
+           request.reduction_probe||request.integer_battery_probe||
+           request.adjustment_project_probe||request.rejection_probe||
+           request.observation_probe||request.assertion_mode||
+           request.cmake_graph_check||request.capture_cmake_graph||
+           !curriculum::cpp_derived_preparation_matches(
+               *block.derived_preparation_probe,request.source_utf8))
+            return false;
+    }
+    if(request.virtual_lifetime_probe!=block.virtual_lifetime_probe)
+        return false;
+    if(block.virtual_lifetime_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||
+           request.move_assignment_invariant_probe||request.array_owner_read_probe||
+           request.array_copy_move_probe||request.array_return_take_probe||
+           request.polymorphic_destruction_probe||
+           request.open_battery_probe||request.boolean_battery_probe||
+           request.reduction_probe||request.integer_battery_probe||
+           request.adjustment_project_probe||request.rejection_probe||
+           request.observation_probe||request.assertion_mode||
+           request.cmake_graph_check||request.capture_cmake_graph||
+           !curriculum::cpp_virtual_lifetime_dispatch_matches(
+               *block.virtual_lifetime_probe,request.source_utf8))
+            return false;
+    }
+    if(request.polymorphic_destruction_probe!=block.polymorphic_destruction_probe)
+        return false;
+    if(block.polymorphic_destruction_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||
+           request.move_assignment_invariant_probe||request.array_owner_read_probe||
+           request.array_copy_move_probe||request.array_return_take_probe||
+           request.open_battery_probe||request.boolean_battery_probe||
+           request.reduction_probe||request.integer_battery_probe||
+           request.adjustment_project_probe||request.rejection_probe||
+           request.observation_probe||request.assertion_mode||
+           request.cmake_graph_check||request.capture_cmake_graph||
+           !curriculum::cpp_polymorphic_destruction_matches(
+               *block.polymorphic_destruction_probe,request.source_utf8))
+            return false;
+    }
+    if(request.array_return_take_probe!=block.array_return_take_probe)
+        return false;
+    if(block.array_return_take_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||
+           request.move_assignment_invariant_probe||request.array_owner_read_probe||
+           request.array_copy_move_probe||
+           request.open_battery_probe||request.boolean_battery_probe||
+           request.reduction_probe||request.integer_battery_probe||
+           request.adjustment_project_probe||request.rejection_probe||
+           request.observation_probe||request.assertion_mode||
+           request.cmake_graph_check||request.capture_cmake_graph||
+           !curriculum::cpp_array_return_take_matches(
+               *block.array_return_take_probe,request.source_utf8))
+            return false;
+    }
+    if(request.array_copy_move_probe!=block.array_copy_move_probe)
+        return false;
+    if(block.array_copy_move_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||
+           request.move_assignment_invariant_probe||request.array_owner_read_probe||
+           request.open_battery_probe||request.boolean_battery_probe||
+           request.reduction_probe||request.integer_battery_probe||
+           request.adjustment_project_probe||request.rejection_probe||
+           request.observation_probe||request.assertion_mode||
+           request.cmake_graph_check||request.capture_cmake_graph||
+           !curriculum::cpp_array_copy_move_matches(
+               *block.array_copy_move_probe,request.source_utf8))
+            return false;
+    }
+    if(request.array_owner_read_probe!=block.array_owner_read_probe)
+        return false;
+    if(block.array_owner_read_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||
+           request.move_assignment_invariant_probe||request.open_battery_probe||
+           request.boolean_battery_probe||request.reduction_probe||
+           request.integer_battery_probe||request.adjustment_project_probe||
+           request.rejection_probe||request.observation_probe||
+           request.assertion_mode||request.cmake_graph_check||
+           request.capture_cmake_graph||
+           !curriculum::cpp_array_owner_read_matches(
+               *block.array_owner_read_probe,request.source_utf8))
+            return false;
+    }
+    if(request.move_assignment_invariant_probe!=block.move_assignment_invariant_probe)
+        return false;
+    if(block.move_assignment_invariant_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||request.open_battery_probe||
+           request.boolean_battery_probe||request.reduction_probe||
+           request.integer_battery_probe||request.adjustment_project_probe||
+           request.rejection_probe||request.observation_probe||
+           request.assertion_mode||request.cmake_graph_check||
+           request.capture_cmake_graph||
+           !curriculum::cpp_move_invariant_matches(
+               *block.move_assignment_invariant_probe,request.source_utf8))
+            return false;
+    }
+    if(request.independent_copy_assignment_probe!=block.independent_copy_assignment_probe)
+        return false;
+    if(block.independent_copy_assignment_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+           request.open_battery_probe||request.boolean_battery_probe||
+           request.reduction_probe||request.integer_battery_probe||
+           request.adjustment_project_probe||request.rejection_probe||
+           request.observation_probe||request.assertion_mode||
+           request.cmake_graph_check||request.capture_cmake_graph||
+           !curriculum::cpp_independent_copy_matches(
+               *block.independent_copy_assignment_probe,request.source_utf8))
+            return false;
+    }
+    if(request.defaulted_move_policy_probe!=block.defaulted_move_policy_probe)
+        return false;
+    if(block.defaulted_move_policy_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.open_battery_probe||
+           request.boolean_battery_probe||request.reduction_probe||
+           request.integer_battery_probe||request.adjustment_project_probe||
+           request.rejection_probe||request.observation_probe||
+           request.assertion_mode||request.cmake_graph_check||
+           request.capture_cmake_graph||
+           !curriculum::cpp_defaulted_move_policy_matches(
+               *block.defaulted_move_policy_probe,request.source_utf8))
+            return false;
+    }
+    if(request.indexed_unique_transfer_probe!=block.indexed_unique_transfer_probe)
+        return false;
+    if(block.indexed_unique_transfer_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.open_battery_probe||request.boolean_battery_probe||
+           request.reduction_probe||request.integer_battery_probe||
+           request.adjustment_project_probe||request.rejection_probe||
+           request.observation_probe||request.assertion_mode||
+           request.cmake_graph_check||request.capture_cmake_graph||
+           !curriculum::cpp_indexed_unique_transfer_probe_source(
+               *block.indexed_unique_transfer_probe,request.source_utf8))
+            return false;
+    }
     if(request.adjustment_project_probe!=block.adjustment_project_probe)return false;
     if(block.adjustment_project_probe) {
         const auto& spec=*block.adjustment_project_probe;
@@ -785,11 +1082,242 @@ std::string compiler_program_frame(const CppRunRequest& request) {
     if(configuration)configuration->target.clear();
     return "project-v1/"+curriculum::cpp_project_frame(request.project_files,request.source_files,configuration);
 }
+
+// A second, independent objective never changes or inherits the historical
+// stdout-only receipt. It adds one separate, source-bound completion seal.
+std::string defaulted_move_completion_seal(std::string_view key,
+        std::string_view program,const curriculum::CppDefaultedMovePolicy& spec) {
+    return state::sha256(std::string("compiler-defaulted-move-policy-v1/")+
+        token(key)+token(program)+token(spec.original_source)+
+        token(spec.class_name)+token(spec.member_name)+
+        token(spec.put_method)+token(spec.change_method)+token(spec.clear_method));
+}
+std::string independent_copy_assignment_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppIndependentCopyAssignmentPolicy& spec) {
+    return state::sha256(std::string("compiler-independent-copy-assignment-v1/")+
+        token(key)+token(program)+token(spec.original_source)+
+        token(spec.class_name)+token(spec.member_name)+token(spec.parameter_name)+
+        token(spec.has_method)+token(spec.value_method)+token(spec.access_method)+
+        token(spec.put_method)+token(spec.change_method)+token(spec.clear_method));
+}
+std::string move_assignment_invariant_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppMoveAssignmentInvariantPolicy& spec) {
+    return state::sha256(std::string("compiler-move-invariant-v1/")+
+        token(key)+token(program)+token(spec.original_source)+
+        token(spec.class_name)+token(spec.member_name)+
+        token(spec.label_member)+token(spec.parameter_name)+
+        token(spec.has_method)+token(spec.value_method)+token(spec.label_method)+
+        token(spec.access_method)+token(spec.invariant_method)+
+        token(spec.put_method)+token(spec.change_method)+
+        token(spec.retag_method)+token(spec.clear_method));
+}
+std::string array_owner_read_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppArrayOwnerReadPolicy& spec) {
+    return state::sha256(std::string("compiler-array-owner-read-v1/")+
+        token(key)+token(program)+token(spec.original_source)+
+        token(spec.class_name)+token(spec.owner_member)+token(spec.count_member)+
+        token(spec.quantity_parameter)+token(spec.index_parameter)+
+        token(spec.output_parameter)+token(spec.configure_method)+
+        token(spec.read_method)+token(spec.quantity_method)+
+        token(spec.access_method)+token(spec.write_method)+
+        token(spec.clear_method)+token(spec.sum_method));
+}
+std::string array_copy_move_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppArrayCopyMovePolicy& spec) {
+    return state::sha256(std::string("compiler-array-copy-move-v1/")+
+        token(key)+token(program)+token(spec.original_source)+
+        token(spec.class_name)+token(spec.owner_member)+token(spec.count_member)+
+        token(spec.copy_parameter)+token(spec.move_parameter)+
+        token(spec.quantity_method)+token(spec.access_method)+
+        token(spec.configure_method)+token(spec.read_method)+
+        token(spec.write_method)+token(spec.clear_method)+token(spec.sum_method));
+}
+std::string array_return_take_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppArrayReturnTakePolicy& spec) {
+    return state::sha256(std::string("compiler-array-return-take-v1/")+
+        token(key)+token(program)+token(spec.original_source)+
+        token(spec.class_name)+token(spec.owner_member)+token(spec.count_member)+
+        token(spec.copy_function)+token(spec.take_function)+
+        token(spec.source_parameter)+token(spec.index_parameter)+
+        token(spec.value_parameter)+token(spec.destination_parameter)+
+        token(spec.offered_parameter)+token(spec.limit_parameter)+
+        token(spec.quantity_method)+token(spec.access_method)+
+        token(spec.configure_method)+token(spec.read_method)+
+        token(spec.write_method)+token(spec.clear_method));
+}
+std::string polymorphic_destruction_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppPolymorphicDestructionPolicy& spec) {
+    std::string data=std::string("compiler-polymorphic-destruction-v1/")+
+        token(key)+token(program)+token(spec.editable.original_source)+
+        token(spec.base_class)+token(spec.derived_class)+token(spec.cycle_class)+
+        token(spec.owned_class)+token(spec.owned_member)+
+        token(spec.factory_function)+token(spec.write_method)+
+        token(spec.base_alive)+token(spec.derived_alive)+token(spec.owned_alive)+
+        token(spec.base_destroyed)+token(spec.derived_destroyed)+
+        token(spec.owned_destroyed);
+    for(const auto& body:spec.editable.bodies)
+        data+=token(body.signature)+token(body.qualified?"qualified":"free");
+    return state::sha256(data);
+}
+std::string virtual_lifetime_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppVirtualLifetimeDispatchPolicy& spec) {
+    std::string data=std::string("compiler-virtual-lifetime-v1/")+
+        token(key)+token(program)+token(spec.editable.original_source)+
+        token(spec.base_class)+token(spec.derived_class)+
+        token(spec.register_method)+token(spec.write_method)+
+        token(spec.phase_parameter)+token(spec.register_stream)+
+        token(spec.write_stream);
+    for(const auto& body:spec.editable.bodies)
+        data+=token(body.signature)+token(body.qualified?"qualified":"free");
+    return state::sha256(data);
+}
+std::string derived_preparation_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppDerivedPreparationPolicy& spec) {
+    std::string data=std::string("compiler-derived-preparation-v1/")+
+        token(key)+token(program)+token(spec.editable.original_source)+
+        token(spec.base_class)+token(spec.derived_class)+
+        token(spec.balance_class)+token(spec.resource_class)+
+        token(spec.replacement_function)+token(spec.destination_parameter)+
+        token(spec.number_parameter)+token(spec.code_parameter)+
+        token(spec.mode_parameter)+token(spec.balance_parameter)+
+        token(spec.print_method)+token(spec.resource_alive)+
+        token(spec.base_complete)+token(spec.derived_complete)+
+        token(spec.resource_complete)+token(spec.base_destroyed)+
+        token(spec.derived_destroyed)+token(spec.resource_destroyed);
+    for(const auto& body:spec.editable.bodies)
+        data+=token(body.signature)+token(body.qualified?"qualified":"free");
+    return state::sha256(data);
+}
+std::string abstract_interface_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppAbstractInterfacePolicy& spec) {
+    return state::sha256(std::string("compiler-abstract-interface-v1/")+
+        token(key)+token(program)+token(spec.original_source)+
+        token(spec.base_class)+token(spec.simple_class)+
+        token(spec.identified_class)+token(spec.create_function)+
+        token(spec.present_function)+token(spec.number_method)+
+        token(spec.code_method)+token(spec.write_method)+
+        token(spec.stream_parameter)+token(spec.type_parameter)+
+        token(spec.number_parameter)+token(spec.code_parameter)+
+        token(spec.object_parameter));
+}
+std::string interface_collection_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppInterfaceCollectionPolicy& spec) {
+    return state::sha256(std::string("compiler-interface-collection-v1/")+
+        token(key)+token(program)+token(spec.original_source)+
+        token(spec.base_class)+token(spec.simple_class)+
+        token(spec.identified_class)+token(spec.vector_alias)+
+        token(spec.add_function)+token(spec.report_function)+
+        token(spec.write_method)+token(spec.number_method)+
+        token(spec.destination_parameter)+token(spec.source_parameter)+
+        token(spec.data_parameter)+token(spec.stream_parameter)+
+        token(spec.count_label)+token(spec.index_separator)+
+        token(spec.number_label)+token(spec.code_label));
+}
+std::string polymorphic_clone_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppPolymorphicClonePolicy& spec) {
+    return state::sha256(std::string("compiler-polymorphic-clone-v1/")+
+        token(key)+token(program)+token(spec.original_source)+
+        token(spec.base_class)+token(spec.simple_class)+
+        token(spec.identified_class)+token(spec.vector_alias)+
+        token(spec.clone_method)+token(spec.duplicate_function)+
+        token(spec.number_method)+token(spec.change_method)+
+        token(spec.write_method)+token(spec.code_method)+
+        token(spec.source_parameter)+token(spec.stream_parameter));
+}
+std::string dual_interface_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppDualInterfacePolicy& spec) {
+    return state::sha256(std::string("compiler-dual-interface-v1/")+
+        token(key)+token(program)+token(spec.original_source)+
+        token(spec.value_interface)+token(spec.report_interface)+
+        token(spec.concrete_class)+token(spec.value_method)+
+        token(spec.write_method)+token(spec.change_method)+
+        token(spec.stream_parameter)+token(spec.change_parameter)+
+        token(spec.code_member)+token(spec.value_member)+
+        token(spec.constructor_code_parameter)+
+        token(spec.constructor_value_parameter)+token(spec.report_separator));
+}
+std::string indexed_transfer_completion_seal(std::string_view key,
+        std::string_view program,const curriculum::CppIndexedUniqueTransferProbe& spec) {
+    return state::sha256(std::string("compiler-indexed-unique-owner-v1/")+
+        token(key)+token(program)+token(spec.member.original_source)+
+        token(spec.member.signature)+token(spec.class_name)+
+        token(spec.first_member)+token(spec.second_member)+
+        token(spec.transfer_method)+token(spec.put_method)+
+        token(spec.change_method)+token(spec.clear_method));
+}
 static bool stdout_or_diagnostic_completed(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!curriculum::has_compiler_objective(block))return false;
     const auto key=base(lesson,block);
     const auto captured=state::string_value(data,"native_windows",key+"program");
     const auto proofs=case_proofs(data,key);
+    if(block.indexed_unique_transfer_probe&&
+       state::string_value(data,"native_windows",key+"indexed-unique-transfer/v1")!=
+           indexed_transfer_completion_seal(key,captured,
+               *block.indexed_unique_transfer_probe))return false;
+    if(block.defaulted_move_policy_probe&&
+       state::string_value(data,"native_windows",key+"defaulted-move-policy/v1")!=
+           defaulted_move_completion_seal(key,captured,
+               *block.defaulted_move_policy_probe))return false;
+    if(block.independent_copy_assignment_probe&&
+       state::string_value(data,"native_windows",key+"independent-copy-assignment/v1")!=
+           independent_copy_assignment_completion_seal(key,captured,
+               *block.independent_copy_assignment_probe))return false;
+    if(block.move_assignment_invariant_probe&&
+       state::string_value(data,"native_windows",key+"move-invariant/v1")!=
+           move_assignment_invariant_completion_seal(key,captured,
+               *block.move_assignment_invariant_probe))return false;
+    if(block.array_owner_read_probe&&
+       state::string_value(data,"native_windows",key+"array-owner-read/v1")!=
+           array_owner_read_completion_seal(key,captured,
+               *block.array_owner_read_probe))return false;
+    if(block.array_copy_move_probe&&
+       state::string_value(data,"native_windows",key+"array-copy-move/v1")!=
+           array_copy_move_completion_seal(key,captured,
+               *block.array_copy_move_probe))return false;
+    if(block.array_return_take_probe&&
+       state::string_value(data,"native_windows",key+"array-return-take/v1")!=
+           array_return_take_completion_seal(key,captured,
+               *block.array_return_take_probe))return false;
+    if(block.polymorphic_destruction_probe&&
+       state::string_value(data,"native_windows",key+"polymorphic-destruction/v1")!=
+           polymorphic_destruction_completion_seal(key,captured,
+               *block.polymorphic_destruction_probe))return false;
+    if(block.virtual_lifetime_probe&&
+       state::string_value(data,"native_windows",key+"virtual-lifetime/v1")!=
+           virtual_lifetime_completion_seal(key,captured,
+               *block.virtual_lifetime_probe))return false;
+    if(block.derived_preparation_probe&&
+       state::string_value(data,"native_windows",key+"derived-preparation/v1")!=
+           derived_preparation_completion_seal(key,captured,
+               *block.derived_preparation_probe))return false;
+    if(block.abstract_interface_probe&&
+       state::string_value(data,"native_windows",key+"abstract-interface/v1")!=
+           abstract_interface_completion_seal(key,captured,
+               *block.abstract_interface_probe))return false;
+    if(block.interface_collection_probe&&
+       state::string_value(data,"native_windows",key+"interface-collection/v1")!=
+           interface_collection_completion_seal(key,captured,
+               *block.interface_collection_probe))return false;
+    if(block.polymorphic_clone_probe&&
+       state::string_value(data,"native_windows",key+"polymorphic-clone/v1")!=
+           polymorphic_clone_completion_seal(key,captured,
+               *block.polymorphic_clone_probe))return false;
+    if(block.dual_interface_probe&&
+       state::string_value(data,"native_windows",key+"dual-interface/v1")!=
+           dual_interface_completion_seal(key,captured,
+               *block.dual_interface_probe))return false;
     if(captured.empty()||proofs.size()!=(block.compile_check?1:block.output_check->cases.size())||proofs.empty())return false;
     for(std::size_t index=0;index<proofs.size();++index)
         if(!proofs[index].empty()&&
@@ -944,6 +1472,233 @@ void validate_compiler_puzzle_state(const state::StateData& data,const curriculu
         state::find(data,"native_windows",selective_history_key(lesson,block))&&
         !selective_history_receipt_valid(data,lesson,block))
         throw std::runtime_error("Invalid selective recovery provenance; historical completion was preserved.");
+    // An independent owner identity is never an old stdout answer. Absence
+    // is legitimate while the learner has not passed the new private witness;
+    // a present but wrong/typed-invalid seal is an import-integrity error.
+    if(block.indexed_unique_transfer_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"indexed-unique-transfer/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=indexed_transfer_completion_seal(
+                    key,program,*block.indexed_unique_transfer_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid independent C++ owner identity receipt; historical state was preserved.");
+        }
+    }
+    if(block.defaulted_move_policy_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"defaulted-move-policy/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=defaulted_move_completion_seal(
+                    key,program,*block.defaulted_move_policy_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                    state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid defaulted move policy receipt; historical answers were preserved.");
+        }
+    }
+    if(block.independent_copy_assignment_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"independent-copy-assignment/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=independent_copy_assignment_completion_seal(
+                    key,program,*block.independent_copy_assignment_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                    state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid independent copy assignment receipt; historical answers were preserved.");
+        }
+    }
+    if(block.move_assignment_invariant_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"move-invariant/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=move_assignment_invariant_completion_seal(
+                    key,program,*block.move_assignment_invariant_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                    state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid move-assignment invariant receipt; previous state was preserved.");
+        }
+    }
+    if(block.array_owner_read_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"array-owner-read/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=array_owner_read_completion_seal(
+                    key,program,*block.array_owner_read_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                    state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid array owner/read receipt; original student state was preserved.");
+        }
+    }
+    if(block.array_copy_move_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"array-copy-move/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=array_copy_move_completion_seal(
+                    key,program,*block.array_copy_move_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                    state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid array copy/move receipt; original student state was preserved.");
+        }
+    }
+    if(block.abstract_interface_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"abstract-interface/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=abstract_interface_completion_seal(
+                   key,program,*block.abstract_interface_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid abstract interface receipt; history was preserved.");
+        }
+    }
+    if(block.interface_collection_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"interface-collection/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=interface_collection_completion_seal(
+                   key,program,*block.interface_collection_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid interface collection receipt; history was preserved.");
+        }
+    }
+    if(block.polymorphic_clone_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"polymorphic-clone/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=polymorphic_clone_completion_seal(
+                   key,program,*block.polymorphic_clone_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid polymorphic clone receipt; history was preserved.");
+        }
+    }
+    if(block.dual_interface_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"dual-interface/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=dual_interface_completion_seal(
+                   key,program,*block.dual_interface_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid dual-interface receipt; history was preserved.");
+        }
+    }
+    if(block.derived_preparation_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"derived-preparation/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=derived_preparation_completion_seal(
+                   key,program,*block.derived_preparation_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid derived preparation receipt; history preserved.");
+        }
+    }
+    if(block.virtual_lifetime_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"virtual-lifetime/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=virtual_lifetime_completion_seal(
+                   key,program,*block.virtual_lifetime_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid virtual lifetime receipt; historical data retained.");
+        }
+    }
+    if(block.polymorphic_destruction_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"polymorphic-destruction/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=polymorphic_destruction_completion_seal(
+                   key,program,*block.polymorphic_destruction_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid polymorphic destruction receipt; history preserved.");
+        }
+    }
+    if(block.array_return_take_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"array-return-take/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=array_return_take_completion_seal(
+                    key,program,*block.array_return_take_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                    state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid array return/take receipt; historical state was preserved.");
+        }
+    }
     // Existing objectives retain their historical permissive decoding. The
     // reviewed migration validates every receipt it is about to reuse.
     if(block.compile_check){validate_receipts(data,lesson,block);return;}
@@ -1061,6 +1816,76 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
         const CppRunRequest& captured,const curriculum::FreshExecution& execution,std::string_view feedback) {
     if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||
        !matches_runtime_capture(captured,execution)||!compiler_runtime_request_allowed(block,captured)||
+       (block.defaulted_move_policy_probe&&
+           (!execution.defaulted_move_policy_probe_correct||
+            execution.defaulted_move_policy_request_fingerprint.empty()||
+            execution.defaulted_move_policy_request_fingerprint!=
+                cpp_defaulted_move_policy_request_fingerprint(captured)))||
+       (block.independent_copy_assignment_probe&&
+           (!execution.independent_copy_assignment_probe_correct||
+            execution.independent_copy_assignment_request_fingerprint.empty()||
+            execution.independent_copy_assignment_request_fingerprint!=
+                cpp_independent_copy_assignment_request_fingerprint(captured)))||
+       (block.move_assignment_invariant_probe&&
+           (!execution.move_assignment_invariant_probe_correct||
+            execution.move_assignment_invariant_request_fingerprint.empty()||
+            execution.move_assignment_invariant_request_fingerprint!=
+                cpp_move_assignment_invariant_request_fingerprint(captured)))||
+       (block.array_owner_read_probe&&
+           (!execution.array_owner_read_probe_correct||
+            execution.array_owner_read_request_fingerprint.empty()||
+            execution.array_owner_read_request_fingerprint!=
+                cpp_array_owner_read_request_fingerprint(captured)))||
+       (block.array_copy_move_probe&&
+           (!execution.array_copy_move_probe_correct||
+            execution.array_copy_move_request_fingerprint.empty()||
+            execution.array_copy_move_request_fingerprint!=
+                cpp_array_copy_move_request_fingerprint(captured)))||
+       (block.array_return_take_probe&&
+           (!execution.array_return_take_probe_correct||
+            execution.array_return_take_request_fingerprint.empty()||
+            execution.array_return_take_request_fingerprint!=
+                cpp_array_return_take_request_fingerprint(captured)))||
+       (block.polymorphic_destruction_probe&&
+           (!execution.polymorphic_destruction_probe_correct||
+            execution.polymorphic_destruction_request_fingerprint.empty()||
+            execution.polymorphic_destruction_request_fingerprint!=
+                cpp_polymorphic_destruction_request_fingerprint(captured)))||
+       (block.virtual_lifetime_probe&&
+           (!execution.virtual_lifetime_probe_correct||
+            execution.virtual_lifetime_request_fingerprint.empty()||
+            execution.virtual_lifetime_request_fingerprint!=
+                cpp_virtual_lifetime_request_fingerprint(captured)))||
+       (block.derived_preparation_probe&&
+           (!execution.derived_preparation_probe_correct||
+            execution.derived_preparation_request_fingerprint.empty()||
+            execution.derived_preparation_request_fingerprint!=
+                cpp_derived_preparation_request_fingerprint(captured)))||
+       (block.abstract_interface_probe&&
+           (!execution.abstract_interface_probe_correct||
+            execution.abstract_interface_request_fingerprint.empty()||
+            execution.abstract_interface_request_fingerprint!=
+                cpp_abstract_interface_request_fingerprint(captured)))||
+       (block.interface_collection_probe&&
+           (!execution.interface_collection_probe_correct||
+            execution.interface_collection_request_fingerprint.empty()||
+            execution.interface_collection_request_fingerprint!=
+                cpp_interface_collection_request_fingerprint(captured)))||
+       (block.polymorphic_clone_probe&&
+           (!execution.polymorphic_clone_probe_correct||
+            execution.polymorphic_clone_request_fingerprint.empty()||
+            execution.polymorphic_clone_request_fingerprint!=
+                cpp_polymorphic_clone_request_fingerprint(captured)))||
+       (block.dual_interface_probe&&
+           (!execution.dual_interface_probe_correct||
+            execution.dual_interface_request_fingerprint.empty()||
+            execution.dual_interface_request_fingerprint!=
+                cpp_dual_interface_request_fingerprint(captured)))||
+       (block.indexed_unique_transfer_probe&&
+           (!execution.indexed_unique_transfer_probe_correct||
+            execution.indexed_unique_transfer_request_fingerprint.empty()||
+            execution.indexed_unique_transfer_request_fingerprint!=
+                cpp_indexed_unique_transfer_request_fingerprint(captured)))||
        (block.named_rule_source_check&&
            block.named_rule_source_check->execution_probe&&
            !execution.named_rule_probe_correct)||
@@ -1091,6 +1916,79 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     const bool previously_completed=stdout_or_diagnostic_completed(data,lesson,block);
     auto proofs=case_proofs(data,key);
     const auto stored_program=state::string_value(data,"native_windows",key+"program");
+    if((block.indexed_unique_transfer_probe||block.defaulted_move_policy_probe||
+        block.independent_copy_assignment_probe||block.move_assignment_invariant_probe||
+        block.array_owner_read_probe||block.array_copy_move_probe||
+        block.array_return_take_probe||
+        block.polymorphic_destruction_probe||
+        block.virtual_lifetime_probe||
+        block.derived_preparation_probe||
+        block.abstract_interface_probe||block.interface_collection_probe||
+        block.polymorphic_clone_probe||block.dual_interface_probe)&&
+       !previously_completed&&stored_program==program&&
+       valid_completion_seal(block,key,program,proofs,
+           state::string_value(data,"native_windows",key+"completed"))) {
+        // Preserve old stdout-only receipts exactly and append just the
+        // independently witnessed objective; no historical auto-promotion.
+        if(block.indexed_unique_transfer_probe)
+            data.preferences["native_windows"][key+"indexed-unique-transfer/v1"]=
+                indexed_transfer_completion_seal(key,program,
+                    *block.indexed_unique_transfer_probe);
+        if(block.defaulted_move_policy_probe)
+            data.preferences["native_windows"][key+"defaulted-move-policy/v1"]=
+                defaulted_move_completion_seal(key,program,
+                    *block.defaulted_move_policy_probe);
+        if(block.independent_copy_assignment_probe)
+            data.preferences["native_windows"][key+"independent-copy-assignment/v1"]=
+                independent_copy_assignment_completion_seal(key,program,
+                    *block.independent_copy_assignment_probe);
+        if(block.move_assignment_invariant_probe)
+            data.preferences["native_windows"][key+"move-invariant/v1"]=
+                move_assignment_invariant_completion_seal(key,program,
+                    *block.move_assignment_invariant_probe);
+        if(block.array_owner_read_probe)
+            data.preferences["native_windows"][key+"array-owner-read/v1"]=
+                array_owner_read_completion_seal(key,program,
+                    *block.array_owner_read_probe);
+        if(block.array_copy_move_probe)
+            data.preferences["native_windows"][key+"array-copy-move/v1"]=
+                array_copy_move_completion_seal(key,program,
+                    *block.array_copy_move_probe);
+        if(block.array_return_take_probe)
+            data.preferences["native_windows"][key+"array-return-take/v1"]=
+                array_return_take_completion_seal(key,program,
+                    *block.array_return_take_probe);
+        if(block.polymorphic_destruction_probe)
+            data.preferences["native_windows"][key+"polymorphic-destruction/v1"]=
+                polymorphic_destruction_completion_seal(key,program,
+                    *block.polymorphic_destruction_probe);
+        if(block.virtual_lifetime_probe)
+            data.preferences["native_windows"][key+"virtual-lifetime/v1"]=
+                virtual_lifetime_completion_seal(key,program,
+                    *block.virtual_lifetime_probe);
+        if(block.derived_preparation_probe)
+            data.preferences["native_windows"][key+"derived-preparation/v1"]=
+                derived_preparation_completion_seal(key,program,
+                    *block.derived_preparation_probe);
+        if(block.abstract_interface_probe)
+            data.preferences["native_windows"][key+"abstract-interface/v1"]=
+                abstract_interface_completion_seal(key,program,
+                    *block.abstract_interface_probe);
+        if(block.interface_collection_probe)
+            data.preferences["native_windows"][key+"interface-collection/v1"]=
+                interface_collection_completion_seal(key,program,
+                    *block.interface_collection_probe);
+        if(block.polymorphic_clone_probe)
+            data.preferences["native_windows"][key+"polymorphic-clone/v1"]=
+                polymorphic_clone_completion_seal(key,program,
+                    *block.polymorphic_clone_probe);
+        if(block.dual_interface_probe)
+            data.preferences["native_windows"][key+"dual-interface/v1"]=
+                dual_interface_completion_seal(key,program,
+                    *block.dual_interface_probe);
+        clear_compiler_puzzle_review(data,lesson,block);
+        return true;
+    }
     // All-case V1 achievements and achievements for another program are
     // immutable. Only a new first-case achievement of this same program may
     // collect optional extra case receipts afterwards.
@@ -1128,6 +2026,62 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     if(all||first){
         values[key+"completed"]=all?complete_seal(key,program,proofs):
             first_case_complete_seal(key,program,proofs);
+        if(block.indexed_unique_transfer_probe)
+            values[key+"indexed-unique-transfer/v1"]=
+                indexed_transfer_completion_seal(key,program,
+                    *block.indexed_unique_transfer_probe);
+        if(block.defaulted_move_policy_probe)
+            values[key+"defaulted-move-policy/v1"]=
+                defaulted_move_completion_seal(key,program,
+                    *block.defaulted_move_policy_probe);
+        if(block.independent_copy_assignment_probe)
+            values[key+"independent-copy-assignment/v1"]=
+                independent_copy_assignment_completion_seal(key,program,
+                    *block.independent_copy_assignment_probe);
+        if(block.move_assignment_invariant_probe)
+            values[key+"move-invariant/v1"]=
+                move_assignment_invariant_completion_seal(key,program,
+                    *block.move_assignment_invariant_probe);
+        if(block.array_owner_read_probe)
+            values[key+"array-owner-read/v1"]=
+                array_owner_read_completion_seal(key,program,
+                    *block.array_owner_read_probe);
+        if(block.array_copy_move_probe)
+            values[key+"array-copy-move/v1"]=
+                array_copy_move_completion_seal(key,program,
+                    *block.array_copy_move_probe);
+        if(block.array_return_take_probe)
+            values[key+"array-return-take/v1"]=
+                array_return_take_completion_seal(key,program,
+                    *block.array_return_take_probe);
+        if(block.polymorphic_destruction_probe)
+            values[key+"polymorphic-destruction/v1"]=
+                polymorphic_destruction_completion_seal(key,program,
+                    *block.polymorphic_destruction_probe);
+        if(block.virtual_lifetime_probe)
+            values[key+"virtual-lifetime/v1"]=
+                virtual_lifetime_completion_seal(key,program,
+                    *block.virtual_lifetime_probe);
+        if(block.derived_preparation_probe)
+            values[key+"derived-preparation/v1"]=
+                derived_preparation_completion_seal(key,program,
+                    *block.derived_preparation_probe);
+        if(block.abstract_interface_probe)
+            values[key+"abstract-interface/v1"]=
+                abstract_interface_completion_seal(key,program,
+                    *block.abstract_interface_probe);
+        if(block.interface_collection_probe)
+            values[key+"interface-collection/v1"]=
+                interface_collection_completion_seal(key,program,
+                    *block.interface_collection_probe);
+        if(block.polymorphic_clone_probe)
+            values[key+"polymorphic-clone/v1"]=
+                polymorphic_clone_completion_seal(key,program,
+                    *block.polymorphic_clone_probe);
+        if(block.dual_interface_probe)
+            values[key+"dual-interface/v1"]=
+                dual_interface_completion_seal(key,program,
+                    *block.dual_interface_probe);
         values[key+"feedback"]=std::string(feedback);
         record_feedback_origin(data,key,block,evaluation.feedback_path,feedback,
             std::get<std::string>(values.at(key+"completed")));

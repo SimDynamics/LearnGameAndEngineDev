@@ -77,7 +77,21 @@ target_link_libraries(lgaed_guidance_platform PUBLIC
 
 add_executable(lgaed_compiler_guidance_portable_qa
     "${LGAED_ROOT}/native/platform/windows/compiler_guidance_state_tests.cpp"
-    "${LGAED_ROOT}/native/platform/windows/math_matching_text_state_tests.cpp")
+    "${LGAED_ROOT}/native/platform/windows/math_matching_text_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/indexed_unique_transfer_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/defaulted_move_policy_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/independent_copy_assignment_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/move_assignment_invariant_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/array_owner_read_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/array_copy_move_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/array_return_take_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/polymorphic_destruction_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/virtual_lifetime_dispatch_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/derived_preparation_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/abstract_interface_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/interface_collection_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/polymorphic_clone_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/dual_interface_state_tests.cpp")
 target_link_libraries(lgaed_compiler_guidance_portable_qa PRIVATE
     lgaed_guidance_platform lgaed_guidance_qa_options)
 target_link_options(lgaed_compiler_guidance_portable_qa PRIVATE /OPT:REF)
@@ -94,9 +108,51 @@ add_test(NAME native.u5l13_identifier_rename_historical
     COMMAND lgaed_compiler_guidance_portable_qa --identifier-rename-live)
 add_test(NAME native.u5l13_math_matching_text_historical
     COMMAND lgaed_compiler_guidance_portable_qa --math-matching-text-live)
+add_test(NAME native.u6l5_indexed_unique_transfer_state
+    COMMAND lgaed_compiler_guidance_portable_qa --indexed-unique-transfer-state-live)
+add_test(NAME native.u6l6_defaulted_move_policy_state
+    COMMAND lgaed_compiler_guidance_portable_qa --defaulted-move-policy-state-live)
+add_test(NAME native.u6l7_independent_copy_assignment_state
+    COMMAND lgaed_compiler_guidance_portable_qa --independent-copy-assignment-state-live)
+add_test(NAME native.u6l8_move_assignment_invariant_state
+    COMMAND lgaed_compiler_guidance_portable_qa --move-assignment-invariant-state-live)
+add_test(NAME native.u6l10_array_owner_read_state
+    COMMAND lgaed_compiler_guidance_portable_qa --array-owner-read-state-live)
+add_test(NAME native.u6l11_array_copy_move_state
+    COMMAND lgaed_compiler_guidance_portable_qa --array-copy-move-state-live)
+add_test(NAME native.u6l12_array_return_take_state
+    COMMAND lgaed_compiler_guidance_portable_qa --array-return-take-state-live)
+add_test(NAME native.u8l5_polymorphic_destruction_state
+    COMMAND lgaed_compiler_guidance_portable_qa --polymorphic-destruction-state-live)
+add_test(NAME native.u8l6_virtual_lifetime_state
+    COMMAND lgaed_compiler_guidance_portable_qa --virtual-lifetime-state-live)
+add_test(NAME native.u8l7_derived_preparation_state
+    COMMAND lgaed_compiler_guidance_portable_qa --derived-preparation-state-live)
+add_test(NAME native.u8l8_abstract_interface_state
+    COMMAND lgaed_compiler_guidance_portable_qa --abstract-interface-state-live)
+add_test(NAME native.u8l9_interface_collection_state
+    COMMAND lgaed_compiler_guidance_portable_qa --interface-collection-state-live)
+add_test(NAME native.u8l10_polymorphic_clone_state
+    COMMAND lgaed_compiler_guidance_portable_qa --polymorphic-clone-state-live)
+add_test(NAME native.u10l1_dual_interface_state
+    COMMAND lgaed_compiler_guidance_portable_qa --dual-interface-state-live)
 set_tests_properties(native.compiler_guidance_state
     native.compiler_review_guidance_priority
     native.u12l24_authored_compiler_guides
     native.u9l13_general_choice_editorial
     native.u5l13_identifier_rename_historical
-    native.u5l13_math_matching_text_historical PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+    native.u5l13_math_matching_text_historical
+    native.u6l5_indexed_unique_transfer_state
+    native.u6l6_defaulted_move_policy_state
+    native.u6l7_independent_copy_assignment_state
+    native.u6l8_move_assignment_invariant_state
+    native.u6l10_array_owner_read_state
+    native.u6l11_array_copy_move_state
+    native.u6l12_array_return_take_state
+    native.u8l5_polymorphic_destruction_state
+    native.u8l6_virtual_lifetime_state
+    native.u8l7_derived_preparation_state
+    native.u8l8_abstract_interface_state
+    native.u8l9_interface_collection_state
+    native.u8l10_polymorphic_clone_state
+    native.u10l1_dual_interface_state PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)

@@ -8,7 +8,22 @@
 #include "core/integer_battery_check.hpp"
 #include "core/cmake_graph_check.hpp"
 #include "core/adjustment_project_check.hpp"
+#include "core/cpp_indexed_unique_transfer_probe.hpp"
+#include "core/cpp_defaulted_move_policy_check.hpp"
+#include "core/cpp_independent_copy_assignment_check.hpp"
+#include "core/cpp_move_assignment_invariant_check.hpp"
+#include "core/cpp_array_owner_read_check.hpp"
+#include "core/cpp_array_copy_move_check.hpp"
+#include "core/cpp_array_return_take_check.hpp"
+#include "core/cpp_polymorphic_destruction_check.hpp"
+#include "core/cpp_virtual_lifetime_dispatch_check.hpp"
+#include "core/cpp_derived_preparation_check.hpp"
+#include "core/cpp_abstract_interface_check.hpp"
+#include "core/cpp_interface_collection_check.hpp"
+#include "core/cpp_polymorphic_clone_check.hpp"
+#include "core/cpp_dual_interface_check.hpp"
 
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -108,6 +123,23 @@ struct CppRunRequest {
     std::optional<curriculum::RejectionOperation> rejection_probe;
     std::optional<curriculum::ReportMode> observation_probe;
     std::optional<curriculum::NamedRuleExecutionProbe> named_rule_probe;
+    // A lesson-owned, opt-in, independent two-owner identity witness.
+    std::optional<curriculum::CppIndexedUniqueTransferProbe> indexed_unique_transfer_probe;
+    // A sealed root declaration may ask the Windows worker to compile three
+    // independent move/copy programs, never the learner-visible extra cases.
+    std::optional<curriculum::CppDefaultedMovePolicy> defaulted_move_policy_probe;
+    std::optional<curriculum::CppIndependentCopyAssignmentPolicy> independent_copy_assignment_probe;
+    std::optional<curriculum::CppMoveAssignmentInvariantPolicy> move_assignment_invariant_probe;
+    std::optional<curriculum::CppArrayOwnerReadPolicy> array_owner_read_probe;
+    std::optional<curriculum::CppArrayCopyMovePolicy> array_copy_move_probe;
+    std::optional<curriculum::CppArrayReturnTakePolicy> array_return_take_probe;
+    std::optional<curriculum::CppPolymorphicDestructionPolicy> polymorphic_destruction_probe;
+    std::optional<curriculum::CppVirtualLifetimeDispatchPolicy> virtual_lifetime_probe;
+    std::optional<curriculum::CppDerivedPreparationPolicy> derived_preparation_probe;
+    std::optional<curriculum::CppAbstractInterfacePolicy> abstract_interface_probe;
+    std::optional<curriculum::CppInterfaceCollectionPolicy> interface_collection_probe;
+    std::optional<curriculum::CppPolymorphicClonePolicy> polymorphic_clone_probe;
+    std::optional<curriculum::CppDualInterfacePolicy> dual_interface_probe;
     std::optional<curriculum::OpenBatteryProbeSpec> open_battery_probe;
     std::optional<curriculum::AssertionMode> assertion_mode;
     // Ordinary CMake builds and private probes do not need to parse the
@@ -146,6 +178,66 @@ struct CppAssertionProbe {
 struct CppNamedRuleProbe {
     std::string source_sha256, project_sha256;
     CppPhaseResult compilation, execution;
+};
+struct CppIndexedUniqueTransferEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppArrayReturnTakeEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppPolymorphicDestructionEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppVirtualLifetimeEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppDerivedPreparationEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppAbstractInterfaceEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppInterfaceCollectionEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppPolymorphicCloneEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppDualInterfaceEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppArrayCopyMoveEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppArrayOwnerReadEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppMoveAssignmentInvariantEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppIndependentCopyAssignmentEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppDefaultedMovePhaseEvidence {
+    std::string driver_sha256;
+    CppPhaseResult compilation, execution;
+};
+struct CppDefaultedMovePolicyEvidence {
+    std::string program_sha256, request_fingerprint;
+    std::array<CppDefaultedMovePhaseEvidence,3> phases;
 };
 struct CppNamedRuleConstantVariationProbe {
     std::size_t index=0;
@@ -243,6 +335,20 @@ struct CppRunResult {
     std::optional<CppDiagnosticEvidence> diagnostic;
     std::optional<CppRejectionProbe> rejection_probe;
     std::optional<CppNamedRuleProbe> named_rule_probe;
+    std::optional<CppIndexedUniqueTransferEvidence> indexed_unique_transfer_evidence;
+    std::optional<CppDefaultedMovePolicyEvidence> defaulted_move_policy_evidence;
+    std::optional<CppIndependentCopyAssignmentEvidence> independent_copy_assignment_evidence;
+    std::optional<CppMoveAssignmentInvariantEvidence> move_assignment_invariant_evidence;
+    std::optional<CppArrayOwnerReadEvidence> array_owner_read_evidence;
+    std::optional<CppArrayCopyMoveEvidence> array_copy_move_evidence;
+    std::optional<CppArrayReturnTakeEvidence> array_return_take_evidence;
+    std::optional<CppPolymorphicDestructionEvidence> polymorphic_destruction_evidence;
+    std::optional<CppVirtualLifetimeEvidence> virtual_lifetime_evidence;
+    std::optional<CppDerivedPreparationEvidence> derived_preparation_evidence;
+    std::optional<CppAbstractInterfaceEvidence> abstract_interface_evidence;
+    std::optional<CppInterfaceCollectionEvidence> interface_collection_evidence;
+    std::optional<CppPolymorphicCloneEvidence> polymorphic_clone_evidence;
+    std::optional<CppDualInterfaceEvidence> dual_interface_evidence;
     std::optional<CppNamedRuleBatteryEvidence> named_rule_battery_evidence;
     std::string named_rule_battery_request_fingerprint;
     std::optional<CppOpenBatteryEvidence> open_battery_evidence;
@@ -286,6 +392,37 @@ struct CppProjectAvailability {
 
 // Read-only inspection. Never configures, builds, executes or rewrites a draft.
 [[nodiscard]] CppProjectAvailability inspect_cpp_project(const CppRunRequest&);
+
+// Bind an opt-in private identity witness to the exact student request.
+// This is an internal frame, not a persisted answer or learner achievement.
+[[nodiscard]] std::string cpp_indexed_unique_transfer_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_defaulted_move_policy_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_independent_copy_assignment_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_move_assignment_invariant_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_array_owner_read_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_array_copy_move_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_array_return_take_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_polymorphic_destruction_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_virtual_lifetime_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_derived_preparation_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_abstract_interface_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_interface_collection_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_polymorphic_clone_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_dual_interface_request_fingerprint(
+    const CppRunRequest& request);
 
 // Blocking adapter: invoke on an owned worker, never the window thread. A stop
 // request kills the entire child job before returning. The caller rejects stale

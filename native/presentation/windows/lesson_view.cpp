@@ -2299,6 +2299,20 @@ struct LessonView {
         if(vm.project)vm.project->snapshot(request);
         if(block(index).named_rule_source_check)
             request.named_rule_probe=block(index).named_rule_source_check->execution_probe;
+        request.indexed_unique_transfer_probe=block(index).indexed_unique_transfer_probe;
+        request.defaulted_move_policy_probe=block(index).defaulted_move_policy_probe;
+        request.independent_copy_assignment_probe=block(index).independent_copy_assignment_probe;
+        request.move_assignment_invariant_probe=block(index).move_assignment_invariant_probe;
+        request.array_owner_read_probe=block(index).array_owner_read_probe;
+        request.array_copy_move_probe=block(index).array_copy_move_probe;
+        request.array_return_take_probe=block(index).array_return_take_probe;
+        request.polymorphic_destruction_probe=block(index).polymorphic_destruction_probe;
+        request.virtual_lifetime_probe=block(index).virtual_lifetime_probe;
+        request.derived_preparation_probe=block(index).derived_preparation_probe;
+        request.abstract_interface_probe=block(index).abstract_interface_probe;
+        request.interface_collection_probe=block(index).interface_collection_probe;
+        request.polymorphic_clone_probe=block(index).polymorphic_clone_probe;
+        request.dual_interface_probe=block(index).dual_interface_probe;
         request.open_battery_probe=block(index).open_battery_probe;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
@@ -4297,7 +4311,35 @@ struct LessonView {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
                     block(index),running_program);
-                const bool independent=(!block(index).named_rule_source_check||
+                const bool independent=(!block(index).abstract_interface_probe||
+                    fresh.abstract_interface_probe_correct)&&
+                    (!block(index).interface_collection_probe||
+                     fresh.interface_collection_probe_correct)&&
+                    (!block(index).polymorphic_clone_probe||
+                     fresh.polymorphic_clone_probe_correct)&&
+                    (!block(index).dual_interface_probe||
+                     fresh.dual_interface_probe_correct)&&
+                    (!block(index).derived_preparation_probe||
+                    fresh.derived_preparation_probe_correct)&&
+                    (!block(index).virtual_lifetime_probe||
+                    fresh.virtual_lifetime_probe_correct)&&
+                    (!block(index).polymorphic_destruction_probe||
+                    fresh.polymorphic_destruction_probe_correct)&&
+                    (!block(index).array_return_take_probe||
+                    fresh.array_return_take_probe_correct)&&
+                    (!block(index).array_copy_move_probe||
+                    fresh.array_copy_move_probe_correct)&&
+                    (!block(index).array_owner_read_probe||
+                    fresh.array_owner_read_probe_correct)&&
+                    (!block(index).move_assignment_invariant_probe||
+                    fresh.move_assignment_invariant_probe_correct)&&
+                    (!block(index).independent_copy_assignment_probe||
+                    fresh.independent_copy_assignment_probe_correct)&&
+                    (!block(index).defaulted_move_policy_probe||
+                    fresh.defaulted_move_policy_probe_correct)&&
+                    (!block(index).indexed_unique_transfer_probe||
+                    fresh.indexed_unique_transfer_probe_correct)&&
+                    (!block(index).named_rule_source_check||
                     !block(index).named_rule_source_check->execution_probe||
                     (fresh.named_rule_probe_correct&&
                      (!block(index).named_rule_source_check->execution_probe->battery_check||
@@ -4340,6 +4382,90 @@ struct LessonView {
                         "La batería no acreditó los casos originales y el caso nuevo mediante ejecuciones independientes. Comprueba las llamadas, los resultados esperados y que ningún fallo detenga los casos posteriores.",
                         "The test battery did not prove the original and new case using independent executions. Check calls, expected results, and that failures never skip later cases.",
                         "La batterie ne prouve pas les cas originaux et le nouveau cas par des exécutions indépendantes. Vérifiez les appels, les résultats attendus et tous les cas suivants.");
+                if(!fresh.defaulted_move_policy_probe_correct&&
+                   block(index).defaulted_move_policy_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero falta acreditar que el constructor y la asignación por movimiento conservan el mismo objeto, no reservan otro entero y mantienen prohibida la copia.",
+                        "The output matches, but the independent proof has not verified that the move constructor and assignment preserve the same object, make no new integer allocation and keep copying forbidden.",
+                        "La sortie correspond, mais la preuve indépendante doit encore vérifier l'identité de l'objet déplacé, l'absence d'allocation et l'interdiction de la copie.");
+                if(!fresh.abstract_interface_probe_correct&&
+                   block(index).abstract_interface_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida visible coincide, pero la prueba independiente no confirmó que la fábrica cree el tipo concreto solicitado ni que presentar consulte numero y escribir mediante la interfaz, también con otros tipos compatibles. Revisa únicamente las dos operaciones escribir, crear y presentar.",
+                        "Output matches, but independent C++ execution did not prove correct concrete factory types or virtual number and report operations on an additional implementation.",
+                        "La sortie correspond, mais la preuve indépendante ne confirme pas le type concret demandé ni les appels virtuels pour une autre implémentation conforme.");
+                if(!fresh.interface_collection_probe_correct&&
+                   block(index).interface_collection_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la comprobación independiente no confirmó la transferencia del mismo objeto al vector, el rechazo de propietarios vacíos, la conservación del orden ni la consulta virtual de escribir en el flujo recibido. Revisa únicamente agregar e informar.",
+                        "Output matches, but the independent proof did not confirm original object identity, empty-owner rejection, ordering or virtual reporting into the requested stream.",
+                        "La sortie correspond, mais la vérification indépendante n'a pas confirmé l'identité, le rejet d'un propriétaire vide, l'ordre et l'écriture virtuelle.");
+                if(!fresh.polymorphic_clone_probe_correct&&
+                   block(index).polymorphic_clone_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida visible coincide, pero la prueba independiente no confirmó que clonar cree otro objeto de la misma clase concreta y que duplicar conserve los originales, invoque la clonación virtual y limpie sus copias ante un fallo. Revisa únicamente los dos clonar y duplicar.",
+                        "Output matches, but independent compilation did not prove concrete clone type, independent ownership, virtual collection copying or cleanup after a controlled failure.",
+                        "La sortie correspond, mais la preuve indépendante ne confirme pas les types concrets, les copies indépendantes ni leur nettoyage en cas d'échec.");
+                if(!fresh.dual_interface_probe_correct&&
+                   block(index).dual_interface_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la comprobación independiente no confirmó que valor consulte el dato actual mediante ConValor ni que escribir use el flujo recibido y el código=valor actual mediante ConInforme. Las dos vistas deben observar el mismo objeto antes y después de cambiar. Revisa únicamente los cuerpos de valor y escribir.",
+                        "The visible output matches, but an independent C++ execution did not verify the shared object through both base interfaces, the updated value, or reporting into the supplied stream.",
+                        "La sortie correspond, mais l'exécution indépendante ne confirme pas la même instance à travers deux bases, les données actuelles ni le flux fourni.");
+                if(!fresh.derived_preparation_probe_correct&&
+                   block(index).derived_preparation_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la prueba independiente no confirma que sustituir prepare el objeto derivado completo antes de reemplazar el destino. Comprueba los tres fallos de construcción: el destino y sus recursos deben conservarse sin cambios, mientras los recursos del intento se limpian correctamente.",
+                        "Output matches, but the independent C++ proof has not verified preparing a complete derived owner before replacement, or preserving the destination through all three constructor failure stages.",
+                        "La sortie correspond, mais la vérification indépendante ne confirme pas la préparation complète avant remplacement ni la conservation de l'objet d'origine lors des trois échecs de construction.");
+                if(!fresh.virtual_lifetime_probe_correct&&
+                   block(index).virtual_lifetime_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la prueba privada no confirmó que registrar invoque la operación virtual real durante la construcción, el uso y la destrucción, ni que escribir informe en el flujo recibido. Revisa únicamente los dos cuerpos originales.",
+                        "Output matches, but independent C++ execution did not verify the real virtual calls during construction, use and destruction, or the supplied reporting stream.",
+                        "La sortie correspond, mais la preuve indépendante ne confirme pas les appels virtuels réels pendant le cycle de vie ni le flux demandé.");
+                if(!fresh.polymorphic_destruction_probe_correct&&
+                   block(index).polymorphic_destruction_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero aún no se acreditó que crear_medida entregue una MedidaIdentificada completa, con su Ficha propia, ni que la destrucción por el propietario base libere una sola vez las tres partes. Revisa únicamente los dos destructores y la fábrica.",
+                        "The output matches, but independent verification has not proved concrete derived construction or complete single cleanup through the base owner. Review the two destructors and factory.",
+                        "La sortie correspond, mais la vérification indépendante ne confirme pas la construction de la classe dérivée et sa destruction complète par le propriétaire de base.");
+                if(!fresh.array_return_take_probe_correct&&
+                   block(index).array_return_take_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la prueba independiente aún no acredita que copia_modificada devuelva un array propio sin alterar el origen, ni que tomar_si_cabe compruebe el límite antes de transferir el mismo objeto. Comprueba ambas funciones sin cambiar la clase ni main.",
+                        "The output matches, but independent evidence has not proved that the returned copy owns a separate array without changing its source, or that the bounded transfer checks its limit before moving the same owner.",
+                        "La sortie correspond, mais le test indépendant ne confirme pas la copie distincte ni le contrôle de limite avant le transfert de propriété.");
+                if(!fresh.array_copy_move_probe_correct&&
+                   block(index).array_copy_move_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la comprobación independiente aún no acredita la copia de un array nuevo, la conservación ante un fallo de reserva o el movimiento del mismo array con su cantidad. Revisa ambos operadores de Tramo sin cambiar el resto del programa.",
+                        "The output matches, but independent evidence did not prove a newly owned copied array, preservation after allocation failure, or movement of the same array with its count. Check both assignment operators without changing the provided program.",
+                        "La sortie correspond, mais la preuve indépendante n'a pas confirmé une copie distincte, la conservation lors d'un échec d'allocation et le transfert du même tableau avec sa taille.");
+                if(!fresh.array_owner_read_probe_correct&&
+                   block(index).array_owner_read_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero falta demostrar que configurar reserva un array nuevo sin perder el anterior ante un fallo y que leer conserva el dato de salida al rechazar un índice. Comprueba las dos funciones sin modificar el resto del programa.",
+                        "The output matches, but the independent test has not proven fresh array allocation, preservation on allocation failure and unchanged read output when an index is rejected. Check both functions without modifying the supplied program.",
+                        "La sortie correspond, mais la preuve indépendante n'a pas confirmé l'allocation d'un nouveau tableau, la conservation en cas d'échec et la sortie inchangée lors d'un indice invalide.");
+                if(!fresh.move_assignment_invariant_probe_correct&&
+                   block(index).move_assignment_invariant_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la prueba independiente no confirma que el destino reciba el mismo entero sin reservar otro, que el origen quede con etiqueta cero o que el automovimiento conserve su estado.",
+                        "The output matches, but the independent test did not confirm transfer of the same integer without allocating, an empty zero-labeled source, or self-move preservation.",
+                        "La sortie correspond, mais le contrôle indépendant ne confirme pas le transfert sans allocation, la remise à zéro de l'étiquette de la source ni l'autodéplacement sans modification.");
+                if(!fresh.independent_copy_assignment_probe_correct&&
+                   block(index).independent_copy_assignment_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la copia aún no acredita que se haya creado otro entero independiente, que la autocopia conserve el objeto ni que una reserva fallida mantenga intacto el destino.",
+                        "The output matches, but the independent test did not confirm a new integer for copying, self-assignment preservation, and an unchanged destination after a failed allocation.",
+                        "La sortie correspond, mais le contrôle indépendant n'a pas confirmé une copie distincte, l'autocopie sans changement et la conservation de la destination en cas d'échec d'allocation.");
+                if(!fresh.indexed_unique_transfer_probe_correct&&
+                   block(index).indexed_unique_transfer_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la prueba independiente aún no acredita que se transfirió el mismo objeto ni su limpieza. Revisa la transferencia y conserva el resto del programa.",
+                        "The output matches, but the independent probe has not verified transfer of the same object and its cleanup. Check the transfer without changing the provided program.",
+                        "La sortie correspond, mais la sonde indépendante ne confirme pas le transfert du même objet et son nettoyage. Vérifiez le transfert sans modifier le programme fourni.");
                 const bool named_battery_pending=block(index).named_rule_source_check&&
                     block(index).named_rule_source_check->execution_probe&&
                     block(index).named_rule_source_check->execution_probe->battery_check&&
@@ -4356,7 +4482,21 @@ struct LessonView {
                 if(!independent&&!named_battery_pending&&!named_variation_pending&&
                    preserved_source&&!block(index).open_battery_probe&&
                    !block(index).boolean_battery_probe&&!block(index).reduction_probe&&
-                   !block(index).integer_battery_probe&&!block(index).adjustment_project_probe)
+                   !block(index).integer_battery_probe&&!block(index).adjustment_project_probe&&
+                   !block(index).indexed_unique_transfer_probe&&
+                   !block(index).defaulted_move_policy_probe&&
+                   !block(index).independent_copy_assignment_probe&&
+                   !block(index).move_assignment_invariant_probe&&
+                   !block(index).array_owner_read_probe&&
+                   !block(index).array_copy_move_probe&&
+                   !block(index).array_return_take_probe&&
+                   !block(index).polymorphic_destruction_probe&&
+                   !block(index).virtual_lifetime_probe&&
+                   !block(index).derived_preparation_probe&&
+                   !block(index).abstract_interface_probe&&
+                   !block(index).interface_collection_probe&&
+                   !block(index).polymorphic_clone_probe&&
+                   !block(index).dual_interface_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",

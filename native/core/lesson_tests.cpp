@@ -1022,8 +1022,33 @@ void integrated_retirement_contract_tests() {
         check(current.state_layout.retirement_history.front().retired==std::vector<std::string>(plan.compiler_ids.begin(),plan.compiler_ids.end())
             &&(plan.reading_ids.empty()||current.state_layout.retirement_history[1].retired==plan.reading_ids),
             "A later edition rewrote the original compiler or reading retirement batch");
-        check(current.state_layout.lineage==before.state_layout.lineage&&current.state_layout.legacy_lineage==before.state_layout.legacy_lineage
-            &&current.state_layout.signatures==before.state_layout.signatures,
+        // The immutable origin and lineage remain identical, but Work may
+        // legitimately append new editors with separately reserved state IDs.
+        // Never demand equality with the old signature map: it now includes
+        // those genuine additions. Check every old identity and its digest,
+        // and require each new signature to belong to a new reserved owner.
+        const auto& old_signatures=before.state_layout.signatures;
+        const auto& new_signatures=current.state_layout.signatures;
+        const bool originals_untouched=std::ranges::all_of(old_signatures,
+            [&](const auto& item){
+                const auto found=new_signatures.find(item.first);
+                return found!=new_signatures.end()&&found->second==item.second;
+            });
+        const auto& old_additions=before.state_layout.additions;
+        const auto& new_additions=current.state_layout.additions;
+        check(current.state_layout.lineage==before.state_layout.lineage&&
+            current.state_layout.legacy_lineage==before.state_layout.legacy_lineage&&
+            originals_untouched&&new_signatures.size()>=old_signatures.size()&&
+            new_additions.size()>=old_additions.size()&&
+            std::ranges::equal(old_additions,new_additions.begin(),
+                new_additions.begin()+static_cast<std::ptrdiff_t>(old_additions.size()),
+                [](const auto& prior,const auto& current){
+                    return prior.id==current.id&&prior.sha256==current.sha256&&
+                        prior.storage==current.storage&&
+                        prior.progress_page==current.progress_page;
+                })&&
+            new_signatures.size()-old_signatures.size()==
+                new_additions.size()-old_additions.size(),
             "Integrated retirement changed historical state ownership");
         const auto archived=JsonObject::Parse(winrt::to_hstring(current.state_layout.retirement_history.front().raw_json));
         const auto historical=JsonObject::Parse(winrt::to_hstring(before.raw_json));

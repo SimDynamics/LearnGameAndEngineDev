@@ -82,6 +82,24 @@ int main() { return 0; }
         require(!cpp_member_body_preserves_source(check,update(
             "\nconst char* a = \"unterminated;\nreturn false;\n")),
                 "Unterminated code string was accepted");
+        for (const auto early : {"std::exit(0)", "std::_Exit(0)",
+                                "::quick_exit(0)", "ExitProcess(0)",
+                                "::abort()"}) {
+            require(!cpp_member_body_preserves_source(check,update(
+                "\n    std::fputs(\"LGAED_OWNER_COMPLETE_V1\", stderr);\n    " +
+                std::string(early) + ";\n")),
+                "An edited member could exit with a forged private witness");
+        }
+        require(!cpp_member_body_preserves_source(check,update(
+            "\n    auto finish = &std::exit;\n    finish(0);\n")),
+            "Aliased std::exit bypassed the member source gate");
+        require(cpp_member_body_preserves_source(check,update(R"cpp(
+    // Discuss std::exit(0) but do not call it.
+    const auto text = R"memo(std::exit(0))memo";
+    (void)text;
+    return false;
+)cpp")), "Text-only mention of exit was rejected");
+
         auto wrong=check;
         wrong.signature="bool Deposito::vaciar(int origen)";
         require(!cpp_member_body_span(wrong),"A nonexistent signature became a valid owner");

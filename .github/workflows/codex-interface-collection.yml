@@ -1,0 +1,56 @@
+name: Codex U8L9 polymorphic collection ownership
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-interface-collection.yml
+      - scripts/curriculum/test_cpp_interface_collection.py
+      - scripts/curriculum/test_cpp_interface_collection_authoring.py
+      - scripts/curriculum/stable_state_layout.py
+      - native/core/cpp_interface_collection_check.hpp
+      - native/core/cpp_interface_collection_check_tests.cpp
+      - native/core/cpp_multi_body_check.hpp
+      - native/core/cpp_member_body_check.hpp
+      - native/core/code_format_compat.hpp
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/composicion_y_herencia_publica/lesson_reunir_objetos_que_comparten_una_interfaz.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gcc-clang:
+    name: U8L9 source preservation and semantic probes (GCC, Clang)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Compile original, accepted alternatives and safe counterexamples
+        run: |
+          for compiler in g++ clang++; do
+            python3 -B scripts/curriculum/test_cpp_interface_collection.py \
+              --compiler "$compiler"
+          done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_interface_collection_authoring.py -v
+
+  msvc:
+    name: U8L9 portable ownership proof with MSVC
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile original, accepted alternatives and safe counterexamples
+        shell: cmd
+        run: |
+          python -B scripts\curriculum\test_cpp_interface_collection.py --compiler cl --windows
+          python -B -m unittest discover -s scripts\curriculum -p test_cpp_interface_collection_authoring.py -v

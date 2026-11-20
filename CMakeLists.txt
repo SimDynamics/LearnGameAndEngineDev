@@ -141,6 +141,10 @@ add_library(lgaed_platform_windows STATIC
 # Scope the flag to this source, not the whole project or student programs.
 set_source_files_properties(native/platform/windows/content_loader.cpp
     PROPERTIES COMPILE_OPTIONS "/bigobj")
+# The runner's many independently verified C++23 probes also exceed the
+# classic COFF section ceiling under some MSVC Debug toolsets.
+set_source_files_properties(native/platform/windows/cpp_runner.cpp
+    PROPERTIES COMPILE_OPTIONS "/bigobj")
 target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
 add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
@@ -155,7 +159,21 @@ function(lgaed_add_compiler_guidance_state_target)
     endif()
     add_executable(lgaed_compiler_guidance_state_tests
         native/platform/windows/compiler_guidance_state_tests.cpp
-        native/platform/windows/math_matching_text_state_tests.cpp)
+        native/platform/windows/math_matching_text_state_tests.cpp
+        native/platform/windows/indexed_unique_transfer_state_tests.cpp
+        native/platform/windows/defaulted_move_policy_state_tests.cpp
+        native/platform/windows/independent_copy_assignment_state_tests.cpp
+        native/platform/windows/move_assignment_invariant_state_tests.cpp
+        native/platform/windows/array_owner_read_state_tests.cpp
+        native/platform/windows/array_copy_move_state_tests.cpp
+        native/platform/windows/array_return_take_state_tests.cpp
+        native/platform/windows/polymorphic_destruction_state_tests.cpp
+        native/platform/windows/virtual_lifetime_dispatch_state_tests.cpp
+        native/platform/windows/derived_preparation_state_tests.cpp
+        native/platform/windows/abstract_interface_state_tests.cpp
+        native/platform/windows/interface_collection_state_tests.cpp
+        native/platform/windows/polymorphic_clone_state_tests.cpp
+        native/platform/windows/dual_interface_state_tests.cpp)
     target_link_libraries(lgaed_compiler_guidance_state_tests
         PRIVATE lgaed_platform_windows lgaed_host_options)
 endfunction()
@@ -230,8 +248,50 @@ if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
             COMMAND lgaed_compiler_guidance_state_tests --general-choice-live)
         add_test(NAME native.identifier_rename_live
             COMMAND lgaed_compiler_guidance_state_tests --identifier-rename-live)
+        add_test(NAME native.indexed_unique_transfer_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --indexed-unique-transfer-state-live)
+        add_test(NAME native.defaulted_move_policy_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --defaulted-move-policy-state-live)
+        add_test(NAME native.independent_copy_assignment_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --independent-copy-assignment-state-live)
+        add_test(NAME native.move_assignment_invariant_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --move-assignment-invariant-state-live)
+        add_test(NAME native.array_owner_read_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --array-owner-read-state-live)
+        add_test(NAME native.array_copy_move_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --array-copy-move-state-live)
+        add_test(NAME native.array_return_take_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --array-return-take-state-live)
+        add_test(NAME native.polymorphic_destruction_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --polymorphic-destruction-state-live)
+        add_test(NAME native.virtual_lifetime_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --virtual-lifetime-state-live)
+        add_test(NAME native.derived_preparation_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --derived-preparation-state-live)
+        add_test(NAME native.abstract_interface_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --abstract-interface-state-live)
+        add_test(NAME native.interface_collection_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --interface-collection-state-live)
+        add_test(NAME native.polymorphic_clone_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --polymorphic-clone-state-live)
+        add_test(NAME native.dual_interface_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --dual-interface-state-live)
         set_tests_properties(native.math_matching_text_live
             native.general_choice_live native.identifier_rename_live
+            native.indexed_unique_transfer_state_live
+            native.defaulted_move_policy_state_live
+            native.independent_copy_assignment_state_live
+            native.move_assignment_invariant_state_live
+            native.array_owner_read_state_live
+            native.array_copy_move_state_live
+            native.array_return_take_state_live
+            native.polymorphic_destruction_state_live
+            native.virtual_lifetime_state_live
+            native.derived_preparation_state_live
+            native.abstract_interface_state_live
+            native.interface_collection_state_live
+            native.polymorphic_clone_state_live
+            native.dual_interface_state_live
             PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
         # The remaining guidance modes still require fixtures from the full
         # native configuration; the StateImport profile does not run those modes.
@@ -803,7 +863,48 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_compiler_guidance_state_tests --general-choice-live)
     add_test(NAME native.identifier_rename_live
         COMMAND lgaed_compiler_guidance_state_tests --identifier-rename-live)
+    add_test(NAME native.indexed_unique_transfer_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --indexed-unique-transfer-state-live)
+    add_test(NAME native.defaulted_move_policy_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --defaulted-move-policy-state-live)
+    add_test(NAME native.independent_copy_assignment_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --independent-copy-assignment-state-live)
+    add_test(NAME native.move_assignment_invariant_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --move-assignment-invariant-state-live)
+    add_test(NAME native.array_owner_read_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --array-owner-read-state-live)
+    add_test(NAME native.array_copy_move_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --array-copy-move-state-live)
+    add_test(NAME native.array_return_take_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --array-return-take-state-live)
+    add_test(NAME native.polymorphic_destruction_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --polymorphic-destruction-state-live)
+    add_test(NAME native.virtual_lifetime_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --virtual-lifetime-state-live)
+    add_test(NAME native.derived_preparation_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --derived-preparation-state-live)
+    add_test(NAME native.abstract_interface_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --abstract-interface-state-live)
+    add_test(NAME native.interface_collection_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --interface-collection-state-live)
+    add_test(NAME native.polymorphic_clone_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --polymorphic-clone-state-live)
+    add_test(NAME native.dual_interface_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --dual-interface-state-live)
     set_tests_properties(native.general_choice_live native.identifier_rename_live
+        native.indexed_unique_transfer_state_live native.defaulted_move_policy_state_live
+        native.independent_copy_assignment_state_live
+        native.move_assignment_invariant_state_live
+        native.array_owner_read_state_live
+        native.array_copy_move_state_live
+        native.array_return_take_state_live
+        native.polymorphic_destruction_state_live
+        native.virtual_lifetime_state_live
+        native.derived_preparation_state_live
+        native.abstract_interface_state_live
+        native.interface_collection_state_live
+        native.polymorphic_clone_state_live
+        native.dual_interface_state_live
         PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     # Run the real Win32 compiler view against thirteen authored inputs.
     # Exactly the first must unlock navigation; all others remain optional.
@@ -828,6 +929,13 @@ if(LGAED_READER_BUILD_QA_ONLY)
     add_executable(lgaed_cpp_cmake_runner_tests
         native/platform/windows/cpp_cmake_runner_tests.cpp)
     target_link_libraries(lgaed_cpp_cmake_runner_tests PRIVATE lgaed_platform_windows)
+    # This QA program keeps many independent CppRunResult objects alive in
+    # one comprehensive main. MSVC's default 1 MiB process stack can be
+    # exhausted before the first CMake check begins; no application target
+    # needs this larger reserve. Keep the actual graph evaluation unchanged.
+    if(MSVC)
+        target_link_options(lgaed_cpp_cmake_runner_tests PRIVATE "/STACK:8388608")
+    endif()
     add_test(NAME native.cpp_cmake_graph
         COMMAND lgaed_cpp_cmake_runner_tests --graph)
     # Includes authentic fixed-report counterexamples for both repair owners.
@@ -1182,7 +1290,48 @@ if(BUILD_TESTING)
         COMMAND lgaed_compiler_guidance_state_tests --general-choice-live)
     add_test(NAME native.identifier_rename_live
         COMMAND lgaed_compiler_guidance_state_tests --identifier-rename-live)
+    add_test(NAME native.indexed_unique_transfer_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --indexed-unique-transfer-state-live)
+    add_test(NAME native.defaulted_move_policy_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --defaulted-move-policy-state-live)
+    add_test(NAME native.independent_copy_assignment_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --independent-copy-assignment-state-live)
+    add_test(NAME native.move_assignment_invariant_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --move-assignment-invariant-state-live)
+    add_test(NAME native.array_owner_read_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --array-owner-read-state-live)
+    add_test(NAME native.array_copy_move_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --array-copy-move-state-live)
+    add_test(NAME native.array_return_take_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --array-return-take-state-live)
+    add_test(NAME native.polymorphic_destruction_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --polymorphic-destruction-state-live)
+    add_test(NAME native.virtual_lifetime_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --virtual-lifetime-state-live)
+    add_test(NAME native.derived_preparation_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --derived-preparation-state-live)
+    add_test(NAME native.abstract_interface_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --abstract-interface-state-live)
+    add_test(NAME native.interface_collection_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --interface-collection-state-live)
+    add_test(NAME native.polymorphic_clone_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --polymorphic-clone-state-live)
+    add_test(NAME native.dual_interface_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --dual-interface-state-live)
     set_tests_properties(native.general_choice_live native.identifier_rename_live
+        native.indexed_unique_transfer_state_live native.defaulted_move_policy_state_live
+        native.independent_copy_assignment_state_live
+        native.move_assignment_invariant_state_live
+        native.array_owner_read_state_live
+        native.array_copy_move_state_live
+        native.array_return_take_state_live
+        native.polymorphic_destruction_state_live
+        native.virtual_lifetime_state_live
+        native.derived_preparation_state_live
+        native.abstract_interface_state_live
+        native.interface_collection_state_live
+        native.polymorphic_clone_state_live
+        native.dual_interface_state_live
         PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     add_test(NAME curriculum.compiler_guidance_projection COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_compiler_guidance_projection.py)
@@ -2243,6 +2392,10 @@ if(BUILD_TESTING)
     set_tests_properties(native.cpp_project PROPERTIES TIMEOUT 30)
     add_executable(lgaed_cpp_cmake_runner_tests native/platform/windows/cpp_cmake_runner_tests.cpp)
     target_link_libraries(lgaed_cpp_cmake_runner_tests PRIVATE lgaed_platform_windows)
+    # The full native test uses the same large, independent CMake QA program.
+    if(MSVC)
+        target_link_options(lgaed_cpp_cmake_runner_tests PRIVATE "/STACK:8388608")
+    endif()
     add_test(NAME native.cpp_cmake_runner COMMAND lgaed_cpp_cmake_runner_tests)
     set_tests_properties(native.cpp_cmake_runner PROPERTIES TIMEOUT 180)
     add_executable(lgaed_cpp_project_history_tests native/platform/windows/cpp_project_history_tests.cpp)

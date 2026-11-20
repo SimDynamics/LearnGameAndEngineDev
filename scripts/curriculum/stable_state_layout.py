@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -4563,6 +4563,1178 @@ def _validate_adjustment_project_record(document: dict, record: dict, block: dic
                     "Adjustment construction consumers must link the same library")
 
 
+
+def _validate_compiler_indexed_unique_transfer_checks(document: dict) -> None:
+    """Bind original C++ member bodies to new private ownership witnesses."""
+    field="compilerIndexedUniqueTransferChecks"
+    if field not in document:
+        return
+    meta=document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version")==2 and meta.get("locale")=="es",
+            "Ownership probes require an existing Spanish v2 lesson")
+    entries=document[field]
+    require(type(entries) is list and 0<len(entries)<=32,
+            "Ownership probes require 1..32 owners")
+    required={"activity","signature","className","firstMember","secondMember",
+              "transferMethod","putMethod","changeMethod","clearMethod"}
+    seen=set()
+    owners=_blocks(document)
+    for entry in entries:
+        require(type(entry) is dict and set(entry)==required,
+                "Ownership probe requires the exact nine-field declaration")
+        identity=_identity(entry["activity"])
+        require(identity not in seen,"Duplicate ownership probe owner")
+        seen.add(identity)
+        owner=owners.get(identity)
+        require(type(owner) is dict and owner.get("type")=="cpp_compiler"
+                and type(owner.get("outputCheck")) is dict
+                and type(owner["outputCheck"].get("cases")) is list
+                and bool(owner["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"} & set(owner)),
+                "Ownership probe must belong to an original single-file output editor")
+        for collection in ("compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                           "compilerReductionChecks","compilerCmakeGraphChecks",
+                           "compilerIntegerBatteryChecks"):
+            others=document.get(collection,[])
+            require(type(others) is list and not any(type(x) is dict and
+                x.get("activity")==identity for x in others),
+                "Ownership probe conflicts with an existing runtime objective")
+        source=owner.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Ownership probe requires exact original C++ source")
+        for key in required-{"activity","signature"}:
+            value=entry[key]
+            require(type(value) is str and len(value)<=96 and
+                    re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value) and
+                    not value.startswith("__") and
+                    not (value.startswith("_") and len(value)>1 and value[1].isupper()),
+                    "Unsafe identifier in unique-owner specification")
+        require(entry["firstMember"]!=entry["secondMember"],
+                "Source and destination members must be distinct")
+        signature=entry["signature"]
+        require(type(signature) is str and 0<len(signature)<=512 and
+                "::" in signature and "(" in signature and ")" in signature and
+                source.count(signature)==1 and
+                entry["className"]+"::"+entry["transferMethod"]+"(" in signature,
+                "Cannot locate a unique original member-body signature")
+        require(source.count("class "+entry["className"]+" {")==1,
+                "The original owner class is missing or ambiguous")
+
+
+def _validate_compiler_defaulted_move_policy_checks(document: dict) -> None:
+    """Authenticate a new private move/copy compiler policy without rewriting its editor."""
+    field="compilerDefaultedMovePolicyChecks"
+    if field not in document:
+        return
+    meta=document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version")==2 and meta.get("locale")=="es",
+            "Defaulted move policy requires an existing Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Defaulted move policy requires 1..32 mapped owners")
+    required={"activity","className","memberName","putMethod",
+              "changeMethod","clearMethod"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Defaulted move policy must declare the exact original owner fields")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate defaulted move policy owner")
+        seen.add(identity)
+        owner=owners.get(identity)
+        require(type(owner) is dict and owner.get("type")=="cpp_compiler"
+                and type(owner.get("outputCheck")) is dict
+                and type(owner["outputCheck"].get("cases")) is list
+                and bool(owner["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(owner)),
+                "Defaulted move policy requires an original single-file output editor")
+        for key in ("compilerIndexedUniqueTransferChecks","compilerNamedRuleChecks",
+                    "compilerOpenBatteryChecks","compilerReductionChecks",
+                    "compilerCmakeGraphChecks","compilerIntegerBatteryChecks"):
+            others=document.get(key,[])
+            require(type(others) is list and not any(
+                type(record) is dict and record.get("activity")==identity
+                for record in others),
+                "Defaulted move policy cannot share another private runtime owner")
+        source=owner.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Defaulted move policy requires complete original source")
+        for name in required-{"activity"}:
+            word=item[name]
+            require(type(word) is str and 0<len(word)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",word)
+                    and not word.startswith("__")
+                    and not (word.startswith("_") and len(word)>1 and word[1].isupper()),
+                    "Invalid identifier in defaulted move policy declaration")
+        cls=item["className"]
+        require(len(re.findall(r"\b(?:class|struct)\s+"+re.escape(cls)+r"\s*\{",source))==1,
+                "A defaulted move policy must identify exactly one authored class")
+        member=item["memberName"]
+        require(re.search(r"\bstd\s*::\s*unique_ptr\s*<\s*int\s*>\s*"+
+                          re.escape(member)+r"\b",source) is not None,
+                "Defaulted move policy requires its original unique_ptr<int> member")
+
+def _validate_compiler_independent_copy_assignment_checks(document: dict) -> None:
+    """Validate separately authored copy-assignment policy on a stable original editor."""
+    field = "compilerIndependentCopyAssignmentChecks"
+    if field not in document:
+        return
+    meta = document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version") == 2 and
+            meta.get("locale") == "es",
+            "Independent copy assignment requires an existing Spanish v2 lesson")
+    checks = document[field]
+    require(type(checks) is list and 0 < len(checks) <= 32,
+            "Independent copy assignment requires 1..32 mapped owners")
+    required = {"activity","className","memberName","parameterName",
+                "hasMethod","valueMethod","accessMethod","putMethod",
+                "changeMethod","clearMethod"}
+    owners = _blocks(document)
+    seen = set()
+    for item in checks:
+        require(type(item) is dict and set(item) == required,
+                "Independent copy assignment requires the documented authoring fields")
+        identity = _identity(item["activity"])
+        require(identity not in seen, "Duplicate independent copy assignment owner")
+        seen.add(identity)
+        owner = owners.get(identity)
+        require(type(owner) is dict and owner.get("type") == "cpp_compiler"
+                and type(owner.get("outputCheck")) is dict
+                and type(owner["outputCheck"].get("cases")) is list
+                and bool(owner["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"} & set(owner)),
+                "Independent copy assignment requires an original single-file output editor")
+        for key in ("compilerIndexedUniqueTransferChecks","compilerDefaultedMovePolicyChecks",
+                    "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                    "compilerReductionChecks","compilerCmakeGraphChecks",
+                    "compilerIntegerBatteryChecks"):
+            others = document.get(key, [])
+            require(type(others) is list and not any(
+                    type(record) is dict and record.get("activity") == identity
+                    for record in others),
+                "Independent copy assignment cannot share another private owner")
+        source = owner.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Independent copy assignment requires original C++ source")
+        for name in required - {"activity"}:
+            word = item[name]
+            require(type(word) is str and 0 < len(word) <= 96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", word)
+                    and not word.startswith("__")
+                    and not (word.startswith("_") and len(word)>1 and word[1].isupper()),
+                "Invalid independent copy assignment C++ identifier")
+        cls = item["className"]
+        member = item["memberName"]
+        param = item["parameterName"]
+        require(len(re.findall(r"\b(?:class|struct)\s+"+re.escape(cls)+r"\s*\{",
+                               source)) == 1,
+                "Independent copy assignment class missing or ambiguous")
+        require(re.search(r"\bstd\s*::\s*unique_ptr\s*<\s*int\s*>\s*"+
+                          re.escape(member)+r"\b",source) is not None,
+                "Independent copy assignment original member is missing")
+        signature = (r"\b"+re.escape(cls)+r"\s*&\s*"+re.escape(cls)+
+                     r"\s*::\s*operator\s*=\s*\(\s*const\s+"+
+                     re.escape(cls)+r"\s*&\s*"+re.escape(param)+r"\s*\)\s*\{")
+        require(len(re.findall(signature, source)) == 1,
+                "Independent copy assignment must bind one original operator body")
+
+
+def _validate_compiler_move_assignment_invariant_checks(document: dict) -> None:
+    """Bind a new invariant proof to the original C++23 move-assignment owner."""
+    field="compilerMoveAssignmentInvariantChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Move-assignment invariant requires an existing Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Move-assignment invariant requires 1..32 mapped owners")
+    required={"activity","className","memberName","labelMember",
+              "parameterName","hasMethod","valueMethod","labelMethod",
+              "accessMethod","invariantMethod","putMethod","changeMethod",
+              "retagMethod","clearMethod"}
+    owners=_blocks(document)
+    seen=set()
+    for entry in checks:
+        require(type(entry) is dict and set(entry)==required,
+                "Move-assignment invariant requires the exact documented fields")
+        owner_id=_identity(entry["activity"])
+        require(owner_id not in seen,"Duplicate move-assignment invariant owner")
+        seen.add(owner_id)
+        block=owners.get(owner_id)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Move-assignment invariant requires a published single-source output editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            items=document.get(other,[])
+            require(type(items) is list and not any(
+                    type(item) is dict and item.get("activity")==owner_id
+                    for item in items),
+                "Move-assignment invariant cannot share a private runtime owner")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Move-assignment invariant requires original C++ source")
+        for key in required-{"activity"}:
+            value=entry[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid move-assignment invariant identifier")
+        cls=entry["className"]
+        require(len(re.findall(r"\b(?:class|struct)\s+"+re.escape(cls)+r"\s*\{",
+                               source))==1,
+                "Move-assignment original class missing or ambiguous")
+        require(re.search(r"\bstd\s*::\s*unique_ptr\s*<\s*int\s*>\s*"+
+                          re.escape(entry["memberName"])+r"\b",source) is not None,
+                "Move-assignment original unique owner missing")
+        require(re.search(r"\bint\s+"+re.escape(entry["labelMember"])+r"\b",
+                          source) is not None,
+                "Move-assignment original label field missing")
+        signature=(re.escape(cls)+r"\s*&\s*"+re.escape(cls)+
+                   r"\s*::\s*operator\s*=\s*\(\s*"+re.escape(cls)+
+                   r"\s*&&\s*"+re.escape(entry["parameterName"])+r"\s*\)\s*\{")
+        require(len(re.findall(signature,source))==1,
+                "Move-assignment original operator body missing or ambiguous")
+
+
+def _validate_compiler_array_owner_read_checks(document: dict) -> None:
+    """Attach one fresh array ownership/read proof to an unchanged v2 editor."""
+    field="compilerArrayOwnerReadChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Array owner/read requires the existing Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Array owner/read requires 1..32 mapped owners")
+    required={"activity","className","ownerMember","countMember",
+              "quantityParameter","indexParameter","outputParameter",
+              "configureMethod","readMethod","quantityMethod","accessMethod",
+              "writeMethod","clearMethod","sumMethod"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Array owner/read requires exactly its documented authoring fields")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate array owner/read declaration")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Array owner/read must bind an original single-file output editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            entries=document.get(other,[])
+            require(type(entries) is list and not any(
+                    type(x) is dict and x.get("activity")==identity
+                    for x in entries),
+                "Array owner/read cannot share another private semantic owner")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Array owner/read requires an authentic original C++ source")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid array owner/read identifier")
+        name=item["className"]
+        require(len(re.findall(r"\bclass\s+"+re.escape(name)+r"\s*\{",
+                               source))==1,
+                "Array owner/read original class is missing or ambiguous")
+        owner=item["ownerMember"]
+        count=item["countMember"]
+        require(re.search(r"\bstd\s*::\s*unique_ptr\s*<\s*int\s*\[\s*\]\s*>\s*"+
+                          re.escape(owner)+r"\b",source) is not None,
+                "Array owner/read original unique_ptr<int[]> missing")
+        require(re.search(r"\bint\s+"+re.escape(count)+r"\b",source) is not None,
+                "Array owner/read original count missing")
+        config=(r"\bbool\s+"+re.escape(name)+r"\s*::\s*"+
+                re.escape(item["configureMethod"])+r"\s*\(\s*int\s+"+
+                re.escape(item["quantityParameter"])+r"\s*\)\s*noexcept\s*\{")
+        reader=(r"\bbool\s+"+re.escape(name)+r"\s*::\s*"+
+                re.escape(item["readMethod"])+r"\s*\(\s*int\s+"+
+                re.escape(item["indexParameter"])+r"\s*,\s*int\s*&\s*"+
+                re.escape(item["outputParameter"])+
+                r"\s*\)\s*const\s+noexcept\s*\{")
+        require(len(re.findall(config,source))==1 and
+                len(re.findall(reader,source))==1,
+                "Array owner/read requires the two original C++ method signatures")
+
+
+def _validate_compiler_array_copy_move_checks(document: dict) -> None:
+    """Authenticate two new assignment-body goals on one unchanged v2 editor."""
+    field="compilerArrayCopyMoveChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Array copy/move requires the existing Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Array copy/move requires 1..32 original mapped owners")
+    required={"activity","className","ownerMember","countMember",
+              "copyParameter","moveParameter","quantityMethod",
+              "accessMethod","configureMethod","readMethod",
+              "writeMethod","clearMethod","sumMethod"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Array copy/move requires exactly the documented authoring fields")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate array copy/move objective owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Array copy/move must attach to an original single-file output editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            entries=document.get(other,[])
+            require(type(entries) is list and not any(
+                    type(x) is dict and x.get("activity")==identity
+                    for x in entries),
+                "Array copy/move cannot reuse an existing private probe owner")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Array copy/move requires authentic published C++ source")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid identifier in array copy/move authoring")
+        name=item["className"]
+        require(len(re.findall(
+                    r"\b(?:class|struct)\s+"+re.escape(name)+r"\s*\{",
+                    source))==1,
+                "Original array class missing or ambiguous")
+        require(re.search(
+                    r"\bstd\s*::\s*unique_ptr\s*<\s*int\s*\[\s*\]\s*>\s*"+
+                    re.escape(item["ownerMember"])+r"\b",source) is not None,
+                "Original unique_ptr<int[]> member missing")
+        require(re.search(r"\bint\s+"+re.escape(item["countMember"])+r"\b",
+                          source) is not None,
+                "Original array count field missing")
+        copy=(re.escape(name)+r"\s*&\s*"+re.escape(name)+
+              r"\s*::\s*operator\s*=\s*\(\s*const\s+"+
+              re.escape(name)+r"\s*&\s*"+
+              re.escape(item["copyParameter"])+r"\s*\)\s*\{")
+        move=(re.escape(name)+r"\s*&\s*"+re.escape(name)+
+              r"\s*::\s*operator\s*=\s*\(\s*"+
+              re.escape(name)+r"\s*&&\s*"+
+              re.escape(item["moveParameter"])+r"\s*\)\s*noexcept\s*\{")
+        require(len(re.findall(copy,source))==1 and
+                len(re.findall(move,source))==1,
+                "Array copy/move requires the two original distinct operator bodies")
+
+
+def _validate_compiler_array_return_take_checks(document: dict) -> None:
+    """Authenticate two global-function bodies on the existing v2 compiler owner."""
+    field="compilerArrayReturnTakeChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Array return/take requires the original Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Array return/take requires 1..32 original compiler owners")
+    required={"activity","className","ownerMember","countMember",
+              "copyFunction","takeFunction","sourceParameter","indexParameter",
+              "valueParameter","destinationParameter","offeredParameter",
+              "limitParameter","quantityMethod","accessMethod",
+              "configureMethod","readMethod","writeMethod","clearMethod"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Array return/take requires exactly the declared original symbols")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate array return/take owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Array return/take must bind a historical single-source output editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            others=document.get(other,[])
+            require(type(others) is list and not any(
+                    type(x) is dict and x.get("activity")==identity
+                    for x in others),
+                "Array return/take must not share a different private compiler owner")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Array return/take requires the complete original C++ source")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid identifier in array return/take authoring")
+        name=item["className"]
+        require(len(re.findall(
+                    r"\b(?:class|struct)\s+"+re.escape(name)+r"\s*\{",
+                    source))==1,
+                "Array return/take original class missing or ambiguous")
+        require(re.search(
+                    r"\bstd\s*::\s*unique_ptr\s*<\s*int\s*\[\s*\]\s*>\s*"+
+                    re.escape(item["ownerMember"])+r"\b",source) is not None,
+                "Array return/take original unique_ptr<int[]> member missing")
+        require(re.search(r"\bint\s+"+re.escape(item["countMember"])+r"\b",
+                          source) is not None,
+                "Array return/take original count field missing")
+        copy=(re.escape(name)+r"\s+"+re.escape(item["copyFunction"])+
+              r"\s*\(\s*const\s+"+re.escape(name)+r"\s*&\s*"+
+              re.escape(item["sourceParameter"])+r"\s*,\s*int\s+"+
+              re.escape(item["indexParameter"])+r"\s*,\s*int\s+"+
+              re.escape(item["valueParameter"])+r"\s*\)\s*\{")
+        take=(r"\bbool\s+"+re.escape(item["takeFunction"])+
+              r"\s*\(\s*"+re.escape(name)+r"\s*&\s*"+
+              re.escape(item["destinationParameter"])+r"\s*,\s*"+
+              re.escape(name)+r"\s*&&\s*"+
+              re.escape(item["offeredParameter"])+r"\s*,\s*int\s+"+
+              re.escape(item["limitParameter"])+r"\s*\)\s*noexcept\s*\{")
+        require(len(re.findall(copy,source))==1 and
+                len(re.findall(take,source))==1,
+                "Array return/take requires both original external function signatures")
+
+
+
+def _validate_compiler_polymorphic_destruction_checks(document: dict) -> None:
+    """Authenticate three editable function bodies on a published C++ editor.
+
+    The root contract adds a new semantic goal without changing its original
+    source, cases, state-layout identities or historical output achievements.
+    """
+    field="compilerPolymorphicDestructionChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Polymorphic destruction requires a Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Polymorphic destruction requires 1..32 original editors")
+    required={"activity","baseClass","derivedClass","cycleClass",
+              "ownedClass","ownedMember","factoryFunction","writeMethod",
+              "numberParameter","codeParameter","cycleParameter",
+              "baseAlive","derivedAlive","ownedAlive",
+              "baseDestroyed","derivedDestroyed","ownedDestroyed"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Polymorphic destruction has unknown or missing symbols")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate polymorphic destructor owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Polymorphic destructor proof requires one original C++ editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                      "compilerArrayReturnTakeChecks","compilerNamedRuleChecks",
+                      "compilerOpenBatteryChecks","compilerReductionChecks",
+                      "compilerCmakeGraphChecks","compilerIntegerBatteryChecks"):
+            others=document.get(other,[])
+            require(type(others) is list and not any(
+                    type(x) is dict and x.get("activity")==identity for x in others),
+                    "Polymorphic destruction must not reuse another private editor")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Polymorphic destruction requires the published complete source")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                    "Invalid polymorphic destructor source identifier")
+        base=item["baseClass"]
+        derived=item["derivedClass"]
+        cycle=item["cycleClass"]
+        owner=item["ownedClass"]
+        member=item["ownedMember"]
+        require(len(re.findall(r"\bclass\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(derived)+r"\s*:\s*public\s+"+
+                                   re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bstruct\s+"+re.escape(cycle)+r"\s*\{",source))==1,
+                "Polymorphic destruction must preserve a real published hierarchy")
+        require("virtual ~"+base+"() noexcept;" in source and
+                "~"+derived+"() noexcept override;" in source and
+                re.search(r"\bstd\s*::\s*unique_ptr\s*<\s*"+
+                          re.escape(owner)+r"\s*>\s*"+re.escape(member)+r"\b",
+                          source) is not None,
+                "Original virtual lifetime or derived owner member missing")
+        require(re.search(r"\b(?:class|struct)\s+"+re.escape(owner)+r"\s*\{",
+                          source) is not None and
+                re.search(r"\b(?:virtual\s+)?void\s+"+
+                          re.escape(item["writeMethod"])+r"\s*\(",
+                          source) is not None,
+                "Declared owner type or stream-reporting method is absent")
+        cycle_declaration=re.search(r"\bstruct\s+"+re.escape(cycle)+
+                                    r"\s*\{([^{}]*)\};",source,re.DOTALL)
+        require(cycle_declaration is not None,
+                "Original cycle record definition is missing or ambiguous")
+        for property_name in ("baseAlive","derivedAlive","ownedAlive",
+                              "baseDestroyed","derivedDestroyed","ownedDestroyed"):
+            require(re.search(r"\bint\s+"+re.escape(item[property_name])+
+                              r"\b",cycle_declaration.group(1)) is not None,
+                    "Missing original lifetime counter field: "+property_name)
+        factory=("std::unique_ptr<"+base+"> "+item["factoryFunction"]+
+                 "(int "+item["numberParameter"]+
+                 ", int "+item["codeParameter"]+
+                 ", "+cycle+"& "+item["cycleParameter"]+")")
+        require(source.count(base+"::~"+base+"() noexcept {")==1 and
+                source.count(derived+"::~"+derived+"() noexcept {")==1 and
+                source.count(factory+" {")==1,
+                "Polymorphic destruction needs precisely three original bodies")
+
+
+
+def _validate_compiler_virtual_lifetime_dispatch_checks(document: dict) -> None:
+    """Bind two published C++ member bodies to an independent dispatch probe."""
+    field="compilerVirtualLifetimeDispatchChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Virtual lifetime dispatch requires a Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Virtual lifetime dispatch requires 1..32 existing editors")
+    required={"activity","baseClass","derivedClass","registerMethod",
+              "writeMethod","phaseParameter","registerStream","writeStream"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Virtual lifetime dispatch requires its exact authoring symbols")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate virtual lifetime dispatch owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Virtual lifetime dispatch needs an original single-source editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                      "compilerArrayReturnTakeChecks",
+                      "compilerPolymorphicDestructionChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            others=document.get(other,[])
+            require(type(others) is list and not any(
+                    type(x) is dict and x.get("activity")==identity for x in others),
+                "Virtual lifetime dispatch cannot share another private editor")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Virtual lifetime dispatch requires original full C++ source")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid virtual dispatch authoring identifier")
+        base=item["baseClass"]
+        derived=item["derivedClass"]
+        register=item["registerMethod"]
+        write=item["writeMethod"]
+        phase=item["phaseParameter"]
+        stream=item["registerStream"]
+        derived_stream=item["writeStream"]
+        require(len(re.findall(r"\bclass\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(derived)+
+                                   r"\s*:\s*public\s+"+re.escape(base)+r"\s*\{",
+                                   source))==1
+                and re.search(r"\bvirtual\s+~"+re.escape(base)+r"\s*\(",source)
+                    is not None,
+                "Published virtual base and concrete derived class are missing")
+        require(re.search(r"\bvirtual\s+void\s+"+re.escape(write)+
+                          r"\s*\(\s*std\s*::\s*ostream\s*&",source) is not None
+                and re.search(r"\bvoid\s+"+re.escape(write)+
+                          r"\s*\(\s*std\s*::\s*ostream\s*&\s*"+
+                          re.escape(derived_stream)+r"\s*\)\s*const\s+override\s*;",
+                          source) is not None,
+                "Original virtual reporting interface or derived override missing")
+        register_signature=("void "+base+"::"+register+"(const char* "+
+                            phase+", std::ostream& "+stream+") const {")
+        write_signature=("void "+derived+"::"+write+"(std::ostream& "+
+                         derived_stream+") const {")
+        require(source.count(register_signature)==1 and
+                source.count(write_signature)==1,
+                "Virtual lifetime dispatch needs both original member bodies")
+
+
+
+def _validate_compiler_derived_preparation_checks(document: dict) -> None:
+    """Authenticate a derived-owner replacement goal without editing its editor."""
+    field="compilerDerivedPreparationChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Derived preparation requires an original Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Derived preparation requires 1..32 published compiler owners")
+    required={"activity","baseClass","derivedClass","balanceClass",
+              "resourceClass","replacementFunction","destinationParameter",
+              "numberParameter","codeParameter","modeParameter",
+              "balanceParameter","printMethod","resourceAlive",
+              "baseCompleted","derivedCompleted","resourceCompleted",
+              "baseDestroyed","derivedDestroyed","resourceDestroyed"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Derived preparation requires exactly its declared identifiers")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate derived preparation owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Derived preparation must bind a published single-source editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                      "compilerArrayReturnTakeChecks",
+                      "compilerPolymorphicDestructionChecks",
+                      "compilerVirtualLifetimeDispatchChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            others=document.get(other,[])
+            require(type(others) is list and not any(
+                type(x) is dict and x.get("activity")==identity for x in others),
+                "Derived preparation cannot share another private compiler owner")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Derived preparation requires complete original C++ source")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid derived preparation identifier")
+        base=item["baseClass"]
+        derived=item["derivedClass"]
+        balance=item["balanceClass"]
+        resource=item["resourceClass"]
+        require(len(re.findall(r"\bclass\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(derived)+
+                    r"\s*:\s*public\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(resource)+r"\s*\{",
+                                   source))==1,
+                "Original base/derived/resource types missing or ambiguous")
+        balance_type=re.search(r"\bstruct\s+"+re.escape(balance)+
+                               r"\s*\{([^{}]*)\};",source,re.DOTALL)
+        require(balance_type is not None,
+                "Original lifetime balance struct is missing or ambiguous")
+        for key in ("resourceAlive","baseCompleted","derivedCompleted",
+                    "resourceCompleted","baseDestroyed",
+                    "derivedDestroyed","resourceDestroyed"):
+            require(re.search(r"\bint\s+"+re.escape(item[key])+r"\b",
+                              balance_type.group(1)) is not None,
+                "Derived preparation lifetime counter missing: "+key)
+        require("virtual ~"+base+"() noexcept" in source and
+                "~"+derived+"() noexcept override" in source and
+                len(re.findall(r"\bstd\s*::\s*unique_ptr\s*<\s*"+
+                               re.escape(resource)+r"\s*>",source))>=2 and
+                re.search(r"\bvoid\s+"+re.escape(item["printMethod"])+
+                          r"\s*\(\s*std\s*::\s*ostream\s*&",source) is not None,
+                "Original unique owners or virtual destructor missing")
+        signature=("void "+item["replacementFunction"]+
+            "(std::unique_ptr<"+base+">& "+item["destinationParameter"]+
+            ", int "+item["numberParameter"]+", int "+item["codeParameter"]+
+            ", int "+item["modeParameter"]+", "+balance+"& "+
+            item["balanceParameter"]+") {")
+        require(source.count(signature)==1,
+                "Derived preparation must bind one original free function body")
+
+
+
+
+
+
+def _validate_compiler_dual_interface_checks(document: dict) -> None:
+    """Original dual-base C++ source with exactly two editable method bodies."""
+    field="compilerDualInterfaceChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Dual-interface proof requires an original Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Dual-interface authoring needs 1..32 existing compiler editors")
+    required={"activity","valueInterface","reportInterface","concreteClass",
+              "valueMethod","writeMethod","changeMethod","streamParameter",
+              "changeParameter","codeMember","valueMember",
+              "constructorCodeParameter","constructorValueParameter",
+              "reportSeparator"}
+    identifiers=required-{"activity","reportSeparator"}
+    private_fields=(
+        "compilerIndexedUniqueTransferChecks","compilerDefaultedMovePolicyChecks",
+        "compilerIndependentCopyAssignmentChecks",
+        "compilerMoveAssignmentInvariantChecks","compilerArrayOwnerReadChecks",
+        "compilerArrayCopyMoveChecks","compilerArrayReturnTakeChecks",
+        "compilerPolymorphicDestructionChecks",
+        "compilerVirtualLifetimeDispatchChecks",
+        "compilerDerivedPreparationChecks","compilerAbstractInterfaceChecks",
+        "compilerInterfaceCollectionChecks","compilerPolymorphicCloneChecks",
+        "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+        "compilerReductionChecks","compilerCmakeGraphChecks",
+        "compilerIntegerBatteryChecks",
+    )
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Dual-interface authoring requires exact original names")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate dual-interface compiler owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&
+                         set(block)),
+                "Dual-interface proof needs a published single-file C++ editor")
+        for other in private_fields:
+            entries=document.get(other,[])
+            require(type(entries) is list and not any(
+                type(x) is dict and x.get("activity")==identity for x in entries),
+                "Dual-interface proof cannot share an existing private owner")
+        for key in identifiers:
+            name=item[key]
+            require(type(name) is str and 0<len(name)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",name)
+                    and not name.startswith("__")
+                    and not (len(name)>1 and name[0]=="_" and name[1].isupper()),
+                    "Invalid dual-interface C++ authoring identifier")
+        sep=item["reportSeparator"]
+        require(type(sep) is str and 0<len(sep)<=32 and all(
+                32<=ord(ch)<=126 and ch not in '"\\' for ch in sep),
+                "Unsafe dual-interface output separator")
+        value_base=item["valueInterface"]
+        report_base=item["reportInterface"]
+        concrete=item["concreteClass"]
+        value=item["valueMethod"]
+        write=item["writeMethod"]
+        change=item["changeMethod"]
+        stream=item["streamParameter"]
+        data=item["valueMember"]
+        code=item["codeMember"]
+        ctor_code=item["constructorCodeParameter"]
+        ctor_value=item["constructorValueParameter"]
+        change_param=item["changeParameter"]
+        require(value_base!=report_base and data!=code,
+                "Independent interfaces and distinct members are required")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Dual-interface proof needs the published source")
+        require(source.count("class "+value_base+" {")==1 and
+                source.count("class "+report_base+" {")==1 and
+                source.count("class "+concrete+" : public "+value_base+
+                             ", public "+report_base+" {")==1,
+                "Two public abstract base interfaces must be preserved")
+        require("virtual ~"+value_base+"() = default;" in source and
+                "virtual ~"+report_base+"() = default;" in source and
+                "virtual int "+value+"() const = 0;" in source and
+                "virtual void "+write+"(std::ostream& "+stream+
+                    ") const = 0;" in source,
+                "Dual-interface declarations are absent or incomplete")
+        ctor=(concrete+"(int "+ctor_code+", int "+ctor_value+") : "+
+              code+"{"+ctor_code+"}, "+data+"{"+ctor_value+"} {}")
+        mutate=("void "+change+"(int "+change_param+") { "+
+                data+" = "+change_param+"; }")
+        require(source.count(ctor)==1 and source.count(mutate)==1
+                and "int "+code+";" in source and
+                "int "+data+";" in source,
+                "Provided constructor, fields or mutation are missing")
+        value_signature="int "+value+"() const override {"
+        report_signature=("void "+write+"(std::ostream& "+stream+
+                          ") const override {")
+        require(source.count(value_signature)==1 and
+                source.count(report_signature)==1 and
+                source.index(value_signature)<source.index(report_signature),
+                "Dual-interface authoring requires two original method bodies")
+
+
+def _validate_compiler_polymorphic_clone_checks(document: dict) -> None:
+    """Authorize three clone bodies without changing saved stdout contracts."""
+    field="compilerPolymorphicCloneChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Polymorphic cloning requires a Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Polymorphic cloning requires 1..32 original compiler editors")
+    required={"activity","baseClass","simpleClass","identifiedClass",
+              "vectorAlias","cloneMethod","duplicateFunction",
+              "numberMethod","changeMethod","writeMethod","codeMethod",
+              "sourceParameter","streamParameter"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Polymorphic cloning needs exact author-declared identifiers")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate polymorphic cloning owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&
+                         set(block)),
+                "Polymorphic cloning requires an original single-file editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                      "compilerArrayReturnTakeChecks",
+                      "compilerPolymorphicDestructionChecks",
+                      "compilerVirtualLifetimeDispatchChecks",
+                      "compilerDerivedPreparationChecks",
+                      "compilerAbstractInterfaceChecks",
+                      "compilerInterfaceCollectionChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            entries=document.get(other,[])
+            require(type(entries) is list and not any(
+                type(x) is dict and x.get("activity")==identity for x in entries),
+                "Polymorphic cloning cannot reuse another compiler proof owner")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and
+                             value[1].isupper()),
+                    "Invalid polymorphic cloning identifier")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Cloning requires an authentic published initial source")
+        base=item["baseClass"]
+        simple=item["simpleClass"]
+        identified=item["identifiedClass"]
+        vector=item["vectorAlias"]
+        clone=item["cloneMethod"]
+        duplicate=item["duplicateFunction"]
+        number=item["numberMethod"]
+        change=item["changeMethod"]
+        write=item["writeMethod"]
+        stream=item["streamParameter"]
+        require(len(re.findall(r"\bclass\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(simple)+
+                       r"\s*:\s*public\s+"+re.escape(base)+r"\s*\{",
+                       source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(identified)+
+                       r"\s*:\s*public\s+"+re.escape(base)+r"\s*\{",
+                       source))==1,
+                "Polymorphic cloning requires original public class hierarchy")
+        require("virtual ~"+base+"() = default;" in source and
+                "virtual std::unique_ptr<"+base+"> "+clone+
+                    "() const = 0;" in source and
+                "virtual int "+number+"() const noexcept = 0;" in source and
+                "virtual void "+change+"(int valor) noexcept = 0;" in source and
+                "virtual void "+write+"(std::ostream& "+stream+
+                    ") const = 0;" in source,
+                "Polymorphic cloning requires a valid abstract base")
+        alias="using "+vector+" = std::vector<std::unique_ptr<"+base+">>;"
+        implementation=("std::unique_ptr<"+base+"> "+clone+
+                        "() const override {")
+        duplicate_source=(vector+" "+duplicate+"(const "+vector+"& "+
+                          item["sourceParameter"]+") {")
+        require(source.count(alias)==1 and source.count(implementation)==2
+                and source.count(duplicate_source)==1 and
+                source.index(alias)<source.index(duplicate_source),
+                "Polymorphic cloning requires two concrete bodies and one consumer")
+        require(len(re.findall(r"\bint\s+"+re.escape(item["codeMethod"])+
+                   r"\s*\(\s*\)\s*const\s+noexcept",source))==1,
+                "Polymorphic cloning lost the concrete code getter")
+
+
+def _validate_compiler_interface_collection_checks(document: dict) -> None:
+    """Author-only ownership transfer and virtual reporting, without source edits."""
+    field="compilerInterfaceCollectionChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Interface collection authoring requires a Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Interface collection requires 1..32 compiler owners")
+    required={"activity","baseClass","simpleClass","identifiedClass",
+              "vectorAlias","addFunction","reportFunction","writeMethod",
+              "numberMethod","destinationParameter","sourceParameter",
+              "dataParameter","streamParameter","countLabel",
+              "indexSeparator","numberLabel","codeLabel"}
+    identifiers=required-{"activity","countLabel","indexSeparator",
+                           "numberLabel","codeLabel"}
+    labels={"countLabel","indexSeparator","numberLabel","codeLabel"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Interface collection requires exact declarative symbols")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Repeated interface collection owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&
+                         set(block)),
+                "Interface collection needs the published single-file editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                      "compilerArrayReturnTakeChecks",
+                      "compilerPolymorphicDestructionChecks",
+                      "compilerVirtualLifetimeDispatchChecks",
+                      "compilerDerivedPreparationChecks",
+                      "compilerAbstractInterfaceChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            entries=document.get(other,[])
+            require(type(entries) is list and not any(
+                type(x) is dict and x.get("activity")==identity for x in entries),
+                "Interface collection cannot overlap another private compiler owner")
+        for key in identifiers:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and
+                             value[1].isupper()),
+                    "Invalid interface collection identifier")
+        for key in labels:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=64
+                    and all(32<=ord(ch)<=126 and ch not in '"\\'
+                            for ch in value),
+                    "Invalid interface collection output label")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Interface collection requires original C++ source")
+        base=item["baseClass"]
+        simple=item["simpleClass"]
+        identified=item["identifiedClass"]
+        vector=item["vectorAlias"]
+        number=item["numberMethod"]
+        write=item["writeMethod"]
+        stream=item["streamParameter"]
+        require(len(re.findall(r"\bclass\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(simple)+
+                       r"\s*:\s*public\s+"+re.escape(base)+r"\s*\{",
+                       source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(identified)+
+                       r"\s*:\s*public\s+"+re.escape(base)+r"\s*\{",
+                       source))==1,
+                "Interface collection types or public inheritance missing")
+        require("virtual ~"+base+"() = default;" in source and
+                "virtual int "+number+"() const noexcept = 0;" in source and
+                "virtual void "+write+"(std::ostream& "+stream+
+                    ") const = 0;" in source,
+                "Interface collection requires an actual abstract interface")
+        alias="using "+vector+" = std::vector<std::unique_ptr<"+base+">>;"
+        add=("bool "+item["addFunction"]+"("+vector+"& "+
+             item["destinationParameter"]+", std::unique_ptr<"+base+
+             ">& "+item["sourceParameter"]+") {")
+        report=("void "+item["reportFunction"]+"(const "+vector+"& "+
+                item["dataParameter"]+", std::ostream& "+stream+") {")
+        require(source.count(alias)==1 and source.count(add)==1 and
+                source.count(report)==1 and
+                source.index(alias)<source.index(add)<source.index(report),
+                "Interface collection needs the original alias and two editable bodies")
+
+
+def _validate_compiler_abstract_interface_checks(document: dict) -> None:
+    """Four immutable-source-bounded bodies of a published abstract interface."""
+    field="compilerAbstractInterfaceChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Abstract interface authoring requires the original Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Abstract interface proof requires 1..32 existing compiler editors")
+    required={"activity","baseClass","simpleClass","identifiedClass",
+              "createFunction","presentFunction","numberMethod","codeMethod",
+              "writeMethod","streamParameter","typeParameter",
+              "numberParameter","codeParameter","objectParameter"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Abstract interface authoring requires its exact symbols")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Repeated abstract interface editor owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Abstract interface proof needs the published single-file editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                      "compilerArrayReturnTakeChecks",
+                      "compilerPolymorphicDestructionChecks",
+                      "compilerVirtualLifetimeDispatchChecks",
+                      "compilerDerivedPreparationChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            others=document.get(other,[])
+            require(type(others) is list and not any(
+                type(x) is dict and x.get("activity")==identity for x in others),
+                "Abstract interface cannot overlap another private compiler owner")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Abstract interface requires the complete original C++ file")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid abstract interface authoring identifier")
+        base=item["baseClass"]
+        simple=item["simpleClass"]
+        identified=item["identifiedClass"]
+        number=item["numberMethod"]
+        code=item["codeMethod"]
+        write=item["writeMethod"]
+        stream=item["streamParameter"]
+        require(len(re.findall(r"\bclass\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(simple)+
+                    r"\s*:\s*public\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(identified)+
+                    r"\s*:\s*public\s+"+re.escape(base)+r"\s*\{",source))==1,
+                "Abstract interface or public derived types missing")
+        require("virtual ~"+base+"() = default;" in source and
+                "virtual int "+number+"() const noexcept = 0;" in source and
+                "virtual void "+write+"(std::ostream& "+stream+
+                    ") const = 0;" in source,
+                "Abstract interface lost a pure virtual operation or destructor")
+        require(len(re.findall(r"\bint\s+"+re.escape(number)+
+                   r"\s*\(\s*\)\s*const\s+noexcept\s+override",source))==2 and
+                len(re.findall(r"\bvoid\s+"+re.escape(write)+
+                   r"\s*\(\s*std\s*::\s*ostream\s*&\s*"+
+                   re.escape(stream)+r"\s*\)\s*const\s+override\s*\{",source))==2,
+                "Both concrete virtual implementations are required")
+        require(len(re.findall(r"\bint\s+"+re.escape(code)+
+                   r"\s*\(\s*\)\s*const\s+noexcept",source))==1,
+                "Derived code getter is missing")
+        factory=("std::unique_ptr<"+base+"> "+item["createFunction"]+
+            "(int "+item["typeParameter"]+", int "+item["numberParameter"]+
+            ", int "+item["codeParameter"]+") {")
+        consumer=("void "+item["presentFunction"]+"(const "+base+"& "+
+            item["objectParameter"]+", std::ostream& "+stream+") {")
+        require(source.count(factory)==1 and source.count(consumer)==1,
+                "Factory and polymorphic consumer must retain their original signatures")
+
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
@@ -5353,6 +6525,20 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_workflow_checks(document)
     _validate_compiler_runtime_checks(document)
     _validate_compiler_named_rule_checks(document)
+    _validate_compiler_indexed_unique_transfer_checks(document)
+    _validate_compiler_defaulted_move_policy_checks(document)
+    _validate_compiler_independent_copy_assignment_checks(document)
+    _validate_compiler_move_assignment_invariant_checks(document)
+    _validate_compiler_array_owner_read_checks(document)
+    _validate_compiler_array_copy_move_checks(document)
+    _validate_compiler_array_return_take_checks(document)
+    _validate_compiler_polymorphic_destruction_checks(document)
+    _validate_compiler_virtual_lifetime_dispatch_checks(document)
+    _validate_compiler_derived_preparation_checks(document)
+    _validate_compiler_abstract_interface_checks(document)
+    _validate_compiler_interface_collection_checks(document)
+    _validate_compiler_polymorphic_clone_checks(document)
+    _validate_compiler_dual_interface_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)

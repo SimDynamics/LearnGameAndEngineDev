@@ -1,0 +1,58 @@
+name: Codex U6L12 independent return and take ownership
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-array-return-take.yml
+      - scripts/curriculum/test_cpp_array_return_take.py
+      - scripts/curriculum/test_cpp_array_return_take_core.py
+      - scripts/curriculum/test_cpp_array_return_take_authoring.py
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/stable_state_layout.py
+      - native/core/cpp_array_return_take_check.hpp
+      - native/core/cpp_array_return_take_check_tests.cpp
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_recibir_y_devolver_objetos_propietarios.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Original U6L12 ownership with GCC and Clang C++23
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify real Tramo independent returns and bounded rvalue transfer
+        run: |
+          for compiler in g++ clang++; do
+            python3 -B scripts/curriculum/test_cpp_array_return_take.py \
+              --compiler "$compiler"
+            python3 -B scripts/curriculum/test_cpp_array_return_take_core.py \
+              --compiler "$compiler"
+          done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_array_return_take_authoring.py -v
+
+  windows-msvc:
+    name: Original U6L12 ownership with Windows MSVC C++23
+    runs-on: windows-2022
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Verify Tramo returns, exception safety and source identity
+        shell: cmd
+        run: |
+          python -B scripts\curriculum\test_cpp_array_return_take.py --compiler cl --windows
+          python -B scripts\curriculum\test_cpp_array_return_take_core.py --compiler cl --windows
+          python -B -m unittest discover -s scripts\curriculum -p test_cpp_array_return_take_authoring.py -v

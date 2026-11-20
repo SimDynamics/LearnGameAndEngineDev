@@ -1,0 +1,72 @@
+name: Codex U8L5 polymorphic ownership and complete destruction
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-polymorphic-destruction.yml
+      - scripts/curriculum/test_cpp_polymorphic_destruction.py
+      - native/core/cpp_multi_body_check.hpp
+      - native/core/cpp_multi_body_check_tests.cpp
+      - native/core/cpp_polymorphic_destruction_check.hpp
+      - native/core/cpp_polymorphic_destruction_check_tests.cpp
+      - scripts/curriculum/test_cpp_polymorphic_destruction_core.py
+      - scripts/curriculum/test_cpp_polymorphic_destruction_authoring.py
+      - scripts/curriculum/stable_state_layout.py
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/composicion_y_herencia_publica/lesson_destruir_una_derivada_mediante_la_base.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Original U8L5 derived ownership and destruction with GCC and Clang
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check independent polymorphic destructors and counterexamples
+        run: |
+          for compiler in g++ clang++; do
+            python3 -B scripts/curriculum/test_cpp_polymorphic_destruction.py \
+              --compiler "$compiler"
+            python3 -B scripts/curriculum/test_cpp_polymorphic_destruction_core.py \
+              --compiler "$compiler"
+          done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_polymorphic_destruction_authoring.py -v
+
+      - name: Verify authenticated multi-body source preservation
+        run: |
+          for compiler in g++ clang++; do
+            "$compiler" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+              native/core/cpp_multi_body_check_tests.cpp -o multi_body_qa
+            ./multi_body_qa
+          done
+
+  windows-msvc:
+    name: Original U8L5 derived ownership and destruction with MSVC
+    runs-on: windows-2022
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile and run independent three-body preservation with MSVC
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative native\core\cpp_multi_body_check_tests.cpp /Fe:multi_body_qa.exe
+          .\multi_body_qa.exe
+      - name: Check polymorphic deletion and preserved owner with Windows MSVC
+        shell: cmd
+        run: |
+          python -B scripts\curriculum\test_cpp_polymorphic_destruction.py --compiler cl --windows
+          python -B scripts\curriculum\test_cpp_polymorphic_destruction_core.py --compiler cl --windows
+          python -B -m unittest discover -s scripts\curriculum -p test_cpp_polymorphic_destruction_authoring.py -v

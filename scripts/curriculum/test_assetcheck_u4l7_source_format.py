@@ -234,7 +234,10 @@ class SourceFormatU4L7(unittest.TestCase):
         all_blocks, positions = self.owners(self.doc)
         old_archives = deepcopy(self.doc["stateLayout"]["sourceFormatRevisions"])
         old_proofs = deepcopy(self.doc["stateLayout"]["editorial"])
-        for owner, field in ((COMPILER, "initialCode"), (CMAKE, "code")):
+        # Reflow every published source owner after its later lesson reorder.
+        # The original six archives must remain intact; none is a new puzzle.
+        for owner in OWNERS:
+            field = "initialCode" if owner == COMPILER else "code"
             with self.subTest(owner=owner):
                 proposal = deepcopy(self.doc)
                 blocks, projected_positions = self.owners(proposal)

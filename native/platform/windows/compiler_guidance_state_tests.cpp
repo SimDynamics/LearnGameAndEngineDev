@@ -11,6 +11,34 @@
 namespace lgaed::test {
 int math_matching_text_live_windows(
     const std::filesystem::path& content,const std::filesystem::path& qa);
+int indexed_unique_transfer_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int defaulted_move_policy_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int independent_copy_assignment_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int move_assignment_invariant_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int array_owner_read_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int array_copy_move_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int array_return_take_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int polymorphic_destruction_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int virtual_lifetime_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int derived_preparation_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int abstract_interface_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int interface_collection_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int polymorphic_clone_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
+int dual_interface_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
 }
 
 namespace {
@@ -987,6 +1015,34 @@ int main(int argc,char** argv)try{
     if(argc==2&&std::string_view(argv[1])=="--identifier-rename-live")return identifier_rename_live_windows(content,qa);
     if(argc==2&&std::string_view(argv[1])=="--math-matching-text-live")
         return test::math_matching_text_live_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--indexed-unique-transfer-state-live")
+        return test::indexed_unique_transfer_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--defaulted-move-policy-state-live")
+        return test::defaulted_move_policy_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--independent-copy-assignment-state-live")
+        return test::independent_copy_assignment_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--move-assignment-invariant-state-live")
+        return test::move_assignment_invariant_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--array-owner-read-state-live")
+        return test::array_owner_read_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--array-copy-move-state-live")
+        return test::array_copy_move_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--array-return-take-state-live")
+        return test::array_return_take_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--polymorphic-destruction-state-live")
+        return test::polymorphic_destruction_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--virtual-lifetime-state-live")
+        return test::virtual_lifetime_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--derived-preparation-state-live")
+        return test::derived_preparation_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--abstract-interface-state-live")
+        return test::abstract_interface_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--interface-collection-state-live")
+        return test::interface_collection_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--polymorphic-clone-state-live")
+        return test::polymorphic_clone_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--dual-interface-state-live")
+        return test::dual_interface_state_windows(content,qa);
     if(argc!=1)return 2;
     const auto lesson=load_lesson(content/"archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json");
     const auto stage=[&](std::string_view name,const auto& work){

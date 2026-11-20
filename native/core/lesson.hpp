@@ -6,6 +6,20 @@
 #include "core/report_observation_check.hpp"
 #include "core/assertion_runtime_check.hpp"
 #include "core/named_rule_check.hpp"
+#include "core/cpp_indexed_unique_transfer_probe.hpp"
+#include "core/cpp_defaulted_move_policy_check.hpp"
+#include "core/cpp_independent_copy_assignment_check.hpp"
+#include "core/cpp_move_assignment_invariant_check.hpp"
+#include "core/cpp_array_owner_read_check.hpp"
+#include "core/cpp_array_copy_move_check.hpp"
+#include "core/cpp_array_return_take_check.hpp"
+#include "core/cpp_polymorphic_destruction_check.hpp"
+#include "core/cpp_virtual_lifetime_dispatch_check.hpp"
+#include "core/cpp_derived_preparation_check.hpp"
+#include "core/cpp_abstract_interface_check.hpp"
+#include "core/cpp_interface_collection_check.hpp"
+#include "core/cpp_polymorphic_clone_check.hpp"
+#include "core/cpp_dual_interface_check.hpp"
 #include "core/open_battery_check.hpp"
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
@@ -297,6 +311,30 @@ struct Block {
     // Lesson-root source prerequisite. It is checked before any case receipt
     // and keeps the original editor payload, answers and stable identity.
     std::optional<NamedRuleSourceCheck> named_rule_source_check;
+    // Only a fresh independent identity witness can accredit this root goal.
+    std::optional<CppIndexedUniqueTransferProbe> indexed_unique_transfer_probe;
+    // Independently compiled class policy, selected only by original v2 root.
+    std::optional<CppDefaultedMovePolicy> defaulted_move_policy_probe;
+    // Opt-in independent semantics for the original copy-assignment body.
+    std::optional<CppIndependentCopyAssignmentPolicy> independent_copy_assignment_probe;
+    // Authored, original-owner semantics for a move-assignment method body.
+    std::optional<CppMoveAssignmentInvariantPolicy> move_assignment_invariant_probe;
+    // Original owner, two editable bodies, independent padded array probe.
+    std::optional<CppArrayOwnerReadPolicy> array_owner_read_probe;
+    // Opt-in copy/move of unique array with owner/count semantics.
+    std::optional<CppArrayCopyMovePolicy> array_copy_move_probe;
+    // Independent source-bound contract for two external ownership functions.
+    std::optional<CppArrayReturnTakePolicy> array_return_take_probe;
+    // Source-bound three-body virtual destruction, factory and owner proof.
+    std::optional<CppPolymorphicDestructionPolicy> polymorphic_destruction_probe;
+    std::optional<CppVirtualLifetimeDispatchPolicy> virtual_lifetime_probe;
+    // Independent property for preparing a complete derived owner before replacement.
+    std::optional<CppDerivedPreparationPolicy> derived_preparation_probe;
+    // Typed abstract-interface/factory/consumer contract with four editable bodies.
+    std::optional<CppAbstractInterfacePolicy> abstract_interface_probe;
+    std::optional<CppInterfaceCollectionPolicy> interface_collection_probe;
+    std::optional<CppPolymorphicClonePolicy> polymorphic_clone_probe;
+    std::optional<CppDualInterfacePolicy> dual_interface_probe;
     // The root declares this open CMake battery without changing its
     // previously published block or saved student draft identity.
     std::optional<OpenBatteryProbeSpec> open_battery_probe;
@@ -529,6 +567,34 @@ struct FreshExecution {
     bool rejection_probe_correct = false;
     bool report_probe_correct = false;
     bool named_rule_probe_correct = false;
+    bool indexed_unique_transfer_probe_correct = false;
+    std::string indexed_unique_transfer_request_fingerprint;
+    bool defaulted_move_policy_probe_correct = false;
+    std::string defaulted_move_policy_request_fingerprint;
+    bool independent_copy_assignment_probe_correct = false;
+    std::string independent_copy_assignment_request_fingerprint;
+    bool move_assignment_invariant_probe_correct = false;
+    std::string move_assignment_invariant_request_fingerprint;
+    bool array_owner_read_probe_correct = false;
+    std::string array_owner_read_request_fingerprint;
+    bool array_copy_move_probe_correct = false;
+    std::string array_copy_move_request_fingerprint;
+    bool array_return_take_probe_correct = false;
+    std::string array_return_take_request_fingerprint;
+    bool polymorphic_destruction_probe_correct = false;
+    std::string polymorphic_destruction_request_fingerprint;
+    bool virtual_lifetime_probe_correct = false;
+    std::string virtual_lifetime_request_fingerprint;
+    bool derived_preparation_probe_correct = false;
+    std::string derived_preparation_request_fingerprint;
+    bool abstract_interface_probe_correct = false;
+    std::string abstract_interface_request_fingerprint;
+    bool interface_collection_probe_correct = false;
+    std::string interface_collection_request_fingerprint;
+    bool polymorphic_clone_probe_correct = false;
+    std::string polymorphic_clone_request_fingerprint;
+    bool dual_interface_probe_correct = false;
+    std::string dual_interface_request_fingerprint;
     bool open_battery_probe_correct = false;
     bool cmake_graph_correct = false;
     bool assertion_abort_verified = false;

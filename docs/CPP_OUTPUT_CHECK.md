@@ -54,6 +54,928 @@ comprobando antes de conceder el logro. La incorporación de declaraciones
 curriculares U3L6/U3L8 requiere las verificaciones específicas de Work.
 
 
+## Asignación por copia independiente en una clase
+
+La raíz de una lección española existente con mapa de estado v2 puede declarar
+`compilerIndependentCopyAssignmentChecks` para añadir una comprobación
+semántica de asignación por copia **sin modificar el editor publicado**.
+Se utiliza la identidad actual de un único bloque `cpp_compiler` de archivo
+único con `outputCheck`; la declaración no crea otro ejercicio ni reescribe
+`initialCode`, `outputCheck`, direcciones, borradores o resultados anteriores.
+
+Para Programación 3, U6L7, la declaración compatible es:
+
+```json
+"compilerIndependentCopyAssignmentChecks": [
+  {
+    "activity": "block_0014_0002",
+    "className": "Celda",
+    "memberName": "dato_",
+    "parameterName": "otra",
+    "hasMethod": "hay",
+    "valueMethod": "valor",
+    "accessMethod": "acceso",
+    "putMethod": "poner",
+    "changeMethod": "cambiar",
+    "clearMethod": "vaciar"
+  }
+]
+```
+
+Los nombres describen símbolos **reales del código original**. Debe existir
+exactamente la definición exterior
+`Celda& Celda::operator=(const Celda& otra)` y su miembro
+`std::unique_ptr<int> dato_`. El motor admite diferentes implementaciones
+del cuerpo de ese operador, así como diferencias inocuas de espacios y
+comentarios. No admite que el estudiante cambie las declaraciones, los
+miembros, el constructor de copia, las demás funciones o `main`.
+Tampoco admite otras sondas privadas sobre el mismo propietario.
+
+Una pulsación compila y ejecuta el caso visible elegido. Si se cumple su
+contrato de salida, una segunda compilación privada examina también el
+comportamiento de la misma clase. Comprueba que copiar una fuente ocupada
+crea un entero independiente incluso con valores iguales, que se libera el
+destino anterior, que una fuente vacía vacía el destino sin reservar, que
+autocopiar (ocupado o vacío) no cambia la identidad ni solicita memoria,
+y que un `std::bad_alloc` inyectado de forma controlada conserva origen
+y destino. También comprueba devolución por referencia, valor cero presente,
+reutilización después de mover y limpieza. No se requiere ejecutar ni
+introducir los casos privados manualmente.
+
+La prueba independiente nunca modifica el fuente que entregó el estudiante:
+genera una unidad de compilación temporal con ese mismo fuente y un
+`main` de QA aislado. El resultado se vincula al contenido completo de
+la petición, a su revisión y al hash del driver privado. Un resultado antiguo
+de stdout no acredita automáticamente la nueva semántica. El sello
+`independent-copy-assignment/v1` se añade solamente tras una comprobación
+correcta, conservando los recibos y borradores históricos.
+
+Esta variante se refiere a **copia con `unique_ptr<int>`** y a los métodos
+declarados arriba. No constituye una prueba general de todos los operadores,
+de propietarios de arrays ni de jerarquías; cada contrato posterior requiere
+su ampliación y validación correspondientes. Para que una nueva declaración
+sea utilizable por el estudiante, Work debe incorporarla al JSON auténtico de
+la lección y validarla. Los ensayos de CI con metadatos temporales no
+publican por sí solos la declaración en el currículo.
+
+
+## Invariantes de asignación por movimiento y propiedad única
+
+El campo raíz español `compilerMoveAssignmentInvariantChecks` puede asociarse
+a un editor `cpp_compiler` ya publicado, con `stateLayout` v2, un único
+fuente y `outputCheck` original. Su propósito es acreditar la asignación
+por movimiento de una clase con `std::unique_ptr<int>` y una etiqueta
+que indica el estado. No modifica el código, los casos, los identificadores
+ni la posición histórica del bloque.
+
+Declaración concreta para Programación 3, U6L8:
+
+```json
+"compilerMoveAssignmentInvariantChecks": [
+  {
+    "activity": "block_0014_0002",
+    "className": "Muestra",
+    "memberName": "dato_",
+    "labelMember": "etiqueta_",
+    "parameterName": "otra",
+    "hasMethod": "hay",
+    "valueMethod": "valor",
+    "labelMethod": "etiqueta",
+    "accessMethod": "acceso",
+    "invariantMethod": "coherente",
+    "putMethod": "poner",
+    "changeMethod": "cambiar",
+    "retagMethod": "reetiquetar",
+    "clearMethod": "vaciar"
+  }
+]
+```
+
+El motor obtiene la definición original de
+`Muestra& Muestra::operator=(Muestra&& otra)` desde el editor auténtico
+y admite soluciones distintas **dentro de su cuerpo**. Conserva sin
+alteraciones los caracteres del fuente proporcionado fuera del cuerpo
+editable, incluidos las declaraciones, el constructor de movimiento,
+miembros y `main`. No se permite modificar el preprocesador en el cuerpo,
+cerrar la función antes de tiempo ni utilizar otra comprobación privada
+sobre la misma actividad.
+
+Una pulsación conserva el caso visible y ejecuta automáticamente otra
+compilación privada. Esta segunda ejecución prueba que mover entre
+objetos distintos transfiere el mismo entero sin reservar otro, libera
+el entero anterior del destino y deja vacío el origen con etiqueta cero.
+Comprueba directamente las funciones, sin depender de que el programa
+principal muestre esa transición. Verifica origen vacío, destinos con
+valores iguales y etiquetas distintas, cero como valor válido, automovimiento
+ocupado o vacío, referencia retornada, rechazos que conservan el estado,
+reutilización del origen y destrucción normal o durante el desenrollado
+de una excepción. Se vigilan las reservas reales; el movimiento no necesita
+pedir memoria. Nunca se accede a un objeto ya destruido.
+
+La prueba privada tiene su propia huella de código, fuente auténtico,
+parámetros, solicitud, revisión y compilación. Un acierto anterior de
+`outputCheck` no concede este nuevo objetivo. La acreditación añade
+el comprobante `move-invariant/v1` únicamente tras ejecutar correctamente
+los contratos de salida y semántica, conservando el recibo histórico
+y los borradores. No se piden pruebas manuales adicionales al estudiante.
+
+Esta variante concreta cubre la clase y la política descritas. No se
+extiende por sí sola a arrays, copias o jerarquías. Work debe añadir
+la declaración al JSON original de la lección y verificar su integración;
+los archivos de prueba con metadatos temporales no publican dicha autoría.
+
+
+## Arrays propietarios y lectura con límites
+
+En Programación 3, U6L10, el motor admite añadir a la raíz de la lección
+española con `stateLayout` v2 una declaración
+`compilerArrayOwnerReadChecks`. Se vincula a un editor `cpp_compiler`
+existente de archivo único que ya dispone de `outputCheck`.
+No cambia los casos originales, la fuente, los borradores, los identificadores
+ni sus direcciones de progreso.
+
+```json
+"compilerArrayOwnerReadChecks": [
+  {
+    "activity": "block_0017_0002",
+    "className": "Lote",
+    "ownerMember": "datos_",
+    "countMember": "cantidad_",
+    "quantityParameter": "cantidad",
+    "indexParameter": "indice",
+    "outputParameter": "resultado",
+    "configureMethod": "configurar",
+    "readMethod": "leer",
+    "quantityMethod": "cantidad",
+    "accessMethod": "acceso",
+    "writeMethod": "escribir",
+    "clearMethod": "vaciar",
+    "sumMethod": "sumar"
+  }
+]
+```
+
+La declaración identifica la clase y sus métodos y miembros originales.
+El estudiante puede construir implementaciones semánticamente equivalentes
+dentro de los **dos cuerpos editables**:
+`bool Lote::configurar(int cantidad) noexcept` y
+`bool Lote::leer(int indice, int& resultado) const noexcept`.
+La comprobación conserva exactamente los bytes externos a ambos cuerpos,
+incluidas firmas, prohibiciones de copia y movimiento, `escribir`,
+`vaciar`, `sumar` y `main`. Las directivas de preprocesador no
+pueden introducirse ocultamente dentro de los cuerpos.
+
+`configurar` admite cero (vacía y libera sin reservar) y cantidades
+positivas de uno a cuatro. Una cantidad válida prepara un nuevo
+`int[]` inicializado a cero antes de sustituir el array anterior.
+Esto incluye repetir la misma cantidad con los mismos valores: escribir
+ceros en el array existente no acredita la sustitución. Una cantidad
+inválida o una reserva fallida controlada debe conservar exactamente
+el propietario, el tamaño y sus valores, y devolver falso sin propagar
+`std::bad_alloc` desde el método `noexcept`.
+
+`leer` exige comprobar el índice antes del acceso y modificar la referencia
+de salida sólo si es válido. Al rechazar, debe conservar cualquier valor
+anterior de esa referencia, incluido `8`, `88` u otro distinto de `-1`.
+La sonda independiente comprueba los límites lógicos mediante un array
+temporal con memoria física adicional, evitando accesos físicos inválidos
+en los contraejemplos preparados. También comprueba limpieza con
+`delete[]`, reutilización, cero presente y salida por excepción del
+llamador. No expone la sonda ni exige ensayos manuales adicionales.
+
+El motor ejecuta primero el caso visible y después la compilación
+privada con el código del estudiante preservado. La prueba privada
+lleva una huella propia de fuente, declaración, controlador, solicitud y
+revisión. Una comprobación histórica basada únicamente en stdout no
+concede este objetivo: sólo una comprobación nueva y válida añade el
+sello `array-owner-read/v1`. El resto de logros, respuestas y borradores
+permanece intacto.
+
+La implementación admite estos dos métodos y su contrato concreto.
+No acredita por sí sola la copia o movimiento de arrays de U6L11.
+Work incorpora la declaración raíz al JSON auténtico cuando corresponda,
+valida su transición y verifica el ejercicio en la aplicación.
+Las pruebas temporales de Codex no publican metadatos curriculares.
+
+
+## Copia y movimiento independientes de un array propietario
+
+Para Programación 3, U6L11, un editor `cpp_compiler` existente, español,
+de archivo único y con mapa de estado `v2` puede recibir una declaración
+raíz `compilerArrayCopyMoveChecks`. La capacidad se incorpora como
+objetivo **independiente** de los antiguos casos de salida, sin cambiar
+`initialCode`, `outputCheck`, su ID ni los borradores guardados.
+
+Contrato de autoría para el propietario histórico `block_0020_0002`:
+
+```json
+"compilerArrayCopyMoveChecks": [
+  {
+    "activity": "block_0020_0002",
+    "className": "Tramo",
+    "ownerMember": "datos_",
+    "countMember": "cantidad_",
+    "copyParameter": "otra",
+    "moveParameter": "otra",
+    "quantityMethod": "cantidad",
+    "accessMethod": "acceso",
+    "configureMethod": "configurar",
+    "readMethod": "leer",
+    "writeMethod": "escribir",
+    "clearMethod": "vaciar",
+    "sumMethod": "sumar"
+  }
+]
+```
+
+El motor deriva los dos operadores originales:
+`Tramo& Tramo::operator=(const Tramo& otra)` y
+`Tramo& Tramo::operator=(Tramo&& otra) noexcept`. El estudiante
+puede modificar únicamente sus **cuerpos**. El resto del programa
+debe conservarse exactamente, incluidos constructores, destructor,
+datos, métodos de consulta y edición, `main` y casos de prueba.
+La validación no exige copiar la solución de referencia: admite otros
+procedimientos C++ correctos en los cuerpos, siempre que cumplan
+el contrato observable.
+
+Una comprobación visible correcta del **primer caso** inicia, en la
+misma pulsación, una ejecución nativa separada y privada. Esta verifica:
+
+1. Copiar una fuente ocupada a un destino distinto crea otro
+   `int[]` independiente, incluso con los mismos tamaños y valores.
+   El origen conserva su array, cantidad y valores; el destino anterior
+   se libera al aceptar la copia.
+2. Copiar desde vacío vacía el destino sin reservar. Autocopiar,
+   con array o sin él, conserva identidad, cantidad y valores sin
+   reservar ni liberar. Ambos operadores devuelven referencia al destino.
+3. Si falla controladamente la reserva para copiar, `std::bad_alloc`
+   llega al llamador y tanto el origen como el destino conservan
+   sus arrays, cantidades y valores anteriores. No se agota la memoria.
+4. Mover entre objetos distintos transfiere **el mismo array** sin
+   reservar ni copiar sus elementos, libera el destino anterior,
+   y deja vacío al origen con cantidad cero; esto también vale
+   cuando el origen ya está vacío.
+5. Automover un objeto, vacío u ocupado, conserva su estado; después
+   de mover, el origen puede reutilizarse. Las pruebas cubren ceros,
+   valores iguales, cantidades distintas, destrucción normal y
+   limpieza al propagarse una excepción del llamador.
+
+Los controladores privados observan únicamente punteros vivos
+y no requieren liberar dos veces, acceder fuera del array ni usar
+referencias a objetos destruidos. Una salida simulada o una copia
+de valores que genere otro propietario durante el movimiento
+no acredita el objetivo.
+
+El resultado privado se vincula al código completo, a la fuente
+original autenticada, a los identificadores del contrato, al driver
+generado y a la solicitud/revisión de ejecución. Un logro anterior
+de `outputCheck` **no se promueve automáticamente**: sólo un
+resultado nuevo añade el sello `array-copy-move/v1`. Los recibos
+históricos, respuestas, borradores y demás cursos se conservan.
+
+Work debe integrar la declaración real en la lección al llegar a este
+objetivo, validar su transición y comprobar la app. Las sondas de
+Codex con metadatos temporales comprueban la capacidad del motor,
+pero no publican la nueva declaración en el currículo. Este contrato
+no acredita por sí solo las funciones externas de U6L12 ni las
+jerarquías posteriores.
+
+
+## Devolver una copia y recibir un propietario sin consumirlo al rechazar
+
+Para Programación 3, U6L12, una lección española `v2` puede añadir
+a su raíz `compilerArrayReturnTakeChecks`, sin reemplazar el bloque
+histórico de tipo `cpp_compiler`, su `initialCode`, la primera comprobación,
+las entradas opcionales, las respuestas o las direcciones del progreso.
+El propietario vigente es `block_0021_0002` y el ejercicio conserva
+la clase `Tramo` y el programa `main` original.
+
+La declaración general, que Work puede incorporar después de validar
+la transición, utiliza los nombres reales de las dos funciones globales:
+
+```json
+"compilerArrayReturnTakeChecks": [
+  {
+    "activity": "block_0021_0002",
+    "className": "Tramo",
+    "ownerMember": "datos_",
+    "countMember": "cantidad_",
+    "copyFunction": "copia_modificada",
+    "takeFunction": "tomar_si_cabe",
+    "sourceParameter": "origen",
+    "indexParameter": "indice",
+    "valueParameter": "valor",
+    "destinationParameter": "destino",
+    "offeredParameter": "origen",
+    "limitParameter": "limite",
+    "quantityMethod": "cantidad",
+    "accessMethod": "acceso",
+    "configureMethod": "configurar",
+    "readMethod": "leer",
+    "writeMethod": "escribir",
+    "clearMethod": "vaciar"
+  }
+]
+```
+
+El motor identifica en el fuente auténtico estas firmas:
+
+`Tramo copia_modificada(const Tramo& origen, int indice, int valor)`
+
+`bool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept`
+
+Los **dos cuerpos de las funciones** son editables y aceptan
+implementaciones equivalentes correctas. Todos los bytes ajenos a
+ellos se conservan, incluidas declaraciones, constructores,
+operadores miembro, consulta y modificación del array, `main`
+y salidas. El código no debe introducir macros, cerrar funciones
+anticipadamente ni modificar firmas. La prueba privada nace del
+código realmente entregado, con el archivo proporcionado intacto.
+
+`copia_modificada` recibe índice y valor ya comprobados por el llamador.
+Debe devolver otro `Tramo` de igual cantidad, con el dato del índice
+sustituido y los demás datos conservados. El origen y su propietario
+no cambian. Incluso si el dato nuevo coincide con el anterior, la
+copia administra otro array independiente. Cuando falla
+controladamente la reserva, deja propagarse `std::bad_alloc`:
+no consume el origen ni modifica el destino de una asignación
+posterior. La comprobación cubre la asignación de esa copia sobre
+el propio origen y el fallo con ambos nombres referidos al mismo objeto.
+No se exige un número fijo de movimientos o constructores,
+que puede depender de la elisión permitida por C++.
+
+`tomar_si_cabe` revisa `limite` **antes** de transferir.
+Rechaza números fuera de cero a cuatro y cualquier límite menor
+que la cantidad del origen, sin reservar, liberar ni cambiar el
+origen o destino. La expresión `std::move(origen)` del llamador
+no consume por sí sola ese objeto. Si se acepta, transfiere
+el mismo array con sus valores y cantidad, sin copiar elementos
+ni solicitar otra reserva; el destino anterior se libera
+y el origen queda vacío con cantidad cero. Un origen vacío aceptado
+vacía también el destino. Si ambos nombres corresponden al mismo
+objeto y se admite la operación, este conserva su identidad y
+contenido conforme al contrato de `Tramo`.
+
+Una sola pulsación del caso visible obligatorio puede reunir
+la salida esperada y las sondas C++ privadas. Éstas comprueban
+identidad de arrays vivos, caso de valor cero, valores iguales,
+preservación ante rechazo, fallo de reserva sin agotar memoria,
+reutilización de objetos movidos y limpieza normal y excepcional.
+No requieren más entradas del estudiante ni permiten dobles liberaciones
+o accesos fuera de los límites para obtener evidencia.
+
+La evidencia privada queda vinculada al programa completo,
+a la procedencia curricular, al controlador generado y
+a la solicitud y revisión concretas. El recibo
+`array-return-take/v1` se incorpora sólo tras una ejecución
+nueva y correcta. Los aciertos antiguos de `outputCheck`
+no se promueven automáticamente. Se conservan borradores
+y recibos históricos sin reescribirlos.
+
+Work integra la declaración en el JSON auténtico cuando corresponda,
+comprueba sus variantes de referencia y su presentación en la app.
+La QA nativa de Codex con la declaración temporal no publica
+por sí sola nuevos objetivos dentro de las lecciones.
+Esta capacidad no acredita por sí sola las jerarquías posteriores.
+
+
+## Destrucción polimórfica y propiedad de objetos derivados
+
+Programación 3, U8L5, dispone de un comprobador de propiedad
+`compilerPolymorphicDestructionChecks` de carácter general. Work puede
+añadir a la raíz de una lección española `stateLayout` v2 la siguiente
+declaración sin sustituir el editor C++, su programa inicial, sus cinco
+entradas de `outputCheck`, las soluciones originales ni los IDs:
+
+```json
+"compilerPolymorphicDestructionChecks": [
+  {
+    "activity": "block_0020_0002",
+    "baseClass": "Medida",
+    "derivedClass": "MedidaIdentificada",
+    "cycleClass": "Ciclo",
+    "ownedClass": "Ficha",
+    "ownedMember": "ficha_",
+    "factoryFunction": "crear_medida",
+    "writeMethod": "escribir",
+    "numberParameter": "numero",
+    "codeParameter": "codigo",
+    "cycleParameter": "ciclo",
+    "baseAlive": "bases_vivas",
+    "derivedAlive": "derivadas_vivas",
+    "ownedAlive": "fichas_vivas",
+    "baseDestroyed": "bases_destruidas",
+    "derivedDestroyed": "derivadas_destruidas",
+    "ownedDestroyed": "fichas_destruidas"
+  }
+]
+```
+
+La declaración localiza las tres definiciones originales completas,
+que deben permanecer en ese orden:
+
+```cpp
+Medida::~Medida() noexcept
+MedidaIdentificada::~MedidaIdentificada() noexcept
+std::unique_ptr<Medida> crear_medida(int numero, int codigo, Ciclo& ciclo)
+```
+
+Sólo se pueden modificar los **cuerpos** de esas tres funciones,
+conservando byte a byte todo el resto: `struct Ciclo`, la clase base,
+su destructor virtual público, la clase derivada, su `unique_ptr<Ficha>`,
+constructores, miembros, interfaces, declaraciones, `main` y datos
+de salida. La firma, los nombres y las llamadas se identifican por la
+autoría explícita, no por la forma en que stdout mencione la operación.
+Se admiten implementaciones correctas equivalentes. Los cambios
+fuera de los tres cuerpos, las directivas nuevas, los cierres
+anticipados y los textos mal terminados quedan rechazados.
+
+La ejecución del primer caso visible puede acreditar la salida solicitada
+y lanzar una sonda C++ privada que usa **el código verdaderamente entregado**.
+Esta prueba verifica que la fábrica construye un objeto concreto derivado,
+que el propietario de base conserva su identidad tras moverse, que sus
+datos y el miembro `Ficha` son correctos y que la destrucción
+finaliza una vez la derivada, el miembro y la base. Comprueba también
+dos objetos vivos con contadores preexistentes, registros independientes,
+el vaciado explícito repetido y la limpieza automática tras una excepción.
+No ejecuta dobles propietarios ni lecturas posteriores a la destrucción.
+
+Si la salida coincide pero falla el comportamiento real, la app no concede
+el objetivo. La evidencia se sella con el programa completo, el origen,
+la declaración, el controlador privado, el identificador de solicitud y la
+revisión ejecutada. El recibo adicional se llama
+`polymorphic-destruction/v1`. Un acierto antiguo de
+`outputCheck` no se transforma automáticamente en prueba de
+destrucción. Se conservan los recibos históricos, los borradores,
+las respuestas y el progreso de otros cursos. Para avanzar, sólo el
+**primer caso declarado** es obligatorio; los cuatro restantes
+continúan disponibles como ensayos optativos.
+
+Codex prueba el contrato general sin modificar los JSON del currículo.
+Work puede incorporarlo cuando verifique que sus referencias y
+explicaciones corresponden a los campos de origen. La regresión
+independiente de escritorio y las pruebas de StateStore no sustituyen
+la revisión visual de la app durante el estudio.
+
+
+
+## Despacho virtual real durante construcción, uso y destrucción
+
+Programación 3, U8L6, dispone de un comprobador general de dos cuerpos,
+`compilerVirtualLifetimeDispatchChecks`. Work puede añadir a la raíz
+de una lección española con `stateLayout` v2 la declaración siguiente
+sin modificar sus cinco casos, archivos de origen ni identidades:
+
+```json
+"compilerVirtualLifetimeDispatchChecks": [
+  {
+    "activity": "block_0015_0002",
+    "baseClass": "Medida",
+    "derivedClass": "MedidaIdentificada",
+    "registerMethod": "registrar",
+    "writeMethod": "escribir",
+    "phaseParameter": "etapa",
+    "registerStream": "salida",
+    "writeStream": "salida"
+  }
+]
+```
+
+Los cuerpos de estas funciones son editables, pero sus firmas, las
+declaraciones y el resto del archivo original permanecen idénticos:
+
+```cpp
+void Medida::registrar(const char* etapa, std::ostream& salida) const
+void MedidaIdentificada::escribir(std::ostream& salida) const
+```
+
+La sonda privada se compila desde el código realmente entregado y verifica
+que las llamadas virtuales dependen del tipo y del estado del objeto durante
+construcción, uso y destrucción. Un objeto derivado que sigue vivo debe usar
+la implementación derivada incluso cuando se le entregue el rótulo
+`"ConstruirBase"` o `"DestruirBase"`. Una instancia
+solo de la clase base mantiene su implementación base al recibir
+`"ConstruirDerivada"`. Durante el constructor o destructor de la
+base, las llamadas virtuales siguen el comportamiento de esa fase de C++.
+
+La comprobación emplea flujos independientes y también comprueba la
+llamada calificada a la base, rótulos desconocidos o vacíos, códigos cero,
+números negativos y destrucción a través de un propietario de la base.
+Rechaza programas que deducen la función a invocar del texto del rótulo,
+que imitan las salidas o que escriben en un flujo distinto del recibido.
+Se aceptan cuerpos correctos equivalentes.
+
+Un único acierto del primer caso visible permite avanzar cuando pasa la
+sonda. Los otros cuatro casos se conservan como ensayos opcionales.
+El recibo adicional `virtual-lifetime/v1` se vincula al código,
+la declaración curricular, la solicitud y la revisión concretas.
+Los logros anteriores de stdout se conservan, pero no acreditan
+automáticamente el nuevo objetivo; tampoco se modifican borradores
+ni el progreso de otros cursos.
+
+La QA de Codex no edita el contenido de Work. Work incorporará esta
+declaración y comprobará su presentación cuando corresponda. Las
+sondas de C++ y las pruebas aisladas de conservación no sustituyen la
+validación integral nativa de la app Windows.
+
+## Preparar un objeto derivado y conservar el anterior ante una excepción
+
+Programación 3, U8L7, dispone de una prueba independiente de construcción
+segura. Work puede añadir a la raíz de la lección española de estado estable
+`v2` una declaración `compilerDerivedPreparationChecks` sin
+modificar el bloque C++ original, sus cinco casos ni sus direcciones históricas:
+
+```json
+"compilerDerivedPreparationChecks": [
+  {
+    "activity": "block_0016_0002",
+    "baseClass": "Medida",
+    "derivedClass": "MedidaIdentificada",
+    "balanceClass": "Balance",
+    "resourceClass": "Recurso",
+    "replacementFunction": "sustituir",
+    "destinationParameter": "destino",
+    "numberParameter": "numero",
+    "codeParameter": "codigo",
+    "modeParameter": "modo",
+    "balanceParameter": "balance",
+    "printMethod": "escribir",
+    "resourceAlive": "recursos_vivos",
+    "baseCompleted": "bases_completadas",
+    "derivedCompleted": "derivadas_completadas",
+    "resourceCompleted": "recursos_completados",
+    "baseDestroyed": "bases_destruidas",
+    "derivedDestroyed": "derivadas_destruidas",
+    "resourceDestroyed": "recursos_destruidos"
+  }
+]
+```
+
+El único cuerpo editable es el de:
+
+```cpp
+void sustituir(std::unique_ptr<Medida>& destino,
+               int numero, int codigo, int modo, Balance& balance)
+```
+
+Se conserva byte por byte el resto del archivo original: las clases
+`Recurso`, `Medida` y `MedidaIdentificada`,
+sus políticas de propiedad, constructores, destructores, contadores
+`Balance`, `main`, entradas, salidas y contratos. El
+comprobador rechaza cambios fuera de ese cuerpo, escapes de llaves
+o nuevas directivas. No se impone una única implementación: preparar
+un propietario local y después moverlo o intercambiarlo, o completar
+la construcción del lado derecho antes de asignar, son alternativas
+correctas bajo el contrato publicado.
+
+Una sonda C++ privada compilada desde la fuente entregada comprueba
+que un fallo de construcción en el cuerpo base, en el miembro derivado
+o en el cuerpo derivado deja intacto **el mismo propietario de destino**
+y sus valores. La excepción controlada debe propagarse. Los recursos
+del intento incompleto terminan por las reglas RAII de C++, sin ejecutar
+el destructor de una clase cuya construcción no llegó a completarse.
+Los contadores registran las operaciones reales y no tienen que
+retroceder al estado previo para que la propiedad del destino se conserve.
+
+La sonda prueba destinos inicialmente ocupados y vacíos, aceptación
+con datos cero y negativos, nueva identidad cuando los valores se repiten,
+destrucción única del destino reemplazado, registros de recursos
+independientes y limpieza al salir mediante otra excepción. No utiliza
+punteros después de destruir su objeto ni dobles propietarios para
+provocar una evidencia.
+
+La salida visible correcta por sí sola no acredita el nuevo objetivo.
+La primera entrada `outputCheck` es la única obligatoria
+para avanzar; las otras cuatro permanecen opcionales. El recibo
+`derived-preparation/v1` se incorpora únicamente después de
+una sonda nueva, correcta y vinculada a la fuente original, la declaración
+editorial, el controlador privado, la solicitud y la revisión concreta.
+Los recibos antiguos se conservan sin atribuirles automáticamente la
+acreditación adicional. También permanecen intactos borradores,
+respuestas, estado de lectura y progreso de otros cursos.
+
+Codex proporciona el mecanismo técnico sin modificar los JSON de Work.
+La prueba independiente de C++ y la conservación de StateStore no
+constituyen, por sí mismas, una aceptación de la app nativa completa
+en el Windows del usuario.
+
+## Dos interfaces independientes sobre un único objeto vivo
+
+Programación 3, **U10L1**, dispone de la declaración opcional
+`compilerDualInterfaceChecks` para una lección española
+`stateLayout` v2. Work la incorpora en la raíz de
+`lesson_reunir_dos_bases_independientes_en_un_objeto.json`,
+sin cambiar el código inicial, los tres casos, las respuestas ni el
+propietario estable del editor. Ejemplo exacto de autoría:
+
+```json
+"compilerDualInterfaceChecks": [
+  {
+    "activity": "block_0007_0011",
+    "valueInterface": "ConValor",
+    "reportInterface": "ConInforme",
+    "concreteClass": "Muestra",
+    "valueMethod": "valor",
+    "writeMethod": "escribir",
+    "changeMethod": "cambiar",
+    "streamParameter": "salida",
+    "changeParameter": "nuevo",
+    "codeMember": "codigo_",
+    "valueMember": "valor_",
+    "constructorCodeParameter": "codigo",
+    "constructorValueParameter": "valor",
+    "reportSeparator": "="
+  }
+]
+```
+
+El objetivo autoriza editar **solo dos cuerpos** del código C++
+publicado: `Muestra::valor() const` y
+`Muestra::escribir(std::ostream&) const`. Ambas
+interfaces abstractas, sus destructores virtuales, la herencia pública
+múltiple, las firmas, los campos, la construcción, `cambiar`,
+`mostrar` y `main` permanecen exactamente
+iguales. El motor contrasta los intervalos protegidos byte a byte,
+rechaza directivas y no depende de que el estudiante copie literalmente
+un único cuerpo de referencia.
+
+La sonda semántica se compila a partir del **programa editado realmente
+entregado**, más un controlador interno independiente del comprobador
+visible de salida. Construye objetos con códigos y valores cero,
+negativos, extremos y repetidos. Consulta dos referencias, una
+`ConValor` y otra `ConInforme`, y
+comprueba que ambas corresponden al **mismo objeto vivo**. Después de
+`cambiar`, la primera debe devolver el valor actualizado
+y la segunda escribir `código=valor` en **cada uno de
+dos flujos independientes**. También se prueba escribir dos veces
+seguidas sin modificar el objeto: no se admiten valores constantes,
+informes desactualizados ni escribir siempre en `std::cout`
+para imitar el primer resultado.
+
+La primera ejecución visible correcta sigue siendo la **única
+obligatoria**. Su entrada publicada es `7 3 -2`; las
+otras dos entradas, `0 0 0` y `-4 -8 5`,
+continúan como pruebas opcionales. La comprobación semántica privada
+no exige repetir esas entradas manualmente. La evidencia nueva usa
+el recibo `dual-interface/v1`, vinculado a fuente,
+declaración, solicitud, revisión y resultado de la sonda. Un logro
+histórico por `stdout` no recibe ese sello
+automáticamente. El estado de otros cursos, los intentos y los
+borradores no se convierten ni se borran.
+
+Para comprobar la semántica y la autoría por separado desde la raíz
+de `Codex`:
+
+```text
+python -B scripts/curriculum/test_cpp_dual_interface.py --compiler cl --windows
+python -B -m unittest discover -s scripts/curriculum -p test_cpp_dual_interface_authoring.py -v
+```
+
+El workflow `.github/workflows/codex-dual-interface.yml`
+compila el núcleo semántico con GCC, Clang y MSVC desechables.
+`native.dual_interface_state_live` comprueba además
+el lector completo y ligero, los tres casos originales y la
+persistencia de recibos válidos, ausentes y adulterados en StateStore
+aislado. Las comprobaciones de núcleo y StateStore no sustituyen la
+ejecución visual de la app ni la aceptación en el Windows personal
+del estudiante. Un ejecutor Windows alojado utiliza su propio
+toolchain; solo acredita el alcance y la versión que realmente ejecuta.
+
+## Clonar sin perder la clase concreta ni duplicar propietarios
+
+Para Programación 3, **U8L10**, la raíz de una lección española con
+`stateLayout` v2 admite el contrato de autoría optativo
+`compilerPolymorphicCloneChecks`, sobre un editor ya publicado.
+Ejemplo de la lección «Copiar objetos sin perder su clase concreta»:
+
+```json
+"compilerPolymorphicCloneChecks": [
+  {
+    "activity": "block_0015_0002",
+    "baseClass": "Muestra",
+    "simpleClass": "MuestraSimple",
+    "identifiedClass": "MuestraIdentificada",
+    "vectorAlias": "Muestras",
+    "cloneMethod": "clonar",
+    "duplicateFunction": "duplicar",
+    "numberMethod": "numero",
+    "changeMethod": "cambiar_numero",
+    "writeMethod": "escribir",
+    "codeMethod": "codigo",
+    "sourceParameter": "origen",
+    "streamParameter": "salida"
+  }
+]
+```
+
+Work mantiene íntegros el `initialCode`, las cinco entradas con sus
+salidas, las explicaciones, los identificadores, la clase base abstracta,
+las clases concretas, los métodos y miembros facilitados, el generador,
+el alias de vector, `informar` y `main`. Sólo son
+editables los cuerpos que ya existen de
+`MuestraSimple::clonar()`, `MuestraIdentificada::clonar()`
+y `duplicar(const Muestras&)`. Los intervalos de código no
+editables se comparan byte a byte; no se admiten directivas ni cambios
+de declaraciones para fabricar el resultado.
+
+La prueba adicional compila el código realmente entregado con un
+controlador privado que nunca reemplaza la clase abstracta ni la
+implementación del estudiante. Cada clon concreto debe ser **otro
+objeto vivo**, de su misma clase y con todos los datos conservados.
+Se prueban cero, negativos, extremos, números y códigos repetidos.
+Modificar el original no cambia el clon y modificar el clon no cambia
+el original. Al destruir los originales, las copias deben seguir
+funcionando.
+
+La función `duplicar` conserva cantidad, orden, identidad de
+cada origen y tipo concreto de cada copia, también para una tercera
+clase derivada conforme, no contemplada por las dos clases del ejemplo.
+Se verifica que invoque la clonación virtual, no una fabricación manual
+que únicamente reproduzca los textos conocidos. En un fallo
+controlado de `clonar()` tras haber creado dos copias,
+el error debe propagarse sin modificar la colección origen ni
+sustituir el destino; las copias parciales terminan mediante RAII.
+El controlador no agota memoria ni utiliza préstamos a objetos
+destruidos. Un resultado de salida idéntico no acredita por sí solo
+estas propiedades.
+
+La primera entrada correcta del editor sigue siendo el **único
+caso visible obligatorio**. Los otros cuatro son ensayos opcionales.
+El recibo independiente `polymorphic-clone/v1` está ligado a
+la fuente, la revisión, la declaración y la ejecución privada.
+Un logro histórico de `stdout` no adquiere el recibo
+automáticamente; se conservan los borradores, intentos, referencias,
+pausas y estados de otros cursos.
+
+Comprobaciones portátiles y de autoría desde la raíz de `Codex`:
+
+```text
+python -B scripts/curriculum/test_cpp_polymorphic_clone.py --compiler cl --windows
+python -B -m unittest discover -s scripts/curriculum -p test_cpp_polymorphic_clone_authoring.py -v
+```
+
+El workflow `.github/workflows/codex-polymorphic-clone.yml`
+contrasta la fuente y los escenarios de clonación con GCC, Clang
+y MSVC sobre ejecutores desechables. La prueba Win32
+`native.polymorphic_clone_state_live` comprueba el
+cargador completo y de progreso, el recibo independiente, los
+casos históricos y el rechazo de recibos alterados en un perfil QA
+aislado. Una ejecución portátil aprobada no sustituye la
+compilación integral del lector ni la evaluación visual y auditiva
+en el Windows del estudiante.
+
+## Colecciones con propiedad única e informes por interfaz virtual
+
+Programación 3, **U8L9**, admite el campo raíz
+`compilerInterfaceCollectionChecks` en una lección española con
+`stateLayout` v2. El contrato se declara sobre un editor ya publicado;
+Work no cambia su `initialCode`, sus cinco casos, los identificadores
+ni las respuestas originales. Ejemplo correspondiente a la lección actual:
+
+```json
+"compilerInterfaceCollectionChecks": [
+  {
+    "activity": "block_0015_0002",
+    "baseClass": "Muestra",
+    "simpleClass": "MuestraSimple",
+    "identifiedClass": "MuestraIdentificada",
+    "vectorAlias": "Muestras",
+    "addFunction": "agregar",
+    "reportFunction": "informar",
+    "writeMethod": "escribir",
+    "numberMethod": "numero",
+    "destinationParameter": "destino",
+    "sourceParameter": "fuente",
+    "dataParameter": "datos",
+    "streamParameter": "salida",
+    "countLabel": "Cantidad:",
+    "indexSeparator": ":",
+    "numberLabel": "Numero:",
+    "codeLabel": ";Codigo:"
+  }
+]
+```
+
+La lista de propietarios es `std::vector<std::unique_ptr<Muestra>>` y
+el verificador conserva todas las declaraciones, constructores, consultas,
+clases, fábrica, alias, y `main`. Únicamente admite cambiar los
+cuerpos ya existentes de `agregar(Muestras&, std::unique_ptr<Muestra>&)`
+e `informar(const Muestras&, std::ostream&)`. La protección compara
+los segmentos no editables byte a byte y rechaza intentos de introducir
+directivas, funciones ajenas o modificaciones de la interfaz. Las dos
+implementaciones pueden ser semánticamente equivalentes sin reproducir
+literalmente una solución modelo.
+
+La sonda privada compila el programa auténtico con un controlador
+independiente. Verifica el rechazo de una fuente vacía sin cambiar la
+colección, el traslado del **mismo objeto** a su posición final, el
+vaciamiento del propietario fuente, el orden y la identidad de todo el
+prefijo después de múltiples inserciones y crecimiento, y la escritura
+en dos flujos independientes. Incluye ceros, números negativos, extremos
+y repetidos. Otra clase derivada válida, ausente de los ejemplos del
+estudiante, comprueba que `informar` invoque realmente el
+método virtual en lugar de reconocer únicamente los dos tipos
+conocidos. Comprueba la liberación del objeto adicional al vaciar el
+vector sin observar punteros liberados. Coincidir con la salida de
+`main` sin estas garantías no acredita el objetivo.
+
+Solo la primera entrada del editor publicada es obligatoria para avanzar;
+los otros cuatro casos siguen como pruebas opcionales. La evidencia
+adicional produce el recibo `interface-collection/v1` ligado al
+programa, a la revisión, a la fuente protegida y al controlador privado.
+Una acreditación histórica de salida **no obtiene** ese recibo
+automáticamente. Se conservan respuestas, intentos, borradores y el
+progreso de los demás cursos.
+
+Comprobaciones de alcance separado:
+
+```text
+python -B scripts/curriculum/test_cpp_interface_collection.py --compiler cl --windows
+python -B -m unittest discover -s scripts/curriculum -p test_cpp_interface_collection_authoring.py -v
+```
+
+El flujo `.github/workflows/codex-interface-collection.yml` comprueba
+la sonda portátil en GCC, Clang y MSVC con programas de prueba
+desechables. La prueba nativa
+`native.interface_collection_state_live` de StateStore verifica la
+importación completa y ligera, conserva los cinco casos y las identidades,
+rechaza recibos falsificados y permite añadir solo una nueva acreditación
+tras el primer caso correcto. Una prueba de núcleo, una compilación del
+módulo o un ejecutor hospedado no sustituyen la ejecución y la
+inspección visual de la app en el PC Windows del estudiante. Work
+incorpora la declaración cuando corresponda, conserva el currículo
+y acredita sus propias variantes educativas.
+
+## Interfaces abstractas, fábrica de propietarios y consumo virtual
+
+Programación 3, U8L8, puede declarar en la raíz de una lección española
+`stateLayout` v2 el contrato general
+`compilerAbstractInterfaceChecks`. Work mantiene los cinco casos
+del editor publicado, su código inicial, sus respuestas, identidades y
+direcciones de progreso.
+
+```json
+"compilerAbstractInterfaceChecks": [
+  {
+    "activity": "block_0017_0002",
+    "baseClass": "Muestra",
+    "simpleClass": "MuestraSimple",
+    "identifiedClass": "MuestraIdentificada",
+    "createFunction": "crear",
+    "presentFunction": "presentar",
+    "numberMethod": "numero",
+    "codeMethod": "codigo",
+    "writeMethod": "escribir",
+    "streamParameter": "salida",
+    "typeParameter": "tipo",
+    "numberParameter": "numero",
+    "codeParameter": "codigo",
+    "objectParameter": "dato"
+  }
+]
+```
+
+Los cuatro cuerpos originales que puede editar el estudiante son la
+implementación de `MuestraSimple::escribir`, la implementación de
+`MuestraIdentificada::escribir`, la función
+`crear(int, int, int)` y
+`presentar(const Muestra&, std::ostream&)`. Las dos operaciones
+`escribir` tienen la misma firma textual, de modo que la
+autenticación las identifica por la clase concreta que contiene cada
+implementación. No confunde un método con el otro ni permite cambiar la
+declaración abstracta, los operadores virtuales puros, el destructor
+virtual público, constructores, campos, getters, herencia o `main`.
+Los cuatro cuerpos pueden adoptar implementaciones semánticamente
+equivalentes; la protección conserva byte por byte todo el resto.
+
+La ejecución independiente compila el programa verdaderamente entregado
+junto con una sonda que comprueba las dos clases concretas y una tercera
+implementación legítima de `Muestra`. Se verifican la selección
+de tipo de la fábrica según el parámetro recibido, la propiedad única,
+el número y el código, datos cero, negativos y extremos, informes en
+flujos diferentes, y el uso de las operaciones virtuales
+`numero()` y `escribir(...)` por parte de
+`presentar`. La tercera clase no debe requerir un reconocimiento
+por rótulos o una reconstrucción manual de los casos conocidos.
+Una salida de consola copiada no acredita la estructura ni la
+transferencia del mismo objeto.
+
+La primera entrada correcta del editor es la **única comprobación
+visible obligatoria**; las cuatro entradas restantes siguen disponibles
+como ensayos opcionales. Para el nuevo objetivo semántico también deben
+aprobarse las sondas internas en esa misma comprobación, sin requerir más
+entradas del estudiante. El recibo adicional
+`abstract-interface/v1` queda vinculado a la fuente original,
+declaración de autoría, programa completo, controlador privado,
+solicitud y revisión ejecutadas. Un logro antiguo de stdout no recibe
+automáticamente el nuevo sello. Se conservan intentos, borradores,
+respuestas, referencias, lecturas y progreso de otros cursos.
+
+Codex no modifica los JSON curriculares; Work incorpora y verifica la
+declaración cuando corresponda. Las sondas C++ aisladas y la QA de
+conservación no acreditan por sí solas la compilación integral de la app
+con la versión exacta de MSVC del proyecto ni su inspección visual.
+
 ## Baterías abiertas de una función booleana con dos enteros
 
 Windows admite la variante `boolean-pair-v1` dentro de la lista raíz
