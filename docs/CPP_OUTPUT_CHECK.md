@@ -659,6 +659,76 @@ La prueba independiente de C++ y la conservación de StateStore no
 constituyen, por sí mismas, una aceptación de la app nativa completa
 en el Windows del usuario.
 
+## Interfaces abstractas, fábrica de propietarios y consumo virtual
+
+Programación 3, U8L8, puede declarar en la raíz de una lección española
+`stateLayout` v2 el contrato general
+`compilerAbstractInterfaceChecks`. Work mantiene los cinco casos
+del editor publicado, su código inicial, sus respuestas, identidades y
+direcciones de progreso.
+
+```json
+"compilerAbstractInterfaceChecks": [
+  {
+    "activity": "block_0017_0002",
+    "baseClass": "Muestra",
+    "simpleClass": "MuestraSimple",
+    "identifiedClass": "MuestraIdentificada",
+    "createFunction": "crear",
+    "presentFunction": "presentar",
+    "numberMethod": "numero",
+    "codeMethod": "codigo",
+    "writeMethod": "escribir",
+    "streamParameter": "salida",
+    "typeParameter": "tipo",
+    "numberParameter": "numero",
+    "codeParameter": "codigo",
+    "objectParameter": "dato"
+  }
+]
+```
+
+Los cuatro cuerpos originales que puede editar el estudiante son la
+implementación de `MuestraSimple::escribir`, la implementación de
+`MuestraIdentificada::escribir`, la función
+`crear(int, int, int)` y
+`presentar(const Muestra&, std::ostream&)`. Las dos operaciones
+`escribir` tienen la misma firma textual, de modo que la
+autenticación las identifica por la clase concreta que contiene cada
+implementación. No confunde un método con el otro ni permite cambiar la
+declaración abstracta, los operadores virtuales puros, el destructor
+virtual público, constructores, campos, getters, herencia o `main`.
+Los cuatro cuerpos pueden adoptar implementaciones semánticamente
+equivalentes; la protección conserva byte por byte todo el resto.
+
+La ejecución independiente compila el programa verdaderamente entregado
+junto con una sonda que comprueba las dos clases concretas y una tercera
+implementación legítima de `Muestra`. Se verifican la selección
+de tipo de la fábrica según el parámetro recibido, la propiedad única,
+el número y el código, datos cero, negativos y extremos, informes en
+flujos diferentes, y el uso de las operaciones virtuales
+`numero()` y `escribir(...)` por parte de
+`presentar`. La tercera clase no debe requerir un reconocimiento
+por rótulos o una reconstrucción manual de los casos conocidos.
+Una salida de consola copiada no acredita la estructura ni la
+transferencia del mismo objeto.
+
+La primera entrada correcta del editor es la **única comprobación
+visible obligatoria**; las cuatro entradas restantes siguen disponibles
+como ensayos opcionales. Para el nuevo objetivo semántico también deben
+aprobarse las sondas internas en esa misma comprobación, sin requerir más
+entradas del estudiante. El recibo adicional
+`abstract-interface/v1` queda vinculado a la fuente original,
+declaración de autoría, programa completo, controlador privado,
+solicitud y revisión ejecutadas. Un logro antiguo de stdout no recibe
+automáticamente el nuevo sello. Se conservan intentos, borradores,
+respuestas, referencias, lecturas y progreso de otros cursos.
+
+Codex no modifica los JSON curriculares; Work incorpora y verifica la
+declaración cuando corresponda. Las sondas C++ aisladas y la QA de
+conservación no acreditan por sí solas la compilación integral de la app
+con la versión exacta de MSVC del proyecto ni su inspección visual.
+
 ## Baterías abiertas de una función booleana con dos enteros
 
 Windows admite la variante `boolean-pair-v1` dentro de la lista raíz
