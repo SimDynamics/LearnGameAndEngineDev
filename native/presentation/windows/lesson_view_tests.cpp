@@ -3697,6 +3697,17 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
             if(f.lesson.pages[p].blocks[b].type==BlockType::cpp_compiler)compilers.push_back({p,b});
         require(compilers.size()==(new_edition?3u:2u),
             "Integrated U1 lost a useful historical compiler or its new intermediate-line editor");
+        const bool authentic_matching=std::string_view(filename)==
+            "lesson_fuente_compilacion_y_diagnostico.json";
+        if(authentic_matching){
+            // A restored math answer is not trusted merely because its saved
+            // "correct" bit is set. The real page gate stays closed until the
+            // source-bound matching oracle has verified the archived response.
+            wait_for(f.host,[&]{
+                const auto state=lesson_page_state(f.view);
+                return state.index==compilers.front().page&&state.can_previous;
+            },"The original U1L4 matching result was not independently restored",20000);
+        }
         std::set<std::string> owners;
         for(const auto position:compilers){
             const auto& compiler=f.lesson.pages[position.page].blocks[position.block];
@@ -3769,7 +3780,14 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
                         f.lesson.pages[other.page].blocks[other.block]),
                         "Correcting the intermediate line automatically accredited a different U1L5 editor");
             }
-            ++completed;f.reopen();require(f.text(position.block,10)==solution&&f.text(position.block,4).starts_with("✓ Correcto"),
+            ++completed;f.reopen();
+            if(authentic_matching) {
+                wait_for(f.host,[&]{
+                    const auto state=lesson_page_state(f.view);
+                    return state.index==position.page&&state.can_previous;
+                },"Reopening U1L4 did not verify the existing mathematical responses",20000);
+            }
+            require(f.text(position.block,10)==solution&&f.text(position.block,4).starts_with("✓ Correcto"),
                 "Reopening an integrated useful objective lost its independent source or persistent success");
         }
         const auto first=compilers.front(),last=compilers.back();
