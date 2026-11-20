@@ -2306,6 +2306,7 @@ struct LessonView {
         request.array_owner_read_probe=block(index).array_owner_read_probe;
         request.array_copy_move_probe=block(index).array_copy_move_probe;
         request.array_return_take_probe=block(index).array_return_take_probe;
+        request.polymorphic_destruction_probe=block(index).polymorphic_destruction_probe;
         request.open_battery_probe=block(index).open_battery_probe;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
@@ -4304,7 +4305,9 @@ struct LessonView {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
                     block(index),running_program);
-                const bool independent=(!block(index).array_return_take_probe||
+                const bool independent=(!block(index).polymorphic_destruction_probe||
+                    fresh.polymorphic_destruction_probe_correct)&&
+                    (!block(index).array_return_take_probe||
                     fresh.array_return_take_probe_correct)&&
                     (!block(index).array_copy_move_probe||
                     fresh.array_copy_move_probe_correct)&&
@@ -4367,6 +4370,12 @@ struct LessonView {
                         "La salida coincide, pero falta acreditar que el constructor y la asignación por movimiento conservan el mismo objeto, no reservan otro entero y mantienen prohibida la copia.",
                         "The output matches, but the independent proof has not verified that the move constructor and assignment preserve the same object, make no new integer allocation and keep copying forbidden.",
                         "La sortie correspond, mais la preuve indépendante doit encore vérifier l'identité de l'objet déplacé, l'absence d'allocation et l'interdiction de la copie.");
+                if(!fresh.polymorphic_destruction_probe_correct&&
+                   block(index).polymorphic_destruction_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero aún no se acreditó que crear_medida entregue una MedidaIdentificada completa, con su Ficha propia, ni que la destrucción por el propietario base libere una sola vez las tres partes. Revisa únicamente los dos destructores y la fábrica.",
+                        "The output matches, but independent verification has not proved concrete derived construction or complete single cleanup through the base owner. Review the two destructors and factory.",
+                        "La sortie correspond, mais la vérification indépendante ne confirme pas la construction de la classe dérivée et sa destruction complète par le propriétaire de base.");
                 if(!fresh.array_return_take_probe_correct&&
                    block(index).array_return_take_probe&&preserved_source)
                     text+='\n'+ui(
@@ -4426,7 +4435,8 @@ struct LessonView {
                    !block(index).move_assignment_invariant_probe&&
                    !block(index).array_owner_read_probe&&
                    !block(index).array_copy_move_probe&&
-                   !block(index).array_return_take_probe)
+                   !block(index).array_return_take_probe&&
+                   !block(index).polymorphic_destruction_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
