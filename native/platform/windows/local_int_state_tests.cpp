@@ -32,13 +32,21 @@ const Block& owner(const Lesson& lesson) {
     return lesson.pages.at(position->page).blocks.at(position->block);
 }
 void rejects_raw(std::string_view serialized) {
+    // Every malformed-document variant must fail on BOTH native load paths.
+    // Number the invocations so a Windows CI failure identifies precisely
+    // which adversarial input and loader path still accept a duplicate key.
+    static unsigned scenario=0;
+    const auto case_number=++scenario;
     for(const bool metadata:{false,true}) {
         bool failed=false;
         try {
             if(metadata)(void)parse_lesson_progress_metadata(serialized,"es");
             else (void)parse_lesson_json(serialized,"es");
         }catch(const std::exception&) {failed=true;}
-        require(failed,"Invalid local-int authoring passed a native load path");
+        if(!failed)
+            throw std::runtime_error("Invalid local-int authoring scenario "+
+                std::to_string(case_number)+" passed "+
+                (metadata?"progress metadata":"full lesson")+" loader");
     }
 }
 void rejects(const JsonObject& root) {
