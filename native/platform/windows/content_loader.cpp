@@ -5407,6 +5407,53 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
 // Root-authored batteries are attached only after the original mapped blocks
 // are loaded. Boolean single-file contracts preserve their published function;
 // historical CMake contracts retain their exact original call verification.
+
+void read_compiler_indexed_unique_transfer_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerIndexedUniqueTransferChecks"))return;
+    const auto entries=array(root,"compilerIndexedUniqueTransferChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Ownership identity checks require mapped Spanish v2 owners");
+    std::set<std::string> owners;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","signature","className","firstMember",
+            "secondMember","transferMethod","putMethod","changeMethod",
+            "clearMethod"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&owners.insert(identity).second,
+            "Ownership identity check has a repeated or unknown owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity){
+                require(!owner,"Ownership identity check has duplicate mapped blocks");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&owner->output_check&&
+                !owner->output_check->cases.empty()&&!owner->compile_check&&
+                !owner->cmake&&owner->project_files.empty()&&
+                owner->source_files.empty()&&!owner->compiler_workflow_check&&
+                !owner->named_rule_source_check&&!owner->open_battery_probe&&
+                !owner->boolean_battery_probe&&!owner->reduction_probe&&
+                !owner->integer_battery_probe&&!owner->adjustment_project_probe&&
+                !owner->cmake_graph_check,
+            "Owner identity requires one original single-file output-check editor");
+        CppIndexedUniqueTransferProbe spec;
+        spec.member.original_source=owner->initial_code;
+        spec.member.signature=text(item,"signature");
+        spec.class_name=text(item,"className");
+        spec.first_member=text(item,"firstMember");
+        spec.second_member=text(item,"secondMember");
+        spec.transfer_method=text(item,"transferMethod");
+        spec.put_method=text(item,"putMethod");
+        spec.change_method=text(item,"changeMethod");
+        spec.clear_method=text(item,"clearMethod");
+        require(cpp_indexed_unique_transfer_probe_source(spec,owner->initial_code).has_value(),
+            "Owner identity declaration cannot bind its original C++ member source");
+        owner->indexed_unique_transfer_probe=std::move(spec);
+    }
+}
+
 void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerOpenBatteryChecks"))return;
     const auto entries=array(root,"compilerOpenBatteryChecks");
@@ -6183,6 +6230,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
+        read_compiler_indexed_unique_transfer_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
@@ -6309,6 +6357,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
+        read_compiler_indexed_unique_transfer_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);

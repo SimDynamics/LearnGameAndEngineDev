@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -4563,6 +4563,63 @@ def _validate_adjustment_project_record(document: dict, record: dict, block: dic
                     "Adjustment construction consumers must link the same library")
 
 
+
+def _validate_compiler_indexed_unique_transfer_checks(document: dict) -> None:
+    """Bind original C++ member bodies to new private ownership witnesses."""
+    field="compilerIndexedUniqueTransferChecks"
+    if field not in document:
+        return
+    meta=document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version")==2 and meta.get("locale")=="es",
+            "Ownership probes require an existing Spanish v2 lesson")
+    entries=document[field]
+    require(type(entries) is list and 0<len(entries)<=32,
+            "Ownership probes require 1..32 owners")
+    required={"activity","signature","className","firstMember","secondMember",
+              "transferMethod","putMethod","changeMethod","clearMethod"}
+    seen=set()
+    owners=_blocks(document)
+    for entry in entries:
+        require(type(entry) is dict and set(entry)==required,
+                "Ownership probe requires the exact nine-field declaration")
+        identity=_identity(entry["activity"])
+        require(identity not in seen,"Duplicate ownership probe owner")
+        seen.add(identity)
+        owner=owners.get(identity)
+        require(type(owner) is dict and owner.get("type")=="cpp_compiler"
+                and type(owner.get("outputCheck")) is dict
+                and type(owner["outputCheck"].get("cases")) is list
+                and bool(owner["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"} & set(owner)),
+                "Ownership probe must belong to an original single-file output editor")
+        for collection in ("compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                           "compilerReductionChecks","compilerCmakeGraphChecks",
+                           "compilerIntegerBatteryChecks"):
+            others=document.get(collection,[])
+            require(type(others) is list and not any(type(x) is dict and
+                x.get("activity")==identity for x in others),
+                "Ownership probe conflicts with an existing runtime objective")
+        source=owner.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Ownership probe requires exact original C++ source")
+        for key in required-{"activity","signature"}:
+            value=entry[key]
+            require(type(value) is str and len(value)<=96 and
+                    re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value) and
+                    not value.startswith("__") and
+                    not (value.startswith("_") and len(value)>1 and value[1].isupper()),
+                    "Unsafe identifier in unique-owner specification")
+        require(entry["firstMember"]!=entry["secondMember"],
+                "Source and destination members must be distinct")
+        signature=entry["signature"]
+        require(type(signature) is str and 0<len(signature)<=512 and
+                "::" in signature and "(" in signature and ")" in signature and
+                source.count(signature)==1 and
+                entry["className"]+"::"+entry["transferMethod"]+"(" in signature,
+                "Cannot locate a unique original member-body signature")
+        require(source.count("class "+entry["className"]+" {")==1,
+                "The original owner class is missing or ambiguous")
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
@@ -5353,6 +5410,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_workflow_checks(document)
     _validate_compiler_runtime_checks(document)
     _validate_compiler_named_rule_checks(document)
+    _validate_compiler_indexed_unique_transfer_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)

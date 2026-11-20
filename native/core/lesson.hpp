@@ -6,6 +6,7 @@
 #include "core/report_observation_check.hpp"
 #include "core/assertion_runtime_check.hpp"
 #include "core/named_rule_check.hpp"
+#include "core/cpp_indexed_unique_transfer_probe.hpp"
 #include "core/open_battery_check.hpp"
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
@@ -297,6 +298,8 @@ struct Block {
     // Lesson-root source prerequisite. It is checked before any case receipt
     // and keeps the original editor payload, answers and stable identity.
     std::optional<NamedRuleSourceCheck> named_rule_source_check;
+    // Only a fresh independent identity witness can accredit this root goal.
+    std::optional<CppIndexedUniqueTransferProbe> indexed_unique_transfer_probe;
     // The root declares this open CMake battery without changing its
     // previously published block or saved student draft identity.
     std::optional<OpenBatteryProbeSpec> open_battery_probe;
