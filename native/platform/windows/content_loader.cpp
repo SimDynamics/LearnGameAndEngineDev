@@ -5808,6 +5808,75 @@ void read_compiler_array_return_take_checks(const JsonObject& root,Lesson& lesso
     }
 }
 
+void read_compiler_polymorphic_destruction_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerPolymorphicDestructionChecks"))return;
+    const auto entries=array(root,"compilerPolymorphicDestructionChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Polymorphic destructor checks require a Spanish v2 compiler owner");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","baseClass","derivedClass","cycleClass",
+            "ownedClass","ownedMember","factoryFunction","writeMethod",
+            "numberParameter","codeParameter","cycleParameter",
+            "baseAlive","derivedAlive","ownedAlive",
+            "baseDestroyed","derivedDestroyed","ownedDestroyed"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Polymorphic destructor check has invalid or duplicate owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated original polymorphic destructor owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&!owner->polymorphic_destruction_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Polymorphic destruction must use an independent historical editor");
+        CppPolymorphicDestructionPolicy spec;
+        spec.editable.original_source=owner->initial_code;
+        spec.base_class=text(item,"baseClass");
+        spec.derived_class=text(item,"derivedClass");
+        spec.cycle_class=text(item,"cycleClass");
+        spec.owned_class=text(item,"ownedClass");
+        spec.owned_member=text(item,"ownedMember");
+        spec.factory_function=text(item,"factoryFunction");
+        spec.write_method=text(item,"writeMethod");
+        const auto number=text(item,"numberParameter");
+        const auto code=text(item,"codeParameter");
+        const auto cycle=text(item,"cycleParameter");
+        spec.base_alive=text(item,"baseAlive");
+        spec.derived_alive=text(item,"derivedAlive");
+        spec.owned_alive=text(item,"ownedAlive");
+        spec.base_destroyed=text(item,"baseDestroyed");
+        spec.derived_destroyed=text(item,"derivedDestroyed");
+        spec.owned_destroyed=text(item,"ownedDestroyed");
+        spec.editable.bodies={
+            {spec.base_class+"::~"+spec.base_class+"() noexcept",true},
+            {spec.derived_class+"::~"+spec.derived_class+"() noexcept",true},
+            {"std::unique_ptr<"+spec.base_class+"> "+spec.factory_function+
+                "(int "+number+", int "+code+", "+spec.cycle_class+"& "+cycle+")",false}
+        };
+        require(cpp_polymorphic_destruction_matches(
+                    spec,spec.editable.original_source),
+            "Polymorphic destructor declaration does not bind three original bodies");
+        owner->polymorphic_destruction_probe=std::move(spec);
+    }
+}
+
 void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerOpenBatteryChecks"))return;
     const auto entries=array(root,"compilerOpenBatteryChecks");
@@ -6591,6 +6660,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_array_owner_read_checks(root,lesson);
         read_compiler_array_copy_move_checks(root,lesson);
         read_compiler_array_return_take_checks(root,lesson);
+        read_compiler_polymorphic_destruction_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
@@ -6724,6 +6794,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_array_owner_read_checks(root,lesson);
         read_compiler_array_copy_move_checks(root,lesson);
         read_compiler_array_return_take_checks(root,lesson);
+        read_compiler_polymorphic_destruction_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
