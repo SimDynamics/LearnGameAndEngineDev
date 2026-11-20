@@ -509,6 +509,28 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(request.derived_preparation_probe!=block.derived_preparation_probe)
+        return false;
+    if(block.derived_preparation_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||
+           request.move_assignment_invariant_probe||request.array_owner_read_probe||
+           request.array_copy_move_probe||request.array_return_take_probe||
+           request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
+           request.open_battery_probe||request.boolean_battery_probe||
+           request.reduction_probe||request.integer_battery_probe||
+           request.adjustment_project_probe||request.rejection_probe||
+           request.observation_probe||request.assertion_mode||
+           request.cmake_graph_check||request.capture_cmake_graph||
+           !curriculum::cpp_derived_preparation_matches(
+               *block.derived_preparation_probe,request.source_utf8))
+            return false;
+    }
     if(request.virtual_lifetime_probe!=block.virtual_lifetime_probe)
         return false;
     if(block.virtual_lifetime_probe) {
@@ -1057,6 +1079,24 @@ std::string virtual_lifetime_completion_seal(
         data+=token(body.signature)+token(body.qualified?"qualified":"free");
     return state::sha256(data);
 }
+std::string derived_preparation_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppDerivedPreparationPolicy& spec) {
+    std::string data=std::string("compiler-derived-preparation-v1/")+
+        token(key)+token(program)+token(spec.editable.original_source)+
+        token(spec.base_class)+token(spec.derived_class)+
+        token(spec.balance_class)+token(spec.resource_class)+
+        token(spec.replacement_function)+token(spec.destination_parameter)+
+        token(spec.number_parameter)+token(spec.code_parameter)+
+        token(spec.mode_parameter)+token(spec.balance_parameter)+
+        token(spec.print_method)+token(spec.resource_alive)+
+        token(spec.base_complete)+token(spec.derived_complete)+
+        token(spec.resource_complete)+token(spec.base_destroyed)+
+        token(spec.derived_destroyed)+token(spec.resource_destroyed);
+    for(const auto& body:spec.editable.bodies)
+        data+=token(body.signature)+token(body.qualified?"qualified":"free");
+    return state::sha256(data);
+}
 std::string indexed_transfer_completion_seal(std::string_view key,
         std::string_view program,const curriculum::CppIndexedUniqueTransferProbe& spec) {
     return state::sha256(std::string("compiler-indexed-unique-owner-v1/")+
@@ -1107,6 +1147,10 @@ static bool stdout_or_diagnostic_completed(const state::StateData& data,const cu
        state::string_value(data,"native_windows",key+"virtual-lifetime/v1")!=
            virtual_lifetime_completion_seal(key,captured,
                *block.virtual_lifetime_probe))return false;
+    if(block.derived_preparation_probe&&
+       state::string_value(data,"native_windows",key+"derived-preparation/v1")!=
+           derived_preparation_completion_seal(key,captured,
+               *block.derived_preparation_probe))return false;
     if(captured.empty()||proofs.size()!=(block.compile_check?1:block.output_check->cases.size())||proofs.empty())return false;
     for(std::size_t index=0;index<proofs.size();++index)
         if(!proofs[index].empty()&&
@@ -1360,6 +1404,22 @@ void validate_compiler_puzzle_state(const state::StateData& data,const curriculu
                     "Invalid array copy/move receipt; original student state was preserved.");
         }
     }
+    if(block.derived_preparation_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"derived-preparation/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=derived_preparation_completion_seal(
+                   key,program,*block.derived_preparation_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid derived preparation receipt; history preserved.");
+        }
+    }
     if(block.virtual_lifetime_probe) {
         const auto key=base(lesson,block);
         if(const auto* stored=state::find(data,"native_windows",
@@ -1565,6 +1625,11 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
             execution.virtual_lifetime_request_fingerprint.empty()||
             execution.virtual_lifetime_request_fingerprint!=
                 cpp_virtual_lifetime_request_fingerprint(captured)))||
+       (block.derived_preparation_probe&&
+           (!execution.derived_preparation_probe_correct||
+            execution.derived_preparation_request_fingerprint.empty()||
+            execution.derived_preparation_request_fingerprint!=
+                cpp_derived_preparation_request_fingerprint(captured)))||
        (block.indexed_unique_transfer_probe&&
            (!execution.indexed_unique_transfer_probe_correct||
             execution.indexed_unique_transfer_request_fingerprint.empty()||
@@ -1605,7 +1670,8 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
         block.array_owner_read_probe||block.array_copy_move_probe||
         block.array_return_take_probe||
         block.polymorphic_destruction_probe||
-        block.virtual_lifetime_probe)&&
+        block.virtual_lifetime_probe||
+        block.derived_preparation_probe)&&
        !previously_completed&&stored_program==program&&
        valid_completion_seal(block,key,program,proofs,
            state::string_value(data,"native_windows",key+"completed"))) {
@@ -1647,6 +1713,10 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
             data.preferences["native_windows"][key+"virtual-lifetime/v1"]=
                 virtual_lifetime_completion_seal(key,program,
                     *block.virtual_lifetime_probe);
+        if(block.derived_preparation_probe)
+            data.preferences["native_windows"][key+"derived-preparation/v1"]=
+                derived_preparation_completion_seal(key,program,
+                    *block.derived_preparation_probe);
         clear_compiler_puzzle_review(data,lesson,block);
         return true;
     }
@@ -1723,6 +1793,10 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
             values[key+"virtual-lifetime/v1"]=
                 virtual_lifetime_completion_seal(key,program,
                     *block.virtual_lifetime_probe);
+        if(block.derived_preparation_probe)
+            values[key+"derived-preparation/v1"]=
+                derived_preparation_completion_seal(key,program,
+                    *block.derived_preparation_probe);
         values[key+"feedback"]=std::string(feedback);
         record_feedback_origin(data,key,block,evaluation.feedback_path,feedback,
             std::get<std::string>(values.at(key+"completed")));
