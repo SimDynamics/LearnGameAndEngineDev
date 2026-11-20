@@ -10,6 +10,7 @@
 #include "core/cpp_defaulted_move_policy_check.hpp"
 #include "core/cpp_independent_copy_assignment_check.hpp"
 #include "core/cpp_move_assignment_invariant_check.hpp"
+#include "core/cpp_array_owner_read_check.hpp"
 #include "core/open_battery_check.hpp"
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
@@ -309,6 +310,8 @@ struct Block {
     std::optional<CppIndependentCopyAssignmentPolicy> independent_copy_assignment_probe;
     // Authored, original-owner semantics for a move-assignment method body.
     std::optional<CppMoveAssignmentInvariantPolicy> move_assignment_invariant_probe;
+    // Original owner, two editable bodies, independent padded array probe.
+    std::optional<CppArrayOwnerReadPolicy> array_owner_read_probe;
     // The root declares this open CMake battery without changing its
     // previously published block or saved student draft identity.
     std::optional<OpenBatteryProbeSpec> open_battery_probe;
@@ -549,6 +552,8 @@ struct FreshExecution {
     std::string independent_copy_assignment_request_fingerprint;
     bool move_assignment_invariant_probe_correct = false;
     std::string move_assignment_invariant_request_fingerprint;
+    bool array_owner_read_probe_correct = false;
+    std::string array_owner_read_request_fingerprint;
     bool open_battery_probe_correct = false;
     bool cmake_graph_correct = false;
     bool assertion_abort_verified = false;
