@@ -89,7 +89,8 @@ add_executable(lgaed_compiler_guidance_portable_qa
     "${LGAED_ROOT}/native/platform/windows/virtual_lifetime_dispatch_state_tests.cpp"
     "${LGAED_ROOT}/native/platform/windows/derived_preparation_state_tests.cpp"
     "${LGAED_ROOT}/native/platform/windows/abstract_interface_state_tests.cpp"
-    "${LGAED_ROOT}/native/platform/windows/interface_collection_state_tests.cpp")
+    "${LGAED_ROOT}/native/platform/windows/interface_collection_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/polymorphic_clone_state_tests.cpp")
 target_link_libraries(lgaed_compiler_guidance_portable_qa PRIVATE
     lgaed_guidance_platform lgaed_guidance_qa_options)
 target_link_options(lgaed_compiler_guidance_portable_qa PRIVATE /OPT:REF)
@@ -130,6 +131,8 @@ add_test(NAME native.u8l8_abstract_interface_state
     COMMAND lgaed_compiler_guidance_portable_qa --abstract-interface-state-live)
 add_test(NAME native.u8l9_interface_collection_state
     COMMAND lgaed_compiler_guidance_portable_qa --interface-collection-state-live)
+add_test(NAME native.u8l10_polymorphic_clone_state
+    COMMAND lgaed_compiler_guidance_portable_qa --polymorphic-clone-state-live)
 set_tests_properties(native.compiler_guidance_state
     native.compiler_review_guidance_priority
     native.u12l24_authored_compiler_guides
@@ -147,4 +150,5 @@ set_tests_properties(native.compiler_guidance_state
     native.u8l6_virtual_lifetime_state
     native.u8l7_derived_preparation_state
     native.u8l8_abstract_interface_state
-    native.u8l9_interface_collection_state PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+    native.u8l9_interface_collection_state
+    native.u8l10_polymorphic_clone_state PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
