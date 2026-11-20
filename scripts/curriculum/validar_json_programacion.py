@@ -1908,6 +1908,12 @@ def _validate_cpp_fundamentals(base_commit):
                 require(item["title"] == lessons[item["id"]]["title"], path, "título no coincide con la lección")
 
     course = load(CONTENT / "course_cpp_fundamentals.json")
+    # Una edición nueva sólo puede activar unidades y lecciones de su propia
+    # generación. El control global de publicación protege el repositorio;
+    # esta comprobación impide que el validador individual acepte una mezcla
+    # cuando se usa de manera independiente durante la autoría de Work.
+    # La edición anterior permanece en archivos históricos inactivos.
+    _state_layout.course_edition.validate_active_course(course, units, lessons)
     require([u["number"] for u in course["units"]] == list(range(1, len(course["units"]) + 1)), "curso", "numeración de unidades discontinua")
     for item in course["units"]:
         require(item["id"] in units, "curso", "referencia a unidad inexistente")

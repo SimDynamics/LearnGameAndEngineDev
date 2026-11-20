@@ -127,6 +127,84 @@ class StructuralCourseFixtures(unittest.TestCase):
         self.assertIn("lección publicada sin índice en unidad activa", output)
         self.assertIn(f"{COURSE}__fixture__omitida", output)
 
+    def test_programming1_new_edition_is_active_without_reusing_old_owner(self):
+        # La publicación nueva se prepara en un árbol temporal. El curso
+        # histórico queda físicamente presente, pero fuera del índice activo.
+        self.select_course("cpp_fundamentals")
+        old_lesson = self.lesson_path
+        old_unit = self.unit_path
+        legacy_lesson = old_lesson.read_bytes()
+        legacy_unit = old_unit.read_bytes()
+        value = {"version": 1, "courseId": "cpp_fundamentals",
+                 "locale": "es", "id": "qa-first-edition", "generation": 1}
+        edition = layout.course_edition
+        self.unit_id = edition.unit_prefix(value) + "inicio"
+        self.lesson_id = self.unit_id + "__primera"
+        folder = self.content / "edition_es_1__inicio"
+        self.unit_path = folder / "unit_edition_es_1__inicio.json"
+        self.lesson_path = folder / "lesson_primera.json"
+        self.lesson = edition.prepare_edition_lesson({
+            "id": self.lesson_id, "title": "Fundamentos nuevos",
+            "pages": [
+                {"blocks": [{"type": "paragraph",
+                             "text": "Ahora la explicación tiene otra organización."}]},
+                {"blocks": [{"type": "multiple_choice", "id": "nuevo",
+                             "question": "Selecciona el nuevo resultado.",
+                             "options": ["Cuatro", "Siete"], "correctIndex": 1,
+                             "explanation": "El segundo resultado corresponde a la consigna."}]},
+            ],
+        }, value)
+        self.unit = {"courseId": "cpp_fundamentals", "unitId": self.unit_id,
+                     "title": "Nueva unidad", "courseEdition": deepcopy(value),
+                     "lessons": [{"id": self.lesson_id, "number": 1,
+                                  "title": self.lesson["title"]}]}
+        self.course = {"id": "cpp_fundamentals", "title": "Programación 1",
+                       "courseEdition": deepcopy(value),
+                       "units": [{"id": self.unit_id, "number": 1,
+                                  "title": "Nueva unidad"}]}
+        self.save()
+
+        output = self.run_course()
+        self.assertIn("Curso cpp_fundamentals: 2 lecciones, 2 unidades, 4 bloques", output)
+        self.assertEqual(old_lesson.read_bytes(), legacy_lesson)
+        self.assertEqual(old_unit.read_bytes(), legacy_unit)
+        self.assertEqual(self.lesson["stateLayout"]["origin"][1]["blocks"][0]["id"],
+                         "block_0001_0000")
+        self.assertNotEqual(self.lesson_id,
+                            "cpp_fundamentals__fixture__fixture")
+
+        # El validador normal debe rechazar mezclas sin depender de que la
+        # compuerta global (que ya tiene sus propias pruebas) se ejecute.
+        for kind in ("missing-unit-edition", "missing-lesson-edition",
+                     "mixed-generation", "retired-unit-reindexed",
+                     "retired-lesson-reindexed"):
+            with self.subTest(case=kind):
+                unit = deepcopy(self.unit)
+                lesson = deepcopy(self.lesson)
+                course = deepcopy(self.course)
+                if kind == "missing-unit-edition":
+                    unit.pop("courseEdition")
+                elif kind == "missing-lesson-edition":
+                    lesson.pop("courseEdition")
+                elif kind == "mixed-generation":
+                    unit["courseEdition"]["generation"] = 2
+                elif kind == "retired-unit-reindexed":
+                    course["units"][0]["id"] = "cpp_fundamentals__fixture"
+                else:
+                    unit["lessons"][0]["id"] = "cpp_fundamentals__fixture__fixture"
+                original = self.unit, self.lesson, self.course
+                try:
+                    self.unit, self.lesson, self.course = unit, lesson, course
+                    self.save()
+                    rejected = self.run_course(reject=True)
+                    self.assertIn("cpp_fundamentals", rejected)
+                    self.assertIn("contrato del curso inválido", rejected)
+                finally:
+                    self.unit, self.lesson, self.course = original
+                    self.save()
+        self.assertEqual(old_lesson.read_bytes(), legacy_lesson)
+        self.assertEqual(old_unit.read_bytes(), legacy_unit)
+
     def test_usual_programming1_cli_rejects_an_unindexed_active_lesson(self):
         course = "cpp_fundamentals"
         folder = self.cpp / "fixture"
