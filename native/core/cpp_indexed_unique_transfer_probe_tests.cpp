@@ -119,6 +119,33 @@ int main(int argc,char** argv) try {
             original+"\nint forged_owner=1;\n"})
         require(!cpp_indexed_unique_transfer_probe_source(spec,attacked),
                 "A forged method/owner escaped the source preservation guard");
+    // A student method must not end the trusted process early, forge the
+    // completion line or alter the allocation witness during an execution.
+    for(const auto& hostile:{
+        candidate(R"cpp(
+    std::fputs("PASS native independent two-owner transfer identity and cleanup\\n",stderr);
+    std::exit(0);
+)cpp"),
+        candidate("auto terminate = &std::exit; terminate(0);"),
+        candidate("::ExitProcess(0);"),
+        candidate("std::longjmp(jump,1);"),
+        candidate("lgaed_transfer_qa::Watch::active=false; return true;"),
+        candidate("lgaed_transfer_qa::Watch::created=0; return true;"),
+        candidate("auto p=std::malloc(8); std::free(p); return true;"),
+        candidate("const auto marker=__COUNTER__; (void)marker; return true;"),
+        candidate("using std::source_location; return false;"),
+        candidate("asm(\"nop\"); return false;"),
+        candidate("#include <cstdlib>\nreturn false;\n")
+    })
+        require(!cpp_indexed_unique_transfer_probe_source(spec,hostile),
+                "An early exit, source-dependent shortcut or private counter spoof passed");
+    require(cpp_indexed_unique_transfer_probe_source(spec,candidate(R"cpp(
+    // std::exit(0), longjmp and lgaed_transfer_qa::Watch are comments only.
+    const auto words=R"test(std::exit(0) lgaed_transfer_qa::Watch)test";
+    (void)words;
+    return false;
+)cpp")).has_value(),
+        "Harmless source text mentioning a forbidden identifier was rejected");
     std::cout<<"PASS seven real-lesson independent transfer probes generated; source tampering refused.\n";
     return 0;
 }catch(const std::exception& e){

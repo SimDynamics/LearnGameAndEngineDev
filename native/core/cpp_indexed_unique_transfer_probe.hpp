@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/cpp_member_body_check.hpp"
+#include "core/code_format_compat.hpp"
 
 #include <algorithm>
 #include <optional>
@@ -36,6 +37,49 @@ inline void replace(std::string& source,std::string_view field,std::string_view 
         at+=value.size();
     }
 }
+
+// A private driver may grant credit only after completing its own checks.
+// Source inspection here is a prerequisite, not a semantic correctness proof.
+// Tokenize the permitted method body, not the protected program or generated
+// harness; comments and string literals cannot trigger these restrictions.
+inline bool probe_neutral_body(const CppMemberBodyCheck& check,
+                               std::string_view candidate) {
+    const auto original=cpp_member_body_span(check);
+    if(!original || !cpp_member_body_preserves_source(check,candidate))
+        return false;
+    const auto suffix_bytes=check.original_source.size()-original->end;
+    const auto body=candidate.substr(original->begin,
+        candidate.size()-suffix_bytes-original->begin);
+    const auto tokens=code_format::cpp_tokens(body);
+    if(!tokens || code_format::cpp_position_sensitive_tokens(*tokens))
+        return false;
+    constexpr std::string_view forbidden[]={
+        "exit","_Exit","_exit","quick_exit","abort","_abort",
+        "ExitProcess","ExitThread","TerminateProcess","RaiseFailFastException",
+        "_endthread","_endthreadex","_c_exit","longjmp","_longjmp",
+        "siglongjmp","setjmp","sigsetjmp",
+        // Bypass of unique_ptr lifecycle observation, or executing arbitrary
+        // platform instructions instead of the declared transfer.
+        "malloc","calloc","realloc","free","_aligned_malloc","_aligned_free",
+        "asm","__asm","__asm__","__pragma","_Pragma","import",
+        // Internal test counters must never be an input to student behavior.
+        "lgaed_transfer_qa","Watch",
+        "__FILE__","__FILEW__","__BASE_FILE__","__COUNTER__",
+        "__DATE__","__TIME__","__TIMESTAMP__","__FUNCSIG__",
+        "__PRETTY_FUNCTION__","source_location",
+        "__builtin_FILE","__builtin_LINE","__builtin_COLUMN"
+    };
+    for(const auto& token:*tokens) {
+        if(token.starts_with("directive:")||token=="op:#"||
+           token=="op:##"||token=="op:%:"||token=="op:%:%:")
+            return false;
+        if(!token.starts_with("id:"))continue;
+        const auto name=std::string_view(token).substr(3);
+        if(std::ranges::find(forbidden,name)!=std::end(forbidden))
+            return false;
+    }
+    return true;
+}
 } // namespace cpp_indexed_transfer_detail
 
 inline std::optional<std::string> cpp_indexed_unique_transfer_probe_source(
@@ -49,7 +93,7 @@ inline std::optional<std::string> cpp_indexed_unique_transfer_probe_source(
     if(spec.first_member==spec.second_member ||
        spec.member.signature.find(spec.class_name+"::"+spec.transfer_method+"(")==
            spec.member.signature.npos ||
-       !cpp_member_body_preserves_source(spec.member,candidate))return {};
+       !detail::probe_neutral_body(spec.member,candidate))return {};
 
     // Attach only a friend witness to the original class, not another owner,
     // another implementation or a replacement public API. The student source
