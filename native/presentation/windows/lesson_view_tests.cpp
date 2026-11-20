@@ -47,6 +47,7 @@
 #include <numeric>
 #include <set>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -187,10 +188,12 @@ struct Fixture {
     LessonViewHooks persisted_hooks;
     HWND host = nullptr, view = nullptr;
     explicit Fixture(const std::function<void(state::StateData&, const curriculum::Lesson&)>& initialize = {},
-        const std::function<curriculum::Lesson(const curriculum::Lesson&)>& load_model = {},bool hidden=false)
+        const std::function<curriculum::Lesson(const curriculum::Lesson&)>& load_model = {},
+        bool hidden=false, LessonViewHooks hooks = {})
         : environment(resolve_windows_environment({ProfileId::Codex,
             L"native-lesson-view-" + std::to_wstring(GetCurrentProcessId()) + L"-" + std::to_wstring(GetTickCount64()), false})),
-        content(std::filesystem::path(build::source_root) / "app/src/main/assets/content") {
+        content(std::filesystem::path(build::source_root) / "app/src/main/assets/content"),
+        persisted_hooks(std::move(hooks)) {
         require(!std::filesystem::exists(environment.paths.root), "QA instance unexpectedly already exists");
         initialize_profile_directories(environment.paths);
         // Fixed-coordinate regressions describe the verified published UI.
@@ -3684,14 +3687,13 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
                 }
                 state::put_response(data,lesson,block,old);
             }
-        },[&](const curriculum::Lesson&){return windows::load_lesson(folder/filename);});
-        if(std::string_view(filename)=="lesson_fuente_compilacion_y_diagnostico.json"){
-            // The same real math gate used in a normal lesson must revalidate
-            // both restored matching answers, including after reopening.
-            // No fake compiler proof or blanket "math correct" hook is used.
-            f.persisted_hooks=u1_matching_qa_hooks();
-            set_lesson_view_hooks(f.view,f.persisted_hooks);
-        }
+        },[&](const curriculum::Lesson&){return windows::load_lesson(folder/filename);},
+        false,
+        // The restored math answers may be checked as soon as the native
+        // view is created. Install the actual source-bound oracle before
+        // opening, not afterward, and keep it through reopen().
+        std::string_view(filename)=="lesson_fuente_compilacion_y_diagnostico.json"
+            ? u1_matching_qa_hooks() : LessonViewHooks{});
         require(f.lesson.compiler_puzzles_required,"An integrated U1 lesson stopped requiring its useful compilers");
         const bool last_lesson=std::string_view(filename)=="lesson_resolver_probar_y_recuperar.json";
         const bool new_edition=last_lesson&&u1l5_revised_compiler_present(f.lesson);
