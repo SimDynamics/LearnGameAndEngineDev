@@ -4886,6 +4886,85 @@ def _validate_compiler_array_owner_read_checks(document: dict) -> None:
                 "Array owner/read requires the two original C++ method signatures")
 
 
+def _validate_compiler_array_copy_move_checks(document: dict) -> None:
+    """Authenticate two new assignment-body goals on one unchanged v2 editor."""
+    field="compilerArrayCopyMoveChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Array copy/move requires the existing Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Array copy/move requires 1..32 original mapped owners")
+    required={"activity","className","ownerMember","countMember",
+              "copyParameter","moveParameter","quantityMethod",
+              "accessMethod","configureMethod","readMethod",
+              "writeMethod","clearMethod","sumMethod"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Array copy/move requires exactly the documented authoring fields")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate array copy/move objective owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Array copy/move must attach to an original single-file output editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            entries=document.get(other,[])
+            require(type(entries) is list and not any(
+                    type(x) is dict and x.get("activity")==identity
+                    for x in entries),
+                "Array copy/move cannot reuse an existing private probe owner")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Array copy/move requires authentic published C++ source")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid identifier in array copy/move authoring")
+        name=item["className"]
+        require(len(re.findall(
+                    r"\b(?:class|struct)\s+"+re.escape(name)+r"\s*\{",
+                    source))==1,
+                "Original array class missing or ambiguous")
+        require(re.search(
+                    r"\bstd\s*::\s*unique_ptr\s*<\s*int\s*\[\s*\]\s*>\s*"+
+                    re.escape(item["ownerMember"])+r"\b",source) is not None,
+                "Original unique_ptr<int[]> member missing")
+        require(re.search(r"\bint\s+"+re.escape(item["countMember"])+r"\b",
+                          source) is not None,
+                "Original array count field missing")
+        copy=(re.escape(name)+r"\s*&\s*"+re.escape(name)+
+              r"\s*::\s*operator\s*=\s*\(\s*const\s+"+
+              re.escape(name)+r"\s*&\s*"+
+              re.escape(item["copyParameter"])+r"\s*\)\s*\{")
+        move=(re.escape(name)+r"\s*&\s*"+re.escape(name)+
+              r"\s*::\s*operator\s*=\s*\(\s*"+
+              re.escape(name)+r"\s*&&\s*"+
+              re.escape(item["moveParameter"])+r"\s*\)\s*noexcept\s*\{")
+        require(len(re.findall(copy,source))==1 and
+                len(re.findall(move,source))==1,
+                "Array copy/move requires the two original distinct operator bodies")
+
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
@@ -5681,6 +5760,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_independent_copy_assignment_checks(document)
     _validate_compiler_move_assignment_invariant_checks(document)
     _validate_compiler_array_owner_read_checks(document)
+    _validate_compiler_array_copy_move_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)
