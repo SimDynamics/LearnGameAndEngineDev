@@ -26,7 +26,7 @@ ADD=("""
     destino.push_back(std::move(fuente));
     return true;
 """)
-REPORT=("""
+REPORT=(r"""
     salida << "Cantidad:" << datos.size() << '\n';
     for (std::size_t i = 0; i < datos.size(); ++i) {
         salida << i << ':';
@@ -39,7 +39,7 @@ ALT_ADD=("""
     destino.emplace_back(std::move(fuente));
     return true;
 """)
-ALT_REPORT=("""
+ALT_REPORT=(r"""
     salida << "Cantidad:" << datos.size() << '\n';
     std::size_t indice = 0;
     for (const auto& propietario : datos) {
@@ -52,43 +52,43 @@ ALT_REPORT=("""
 # executing undefined behavior. Identity probes, not pointer-use-after-free,
 # reveal substitutions and misplaced ownership.
 BAD={
-    "always_reject":("    return false;",REPORT),
-    "accept_empty":("""
+    "always_reject":("    (void)destino; (void)fuente; return false;",REPORT),
+    "accept_empty":(r"""
     destino.push_back(std::move(fuente));
     return true;
 """,REPORT),
-    "return_false_after_move":("""
+    "return_false_after_move":(r"""
     if (!fuente) return false;
     destino.push_back(std::move(fuente));
     return false;
 """,REPORT),
-    "prepend_reorders":("""
+    "prepend_reorders":(r"""
     if (!fuente) return false;
     destino.insert(destino.begin(),std::move(fuente));
     return true;
 """,REPORT),
-    "fake_equal_value":("""
+    "fake_equal_value":(r"""
     if (!fuente) return false;
     destino.push_back(std::make_unique<MuestraSimple>(fuente->numero()));
     fuente.reset();
     return true;
 """,REPORT),
-    "retains_old_owner":("""
+    "retains_old_owner":(r"""
     if (!fuente) return false;
     if (!destino.empty()) {
         std::swap(fuente,destino.back());
     } else destino.push_back(std::move(fuente));
     return true;
 """,REPORT),
-    "leaves_empty_slot":("""
+    "leaves_empty_slot":(r"""
     if (!fuente) return false;
     destino.push_back(std::move(fuente));
     destino.emplace_back();
     return true;
 """,REPORT),
-    "constant_report":(ADD,'    salida << "Cantidad:0\\n";'),
+    "constant_report":(ADD,'    (void)datos; salida << "Cantidad:0\\n";'),
     "wrong_count":(ADD,REPORT.replace('datos.size()', '0')),
-    "reverse_reporting":(ADD,"""
+    "reverse_reporting":(ADD,r"""
     salida << "Cantidad:" << datos.size() << '\n';
     for(std::size_t i=datos.size();i>0;--i) {
         salida << i-1 << ':';
@@ -96,8 +96,8 @@ BAD={
         salida << '\n';
     }
 """),
-    "wrong_output_stream":(ADD,REPORT.replace("salida", "std::cout")),
-    "known_types_only":(ADD,"""
+    "wrong_output_stream":(ADD,"    (void)salida;\n"+REPORT.replace("salida", "std::cout")),
+    "known_types_only":(ADD,r"""
     salida << "Cantidad:" << datos.size() << '\n';
     for(std::size_t i=0;i<datos.size();++i) {
         salida << i << ':';
@@ -109,7 +109,7 @@ BAD={
         salida << '\n';
     }
 """),
-    "report_without_virtual":(ADD,"""
+    "report_without_virtual":(ADD,r"""
     salida << "Cantidad:" << datos.size() << '\n';
     for(std::size_t i=0;i<datos.size();++i)
         salida << i << ":Numero:" << datos[i]->numero() << '\n';
