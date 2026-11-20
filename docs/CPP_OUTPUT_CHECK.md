@@ -341,6 +341,104 @@ no acredita por sí solo las funciones externas de U6L12 ni las
 jerarquías posteriores.
 
 
+## Devolver una copia y recibir un propietario sin consumirlo al rechazar
+
+Para Programación 3, U6L12, una lección española `v2` puede añadir
+a su raíz `compilerArrayReturnTakeChecks`, sin reemplazar el bloque
+histórico de tipo `cpp_compiler`, su `initialCode`, la primera comprobación,
+las entradas opcionales, las respuestas o las direcciones del progreso.
+El propietario vigente es `block_0021_0002` y el ejercicio conserva
+la clase `Tramo` y el programa `main` original.
+
+La declaración general, que Work puede incorporar después de validar
+la transición, utiliza los nombres reales de las dos funciones globales:
+
+```json
+"compilerArrayReturnTakeChecks": [
+  {
+    "activity": "block_0021_0002",
+    "className": "Tramo",
+    "ownerMember": "datos_",
+    "countMember": "cantidad_",
+    "copyFunction": "copia_modificada",
+    "takeFunction": "tomar_si_cabe",
+    "sourceParameter": "origen",
+    "indexParameter": "indice",
+    "valueParameter": "valor",
+    "destinationParameter": "destino",
+    "offeredParameter": "origen",
+    "limitParameter": "limite",
+    "quantityMethod": "cantidad",
+    "accessMethod": "acceso",
+    "configureMethod": "configurar",
+    "readMethod": "leer",
+    "writeMethod": "escribir",
+    "clearMethod": "vaciar"
+  }
+]
+```
+
+El motor identifica en el fuente auténtico estas firmas:
+
+`Tramo copia_modificada(const Tramo& origen, int indice, int valor)`
+
+`bool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept`
+
+Los **dos cuerpos de las funciones** son editables y aceptan
+implementaciones equivalentes correctas. Todos los bytes ajenos a
+ellos se conservan, incluidas declaraciones, constructores,
+operadores miembro, consulta y modificación del array, `main`
+y salidas. El código no debe introducir macros, cerrar funciones
+anticipadamente ni modificar firmas. La prueba privada nace del
+código realmente entregado, con el archivo proporcionado intacto.
+
+`copia_modificada` recibe índice y valor ya comprobados por el llamador.
+Debe devolver otro `Tramo` de igual cantidad, con el dato del índice
+sustituido y los demás datos conservados. El origen y su propietario
+no cambian. Incluso si el dato nuevo coincide con el anterior, la
+copia administra otro array independiente. Cuando falla
+controladamente la reserva, deja propagarse `std::bad_alloc`:
+no consume el origen ni modifica el destino de una asignación
+posterior. La comprobación cubre la asignación de esa copia sobre
+el propio origen y el fallo con ambos nombres referidos al mismo objeto.
+No se exige un número fijo de movimientos o constructores,
+que puede depender de la elisión permitida por C++.
+
+`tomar_si_cabe` revisa `limite` **antes** de transferir.
+Rechaza números fuera de cero a cuatro y cualquier límite menor
+que la cantidad del origen, sin reservar, liberar ni cambiar el
+origen o destino. La expresión `std::move(origen)` del llamador
+no consume por sí sola ese objeto. Si se acepta, transfiere
+el mismo array con sus valores y cantidad, sin copiar elementos
+ni solicitar otra reserva; el destino anterior se libera
+y el origen queda vacío con cantidad cero. Un origen vacío aceptado
+vacía también el destino. Si ambos nombres corresponden al mismo
+objeto y se admite la operación, este conserva su identidad y
+contenido conforme al contrato de `Tramo`.
+
+Una sola pulsación del caso visible obligatorio puede reunir
+la salida esperada y las sondas C++ privadas. Éstas comprueban
+identidad de arrays vivos, caso de valor cero, valores iguales,
+preservación ante rechazo, fallo de reserva sin agotar memoria,
+reutilización de objetos movidos y limpieza normal y excepcional.
+No requieren más entradas del estudiante ni permiten dobles liberaciones
+o accesos fuera de los límites para obtener evidencia.
+
+La evidencia privada queda vinculada al programa completo,
+a la procedencia curricular, al controlador generado y
+a la solicitud y revisión concretas. El recibo
+`array-return-take/v1` se incorpora sólo tras una ejecución
+nueva y correcta. Los aciertos antiguos de `outputCheck`
+no se promueven automáticamente. Se conservan borradores
+y recibos históricos sin reescribirlos.
+
+Work integra la declaración en el JSON auténtico cuando corresponda,
+comprueba sus variantes de referencia y su presentación en la app.
+La QA nativa de Codex con la declaración temporal no publica
+por sí sola nuevos objetivos dentro de las lecciones.
+Esta capacidad no acredita por sí sola las jerarquías posteriores.
+
+
 ## Baterías abiertas de una función booleana con dos enteros
 
 Windows admite la variante `boolean-pair-v1` dentro de la lista raíz
