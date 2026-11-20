@@ -11,6 +11,7 @@
 #include "core/cpp_array_copy_move_check.hpp"
 #include "core/cpp_array_return_take_check.hpp"
 #include "core/cpp_polymorphic_destruction_check.hpp"
+#include "core/cpp_virtual_lifetime_dispatch_check.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 #include "native_build_config.hpp"
@@ -654,6 +655,45 @@ std::string polymorphic_destruction_fingerprint(const CppRunRequest& request) {
         field(spec.base_alive)+field(spec.derived_alive)+field(spec.owned_alive)+
         field(spec.base_destroyed)+field(spec.derived_destroyed)+
         field(spec.owned_destroyed)+field(state::sha256(*driver))+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes));
+    for(const auto& body:spec.editable.bodies)
+        key+=field(body.signature)+field(body.qualified?"qualified":"free");
+    return state::sha256(key);
+}
+
+std::string virtual_lifetime_fingerprint(const CppRunRequest& request) {
+    if(!request.virtual_lifetime_probe||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+       request.cmake||!request.project_files.empty()||!request.source_files.empty()||
+       request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+       request.independent_copy_assignment_probe||
+       request.move_assignment_invariant_probe||request.array_owner_read_probe||
+       request.array_copy_move_probe||request.array_return_take_probe||
+       request.polymorphic_destruction_probe||
+       request.named_rule_probe||request.boolean_battery_probe||
+       request.open_battery_probe||request.reduction_probe||
+       request.integer_battery_probe||request.adjustment_project_probe||
+       request.rejection_probe||request.observation_probe||request.assertion_mode||
+       request.capture_cmake_graph||request.cmake_graph_check)return {};
+    const auto& spec=*request.virtual_lifetime_probe;
+    const auto driver=curriculum::cpp_virtual_lifetime_dispatch_private_driver(
+        spec,request.source_utf8);
+    if(!driver)return {};
+    const auto field=[](std::string_view text) {
+        return std::to_string(text.size())+":"+std::string(text);
+    };
+    std::string key=std::string("windows-virtual-lifetime-v1/")+
+        field(std::to_string(request.request_id))+
+        field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+
+        field(request.project_key)+field(spec.editable.original_source)+
+        field(spec.base_class)+field(spec.derived_class)+
+        field(spec.register_method)+field(spec.write_method)+
+        field(spec.phase_parameter)+field(spec.register_stream)+
+        field(spec.write_stream)+field(state::sha256(*driver))+
         field(std::to_string(request.compile_timeout.count()))+
         field(std::to_string(request.execution_timeout.count()))+
         field(std::to_string(request.output_limit_bytes));
@@ -3535,6 +3575,23 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                     curriculum::cpp_array_copy_move_completion_marker;
         }
     }
+    if(request.virtual_lifetime_probe) {
+        const auto frame=virtual_lifetime_fingerprint(request);
+        fresh.virtual_lifetime_request_fingerprint=frame;
+        const auto driver=curriculum::cpp_virtual_lifetime_dispatch_private_driver(
+            *request.virtual_lifetime_probe,request.source_utf8);
+        if(!frame.empty()&&driver&&result.virtual_lifetime_evidence) {
+            const auto& proof=*result.virtual_lifetime_evidence;
+            fresh.virtual_lifetime_probe_correct=
+                proof.driver_sha256==state::sha256(*driver)&&
+                proof.program_sha256==state::sha256(request.source_utf8)&&
+                proof.request_fingerprint==frame&&
+                proof.compilation.succeeded()&&proof.execution.succeeded()&&
+                proof.execution.stdout_bytes.empty()&&
+                proof.execution.stderr_bytes==
+                    curriculum::cpp_virtual_lifetime_dispatch_marker;
+        }
+    }
     if(request.polymorphic_destruction_probe) {
         const auto frame=polymorphic_destruction_fingerprint(request);
         fresh.polymorphic_destruction_request_fingerprint=frame;
@@ -3907,6 +3964,29 @@ void complete_polymorphic_destruction_probe(const CppRunRequest& request,
     const auto proof=run_cpp(private_request,stop);
     if(!proof.error_utf8.empty()||stop.stop_requested())return;
     result.polymorphic_destruction_evidence=CppPolymorphicDestructionEvidence{
+        state::sha256(*driver),state::sha256(request.source_utf8),frame,
+        proof.compilation,proof.execution};
+}
+
+void complete_virtual_lifetime_probe(const CppRunRequest& request,
+        CppRunResult& result,std::stop_token stop) {
+    if(!request.virtual_lifetime_probe||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto frame=virtual_lifetime_fingerprint(request);
+    if(frame.empty())return;
+    const auto driver=curriculum::cpp_virtual_lifetime_dispatch_private_driver(
+        *request.virtual_lifetime_probe,request.source_utf8);
+    if(!driver)return;
+    auto private_request=request;
+    private_request.virtual_lifetime_probe.reset();
+    private_request.request_id=~request.request_id;
+    private_request.project_key+="/independent-virtual-lifetime-v1";
+    private_request.source_utf8=*driver;
+    private_request.stdin_utf8.clear();
+    const auto proof=run_cpp(private_request,stop);
+    if(!proof.error_utf8.empty()||stop.stop_requested())return;
+    result.virtual_lifetime_evidence=CppVirtualLifetimeEvidence{
         state::sha256(*driver),state::sha256(request.source_utf8),frame,
         proof.compilation,proof.execution};
 }
@@ -5024,6 +5104,10 @@ std::string cpp_polymorphic_destruction_request_fingerprint(
         const CppRunRequest& request) {
     return polymorphic_destruction_fingerprint(request);
 }
+std::string cpp_virtual_lifetime_request_fingerprint(
+        const CppRunRequest& request) {
+    return virtual_lifetime_fingerprint(request);
+}
 
 std::string cpp_indexed_unique_transfer_request_fingerprint(
         const CppRunRequest& request) {
@@ -5131,7 +5215,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             request.defaulted_move_policy_probe||request.independent_copy_assignment_probe||
             request.move_assignment_invariant_probe||request.array_owner_read_probe||
             request.array_copy_move_probe||request.array_return_take_probe||
-            request.polymorphic_destruction_probe;
+            request.polymorphic_destruction_probe||
+            request.virtual_lifetime_probe;
         const auto private_environment=has_private_probe
             ?compiler_environment():std::vector<wchar_t>{};
         const auto fixed_environment=has_private_probe?&private_environment:nullptr;
@@ -5165,6 +5250,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         complete_array_copy_move_probe(request,result,stop);
         complete_array_return_take_probe(request,result,stop);
         complete_polymorphic_destruction_probe(request,result,stop);
+        complete_virtual_lifetime_probe(request,result,stop);
         complete_named_rule_battery_single(request,result,compiler,private_environment,
             initial_toolchain,stop);
         complete_rejection_stream_probe(request,result,stop);
