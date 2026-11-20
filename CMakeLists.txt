@@ -145,6 +145,21 @@ target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_option
 add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
 
+# Reuse the same real Windows state-test executable for full builds and the
+# ReaderBuild/StateImport QA profiles. These three focused CLI modes read the
+# currently published lessons, generate only private QA state, and need no
+# presentation library or historical compiler fixture files.
+function(lgaed_add_compiler_guidance_state_target)
+    if(TARGET lgaed_compiler_guidance_state_tests)
+        return()
+    endif()
+    add_executable(lgaed_compiler_guidance_state_tests
+        native/platform/windows/compiler_guidance_state_tests.cpp
+        native/platform/windows/math_matching_text_state_tests.cpp)
+    target_link_libraries(lgaed_compiler_guidance_state_tests
+        PRIVATE lgaed_platform_windows lgaed_host_options)
+endfunction()
+
 function(lgaed_add_named_rule_source_tests)
     if(TARGET lgaed_named_rule_check_tests)
         return()
@@ -205,9 +220,21 @@ if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
         find_package(Python3 REQUIRED COMPONENTS Interpreter)
         include(cmake/StateImportTests.cmake)
         lgaed_add_state_import_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/state-import")
-        # Keep the import suite focused on historical state and compiler
-        # contracts. General guidance is exercised by the full native configuration;
-        # this isolated profile lacks all resources those fixtures reference.
+        # The three real-lesson CLI paths use no fixture files from the full
+        # guidance suite. Run them here against the same native StateStore,
+        # full/progress loaders and immutable historical owners.
+        lgaed_add_compiler_guidance_state_target()
+        add_test(NAME native.math_matching_text_live
+            COMMAND lgaed_compiler_guidance_state_tests --math-matching-text-live)
+        add_test(NAME native.general_choice_live
+            COMMAND lgaed_compiler_guidance_state_tests --general-choice-live)
+        add_test(NAME native.identifier_rename_live
+            COMMAND lgaed_compiler_guidance_state_tests --identifier-rename-live)
+        set_tests_properties(native.math_matching_text_live
+            native.general_choice_live native.identifier_rename_live
+            PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+        # The remaining guidance modes still require fixtures from the full
+        # native configuration; the StateImport profile does not run those modes.
         message(STATUS "Focused native import QA: historical suites and exact runtime stderr; no application, reader or audio verification.")
     else()
         include(cmake/NarrationPlayerTests.cmake)
@@ -696,20 +723,6 @@ function(lgaed_add_boolean_battery_tests)
         "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/evidencia_y_diagnostico/lesson_versiones_del_fuente_y_del_ejecutable.json")
     set_tests_properties(native.boolean_battery_runtime
         PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
-endfunction()
-
-# One linked WinRT state-test executable is shared by full builds and ReaderBuild.
-# Its math matching-text case must be compiled and executed in the focused
-# Windows QA gate, not only registered in a full-application build.
-function(lgaed_add_compiler_guidance_state_target)
-    if(TARGET lgaed_compiler_guidance_state_tests)
-        return()
-    endif()
-    add_executable(lgaed_compiler_guidance_state_tests
-        native/platform/windows/compiler_guidance_state_tests.cpp
-        native/platform/windows/math_matching_text_state_tests.cpp)
-    target_link_libraries(lgaed_compiler_guidance_state_tests
-        PRIVATE lgaed_platform_windows lgaed_host_options)
 endfunction()
 
 if(LGAED_READER_BUILD_QA_ONLY)
