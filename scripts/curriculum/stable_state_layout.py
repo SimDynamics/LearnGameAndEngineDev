@@ -4740,6 +4740,75 @@ def _validate_compiler_independent_copy_assignment_checks(document: dict) -> Non
                 "Independent copy assignment must bind one original operator body")
 
 
+def _validate_compiler_move_assignment_invariant_checks(document: dict) -> None:
+    """Bind a new invariant proof to the original C++23 move-assignment owner."""
+    field="compilerMoveAssignmentInvariantChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Move-assignment invariant requires an existing Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Move-assignment invariant requires 1..32 mapped owners")
+    required={"activity","className","memberName","labelMember",
+              "parameterName","hasMethod","valueMethod","labelMethod",
+              "accessMethod","invariantMethod","putMethod","changeMethod",
+              "retagMethod","clearMethod"}
+    owners=_blocks(document)
+    seen=set()
+    for entry in checks:
+        require(type(entry) is dict and set(entry)==required,
+                "Move-assignment invariant requires the exact documented fields")
+        owner_id=_identity(entry["activity"])
+        require(owner_id not in seen,"Duplicate move-assignment invariant owner")
+        seen.add(owner_id)
+        block=owners.get(owner_id)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Move-assignment invariant requires a published single-source output editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            items=document.get(other,[])
+            require(type(items) is list and not any(
+                    type(item) is dict and item.get("activity")==owner_id
+                    for item in items),
+                "Move-assignment invariant cannot share a private runtime owner")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Move-assignment invariant requires original C++ source")
+        for key in required-{"activity"}:
+            value=entry[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid move-assignment invariant identifier")
+        cls=entry["className"]
+        require(len(re.findall(r"\b(?:class|struct)\s+"+re.escape(cls)+r"\s*\{",
+                               source))==1,
+                "Move-assignment original class missing or ambiguous")
+        require(re.search(r"\bstd\s*::\s*unique_ptr\s*<\s*int\s*>\s*"+
+                          re.escape(entry["memberName"])+r"\b",source) is not None,
+                "Move-assignment original unique owner missing")
+        require(re.search(r"\bint\s+"+re.escape(entry["labelMember"])+r"\b",
+                          source) is not None,
+                "Move-assignment original label field missing")
+        signature=(re.escape(cls)+r"\s*&\s*"+re.escape(cls)+
+                   r"\s*::\s*operator\s*=\s*\(\s*"+re.escape(cls)+
+                   r"\s*&&\s*"+re.escape(entry["parameterName"])+r"\s*\)\s*\{")
+        require(len(re.findall(signature,source))==1,
+                "Move-assignment original operator body missing or ambiguous")
+
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
@@ -5533,6 +5602,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_indexed_unique_transfer_checks(document)
     _validate_compiler_defaulted_move_policy_checks(document)
     _validate_compiler_independent_copy_assignment_checks(document)
+    _validate_compiler_move_assignment_invariant_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)
