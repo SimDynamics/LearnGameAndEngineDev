@@ -786,6 +786,12 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_compiler_guidance_state_tests --math-matching-text-live)
     set_tests_properties(native.math_matching_text_live
         PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    add_test(NAME native.general_choice_live
+        COMMAND lgaed_compiler_guidance_state_tests --general-choice-live)
+    add_test(NAME native.identifier_rename_live
+        COMMAND lgaed_compiler_guidance_state_tests --identifier-rename-live)
+    set_tests_properties(native.general_choice_live native.identifier_rename_live
+        PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     # Run the real Win32 compiler view against thirteen authored inputs.
     # Exactly the first must unlock navigation; all others remain optional.
     add_executable(lgaed_compiler_first_case_view_tests
@@ -1159,6 +1165,12 @@ if(BUILD_TESTING)
     add_test(NAME native.math_matching_text_live
         COMMAND lgaed_compiler_guidance_state_tests --math-matching-text-live)
     set_tests_properties(native.math_matching_text_live PROPERTIES TIMEOUT 60)
+    add_test(NAME native.general_choice_live
+        COMMAND lgaed_compiler_guidance_state_tests --general-choice-live)
+    add_test(NAME native.identifier_rename_live
+        COMMAND lgaed_compiler_guidance_state_tests --identifier-rename-live)
+    set_tests_properties(native.general_choice_live native.identifier_rename_live
+        PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     add_test(NAME curriculum.compiler_guidance_projection COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_compiler_guidance_projection.py)
     add_executable(lgaed_text_semantic_projection_tests native/presentation/windows/text_semantic_projection_tests.cpp)

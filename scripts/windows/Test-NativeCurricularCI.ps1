@@ -539,6 +539,8 @@ if ($Suite -eq 'ReaderBuild') {
         'native.compiler_case_revision_view',
         'native.catalog',
         'native.math_matching_text_live',
+        'native.general_choice_live',
+        'native.identifier_rename_live',
         'native.course_edition',
         'native.course_edition_authoring',
         'native.optional_prose_format',
