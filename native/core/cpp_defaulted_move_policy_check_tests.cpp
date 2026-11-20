@@ -102,31 +102,6 @@ int main(int argc,char** argv)try {
     for(const auto& variation:variations) {
         const auto candidate=edit(variation.insert);
         const bool accepted=cpp_defaulted_move_policy_matches(spec,candidate);
-        if(accepted!=variation.valid&&variation.valid) {
-            namespace d=lgaed::curriculum::cpp_defaulted_move_detail;
-            const auto old_tokens=d::tokens(original);
-            const auto new_tokens=d::tokens(candidate);
-            const auto before=old_tokens?d::region(*old_tokens,spec.class_name):
-                std::optional<d::ClassRegion>{};
-            const auto after=new_tokens?d::region(*new_tokens,spec.class_name):
-                std::optional<d::ClassRegion>{};
-            std::cerr<<"DEBUG defaulted-move source: oldtokens="<<bool(old_tokens)
-                <<" newtokens="<<bool(new_tokens)<<" oldregion="<<bool(before)
-                <<" newregion="<<bool(after)<<"\n";
-            if(after) {
-                std::cerr<<"DEBUG public region "<<after->public_start<<".."
-                    <<after->public_end<<"\n";
-                for(auto k=after->public_start;k<after->public_end&&
-                        k<after->public_start+55;++k) {
-                    const auto declaration=d::operation(*new_tokens,k,spec.class_name);
-                    std::cerr<<k<<":"<<(*new_tokens)[k];
-                    if(declaration)std::cerr<<" [kind="<<declaration->kind
-                        <<",end="<<declaration->end<<"]";
-                    std::cerr<<' ';
-                }
-                std::cerr<<'\n';
-            }
-        }
         require(accepted==variation.valid,
             std::string("Incorrect structural verdict: ")+std::string(variation.name));
         if(!accepted)continue;

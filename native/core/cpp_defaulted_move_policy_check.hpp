@@ -108,6 +108,9 @@ struct Declaration {
 inline std::optional<Declaration> operation(const Tokens& code,std::size_t first,
                                               std::string_view class_name) {
     const std::string self="id:"+std::string(class_name);
+    // A defaulted destructor has the same token suffix as a constructor,
+    // but its preceding ~ is part of the protected original declaration.
+    if(first>0 && code[first-1]=="op:~")return {};
     std::size_t i=first;
     int kind=0;
     if(i<code.size()&&code[i]==self&&i+1<code.size()&&code[i+1]=="op:(") {
