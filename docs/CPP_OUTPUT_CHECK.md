@@ -258,6 +258,89 @@ valida su transición y verifica el ejercicio en la aplicación.
 Las pruebas temporales de Codex no publican metadatos curriculares.
 
 
+## Copia y movimiento independientes de un array propietario
+
+Para Programación 3, U6L11, un editor `cpp_compiler` existente, español,
+de archivo único y con mapa de estado `v2` puede recibir una declaración
+raíz `compilerArrayCopyMoveChecks`. La capacidad se incorpora como
+objetivo **independiente** de los antiguos casos de salida, sin cambiar
+`initialCode`, `outputCheck`, su ID ni los borradores guardados.
+
+Contrato de autoría para el propietario histórico `block_0020_0002`:
+
+```json
+"compilerArrayCopyMoveChecks": [
+  {
+    "activity": "block_0020_0002",
+    "className": "Tramo",
+    "ownerMember": "datos_",
+    "countMember": "cantidad_",
+    "copyParameter": "otra",
+    "moveParameter": "otra",
+    "quantityMethod": "cantidad",
+    "accessMethod": "acceso",
+    "configureMethod": "configurar",
+    "readMethod": "leer",
+    "writeMethod": "escribir",
+    "clearMethod": "vaciar",
+    "sumMethod": "sumar"
+  }
+]
+```
+
+El motor deriva los dos operadores originales:
+`Tramo& Tramo::operator=(const Tramo& otra)` y
+`Tramo& Tramo::operator=(Tramo&& otra) noexcept`. El estudiante
+puede modificar únicamente sus **cuerpos**. El resto del programa
+debe conservarse exactamente, incluidos constructores, destructor,
+datos, métodos de consulta y edición, `main` y casos de prueba.
+La validación no exige copiar la solución de referencia: admite otros
+procedimientos C++ correctos en los cuerpos, siempre que cumplan
+el contrato observable.
+
+Una comprobación visible correcta del **primer caso** inicia, en la
+misma pulsación, una ejecución nativa separada y privada. Esta verifica:
+
+1. Copiar una fuente ocupada a un destino distinto crea otro
+   `int[]` independiente, incluso con los mismos tamaños y valores.
+   El origen conserva su array, cantidad y valores; el destino anterior
+   se libera al aceptar la copia.
+2. Copiar desde vacío vacía el destino sin reservar. Autocopiar,
+   con array o sin él, conserva identidad, cantidad y valores sin
+   reservar ni liberar. Ambos operadores devuelven referencia al destino.
+3. Si falla controladamente la reserva para copiar, `std::bad_alloc`
+   llega al llamador y tanto el origen como el destino conservan
+   sus arrays, cantidades y valores anteriores. No se agota la memoria.
+4. Mover entre objetos distintos transfiere **el mismo array** sin
+   reservar ni copiar sus elementos, libera el destino anterior,
+   y deja vacío al origen con cantidad cero; esto también vale
+   cuando el origen ya está vacío.
+5. Automover un objeto, vacío u ocupado, conserva su estado; después
+   de mover, el origen puede reutilizarse. Las pruebas cubren ceros,
+   valores iguales, cantidades distintas, destrucción normal y
+   limpieza al propagarse una excepción del llamador.
+
+Los controladores privados observan únicamente punteros vivos
+y no requieren liberar dos veces, acceder fuera del array ni usar
+referencias a objetos destruidos. Una salida simulada o una copia
+de valores que genere otro propietario durante el movimiento
+no acredita el objetivo.
+
+El resultado privado se vincula al código completo, a la fuente
+original autenticada, a los identificadores del contrato, al driver
+generado y a la solicitud/revisión de ejecución. Un logro anterior
+de `outputCheck` **no se promueve automáticamente**: sólo un
+resultado nuevo añade el sello `array-copy-move/v1`. Los recibos
+históricos, respuestas, borradores y demás cursos se conservan.
+
+Work debe integrar la declaración real en la lección al llegar a este
+objetivo, validar su transición y comprobar la app. Las sondas de
+Codex con metadatos temporales comprueban la capacidad del motor,
+pero no publican la nueva declaración en el currículo. Este contrato
+no acredita por sí solo las funciones externas de U6L12 ni las
+jerarquías posteriores.
+
+
 ## Baterías abiertas de una función booleana con dos enteros
 
 Windows admite la variante `boolean-pair-v1` dentro de la lista raíz
