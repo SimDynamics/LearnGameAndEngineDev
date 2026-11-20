@@ -1903,8 +1903,12 @@ Los mensajes abiertos se comprueban por operación, número de petición,
 cantidad o par de campos con sus valores, intervalo 0..20 o 0..9 y acción
 de revisión, sin imponer una frase literal. El intervalo admite notaciones
 claras como «de 0 a 9», «0-9», «0 - 9» o «[0, 9]», siempre
-que se identifique como rango o dominio permitido. También reconoce los
-dos extremos expresamente nombrados: «mínimo 0, máximo 9» o «límite
+que se identifique como rango o dominio permitido. En los mensajes de diagnóstico
+se reconocen también guiones y rayas Unicode, como «0–9» y «0 — 9»,
+y el signo menos matemático en un dato rechazado, como «devoluciones=−1».
+Esta equivalencia se limita a interpretar los hechos del mensaje: no cambia
+los enteros de entrada admitidos, ni acepta límites o valores erróneos.
+También reconoce los dos extremos expresamente nombrados: «mínimo 0, máximo 9» o «límite
 inferior 0, límite superior 9», con esos mismos valores obligatorios.
 Un solo límite no basta, ni puede darse por válido otro mínimo o máximo
 contradictorio. Si el mismo mensaje incluye «rango 0..9, mínimo 1»,
