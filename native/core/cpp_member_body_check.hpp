@@ -126,6 +126,56 @@ inline std::optional<std::size_t> closing_brace(std::string_view text,
     }
     return {};
 }
+
+// Find the actual line-leading method definition, not its spelling in
+// documentation, comments or a quoted/raw string. A second real definition
+// is ambiguous and cannot bind a protected student edit.
+inline std::optional<std::size_t> definition_start(
+        std::string_view source, std::string_view signature) {
+    std::optional<std::size_t> found;
+    bool line_leading = true;
+    for(std::size_t i = 0; i < source.size();) {
+        const auto c = source[i];
+        if(c == '\n' || c == '\r') { line_leading = true; ++i; continue; }
+        if(horizontal_space(c)) { ++i; continue; }
+        if(c == '/' && i + 1 < source.size() && source[i+1] == '/') {
+            const auto end = source.find_first_of("\r\n",i+2);
+            i = end == source.npos ? source.size() : end;
+            continue;
+        }
+        if(c == '/' && i + 1 < source.size() && source[i+1] == '*') {
+            const auto end = source.find("*/",i+2);
+            if(end == source.npos) return {};
+            // A comment preceding a signature on the same physical line
+            // is not a line-leading definition, even if it contains newlines.
+            line_leading = false;
+            i = end+2;
+            continue;
+        }
+        if((c == 'R' && i+1 < source.size() && source[i+1] == '"') ||
+           c == '"' || c == '\'') {
+            const auto end = quoted_end(source,i);
+            if(!end) return {};
+            i = *end;
+            line_leading = false;
+            continue;
+        }
+        if(line_leading && source.substr(i).starts_with(signature)) {
+            auto opening = i+signature.size();
+            while(opening < source.size() &&
+                  (horizontal_space(source[opening]) ||
+                   source[opening] == '\r' || source[opening] == '\n'))
+                ++opening;
+            if(opening < source.size() && source[opening] == '{') {
+                if(found) return {};
+                found = i;
+            }
+        }
+        line_leading = false;
+        ++i;
+    }
+    return found;
+}
 } // namespace cpp_member_body_detail
 
 inline std::optional<CppMemberBodySpan> cpp_member_body_span(
@@ -138,8 +188,9 @@ inline std::optional<CppMemberBodySpan> cpp_member_body_span(
        signature.find('(') == signature.npos || signature.find(')') == signature.npos ||
        signature.find("::") == signature.npos ||
        cpp_member_body_detail::physical_splice(source)) return {};
-    const auto at = source.find(signature);
-    if(at == source.npos || source.find(signature, at + 1) != source.npos) return {};
+    const auto definition = cpp_member_body_detail::definition_start(source,signature);
+    if(!definition) return {};
+    const auto at = *definition;
     const auto prior_newline = source.rfind('\n', at);
     const auto line_begin = prior_newline == source.npos ? 0 : prior_newline + 1;
     for(auto i = line_begin; i < at; ++i)

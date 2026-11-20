@@ -112,6 +112,33 @@ int main() { return 0; }
     return false;
 )cpp")), "Text-only mention of exit was rejected");
 
+        // Signatures quoted in the original lesson must not be mistaken for
+        // a second definition or make a valid method impossible to edit.
+        auto documented=check;
+        documented.original_source=std::string(R"cpp(
+#include <string_view>
+constexpr const char* explanation = R"memo(
+bool Deposito::transferir(int origen, int destino) { return false; }
+)memo";
+// bool Deposito::transferir(int origen, int destino) { return false; }
+/* Example:
+bool Deposito::transferir(int origen, int destino) { return false; }
+*/
+)cpp")+check.original_source;
+        const auto documented_span=cpp_member_body_span(documented);
+        require(documented_span.has_value() &&
+                cpp_member_body_preserves_source(documented,documented.original_source),
+                "A comment or a raw-string mention masked the authentic member");
+        const auto revised_documented=documented.original_source.substr(0,documented_span->begin)+
+            std::string("\n    return false;\n")+
+            documented.original_source.substr(documented_span->end);
+        require(cpp_member_body_preserves_source(documented,revised_documented),
+                "A permitted member edit failed when the same signature was documented");
+        auto invalid_literal=check;
+        invalid_literal.original_source=std::string("const char* broken = \"unfinished\n")+
+            check.original_source;
+        require(!cpp_member_body_span(invalid_literal),
+                "Unterminated source string before a method was accepted");
         auto wrong=check;
         wrong.signature="bool Deposito::vaciar(int origen)";
         require(!cpp_member_body_span(wrong),"A nonexistent signature became a valid owner");
