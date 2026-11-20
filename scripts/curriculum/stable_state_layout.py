@@ -4809,6 +4809,83 @@ def _validate_compiler_move_assignment_invariant_checks(document: dict) -> None:
                 "Move-assignment original operator body missing or ambiguous")
 
 
+def _validate_compiler_array_owner_read_checks(document: dict) -> None:
+    """Attach one fresh array ownership/read proof to an unchanged v2 editor."""
+    field="compilerArrayOwnerReadChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Array owner/read requires the existing Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Array owner/read requires 1..32 mapped owners")
+    required={"activity","className","ownerMember","countMember",
+              "quantityParameter","indexParameter","outputParameter",
+              "configureMethod","readMethod","quantityMethod","accessMethod",
+              "writeMethod","clearMethod","sumMethod"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Array owner/read requires exactly its documented authoring fields")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate array owner/read declaration")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Array owner/read must bind an original single-file output editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            entries=document.get(other,[])
+            require(type(entries) is list and not any(
+                    type(x) is dict and x.get("activity")==identity
+                    for x in entries),
+                "Array owner/read cannot share another private semantic owner")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Array owner/read requires an authentic original C++ source")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid array owner/read identifier")
+        name=item["className"]
+        require(len(re.findall(r"\bclass\s+"+re.escape(name)+r"\s*\{",
+                               source))==1,
+                "Array owner/read original class is missing or ambiguous")
+        owner=item["ownerMember"]
+        count=item["countMember"]
+        require(re.search(r"\bstd\s*::\s*unique_ptr\s*<\s*int\s*\[\s*\]\s*>\s*"+
+                          re.escape(owner)+r"\b",source) is not None,
+                "Array owner/read original unique_ptr<int[]> missing")
+        require(re.search(r"\bint\s+"+re.escape(count)+r"\b",source) is not None,
+                "Array owner/read original count missing")
+        config=(r"\bbool\s+"+re.escape(name)+r"\s*::\s*"+
+                re.escape(item["configureMethod"])+r"\s*\(\s*int\s+"+
+                re.escape(item["quantityParameter"])+r"\s*\)\s*noexcept\s*\{")
+        reader=(r"\bbool\s+"+re.escape(name)+r"\s*::\s*"+
+                re.escape(item["readMethod"])+r"\s*\(\s*int\s+"+
+                re.escape(item["indexParameter"])+r"\s*,\s*int\s*&\s*"+
+                re.escape(item["outputParameter"])+
+                r"\s*\)\s*const\s+noexcept\s*\{")
+        require(len(re.findall(config,source))==1 and
+                len(re.findall(reader,source))==1,
+                "Array owner/read requires the two original C++ method signatures")
+
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
@@ -5603,6 +5680,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_defaulted_move_policy_checks(document)
     _validate_compiler_independent_copy_assignment_checks(document)
     _validate_compiler_move_assignment_invariant_checks(document)
+    _validate_compiler_array_owner_read_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)
