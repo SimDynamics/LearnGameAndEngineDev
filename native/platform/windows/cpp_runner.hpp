@@ -18,6 +18,7 @@
 #include "core/cpp_polymorphic_destruction_check.hpp"
 #include "core/cpp_virtual_lifetime_dispatch_check.hpp"
 #include "core/cpp_derived_preparation_check.hpp"
+#include "core/cpp_abstract_interface_check.hpp"
 
 #include <array>
 #include <chrono>
@@ -132,6 +133,7 @@ struct CppRunRequest {
     std::optional<curriculum::CppPolymorphicDestructionPolicy> polymorphic_destruction_probe;
     std::optional<curriculum::CppVirtualLifetimeDispatchPolicy> virtual_lifetime_probe;
     std::optional<curriculum::CppDerivedPreparationPolicy> derived_preparation_probe;
+    std::optional<curriculum::CppAbstractInterfacePolicy> abstract_interface_probe;
     std::optional<curriculum::OpenBatteryProbeSpec> open_battery_probe;
     std::optional<curriculum::AssertionMode> assertion_mode;
     // Ordinary CMake builds and private probes do not need to parse the
@@ -188,6 +190,10 @@ struct CppVirtualLifetimeEvidence {
     CppPhaseResult compilation, execution;
 };
 struct CppDerivedPreparationEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppAbstractInterfaceEvidence {
     std::string driver_sha256, program_sha256, request_fingerprint;
     CppPhaseResult compilation, execution;
 };
@@ -321,6 +327,7 @@ struct CppRunResult {
     std::optional<CppPolymorphicDestructionEvidence> polymorphic_destruction_evidence;
     std::optional<CppVirtualLifetimeEvidence> virtual_lifetime_evidence;
     std::optional<CppDerivedPreparationEvidence> derived_preparation_evidence;
+    std::optional<CppAbstractInterfaceEvidence> abstract_interface_evidence;
     std::optional<CppNamedRuleBatteryEvidence> named_rule_battery_evidence;
     std::string named_rule_battery_request_fingerprint;
     std::optional<CppOpenBatteryEvidence> open_battery_evidence;
@@ -386,6 +393,8 @@ struct CppProjectAvailability {
 [[nodiscard]] std::string cpp_virtual_lifetime_request_fingerprint(
     const CppRunRequest& request);
 [[nodiscard]] std::string cpp_derived_preparation_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_abstract_interface_request_fingerprint(
     const CppRunRequest& request);
 
 // Blocking adapter: invoke on an owned worker, never the window thread. A stop
