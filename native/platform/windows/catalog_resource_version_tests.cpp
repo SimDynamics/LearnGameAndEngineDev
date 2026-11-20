@@ -40,7 +40,7 @@ int main() {
             const auto stamp=fs::last_write_time(target);
             const auto size=fs::file_size(target);
             const auto change_time=lgaed::windows::catalog_resource_change_time(target);
-            if(catalog_resource_change_time(target)!=change_time)
+            if(lgaed::windows::catalog_resource_change_time(target)!=change_time)
                 throw std::runtime_error("An unchanged file did not retain its own revision");
             Sleep(25);
             write(changed);
@@ -51,7 +51,6 @@ int main() {
             if(change_time==replaced)
                 throw std::runtime_error("A same-size edited file retained its cached revision");
         };
-        using lgaed::windows::catalog_resource_change_time;
         verify_change(temporary / L"course-edition-qa.json");
         const auto extended_root=fs::path(L"\\\\?\\"+fs::absolute(temporary).wstring());
         auto deep=extended_root;
@@ -63,7 +62,7 @@ int main() {
         struct LongPathCleanup {
             fs::path path;
             ~LongPathCleanup(){std::error_code error;fs::remove_all(path,error);}
-        } long_cleanup{deep};
+        } long_cleanup{extended_root};
         verify_change(deep / L"lesson_primera.json");
         std::cout<<"PASS: Win32 cache revisions detect equal-length replacement "
                     "after LastWriteTime restoration, including extended paths\n";
