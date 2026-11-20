@@ -145,6 +145,21 @@ target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_option
 add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
 
+# Reuse the same real Windows state-test executable for full builds and the
+# ReaderBuild/StateImport QA profiles. These three focused CLI modes read the
+# currently published lessons, generate only private QA state, and need no
+# presentation library or historical compiler fixture files.
+function(lgaed_add_compiler_guidance_state_target)
+    if(TARGET lgaed_compiler_guidance_state_tests)
+        return()
+    endif()
+    add_executable(lgaed_compiler_guidance_state_tests
+        native/platform/windows/compiler_guidance_state_tests.cpp
+        native/platform/windows/math_matching_text_state_tests.cpp)
+    target_link_libraries(lgaed_compiler_guidance_state_tests
+        PRIVATE lgaed_platform_windows lgaed_host_options)
+endfunction()
+
 function(lgaed_add_named_rule_source_tests)
     if(TARGET lgaed_named_rule_check_tests)
         return()
@@ -205,9 +220,21 @@ if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
         find_package(Python3 REQUIRED COMPONENTS Interpreter)
         include(cmake/StateImportTests.cmake)
         lgaed_add_state_import_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/state-import")
-        # Keep the import suite focused on historical state and compiler
-        # contracts. General guidance is exercised by the full native configuration;
-        # this isolated profile lacks all resources those fixtures reference.
+        # The three real-lesson CLI paths use no fixture files from the full
+        # guidance suite. Run them here against the same native StateStore,
+        # full/progress loaders and immutable historical owners.
+        lgaed_add_compiler_guidance_state_target()
+        add_test(NAME native.math_matching_text_live
+            COMMAND lgaed_compiler_guidance_state_tests --math-matching-text-live)
+        add_test(NAME native.general_choice_live
+            COMMAND lgaed_compiler_guidance_state_tests --general-choice-live)
+        add_test(NAME native.identifier_rename_live
+            COMMAND lgaed_compiler_guidance_state_tests --identifier-rename-live)
+        set_tests_properties(native.math_matching_text_live
+            native.general_choice_live native.identifier_rename_live
+            PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+        # The remaining guidance modes still require fixtures from the full
+        # native configuration; the StateImport profile does not run those modes.
         message(STATUS "Focused native import QA: historical suites and exact runtime stderr; no application, reader or audio verification.")
     else()
         include(cmake/NarrationPlayerTests.cmake)
@@ -767,6 +794,17 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_open_battery_runtime_test()
     lgaed_add_semantic_retirement_view_test()
     lgaed_add_compiler_case_order_view_test()
+    lgaed_add_compiler_guidance_state_target()
+    add_test(NAME native.math_matching_text_live
+        COMMAND lgaed_compiler_guidance_state_tests --math-matching-text-live)
+    set_tests_properties(native.math_matching_text_live
+        PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    add_test(NAME native.general_choice_live
+        COMMAND lgaed_compiler_guidance_state_tests --general-choice-live)
+    add_test(NAME native.identifier_rename_live
+        COMMAND lgaed_compiler_guidance_state_tests --identifier-rename-live)
+    set_tests_properties(native.general_choice_live native.identifier_rename_live
+        PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     # Run the real Win32 compiler view against thirteen authored inputs.
     # Exactly the first must unlock navigation; all others remain optional.
     add_executable(lgaed_compiler_first_case_view_tests
@@ -1127,19 +1165,25 @@ if(BUILD_TESTING)
     add_executable(lgaed_compiler_feedback_source_tests native/platform/windows/compiler_feedback_source_tests.cpp)
     target_link_libraries(lgaed_compiler_feedback_source_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.compiler_feedback_source COMMAND lgaed_compiler_feedback_source_tests)
-    # The state-test CLI dispatches --math-matching-text-live to a separate
-    # implementation unit. Link it explicitly to avoid an unresolved external
-    # when compiling the full windows-x64-release target.
-    add_executable(lgaed_compiler_guidance_state_tests
-        native/platform/windows/compiler_guidance_state_tests.cpp
-        native/platform/windows/math_matching_text_state_tests.cpp)
-    target_link_libraries(lgaed_compiler_guidance_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    lgaed_add_compiler_guidance_state_target()
     add_test(NAME native.compiler_guidance_state COMMAND lgaed_compiler_guidance_state_tests)
     set_tests_properties(native.compiler_guidance_state PROPERTIES TIMEOUT 30)
     add_test(NAME native.compiler_review_guidance_priority COMMAND lgaed_compiler_guidance_state_tests --review-priority)
     set_tests_properties(native.compiler_review_guidance_priority PROPERTIES TIMEOUT 30)
     add_test(NAME native.u12l24_authored_compiler_guides COMMAND lgaed_compiler_guidance_state_tests --authored-l24-guides)
     set_tests_properties(native.u12l24_authored_compiler_guides PROPERTIES TIMEOUT 30)
+    # Exercise the separately compiled matching-text implementation, not just
+    # its link dependency. The regression uses a private QA copy and does not
+    # mutate the authored U5L13 lesson or any student state.
+    add_test(NAME native.math_matching_text_live
+        COMMAND lgaed_compiler_guidance_state_tests --math-matching-text-live)
+    set_tests_properties(native.math_matching_text_live PROPERTIES TIMEOUT 60)
+    add_test(NAME native.general_choice_live
+        COMMAND lgaed_compiler_guidance_state_tests --general-choice-live)
+    add_test(NAME native.identifier_rename_live
+        COMMAND lgaed_compiler_guidance_state_tests --identifier-rename-live)
+    set_tests_properties(native.general_choice_live native.identifier_rename_live
+        PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     add_test(NAME curriculum.compiler_guidance_projection COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_compiler_guidance_projection.py)
     add_executable(lgaed_text_semantic_projection_tests native/presentation/windows/text_semantic_projection_tests.cpp)

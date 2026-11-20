@@ -40,7 +40,7 @@ $qaSuiteConfig = switch ($Suite) {
         @{
             Directory = 'state-import-ci'
             CMakeOption = 'LGAED_STATE_IMPORT_QA_ONLY'
-            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests', 'lgaed_cpp_project_history_tests', 'lgaed_cpp_history_training_tests', 'lgaed_code_format_loader_tests', 'lgaed_u6_compilecheck_format_runner_tests', 'lgaed_compiler_case_order_state_tests', 'lgaed_compiler_case_revision_state_tests')
+            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests', 'lgaed_cpp_project_history_tests', 'lgaed_cpp_history_training_tests', 'lgaed_code_format_loader_tests', 'lgaed_u6_compilecheck_format_runner_tests', 'lgaed_compiler_case_order_state_tests', 'lgaed_compiler_case_revision_state_tests', 'lgaed_compiler_guidance_state_tests')
             Results = 'state-import'
             Tests = @(
                 'native.cpp_project_history',
@@ -53,7 +53,10 @@ $qaSuiteConfig = switch ($Suite) {
                 'native.compiler_contract_state_import',
                 'native.compiler_case_order_state',
                 'native.compiler_case_revision_state',
-                'native.stderr_exact_contract'
+                'native.stderr_exact_contract',
+                'native.math_matching_text_live',
+                'native.general_choice_live',
+                'native.identifier_rename_live'
             )
         }
     }
@@ -78,6 +81,7 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_lesson_reader_tests',
                 'lgaed_lesson_view_tests',
                 'lgaed_lesson_tests',
+                'lgaed_compiler_guidance_state_tests',
                 'lgaed_code_gutter_wheel_tests',
                 'lgaed_lesson_scroll_tests',
                 'lgaed_diagnostic_path_tests',
@@ -537,6 +541,9 @@ if ($Suite -eq 'ReaderBuild') {
         'native.compiler_case_order_view',
         'native.compiler_case_revision_view',
         'native.catalog',
+        'native.math_matching_text_live',
+        'native.general_choice_live',
+        'native.identifier_rename_live',
         'native.course_edition',
         'native.course_edition_authoring',
         'native.optional_prose_format',
