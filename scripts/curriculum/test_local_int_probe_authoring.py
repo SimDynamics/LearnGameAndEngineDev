@@ -130,6 +130,23 @@ class LocalIntAuthoringTests(unittest.TestCase):
                     state.validate_transition(expanded, altered)
 
 
+    def test_original_and_changed_increase_are_independent_contracts(self):
+        document = fixture()
+        document["compilerLocalIntChecks"][0]["probes"].append({
+            "variable": "llaves", "replacement": 13, "afterUpdate": True,
+            "outputs": ["Llaves: 17", "Llaves: 17\n"],
+        })
+        self.valid(document)
+        for value in (False, None, "true", 1, 0):
+            wrong = deepcopy(document)
+            wrong["compilerLocalIntChecks"][0]["probes"][1]["afterUpdate"] = value
+            with self.subTest(afterUpdate=value):
+                self.rejected(wrong)
+        wrong = deepcopy(document)
+        wrong["compilerLocalIntChecks"][0]["probes"].append(
+            deepcopy(wrong["compilerLocalIntChecks"][0]["probes"][1]))
+        self.rejected(wrong)
+
     def test_rejects_duplicate_edits_and_conflicting_owners(self):
         item = fixture()
         item["compilerLocalIntChecks"][0]["probes"].append(deepcopy(

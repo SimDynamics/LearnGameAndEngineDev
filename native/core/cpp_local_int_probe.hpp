@@ -22,6 +22,11 @@ struct CppLocalIntProbe {
     // Separate, independently authored outputs after replacing this int.
     // The ordinary visible OutputCheck is not part of this hidden evidence.
     std::vector<std::string> expected_stdout{};
+    // False: replace the initialized local int. True: add an independent
+    // delta immediately after its first complete root-level state update.
+    // This witnesses a changed increase without rewriting the student's
+    // original initializer, addition expression or saved source.
+    bool after_update = false;
     bool operator==(const CppLocalIntProbe&) const = default;
 };
 
@@ -57,7 +62,8 @@ inline bool cpp_local_int_check_valid(const CppLocalIntCheck& check) {
                !distinct.insert(cpp_local_int_canonical_stdout(output)).second)return false;
         for(std::size_t prior=0;prior<index;++prior)
             if(check.probes[prior].variable==probe.variable&&
-               check.probes[prior].replacement==probe.replacement)return false;
+               check.probes[prior].replacement==probe.replacement&&
+               check.probes[prior].after_update==probe.after_update)return false;
     }
     return true;
 }
@@ -213,6 +219,51 @@ inline std::optional<std::size_t> first_assignment(
     }
     return {};
 }
+// Locate an actual change to an initialized local int at the main-body
+// level, rather than rewriting a literal 3. Both "aforo += 3" and
+// "aforo = aforo + 3" are accepted, as well as equivalent +/- or increment
+// syntax. A single extra addition is made AFTER the complete statement:
+// a copy taken before it must stay independent; a copy made afterwards
+// must see the modified state. Nested or expression-only writes fail closed.
+inline std::optional<std::size_t> first_state_update(
+        const Tokens& code,std::size_t after,std::size_t closing,
+        std::string_view variable) {
+    const auto wanted="id:"+std::string(variable);
+    std::size_t braces=1,parentheses=0,brackets=0;
+    const auto updates=[](std::string_view value) {
+        return value=="op:=" || value=="op:+=" || value=="op:-=" ||
+               value=="op:++" || value=="op:--";
+    };
+    for(std::size_t i=after;i<closing;++i) {
+        const auto& t=code[i].value;
+        if(braces==1&&!parentheses&&!brackets&&i>0&&
+           boundary(code[i-1].value)) {
+            const bool postfix=t==wanted&&i+1<closing&&
+                updates(code[i+1].value);
+            const bool prefix=(t=="op:++"||t=="op:--")&&
+                i+1<closing&&code[i+1].value==wanted;
+            if(postfix||prefix) {
+                const auto statement=statement_end(code,i+2,closing);
+                if(!statement)return {};
+                return statement;
+            }
+        }
+        if(t=="op:{")++braces;
+        else if(t=="op:}") {
+            if(!braces)return {};
+            --braces;
+        } else if(t=="op:(")++parentheses;
+        else if(t=="op:)") {
+            if(!parentheses)return {};
+            --parentheses;
+        } else if(t=="op:[")++brackets;
+        else if(t=="op:]") {
+            if(!brackets)return {};
+            --brackets;
+        }
+    }
+    return {};
+}
 } // namespace cpp_local_int_probe_detail
 
 // Insert a new value just after a complete local int initialization inside
@@ -236,13 +287,19 @@ inline std::optional<std::size_t> first_assignment(
         if (!assignment) return {};
         end = *assignment;
     }
+    if(probe.after_update) {
+        const auto updated=cpp_local_int_probe_detail::first_state_update(
+            *code,end+1,body->second,probe.variable);
+        if(!updated)return {};
+        end=*updated;
+    }
     const auto offset = (*code)[end].end;
     std::string variant;
     variant.reserve(source.size() + probe.variable.size() + 32);
     variant += source.substr(0, offset);
     variant += "\n    ";
     variant += probe.variable;
-    variant += " = ";
+    variant += probe.after_update?" += ":" = ";
     variant += std::to_string(probe.replacement);
     variant += ";\n";
     variant += source.substr(offset);

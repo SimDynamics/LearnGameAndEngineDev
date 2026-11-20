@@ -126,10 +126,14 @@ int main(){
             R"JSON([
                 {"activity":"block_0006_0002","probes":[
                     {"variable":"aforo","replacement":10,"outputs":["Antes: 10\nAhora: 13","Antes: 10\nAhora: 13\n"]},
-                    {"variable":"anterior","replacement":11,"outputs":["Antes: 11\nAhora: 8","Antes: 11\nAhora: 8\n"]}]},
+                    {"variable":"anterior","replacement":11,"outputs":["Antes: 11\nAhora: 8","Antes: 11\nAhora: 8\n"]},
+                    {"variable":"aforo","replacement":4,"afterUpdate":true,
+                     "outputs":["Antes: 5\nAhora: 12","Antes: 5\nAhora: 12\n"]}]},
                 {"activity":"block_0006_0006","probes":[
                     {"variable":"aforo","replacement":10,"outputs":["Antes: 13\nAhora: 13","Antes: 13\nAhora: 13\n"]},
-                    {"variable":"anterior","replacement":11,"outputs":["Antes: 11\nAhora: 8","Antes: 11\nAhora: 8\n"]}]}
+                    {"variable":"anterior","replacement":11,"outputs":["Antes: 11\nAhora: 8","Antes: 11\nAhora: 8\n"]},
+                    {"variable":"aforo","replacement":4,"afterUpdate":true,
+                     "outputs":["Antes: 12\nAhora: 12","Antes: 12\nAhora: 12\n"]}]}
             ])JSON",
             {"block_0006_0002","block_0006_0006"},
             {

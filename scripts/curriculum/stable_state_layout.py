@@ -6595,8 +6595,9 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
                 "Local-int owner requires 1..8 private variations")
         known = set()
         for probe in probes:
-            require(type(probe) is dict and set(probe) ==
-                    {"variable", "replacement", "outputs"},
+            require(type(probe) is dict and
+                    {"variable", "replacement", "outputs"} <= set(probe) <=
+                    {"variable", "replacement", "outputs", "afterUpdate"},
                     "Local-int variation requires variable, replacement and outputs")
             variable, replacement, outputs = (
                 probe["variable"], probe["replacement"], probe["outputs"])
@@ -6607,9 +6608,13 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
                 "Invalid local-int variable name")
             require(type(replacement) is int and -(2 ** 31) <= replacement < 2 ** 31,
                     "Local-int replacement requires a signed 32-bit integer")
-            require((variable, replacement) not in known,
+            after_update = probe.get("afterUpdate", False)
+            require(type(after_update) is bool and
+                    ("afterUpdate" not in probe or after_update is True),
+                    "Local-int afterUpdate must be explicit boolean true")
+            require((variable, replacement, after_update) not in known,
                     "A local-int variation cannot repeat a prior replacement")
-            known.add((variable, replacement))
+            known.add((variable, replacement, after_update))
             require(type(outputs) is list and 1 <= len(outputs) <= 4 and
                     all(type(o) is str and o and "\x00" not in o and
                         len(o.encode("utf-8")) <= 4096 and

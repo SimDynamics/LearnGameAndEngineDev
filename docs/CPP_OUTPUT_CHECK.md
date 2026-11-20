@@ -3667,3 +3667,29 @@ Si no existe `compilerLocalIntChecks`, no cambia la evaluación anterior.
 Esta capacidad se limita de momento a editores C++ de una sola fuente
 y ejecución MSVC nativa. La revisión curricular y sus valores esperados
 pertenecen a Work.
+
+
+### Mutación del aumento, además del valor inicial (U2L3)
+
+Una sonda puede incluir `"afterUpdate": true` para expresar una
+variación independiente del aumento, sin sustituir la expresión original.
+En ese modo, `replacement` es la **cantidad adicional** que se suma
+después de la primera actualización completa de la variable local.
+Se reconocen actualizaciones directas como `aforo += 3`,
+`aforo = aforo + 3`, `aforo = 3 + aforo`, incremento o resta
+equivalente. El código se conserva; se inserta únicamente
+`aforo += replacement;` después de esa instrucción.
+
+Por ejemplo, U2L3 debe exigir a la vez una variación del inicio y otra
+del aumento de `aforo`, además de contrastar la salida procedente
+de `anterior`. Si `anterior` se copió antes del aumento, la sonda
+del incremento deja intacta su salida «Antes» y cambia «Ahora».
+Si se copió después, ambas salidas deben cambiar. Los programas
+que impriman `aforo` dos veces sin guardar la copia no acreditan
+el conjunto. Esta comprobación sigue siendo interna; no añade
+casos visibles obligatorios al estudiante.
+
+El campo es opcional; su ausencia preserva el comprobante y las
+expectativas históricas de las sondas anteriores. Su presencia
+requiere el booleano JSON `true` y se vincula a la huella de
+la ejecución y al comprobante semántico separado.

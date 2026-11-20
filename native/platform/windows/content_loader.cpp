@@ -4592,7 +4592,7 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
         CppLocalIntCheck spec;
         for(const auto& variant:authored) {
             const auto probe=variant.GetObject();
-            allowed_keys(probe,{"variable","replacement","outputs"},true);
+            allowed_keys(probe,{"variable","replacement","outputs","afterUpdate"});
             const auto number=probe.GetNamedValue(L"replacement");
             require(number.ValueType()==JsonValueType::Number&&
                     std::isfinite(number.GetNumber())&&
@@ -4604,6 +4604,13 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
             next.variable=text(probe,"variable");
             next.replacement=static_cast<std::int32_t>(number.GetNumber());
             next.expected_stdout=strings(array(probe,"outputs"),true);
+            if(probe.HasKey(L"afterUpdate")) {
+                const auto flag=probe.GetNamedValue(L"afterUpdate");
+                require(flag.ValueType()==JsonValueType::Boolean&&
+                        flag.GetBoolean(),
+                    "afterUpdate must be the explicit true option.");
+                next.after_update=true;
+            }
             // A variant with the same permitted output as the published
             // unchanged program could never distinguish a hard-coded value.
             for(const auto& expected:next.expected_stdout)

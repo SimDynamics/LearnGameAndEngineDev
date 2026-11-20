@@ -429,6 +429,7 @@ std::string local_int_fingerprint(const CppRunRequest& request) {
         if(!variant)return {};
         frame+=field(probe.variable)+field(std::to_string(probe.replacement))+
             field(state::sha256(*variant));
+        if(probe.after_update)frame+=field("after-update-v1");
         for(const auto& expected:probe.expected_stdout)
             frame+=field(expected);
     }

@@ -146,6 +146,55 @@ void int32_limits_and_old_text_are_preserved() {
         "An integer limit was mangled or an original learner text was edited");
 }
 
+void changed_increase_is_observed_at_the_actual_update() {
+    const char* equivalents[]{
+        "aforo += 3;",
+        "aforo = aforo + 3;",
+        "aforo = 3 + aforo;",
+        "aforo -= -3;",
+        "++aforo; ++aforo; ++aforo;",
+        "aforo++; aforo++; aforo++;"
+    };
+    for(const auto* increase:equivalents) {
+        const std::string after="#include <iostream>\nint main(){\n"
+            "int aforo{5};\n"+std::string(increase)+
+            "\nint anterior=aforo;\nstd::cout<<anterior<<aforo;\n}";
+        const auto changed=cpp_local_int_override(after,
+            {"aforo",4,{},true});
+        require(changed&&
+            changed->find("aforo += 4;\n")!=std::string::npos&&
+            changed->find("aforo += 4;\n")<changed->find("int anterior=aforo;")&&
+            after.find("aforo += 4;\n")==std::string::npos,
+            "After-update probe did not preserve the original increase or copy order");
+        const std::string before="int main(){int aforo(5); int anterior=aforo; "
+            +std::string(increase)+" std::cout<<anterior<<aforo;}";
+        const auto other=cpp_local_int_override(before,
+            {"aforo",4,{},true});
+        require(other&&
+            other->find("int anterior=aforo;")<
+                other->find("aforo += 4;\n")&&
+            other->find("aforo += 4;\n")<
+                other->find("std::cout<<anterior<<aforo;"),
+            "After-update mutation incorrectly changed the already captured copy");
+    }
+    for(const auto& original:{
+            "int main(){int aforo{5}; std::cout<<aforo;}",
+            "int main(){int aforo=5; if(true){aforo+=3;} std::cout<<aforo;}",
+            "int main(){int aforo=5; int copia=++aforo; std::cout<<aforo;}",
+            "int main(){int aforo=5; aforo+=3, ++aforo; std::cout<<aforo;}"
+        })
+        require(!cpp_local_int_override(original,{"aforo",4,{},true}),
+            "Absent, nested or ambiguous first increase was instrumented");
+    lgaed::curriculum::CppLocalIntCheck distinct{
+        {{"aforo",4,{"Ahora: 9"},false},
+         {"aforo",4,{"Ahora: 13"},true}}};
+    require(lgaed::curriculum::cpp_local_int_check_valid(distinct),
+        "Changing the initial int and its later increase must remain independent");
+    distinct.probes.push_back({"aforo",4,{"Ahora: 13"},true});
+    require(!lgaed::curriculum::cpp_local_int_check_valid(distinct),
+        "A repeated after-update mutation was treated as a distinct probe");
+}
+
 void expected_outputs_are_independent_and_reversible() {
     using lgaed::curriculum::CppLocalIntCheck;
     using lgaed::curriculum::cpp_local_int_check_valid;
@@ -183,6 +232,7 @@ int main() {
         unsafe_ambiguous_and_other_scope_are_rejected();
         int32_limits_and_old_text_are_preserved();
         expected_outputs_are_independent_and_reversible();
+        changed_increase_is_observed_at_the_actual_update();
         std::cout << "PASS local int probes: equivalent initialization, independent "
                      "variables, copy state, safe token positions.\n";
         return 0;

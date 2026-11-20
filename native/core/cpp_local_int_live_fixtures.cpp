@@ -19,8 +19,8 @@ struct Scenario {
     const char* name;
     std::string_view source;
     std::string_view visible;
-    std::array<CppLocalIntProbe,2> probes;
-    std::array<std::string_view,2> expected;
+    std::array<CppLocalIntProbe,3> probes;
+    std::array<std::string_view,3> expected;
     std::size_t probe_count;
 };
 
@@ -49,42 +49,42 @@ int main(int argc,char** argv) try {
             R"CPP(#include <iostream>
 int main(){int llaves=3+4; std::cout<<"Llaves: "<<llaves;})CPP",
             "Llaves: 7",
-            {{{"llaves",13,{}},{}}},
-            {{"Llaves: 13", ""}},1},
+            {{{"llaves",13,{}},{},{}}},
+            {{"Llaves: 13", "", ""}},1},
         {"u2l1_llaves_11",
             R"CPP(#include <iostream>
 int main(){int llaves(11); std::cout<<"Llaves: "<<llaves;})CPP",
             "Llaves: 11",
-            {{{"llaves",19,{}},{}}},
-            {{"Llaves: 19", ""}},1},
+            {{{"llaves",19,{}},{},{}}},
+            {{"Llaves: 19", "", ""}},1},
         {"u2l2_cajas4_sobres9",
             R"CPP(#include <iostream>
 int main(){int cajas{4}; int sobres=9;
 std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;})CPP",
             "Cajas: 4\nSobres: 9",
-            {{{"cajas",13,{}},{"sobres",17,{}}}},
-            {{"Cajas: 13\nSobres: 9","Cajas: 4\nSobres: 17"}},2},
+            {{{"cajas",13,{}},{"sobres",17,{}},{}}},
+            {{"Cajas: 13\nSobres: 9","Cajas: 4\nSobres: 17",""}},2},
         {"u2l2_cajas0_sobres2",
             R"CPP(#include <iostream>
 int main(){int cajas=0; int sobres{2};
 std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;})CPP",
             "Cajas: 0\nSobres: 2",
-            {{{"cajas",6,{}},{"sobres",17,{}}}},
-            {{"Cajas: 6\nSobres: 2","Cajas: 0\nSobres: 17"}},2},
+            {{{"cajas",6,{}},{"sobres",17,{}},{}}},
+            {{"Cajas: 6\nSobres: 2","Cajas: 0\nSobres: 17",""}},2},
         {"u2l3_copy_before",
             R"CPP(#include <iostream>
 int main(){int aforo{5}; int anterior=aforo; aforo+=3;
 std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP",
             "Antes: 5\nAhora: 8",
-            {{{"aforo",10,{}},{"anterior",11,{}}}},
-            {{"Antes: 10\nAhora: 13","Antes: 11\nAhora: 8"}},2},
+            {{{"aforo",10,{}},{"anterior",11,{}},{"aforo",4,{},true}}},
+            {{"Antes: 10\nAhora: 13","Antes: 11\nAhora: 8","Antes: 5\nAhora: 12"}},3},
         {"u2l3_copy_after",
             R"CPP(#include <iostream>
 int main(){int aforo=5; aforo+=3; int anterior(aforo);
 std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP",
             "Antes: 8\nAhora: 8",
-            {{{"aforo",10,{}},{"anterior",11,{}}}},
-            {{"Antes: 13\nAhora: 13","Antes: 11\nAhora: 8"}},2}
+            {{{"aforo",10,{}},{"anterior",11,{}},{"aforo",4,{},true}}},
+            {{"Antes: 13\nAhora: 13","Antes: 11\nAhora: 8","Antes: 12\nAhora: 12"}},3}
     }};
     std::size_t emitted=0;
     for(const auto& example:examples) {
@@ -117,8 +117,8 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP";
     if(!bad_copy)throw std::runtime_error("Cannot probe a fake-copy adversary");
     emit(directory,"reject_fake_copy",*bad_copy,"Antes: 10\nAhora: 13",false);
     ++emitted;
-    if(emitted!=18)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 18 isolated C++ executions for six U2 owners and two adversaries\n";
+    if(emitted!=20)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 20 isolated C++ executions for six U2 owners and two adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';
