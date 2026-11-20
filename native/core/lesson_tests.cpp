@@ -1057,7 +1057,7 @@ void integrated_retirement_contract_tests() {
             "Integrated retirement lost or added a grouped ordering provenance record");
         if(!plan.refined_order.empty()){
             const auto position=stable_block_position(current,plan.refined_order),origin=stable_block_position(before,plan.refined_order);
-            check(origin,"An integrated ordering lost its original activity identity");
+            check(origin.has_value(),"An integrated ordering lost its original activity identity");
             const auto& old=before.pages[origin->page].blocks[origin->block];
             const auto& refinement=current.state_layout.order_refinements.front();
             check(refinement.id==plan.refined_order&&refinement.original_fragments==old.fragments&&
