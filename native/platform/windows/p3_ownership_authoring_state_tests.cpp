@@ -3,10 +3,12 @@
 // This checks real loader and progress projections, not running student code.
 #include "core/lesson.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/state_store.hpp"
 #include "native_build_config.hpp"
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <array>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -14,6 +16,8 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
+#include <set>
 
 namespace {
 using namespace lgaed;
@@ -95,6 +99,17 @@ int main() try {
     const auto entries=manifest.GetNamedArray(L"entries");
     require(entries.Size()==plans.size(),
         "P3 authoring manifest lost its fourteen distinct objectives");
+    // Existing individual fixture tests check one profile per owner. The
+    // entire course also needs a *shared* profile: fourteen historical drafts
+    // must retain independent keys and survive activation of every opt-in.
+    // This is model/state QA, not a fabricated claim of compiling student C++.
+    state::StateData historical;
+    historical.preferences["qa-p3-other-course"]["opaque"]=
+        std::string("retain exactly");
+    std::vector<Lesson> originals,revisions;
+    std::vector<std::string> owners;
+    std::vector<state::Draft> saved_drafts;
+    std::set<std::string> draft_keys;
     for(unsigned i=0;i<entries.Size();++i) {
         const auto item=entries.GetObjectAt(i);
         const auto unit=winrt::to_string(item.GetNamedString(L"unit"));
@@ -148,10 +163,91 @@ int main() try {
             "Native P3 full/progress loader accepted a forged owner");
         require(read(file)==original_bytes,
             "Native P3 authoring QA modified the actual lesson asset");
+
+        state::prepare_lesson_state(historical,before);
+        state::Draft draft;
+        draft.source=old.initial_code+
+            "\n// Isolated P3 shared-profile draft before adoption: "+unit+"\n";
+        draft.input=old.output_check->cases.front().standard_input;
+        const auto saved_key=draft_key("programming",before,old);
+        require(draft_keys.insert(saved_key).second,
+            "Two historical P3 editors share a draft storage key");
+        state::put_draft(historical,saved_key,draft);
+        const auto loaded_draft=state::get_draft(historical,saved_key,
+            old.initial_code,old.standard_input.value_or(""));
+        require(loaded_draft.source==draft.source&&loaded_draft.input==draft.input,
+            "Saving a P3 draft corrupted an earlier course owner");
+        originals.push_back(before);
+        revisions.push_back(after);
+        owners.push_back(identity);
+        saved_drafts.push_back(std::move(draft));
         std::cout<<"PASS native P3 "<<unit
                  <<": authentic owner, metadata and full WinRT loader, "
                  <<"unchanged source/IDs and rejected forged owner\n";
     }
+    // Persist one mixed-course state, not fourteen separate state folders.
+    // Fresh paths are created only under the disposable OS temp directory.
+    // Existing profile directories are never removed or overwritten.
+    const auto stamp=std::chrono::steady_clock::now()
+        .time_since_epoch().count();
+    const auto profile=std::filesystem::temp_directory_path()/
+        ("lgaed-p3-shared-qa-"+std::to_string(stamp));
+    require(!std::filesystem::exists(profile),
+        "P3 regression refuses to reuse a pre-existing state directory");
+    state::StateStore store(profile);
+    require(store.load().preferences.empty(),
+        "An isolated P3 profile unexpectedly contained learner data");
+    const auto initial=historical;
+    store.save(historical);
+    state::StateStore imported(profile);
+    auto current=imported.load();
+    require(current==initial,
+        "A shared P3 profile lost original lessons or drafts on first reopen");
+    for(std::size_t i=0;i<revisions.size();++i) {
+        const auto& before=originals[i];
+        const auto& after=revisions[i];
+        const auto& old=owner(before,owners[i]);
+        const auto& active=owner(after,owners[i]);
+        require(draft_key("programming",before,old)==
+                draft_key("programming",after,active),
+            "Authoring a P3 semantic goal changed its historical draft key");
+        state::prepare_lesson_state(current,after);
+        state::validate_lesson_state(current,after);
+        require(state::get_draft(current,
+                    draft_key("programming",after,active),
+                    active.initial_code,
+                    active.standard_input.value_or("")).source==
+                saved_drafts[i].source,
+            "P3 semantic adoption lost an original draft in a shared profile");
+        require(state::get_draft(current,
+                    draft_key("programming",after,active),
+                    active.initial_code,
+                    active.standard_input.value_or("")).input==
+                saved_drafts[i].input,
+            "P3 semantic adoption lost original case input in a shared profile");
+    }
+    require(state::string_value(current,"qa-p3-other-course","opaque")==
+                "retain exactly",
+        "Enabling P3 owners modified an unrelated course preference");
+    imported.save(current);
+    state::StateStore final_reader(profile);
+    const auto restored=final_reader.load();
+    require(restored==current,
+        "P3 new metadata and original drafts changed on durable reopen");
+    for(std::size_t i=0;i<revisions.size();++i) {
+        const auto& lesson=revisions[i];
+        const auto& block=owner(lesson,owners[i]);
+        const auto draft=state::get_draft(restored,
+            draft_key("programming",lesson,block),block.initial_code,
+            block.standard_input.value_or(""));
+        require(draft.source==saved_drafts[i].source&&
+                draft.input==saved_drafts[i].input,
+            "One P3 adoption overwrote another lesson's historical draft");
+        state::validate_lesson_state(restored,lesson);
+    }
+    std::cout<<"PASS P3 shared profile: fourteen independent original drafts "
+             <<"and unrelated settings preserved through all opt-ins, "
+             <<"StateStore save and two durable reopens\n";
     std::cout<<"PASS fourteen P3 native authoring projections; "
              <<"no student code, lesson or progress modified\n";
     return 0;
