@@ -149,6 +149,10 @@ BAD_MOVE = {
     return *this;
 """,
     "clears_self_move": r"""
+    if (this == &otra) {
+        vaciar();
+        return *this;
+    }
     datos_ = std::move(otra.datos_);
     cantidad_ = std::exchange(otra.cantidad_, 0);
     return *this;
