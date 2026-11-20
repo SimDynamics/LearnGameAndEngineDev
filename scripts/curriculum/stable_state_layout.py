@@ -4675,6 +4675,71 @@ def _validate_compiler_defaulted_move_policy_checks(document: dict) -> None:
                           re.escape(member)+r"\b",source) is not None,
                 "Defaulted move policy requires its original unique_ptr<int> member")
 
+def _validate_compiler_independent_copy_assignment_checks(document: dict) -> None:
+    """Validate separately authored copy-assignment policy on a stable original editor."""
+    field = "compilerIndependentCopyAssignmentChecks"
+    if field not in document:
+        return
+    meta = document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version") == 2 and
+            meta.get("locale") == "es",
+            "Independent copy assignment requires an existing Spanish v2 lesson")
+    checks = document[field]
+    require(type(checks) is list and 0 < len(checks) <= 32,
+            "Independent copy assignment requires 1..32 mapped owners")
+    required = {"activity","className","memberName","parameterName",
+                "hasMethod","valueMethod","accessMethod","putMethod",
+                "changeMethod","clearMethod"}
+    owners = _blocks(document)
+    seen = set()
+    for item in checks:
+        require(type(item) is dict and set(item) == required,
+                "Independent copy assignment requires the documented authoring fields")
+        identity = _identity(item["activity"])
+        require(identity not in seen, "Duplicate independent copy assignment owner")
+        seen.add(identity)
+        owner = owners.get(identity)
+        require(type(owner) is dict and owner.get("type") == "cpp_compiler"
+                and type(owner.get("outputCheck")) is dict
+                and type(owner["outputCheck"].get("cases")) is list
+                and bool(owner["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"} & set(owner)),
+                "Independent copy assignment requires an original single-file output editor")
+        for key in ("compilerIndexedUniqueTransferChecks","compilerDefaultedMovePolicyChecks",
+                    "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                    "compilerReductionChecks","compilerCmakeGraphChecks",
+                    "compilerIntegerBatteryChecks"):
+            others = document.get(key, [])
+            require(type(others) is list and not any(
+                    type(record) is dict and record.get("activity") == identity
+                    for record in others),
+                "Independent copy assignment cannot share another private owner")
+        source = owner.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Independent copy assignment requires original C++ source")
+        for name in required - {"activity"}:
+            word = item[name]
+            require(type(word) is str and 0 < len(word) <= 96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", word)
+                    and not word.startswith("__")
+                    and not (word.startswith("_") and len(word)>1 and word[1].isupper()),
+                "Invalid independent copy assignment C++ identifier")
+        cls = item["className"]
+        member = item["memberName"]
+        param = item["parameterName"]
+        require(len(re.findall(r"\b(?:class|struct)\s+"+re.escape(cls)+r"\s*\{",
+                               source)) == 1,
+                "Independent copy assignment class missing or ambiguous")
+        require(re.search(r"\bstd\s*::\s*unique_ptr\s*<\s*int\s*>\s*"+
+                          re.escape(member)+r"\b",source) is not None,
+                "Independent copy assignment original member is missing")
+        signature = (r"\b"+re.escape(cls)+r"\s*&\s*"+re.escape(cls)+
+                     r"\s*::\s*operator\s*=\s*\(\s*const\s+"+
+                     re.escape(cls)+r"\s*&\s*"+re.escape(param)+r"\s*\)\s*\{")
+        require(len(re.findall(signature, source)) == 1,
+                "Independent copy assignment must bind one original operator body")
+
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
@@ -5467,6 +5532,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_named_rule_checks(document)
     _validate_compiler_indexed_unique_transfer_checks(document)
     _validate_compiler_defaulted_move_policy_checks(document)
+    _validate_compiler_independent_copy_assignment_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)
