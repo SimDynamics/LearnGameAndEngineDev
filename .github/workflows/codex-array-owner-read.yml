@@ -1,0 +1,50 @@
+name: Codex U6L10 independent array owner and safe read
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-array-owner-read.yml
+      - scripts/curriculum/test_cpp_array_owner_read.py
+      - scripts/curriculum/test_cpp_array_owner_read_core.py
+      - scripts/curriculum/test_cpp_array_owner_read_authoring.py
+      - native/core/cpp_array_owner_read_check.hpp
+      - native/core/cpp_array_owner_read_check_tests.cpp
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_gestionar_arrays_con_unique_ptr_y_cantidad.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Genuine U6L10 arrays and read bounds with GCC and Clang
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check safe fresh allocation, logical read indices and invalid source preservation
+        run: |
+          for compiler in g++ clang++; do
+            python3 -B scripts/curriculum/test_cpp_array_owner_read.py \
+              --compiler "$compiler"
+          done
+
+  windows-msvc:
+    name: Genuine U6L10 arrays and read bounds with Windows MSVC
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Check array new and delete, preserved owner and independent reads
+        shell: cmd
+        run: |
+          python -B scripts\curriculum\test_cpp_array_owner_read.py --compiler cl --windows
