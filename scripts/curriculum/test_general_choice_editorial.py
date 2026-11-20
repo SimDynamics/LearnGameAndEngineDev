@@ -268,7 +268,9 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
             relative, *location, previous_block, changed_block,
             previous_document=option_revision, current_document=updated))
         restored=layout.original_projection(updated)
-        original_choice=layout._blocks(restored)[OWNER]
+        # original_projection intentionally removes stateLayout; its pages
+        # follow the immutable *origin* slots returned by validate().
+        original_choice=restored["pages"][location[0]]["blocks"][location[1]]
         self.assertEqual(original_choice["options"], self.block["options"])
         # Its *current* question marker stays bound to its revised prose.
         # Only the corrected answer-option text and its mark rewind.
