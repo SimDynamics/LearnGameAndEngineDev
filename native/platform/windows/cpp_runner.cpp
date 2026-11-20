@@ -965,6 +965,19 @@ std::string indexed_unique_transfer_fingerprint(const CppRunRequest& request) {
        request.action!=CppRunRequest::Action::compile_run || request.diagnostic ||
        request.cmake || !request.project_files.empty() ||
        !request.source_files.empty() || request.named_rule_probe ||
+       // An independent identity witness must never share a request with a
+       // different curricular semantic probe, even before the lesson grader
+       // verifies the sealed owner. Otherwise two unrelated attestations
+       // could run in the same nested native worker.
+       request.defaulted_move_policy_probe ||
+       request.independent_copy_assignment_probe ||
+       request.move_assignment_invariant_probe ||
+       request.array_owner_read_probe || request.array_copy_move_probe ||
+       request.array_return_take_probe || request.polymorphic_destruction_probe ||
+       request.virtual_lifetime_probe || request.derived_preparation_probe ||
+       request.abstract_interface_probe || request.interface_collection_probe ||
+       request.polymorphic_clone_probe || request.dual_interface_probe ||
+       request.local_int_check ||
        request.open_battery_probe || request.boolean_battery_probe ||
        request.reduction_probe || request.integer_battery_probe ||
        request.adjustment_project_probe || request.rejection_probe ||
