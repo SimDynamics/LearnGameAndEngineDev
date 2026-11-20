@@ -16,7 +16,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya sabes mostrar un mensaje con una instrucción. Ahora construiremos mensajes por partes. Para seguirlos, miraremos qué texto escribe cada instrucción y qué texto hay en la salida después de ejecutarla. Empezaremos con dos palabras, sin pedir datos de entrada."
+          "text": "Ya sabes mostrar un mensaje con una instrucción. Ahora construirás mensajes por partes. Empezarás con dos palabras escritas en el código. Al leer cada instrucción, fíjate en qué palabra añade al texto que ya aparece en la consola."
         },
         {
           "type": "code",
@@ -43,7 +43,7 @@
         {
           "type": "output_prediction",
           "id": "sin_espacio",
-          "question": "Predice la salida. Escribe únicamente los caracteres que el programa envía a la salida; distingue la separación de las instrucciones del contenido de los literales.",
+          "question": "¿Qué texto verás en la consola cuando se ejecuten las dos instrucciones? Escribe el mensaje tal como aparecerá. Fíjate en qué caracteres hay entre las comillas de cada literal.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Roca\";\n    std::cout << \"Azul\";\n    return 0;\n}\n",
           "answers": [
@@ -69,7 +69,7 @@
           "answers": [
             "\" Este\""
           ],
-          "explanation": "El segundo literal es \" Este\": comienza con un espacio y continúa con Este. El espacio debe estar dentro de sus comillas. Así se añade a la salida después de Anden."
+          "explanation": "El segundo literal es \" Este\". Dentro de las comillas hay un espacio antes de Este. Por eso, cuando std::cout escribe ese texto después de Anden, ves Anden Este en la consola."
         },
         {
           "type": "output_prediction",
@@ -114,15 +114,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta vez hay una sola instrucción. Después de std::cout escribimos varias parejas formadas por << y un literal. Cada pareja envía otra parte al mismo recurso de salida. El punto y coma termina la instrucción completa (Stroustrup, 2024)."
+          "text": "Lee la instrucción de izquierda a derecha. Con el primer <<, std::cout escribe el texto del primer literal en la consola. Cada vez que aparece otro <<, std::cout escribe el texto del literal siguiente justo después del texto anterior (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
-          "text": "Primera parte: \"Sala\" escribe Sala.\nSegunda parte: \" \" añade un espacio; ya queda Sala seguido de ese espacio.\nTercera parte: \"Central\" añade Central.\nResultado completo: Sala Central."
+          "text": "Primero, con el literal \"Sala\" el programa escribe Sala.\nLuego con el literal \" \" añade un espacio después de Sala.\nPor último, con el literal \"Central\" escribe Central después del espacio.\nEn la consola ves Sala Central."
         },
         {
           "type": "paragraph",
-          "text": "A escribir varias operaciones de este modo en una misma instrucción lo llamamos encadenar inserciones. Insertar significa aquí enviar otra parte al recurso de salida. Los tres literales aportan texto; los signos que quedan entre ellos forman parte del código (Stroustrup, 2024).",
+          "text": "Cada vez que escribes un valor en std::cout con << haces una inserción. Usar << varias veces en la misma instrucción para escribir los valores uno tras otro se llama encadenar inserciones. El punto y coma indica dónde termina la instrucción (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "encadenar inserciones"
@@ -591,7 +591,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor tiene la cabecera y un cuerpo de main vacío antes de return 0;. Escribe las instrucciones que faltan para producir este informe. No se recibe ninguna entrada."
+          "text": "El editor ya contiene la cabecera y el cuerpo de main. Antes de return 0; hay una línea en blanco. Escribe ahí las instrucciones que muestran el informe. El programa debe mostrar el texto que dejes escrito en el código, sin pedirle datos al usuario al ejecutarse."
         },
         {
           "type": "paragraph",
@@ -599,11 +599,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva exactamente las palabras, el espacio de la segunda línea y las dos separaciones interiores. Puedes terminar con o sin un salto después de Fin. Elige una instrucción con un literal completo, una instrucción encadenada o varias instrucciones. Todas esas formas ya se han practicado; compara el texto producido con el solicitado."
+          "text": "Escribe un salto de línea después de Informe y otro después de Zona Este. Deja un espacio entre las dos palabras de la segunda línea. Después de Fin, el salto de línea es opcional. Puedes escribir el informe con un solo literal, encadenar varios con << o usar una instrucción para cada línea."
         },
         {
           "type": "paragraph",
-          "text": "Pulsa Compilar para construir, ejecutar y comprobar el programa. Si hay un diagnóstico, revisa primero la escritura del código. Si el programa se ejecuta pero el informe es distinto, busca la primera palabra o separación que no coincide, corrígela y vuelve a comprobar."
+          "text": "Pulsa «Compilar, ejecutar y comprobar». Si aparece un error de compilación, lee su mensaje y revisa el código. Si el programa se ejecuta, compara el texto de la consola con las tres líneas del ejemplo. Busca la primera diferencia en las palabras, los espacios o los saltos de línea. Corrígela y vuelve a comprobar."
         },
         {
           "type": "cpp_compiler",
@@ -617,7 +617,7 @@
                   "Informe\nZona Este\nFin",
                   "Informe\nZona Este\nFin\n"
                 ],
-                "explanation": "Deben aparecer Informe, Zona Este y Fin en tres líneas y en ese orden. Se acepta un salto final opcional; las dos separaciones interiores son necesarias."
+                "explanation": "Informe termina con un salto de línea. Zona Este termina con otro. Fin ocupa la tercera línea y puede llevar un salto de línea al final."
               }
             ]
           }
@@ -653,7 +653,7 @@
         },
         {
           "type": "paragraph",
-          "text": "No se recibe entrada. Deben aparecer esas tres líneas en ese orden; el salto después de la última es opcional. Revisa qué instrucción escribe cada parte y cuál quedó comentada. Modifica el editor, ejecuta la comprobación y compara la nueva salida con el objetivo."
+          "text": "Los textos del informe ya están en el código. El programa debe mostrarlos sin pedirle datos al usuario. Lee las instrucciones en orden y fíjate en cuál quedó comentada. Corrige el código para que las tres líneas aparezcan en el orden del ejemplo. El salto de línea después de la última es opcional."
         },
         {
           "type": "cpp_compiler",
@@ -2453,6 +2453,61 @@
         "id": "block_0006_0003",
         "beforeSha256": "419f7e4fe0988ca6d9d2f10e2d5dcc2cbfa21fc74881d01c73ea80671e5af764",
         "afterSha256": "079cbb56c967c36421b0ecdbedf57fb5a1507808225272d83867a184bdcd9fdc"
+      },
+      {
+        "id": "p1u1l3_objetivo",
+        "beforeSha256": "7a7cc356885d0a0655338d825833c73e0496f9bcff56edc396eb02a54db4c7b4",
+        "afterSha256": "c048c7ca72a59f2bbc675af2796ad9a32135c7245968711b88179c3cd5d80ca9"
+      },
+      {
+        "id": "p1u1l3_construir_objetivo",
+        "beforeSha256": "847b05ba41b0f1b78fd7b5511b2157ebed5f04fab5e60485524072859709f0aa",
+        "afterSha256": "eeca455d516ca12d5b5aeb7123caf25aa231161ac98a934db89597b0c70ac399"
+      },
+      {
+        "id": "p1u1l3_construir_criterios",
+        "beforeSha256": "9ee5d8876e9507c0118ce7d12091d9d9dcf247a0c8af99bf93a1680bcc00aa59",
+        "afterSha256": "771b9008856a1bf43f52dc0f48adb1e5d434d5a520dd5a940710eec379e37801"
+      },
+      {
+        "id": "p1u1l3_construir_proceso",
+        "beforeSha256": "b61f4dab8a58cbc25c9feb0f4c7d1cf384f30b54150d8f4be0ae326fdd5cd7fa",
+        "afterSha256": "4d304ba31978ccff0796fccc12c408529182422ea6964158278c7553355eec2d"
+      },
+      {
+        "id": "p1u1l3_construir_informe",
+        "beforeSha256": "7e43c40bc1911ba9d7d3bbc1118960a115e7f66719e4091d087bae66abf7faa1",
+        "afterSha256": "7ce18cc2644a3963969000f7f1fb32f220c0f6ff053ec46a7e5aa03a90d598dc"
+      },
+      {
+        "id": "p1u1l3_reparar_criterios",
+        "beforeSha256": "d11c1e02a76b7a265cf220ee51b1b5ae221e3df006a1ca25d5de7da4ebcbdf82",
+        "afterSha256": "069de05c4b9e3649ae3d2a38564e0dadeb4d0b0bea5e4f451598b7eab76a1938"
+      },
+      {
+        "id": "p1u1l3_partes_encadenado",
+        "beforeSha256": "49b65cb6de800310a3dc4f945e6f36372fe8d13d1d350f3a983660861093f140",
+        "afterSha256": "c65f208edfa6cff26ead661e0f38ae0064088d7272d81921f5e1092426360f81"
+      },
+      {
+        "id": "p1u1l3_estados_encadenado",
+        "beforeSha256": "68ff7035080af8a7455843aed5dc9dd424f91361d0d3d97513e294cfc56c4127",
+        "afterSha256": "4a173c328358b7ad0378b8373fe773d58a34359b0f1d02093be9b01838337328"
+      },
+      {
+        "id": "p1u1l3_nombre_encadenar",
+        "beforeSha256": "0ca256630b34bdca35ca4c4c3bd7dd3094d0ffc9fc734d1c06bb9719a26ee043",
+        "afterSha256": "707fd8bd08141bc1d6e1fd80032ca7ed61fcff17132d6e442ba6b8db38312d2e"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "1184e16fc33dbc9d91d174ba542d7aa9325dccdd5663a0a19daa7362cd17ef7a",
+        "afterSha256": "c9ed5e17ff72d8bdd013d017c666ea4d0917a3ecb48fcf7a934ccfc52dbd85cc"
+      },
+      {
+        "id": "p1u1l3_completar_separacion",
+        "beforeSha256": "090af6c8b7ce6d05feff0da4a5f5d862d93ddf6a47f0a753fe5be17cdab8a864",
+        "afterSha256": "a143e879d0926acd5ae377bffd05032f108b530331b05955206af2d251ffb5ff"
       }
     ],
     "retired": [
@@ -5813,7 +5868,7 @@
       {
         "block": "block_0000_0003",
         "path": "/question",
-        "sourceSha256": "f07cc62ce48e538a79209182e8cebbcc85b0dad2d60f6f6772ede0fcfca5fdf8",
+        "sourceSha256": "2ef8c7f087a6ec2b13047448a1f4e6345942a3496acd4ab04fee3673bf5b7a67",
         "spans": []
       },
       {
@@ -6554,7 +6609,7 @@
       {
         "block": "p1u1l3_objetivo",
         "path": "/text",
-        "sourceSha256": "2b4c47b8efc5825a9cacc2f1d5e966371c67667670703a3d7d6c061e3fbd2b57",
+        "sourceSha256": "1a756763c6b99a378dd930480092b8273ef658330cb5003eae0b00205642c8de",
         "spans": []
       },
       {
@@ -6671,7 +6726,7 @@
       {
         "block": "p1u1l3_completar_separacion",
         "path": "/explanation",
-        "sourceSha256": "24838976c71386254d335383f3e74b2b8711a957f9f04ce525fcc1ef92a8aad2",
+        "sourceSha256": "1ce98364e9143124f51a1c263b11e3211a9336c95852126a1b457273ca51ac17",
         "spans": [
           {
             "start": 22,
@@ -6681,16 +6736,30 @@
             "reading": "natural"
           },
           {
-            "start": 70,
-            "end": 74,
+            "start": 78,
+            "end": 82,
             "text": "Este",
-            "role": "string",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 158,
-            "end": 163,
+            "start": 100,
+            "end": 109,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 144,
             "text": "Anden",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 160,
+            "text": "Anden Este",
             "role": "output",
             "reading": "natural"
           }
@@ -6839,25 +6908,39 @@
       {
         "block": "p1u1l3_partes_encadenado",
         "path": "/text",
-        "sourceSha256": "c6b38b75bfbc6914293ac14f369bd4dbd66af21445c52d379d5371276c4ff4cd",
+        "sourceSha256": "3279438235b9d0b9ea3d85b7cb1e2409f44e99c28214d1e7e444a05993f81939",
         "spans": [
           {
-            "start": 46,
-            "end": 55,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 95,
-            "end": 97,
+            "start": 57,
+            "end": 59,
             "text": "<<",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 217,
-            "end": 235,
+            "start": 61,
+            "end": 70,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 148,
+            "end": 150,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 161,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 252,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -6867,53 +6950,53 @@
       {
         "block": "p1u1l3_estados_encadenado",
         "path": "/text",
-        "sourceSha256": "2f3d5822e48dd05eaaec0c18d9425b326b3268c37b524a4cee48357f521872e6",
+        "sourceSha256": "3ac051b06509c4492d9ea761897e437f051b8edde21170ecf76e969dfdd15ae1",
         "spans": [
           {
-            "start": 15,
-            "end": 21,
+            "start": 24,
+            "end": 30,
             "text": "\"Sala\"",
             "role": "string",
             "reading": "natural"
           },
           {
-            "start": 30,
-            "end": 34,
+            "start": 51,
+            "end": 55,
             "text": "Sala",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 51,
-            "end": 54,
+            "start": 78,
+            "end": 81,
             "text": "\" \"",
             "role": "string",
             "reading": "natural"
           },
           {
-            "start": 82,
-            "end": 86,
+            "start": 110,
+            "end": 114,
             "text": "Sala",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 126,
-            "end": 135,
+            "start": 143,
+            "end": 152,
             "text": "\"Central\"",
             "role": "string",
             "reading": "natural"
           },
           {
-            "start": 142,
-            "end": 149,
+            "start": 161,
+            "end": 168,
             "text": "Central",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 171,
-            "end": 183,
+            "start": 208,
+            "end": 220,
             "text": "Sala Central",
             "role": "output",
             "reading": "natural"
@@ -6923,11 +7006,32 @@
       {
         "block": "p1u1l3_nombre_encadenar",
         "path": "/text",
-        "sourceSha256": "15cbb042f277e4cc393088365f281fb0b71dbb1358f5e0434f5ec5f4f3271830",
+        "sourceSha256": "28b21c3805079ec9f02bfb3a6b8ca05cbf1a4d1a967147108241010c5f1f1683",
         "spans": [
           {
-            "start": 259,
-            "end": 277,
+            "start": 34,
+            "end": 43,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 50,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 79,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 241,
+            "end": 259,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -7860,18 +7964,18 @@
       {
         "block": "p1u1l3_construir_objetivo",
         "path": "/text",
-        "sourceSha256": "6315b2cd291f959a91bb1541811f05fd0d0b35158b85d48790595c2b953058db",
+        "sourceSha256": "27156c2004f33108609154102070f7374cc6e94e151004ecbcdcf02f29db943b",
         "spans": [
           {
-            "start": 43,
-            "end": 47,
+            "start": 49,
+            "end": 53,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 63,
-            "end": 72,
+            "start": 64,
+            "end": 73,
             "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
@@ -7895,45 +7999,66 @@
       {
         "block": "p1u1l3_construir_criterios",
         "path": "/text",
-        "sourceSha256": "ac3911086e4d0fff2f0fd5238c01889f6b39a2c6c12469bc362109646fbc9833",
+        "sourceSha256": "4c8a2047baf6e84b2fe21f5e160f51a7e9693afddb4fed66e5a8eb3186481706",
         "spans": [
           {
-            "start": 147,
-            "end": 150,
+            "start": 37,
+            "end": 44,
+            "text": "Informe",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 72,
+            "text": "Zona Este",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 148,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 252,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "p1u1l3_construir_proceso",
         "path": "/text",
-        "sourceSha256": "47cc76e5261fab1314a5ff9b5bafab7be2dd5efd00518e3d38828b250cc50284",
+        "sourceSha256": "bd5a89153fd2a1073767ff9947022e41e04e50a6aca14a563e158eaa11a07d36",
         "spans": []
       },
       {
         "block": "p1u1l3_construir_informe",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "19c21695495dfa3cd6c71131b78e82887bf8beb05cf774b6522bcbdd55776c1c",
+        "sourceSha256": "c7c2ee0ccb182c0310c51369f18a48ef86c68f46941546c90039ac23fafc227f",
         "spans": [
           {
-            "start": 15,
-            "end": 22,
+            "start": 0,
+            "end": 7,
             "text": "Informe",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 24,
-            "end": 33,
+            "start": 39,
+            "end": 48,
             "text": "Zona Este",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 36,
-            "end": 39,
+            "start": 67,
+            "end": 70,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
@@ -7997,7 +8122,7 @@
       {
         "block": "p1u1l3_reparar_criterios",
         "path": "/text",
-        "sourceSha256": "870c5910fdee338381aec36aa98a7bb0bd4cc683f0ee38992f4391e3bb7e8539",
+        "sourceSha256": "8acbeac78e9eccc52994996a3fb29bb329fa0effd10f0874086720dfec1dd012",
         "spans": []
       },
       {
