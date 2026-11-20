@@ -1009,13 +1009,19 @@ void integrated_retirement_contract_tests() {
         expected_ids.insert(plan.reading_ids.begin(),plan.reading_ids.end());
         for(const auto& block:current.retired_blocks)actual_ids.insert(block.stable_id);
         for(const auto& record:current.state_layout.retired)layout_ids.insert(record.id);
-        check(current.compiler_puzzles_required&&current.retired_blocks.size()==expected_ids.size()
-            &&current.state_layout.retired.size()==expected_ids.size()&&actual_ids==expected_ids&&layout_ids==expected_ids
-            &&current.state_layout.retirement_history.size()==(plan.reading_ids.empty()?1u:2u),
-            "The integrated U1 asset changed mandatory objectives, its exact archived identities or retirement batches");
+        // Later course editions may retire more original exercises. Keep the
+        // first compiler/reading batches and all original owners immutable,
+        // while allowing independently authenticated later retirement batches.
+        const auto original_batches=plan.reading_ids.empty()?1u:2u;
+        check(current.compiler_puzzles_required&&current.retired_blocks.size()>=expected_ids.size()
+            &&current.state_layout.retired.size()==current.retired_blocks.size()
+            &&actual_ids==layout_ids&&std::includes(actual_ids.begin(),actual_ids.end(),
+                expected_ids.begin(),expected_ids.end())
+            &&current.state_layout.retirement_history.size()>=original_batches,
+            "The integrated U1 asset lost mandatory objectives, archived identities or original retirement batches");
         check(current.state_layout.retirement_history.front().retired==std::vector<std::string>(plan.compiler_ids.begin(),plan.compiler_ids.end())
-            &&(plan.reading_ids.empty()||current.state_layout.retirement_history.back().retired==plan.reading_ids),
-            "Integrated retirement merged or rewrote the published compiler and reading archive batches");
+            &&(plan.reading_ids.empty()||current.state_layout.retirement_history[1].retired==plan.reading_ids),
+            "A later edition rewrote the original compiler or reading retirement batch");
         check(current.state_layout.lineage==before.state_layout.lineage&&current.state_layout.legacy_lineage==before.state_layout.legacy_lineage
             &&current.state_layout.signatures==before.state_layout.signatures,
             "Integrated retirement changed historical state ownership");
@@ -1030,27 +1036,48 @@ void integrated_retirement_contract_tests() {
         for(const auto& identity:expected_ids)check(retired_block(current,identity)&&!stable_block_position(current,identity)
             &&active_block_successor(current,identity).has_value(),"An integrated retired identity remained active or lost its successor");
         for(const auto& block:current.retired_blocks){
-            const auto origin=stable_block_position(before,block.stable_id);check(origin.has_value(),"Integrated retirement invented an archived identity");
+            const auto origin=stable_block_position(before,block.stable_id);
+            check(origin.has_value(),"An integrated U1 retirement invented a historical owner");
             const auto& old=before.pages[origin->page].blocks[origin->block];
-            check(block.type==old.type&&JsonObject::Parse(winrt::to_hstring(block.raw_json)).Stringify()==JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify()
-                &&exercise_key(current,block)==exercise_key(before,old)&&draft_key("programming",current,block)==draft_key("programming",before,old),
-                "An integrated archived compiler or reading reference lost its complete published source or historical slots");
+            check(block.type==old.type&&exercise_key(current,block)==exercise_key(before,old)
+                &&draft_key("programming",current,block)==draft_key("programming",before,old),
+                "A retired U1 owner changed its original type, response or draft slot");
+            if(expected_ids.contains(block.stable_id)){
+                check(JsonObject::Parse(winrt::to_hstring(block.raw_json)).Stringify()==
+                    JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify(),
+                    "An original compiler/reading retirement lost its independently pinned published source");
+            }else{
+                check(std::ranges::any_of(current.state_layout.retirement_history.begin()+original_batches,
+                    current.state_layout.retirement_history.end(),[&](const auto& history){
+                        return std::ranges::find(history.retired,block.stable_id)!=history.retired.end();
+                    }),"A later edition archived a U1 owner without an authenticated retirement batch");
+            }
         }
         check(current.state_layout.order_refinements.size()==(plan.refined_order.empty()?0u:1u),
             "Integrated retirement lost or added a grouped ordering provenance record");
         if(!plan.refined_order.empty()){
             const auto position=stable_block_position(current,plan.refined_order),origin=stable_block_position(before,plan.refined_order);
-            check(position&&origin,"An integrated refined ordering lost its original activity identity");
-            const auto& block=current.pages[position->page].blocks[position->block];
+            check(origin&&current.state_layout.order_refinements.front().id==plan.refined_order,
+                "An integrated ordering lost its original revision provenance");
             const auto& old=before.pages[origin->page].blocks[origin->block];
-            check(block.order_refinement&&block.order_refinement->id==plan.refined_order
-                &&block.order_refinement->original_fragments==old.fragments&&block.order_refinement->original_correct_order==old.correct_order
-                &&JsonObject::Parse(winrt::to_hstring(block.order_refinement->raw_json)).Stringify()==JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify(),
-                "Integrated line refinement changed its independently pinned original grouped ordering");
+            // The course restart may archive the refined order instead of
+            // keeping it active. Its pre-restart reading snapshot must survive.
+            const auto& reading_snapshot=current.state_layout.retirement_history[1];
             bool preserved=false;
-            for(const auto& page:current.state_layout.retirement_history.back().pages)for(const auto& archived_order:page.blocks)
-                if(archived_order.stable_id==plan.refined_order)preserved=order_representation_frame(archived_order)==order_representation_frame(block);
-            check(preserved,"The later reading archive lost the already-refined ordering representation");
+            for(const auto& page:reading_snapshot.pages)for(const auto& archived_order:page.blocks)
+                if(archived_order.stable_id==plan.refined_order){
+                    preserved=archived_order.order_refinement&&
+                        archived_order.order_refinement->id==plan.refined_order&&
+                        archived_order.order_refinement->original_fragments==old.fragments&&
+                        archived_order.order_refinement->original_correct_order==old.correct_order&&
+                        JsonObject::Parse(winrt::to_hstring(archived_order.order_refinement->raw_json)).Stringify()==
+                            JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify();
+                    if(position)preserved=preserved&&
+                        order_representation_frame(archived_order)==order_representation_frame(
+                            current.pages[position->page].blocks[position->block]);
+                }
+            check(preserved&&(position.has_value()||retired_block(current,plan.refined_order)),
+                "A subsequent course edition lost the authenticated grouped-order representation");
         }
         for(const auto& page:current.pages)for(const auto& block:page.blocks){
             const auto origin=stable_block_position(before,block.stable_id);
