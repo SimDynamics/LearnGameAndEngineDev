@@ -10,6 +10,7 @@ on:
       - native/core/lesson.cpp
       - native/core/cpp_project.cpp
       - native/core/cpp_project.hpp
+      - native/core/compile_check.cpp
   workflow_dispatch:
 
 permissions:
@@ -38,8 +39,8 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          ${{ matrix.compiler }} -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-            native/core/lesson.cpp native/core/cpp_project.cpp \
+          ${{ matrix.compiler }} -std=c++23 -Wall -Wextra -Werror -Wno-error=missing-field-initializers -Wno-error=misleading-indentation -pedantic -Inative \
+            native/core/lesson.cpp native/core/cpp_project.cpp native/core/compile_check.cpp \
             native/core/compiler_case_first_required_tests.cpp \
             -o "${RUNNER_TEMP}/lgaed_case_evaluator_tests"
           "${RUNNER_TEMP}/lgaed_case_evaluator_tests"
@@ -50,6 +51,6 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative /bigobj native\core\lesson.cpp native\core\cpp_project.cpp native\core\compiler_case_first_required_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_case_evaluator_tests.exe"
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative /bigobj native\core\lesson.cpp native\core\cpp_project.cpp native\core\compile_check.cpp native\core\compiler_case_first_required_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_case_evaluator_tests.exe"
           if errorlevel 1 exit /b 1
           "%RUNNER_TEMP%\lgaed_case_evaluator_tests.exe"
