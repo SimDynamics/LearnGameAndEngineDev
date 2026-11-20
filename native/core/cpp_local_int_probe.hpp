@@ -21,7 +21,7 @@ struct CppLocalIntProbe {
     std::int32_t replacement = 0;
     // Separate, independently authored outputs after replacing this int.
     // The ordinary visible OutputCheck is not part of this hidden evidence.
-    std::vector<std::string> expected_stdout;
+    std::vector<std::string> expected_stdout{};
     bool operator==(const CppLocalIntProbe&) const = default;
 };
 
