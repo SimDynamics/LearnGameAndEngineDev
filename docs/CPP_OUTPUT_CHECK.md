@@ -659,6 +659,88 @@ La prueba independiente de C++ y la conservación de StateStore no
 constituyen, por sí mismas, una aceptación de la app nativa completa
 en el Windows del usuario.
 
+## Colecciones con propiedad única e informes por interfaz virtual
+
+Programación 3, **U8L9**, admite el campo raíz
+`compilerInterfaceCollectionChecks` en una lección española con
+`stateLayout` v2. El contrato se declara sobre un editor ya publicado;
+Work no cambia su `initialCode`, sus cinco casos, los identificadores
+ni las respuestas originales. Ejemplo correspondiente a la lección actual:
+
+```json
+"compilerInterfaceCollectionChecks": [
+  {
+    "activity": "block_0015_0002",
+    "baseClass": "Muestra",
+    "simpleClass": "MuestraSimple",
+    "identifiedClass": "MuestraIdentificada",
+    "vectorAlias": "Muestras",
+    "addFunction": "agregar",
+    "reportFunction": "informar",
+    "writeMethod": "escribir",
+    "numberMethod": "numero",
+    "destinationParameter": "destino",
+    "sourceParameter": "fuente",
+    "dataParameter": "datos",
+    "streamParameter": "salida",
+    "countLabel": "Cantidad:",
+    "indexSeparator": ":",
+    "numberLabel": "Numero:",
+    "codeLabel": ";Codigo:"
+  }
+]
+```
+
+La lista de propietarios es `std::vector<std::unique_ptr<Muestra>>` y
+el verificador conserva todas las declaraciones, constructores, consultas,
+clases, fábrica, alias, y `main`. Únicamente admite cambiar los
+cuerpos ya existentes de `agregar(Muestras&, std::unique_ptr<Muestra>&)`
+e `informar(const Muestras&, std::ostream&)`. La protección compara
+los segmentos no editables byte a byte y rechaza intentos de introducir
+directivas, funciones ajenas o modificaciones de la interfaz. Las dos
+implementaciones pueden ser semánticamente equivalentes sin reproducir
+literalmente una solución modelo.
+
+La sonda privada compila el programa auténtico con un controlador
+independiente. Verifica el rechazo de una fuente vacía sin cambiar la
+colección, el traslado del **mismo objeto** a su posición final, el
+vaciamiento del propietario fuente, el orden y la identidad de todo el
+prefijo después de múltiples inserciones y crecimiento, y la escritura
+en dos flujos independientes. Incluye ceros, números negativos, extremos
+y repetidos. Otra clase derivada válida, ausente de los ejemplos del
+estudiante, comprueba que `informar` invoque realmente el
+método virtual en lugar de reconocer únicamente los dos tipos
+conocidos. Comprueba la liberación del objeto adicional al vaciar el
+vector sin observar punteros liberados. Coincidir con la salida de
+`main` sin estas garantías no acredita el objetivo.
+
+Solo la primera entrada del editor publicada es obligatoria para avanzar;
+los otros cuatro casos siguen como pruebas opcionales. La evidencia
+adicional produce el recibo `interface-collection/v1` ligado al
+programa, a la revisión, a la fuente protegida y al controlador privado.
+Una acreditación histórica de salida **no obtiene** ese recibo
+automáticamente. Se conservan respuestas, intentos, borradores y el
+progreso de los demás cursos.
+
+Comprobaciones de alcance separado:
+
+```text
+python -B scripts/curriculum/test_cpp_interface_collection.py --compiler cl --windows
+python -B -m unittest discover -s scripts/curriculum -p test_cpp_interface_collection_authoring.py -v
+```
+
+El flujo `.github/workflows/codex-interface-collection.yml` comprueba
+la sonda portátil en GCC, Clang y MSVC con programas de prueba
+desechables. La prueba nativa
+`native.interface_collection_state_live` de StateStore verifica la
+importación completa y ligera, conserva los cinco casos y las identidades,
+rechaza recibos falsificados y permite añadir solo una nueva acreditación
+tras el primer caso correcto. Una prueba de núcleo, una compilación del
+módulo o un ejecutor hospedado no sustituyen la ejecución y la
+inspección visual de la app en el PC Windows del estudiante. Work
+incorpora la declaración cuando corresponda, conserva el currículo
+y acredita sus propias variantes educativas.
+
 ## Interfaces abstractas, fábrica de propietarios y consumo virtual
 
 Programación 3, U8L8, puede declarar en la raíz de una lección española
