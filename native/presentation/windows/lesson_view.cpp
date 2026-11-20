@@ -2308,6 +2308,7 @@ struct LessonView {
         request.array_return_take_probe=block(index).array_return_take_probe;
         request.polymorphic_destruction_probe=block(index).polymorphic_destruction_probe;
         request.virtual_lifetime_probe=block(index).virtual_lifetime_probe;
+        request.derived_preparation_probe=block(index).derived_preparation_probe;
         request.open_battery_probe=block(index).open_battery_probe;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
@@ -4306,7 +4307,9 @@ struct LessonView {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
                     block(index),running_program);
-                const bool independent=(!block(index).virtual_lifetime_probe||
+                const bool independent=(!block(index).derived_preparation_probe||
+                    fresh.derived_preparation_probe_correct)&&
+                    (!block(index).virtual_lifetime_probe||
                     fresh.virtual_lifetime_probe_correct)&&
                     (!block(index).polymorphic_destruction_probe||
                     fresh.polymorphic_destruction_probe_correct)&&
@@ -4373,6 +4376,12 @@ struct LessonView {
                         "La salida coincide, pero falta acreditar que el constructor y la asignación por movimiento conservan el mismo objeto, no reservan otro entero y mantienen prohibida la copia.",
                         "The output matches, but the independent proof has not verified that the move constructor and assignment preserve the same object, make no new integer allocation and keep copying forbidden.",
                         "La sortie correspond, mais la preuve indépendante doit encore vérifier l'identité de l'objet déplacé, l'absence d'allocation et l'interdiction de la copie.");
+                if(!fresh.derived_preparation_probe_correct&&
+                   block(index).derived_preparation_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la prueba independiente no confirma que sustituir prepare el objeto derivado completo antes de reemplazar el destino. Comprueba los tres fallos de construcción: el destino y sus recursos deben conservarse sin cambios, mientras los recursos del intento se limpian correctamente.",
+                        "Output matches, but the independent C++ proof has not verified preparing a complete derived owner before replacement, or preserving the destination through all three constructor failure stages.",
+                        "La sortie correspond, mais la vérification indépendante ne confirme pas la préparation complète avant remplacement ni la conservation de l'objet d'origine lors des trois échecs de construction.");
                 if(!fresh.virtual_lifetime_probe_correct&&
                    block(index).virtual_lifetime_probe&&preserved_source)
                     text+='\n'+ui(
@@ -4446,7 +4455,8 @@ struct LessonView {
                    !block(index).array_copy_move_probe&&
                    !block(index).array_return_take_probe&&
                    !block(index).polymorphic_destruction_probe&&
-                   !block(index).virtual_lifetime_probe)
+                   !block(index).virtual_lifetime_probe&&
+                   !block(index).derived_preparation_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
