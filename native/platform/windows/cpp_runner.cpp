@@ -6,6 +6,7 @@
 #include "core/cpp_indexed_unique_transfer_probe.hpp"
 #include "core/cpp_defaulted_move_policy_check.hpp"
 #include "core/cpp_independent_copy_assignment_check.hpp"
+#include "core/cpp_move_assignment_invariant_check.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 #include "native_build_config.hpp"
@@ -463,6 +464,41 @@ std::string independent_copy_assignment_fingerprint(const CppRunRequest& request
         field(spec.parameter_name)+field(spec.has_method)+
         field(spec.value_method)+field(spec.access_method)+
         field(spec.put_method)+field(spec.change_method)+
+        field(spec.clear_method)+field(state::sha256(*driver))+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes)));
+}
+
+std::string move_assignment_invariant_fingerprint(const CppRunRequest& request) {
+    if(!request.move_assignment_invariant_probe||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+       request.cmake||!request.project_files.empty()||!request.source_files.empty()||
+       request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+       request.independent_copy_assignment_probe||request.named_rule_probe||
+       request.boolean_battery_probe||request.open_battery_probe||
+       request.reduction_probe||request.integer_battery_probe||
+       request.adjustment_project_probe||request.rejection_probe||
+       request.observation_probe||request.assertion_mode||
+       request.capture_cmake_graph||request.cmake_graph_check)return {};
+    const auto& spec=*request.move_assignment_invariant_probe;
+    const auto driver=curriculum::cpp_move_invariant_private_driver(
+        spec,request.source_utf8);
+    if(!driver)return {};
+    const auto field=[](std::string_view text) {
+        return std::to_string(text.size())+":"+std::string(text);
+    };
+    return state::sha256(std::string("windows-move-assignment-invariants-v1/")+
+        field(std::to_string(request.request_id))+
+        field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+
+        field(request.project_key)+field(spec.original_source)+
+        field(spec.class_name)+field(spec.member_name)+
+        field(spec.label_member)+field(spec.parameter_name)+
+        field(spec.has_method)+field(spec.value_method)+field(spec.label_method)+
+        field(spec.access_method)+field(spec.invariant_method)+
+        field(spec.put_method)+field(spec.change_method)+field(spec.retag_method)+
         field(spec.clear_method)+field(state::sha256(*driver))+
         field(std::to_string(request.compile_timeout.count()))+
         field(std::to_string(request.execution_timeout.count()))+
@@ -3291,6 +3327,23 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                     curriculum::cpp_independent_copy_completion_marker;
         }
     }
+    if(request.move_assignment_invariant_probe) {
+        const auto frame=move_assignment_invariant_fingerprint(request);
+        fresh.move_assignment_invariant_request_fingerprint=frame;
+        const auto driver=curriculum::cpp_move_invariant_private_driver(
+            *request.move_assignment_invariant_probe,request.source_utf8);
+        if(!frame.empty()&&driver&&result.move_assignment_invariant_evidence) {
+            const auto& proof=*result.move_assignment_invariant_evidence;
+            fresh.move_assignment_invariant_probe_correct=
+                proof.driver_sha256==state::sha256(*driver)&&
+                proof.program_sha256==state::sha256(request.source_utf8)&&
+                proof.request_fingerprint==frame&&
+                proof.compilation.succeeded()&&proof.execution.succeeded()&&
+                proof.execution.stdout_bytes.empty()&&
+                proof.execution.stderr_bytes==
+                    curriculum::cpp_move_invariant_completion_marker;
+        }
+    }
     if(request.indexed_unique_transfer_probe) {
         const auto frame=indexed_unique_transfer_fingerprint(request);
         fresh.indexed_unique_transfer_request_fingerprint=frame;
@@ -3514,6 +3567,29 @@ void complete_independent_copy_assignment_probe(const CppRunRequest& request,
     const auto proof=run_cpp(private_request,stop);
     if(!proof.error_utf8.empty()||stop.stop_requested())return;
     result.independent_copy_assignment_evidence=CppIndependentCopyAssignmentEvidence{
+        state::sha256(*driver),state::sha256(request.source_utf8),frame,
+        proof.compilation,proof.execution};
+}
+
+void complete_move_assignment_invariant_probe(const CppRunRequest& request,
+        CppRunResult& result,std::stop_token stop) {
+    if(!request.move_assignment_invariant_probe||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto frame=move_assignment_invariant_fingerprint(request);
+    if(frame.empty())return;
+    const auto driver=curriculum::cpp_move_invariant_private_driver(
+        *request.move_assignment_invariant_probe,request.source_utf8);
+    if(!driver)return;
+    auto private_request=request;
+    private_request.move_assignment_invariant_probe.reset();
+    private_request.request_id=~request.request_id;
+    private_request.project_key+="/independent-move-invariants-v1";
+    private_request.source_utf8=*driver;
+    private_request.stdin_utf8.clear();
+    const auto proof=run_cpp(private_request,stop);
+    if(!proof.error_utf8.empty()||stop.stop_requested())return;
+    result.move_assignment_invariant_evidence=CppMoveAssignmentInvariantEvidence{
         state::sha256(*driver),state::sha256(request.source_utf8),frame,
         proof.compilation,proof.execution};
 }
@@ -4608,6 +4684,11 @@ std::string cpp_independent_copy_assignment_request_fingerprint(
     return independent_copy_assignment_fingerprint(request);
 }
 
+std::string cpp_move_assignment_invariant_request_fingerprint(
+        const CppRunRequest& request) {
+    return move_assignment_invariant_fingerprint(request);
+}
+
 std::string cpp_indexed_unique_transfer_request_fingerprint(
         const CppRunRequest& request) {
     return indexed_unique_transfer_fingerprint(request);
@@ -4711,7 +4792,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         const auto arguments=single_file_arguments(result.run_directory);
         const bool has_private_probe=request.boolean_battery_probe||request.reduction_probe||
             named_rule_battery_requested(request)||request.indexed_unique_transfer_probe||
-            request.defaulted_move_policy_probe||request.independent_copy_assignment_probe;
+            request.defaulted_move_policy_probe||request.independent_copy_assignment_probe||
+            request.move_assignment_invariant_probe;
         const auto private_environment=has_private_probe
             ?compiler_environment():std::vector<wchar_t>{};
         const auto fixed_environment=has_private_probe?&private_environment:nullptr;
@@ -4740,6 +4822,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         complete_indexed_unique_transfer_probe(request,result,stop);
         complete_defaulted_move_policy_probe(request,result,stop);
         complete_independent_copy_assignment_probe(request,result,stop);
+        complete_move_assignment_invariant_probe(request,result,stop);
         complete_named_rule_battery_single(request,result,compiler,private_environment,
             initial_toolchain,stop);
         complete_rejection_stream_probe(request,result,stop);
