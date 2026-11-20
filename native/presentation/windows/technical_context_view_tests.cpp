@@ -381,7 +381,7 @@ void naming_options(){
     std::cout<<"PASS actual U2L4 naming options: all three valid/invalid samples equally backed, ordinary explanation choices preserved, no solution exposure, selection/reopen, source/narration/state and static backgrounds\n";
 }
 void verify_u2_text_semantic_ranges(View& fixture,HWND target,const curriculum::Block& block){
-    // The author owns the exact UTF-8 spans; the test must follow the active
+    // The author owns exact UTF-16 ranges; the test must follow the active
     // wording, not an earlier lesson's a/b variable names or literal numbers.
     const auto at=block.text_semantics.find("/text");
     check(at!=block.text_semantics.end()&&at->second.source==block.text&&
@@ -438,10 +438,36 @@ void current_u2_roles(){
             if(page==3){const auto index=block_at("block_0003_0001",page);const auto target=fixture.item(index,0);
                 const auto& paragraph=lesson.pages[page].blocks[index];
                 verify_u2_text_semantic_ranges(fixture,target,paragraph);
-                // The four structural list numbers remain neutral data,
-                // regardless of the identifiers used inside the code lines.
-                for(const auto number:{L"1.",L"2.",L"3.",L"4."})
-                    role_reference(fixture,target,number,std::wstring_view(number).substr(0,1),true);
+                // Only explicitly marked list numerals may receive a
+                // technical background. In the revised edition, unmarked
+                // "1." through "4." remain ordinary prose.
+                const auto original=wide(paragraph.text);
+                const auto boundaries=semantic_utf8_boundaries(paragraph.text);
+                const auto annotated=paragraph.text_semantics.find("/text");
+                check(annotated!=paragraph.text_semantics.end(),
+                    "The current U2 paragraph has no semantic descriptor");
+                for(const auto digit:{L'1',L'2',L'3',L'4'}){
+                    const auto prefix=std::wstring(L"\n")+digit+L". ";
+                    const auto found=original.find(prefix);
+                    check(found!=std::wstring::npos,
+                        "A numbered U2 instruction no longer exists");
+                    const auto index=found+1;
+                    const bool marked=std::ranges::any_of(annotated->second.spans,
+                        [&](const auto& span){
+                            return span.start<=index&&index<span.end;
+                        });
+                    if(marked)continue; // The semantic range checker handles it.
+                    check(index<boundaries.size()&&boundaries[index]!=std::string_view::npos,
+                        "An unmarked list numeral has no valid UTF-16 boundary");
+                    const auto visible=wide(visible_prose(
+                        paragraph.text.substr(0,boundaries[index]))).size();
+                    const auto shown=wide(edit_text(target));
+                    check(visible<shown.size()&&shown[visible]==digit,
+                        "A list numeral is displaced in the actual RichEdit");
+                    const auto style=character(target,static_cast<LONG>(visible));
+                    check(!reference_at(target,visible)&&(style.dwEffects&CFE_AUTOBACKCOLOR),
+                        "An unmarked list numeral acquired technical background");
+                }
                 source_and_shading(fixture,target,paragraph.text,paragraph.emphasis);
                 const auto order=block_at("block_0003_0002",page);const auto prompt=fixture.item(order,0);
                 role_reference(fixture,prompt,L"valor 3 en anterior",L"anterior");role_reference(fixture,prompt,L"valor 3 en anterior",L"3",true);
