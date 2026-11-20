@@ -44,7 +44,7 @@ int main(int argc,char** argv) try {
     const auto candidate=[&](std::string_view replacement) {
         return original.substr(0,body->begin)+std::string(replacement)+original.substr(body->end);
     };
-    const std::array<Version,9> versions{{
+    const std::array<Version,10> versions{{
         {"correct_move",R"cpp(
     if (!indice_valido(origen) || !indice_valido(destino) || origen == destino ||
         !elegir(origen)) return false;
@@ -114,6 +114,19 @@ int main(int argc,char** argv) try {
     elegir(destino) = std::move(elegir(origen));
     std::fputs("unexpected output from transfer", stdout);
     return true;
+)cpp",false},
+        {"equal_value_hidden_copy",R"cpp(
+    if (!indice_valido(origen) || !indice_valido(destino) || origen == destino ||
+        !elegir(origen)) return false;
+    auto& desde = elegir(origen);
+    auto& hacia = elegir(destino);
+    if (hacia && *desde == *hacia) {
+        hacia = std::make_unique<int>(*desde);
+        desde.reset();
+        return true;
+    }
+    hacia = std::move(desde);
+    return true;
 )cpp",false}
     }};
     std::filesystem::create_directories(argv[2]);
@@ -170,7 +183,7 @@ int main(int argc,char** argv) try {
     return false;
 )cpp")).has_value(),
         "Harmless source text mentioning a forbidden identifier was rejected");
-    std::cout<<"PASS nine real-lesson independent transfer probes generated; source tampering refused.\n";
+    std::cout<<"PASS ten real-lesson independent transfer probes generated; source tampering refused.\n";
     return 0;
 }catch(const std::exception& e){
     std::cerr<<"FAIL independent transfer probe generation: "<<e.what()<<'\n';
