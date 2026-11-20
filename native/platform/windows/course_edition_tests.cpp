@@ -693,6 +693,60 @@ void negative_contracts(const Fixture& fixture, const curriculum::Lesson& curren
         rejects([&] { (void)windows::load_catalog(fixture.content, unit_location()); },
             "El catálogo aceptó un título incorrecto en el índice de lecciones.");
     }
+    {
+        // Warm the real catalog cache, then alter a lesson title while
+        // retaining the same byte length and restored LastWriteTime.
+        RestoreFile restore(fixture.path("lesson"));
+        const auto listed = windows::load_catalog(fixture.content,unit_location());
+        require(entry(listed,new_id).title=="Nueva edición QA",
+            "No se preparó la caché nativa del título original.");
+        const auto path=state::native_io_path(restore.path);
+        const auto timestamp=fs::last_write_time(path);
+        std::string tampered=restore.original;
+        constexpr std::string_view old_title="Nueva edición QA";
+        constexpr std::string_view bad_title="Falsa edición QA";
+        require(old_title.size()==bad_title.size(),
+            "La prueba debe conservar la longitud del archivo.");
+        const auto offset=tampered.find(old_title);
+        require(offset!=std::string::npos,"No existe el título QA esperado.");
+        tampered.replace(offset,old_title.size(),bad_title);
+        Sleep(25);
+        write(restore.path,tampered);
+        fs::last_write_time(path,timestamp);
+        require(fs::file_size(path)==restore.original.size() &&
+                fs::last_write_time(path)==timestamp,
+            "El ejemplo no conserva tamaño y fecha visible.");
+        rejects([&] { (void)windows::load_catalog(fixture.content,unit_location()); },
+            "El catálogo reutilizó un título antiguo con fecha restaurada.");
+    }
+    {
+        // Progress metadata has a separate cache. Replacing one numeric
+        // answer with another of equal byte length invalidates its original
+        // state layout even when the visible modification date is restored.
+        RestoreFile restore(fixture.path("lesson"));
+        const auto listed = windows::load_catalog(fixture.content,unit_location());
+        state::StateData empty;
+        (void)windows::catalog_entry_progress(fixture.content,unit_location(),
+            entry(listed,new_id),empty);
+        const auto path=state::native_io_path(restore.path);
+        const auto timestamp=fs::last_write_time(path);
+        std::string tampered=restore.original;
+        constexpr std::string_view before="\"correctIndex\": 1";
+        constexpr std::string_view after="\"correctIndex\": 0";
+        const auto offset=tampered.find(before);
+        require(offset!=std::string::npos,"No existe el contrato QA.");
+        tampered.replace(offset,before.size(),after);
+        Sleep(25);
+        write(restore.path,tampered);
+        fs::last_write_time(path,timestamp);
+        require(fs::file_size(path)==restore.original.size() &&
+                fs::last_write_time(path)==timestamp,
+            "La prueba del progreso no conserva tamaño y fecha.");
+        const auto current = windows::load_catalog(fixture.content,unit_location());
+        rejects([&] { (void)windows::catalog_entry_progress(fixture.content,
+                unit_location(),entry(current,new_id),empty); },
+            "La caché acreditó respuestas cambiadas con fecha restaurada.");
+    }
     // Los recursos antiguos siguen cargándose directamente, pero quedan fuera
     // de los índices activos. Conservar archivos no vuelve a acreditarlos.
     require(windows::load_lesson(fixture.path("legacyLesson")).id == old_id, "La edición impidió conservar el recurso antiguo.");
