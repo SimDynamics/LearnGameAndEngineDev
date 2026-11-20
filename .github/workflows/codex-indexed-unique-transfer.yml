@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Compile and execute seven safe ownership witnesses
+      - name: Compile and execute nine safe ownership witnesses
         run: |
           for compiler in g++ clang++; do
             python3 -B scripts/curriculum/test_cpp_indexed_unique_transfer_runtime.py --compiler "$compiler"
@@ -43,7 +43,7 @@ jobs:
         with:
           python-version: '3.12'
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: Compile and execute seven safe ownership witnesses
+      - name: Compile and execute nine safe ownership witnesses
         shell: cmd
         run: |
           python -B scripts\curriculum\test_cpp_indexed_unique_transfer_runtime.py --compiler cl --windows
