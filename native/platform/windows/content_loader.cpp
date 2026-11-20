@@ -4521,9 +4521,21 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
     require(lesson.locale=="es"&&lesson.state_layout.version==2&&
             entries.Size()>0&&entries.Size()<=32,
         "Local int checks require existing Spanish v2 compiler owners.");
+    // Windows.Data.Json merges duplicate member names. Check the original
+    // JSON lexically so a second "activity", "replacement" or "outputs"
+    // cannot silently override the authored semantic requirement.
+    const OriginalJson original(lesson.raw_json);
+    const auto raw_entries=original.elements(
+        original.member(original.root(),"compilerLocalIntChecks"));
+    require(raw_entries.size()==entries.Size(),
+        "Original local-int owner count differs from the parsed document.");
     std::set<std::string> seen;
+    std::size_t owner_index=0;
     for(const auto& entry:entries) {
         const auto item=entry.GetObject();
+        const auto raw_item=raw_entries.at(owner_index++);
+        (void)original.member(raw_item,"activity");
+        (void)original.member(raw_item,"probes");
         allowed_keys(item,{"activity","probes"},true);
         const auto identity=text(item,"activity");
         require(valid_id(identity)&&seen.insert(identity).second,
@@ -4589,9 +4601,19 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
         const auto authored=array(item,"probes");
         require(authored.Size()>0&&authored.Size()<=8,
             "A local-int owner requires 1..8 private mutations.");
+        const auto raw_probes=original.elements(
+            original.member(raw_item,"probes"));
+        require(raw_probes.size()==authored.Size(),
+            "Original local-int probe count differs from the parsed document.");
         CppLocalIntCheck spec;
+        std::size_t probe_index=0;
         for(const auto& variant:authored) {
             const auto probe=variant.GetObject();
+            const auto raw_probe=raw_probes.at(probe_index++);
+            for(const auto field:{"variable","replacement","outputs"})
+                (void)original.member(raw_probe,field);
+            if(probe.HasKey(L"afterUpdate"))
+                (void)original.member(raw_probe,"afterUpdate");
             allowed_keys(probe,{"variable","replacement","outputs","afterUpdate"});
             const auto number=probe.GetNamedValue(L"replacement");
             require(number.ValueType()==JsonValueType::Number&&

@@ -31,8 +31,7 @@ const Block& owner(const Lesson& lesson) {
     require(position.has_value(),"Published U2L1 compiler owner was not found");
     return lesson.pages.at(position->page).blocks.at(position->block);
 }
-void rejects(const JsonObject& root) {
-    const auto serialized=winrt::to_string(root.Stringify());
+void rejects_raw(std::string_view serialized) {
     for(const bool metadata:{false,true}) {
         bool failed=false;
         try {
@@ -41,6 +40,16 @@ void rejects(const JsonObject& root) {
         }catch(const std::exception&) {failed=true;}
         require(failed,"Invalid local-int authoring passed a native load path");
     }
+}
+void rejects(const JsonObject& root) {
+    rejects_raw(winrt::to_string(root.Stringify()));
+}
+std::string overwrite_first(std::string source,std::string_view old_text,
+        std::string_view new_text) {
+    const auto at=source.find(old_text);
+    require(at!=source.npos,"An original duplicate-field test token is missing");
+    source.replace(at,old_text.size(),new_text);
+    return source;
 }
 FreshExecution visible_result(std::uint64_t revision,std::string source={}) {
     FreshExecution result;
@@ -344,6 +353,33 @@ void run() {
     catch(const std::exception&){rejected=true;}
     require(rejected,"Imported semantic proof tampering was silently accepted");
 
+    // Windows.Data.Json normally merges duplicate object keys. Exercise
+    // both the full loader and the progress-side loader with raw, valid JSON
+    // instead of pre-parsing the malicious source and losing the duplicates.
+    const auto canonical=winrt::to_string(raw.Stringify());
+    const auto duplicated_root=std::string("{\"compilerLocalIntChecks\":")+
+        winrt::to_string(raw.GetNamedArray(L"compilerLocalIntChecks").Stringify())+
+        ","+canonical.substr(1);
+    rejects_raw(duplicated_root);
+    rejects_raw(overwrite_first(canonical,
+        "\"activity\":\"block_0004_0002\"",
+        "\"activity\":\"block_0004_0002\",\"activity\":\"block_0004_0002\""));
+    rejects_raw(overwrite_first(canonical,
+        "\"replacement\":13",
+        "\"replacement\":13,\"replacement\":17"));
+    rejects_raw(overwrite_first(canonical,
+        "\"variable\":\"llaves\"",
+        "\"variable\":\"llaves\",\"variable\":\"llaves\""));
+    rejects_raw(overwrite_first(canonical,
+        "\"variable\":\"llaves\"",
+        "\"variable\":\"llaves\",\"afterUpdate\":true,\"afterUpdate\":true"));
+    const auto local_int_start=canonical.find("\"compilerLocalIntChecks\"");
+    require(local_int_start!=canonical.npos,
+        "The canonical JSON lost the local-int declaration");
+    rejects_raw(canonical.substr(0,local_int_start)+
+        overwrite_first(canonical.substr(local_int_start),
+            "\"outputs\":[\"",
+            "\"outputs\":[],\"outputs\":[\""));
     auto wrong=JsonObject::Parse(winrt::to_hstring(raw.Stringify()));
     auto first=wrong.GetNamedArray(L"compilerLocalIntChecks").GetObjectAt(0)
         .GetNamedArray(L"probes").GetObjectAt(0);
