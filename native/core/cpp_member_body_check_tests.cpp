@@ -65,6 +65,61 @@ int main() { return 0; }
     %>
     return true;
 )cpp")), "Balanced mixed C++ brace digraphs were rejected");
+
+        // Standard digraph braces can delimit the complete member body,
+        // not just nested branches. The immutable prefix and suffix remain
+        // enforced exactly when the opening is two bytes long.
+        auto digraph=check;
+        const auto signature_pos=digraph.original_source.find(check.signature);
+        require(signature_pos!=std::string::npos,"Method signature fixture missing");
+        const auto brace_pos=digraph.original_source.find('{',
+            signature_pos+check.signature.size());
+        require(brace_pos!=std::string::npos,"Method opening fixture missing");
+        digraph.original_source.replace(brace_pos,1,"<%");
+        const auto close_pos=digraph.original_source.find("\n}\n\nint main()",brace_pos);
+        require(close_pos!=std::string::npos,"Method closing fixture missing");
+        digraph.original_source.replace(close_pos+1,1,"%>");
+        const auto digraph_span=cpp_member_body_span(digraph);
+        require(digraph_span &&
+            cpp_member_body_preserves_source(digraph,digraph.original_source),
+            "A member with <% and %> opening/closing braces was rejected");
+        const auto edit_digraph=[&](std::string_view body) {
+            return digraph.original_source.substr(0,digraph_span->begin)+
+                std::string(body)+digraph.original_source.substr(digraph_span->end);
+        };
+        require(cpp_member_body_preserves_source(digraph,
+            edit_digraph("\n    if (origen==destino) return false;\n"
+                          "    return true;\n")),
+            "A body-only edit to a digraph method was rejected");
+        require(!cpp_member_body_preserves_source(digraph,
+            edit_digraph("\n    return true; %>\n"
+                          "    int unrelated(){return 1;}\n<%\n")),
+            "An early %> escaped the protected member body");
+        auto documented_opening=check;
+        const auto method_open=check.original_source.find(
+            '{',check.original_source.find(check.signature)+check.signature.size());
+        require(method_open!=std::string::npos,"Original method opening missing");
+        documented_opening.original_source.insert(method_open,
+            "/* explanation */\n// immediately before the opening\n");
+        const auto comment_span=cpp_member_body_span(documented_opening);
+        require(comment_span &&
+            cpp_member_body_preserves_source(
+                documented_opening,documented_opening.original_source),
+            "Valid comments between signature and opening were rejected");
+        const auto edited_comment=documented_opening.original_source.substr(0,comment_span->begin)+
+            std::string("\n    return true;\n")+
+            documented_opening.original_source.substr(comment_span->end);
+        require(cpp_member_body_preserves_source(documented_opening,edited_comment),
+            "An edited member could not preserve its documented body boundary");
+        auto unfinished=check;
+        unfinished.original_source.insert(method_open,"/* unfinished");
+        require(!cpp_member_body_span(unfinished),
+            "An unclosed block comment before the body was accepted");
+        auto decoy=check;
+        decoy.original_source.insert(method_open,"; /* declaration, not a definition */ ");
+        require(!cpp_member_body_span(decoy),
+            "A declaration terminator was treated as comment whitespace");
+
         auto changed=good;
         changed.replace(changed.find("std::unique_ptr<int> primero_"),
                         std::string("std::unique_ptr<int> primero_").size(),"int primero_");

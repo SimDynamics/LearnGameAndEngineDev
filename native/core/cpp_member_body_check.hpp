@@ -65,9 +65,40 @@ inline std::optional<std::size_t> quoted_end(std::string_view text, std::size_t 
     return {};
 }
 
+struct OpeningBrace { std::size_t position=0, length=0; };
+
+// C++ comments are whitespace between a signature and the opening brace.
+// Recognize the original { as well as the alternative <% C++ brace token,
+// without interpreting quotes, statements or directives as part of a body.
+inline std::optional<OpeningBrace> definition_opening(
+        std::string_view source,std::size_t at) {
+    for(auto i=at;i<source.size();) {
+        const auto c=source[i];
+        if(horizontal_space(c)||c=='\n'||c=='\r'){++i;continue;}
+        if(c=='/'&&i+1<source.size()&&source[i+1]=='/') {
+            const auto end=source.find_first_of("\r\n",i+2);
+            i=end==source.npos?source.size():end;
+            continue;
+        }
+        if(c=='/'&&i+1<source.size()&&source[i+1]=='*') {
+            const auto end=source.find("*/",i+2);
+            if(end==source.npos)return {};
+            i=end+2;
+            continue;
+        }
+        if(c=='{')return OpeningBrace{i,1};
+        if(c=='<'&&i+1<source.size()&&source[i+1]=='%')
+            return OpeningBrace{i,2};
+        return {};
+    }
+    return {};
+}
+
 inline std::optional<std::size_t> closing_brace(std::string_view text,
                                                 std::size_t opening) {
-    if(opening >= text.size() || text[opening] != '{' ||
+    if(opening >= text.size() ||
+       !(text[opening]=='{' || (text[opening]=='<' &&
+          opening+1<text.size() && text[opening+1]=='%')) ||
        physical_splice(text)) return {};
     std::size_t depth = 0;
     bool line_start = false;
@@ -162,16 +193,10 @@ inline std::optional<std::size_t> definition_start(
             line_leading = false;
             continue;
         }
-        if(line_leading && source.substr(i).starts_with(signature)) {
-            auto opening = i+signature.size();
-            while(opening < source.size() &&
-                  (horizontal_space(source[opening]) ||
-                   source[opening] == '\r' || source[opening] == '\n'))
-                ++opening;
-            if(opening < source.size() && source[opening] == '{') {
-                if(found) return {};
-                found = i;
-            }
+        if(line_leading && source.substr(i).starts_with(signature) &&
+           definition_opening(source,i+signature.size())) {
+            if(found)return {};
+            found=i;
         }
         line_leading = false;
         ++i;
@@ -196,14 +221,12 @@ inline std::optional<CppMemberBodySpan> cpp_member_body_span(
     // line-leading whitespace or comments. Rechecking raw bytes would
     // incorrectly reject a real method after a block comment.
     const auto at = *definition;
-    auto opening = at + signature.size();
-    while(opening < source.size() &&
-          (cpp_member_body_detail::horizontal_space(source[opening]) ||
-           source[opening] == '\r' || source[opening] == '\n')) ++opening;
-    if(opening >= source.size() || source[opening] != '{') return {};
-    const auto end = cpp_member_body_detail::closing_brace(source, opening);
-    if(!end || *end <= opening) return {};
-    return CppMemberBodySpan{opening + 1, *end};
+    const auto opening=cpp_member_body_detail::definition_opening(
+        source,at+signature.size());
+    if(!opening)return {};
+    const auto end=cpp_member_body_detail::closing_brace(source,opening->position);
+    if(!end || *end <= opening->position)return {};
+    return CppMemberBodySpan{opening->position+opening->length,*end};
 }
 
 inline bool cpp_member_body_preserves_source(const CppMemberBodyCheck& check,
@@ -218,8 +241,11 @@ inline bool cpp_member_body_preserves_source(const CppMemberBodyCheck& check,
     // The original brace pair stays intact; no injected method closing brace,
     // preprocessor directive or physical line splice can escape the boundary.
     const auto close = candidate.size() - suffix.size();
-    const auto closing = cpp_member_body_detail::closing_brace(candidate, prefix.size()-1);
-    if (!closing || *closing != close) return false;
+    const auto opening=span->begin>=2 &&
+        std::string_view(check.original_source).substr(span->begin-2,2)=="<%"
+            ?span->begin-2:span->begin-1;
+    const auto closing=cpp_member_body_detail::closing_brace(candidate,opening);
+    if(!closing||*closing!=close)return false;
     const auto body = candidate.substr(prefix.size(), close - prefix.size());
     const auto tokens = code_format::cpp_tokens(body);
     // The source-level scanner also has a separate lexical guard. Both
