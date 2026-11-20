@@ -327,6 +327,33 @@ void source_edits_stay_inside_assigned_diagnostic() {
         "\n    if (peticion>0) <% destino << piezas; %>\n"),
         RejectionOperation::boxes),
         "Balanced digraph braces inside the rejection function were rejected");
+    require(rejection_function_only_edit(original,modify(
+        "\n    destino << R\"probe(std::exit(0) std::cout printf stdout)\"probe;\n"
+        "    // ExitProcess(0), fputs and freopen are only explanation text.\n"),
+        RejectionOperation::boxes),
+        "Comments and quoted examples of unsafe APIs cannot block a valid stream edit");
+    for(const auto dangerous:{
+            "std::exit(0);","std::_Exit(0);","::quick_exit(0);",
+            "auto finish=&std::exit; finish(0);",
+            "std::cout << \"forged\";",
+            "std::cout.setstate(std::ios::failbit);",
+            "std::cerr << \"wrong stream\";",
+            "std::printf(\"forged\");",
+            "std::fputs(\"forged\",stdout);",
+            "std::freopen(\"hidden.txt\",\"w\",stdout);",
+            "std::system(\"echo forged\");",
+            "::SetStdHandle(0,nullptr);",
+            "std::terminate();"})
+        require(!rejection_function_only_edit(original,
+            modify("\n    "+std::string(dangerous)+"\n"),
+            RejectionOperation::boxes),
+            "An early exit or direct-output spoof bypassed the assigned stream contract");
+    const auto driver=rejection_stream_probe_source(RejectionOperation::boxes,original);
+    require(driver.find("std::fwrite(")!=driver.npos &&
+            driver.find("std::fputc(")!=driver.npos &&
+            driver.find("std::fflush(")!=driver.npos &&
+            driver.find("std::cout << primero.str()")==driver.npos,
+            "The trusted stream probe still trusts a student's mutable std::cout state");
 
     require(!rejection_function_only_edit(original,modify(
         "\n    destino << piezas;\n}\n"

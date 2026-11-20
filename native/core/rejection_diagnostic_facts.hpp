@@ -841,7 +841,7 @@ inline RejectionReview evaluate_rejection_diagnostics(std::string_view stderr_te
 inline std::string rejection_stream_probe_source(RejectionOperation kind,std::string_view student_source) {
     std::string source="#define main lgaed_student_original_main\n";
     source+=student_source;
-    source+="\n#undef main\n#include <iostream>\n#include <sstream>\nint main() {\n"
+    source+="\n#undef main\n#include <cstdio>\n#include <iostream>\n#include <sstream>\n#include <string>\nint main() {\n"
         "    std::ostringstream primero, segundo;\n";
     if(kind==RejectionOperation::boxes)source+=
         "    informar_rechazo_cajas(primero, 1, -1);\n"
@@ -849,7 +849,14 @@ inline std::string rejection_stream_probe_source(RejectionOperation kind,std::st
     else source+=
         "    informar_rechazo_saldo(primero, 2, 10, 0);\n"
         "    informar_rechazo_saldo(segundo, 3, 0, -1);\n";
-    source+="    std::cout << primero.str() << '\\x1e' << segundo.str();\n"
+    // The trusted driver writes the two captured streams through C stdio.
+    // Unlike std::cout, this is not silenced by a student's manipulation of
+    // std::cout's failbit/rdbuf while the function is being evaluated.
+    source+="    const auto emit = [](const std::string& value) {\n"
+        "        return std::fwrite(value.data(), 1, value.size(), stdout) == value.size();\n"
+        "    };\n"
+        "    if (!emit(primero.str()) || std::fputc('\\x1e',stdout)==EOF ||\n"
+        "        !emit(segundo.str()) || std::fflush(stdout)!=0) return 2;\n"
         "    return 0;\n}\n";
     return source;
 }
@@ -967,6 +974,28 @@ inline bool rejection_function_only_edit(std::string_view original,
     if(candidate.size()<prefix.size()+suffix.size()||!candidate.starts_with(prefix)||
         !candidate.ends_with(suffix))return false;
     const auto body=candidate.substr(prefix.size(),candidate.size()-prefix.size()-suffix.size());
+    const auto tokens=code_format::cpp_tokens(body);
+    if(!tokens || code_format::cpp_process_termination_tokens(*tokens))
+        return false;
+    // The function's one permitted output is the supplied std::ostream&.
+    // Source identifiers are checked as tokens, never as substrings of
+    // Spanish text, comments or raw strings. In particular, denying early
+    // process termination is essential: the independent driver must run to
+    // completion, rather than accepting a forged pair of diagnostics.
+    constexpr std::string_view forbidden[]{
+        "cout","cerr","clog","wcout","wcerr","wclog",
+        "stdout","stderr","printf","fprintf","fputs","puts",
+        "putchar","fputc","fwrite","freopen","fclose",
+        "dup2","_dup2","SetStdHandle","WriteFile",
+        "WriteConsoleA","WriteConsoleW","system","_popen","popen",
+        "CreateProcessA","CreateProcessW","WinExec"
+    };
+    for(const auto& token:*tokens) {
+        if(!token.starts_with("id:"))continue;
+        const auto name=std::string_view(token).substr(3);
+        for(const auto blocked:forbidden)
+            if(name==blocked)return false;
+    }
     return code_format::confined_function_body_edit(body);
 }
 
