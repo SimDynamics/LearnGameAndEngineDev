@@ -94,7 +94,9 @@ def compile_source(compiler:str,source:Path,target:Path,
           str(source),"/Fe:"+str(target)]
          if windows else
          [compiler,"-std=c++23","-Wall","-Wextra","-Werror",
-          "-pedantic",*(["-Inative"] if include_native else []),
+          "-pedantic",
+          *(["-Wno-unused-private-field"] if "clang" in compiler else []),
+          *(["-Inative"] if include_native else []),
           str(source),"-o",str(target)])
     r=run(cmd)
     if r.returncode:
