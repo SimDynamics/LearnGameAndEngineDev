@@ -2,6 +2,7 @@
 
 #include "core/cpp_abstract_interface_check.hpp"
 #include "core/cpp_multi_body_check.hpp"
+#include "core/cpp_private_probe_neutral.hpp"
 
 #include <algorithm>
 #include <array>
@@ -110,8 +111,20 @@ inline std::optional<std::array<CppMemberBodySpan,3>> spans(
         *simple,*identified,*duplicate
     };
     if(check_contents)
-        for(const auto& span:result)
+        for(const auto& span:result) {
             if(!multi::safe_body(text,span))return {};
+            // The independently compiled witness is trusted, but these three
+            // function bodies belong to the learner. They must not emit the
+            // private completion marker, modify its streams, escape via a
+            // nonlocal jump, or inspect its unpublished helper types.
+            // Tokens inside prose, comments and raw strings remain inert.
+            const auto tokens=code_format::cpp_tokens(text.substr(
+                span.begin,span.end-span.begin));
+            if(!tokens ||
+               !cpp_private_probe_body_neutral(*tokens,"LgaedNewKind") ||
+               !cpp_private_probe_body_neutral(*tokens,"LgaedCloneCounts"))
+                return {};
+        }
     return result;
 }
 

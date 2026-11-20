@@ -51,6 +51,13 @@ ALT_DUPLICATE=r"""
     return resultado;
 """
 
+INERT_SIMPLE=r"""
+    // std::fputs("LGAED_POLYMORPHIC_CLONE_COMPLETE_V1", stderr);
+    const auto* note=R"proof(std::longjmp(0, 1); LgaedNewKind)proof";
+    (void)note;
+    return std::make_unique<MuestraSimple>(numero());
+"""
+
 BAD={
     "simple_null":("    return {};",IDENTIFIED,DUPLICATE),
     "simple_zero":("    return std::make_unique<MuestraSimple>(0);",IDENTIFIED,DUPLICATE),
@@ -211,6 +218,7 @@ def main()->None:
     solutions={
         "correct_direct":(SIMPLE,IDENTIFIED,DUPLICATE,True),
         "correct_reserved":(ALT_SIMPLE,ALT_IDENTIFIED,ALT_DUPLICATE,True),
+        "correct_with_inert_notes":(INERT_SIMPLE,IDENTIFIED,DUPLICATE,True),
         **{name:(*bodies,False) for name,bodies in BAD.items()},
     }
     with tempfile.TemporaryDirectory(prefix="lgaed-u8l10-cloning-") as d:
@@ -274,6 +282,26 @@ def main()->None:
                 "    return std::make_unique<MuestraSimple>(numero());",
                 "}\nvoid injected() {}\nvoid another() {\n"
                 "    return std::make_unique<MuestraSimple>(numero());",1),
+            "forged_completion_on_stderr":correct.replace(
+                "    return std::make_unique<MuestraSimple>(numero());",
+                "    std::fputs(\"LGAED_POLYMORPHIC_CLONE_COMPLETE_V1\", stderr);\n"
+                "    return std::make_unique<MuestraSimple>(numero());",1),
+            "private_probe_type":correct.replace(
+                "    return std::make_unique<MuestraSimple>(numero());",
+                "    (void)sizeof(LgaedNewKind);\n"
+                "    return std::make_unique<MuestraSimple>(numero());",1),
+            "private_probe_counter":correct.replace(
+                "    return std::make_unique<MuestraSimple>(numero());",
+                "    (void)sizeof(LgaedCloneCounts);\n"
+                "    return std::make_unique<MuestraSimple>(numero());",1),
+            "nonlocal_escape":correct.replace(
+                "    return std::make_unique<MuestraSimple>(numero());",
+                "    std::longjmp(0, 1);\n"
+                "    return std::make_unique<MuestraSimple>(numero());",1),
+            "direct_console_output":correct.replace(
+                "    Muestras copias;",
+                "    std::cout << \"Clones preparados\";\n"
+                "    Muestras copias;",1),
         }
         for name,source in attacks.items():
             candidate=folder/(name+".cpp")
@@ -283,7 +311,7 @@ def main()->None:
             if not result.returncode:
                 raise AssertionError((name,"Protected declarations were editable"))
             print(f"{args.compiler}: {name}: REJECT",flush=True)
-    print(f"PASS U8L10 deep polymorphic cloning: 2 accepted, "
+    print(f"PASS U8L10 deep polymorphic cloning: 3 accepted, "
           f"{len(BAD)} semantic negatives, {len(attacks)} source attacks")
 
 
