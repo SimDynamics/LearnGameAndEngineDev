@@ -748,6 +748,21 @@ class CourseEditionAuthoringTest(unittest.TestCase):
                 for path in root.rglob("*.json")
             }, "Failed single-lesson authoring modified source files")
 
+    def test_descriptor_leaves_room_for_a_real_unit_and_lesson(self):
+        for generation, maximum_course in ((1, 236), (1_000_000, 230)):
+            with self.subTest(generation=generation):
+                boundary = dict(descriptor(generation), courseId="c" * maximum_course)
+                self.assertEqual(
+                    edition.descriptor({"courseEdition": boundary}), boundary)
+                lesson = edition.unit_prefix(boundary) + "u__l"
+                self.assertEqual(len(lesson), 256)
+                self.assertEqual(edition.lesson_parts(lesson, boundary)[1:], ("u", "l"))
+                for length in (maximum_course + 1, 256):
+                    oversized = dict(boundary, courseId="c" * length)
+                    with self.subTest(length=length), self.assertRaisesRegex(
+                            ValueError, "cannot fit a lesson ID"):
+                        edition.descriptor({"courseEdition": oversized})
+
     def test_descriptor_and_namespace_reject_ambiguous_or_cross_scope_values(self):
         for value in (dict(descriptor(), version=True), dict(descriptor(), generation=True),
                       dict(descriptor(), version=1.0), dict(descriptor(), generation=1.0),

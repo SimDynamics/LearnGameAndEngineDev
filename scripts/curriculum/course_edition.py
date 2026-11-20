@@ -52,6 +52,11 @@ def descriptor(document):
     require(_safe(value["id"], 64) and value["id"] != "legacy", "Invalid courseEdition id")
     require(type(value["generation"]) is int and 1 <= value["generation"] <= 1_000_000,
             "Invalid courseEdition generation")
+    # The shortest publishable lesson is "<edition-prefix>u__l".
+    # Validate it here rather than accepting an edition with no possible lesson IDs.
+    shortest_lesson = f'{value["courseId"]}__edition_{value["locale"]}_{value["generation"]}__u__l'
+    require(len(shortest_lesson) <= 256,
+            "A courseEdition descriptor cannot fit a lesson ID")
     return value
 
 
