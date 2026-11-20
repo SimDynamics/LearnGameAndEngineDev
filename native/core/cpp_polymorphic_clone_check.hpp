@@ -42,6 +42,51 @@ inline bool identifier(std::string_view text) {
     });
 }
 
+// Authenticate the collection alias as a top-level C++ declaration, not
+// quoted documentation, a comment, a namespace-local name or a disabled
+// preprocessor branch. Compare tokens so ordinary spacing and comments do
+// not create a false incompatibility in the unmodified authored source.
+inline bool authentic_vector_alias(std::string_view source,
+        std::string_view alias,std::string_view base) {
+    const std::string declaration="using "+std::string(alias)+
+        " = std::vector<std::unique_ptr<"+std::string(base)+">>;";
+    const auto expected=code_format::cpp_tokens(declaration);
+    const auto lexed=code_format::cpp_tokens(source);
+    if(!expected||!lexed)return false;
+    std::vector<std::string_view> tokens;
+    tokens.reserve(lexed->size());
+    for(const auto& token:*lexed) {
+        if(token.starts_with("comment:"))continue;
+        if(token.starts_with("directive:")) {
+            // The source used by this lesson needs only #include directives.
+            // #if / #define could otherwise manufacture a lexical alias
+            // that is not part of the actual compiled program.
+            if(!token.starts_with("directive:#include") &&
+               !token.starts_with("directive:%:include"))return false;
+            continue;
+        }
+        tokens.emplace_back(token);
+    }
+    std::size_t braces=0;
+    bool found=false;
+    for(std::size_t i=0;i<tokens.size();++i) {
+        if(braces==0&&i+1<tokens.size()&&
+           tokens[i]=="id:using"&&tokens[i+1]=="id:"+std::string(alias)) {
+            if(found||i+expected->size()>tokens.size()||
+               !std::equal(expected->begin(),expected->end(),
+                           tokens.begin()+static_cast<std::ptrdiff_t>(i)))
+                return false;
+            found=true;
+        }
+        if(tokens[i]=="op:{"||tokens[i]=="op:<%")++braces;
+        else if(tokens[i]=="op:}"||tokens[i]=="op:%>") {
+            if(!braces)return false;
+            --braces;
+        }
+    }
+    return found&&braces==0;
+}
+
 inline std::optional<std::array<CppMemberBodySpan,3>> spans(
         const CppPolymorphicClonePolicy& policy,std::string_view text,
         bool check_contents) {
@@ -121,8 +166,7 @@ inline bool valid(const CppPolymorphicClonePolicy& policy) {
             writer).has_value()&&
         abstract::inline_body(src,policy.identified_class,policy.base_class,
             "int "+policy.code_method+"() const noexcept").has_value()&&
-        src.find("using "+policy.vector_alias+" = std::vector<"
-            "std::unique_ptr<"+policy.base_class+">>;")!=src.npos;
+        authentic_vector_alias(src,policy.vector_alias,policy.base_class);
 }
 
 inline void substitute(std::string& text,std::string_view token,

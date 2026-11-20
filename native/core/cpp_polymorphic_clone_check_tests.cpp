@@ -66,6 +66,32 @@ void check_original_virtual_declarations(
             "int codigo_aux() const noexcept { return codigo_; } "
             "// int codigo() const noexcept",
             "A quoted getter appeared without the concrete code query");
+    // The last unprotected source prerequisite used a substring lookup.
+    // Preserve only the real alias, not matching characters in comments,
+    // raw literals, disabled code or inside an unrelated function.
+    constexpr std::string_view alias="using Muestras = std::vector<std::unique_ptr<Muestra>>;";
+    falsify(alias,
+            "using Muestras = std::vector<Muestra*>; // using Muestras = std::vector<std::unique_ptr<Muestra>>;",
+            "An alias mentioned in a comment passed as an owner collection");
+    falsify(alias,
+            "using Muestras = std::vector<Muestra*>;\n"
+            "const char* note = R\"proof(using Muestras = std::vector<std::unique_ptr<Muestra>>;)proof\";",
+            "A raw literal impersonated the required owning vector alias");
+    falsify(alias,
+            "#if 0\nusing Muestras = std::vector<std::unique_ptr<Muestra>>;\n#endif\n"
+            "using Muestras = std::vector<Muestra*>;",
+            "A disabled alias was mistaken for the compiled owning vector");
+    falsify(alias,
+            "using Muestras = std::vector<std::unique_ptr<Muestra>>;\nusing Muestras = std::vector<std::unique_ptr<Muestra>>;",
+            "Two competing top-level aliases were accepted");
+    auto formatted=policy;
+    const auto at=formatted.original_source.find(alias);
+    if(at==std::string::npos)
+        throw std::runtime_error("The vector alias vanished from original QA");
+    formatted.original_source.replace(at,alias.size(),
+        "using  Muestras /* kept source note */=std::vector<std::unique_ptr<Muestra>>;");
+    if(!guard::valid(formatted))
+        throw std::runtime_error("Safe C++ whitespace/comment formatting of the alias was rejected");
 }
 
 }
