@@ -5877,6 +5877,66 @@ void read_compiler_polymorphic_destruction_checks(const JsonObject& root,Lesson&
     }
 }
 
+void read_compiler_virtual_lifetime_dispatch_checks(const JsonObject& root,
+        Lesson& lesson) {
+    if(!root.HasKey(L"compilerVirtualLifetimeDispatchChecks"))return;
+    const auto entries=array(root,"compilerVirtualLifetimeDispatchChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Virtual lifetime dispatch needs original Spanish v2 compiler owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","baseClass","derivedClass",
+            "registerMethod","writeMethod","phaseParameter",
+            "registerStream","writeStream"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Invalid or repeated virtual lifetime dispatch editor");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated original virtual lifetime editor identity");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&!owner->polymorphic_destruction_probe&&
+                !owner->virtual_lifetime_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Virtual lifetime dispatch requires an independent original C++ editor");
+        CppVirtualLifetimeDispatchPolicy spec;
+        spec.editable.original_source=owner->initial_code;
+        spec.base_class=text(item,"baseClass");
+        spec.derived_class=text(item,"derivedClass");
+        spec.register_method=text(item,"registerMethod");
+        spec.write_method=text(item,"writeMethod");
+        spec.phase_parameter=text(item,"phaseParameter");
+        spec.register_stream=text(item,"registerStream");
+        spec.write_stream=text(item,"writeStream");
+        spec.editable.bodies={{
+                "void "+spec.base_class+"::"+spec.register_method+
+                    "(const char* "+spec.phase_parameter+", std::ostream& "+
+                    spec.register_stream+") const",true},
+            {"void "+spec.derived_class+"::"+spec.write_method+
+                    "(std::ostream& "+spec.write_stream+") const",true}};
+        require(cpp_virtual_lifetime_dispatch_matches(
+                    spec,spec.editable.original_source),
+            "Virtual lifetime dispatch must bind two authentic original members");
+        owner->virtual_lifetime_probe=std::move(spec);
+    }
+}
+
 void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerOpenBatteryChecks"))return;
     const auto entries=array(root,"compilerOpenBatteryChecks");
@@ -6661,6 +6721,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_array_copy_move_checks(root,lesson);
         read_compiler_array_return_take_checks(root,lesson);
         read_compiler_polymorphic_destruction_checks(root,lesson);
+        read_compiler_virtual_lifetime_dispatch_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
@@ -6795,6 +6856,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_array_copy_move_checks(root,lesson);
         read_compiler_array_return_take_checks(root,lesson);
         read_compiler_polymorphic_destruction_checks(root,lesson);
+        read_compiler_virtual_lifetime_dispatch_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
