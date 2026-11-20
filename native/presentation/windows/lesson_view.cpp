@@ -2300,6 +2300,7 @@ struct LessonView {
         if(block(index).named_rule_source_check)
             request.named_rule_probe=block(index).named_rule_source_check->execution_probe;
         request.indexed_unique_transfer_probe=block(index).indexed_unique_transfer_probe;
+        request.defaulted_move_policy_probe=block(index).defaulted_move_policy_probe;
         request.open_battery_probe=block(index).open_battery_probe;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
@@ -4298,7 +4299,9 @@ struct LessonView {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
                     block(index),running_program);
-                const bool independent=(!block(index).indexed_unique_transfer_probe||
+                const bool independent=(!block(index).defaulted_move_policy_probe||
+                    fresh.defaulted_move_policy_probe_correct)&&
+                    (!block(index).indexed_unique_transfer_probe||
                     fresh.indexed_unique_transfer_probe_correct)&&
                     (!block(index).named_rule_source_check||
                     !block(index).named_rule_source_check->execution_probe||
@@ -4343,6 +4346,12 @@ struct LessonView {
                         "La batería no acreditó los casos originales y el caso nuevo mediante ejecuciones independientes. Comprueba las llamadas, los resultados esperados y que ningún fallo detenga los casos posteriores.",
                         "The test battery did not prove the original and new case using independent executions. Check calls, expected results, and that failures never skip later cases.",
                         "La batterie ne prouve pas les cas originaux et le nouveau cas par des exécutions indépendantes. Vérifiez les appels, les résultats attendus et tous les cas suivants.");
+                if(!fresh.defaulted_move_policy_probe_correct&&
+                   block(index).defaulted_move_policy_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero falta acreditar que el constructor y la asignación por movimiento conservan el mismo objeto, no reservan otro entero y mantienen prohibida la copia.",
+                        "The output matches, but the independent proof has not verified that the move constructor and assignment preserve the same object, make no new integer allocation and keep copying forbidden.",
+                        "La sortie correspond, mais la preuve indépendante doit encore vérifier l'identité de l'objet déplacé, l'absence d'allocation et l'interdiction de la copie.");
                 if(!fresh.indexed_unique_transfer_probe_correct&&
                    block(index).indexed_unique_transfer_probe&&preserved_source)
                     text+='\n'+ui(
@@ -4366,7 +4375,8 @@ struct LessonView {
                    preserved_source&&!block(index).open_battery_probe&&
                    !block(index).boolean_battery_probe&&!block(index).reduction_probe&&
                    !block(index).integer_battery_probe&&!block(index).adjustment_project_probe&&
-                   !block(index).indexed_unique_transfer_probe)
+                   !block(index).indexed_unique_transfer_probe&&
+                   !block(index).defaulted_move_policy_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",

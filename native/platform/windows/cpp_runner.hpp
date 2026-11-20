@@ -9,7 +9,9 @@
 #include "core/cmake_graph_check.hpp"
 #include "core/adjustment_project_check.hpp"
 #include "core/cpp_indexed_unique_transfer_probe.hpp"
+#include "core/cpp_defaulted_move_policy_check.hpp"
 
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -111,6 +113,9 @@ struct CppRunRequest {
     std::optional<curriculum::NamedRuleExecutionProbe> named_rule_probe;
     // A lesson-owned, opt-in, independent two-owner identity witness.
     std::optional<curriculum::CppIndexedUniqueTransferProbe> indexed_unique_transfer_probe;
+    // A sealed root declaration may ask the Windows worker to compile three
+    // independent move/copy programs, never the learner-visible extra cases.
+    std::optional<curriculum::CppDefaultedMovePolicy> defaulted_move_policy_probe;
     std::optional<curriculum::OpenBatteryProbeSpec> open_battery_probe;
     std::optional<curriculum::AssertionMode> assertion_mode;
     // Ordinary CMake builds and private probes do not need to parse the
@@ -153,6 +158,14 @@ struct CppNamedRuleProbe {
 struct CppIndexedUniqueTransferEvidence {
     std::string driver_sha256, program_sha256, request_fingerprint;
     CppPhaseResult compilation, execution;
+};
+struct CppDefaultedMovePhaseEvidence {
+    std::string driver_sha256;
+    CppPhaseResult compilation, execution;
+};
+struct CppDefaultedMovePolicyEvidence {
+    std::string program_sha256, request_fingerprint;
+    std::array<CppDefaultedMovePhaseEvidence,3> phases;
 };
 struct CppNamedRuleConstantVariationProbe {
     std::size_t index=0;
@@ -251,6 +264,7 @@ struct CppRunResult {
     std::optional<CppRejectionProbe> rejection_probe;
     std::optional<CppNamedRuleProbe> named_rule_probe;
     std::optional<CppIndexedUniqueTransferEvidence> indexed_unique_transfer_evidence;
+    std::optional<CppDefaultedMovePolicyEvidence> defaulted_move_policy_evidence;
     std::optional<CppNamedRuleBatteryEvidence> named_rule_battery_evidence;
     std::string named_rule_battery_request_fingerprint;
     std::optional<CppOpenBatteryEvidence> open_battery_evidence;
@@ -298,6 +312,8 @@ struct CppProjectAvailability {
 // Bind an opt-in private identity witness to the exact student request.
 // This is an internal frame, not a persisted answer or learner achievement.
 [[nodiscard]] std::string cpp_indexed_unique_transfer_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_defaulted_move_policy_request_fingerprint(
     const CppRunRequest& request);
 
 // Blocking adapter: invoke on an owned worker, never the window thread. A stop

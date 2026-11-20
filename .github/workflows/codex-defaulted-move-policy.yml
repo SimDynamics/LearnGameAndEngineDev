@@ -8,6 +8,9 @@ on:
       - native/core/cpp_defaulted_move_policy_check.hpp
       - native/core/cpp_defaulted_move_policy_check_tests.cpp
       - scripts/curriculum/test_cpp_defaulted_move_policy.py
+      - scripts/curriculum/test_cpp_defaulted_move_policy_authoring.py
+      - scripts/curriculum/stable_state_layout.py
+      - native/platform/windows/content_loader.cpp
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_elegir_copia_y_movimiento_de_una_clase.json
   workflow_dispatch:
 
@@ -29,6 +32,8 @@ jobs:
             python3 -B scripts/curriculum/test_cpp_defaulted_move_policy.py \
               --compiler "$compiler"
           done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_defaulted_move_policy_authoring.py -v
 
   windows-msvc:
     name: Genuine U6L6 generated moves and rejected copies with MSVC C++23

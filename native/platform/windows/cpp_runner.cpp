@@ -4,6 +4,7 @@
 #include "core/cpp_expression_repair.hpp"
 #include "core/named_rule_constant_variation_check.hpp"
 #include "core/cpp_indexed_unique_transfer_probe.hpp"
+#include "core/cpp_defaulted_move_policy_check.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 #include "native_build_config.hpp"
@@ -390,6 +391,49 @@ std::string fingerprint(const CppRunRequest& request,bool configuration=false){r
 // The exact source, trusted owner, request/revision, input and driver all bind
 // the private execution to this specific student attempt.
 
+// Dedicated fingerprint: the complete submitted source, immutable authoring
+// and all three generated driver hashes are sealed to one request/revision.
+// Existing single-file and CMake fingerprints stay byte-for-byte unchanged.
+std::string defaulted_move_policy_fingerprint(const CppRunRequest& request) {
+    if(!request.defaulted_move_policy_probe||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+       request.cmake||!request.project_files.empty()||!request.source_files.empty()||
+       request.indexed_unique_transfer_probe||request.named_rule_probe||
+       request.boolean_battery_probe||request.open_battery_probe||
+       request.reduction_probe||request.integer_battery_probe||
+       request.adjustment_project_probe||request.rejection_probe||
+       request.observation_probe||request.assertion_mode||
+       request.capture_cmake_graph||request.cmake_graph_check)return {};
+    const auto& spec=*request.defaulted_move_policy_probe;
+    std::array<std::string,3> driver_hashes;
+    const std::array modes{
+        curriculum::CppDefaultedMoveProbe::success,
+        curriculum::CppDefaultedMoveProbe::rejected_copy_constructor,
+        curriculum::CppDefaultedMoveProbe::rejected_copy_assignment};
+    for(std::size_t i=0;i<modes.size();++i) {
+        const auto driver=curriculum::cpp_defaulted_move_policy_probe_source(
+            spec,request.source_utf8,modes[i]);
+        if(!driver)return {};
+        driver_hashes[i]=state::sha256(*driver);
+    }
+    const auto field=[](std::string_view value){
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    auto frame=std::string("windows-defaulted-move-policy-v1/")+
+        field(std::to_string(request.request_id))+
+        field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+
+        field(request.project_key)+field(spec.original_source)+
+        field(spec.class_name)+field(spec.member_name)+
+        field(spec.put_method)+field(spec.change_method)+
+        field(spec.clear_method)+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes));
+    for(const auto& digest:driver_hashes)frame+=field(digest);
+    return state::sha256(frame);
+}
 std::string indexed_unique_transfer_fingerprint(const CppRunRequest& request) {
     if(!request.indexed_unique_transfer_probe ||
        request.backend!=CppRunRequest::Backend::native_msvc ||
@@ -3155,6 +3199,46 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                 request.open_battery_probe->original_cases,
                 request.open_battery_probe->original_case_numbers,evidence.runs,frame).accepted;
     }
+    if(request.defaulted_move_policy_probe) {
+        const auto frame=defaulted_move_policy_fingerprint(request);
+        fresh.defaulted_move_policy_request_fingerprint=frame;
+        if(!frame.empty()&&result.defaulted_move_policy_evidence) {
+            const auto& proof=*result.defaulted_move_policy_evidence;
+            const std::array modes{
+                curriculum::CppDefaultedMoveProbe::success,
+                curriculum::CppDefaultedMoveProbe::rejected_copy_constructor,
+                curriculum::CppDefaultedMoveProbe::rejected_copy_assignment};
+            bool bound=proof.program_sha256==state::sha256(request.source_utf8)&&
+                proof.request_fingerprint==frame;
+            for(std::size_t i=0;bound&&i<modes.size();++i) {
+                const auto driver=curriculum::cpp_defaulted_move_policy_probe_source(
+                    *request.defaulted_move_policy_probe,request.source_utf8,modes[i]);
+                bound=driver&&proof.phases[i].driver_sha256==state::sha256(*driver);
+            }
+            if(bound) {
+                const auto& positive=proof.phases[0];
+                bool accepted=positive.compilation.succeeded()&&
+                    positive.execution.succeeded()&&
+                    positive.execution.stdout_bytes.empty()&&
+                    positive.execution.stderr_bytes==
+                        curriculum::cpp_defaulted_move_completion_marker;
+                for(std::size_t i=1;accepted&&i<proof.phases.size();++i) {
+                    const auto& negative=proof.phases[i];
+                    const auto& diagnostic=negative.compilation.stdout_bytes;
+                    const auto& diagnostic_error=negative.compilation.stderr_bytes;
+                    const bool deleted=diagnostic.find("C2280")!=std::string::npos||
+                        diagnostic_error.find("C2280")!=std::string::npos||
+                        diagnostic.find("C2248")!=std::string::npos||
+                        diagnostic_error.find("C2248")!=std::string::npos;
+                    accepted=negative.compilation.status==CppPhaseStatus::completed&&
+                        negative.compilation.exit_code&&
+                        *negative.compilation.exit_code!=0&&deleted&&
+                        negative.execution.status==CppPhaseStatus::not_started;
+                }
+                fresh.defaulted_move_policy_probe_correct=accepted;
+            }
+        }
+    }
     if(request.indexed_unique_transfer_probe) {
         const auto frame=indexed_unique_transfer_fingerprint(request);
         fresh.indexed_unique_transfer_request_fingerprint=frame;
@@ -3323,6 +3407,42 @@ void complete_cmake_option_probe(const CppRunRequest& request,
 // The student's unmodified submitted program runs first. Only afterward may
 // a second private native program observe the real identity and cleanup.
 // This never edits an existing draft, curricular asset or saved achievement.
+// Independent compiled semantics: one successful generated-move witness and
+// two genuinely compiler-rejected copy operations. No undefined-behavior
+// execution is used for negative cases and no extra learner input is requested.
+void complete_defaulted_move_policy_probe(const CppRunRequest& request,
+        CppRunResult& result,std::stop_token stop) {
+    if(!request.defaulted_move_policy_probe||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto frame=defaulted_move_policy_fingerprint(request);
+    if(frame.empty())return;
+    const std::array modes{
+        curriculum::CppDefaultedMoveProbe::success,
+        curriculum::CppDefaultedMoveProbe::rejected_copy_constructor,
+        curriculum::CppDefaultedMoveProbe::rejected_copy_assignment};
+    CppDefaultedMovePolicyEvidence observed;
+    observed.program_sha256=state::sha256(request.source_utf8);
+    observed.request_fingerprint=frame;
+    for(std::size_t i=0;i<modes.size();++i) {
+        if(stop.stop_requested())return;
+        const auto driver=curriculum::cpp_defaulted_move_policy_probe_source(
+            *request.defaulted_move_policy_probe,request.source_utf8,modes[i]);
+        if(!driver)return;
+        auto private_request=request;
+        private_request.defaulted_move_policy_probe.reset(); // never recurse
+        private_request.request_id=(~request.request_id)^(static_cast<std::uint64_t>(i)+1);
+        private_request.project_key+="/independent-defaulted-move-v1/"+std::to_string(i);
+        private_request.source_utf8=*driver;
+        private_request.stdin_utf8.clear();
+        const auto proof=run_cpp(private_request,stop);
+        if(!proof.error_utf8.empty()||stop.stop_requested())return;
+        observed.phases[i]=CppDefaultedMovePhaseEvidence{
+            state::sha256(*driver),proof.compilation,proof.execution};
+    }
+    result.defaulted_move_policy_evidence=std::move(observed);
+}
+
 void complete_indexed_unique_transfer_probe(const CppRunRequest& request,
         CppRunResult& result,std::stop_token stop) {
     if(!request.indexed_unique_transfer_probe||
@@ -4403,6 +4523,11 @@ void complete_reduction_probe(const CppRunRequest& request,CppRunResult& result,
 }
 } // namespace
 
+std::string cpp_defaulted_move_policy_request_fingerprint(
+        const CppRunRequest& request) {
+    return defaulted_move_policy_fingerprint(request);
+}
+
 std::string cpp_indexed_unique_transfer_request_fingerprint(
         const CppRunRequest& request) {
     return indexed_unique_transfer_fingerprint(request);
@@ -4505,7 +4630,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         write_exact(source, request.source_utf8);
         const auto arguments=single_file_arguments(result.run_directory);
         const bool has_private_probe=request.boolean_battery_probe||request.reduction_probe||
-            named_rule_battery_requested(request)||request.indexed_unique_transfer_probe;
+            named_rule_battery_requested(request)||request.indexed_unique_transfer_probe||
+            request.defaulted_move_policy_probe;
         const auto private_environment=has_private_probe
             ?compiler_environment():std::vector<wchar_t>{};
         const auto fixed_environment=has_private_probe?&private_environment:nullptr;
@@ -4532,6 +4658,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         }
         complete_named_rule_probe(request,result,stop);
         complete_indexed_unique_transfer_probe(request,result,stop);
+        complete_defaulted_move_policy_probe(request,result,stop);
         complete_named_rule_battery_single(request,result,compiler,private_environment,
             initial_toolchain,stop);
         complete_rejection_stream_probe(request,result,stop);

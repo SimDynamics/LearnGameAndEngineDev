@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -4620,6 +4620,61 @@ def _validate_compiler_indexed_unique_transfer_checks(document: dict) -> None:
         require(source.count("class "+entry["className"]+" {")==1,
                 "The original owner class is missing or ambiguous")
 
+
+def _validate_compiler_defaulted_move_policy_checks(document: dict) -> None:
+    """Authenticate a new private move/copy compiler policy without rewriting its editor."""
+    field="compilerDefaultedMovePolicyChecks"
+    if field not in document:
+        return
+    meta=document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version")==2 and meta.get("locale")=="es",
+            "Defaulted move policy requires an existing Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Defaulted move policy requires 1..32 mapped owners")
+    required={"activity","className","memberName","putMethod",
+              "changeMethod","clearMethod"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Defaulted move policy must declare the exact original owner fields")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate defaulted move policy owner")
+        seen.add(identity)
+        owner=owners.get(identity)
+        require(type(owner) is dict and owner.get("type")=="cpp_compiler"
+                and type(owner.get("outputCheck")) is dict
+                and type(owner["outputCheck"].get("cases")) is list
+                and bool(owner["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(owner)),
+                "Defaulted move policy requires an original single-file output editor")
+        for key in ("compilerIndexedUniqueTransferChecks","compilerNamedRuleChecks",
+                    "compilerOpenBatteryChecks","compilerReductionChecks",
+                    "compilerCmakeGraphChecks","compilerIntegerBatteryChecks"):
+            others=document.get(key,[])
+            require(type(others) is list and not any(
+                type(record) is dict and record.get("activity")==identity
+                for record in others),
+                "Defaulted move policy cannot share another private runtime owner")
+        source=owner.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Defaulted move policy requires complete original source")
+        for name in required-{"activity"}:
+            word=item[name]
+            require(type(word) is str and 0<len(word)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",word)
+                    and not word.startswith("__")
+                    and not (word.startswith("_") and len(word)>1 and word[1].isupper()),
+                    "Invalid identifier in defaulted move policy declaration")
+        cls=item["className"]
+        require(len(re.findall(r"\b(?:class|struct)\s+"+re.escape(cls)+r"\s*\{",source))==1,
+                "A defaulted move policy must identify exactly one authored class")
+        member=item["memberName"]
+        require(re.search(r"\bstd\s*::\s*unique_ptr\s*<\s*int\s*>\s*"+
+                          re.escape(member)+r"\b",source) is not None,
+                "Defaulted move policy requires its original unique_ptr<int> member")
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
@@ -5411,6 +5466,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_runtime_checks(document)
     _validate_compiler_named_rule_checks(document)
     _validate_compiler_indexed_unique_transfer_checks(document)
+    _validate_compiler_defaulted_move_policy_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)

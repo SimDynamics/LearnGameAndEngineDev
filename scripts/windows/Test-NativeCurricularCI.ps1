@@ -57,7 +57,8 @@ $qaSuiteConfig = switch ($Suite) {
                 'native.math_matching_text_live',
                 'native.general_choice_live',
                 'native.identifier_rename_live',
-                'native.indexed_unique_transfer_state_live'
+                'native.indexed_unique_transfer_state_live',
+                'native.defaulted_move_policy_state_live'
             )
         }
     }
@@ -546,6 +547,7 @@ if ($Suite -eq 'ReaderBuild') {
         'native.general_choice_live',
         'native.identifier_rename_live',
         'native.indexed_unique_transfer_state_live',
+        'native.defaulted_move_policy_state_live',
         'native.course_edition',
         'native.course_edition_authoring',
         'native.optional_prose_format',

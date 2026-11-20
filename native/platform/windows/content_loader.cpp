@@ -5454,6 +5454,69 @@ void read_compiler_indexed_unique_transfer_checks(const JsonObject& root,Lesson&
     }
 }
 
+void read_compiler_defaulted_move_policy_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerDefaultedMovePolicyChecks"))return;
+    const auto entries=array(root,"compilerDefaultedMovePolicyChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Defaulted move policy requires 1..32 mapped Spanish v2 owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","className","memberName",
+            "putMethod","changeMethod","clearMethod"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&seen.insert(identity).second,
+            "Defaulted move policy owner is repeated or unknown");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate native defaulted move policy owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Defaulted move policy requires an original single-file compiler objective");
+        CppDefaultedMovePolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.class_name=text(item,"className");
+        spec.member_name=text(item,"memberName");
+        spec.put_method=text(item,"putMethod");
+        spec.change_method=text(item,"changeMethod");
+        spec.clear_method=text(item,"clearMethod");
+        require(cpp_defaulted_move_detail::name(spec.class_name)&&
+                cpp_defaulted_move_detail::name(spec.member_name)&&
+                cpp_defaulted_move_detail::name(spec.put_method)&&
+                cpp_defaulted_move_detail::name(spec.change_method)&&
+                cpp_defaulted_move_detail::name(spec.clear_method),
+            "Defaulted move policy has invalid C++ authoring identifiers");
+        const auto tokens=cpp_defaulted_move_detail::tokens(spec.original_source);
+        require(tokens&&
+                cpp_defaulted_move_detail::region(*tokens,spec.class_name),
+            "Defaulted move policy has no authenticated original class");
+        const std::array<std::string,6> member_tokens{{
+            "id:std","op:::","id:unique_ptr","op:<","id:int","op:>"}};
+        bool typed_member=false;
+        for(std::size_t i=0;i+member_tokens.size()<tokens->size();++i) {
+            if(!std::equal(member_tokens.begin(),member_tokens.end(),
+                    tokens->begin()+static_cast<std::ptrdiff_t>(i)))continue;
+            if((*tokens)[i+member_tokens.size()]=="id:"+spec.member_name) {
+                typed_member=true;break;
+            }
+        }
+        require(typed_member,
+            "Defaulted move policy must name an existing unique_ptr<int> member");
+        owner->defaulted_move_policy_probe=std::move(spec);
+    }
+}
+
 void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerOpenBatteryChecks"))return;
     const auto entries=array(root,"compilerOpenBatteryChecks");
@@ -6231,6 +6294,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_indexed_unique_transfer_checks(root,lesson);
+        read_compiler_defaulted_move_policy_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
@@ -6358,6 +6422,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_indexed_unique_transfer_checks(root,lesson);
+        read_compiler_defaulted_move_policy_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
