@@ -519,6 +519,65 @@ la revisión visual de la app durante el estudio.
 
 
 
+## Despacho virtual real durante construcción, uso y destrucción
+
+Programación 3, U8L6, dispone de un comprobador general de dos cuerpos,
+`compilerVirtualLifetimeDispatchChecks`. Work puede añadir a la raíz
+de una lección española con `stateLayout` v2 la declaración siguiente
+sin modificar sus cinco casos, archivos de origen ni identidades:
+
+```json
+"compilerVirtualLifetimeDispatchChecks": [
+  {
+    "activity": "block_0015_0002",
+    "baseClass": "Medida",
+    "derivedClass": "MedidaIdentificada",
+    "registerMethod": "registrar",
+    "writeMethod": "escribir",
+    "phaseParameter": "etapa",
+    "registerStream": "salida",
+    "writeStream": "salida"
+  }
+]
+```
+
+Los cuerpos de estas funciones son editables, pero sus firmas, las
+declaraciones y el resto del archivo original permanecen idénticos:
+
+```cpp
+void Medida::registrar(const char* etapa, std::ostream& salida) const
+void MedidaIdentificada::escribir(std::ostream& salida) const
+```
+
+La sonda privada se compila desde el código realmente entregado y verifica
+que las llamadas virtuales dependen del tipo y del estado del objeto durante
+construcción, uso y destrucción. Un objeto derivado que sigue vivo debe usar
+la implementación derivada incluso cuando se le entregue el rótulo
+`"ConstruirBase"` o `"DestruirBase"`. Una instancia
+solo de la clase base mantiene su implementación base al recibir
+`"ConstruirDerivada"`. Durante el constructor o destructor de la
+base, las llamadas virtuales siguen el comportamiento de esa fase de C++.
+
+La comprobación emplea flujos independientes y también comprueba la
+llamada calificada a la base, rótulos desconocidos o vacíos, códigos cero,
+números negativos y destrucción a través de un propietario de la base.
+Rechaza programas que deducen la función a invocar del texto del rótulo,
+que imitan las salidas o que escriben en un flujo distinto del recibido.
+Se aceptan cuerpos correctos equivalentes.
+
+Un único acierto del primer caso visible permite avanzar cuando pasa la
+sonda. Los otros cuatro casos se conservan como ensayos opcionales.
+El recibo adicional `virtual-lifetime/v1` se vincula al código,
+la declaración curricular, la solicitud y la revisión concretas.
+Los logros anteriores de stdout se conservan, pero no acreditan
+automáticamente el nuevo objetivo; tampoco se modifican borradores
+ni el progreso de otros cursos.
+
+La QA de Codex no edita el contenido de Work. Work incorporará esta
+declaración y comprobará su presentación cuando corresponda. Las
+sondas de C++ y las pruebas aisladas de conservación no sustituyen la
+validación integral nativa de la app Windows.
+
 ## Baterías abiertas de una función booleana con dos enteros
 
 Windows admite la variante `boolean-pair-v1` dentro de la lista raíz
