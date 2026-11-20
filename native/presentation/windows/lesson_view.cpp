@@ -508,7 +508,7 @@ struct LessonView {
     std::string secondary_instruction(BlockType type,bool optional_separators=false)const{
         if(type==BlockType::order_code){
             if(optional_separators)return ui(
-                "Arrastra las líneas de código para ordenarlas. Puedes mover las tarjetas vacías si quieres dejar una línea en blanco",
+                "Arrastra las líneas de código para ordenarlas. Puedes mover las tarjetas vacías si quieres dejar una línea en blanco.",
                 "Drag the code lines to put them in order. You can move blank cards if you want to leave an empty line.",
                 "Faites glisser les lignes de code pour les mettre dans l’ordre. Vous pouvez déplacer les cartes vides pour laisser une ligne blanche.");
             return ui("Mantén pulsado un bloque y arrástralo hasta la posición correcta.",
