@@ -10,6 +10,7 @@
 #include "core/adjustment_project_check.hpp"
 #include "core/cpp_indexed_unique_transfer_probe.hpp"
 #include "core/cpp_defaulted_move_policy_check.hpp"
+#include "core/cpp_independent_copy_assignment_check.hpp"
 
 #include <array>
 #include <chrono>
@@ -116,6 +117,7 @@ struct CppRunRequest {
     // A sealed root declaration may ask the Windows worker to compile three
     // independent move/copy programs, never the learner-visible extra cases.
     std::optional<curriculum::CppDefaultedMovePolicy> defaulted_move_policy_probe;
+    std::optional<curriculum::CppIndependentCopyAssignmentPolicy> independent_copy_assignment_probe;
     std::optional<curriculum::OpenBatteryProbeSpec> open_battery_probe;
     std::optional<curriculum::AssertionMode> assertion_mode;
     // Ordinary CMake builds and private probes do not need to parse the
@@ -156,6 +158,10 @@ struct CppNamedRuleProbe {
     CppPhaseResult compilation, execution;
 };
 struct CppIndexedUniqueTransferEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
+    CppPhaseResult compilation, execution;
+};
+struct CppIndependentCopyAssignmentEvidence {
     std::string driver_sha256, program_sha256, request_fingerprint;
     CppPhaseResult compilation, execution;
 };
@@ -265,6 +271,7 @@ struct CppRunResult {
     std::optional<CppNamedRuleProbe> named_rule_probe;
     std::optional<CppIndexedUniqueTransferEvidence> indexed_unique_transfer_evidence;
     std::optional<CppDefaultedMovePolicyEvidence> defaulted_move_policy_evidence;
+    std::optional<CppIndependentCopyAssignmentEvidence> independent_copy_assignment_evidence;
     std::optional<CppNamedRuleBatteryEvidence> named_rule_battery_evidence;
     std::string named_rule_battery_request_fingerprint;
     std::optional<CppOpenBatteryEvidence> open_battery_evidence;
@@ -314,6 +321,8 @@ struct CppProjectAvailability {
 [[nodiscard]] std::string cpp_indexed_unique_transfer_request_fingerprint(
     const CppRunRequest& request);
 [[nodiscard]] std::string cpp_defaulted_move_policy_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_independent_copy_assignment_request_fingerprint(
     const CppRunRequest& request);
 
 // Blocking adapter: invoke on an owned worker, never the window thread. A stop
