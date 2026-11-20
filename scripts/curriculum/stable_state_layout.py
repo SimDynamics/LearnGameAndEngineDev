@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -5232,6 +5232,101 @@ def _validate_compiler_virtual_lifetime_dispatch_checks(document: dict) -> None:
                 "Virtual lifetime dispatch needs both original member bodies")
 
 
+
+def _validate_compiler_derived_preparation_checks(document: dict) -> None:
+    """Authenticate a derived-owner replacement goal without editing its editor."""
+    field="compilerDerivedPreparationChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Derived preparation requires an original Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Derived preparation requires 1..32 published compiler owners")
+    required={"activity","baseClass","derivedClass","balanceClass",
+              "resourceClass","replacementFunction","destinationParameter",
+              "numberParameter","codeParameter","modeParameter",
+              "balanceParameter","printMethod","resourceAlive",
+              "baseCompleted","derivedCompleted","resourceCompleted",
+              "baseDestroyed","derivedDestroyed","resourceDestroyed"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Derived preparation requires exactly its declared identifiers")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate derived preparation owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Derived preparation must bind a published single-source editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                      "compilerArrayReturnTakeChecks",
+                      "compilerPolymorphicDestructionChecks",
+                      "compilerVirtualLifetimeDispatchChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            others=document.get(other,[])
+            require(type(others) is list and not any(
+                type(x) is dict and x.get("activity")==identity for x in others),
+                "Derived preparation cannot share another private compiler owner")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Derived preparation requires complete original C++ source")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid derived preparation identifier")
+        base=item["baseClass"]
+        derived=item["derivedClass"]
+        balance=item["balanceClass"]
+        resource=item["resourceClass"]
+        require(len(re.findall(r"\bclass\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(derived)+
+                    r"\s*:\s*public\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(resource)+r"\s*\{",
+                                   source))==1,
+                "Original base/derived/resource types missing or ambiguous")
+        balance_type=re.search(r"\bstruct\s+"+re.escape(balance)+
+                               r"\s*\{([^{}]*)\};",source,re.DOTALL)
+        require(balance_type is not None,
+                "Original lifetime balance struct is missing or ambiguous")
+        for key in ("resourceAlive","baseCompleted","derivedCompleted",
+                    "resourceCompleted","baseDestroyed",
+                    "derivedDestroyed","resourceDestroyed"):
+            require(re.search(r"\bint\s+"+re.escape(item[key])+r"\b",
+                              balance_type.group(1)) is not None,
+                "Derived preparation lifetime counter missing: "+key)
+        require("virtual ~"+base+"() noexcept" in source and
+                "~"+derived+"() noexcept override" in source and
+                len(re.findall(r"\bstd\s*::\s*unique_ptr\s*<\s*"+
+                               re.escape(resource)+r"\s*>",source))>=2 and
+                re.search(r"\bvoid\s+"+re.escape(item["printMethod"])+
+                          r"\s*\(\s*std\s*::\s*ostream\s*&",source) is not None,
+                "Original unique owners or virtual destructor missing")
+        signature=("void "+item["replacementFunction"]+
+            "(std::unique_ptr<"+base+">& "+item["destinationParameter"]+
+            ", int "+item["numberParameter"]+", int "+item["codeParameter"]+
+            ", int "+item["modeParameter"]+", "+balance+"& "+
+            item["balanceParameter"]+") {")
+        require(source.count(signature)==1,
+                "Derived preparation must bind one original free function body")
+
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
@@ -6031,6 +6126,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_array_return_take_checks(document)
     _validate_compiler_polymorphic_destruction_checks(document)
     _validate_compiler_virtual_lifetime_dispatch_checks(document)
+    _validate_compiler_derived_preparation_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)
