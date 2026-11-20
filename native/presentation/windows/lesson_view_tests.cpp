@@ -3401,6 +3401,13 @@ void real_retirement_pages_preserve_all_eight_useful_editors() {
                     }
                     state::put_response(data,lesson,block,answer);
                 }
+            // The original bookmark is evidence of a page the historical
+            // reader actually reached. Saved quiz answers alone do not
+            // populate the independent stable-page reading coverage.
+            for(std::size_t reached=0;reached<=plan.page;++reached)
+                (void)state::mark_page_reached(data,lesson,reached);
+            require(state::can_reach_page(data,lesson,plan.page),
+                "The historical test bookmark is not supported by page-reading coverage");
             state::save_current_page(data,lesson,plan.page);
             for(const auto& p:lesson.pages)for(const auto& block:p.blocks)if(block.type==BlockType::cpp_compiler){
                 state::Draft draft;draft.source=block.initial_code+"// borrador QA independiente: "+block.stable_id+"\n";
