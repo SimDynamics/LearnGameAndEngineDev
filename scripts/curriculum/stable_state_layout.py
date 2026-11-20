@@ -7396,8 +7396,27 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(choices[:len(old_choices)] == old_choices,
             "Published choice revisions are append-only and cannot be removed or replaced")
     for item in choices[len(old_choices):]:
-        require(item["id"] in before and fingerprint(item["block"]) == fingerprint(before[item["id"]]),
-                "A new choice revision must preserve its complete previous published block")
+        identity = item["id"]
+        require(identity in before,
+                "A new choice revision must belong to a previously published owner")
+        if fingerprint(item["block"]) != fingerprint(before[identity]):
+            # One separately authenticated prose revision may precede the
+            # option edit within a release that skips the intermediate Git
+            # publication. The choice archive must contain EXACTLY that
+            # predecessor, not an arbitrary substituted exercise contract.
+            require("optionIndex" in item and
+                    bool(ordinary_editorial_fields(before[identity], item["block"])),
+                    "A new choice revision must preserve its complete previous published block")
+            authored = [edge for edge in meta["editorial"][len(old_editorial):]
+                        if edge["id"] == identity]
+            revised_option = deepcopy(item["block"])
+            revised_option["options"][item["optionIndex"]] = item["replacement"]
+            require(len(authored) >= 2
+                    and authored[0]["beforeSha256"] == fingerprint(before[identity])
+                    and authored[0]["afterSha256"] == fingerprint(item["block"])
+                    and authored[1]["beforeSha256"] == fingerprint(item["block"])
+                    and authored[1]["afterSha256"] == fingerprint(revised_option),
+                    "An earlier choice-owner prose revision needs its own complete ordered proof")
         if "optionIndex" in item:
             require(item["semanticBefore"] == _choice_semantic_entry(
                 baseline, item["id"], item["optionIndex"]),

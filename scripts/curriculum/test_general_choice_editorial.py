@@ -367,6 +367,69 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
                     relative, *position, old, active,
                     previous_document=self.original, current_document=forged))
 
+    def test_prose_before_option_survives_skipped_publication_without_reusing_answer(self):
+        """A signed question correction may precede the independently archived option.
+
+        The final document must verify against the original published U9 owner,
+        even if Work did not publish the intermediate wording-only snapshot.
+        """
+        import validar_json_programacion as contract
+
+        question = self.block["question"].replace(
+            "¿Qué falta?", "¿Qué condición debe corregirse?")
+        self.assertNotEqual(question, self.block["question"])
+        prose_first = layout.revise_ordinary_editorial(self.original, OWNER, {
+            "question": {"text": question, "spans": [
+                layout.text_semantics.select(question, "enviar", "cpp",
+                                             reading="technical")]}})
+        option_last = layout.revise_choice_editorial(prose_first, OWNER, 0, REVISED)
+        layout.validate_transition(self.original, prose_first)
+        layout.validate_transition(prose_first, option_last)
+        layout.validate_transition(self.original, option_last)
+        self.assertEqual(layout.validate(self.original), layout.validate(option_last))
+        self.assertEqual(self.original["stateLayout"]["origin"],
+                         option_last["stateLayout"]["origin"])
+        old, current = self.block, layout._blocks(option_last)[OWNER]
+        self.assertEqual(current["options"][0], REVISED)
+        self.assertEqual(current["options"][1:], old["options"][1:])
+        self.assertEqual(current["correctIndex"], old["correctIndex"])
+        self.assertEqual(current["explanation"], old["explanation"])
+        self.assertEqual(current["question"], question)
+        relative = "app/src/main/assets/content/es/" + RELATIVE
+        position = next((p, b)
+                        for p, page in enumerate(self.original["stateLayout"]["current"])
+                        for b, owner in enumerate(page["blocks"]) if owner == OWNER)
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *position, old, current,
+            previous_document=self.original, current_document=option_last))
+        restored = layout.original_projection(option_last)
+        origin_position = next((p, b) for (p, b), storage in
+                               layout.validate(self.original).items()
+                               if storage == position)
+        historical = restored["pages"][origin_position[0]]["blocks"][origin_position[1]]
+        self.assertEqual(historical["options"], old["options"])
+        self.assertEqual(historical["question"], question)
+
+        for mutation in ("missing-prior-proof", "forged-option-predecessor",
+                         "changed-answer", "stale-question-marker"):
+            bad = deepcopy(option_last)
+            active = layout._blocks(bad)[OWNER]
+            if mutation == "missing-prior-proof":
+                bad["stateLayout"]["editorial"].pop(-2)
+            elif mutation == "forged-option-predecessor":
+                bad["stateLayout"]["choiceRevisions"][0]["block"]["explanation"] += " Alterada."
+            elif mutation == "changed-answer":
+                active["correctIndex"] = 1
+            else:
+                marker = next(field for field in bad["textSemantics"]["fields"]
+                              if field["block"] == OWNER and field["path"] == "/question")
+                marker["sourceSha256"] = "0" * 64
+            with self.subTest(mutation=mutation), self.assertRaises(layout.LayoutError):
+                layout.validate_transition(self.original, bad)
+            self.assertFalse(contract.preserves_previous_exercise(
+                relative, *position, old, active,
+                previous_document=self.original, current_document=bad))
+
     def test_general_option_curricular_guard_rejects_answer_and_history_tampering(self):
         import validar_json_programacion as contract
 
