@@ -68,7 +68,8 @@ $qaSuiteConfig = switch ($Suite) {
                 'native.virtual_lifetime_state_live',
                 'native.derived_preparation_state_live',
                 'native.abstract_interface_state_live',
-                'native.interface_collection_state_live'
+                'native.interface_collection_state_live',
+                'native.polymorphic_clone_state_live'
             )
         }
     }
