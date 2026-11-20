@@ -1140,6 +1140,12 @@ if(BUILD_TESTING)
     set_tests_properties(native.compiler_review_guidance_priority PROPERTIES TIMEOUT 30)
     add_test(NAME native.u12l24_authored_compiler_guides COMMAND lgaed_compiler_guidance_state_tests --authored-l24-guides)
     set_tests_properties(native.u12l24_authored_compiler_guides PROPERTIES TIMEOUT 30)
+    # Exercise the separately compiled matching-text implementation, not just
+    # its link dependency. The regression uses a private QA copy and does not
+    # mutate the authored U5L13 lesson or any student state.
+    add_test(NAME native.math_matching_text_live
+        COMMAND lgaed_compiler_guidance_state_tests --math-matching-text-live)
+    set_tests_properties(native.math_matching_text_live PROPERTIES TIMEOUT 60)
     add_test(NAME curriculum.compiler_guidance_projection COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_compiler_guidance_projection.py)
     add_executable(lgaed_text_semantic_projection_tests native/presentation/windows/text_semantic_projection_tests.cpp)
