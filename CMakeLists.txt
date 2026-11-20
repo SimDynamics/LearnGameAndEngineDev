@@ -698,6 +698,20 @@ function(lgaed_add_boolean_battery_tests)
         PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
 endfunction()
 
+# One linked WinRT state-test executable is shared by full builds and ReaderBuild.
+# Its math matching-text case must be compiled and executed in the focused
+# Windows QA gate, not only registered in a full-application build.
+function(lgaed_add_compiler_guidance_state_target)
+    if(TARGET lgaed_compiler_guidance_state_tests)
+        return()
+    endif()
+    add_executable(lgaed_compiler_guidance_state_tests
+        native/platform/windows/compiler_guidance_state_tests.cpp
+        native/platform/windows/math_matching_text_state_tests.cpp)
+    target_link_libraries(lgaed_compiler_guidance_state_tests
+        PRIVATE lgaed_platform_windows lgaed_host_options)
+endfunction()
+
 if(LGAED_READER_BUILD_QA_ONLY)
     include(CTest)
     if(NOT BUILD_TESTING)
@@ -767,6 +781,11 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_open_battery_runtime_test()
     lgaed_add_semantic_retirement_view_test()
     lgaed_add_compiler_case_order_view_test()
+    lgaed_add_compiler_guidance_state_target()
+    add_test(NAME native.math_matching_text_live
+        COMMAND lgaed_compiler_guidance_state_tests --math-matching-text-live)
+    set_tests_properties(native.math_matching_text_live
+        PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     # Run the real Win32 compiler view against thirteen authored inputs.
     # Exactly the first must unlock navigation; all others remain optional.
     add_executable(lgaed_compiler_first_case_view_tests
@@ -1127,13 +1146,7 @@ if(BUILD_TESTING)
     add_executable(lgaed_compiler_feedback_source_tests native/platform/windows/compiler_feedback_source_tests.cpp)
     target_link_libraries(lgaed_compiler_feedback_source_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.compiler_feedback_source COMMAND lgaed_compiler_feedback_source_tests)
-    # The state-test CLI dispatches --math-matching-text-live to a separate
-    # implementation unit. Link it explicitly to avoid an unresolved external
-    # when compiling the full windows-x64-release target.
-    add_executable(lgaed_compiler_guidance_state_tests
-        native/platform/windows/compiler_guidance_state_tests.cpp
-        native/platform/windows/math_matching_text_state_tests.cpp)
-    target_link_libraries(lgaed_compiler_guidance_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    lgaed_add_compiler_guidance_state_target()
     add_test(NAME native.compiler_guidance_state COMMAND lgaed_compiler_guidance_state_tests)
     set_tests_properties(native.compiler_guidance_state PROPERTIES TIMEOUT 30)
     add_test(NAME native.compiler_review_guidance_priority COMMAND lgaed_compiler_guidance_state_tests --review-priority)
