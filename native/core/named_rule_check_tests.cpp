@@ -19,13 +19,20 @@ void alternative_logical_tokens() {
     using named_rule_detail::canonical_rule_token;
     for(const auto& equivalent:std::array{
             std::pair{"id:and","op:&&"},std::pair{"id:or","op:||"},
-            std::pair{"id:not","op:!"},std::pair{"op:<%","op:{"},
-            std::pair{"op:%>","op:}"}}) {
+            std::pair{"id:not","op:!"},std::pair{"id:not_eq","op:!="},
+            std::pair{"id:and_eq","op:&="},std::pair{"id:or_eq","op:|="},
+            std::pair{"id:xor_eq","op:^="},std::pair{"id:bitand","op:&"},
+            std::pair{"id:bitor","op:|"},std::pair{"id:xor","op:^"},
+            std::pair{"id:compl","op:~"},std::pair{"op:<%","op:{"},
+            std::pair{"op:%>","op:}"},std::pair{"op:<:","op:["},
+            std::pair{"op::>","op:]"}}) {
         if(canonical_rule_token(equivalent.first)!=equivalent.second)
             throw std::runtime_error("A standard C++ alternate token lost its operator meaning");
     }
-    if(canonical_rule_token("literal:\"and or not\"")!="literal:\"and or not\"")
-        throw std::runtime_error("A quoted explanation became an executable operator");
+    if(canonical_rule_token("literal:\"and or not\"")!="literal:\"and or not\"" ||
+       canonical_rule_token("op:%:")!="op:%:" ||
+       canonical_rule_token("op:%:%:")!="op:%:%:")
+        throw std::runtime_error("A quoted explanation or macro digraph was reinterpreted");
     const std::array rules{NamedRuleRequirement{"cajas_para",4,
         {"capacidad","plaza","cupo"},2}};
     verify(R"cpp(
@@ -56,6 +63,36 @@ void alternative_logical_tokens() {
                    (true or capacidad or capacidad) - 1;
         })cpp",rules,true,
         "A constant true 'or' expression preserves a separately valid result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return piezas / capacidad + (piezas % capacidad not_eq 0);
+        })cpp",rules,true,
+        "A valid not_eq comparison preserves the two calculated uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            resultado and_eq 0;
+            return resultado + (piezas + 3) / 4;
+        })cpp",rules,false,
+        "An and_eq overwrite must revoke earlier named-rule evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            resultado or_eq 0;
+            return resultado;
+        })cpp",rules,true,
+        "A neutral or_eq zero must preserve actual result dependencies");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            resultado xor_eq 0;
+            return resultado;
+        })cpp",rules,true,
+        "A neutral xor_eq zero must preserve actual result dependencies");
 }
 void capacity() {
     const std::array rules{NamedRuleRequirement{"cajas_para",4,
