@@ -71,6 +71,13 @@ jobs:
           /Zc:__cplusplus /utf-8 /Inative /c
           native\platform\windows\catalog_loader.cpp
           /Fo:"%RUNNER_TEMP%\lgaed_course_edition_catalog.obj"
+      - name: Compile the real QA edition reader scenario (object, no app launch)
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /permissive- /bigobj
+          /Zc:__cplusplus /utf-8 /Inative /c
+          native\platform\windows\course_edition_tests.cpp
+          /Fo:"%RUNNER_TEMP%\lgaed_course_edition_reader_tests.obj"
 
   metadata-cache:
     name: Detect altered edition files despite restored Windows LastWriteTime
