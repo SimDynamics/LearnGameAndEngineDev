@@ -128,6 +128,26 @@ def _entries(document, field):
     return identities
 
 
+def _active_index_entries(document, field):
+    """Authenticate the visible title and ordinal as well as the owner ID.
+
+    Windows uses these exact entries to present the lesson route. A valid
+    target identifier must not lend its provenance to a misleading title
+    or to a duplicate/out-of-order position. Retired historical indexes
+    remain unchanged and are handled by their legacy validator.
+    """
+    _entries(document, field)
+    entries = document[field]
+    for ordinal, entry in enumerate(entries, 1):
+        require(set(entry) == {"id", "number", "title"},
+                f"Una entrada activa de {field} requiere id, number y title")
+        require(type(entry["number"]) is int and entry["number"] == ordinal,
+                f"Numeración incorrecta en índice activo de {field}")
+        require(type(entry["title"]) is str and bool(entry["title"].strip()),
+                f"Título vacío en índice activo de {field}")
+    return entries
+
+
 def validate_active_course(course, units, lessons):
     """Check active references; inactive historical resources stay outside this walk."""
     value = descriptor(course)
@@ -141,19 +161,29 @@ def validate_active_course(course, units, lessons):
                         "A legacy course cannot activate an edition lesson")
         return
     require(course.get("id") == value["courseId"], "The edition belongs to a different course")
-    for unit_id in _entries(course, "units"):
+    require(type(course.get("title")) is str and bool(course["title"].strip()),
+            "El índice de curso activo necesita un título")
+    for unit_entry in _active_index_entries(course, "units"):
+        unit_id = unit_entry["id"]
         unit_slug(unit_id, value)
         require(unit_id in units, "An edition index references a missing unit")
         unit = units[unit_id]
         require(unit.get("courseId") == value["courseId"] and unit.get("unitId") == unit_id
                 and descriptor(unit) == value, "An active unit does not match its courseEdition")
-        for lesson_id in _entries(unit, "lessons"):
+        require(type(unit.get("title")) is str and
+                unit_entry["title"] == unit["title"],
+                "El título de unidad difiere del índice de curso activo")
+        for lesson_entry in _active_index_entries(unit, "lessons"):
+            lesson_id = lesson_entry["id"]
             expected_unit, _, _ = lesson_parts(lesson_id, value)
             require(expected_unit == unit_id, "An edition index references a lesson of another unit")
             require(lesson_id in lessons, "An edition index references a missing lesson")
             lesson = lessons[lesson_id]
             require(lesson.get("id") == lesson_id and descriptor(lesson) == value,
                     "An active lesson does not match its courseEdition")
+            require(type(lesson.get("title")) is str and
+                    lesson_entry["title"] == lesson["title"],
+                    "El título de lección difiere del índice de unidad activo")
             validate_lesson(lesson, require_layout=True)
 
 
