@@ -254,10 +254,10 @@ def execute(argv: list[str],timeout: int=80) -> subprocess.CompletedProcess[str]
 
 def compile_cpp(compiler: str,path: Path,binary: Path,windows: bool):
     argv=([compiler,"/nologo","/std:c++latest","/EHsc","/W4","/WX",
-           "/permissive-","/Zc:__cplusplus","/utf-8",str(path),
+           "/permissive-","/Zc:__cplusplus","/utf-8","/Inative",str(path),
            "/Fe:"+str(binary)] if windows else
           [compiler,"-std=c++23","-Wall","-Wextra","-Werror",
-           "-pedantic",str(path),"-o",str(binary)])
+           "-pedantic","-Inative",str(path),"-o",str(binary)])
     return execute(argv)
 
 def original_block():
