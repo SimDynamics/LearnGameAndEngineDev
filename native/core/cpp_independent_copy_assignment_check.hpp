@@ -97,6 +97,45 @@ inline bool directives_in_body(const Tokens& source,
            source[i]=="op:#"||source[i]=="op:##")return true;
     return false;
 }
+// The independent program reports completion only after its own lifetime and
+// exception-safety checks. A submitted operator= cannot substitute that
+// verdict by terminating the process or writing to the driver's output.
+// Check actual C++ tokens exclusively inside the authorized method body:
+// comments, ordinary literals and raw strings remain harmless data.
+inline bool private_probe_neutral(const Tokens& tokens,
+                                  const MethodRegion& region) {
+    Tokens body;
+    body.reserve(region.closing-region.opening-1);
+    for(auto i=region.opening+1;i<region.closing;++i)
+        body.push_back(tokens[i]);
+    if(code_format::cpp_process_termination_tokens(body))return false;
+    constexpr std::string_view forbidden[]={
+        "lgaed_copy_qa","Watch","fail_next",
+        "__FILE__","__FILEW__","__BASE_FILE__",
+        "__COUNTER__","__INCLUDE_LEVEL__","__DATE__","__TIME__",
+        "__TIMESTAMP__","__PRETTY_FUNCTION__","__FUNCSIG__",
+        "__FUNCDNAME__","__builtin_FILE","__builtin_FUNCTION",
+        "__builtin_source_location","source_location",
+        "longjmp","_longjmp","siglongjmp","setjmp","sigsetjmp",
+        "asm","__asm","__asm__","__pragma","_Pragma",
+        "fputs","puts","printf","fprintf","fwrite","putchar",
+        "freopen","freopen_s","fclose","stdout","stderr",
+        "cout","cerr","clog","wcout","wcerr","wclog",
+        "dup2","_dup2","SetStdHandle","WriteFile","WriteConsoleA",
+        "WriteConsoleW","CreateProcessA","CreateProcessW","WinExec",
+        "system","popen","_popen"
+    };
+    for(const auto& token:body) {
+        if(token.starts_with("directive:")||token=="op:#"||
+           token=="op:##"||token=="op:%:"||token=="op:%:%:")
+            return false;
+        if(!token.starts_with("id:"))continue;
+        const auto name=std::string_view(token).substr(3);
+        if(std::ranges::find(forbidden,name)!=std::end(forbidden))
+            return false;
+    }
+    return true;
+}
 inline bool member_present(const Tokens& source,
         const CppIndependentCopyAssignmentPolicy& spec) {
     const std::array<std::string,7> pattern{{
@@ -137,6 +176,7 @@ inline bool cpp_independent_copy_matches(
     const auto before=d::method(*original,spec);
     const auto after=d::method(*revised,spec);
     return before&&after&&!d::directives_in_body(*revised,*after)&&
+        d::private_probe_neutral(*revised,*after)&&
         d::without_body(*original,*before)==d::without_body(*revised,*after);
 }
 
