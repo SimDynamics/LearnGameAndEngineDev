@@ -328,7 +328,7 @@ void source_edits_stay_inside_assigned_diagnostic() {
         RejectionOperation::boxes),
         "Balanced digraph braces inside the rejection function were rejected");
     require(rejection_function_only_edit(original,modify(
-        "\n    destino << R\"probe(std::exit(0) std::cout printf stdout)\"probe;\n"
+        "\n    destino << R\"probe(std::exit(0) std::cout printf stdout)probe\";\n"
         "    // ExitProcess(0), fputs and freopen are only explanation text.\n"),
         RejectionOperation::boxes),
         "Comments and quoted examples of unsafe APIs cannot block a valid stream edit");
