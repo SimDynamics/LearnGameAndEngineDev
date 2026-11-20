@@ -7,6 +7,7 @@
 #include "native_build_config.hpp"
 
 #include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 
 #include <filesystem>
 #include <iostream>
