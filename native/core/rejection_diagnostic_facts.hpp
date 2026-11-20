@@ -58,6 +58,18 @@ inline std::string fold_spanish(std::string_view source) {
             }
             if(folded){out+=folded; ++i; continue;}
         }
+        // Common typographic hyphens/dashes and mathematical minus are
+        // equivalent to ASCII '-' in a written integer or inclusive range.
+        // Fold one complete UTF-8 scalar at a time: this also keeps Word
+        // offsets consistent with the punctuation inspected by range().
+        if(c==0xE2 && i+2<source.size()) {
+            const auto second=static_cast<unsigned char>(source[i+1]);
+            const auto third=static_cast<unsigned char>(source[i+2]);
+            if((second==0x80 && third>=0x90 && third<=0x95) ||
+                    (second==0x88 && third==0x92)) {
+                out+='-';i+=2;continue;
+            }
+        }
         if(c>='A'&&c<='Z')out+=static_cast<char>(c-'A'+'a');
         else if(c<128)out+=static_cast<char>(c);
         else out+=' ';
