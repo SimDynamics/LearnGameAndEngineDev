@@ -48,7 +48,7 @@ int indexed_unique_transfer_state_windows(const std::filesystem::path& content,
         "The published U6L5 source has an unexpected existing identity objective");
     const auto original_json=old.raw_json;
     const auto root=JsonObject::Parse(winrt::to_hstring(original_json));
-    const auto declaration=JsonObject::Parse(winrt::hstring{LR"({
+    const auto declaration=JsonObject::Parse(winrt::hstring{LR"u6l5({
         "activity":"block_0021_0002",
         "signature":"bool Deposito::transferir(int origen, int destino)",
         "className":"Deposito",
@@ -58,7 +58,7 @@ int indexed_unique_transfer_state_windows(const std::filesystem::path& content,
         "putMethod":"poner",
         "changeMethod":"cambiar",
         "clearMethod":"vaciar"
-    })"});
+    })u6l5"});
     JsonArray declarations;
     declarations.Append(declaration);
     root.Insert(L"compilerIndexedUniqueTransferChecks",declarations);
