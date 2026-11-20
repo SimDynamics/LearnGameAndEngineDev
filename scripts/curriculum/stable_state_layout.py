@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -5330,6 +5330,115 @@ def _validate_compiler_derived_preparation_checks(document: dict) -> None:
 
 
 
+
+def _validate_compiler_dual_interface_checks(document: dict) -> None:
+    """Original dual-base C++ source with exactly two editable method bodies."""
+    field="compilerDualInterfaceChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Dual-interface proof requires an original Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Dual-interface authoring needs 1..32 existing compiler editors")
+    required={"activity","valueInterface","reportInterface","concreteClass",
+              "valueMethod","writeMethod","changeMethod","streamParameter",
+              "changeParameter","codeMember","valueMember",
+              "constructorCodeParameter","constructorValueParameter",
+              "reportSeparator"}
+    identifiers=required-{"activity","reportSeparator"}
+    private_fields=(
+        "compilerIndexedUniqueTransferChecks","compilerDefaultedMovePolicyChecks",
+        "compilerIndependentCopyAssignmentChecks",
+        "compilerMoveAssignmentInvariantChecks","compilerArrayOwnerReadChecks",
+        "compilerArrayCopyMoveChecks","compilerArrayReturnTakeChecks",
+        "compilerPolymorphicDestructionChecks",
+        "compilerVirtualLifetimeDispatchChecks",
+        "compilerDerivedPreparationChecks","compilerAbstractInterfaceChecks",
+        "compilerInterfaceCollectionChecks","compilerPolymorphicCloneChecks",
+        "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+        "compilerReductionChecks","compilerCmakeGraphChecks",
+        "compilerIntegerBatteryChecks",
+    )
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Dual-interface authoring requires exact original names")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate dual-interface compiler owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&
+                         set(block)),
+                "Dual-interface proof needs a published single-file C++ editor")
+        for other in private_fields:
+            entries=document.get(other,[])
+            require(type(entries) is list and not any(
+                type(x) is dict and x.get("activity")==identity for x in entries),
+                "Dual-interface proof cannot share an existing private owner")
+        for key in identifiers:
+            name=item[key]
+            require(type(name) is str and 0<len(name)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",name)
+                    and not name.startswith("__")
+                    and not (len(name)>1 and name[0]=="_" and name[1].isupper()),
+                    "Invalid dual-interface C++ authoring identifier")
+        sep=item["reportSeparator"]
+        require(type(sep) is str and 0<len(sep)<=32 and all(
+                32<=ord(ch)<=126 and ch not in '"\\' for ch in sep),
+                "Unsafe dual-interface output separator")
+        value_base=item["valueInterface"]
+        report_base=item["reportInterface"]
+        concrete=item["concreteClass"]
+        value=item["valueMethod"]
+        write=item["writeMethod"]
+        change=item["changeMethod"]
+        stream=item["streamParameter"]
+        data=item["valueMember"]
+        code=item["codeMember"]
+        ctor_code=item["constructorCodeParameter"]
+        ctor_value=item["constructorValueParameter"]
+        change_param=item["changeParameter"]
+        require(value_base!=report_base and data!=code,
+                "Independent interfaces and distinct members are required")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Dual-interface proof needs the published source")
+        require(source.count("class "+value_base+" {")==1 and
+                source.count("class "+report_base+" {")==1 and
+                source.count("class "+concrete+" : public "+value_base+
+                             ", public "+report_base+" {")==1,
+                "Two public abstract base interfaces must be preserved")
+        require("virtual ~"+value_base+"() = default;" in source and
+                "virtual ~"+report_base+"() = default;" in source and
+                "virtual int "+value+"() const = 0;" in source and
+                "virtual void "+write+"(std::ostream& "+stream+
+                    ") const = 0;" in source,
+                "Dual-interface declarations are absent or incomplete")
+        ctor=(concrete+"(int "+ctor_code+", int "+ctor_value+") : "+
+              code+"{"+ctor_code+"}, "+data+"{"+ctor_value+"} {}")
+        mutate=("void "+change+"(int "+change_param+") { "+
+                data+" = "+change_param+"; }")
+        require(source.count(ctor)==1 and source.count(mutate)==1
+                and "int "+code+";" in source and
+                "int "+data+";" in source,
+                "Provided constructor, fields or mutation are missing")
+        value_signature="int "+value+"() const override {"
+        report_signature=("void "+write+"(std::ostream& "+stream+
+                          ") const override {")
+        require(source.count(value_signature)==1 and
+                source.count(report_signature)==1 and
+                source.index(value_signature)<source.index(report_signature),
+                "Dual-interface authoring requires two original method bodies")
+
+
 def _validate_compiler_polymorphic_clone_checks(document: dict) -> None:
     """Authorize three clone bodies without changing saved stdout contracts."""
     field="compilerPolymorphicCloneChecks"
@@ -6429,6 +6538,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_abstract_interface_checks(document)
     _validate_compiler_interface_collection_checks(document)
     _validate_compiler_polymorphic_clone_checks(document)
+    _validate_compiler_dual_interface_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)
