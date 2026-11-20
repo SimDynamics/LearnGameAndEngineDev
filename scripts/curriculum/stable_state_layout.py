@@ -6756,17 +6756,25 @@ def ordinary_editorial_fields(before: dict, after: dict) -> tuple[str, ...]:
 
 def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
                                           expected: dict | None,
-                                          choice_owners: set[str]) -> dict | None:
-    """Permit only changed prose paths of other intact ordinary owners.
+                                          choice_revisions: dict[str, dict]) -> dict | None:
+    """Compose separately authored prose with a new choice revision.
 
-    Both documents and the append-only proof chain have already been checked
-    by the transition validator. The current overlay has also been validated
-    against exact text, UTF-16 selections and supported public fields.
+    A changed answer-option marker is handled by its own archived choice
+    proof. For that SAME owner, compare the current block against the exact
+    predecessor plus only its authenticated option replacement. All other
+    fields remain protected. Both documents and the append-only editorial
+    chain have already been checked by the full transition validator.
     """
     before, after = _blocks(previous), _blocks(current)
-    allowed = {(identity, "/" + field)
-               for identity, block in before.items() if identity not in choice_owners
-               for field in ordinary_editorial_fields(block, after.get(identity))}
+    allowed = set()
+    for identity, block in before.items():
+        predecessor = block
+        if identity in choice_revisions:
+            choice = choice_revisions[identity]
+            predecessor = deepcopy(block)
+            predecessor["options"][choice["optionIndex"]] = choice["replacement"]
+        allowed.update((identity, "/" + field)
+                       for field in ordinary_editorial_fields(predecessor, after.get(identity)))
     if not allowed:
         return expected
     overlay = current.get(text_semantics.ROOT_FIELD)
@@ -7429,7 +7437,8 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     marker["sourceSha256"] = hashlib.sha256(
                         item["replacement"].encode("utf-8")).hexdigest()
         expected_semantics = _compose_ordinary_editorial_semantics(
-            baseline, current, expected_semantics, {item["id"] for item in new_general_choices})
+            baseline, current, expected_semantics,
+            {item["id"]: item for item in new_general_choices})
         require(expected_semantics == current.get(text_semantics.ROOT_FIELD),
                 "Editorial choice revised an unrelated text marker or semantic span")
     new_closed_sources = _new_closed_compiler_sources(baseline, current)
