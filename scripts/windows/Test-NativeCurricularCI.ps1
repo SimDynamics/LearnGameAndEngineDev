@@ -59,7 +59,8 @@ $qaSuiteConfig = switch ($Suite) {
                 'native.identifier_rename_live',
                 'native.indexed_unique_transfer_state_live',
                 'native.defaulted_move_policy_state_live',
-                'native.independent_copy_assignment_state_live'
+                'native.independent_copy_assignment_state_live',
+                'native.move_assignment_invariant_state_live'
             )
         }
     }
@@ -550,6 +551,7 @@ if ($Suite -eq 'ReaderBuild') {
         'native.indexed_unique_transfer_state_live',
         'native.defaulted_move_policy_state_live',
                 'native.independent_copy_assignment_state_live',
+                'native.move_assignment_invariant_state_live',
         'native.course_edition',
         'native.course_edition_authoring',
         'native.optional_prose_format',
