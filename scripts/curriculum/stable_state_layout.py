@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
