@@ -1040,7 +1040,8 @@ void integrated_retirement_contract_tests() {
             current.state_layout.legacy_lineage==before.state_layout.legacy_lineage&&
             originals_untouched&&new_signatures.size()>=old_signatures.size()&&
             new_additions.size()>=old_additions.size()&&
-            std::ranges::equal(old_additions,new_additions.begin(),
+            std::ranges::equal(old_additions.begin(),old_additions.end(),
+                new_additions.begin(),
                 new_additions.begin()+static_cast<std::ptrdiff_t>(old_additions.size()),
                 [](const auto& prior,const auto& current){
                     return prior.id==current.id&&prior.sha256==current.sha256&&
