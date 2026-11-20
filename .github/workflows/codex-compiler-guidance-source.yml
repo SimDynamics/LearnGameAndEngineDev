@@ -34,6 +34,10 @@ on:
       - native/core/cpp_move_assignment_invariant_check_tests.cpp
       - scripts/curriculum/test_cpp_move_assignment_invariant_authoring.py
       - native/presentation/windows/lesson_view.cpp
+      - native/presentation/windows/technical_context_view_tests.cpp
+      - native/presentation/windows/lesson_reader_tests.cpp
+      - native/presentation/windows/text_semantic_projection.hpp
+      - native/core/text_semantics.hpp
       - native/core/cpp_independent_copy_assignment_check.hpp
       - native/core/cpp_independent_copy_assignment_check_tests.cpp
       - scripts/curriculum/test_cpp_independent_copy_assignment_authoring.py
@@ -124,6 +128,16 @@ jobs:
           /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
           native\presentation\windows\lesson_view.cpp
           /Fo:"%RUNNER_TEMP%\lesson_view_u6l7.obj"
+      # This syntax-only native QA uses the runner's installed MSVC. It is
+      # independent of the exact pinned full application/reader toolchain and
+      # does not claim that Win32 controls or speech were executed.
+      - name: Compile current U2 semantic colors and reader regressions
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /permissive- /bigobj /Zc:__cplusplus /utf-8 /I native /I "%RUNNER_TEMP%\guidance-generated" /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c native\presentation\windows\technical_context_view_tests.cpp /Fo:"%RUNNER_TEMP%\u2_semantic_colors.obj"
+          if errorlevel 1 exit /b 1
+          cl /nologo /std:c++latest /EHsc /W4 /permissive- /bigobj /Zc:__cplusplus /utf-8 /I native /I "%RUNNER_TEMP%\guidance-generated" /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c native\presentation\windows\lesson_reader_tests.cpp /Fo:"%RUNNER_TEMP%\u2_semantic_reader.obj"
+          if errorlevel 1 exit /b 1
       - name: Compile authentic guidance, archival and receipt regressions
         shell: cmd
         run: >
