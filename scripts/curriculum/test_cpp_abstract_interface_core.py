@@ -73,6 +73,14 @@ def main():
                                  encoding="utf-8")
             private=folder/(name+".private.cpp")
             generated=run([str(generator),str(published),str(candidate),str(private)])
+            if name=="presenter_writes_to_stdout":
+                # A diagnostic printed to stdout used to fail only after
+                # executing the independent witness. The private-source gate
+                # must now reject that exact invalid edit before compilation.
+                if generated.returncode==0 or private.is_file():
+                    raise AssertionError((name,"A direct stdout write bypassed the private gate"))
+                print(f"{arguments.compiler}: {name}: REJECT (source gate)",flush=True)
+                continue
             if generated.returncode or not private.is_file():
                 raise AssertionError((name,"The source gate rejected editable code",
                                       generated.stdout,generated.stderr))
