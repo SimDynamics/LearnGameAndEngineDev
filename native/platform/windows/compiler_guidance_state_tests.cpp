@@ -19,6 +19,8 @@ int independent_copy_assignment_state_windows(
     const std::filesystem::path& content,const std::filesystem::path& qa);
 int move_assignment_invariant_state_windows(
     const std::filesystem::path& content,const std::filesystem::path& qa);
+int array_owner_read_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
 }
 
 namespace {
@@ -1003,6 +1005,8 @@ int main(int argc,char** argv)try{
         return test::independent_copy_assignment_state_windows(content,qa);
     if(argc==2&&std::string_view(argv[1])=="--move-assignment-invariant-state-live")
         return test::move_assignment_invariant_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--array-owner-read-state-live")
+        return test::array_owner_read_state_windows(content,qa);
     if(argc!=1)return 2;
     const auto lesson=load_lesson(content/"archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json");
     const auto stage=[&](std::string_view name,const auto& work){
