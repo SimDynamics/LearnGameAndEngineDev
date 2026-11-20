@@ -659,6 +659,89 @@ La prueba independiente de C++ y la conservación de StateStore no
 constituyen, por sí mismas, una aceptación de la app nativa completa
 en el Windows del usuario.
 
+## Clonar sin perder la clase concreta ni duplicar propietarios
+
+Para Programación 3, **U8L10**, la raíz de una lección española con
+`stateLayout` v2 admite el contrato de autoría optativo
+`compilerPolymorphicCloneChecks`, sobre un editor ya publicado.
+Ejemplo de la lección «Copiar objetos sin perder su clase concreta»:
+
+```json
+"compilerPolymorphicCloneChecks": [
+  {
+    "activity": "block_0015_0002",
+    "baseClass": "Muestra",
+    "simpleClass": "MuestraSimple",
+    "identifiedClass": "MuestraIdentificada",
+    "vectorAlias": "Muestras",
+    "cloneMethod": "clonar",
+    "duplicateFunction": "duplicar",
+    "numberMethod": "numero",
+    "changeMethod": "cambiar_numero",
+    "writeMethod": "escribir",
+    "codeMethod": "codigo",
+    "sourceParameter": "origen",
+    "streamParameter": "salida"
+  }
+]
+```
+
+Work mantiene íntegros el `initialCode`, las cinco entradas con sus
+salidas, las explicaciones, los identificadores, la clase base abstracta,
+las clases concretas, los métodos y miembros facilitados, el generador,
+el alias de vector, `informar` y `main`. Sólo son
+editables los cuerpos que ya existen de
+`MuestraSimple::clonar()`, `MuestraIdentificada::clonar()`
+y `duplicar(const Muestras&)`. Los intervalos de código no
+editables se comparan byte a byte; no se admiten directivas ni cambios
+de declaraciones para fabricar el resultado.
+
+La prueba adicional compila el código realmente entregado con un
+controlador privado que nunca reemplaza la clase abstracta ni la
+implementación del estudiante. Cada clon concreto debe ser **otro
+objeto vivo**, de su misma clase y con todos los datos conservados.
+Se prueban cero, negativos, extremos, números y códigos repetidos.
+Modificar el original no cambia el clon y modificar el clon no cambia
+el original. Al destruir los originales, las copias deben seguir
+funcionando.
+
+La función `duplicar` conserva cantidad, orden, identidad de
+cada origen y tipo concreto de cada copia, también para una tercera
+clase derivada conforme, no contemplada por las dos clases del ejemplo.
+Se verifica que invoque la clonación virtual, no una fabricación manual
+que únicamente reproduzca los textos conocidos. En un fallo
+controlado de `clonar()` tras haber creado dos copias,
+el error debe propagarse sin modificar la colección origen ni
+sustituir el destino; las copias parciales terminan mediante RAII.
+El controlador no agota memoria ni utiliza préstamos a objetos
+destruidos. Un resultado de salida idéntico no acredita por sí solo
+estas propiedades.
+
+La primera entrada correcta del editor sigue siendo el **único
+caso visible obligatorio**. Los otros cuatro son ensayos opcionales.
+El recibo independiente `polymorphic-clone/v1` está ligado a
+la fuente, la revisión, la declaración y la ejecución privada.
+Un logro histórico de `stdout` no adquiere el recibo
+automáticamente; se conservan los borradores, intentos, referencias,
+pausas y estados de otros cursos.
+
+Comprobaciones portátiles y de autoría desde la raíz de `Codex`:
+
+```text
+python -B scripts/curriculum/test_cpp_polymorphic_clone.py --compiler cl --windows
+python -B -m unittest discover -s scripts/curriculum -p test_cpp_polymorphic_clone_authoring.py -v
+```
+
+El workflow `.github/workflows/codex-polymorphic-clone.yml`
+contrasta la fuente y los escenarios de clonación con GCC, Clang
+y MSVC sobre ejecutores desechables. La prueba Win32
+`native.polymorphic_clone_state_live` comprueba el
+cargador completo y de progreso, el recibo independiente, los
+casos históricos y el rechazo de recibos alterados en un perfil QA
+aislado. Una ejecución portátil aprobada no sustituye la
+compilación integral del lector ni la evaluación visual y auditiva
+en el Windows del estudiante.
+
 ## Colecciones con propiedad única e informes por interfaz virtual
 
 Programación 3, **U8L9**, admite el campo raíz
