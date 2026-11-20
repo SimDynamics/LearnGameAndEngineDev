@@ -62,6 +62,17 @@ int main(int argc,char** argv) {
     if(mode=="plain") {std::cout<<library;return 0;}
     auto source=std::string(library);
     const bool formatted=mode=="formatted"||mode=="formatted-destination";
+    const bool renamed=mode=="renamed"||mode=="renamed-destination";
+    if(renamed) {
+        source=R"cpp(
+bool intentar_ajuste(const int dato, int const minimo, const int maximo, int& salida) {
+    if(dato<-20||dato>20||minimo<-20||minimo>20||
+       maximo<-20||maximo>20||minimo>maximo)return false;
+    salida=dato<minimo?minimo-dato:dato>maximo?maximo-dato:0;
+    return true;
+}
+)cpp";
+    }
     if(formatted) {
         const std::string needle="bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {";
         const auto at=source.find(needle);
@@ -73,12 +84,13 @@ int main(int argc,char** argv) {
 // bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {}
 )cpp")+source;
     }
-    const auto mutation=(mode=="baseline"||mode=="formatted")?
+    const auto mutation=(mode=="baseline"||mode=="formatted"||mode=="renamed")?
         OpenBatteryMutation::baseline:
-        (mode=="destination"||mode=="formatted-destination")?
+        (mode=="destination"||mode=="formatted-destination"||
+         mode=="renamed-destination")?
         OpenBatteryMutation::corrupt_destination:OpenBatteryMutation::invert_acceptance;
     const std::optional<OpenBatteryCall> target=
-        (mode=="baseline"||mode=="formatted")?std::nullopt:
+        (mode=="baseline"||mode=="formatted"||mode=="renamed")?std::nullopt:
         std::optional<OpenBatteryCall>{mode=="old"?OpenBatteryCall{2,3,7,77}:
                                                      OpenBatteryCall{3,3,7,59}};
     const auto result=open_battery_mutated_library(source,"intentar_ajuste",mutation,target);
@@ -176,7 +188,7 @@ class OpenBatteryTraceRuntimeTest(unittest.TestCase):
             [str(cls.generator), "driver", str(driver)]).stdout)
         cls.binaries = {}
         for name in ("plain", "baseline", "old", "acceptance", "destination",
-                     "formatted", "formatted-destination"):
+                     "formatted", "formatted-destination", "renamed", "renamed-destination"):
             generated = cls.run_tool([str(cls.generator), name])
             library = cls.root / f"{name}.cpp"
             library.write_bytes(generated.stdout)
@@ -243,6 +255,23 @@ class OpenBatteryTraceRuntimeTest(unittest.TestCase):
 
     def test_reformatted_library_still_detects_a_destination_defect(self):
         response = self.execute("formatted-destination", "prefix")
+        self.assertEqual(response.returncode, 1, response.stdout)
+        calls, visible = self.decode(response.stderr)
+        self.assertEqual(calls, [(11, 2, 3, 7, 77), (37, 3, 3, 7, 59)])
+        self.assertEqual(visible.count(b"FALLO"), 1)
+
+    def test_renamed_const_parameters_preserve_real_compilation_and_results(self):
+        original = self.execute("plain", "prefix")
+        renamed = self.execute("renamed", "prefix")
+        self.assertEqual(original.returncode, 0)
+        self.assertEqual(renamed.returncode, 0, renamed.stderr)
+        self.assertEqual(renamed.stdout, original.stdout)
+        calls, visible = self.decode(renamed.stderr)
+        self.assertEqual(calls, [(11, 2, 3, 7, 77), (37, 3, 3, 7, 59)])
+        self.assertEqual(visible, original.stderr)
+
+    def test_renamed_const_parameters_still_detect_a_wrong_destination(self):
+        response = self.execute("renamed-destination", "prefix")
         self.assertEqual(response.returncode, 1, response.stdout)
         calls, visible = self.decode(response.stderr)
         self.assertEqual(calls, [(11, 2, 3, 7, 77), (37, 3, 3, 7, 59)])

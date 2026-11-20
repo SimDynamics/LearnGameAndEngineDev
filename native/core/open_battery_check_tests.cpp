@@ -142,6 +142,45 @@ void generated() {
     verify(!open_battery_mutated_library(
         bad_type,"intentar_ajuste",OpenBatteryMutation::baseline),
         "An incompatible parameter type was treated as a formatting edit");
+    // The C++ contract names four argument *types*, not particular parameter
+    // identifiers. A learner may choose clear names and by-value const.
+    const std::string renamed=R"cpp(
+bool intentar_ajuste(const int dato, int const minimo, const int maximo, int& salida) {
+    if(dato<-20||dato>20||minimo<-20||minimo>20||
+       maximo<-20||maximo>20||minimo>maximo)return false;
+    salida=dato<minimo?minimo-dato:dato>maximo?maximo-dato:0;
+    return true;
+}
+)cpp";
+    const auto named=open_battery_mutated_library(
+        renamed,"intentar_ajuste",OpenBatteryMutation::baseline);
+    verify(named&&named->find(
+        "lgaed_open_battery_original_intentar_ajuste(const int dato, int const minimo, const int maximo, int& salida)")
+            !=std::string::npos &&
+        named->find("salida=dato<minimo?minimo-dato:")!=std::string::npos &&
+        named->find("LGAED_OPEN_BATTERY_CALL:")!=std::string::npos,
+        "A valid parameter rename or by-value const was not accepted");
+    const auto renamed_mutant=open_battery_mutated_library(
+        renamed,"intentar_ajuste",OpenBatteryMutation::corrupt_nonzero_destination,
+        OpenBatteryCall{1,3,7,59});
+    verify(renamed_mutant&&renamed_mutant->find(
+        "ajuste == 1 ? 2 : 1")!=std::string::npos,
+        "The renamed library lost its independent destination mutation");
+    const auto invalid_named=[&](std::string_view old_value,std::string_view new_value) {
+        auto changed=renamed;
+        const auto at=changed.find(old_value);
+        verify(at!=changed.npos,"A parameter counterexample lost its fixture");
+        changed.replace(at,old_value.size(),new_value);
+        return !open_battery_mutated_library(
+            changed,"intentar_ajuste",OpenBatteryMutation::baseline);
+    };
+    verify(invalid_named("int const minimo","long minimo") &&
+           invalid_named("int& salida","const int& salida") &&
+           invalid_named("const int maximo","const int& maximo") &&
+           invalid_named("int& salida","int salida") &&
+           invalid_named("int& salida","int& dato") &&
+           invalid_named("const int dato","const auto dato"),
+        "A different function type or duplicated parameter identity earned credit");
 
 }
 void parsing() {

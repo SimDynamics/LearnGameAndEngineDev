@@ -140,7 +140,9 @@ inline std::pair<bool,int> open_battery_expected(const OpenBatteryCall& c) {
 namespace open_battery_detail {
 // Locate the student's real global function definition by the existing C++
 // lexer, never by raw text. Formatting, comments and brace digraphs may vary;
-// the parameter types and names retain the published four-argument contract.
+// parameter names are learner-chosen, but the exact four-argument types and
+// writable output reference remain compulsory. The first three by-value
+// parameters may also be const-qualified, without changing their function type.
 // Exact source offsets ensure every byte outside the original function's
 // *name* remains unchanged in the private, temporary mutation.
 inline std::optional<std::pair<std::size_t,std::size_t>> library_name_span(
@@ -152,11 +154,33 @@ inline std::optional<std::pair<std::size_t,std::size_t>> library_name_span(
     const auto& tokens=*scanned;
     const std::string function_token="id:"+std::string(function);
     const std::string renamed_token="id:lgaed_open_battery_original_"+std::string(function);
-    const std::array<std::string_view,14> parameters{
-        "op:(", "id:int", "id:valor", "op:,",
-        "id:int", "id:inferior", "op:,",
-        "id:int", "id:superior", "op:,",
-        "id:int", "op:&", "id:ajuste", "op:)"
+    const auto after_parameters=[&](std::size_t first)
+            ->std::optional<std::size_t> {
+        if(first>=tokens.size()||tokens[first].value!="op:(")return {};
+        auto at=first+1;
+        std::vector<std::string> identifiers;
+        for(unsigned parameter=0;parameter<4;++parameter) {
+            if(at<tokens.size()&&tokens[at].value=="id:const")++at;
+            if(at>=tokens.size()||tokens[at++].value!="id:int")return {};
+            if(at<tokens.size()&&tokens[at].value=="id:const")++at;
+            // The fourth argument MUST be an unqualified writable int&.
+            // Its output is observed independently after the library call.
+            if(parameter==3) {
+                if(at>=tokens.size()||tokens[at++].value!="op:&")return {};
+            }
+            if(at>=tokens.size()||!tokens[at].value.starts_with("id:"))
+                return {};
+            auto name=tokens[at++].value.substr(3);
+            if(!open_battery_identifier(name)||
+               std::ranges::find(identifiers,name)!=identifiers.end())
+                return {};
+            identifiers.push_back(std::move(name));
+            if(parameter!=3) {
+                if(at>=tokens.size()||tokens[at++].value!="op:,")return {};
+            }
+        }
+        if(at>=tokens.size()||tokens[at].value!="op:)")return {};
+        return at+1;
     };
     std::optional<std::pair<std::size_t,std::size_t>> found;
     std::size_t depth=0;
@@ -169,11 +193,11 @@ inline std::optional<std::pair<std::size_t,std::size_t>> library_name_span(
            tokens[at-1].value=="id:bool") {
             if(depth||(at>1&&tokens[at-2].value!="op:;"&&
                tokens[at-2].value!="op:}"&&tokens[at-2].value!="op:%>"&&
-               !tokens[at-2].value.starts_with("directive:"))||
-               at+parameters.size()+1>=tokens.size())return {};
-            for(std::size_t i=0;i<parameters.size();++i)
-                if(tokens[at+1+i].value!=parameters[i])return {};
-            const auto& after=tokens[at+1+parameters.size()].value;
+               !tokens[at-2].value.starts_with("directive:")))return {};
+            const auto after_index=after_parameters(at+1);
+            if(!after_index)return {};
+            if(*after_index>=tokens.size())return {};
+            const auto& after=tokens[*after_index].value;
             if(after!="op:;") {
                 if(after!="op:{"&&after!="op:<%")return {};
                 if(found)return {};
