@@ -10,6 +10,8 @@ on:
       - scripts/curriculum/test_course_edition.py
       - native/core/course_edition.hpp
       - native/core/course_edition_contract_tests.cpp
+      - native/platform/windows/catalog_loader.cpp
+      - native/platform/windows/course_edition_tests.cpp
       - scripts/curriculum/stable_state_layout.py
   workflow_dispatch:
 
@@ -50,6 +52,23 @@ jobs:
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative native\\core\\course_edition_contract_tests.cpp /Fe:"%RUNNER_TEMP%\\course_edition_contract_tests.exe"
           if errorlevel 1 exit /b 1
           "%RUNNER_TEMP%\\course_edition_contract_tests.exe"
+
+  catalog-compile:
+    name: Compile real Win32 course-edition catalog loader (MSVC)
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile the actual catalog loader without changing the pinned application toolchain
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive-
+          /Zc:__cplusplus /utf-8 /Inative /c
+          native\platform\windows\catalog_loader.cpp
+          /Fo:"%RUNNER_TEMP%\lgaed_course_edition_catalog.obj"
 
   authoring:
     name: Verify edition authoring and retained files (${{ matrix.os }}, Python 3.12)

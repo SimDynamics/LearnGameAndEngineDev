@@ -661,6 +661,38 @@ void negative_contracts(const Fixture& fixture, const curriculum::Lesson& curren
             std::string_view(name) == "course" ? course_location() : unit_location()); },
             "Un índice reservado sin descriptor cayó al modo histórico.");
     }
+    // The publication checker also enforces names and labels. The actual
+    // Windows reader must reject altered installed indexes and resources,
+    // rather than displaying a title belonging to another lesson or unit.
+    // Each mutation changes the byte length to invalidate read-only caches.
+    for (const auto target : {"course","unit","lesson"}) {
+        RestoreFile restore(fixture.path(target));
+        const auto altered = changed(restore.original,[&](auto& value) {
+            if (std::string_view(target) == "course")
+                value.GetNamedArray(L"units").GetAt(0).GetObject().Insert(
+                    L"title", JsonValue::CreateStringValue(
+                        L"Nombre falso de la unidad activa"));
+            else if (std::string_view(target) == "unit")
+                value.Insert(L"title", JsonValue::CreateStringValue(
+                    L"Nombre falso de la unidad real"));
+            else value.Insert(L"title", JsonValue::CreateStringValue(
+                L"Nombre falso de la lección real"));
+        });
+        write(restore.path,altered);
+        rejects([&] { (void)windows::load_catalog(fixture.content,
+            std::string_view(target) == "lesson" ? unit_location() : course_location()); },
+            "El catálogo mostró un título de índice distinto del recurso activo.");
+    }
+    {
+        RestoreFile restore(fixture.path("unit"));
+        write(restore.path,changed(restore.original,[](auto& value) {
+            value.GetNamedArray(L"lessons").GetAt(0).GetObject().Insert(
+                L"title", JsonValue::CreateStringValue(
+                    L"Nombre falso de una lección publicada"));
+        }));
+        rejects([&] { (void)windows::load_catalog(fixture.content, unit_location()); },
+            "El catálogo aceptó un título incorrecto en el índice de lecciones.");
+    }
     // Los recursos antiguos siguen cargándose directamente, pero quedan fuera
     // de los índices activos. Conservar archivos no vuelve a acreditarlos.
     require(windows::load_lesson(fixture.path("legacyLesson")).id == old_id, "La edición impidió conservar el recurso antiguo.");

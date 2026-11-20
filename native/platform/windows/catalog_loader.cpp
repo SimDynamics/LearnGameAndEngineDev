@@ -43,7 +43,7 @@ CatalogDocument read(const std::filesystem::path& path, std::size_t maximum = 8 
 }
 struct EditionResourceIdentity {
     std::optional<CourseEdition> edition;
-    std::string id, course_id, unit_id;
+    std::string id, course_id, unit_id, title;
 };
 EditionResourceIdentity edition_resource_identity(const std::filesystem::path& asset,
                                                   std::string_view locale) {
@@ -71,6 +71,10 @@ EditionResourceIdentity edition_resource_identity(const std::filesystem::path& a
     if (object.HasKey(L"id")) result.id = text(object,L"id");
     if (object.HasKey(L"courseId")) result.course_id = text(object,L"courseId");
     if (object.HasKey(L"unitId")) result.unit_id = text(object,L"unitId");
+    if (result.edition) {
+        result.title = text(object,L"title");
+        require(!result.title.empty(),"el recurso de edición necesita un título real.");
+    }
     require(std::filesystem::last_write_time(path) == stamp && std::filesystem::file_size(path) == size,
         "el recurso de edición cambió durante la lectura.");
     {
@@ -245,6 +249,12 @@ curriculum::CatalogPage load_catalog(const std::filesystem::path& content_root, 
                 validate_course_edition_physical_path(content_root, entry.asset);
                 const auto child = edition_resource_identity(entry.asset,entry.asset_locale);
                 require(child.edition == edition,"el recurso no declara la misma edición que su índice.");
+                // An index may have the correct owner and generation yet
+                // display a different lesson or unit title. Authenticate
+                // what the student sees against the actual asset every time
+                // metadata is refreshed; the cache retains the same title.
+                require(child.title == entry.title,
+                    "el título del índice no coincide con el recurso de edición.");
                 if (level == CatalogLevel::units)
                     require(child.course_id == edition->course_id && child.unit_id == entry.id,
                         "el recurso de unidad pertenece a otro índice.");
