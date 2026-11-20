@@ -49,8 +49,13 @@ class IndexedUniqueTransferAuthoring(unittest.TestCase):
         self.assertEqual(after["pages"],before["pages"])
         self.assertEqual(after["stateLayout"],before["stateLayout"])
         self.assertEqual(after.get("textSemantics"),before.get("textSemantics"))
-        self.assertEqual(state.original_projection(before),
-                         state.original_projection(after))
+        historical_before=state.original_projection(before)
+        historical_after=state.original_projection(after)
+        # The new root-level declaration remains visible as authoring
+        # metadata. All prior historical content and source positions match.
+        self.assertIn("compilerIndexedUniqueTransferChecks",historical_after)
+        historical_after.pop("compilerIndexedUniqueTransferChecks")
+        self.assertEqual(historical_before,historical_after)
         self.assertEqual(before,original_copy)
         self.assertEqual(SPEC,after["compilerIndexedUniqueTransferChecks"][0])
 
