@@ -117,8 +117,31 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP";
     if(!bad_copy)throw std::runtime_error("Cannot probe a fake-copy adversary");
     emit(directory,"reject_fake_copy",*bad_copy,"Antes: 10\nAhora: 13",false);
     ++emitted;
-    if(emitted!=20)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 20 isolated C++ executions for six U2 owners and two adversaries\n";
+    // A hard-coded "Ahora" might reproduce the public result despite an
+    // authentic increase and copy. Changing the increase must change Ahora.
+    constexpr std::string_view fixed_increase=R"CPP(#include <iostream>
+int main(){int aforo=5; int anterior=aforo; aforo+=3;
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<8;})CPP";
+    const auto bad_increase=cpp_local_int_override(fixed_increase,
+        {"aforo",4,{},true});
+    if(!bad_increase)throw std::runtime_error("Cannot probe a fixed increase adversary");
+    emit(directory,"reject_fixed_increase",*bad_increase,
+        "Antes: 5\nAhora: 12",false);
+    ++emitted;
+    // A student might declare and update anterior but continue printing
+    // aforo twice. U2L3's second original case displays 8/8 either way.
+    // Altering anterior privately must affect the first line only.
+    constexpr std::string_view repeated_aforo=R"CPP(#include <iostream>
+int main(){int aforo{5}; aforo+=3; int anterior=aforo;
+std::cout<<"Antes: "<<aforo<<"\nAhora: "<<aforo;})CPP";
+    const auto missing_copy=cpp_local_int_override(repeated_aforo,
+        {"anterior",11,{}});
+    if(!missing_copy)throw std::runtime_error("Cannot probe a repeated aforo adversary");
+    emit(directory,"reject_print_aforo_twice",*missing_copy,
+        "Antes: 11\nAhora: 8",false);
+    ++emitted;
+    if(emitted!=22)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 22 isolated C++ executions for six U2 owners and four adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';

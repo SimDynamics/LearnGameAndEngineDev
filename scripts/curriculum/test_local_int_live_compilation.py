@@ -33,11 +33,11 @@ def main() -> int:
         output = Path(tmp)
         emitted = subprocess.run([str(args.emitter.resolve()), str(output)],
                                  capture_output=True, timeout=30, check=True)
-        if b"PASS generated 20" not in emitted.stdout:
+        if b"PASS generated 22" not in emitted.stdout:
             raise RuntimeError("The real source-mutation fixture did not finish")
         sources = sorted(output.glob("*.cpp"))
-        if len(sources) != 20:
-            raise RuntimeError(f"Expected exactly 20 source programs, got {len(sources)}")
+        if len(sources) != 22:
+            raise RuntimeError(f"Expected exactly 22 source programs, got {len(sources)}")
         accepted = rejected = 0
         for source in sources:
             evidence = source.with_suffix(".expected").read_bytes()
@@ -70,11 +70,11 @@ def main() -> int:
                 accepted += 1
             else:
                 rejected += 1
-        if (accepted, rejected) != (18, 2):
+        if (accepted, rejected) != (18, 4):
             raise RuntimeError(f"Incorrect execution counts: {(accepted, rejected)}")
         print(f"PASS {args.compiler} on {sys.platform}: {accepted} positive "
               f"original/probe executions, {rejected} actual hard-coded-copy "
-              "counterexamples rejected; 20 real C++ compile-and-run cases.")
+              "counterexamples rejected; 22 real C++ compile-and-run cases.")
     return 0
 
 
