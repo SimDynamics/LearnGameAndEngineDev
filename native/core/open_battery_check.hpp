@@ -160,9 +160,15 @@ inline std::optional<std::pair<std::size_t,std::size_t>> library_name_span(
         auto at=first+1;
         std::vector<std::string> identifiers;
         for(unsigned parameter=0;parameter<4;++parameter) {
-            if(at<tokens.size()&&tokens[at].value=="id:const")++at;
+            if(at<tokens.size()&&tokens[at].value=="id:const") {
+                if(parameter==3)return {}; // const int& cannot receive the adjustment.
+                ++at;
+            }
             if(at>=tokens.size()||tokens[at++].value!="id:int")return {};
-            if(at<tokens.size()&&tokens[at].value=="id:const")++at;
+            if(at<tokens.size()&&tokens[at].value=="id:const") {
+                if(parameter==3)return {}; // int const& is equally read-only.
+                ++at;
+            }
             // The fourth argument MUST be an unqualified writable int&.
             // Its output is observed independently after the library call.
             if(parameter==3) {

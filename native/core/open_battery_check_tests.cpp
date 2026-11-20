@@ -176,6 +176,7 @@ bool intentar_ajuste(const int dato, int const minimo, const int maximo, int& sa
     };
     verify(invalid_named("int const minimo","long minimo") &&
            invalid_named("int& salida","const int& salida") &&
+           invalid_named("int& salida","int const& salida") &&
            invalid_named("const int maximo","const int& maximo") &&
            invalid_named("int& salida","int salida") &&
            invalid_named("int& salida","int& dato") &&
