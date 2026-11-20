@@ -759,7 +759,8 @@ std::string abstract_interface_fingerprint(const CppRunRequest& request) {
        request.move_assignment_invariant_probe||request.array_owner_read_probe||
        request.array_copy_move_probe||request.array_return_take_probe||
        request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
-       request.derived_preparation_probe||request.named_rule_probe||
+       request.derived_preparation_probe||request.interface_collection_probe||
+       request.named_rule_probe||
        request.boolean_battery_probe||request.open_battery_probe||
        request.reduction_probe||request.integer_battery_probe||
        request.adjustment_project_probe||request.rejection_probe||
@@ -784,6 +785,49 @@ std::string abstract_interface_fingerprint(const CppRunRequest& request) {
         field(spec.stream_parameter)+field(spec.type_parameter)+
         field(spec.number_parameter)+field(spec.code_parameter)+
         field(spec.object_parameter)+field(state::sha256(*driver))+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes)));
+}
+
+std::string interface_collection_fingerprint(const CppRunRequest& request) {
+    if(!request.interface_collection_probe||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+       request.cmake||!request.project_files.empty()||!request.source_files.empty()||
+       request.abstract_interface_probe||
+       request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+       request.independent_copy_assignment_probe||
+       request.move_assignment_invariant_probe||request.array_owner_read_probe||
+       request.array_copy_move_probe||request.array_return_take_probe||
+       request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
+       request.derived_preparation_probe||request.named_rule_probe||
+       request.boolean_battery_probe||request.open_battery_probe||
+       request.reduction_probe||request.integer_battery_probe||
+       request.adjustment_project_probe||request.rejection_probe||
+       request.observation_probe||request.assertion_mode||
+       request.capture_cmake_graph||request.cmake_graph_check)return {};
+    const auto& spec=*request.interface_collection_probe;
+    const auto driver=curriculum::cpp_interface_collection_private_driver(
+        spec,request.source_utf8);
+    if(!driver)return {};
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    return state::sha256(std::string("windows-interface-collection-v1/")+
+        field(std::to_string(request.request_id))+
+        field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+
+        field(request.project_key)+field(spec.original_source)+
+        field(spec.base_class)+field(spec.simple_class)+
+        field(spec.identified_class)+field(spec.vector_alias)+
+        field(spec.add_function)+field(spec.report_function)+
+        field(spec.write_method)+field(spec.number_method)+
+        field(spec.destination_parameter)+field(spec.source_parameter)+
+        field(spec.data_parameter)+field(spec.stream_parameter)+
+        field(spec.count_label)+field(spec.index_separator)+
+        field(spec.number_label)+field(spec.code_label)+
+        field(state::sha256(*driver))+
         field(std::to_string(request.compile_timeout.count()))+
         field(std::to_string(request.execution_timeout.count()))+
         field(std::to_string(request.output_limit_bytes)));
@@ -3679,6 +3723,23 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                     curriculum::cpp_abstract_interface_completion_marker;
         }
     }
+    if(request.interface_collection_probe) {
+        const auto frame=interface_collection_fingerprint(request);
+        fresh.interface_collection_request_fingerprint=frame;
+        const auto driver=curriculum::cpp_interface_collection_private_driver(
+            *request.interface_collection_probe,request.source_utf8);
+        if(!frame.empty()&&driver&&result.interface_collection_evidence) {
+            const auto& proof=*result.interface_collection_evidence;
+            fresh.interface_collection_probe_correct=
+                proof.driver_sha256==state::sha256(*driver)&&
+                proof.program_sha256==state::sha256(request.source_utf8)&&
+                proof.request_fingerprint==frame&&
+                proof.compilation.succeeded()&&proof.execution.succeeded()&&
+                proof.execution.stdout_bytes.empty()&&
+                proof.execution.stderr_bytes==
+                    curriculum::cpp_interface_collection_completion_marker;
+        }
+    }
     if(request.derived_preparation_probe) {
         const auto frame=derived_preparation_fingerprint(request);
         fresh.derived_preparation_request_fingerprint=frame;
@@ -4154,6 +4215,29 @@ void complete_abstract_interface_probe(const CppRunRequest& request,
     const auto proof=run_cpp(private_request,stop);
     if(!proof.error_utf8.empty()||stop.stop_requested())return;
     result.abstract_interface_evidence=CppAbstractInterfaceEvidence{
+        state::sha256(*driver),state::sha256(request.source_utf8),frame,
+        proof.compilation,proof.execution};
+}
+
+void complete_interface_collection_probe(const CppRunRequest& request,
+        CppRunResult& result,std::stop_token stop) {
+    if(!request.interface_collection_probe||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto frame=interface_collection_fingerprint(request);
+    if(frame.empty())return;
+    const auto driver=curriculum::cpp_interface_collection_private_driver(
+        *request.interface_collection_probe,request.source_utf8);
+    if(!driver)return;
+    auto private_request=request;
+    private_request.interface_collection_probe.reset();
+    private_request.request_id=~request.request_id;
+    private_request.project_key+="/independent-interface-collection-v1";
+    private_request.source_utf8=*driver;
+    private_request.stdin_utf8.clear();
+    const auto proof=run_cpp(private_request,stop);
+    if(!proof.error_utf8.empty()||stop.stop_requested())return;
+    result.interface_collection_evidence=CppInterfaceCollectionEvidence{
         state::sha256(*driver),state::sha256(request.source_utf8),frame,
         proof.compilation,proof.execution};
 }
@@ -5284,6 +5368,11 @@ std::string cpp_abstract_interface_request_fingerprint(
     return abstract_interface_fingerprint(request);
 }
 
+std::string cpp_interface_collection_request_fingerprint(
+        const CppRunRequest& request) {
+    return interface_collection_fingerprint(request);
+}
+
 std::string cpp_indexed_unique_transfer_request_fingerprint(
         const CppRunRequest& request) {
     return indexed_unique_transfer_fingerprint(request);
@@ -5392,7 +5481,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             request.array_copy_move_probe||request.array_return_take_probe||
             request.polymorphic_destruction_probe||
             request.virtual_lifetime_probe||request.derived_preparation_probe||
-            request.abstract_interface_probe;
+            request.abstract_interface_probe||request.interface_collection_probe;
         const auto private_environment=has_private_probe
             ?compiler_environment():std::vector<wchar_t>{};
         const auto fixed_environment=has_private_probe?&private_environment:nullptr;
@@ -5429,6 +5518,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         complete_virtual_lifetime_probe(request,result,stop);
         complete_derived_preparation_probe(request,result,stop);
         complete_abstract_interface_probe(request,result,stop);
+        complete_interface_collection_probe(request,result,stop);
         complete_named_rule_battery_single(request,result,compiler,private_environment,
             initial_toolchain,stop);
         complete_rejection_stream_probe(request,result,stop);
