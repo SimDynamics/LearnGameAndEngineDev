@@ -3625,3 +3625,45 @@ requisitos públicos/privados de encabezados, opciones, lista de objetivos,
 avisos del compilador, cronología de reconstrucciones y prácticas abiertas
 necesitan sus propias comprobaciones. No deducirlas de este grafo.
 
+
+
+## Dependencia real de variables `int` locales
+
+Work puede declarar `compilerLocalIntChecks` en la raíz de una lección
+española v2 sin modificar los editores ya publicados. Ejemplo:
+
+```json
+"compilerLocalIntChecks": [{
+  "activity": "block_0004_0002",
+  "probes": [{
+    "variable": "llaves",
+    "replacement": 13,
+    "outputs": ["Llaves: 13", "Llaves: 13\n"]
+  }]
+}]
+```
+
+El modelo admite entre una y ocho variaciones por editor, y hasta cuatro
+salidas exactas por variación. Cada salida alternativa debe distinguirse
+de las publicadas para el primer caso obligatorio. Un nombre identifica
+un `int` local declarado directamente dentro de `main`; la inicialización
+puede emplear `=`, `{}` o `()`, o una primera asignación inequívoca.
+Se rechazan otros tipos, posiciones ambiguas y preprocesadores que impidan
+una inserción segura. No se cambian literales, comentarios ni otros nombres.
+
+Después de la ejecución pública, el mismo trabajador Windows compila y
+ejecuta cada variante en un entorno privado. La compilación y la salida
+de todas las variantes se contrastan con expectativas autorales, no con
+lo que calcule el propio alumno. Un LF puede presentarse como CRLF nativo.
+Cambiar `cajas` no altera `sobres`; al comprobar una copia de `aforo`
+puede exigirse otra variación de `anterior` para reconocer su uso real.
+La pantalla mantiene una sola pulsación de Comprobar y un solo caso
+visible obligatorio. El borrador y la ejecución pública se conservan.
+
+Un acierto histórico por stdout se mantiene como registro, pero no
+acredita automáticamente el requisito semántico nuevo. Solo una
+comprobación privada real puede añadir su comprobante independiente.
+Si no existe `compilerLocalIntChecks`, no cambia la evaluación anterior.
+Esta capacidad se limita de momento a editores C++ de una sola fuente
+y ejecución MSVC nativa. La revisión curricular y sus valores esperados
+pertenecen a Work.

@@ -146,6 +146,26 @@ void int32_limits_and_old_text_are_preserved() {
         "An integer limit was mangled or an original learner text was edited");
 }
 
+void expected_outputs_are_independent_and_reversible() {
+    using lgaed::curriculum::CppLocalIntCheck;
+    using lgaed::curriculum::cpp_local_int_check_valid;
+    using lgaed::curriculum::cpp_local_int_expected_output;
+    CppLocalIntCheck check{{{"llaves", 13, {"Llaves: 13", "Llaves: 13\n"}}}};
+    require(cpp_local_int_check_valid(check) &&
+        cpp_local_int_expected_output(check.probes[0], "Llaves: 13") &&
+        cpp_local_int_expected_output(check.probes[0], "Llaves: 13\r\n") &&
+        !cpp_local_int_expected_output(check.probes[0], "Llaves: 7") &&
+        !cpp_local_int_expected_output(check.probes[0], "Llaves: 13 extra"),
+        "Expected output alternatives are not checked exactly");
+    check.probes.push_back({"llaves", 13, {"Llaves: 13"}});
+    require(!cpp_local_int_check_valid(check), "A duplicate mutation was admitted");
+    check.probes.pop_back();
+    check.probes[0].expected_stdout = {"Llaves: 13", "Llaves: 13"};
+    require(!cpp_local_int_check_valid(check), "Duplicate output spelling was admitted");
+    check.probes[0].expected_stdout = {};
+    require(!cpp_local_int_check_valid(check), "Missing independent output was admitted");
+}
+
 } // namespace
 
 int main() {
@@ -156,6 +176,7 @@ int main() {
         comments_literals_and_similar_names_are_inert();
         unsafe_ambiguous_and_other_scope_are_rejected();
         int32_limits_and_old_text_are_preserved();
+        expected_outputs_are_independent_and_reversible();
         std::cout << "PASS local int probes: equivalent initialization, independent "
                      "variables, copy state, safe token positions.\n";
         return 0;

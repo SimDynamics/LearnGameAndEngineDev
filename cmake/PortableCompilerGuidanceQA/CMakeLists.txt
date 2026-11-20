@@ -156,3 +156,15 @@ set_tests_properties(native.compiler_guidance_state
     native.u8l9_interface_collection_state
     native.u8l10_polymorphic_clone_state
     native.u10l1_dual_interface_state PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+
+# Local-int contracts use the real WinRT loader and StateStore codec without
+# running student binaries or changing the pinned Windows toolchain.
+add_executable(lgaed_local_int_state_tests
+    "${LGAED_ROOT}/native/platform/windows/local_int_state_tests.cpp")
+target_link_libraries(lgaed_local_int_state_tests PRIVATE
+    lgaed_guidance_platform lgaed_guidance_qa_options)
+target_link_options(lgaed_local_int_state_tests PRIVATE /OPT:REF)
+add_test(NAME native.compiler_local_int_state
+    COMMAND lgaed_local_int_state_tests)
+set_tests_properties(native.compiler_local_int_state PROPERTIES
+    TIMEOUT 180 RUN_SERIAL TRUE)

@@ -20,6 +20,7 @@
 #include "core/cpp_interface_collection_check.hpp"
 #include "core/cpp_polymorphic_clone_check.hpp"
 #include "core/cpp_dual_interface_check.hpp"
+#include "core/cpp_local_int_probe.hpp"
 #include "core/open_battery_check.hpp"
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
@@ -335,6 +336,9 @@ struct Block {
     std::optional<CppInterfaceCollectionPolicy> interface_collection_probe;
     std::optional<CppPolymorphicClonePolicy> polymorphic_clone_probe;
     std::optional<CppDualInterfacePolicy> dual_interface_probe;
+    // Authored at lesson root: hidden local-int dependency verification.
+    // Old output receipts alone do not prove this new semantic criterion.
+    std::optional<CppLocalIntCheck> local_int_check;
     // The root declares this open CMake battery without changing its
     // previously published block or saved student draft identity.
     std::optional<OpenBatteryProbeSpec> open_battery_probe;
@@ -595,6 +599,9 @@ struct FreshExecution {
     std::string polymorphic_clone_request_fingerprint;
     bool dual_interface_probe_correct = false;
     std::string dual_interface_request_fingerprint;
+    bool local_int_check_correct = false;
+    std::string local_int_check_feedback;
+    std::string local_int_request_fingerprint;
     bool open_battery_probe_correct = false;
     bool cmake_graph_correct = false;
     bool assertion_abort_verified = false;

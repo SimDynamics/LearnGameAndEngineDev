@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerLocalIntChecks", "compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -6534,6 +6534,90 @@ def _validate_order_visual_separators(document: dict) -> None:
                 "Visual separators require an original, evaluated order-code owner")
 
 
+def _validate_compiler_local_int_checks(document: dict) -> None:
+    """Require real, independently checked variable dependence, not stdout alone."""
+    if "compilerLocalIntChecks" not in document:
+        return
+    layout = document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version") == 2 and
+            layout.get("locale") == "es",
+            "Local-int checks require an existing Spanish v2 lesson")
+    checks = document["compilerLocalIntChecks"]
+    require(type(checks) is list and 1 <= len(checks) <= 32,
+            "Local-int checks require 1..32 distinct owners")
+    owners, seen = _blocks(document), set()
+    forbidden = {
+        "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks",
+        "compilerOpenBatteryChecks", "compilerReductionChecks",
+        "compilerCmakeGraphChecks", "compilerIndexedUniqueTransferChecks",
+        "compilerDefaultedMovePolicyChecks",
+        "compilerIndependentCopyAssignmentChecks",
+        "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks",
+        "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks",
+        "compilerPolymorphicDestructionChecks",
+        "compilerVirtualLifetimeDispatchChecks",
+        "compilerDerivedPreparationChecks",
+        "compilerAbstractInterfaceChecks",
+        "compilerInterfaceCollectionChecks",
+        "compilerPolymorphicCloneChecks", "compilerDualInterfaceChecks",
+    }
+    for check in checks:
+        require(type(check) is dict and set(check) == {"activity", "probes"},
+                "Local-int owner requires activity and probes only")
+        identity = _identity(check["activity"])
+        require(identity not in seen, "Duplicate local-int owner")
+        seen.add(identity)
+        owner = owners.get(identity)
+        require(type(owner) is dict and owner.get("type") == "cpp_compiler" and
+                owner.get("language", "cpp") == "cpp" and
+                type(owner.get("outputCheck")) is dict and
+                type(owner["outputCheck"].get("cases")) is list and
+                len(owner["outputCheck"]["cases"]) == 1 and
+                type(owner.get("initialCode")) is str and bool(owner["initialCode"]) and
+                not ({"compileCheck", "cmake", "projectFiles", "sourceFiles"} & set(owner)),
+                "A local-int probe requires an original single-file output editor")
+        case = owner["outputCheck"]["cases"][0]
+        require(type(case) is dict and
+                case.get("standardInput") == owner.get("standardInput", "") and
+                case.get("exitCode", 0) == 0 and type(case.get("exitCode", 0)) is int and
+                "target" not in case and
+                not ({"standardError", "standardErrorExact"} & set(case)) and
+                type(case.get("outputs")) is list and bool(case["outputs"]),
+                "Local-int variations require one unchanged normal-output case")
+        for key in forbidden:
+            related = document.get(key, [])
+            if type(related) is list:
+                require(not any(type(item) is dict and item.get("activity") == identity
+                                for item in related),
+                        "Local-int owner conflicts with an existing runtime objective")
+        probes = check["probes"]
+        require(type(probes) is list and 1 <= len(probes) <= 8,
+                "Local-int owner requires 1..8 private variations")
+        known = set()
+        for probe in probes:
+            require(type(probe) is dict and set(probe) ==
+                    {"variable", "replacement", "outputs"},
+                    "Local-int variation requires variable, replacement and outputs")
+            variable, replacement, outputs = (
+                probe["variable"], probe["replacement"], probe["outputs"])
+            require(type(variable) is str and re.fullmatch(
+                r"[A-Za-z_][A-Za-z_0-9]{0,127}", variable) is not None and
+                variable != "main" and not variable.startswith("__") and
+                not (variable.startswith("_") and len(variable) > 1 and variable[1].isupper()),
+                "Invalid local-int variable name")
+            require(type(replacement) is int and -(2 ** 31) <= replacement < 2 ** 31,
+                    "Local-int replacement requires a signed 32-bit integer")
+            require((variable, replacement) not in known,
+                    "A local-int variation cannot repeat a prior replacement")
+            known.add((variable, replacement))
+            require(type(outputs) is list and 1 <= len(outputs) <= 4 and
+                    all(type(o) is str and o and "\x00" not in o and
+                        len(o.encode("utf-8")) <= 4096 and
+                        o not in case["outputs"] for o in outputs) and
+                    len(set(outputs)) == len(outputs),
+                    "Hidden outputs must be distinct, bounded and differ from visible output")
+
+
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
     course_edition.validate_lesson(document, require_layout=True)
@@ -6545,6 +6629,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_workflow_checks(document)
     _validate_compiler_runtime_checks(document)
     _validate_compiler_named_rule_checks(document)
+    _validate_compiler_local_int_checks(document)
     _validate_compiler_indexed_unique_transfer_checks(document)
     _validate_compiler_defaulted_move_policy_checks(document)
     _validate_compiler_independent_copy_assignment_checks(document)

@@ -10,6 +10,10 @@ on:
       - native/core/compiler_case_receipt_adoption_tests.cpp
       - native/core/cpp_local_int_probe.hpp
       - native/core/cpp_local_int_probe_tests.cpp
+      - native/platform/windows/cpp_runner.cpp
+      - native/platform/windows/local_int_state_tests.cpp
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_local_int_probe_authoring.py
       - native/platform/windows/compiler_completion.cpp
       - native/platform/windows/compiler_case_revision_state_tests.cpp
       - cmake/PortableCompilerCaseBuildQA/CMakeLists.txt
@@ -65,6 +69,7 @@ jobs:
             native/core/cpp_local_int_probe_tests.cpp \
             -o "${RUNNER_TEMP}/lgaed_local_int_probe_tests"
           "${RUNNER_TEMP}/lgaed_local_int_probe_tests"
+          python3 -B -m unittest discover -s scripts/curriculum -p test_local_int_probe_authoring.py -v
       - name: Select hosted MSVC without changing the pinned full-app toolchain
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
@@ -89,7 +94,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Authentic compiler-case fixture generation failed." }
           cmake -S cmake/PortableCompilerCaseBuildQA -B "$env:RUNNER_TEMP/case-history-qa" -G Ninja
           if ($LASTEXITCODE -ne 0) { throw "Standalone native QA configuration failed." }
-          cmake --build "$env:RUNNER_TEMP/case-history-qa" --target lgaed_compiler_case_revision_state_tests --parallel 2
+          cmake --build "$env:RUNNER_TEMP/case-history-qa" --target lgaed_compiler_case_revision_state_tests lgaed_local_int_state_tests --parallel 2
           if ($LASTEXITCODE -ne 0) { throw "Native compiler-case test build failed." }
-          ctest --test-dir "$env:RUNNER_TEMP/case-history-qa" -R "^native\.compiler_case_return_state$" --output-on-failure
+          ctest --test-dir "$env:RUNNER_TEMP/case-history-qa" -R "^(native\.compiler_case_return_state|native\.compiler_local_int_state)$" --output-on-failure
           if ($LASTEXITCODE -ne 0) { throw "Native historical return verification failed." }

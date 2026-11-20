@@ -2,7 +2,9 @@
 
 #include "core/cpp_expression_repair.hpp"
 
+#include <algorithm>
 #include <cstdint>
+#include <set>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -17,7 +19,53 @@ namespace lgaed::curriculum {
 struct CppLocalIntProbe {
     std::string variable;
     std::int32_t replacement = 0;
+    // Separate, independently authored outputs after replacing this int.
+    // The ordinary visible OutputCheck is not part of this hidden evidence.
+    std::vector<std::string> expected_stdout;
+    bool operator==(const CppLocalIntProbe&) const = default;
 };
+
+struct CppLocalIntCheck {
+    std::vector<CppLocalIntProbe> probes;
+    bool operator==(const CppLocalIntCheck&) const = default;
+};
+
+inline bool cpp_local_int_check_valid(const CppLocalIntCheck& check) {
+    if(check.probes.empty() || check.probes.size()>8)return false;
+    for(std::size_t index=0;index<check.probes.size();++index) {
+        const auto& probe=check.probes[index];
+        if(!cpp_expression_repair_detail::identifier(probe.variable)||
+           probe.variable=="main"||probe.expected_stdout.empty()||
+           probe.expected_stdout.size()>4)return false;
+        std::set<std::string> distinct;
+        for(const auto& output:probe.expected_stdout)
+            if(output.empty()||output.size()>4096||
+               output.find('\0')!=std::string::npos||
+               !distinct.insert(output).second)return false;
+        for(std::size_t prior=0;prior<index;++prior)
+            if(check.probes[prior].variable==probe.variable&&
+               check.probes[prior].replacement==probe.replacement)return false;
+    }
+    return true;
+}
+
+inline bool cpp_local_int_expected_output(const CppLocalIntProbe& probe,
+                                           std::string_view observed) {
+    for(const auto& expected:probe.expected_stdout) {
+        if(observed==expected)return true;
+        // CRLF from a native std::ostream is an alternative spelling only
+        // when the authored expectation contains LF but no literal CR.
+        if(expected.find('\r')!=expected.npos||expected.find('\n')==expected.npos)continue;
+        std::string native;
+        native.reserve(expected.size()+std::count(expected.begin(),expected.end(),'\n'));
+        for(const char c:expected) {
+            if(c=='\n')native+='\r';
+            native+=c;
+        }
+        if(observed==native)return true;
+    }
+    return false;
+}
 
 namespace cpp_local_int_probe_detail {
 using Token = cpp_expression_repair_detail::Token;
