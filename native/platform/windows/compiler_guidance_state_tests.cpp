@@ -27,6 +27,8 @@ int array_return_take_state_windows(
     const std::filesystem::path& content,const std::filesystem::path& qa);
 int polymorphic_destruction_state_windows(
     const std::filesystem::path& content,const std::filesystem::path& qa);
+int virtual_lifetime_state_windows(
+    const std::filesystem::path& content,const std::filesystem::path& qa);
 }
 
 namespace {
@@ -1019,6 +1021,8 @@ int main(int argc,char** argv)try{
         return test::array_return_take_state_windows(content,qa);
     if(argc==2&&std::string_view(argv[1])=="--polymorphic-destruction-state-live")
         return test::polymorphic_destruction_state_windows(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--virtual-lifetime-state-live")
+        return test::virtual_lifetime_state_windows(content,qa);
     if(argc!=1)return 2;
     const auto lesson=load_lesson(content/"archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json");
     const auto stage=[&](std::string_view name,const auto& work){
