@@ -92,6 +92,15 @@ struct NamedRuleSourceCheck {
 
 namespace named_rule_detail {
 using Tokens = std::vector<std::string>;
+
+// C++ digraph braces are the same tokens as { and }. Canonicalize only
+// the internal lexical view: keep the original UTF-8 bytes and positioned
+// source offsets unchanged for authored source/variation preservation.
+inline std::string canonical_brace_token(std::string_view token) {
+    if(token=="op:<%")return "op:{";
+    if(token=="op:%>")return "op:}";
+    return std::string(token);
+}
 struct Bounds { std::size_t open, close; };
 struct LocalRule {
     std::string name;
@@ -1526,7 +1535,7 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
     // would manufacture a valid single-element list with a trailing comma.
     for(const auto& token:*scanned)
         if(!token.starts_with("comment:")&&!token.starts_with("directive:"))
-            t.push_back(token);
+            t.push_back(named_rule_detail::canonical_brace_token(token));
     for(const auto& rule:requirements) {
         if(rule.function.empty()||rule.purpose_words.empty()||!rule.min_uses)
             return {false,"La declaracion de la regla esta incompleta."};

@@ -19,6 +19,19 @@ void capacity() {
     const std::array rules{NamedRuleRequirement{"cajas_para",4,
         {"capacidad","plaza","cupo"},2}};
     verify(R"cpp(
+        int cajas_para(int piezas) <%
+            const int capacidad<%4%>;
+            return (piezas + capacidad - 1) / capacidad;
+        %>)cpp",rules,true,
+        "C++ digraph braces keep an independently named four-place rule");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad = <% /* dato */ 4, %>;
+            if (piezas == 0) <% return 0; %>
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "Mixed C++ brace spellings preserve the local rule and a zero guard");
+    verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
             return (piezas + capacidad - 1) / capacidad;
@@ -2613,13 +2626,39 @@ void constant_variation_source_identity() {
         {"static const int capacidad = -(-4);","static const int capacidad = (3);"},
         {"const int capacidad{ /* antes 4 */ 0x4 /* después 4 */ };",
          "const int capacidad{ /* antes 4 */ (3) /* después 4 */ };"},
-        {"const int capacidad = 04;","const int capacidad = (3);"}};
+        {"const int capacidad = 04;","const int capacidad = (3);"},
+        {"const int capacidad<%4%>;","const int capacidad<%(3)%>;"},
+        {"const int capacidad = <% /* valor */ 4, %>;",
+         "const int capacidad = <% /* valor */ (3), %>;"}};
     for(const auto& spelling:spellings) {
         const auto original=constant_variation_candidate(spelling.before);
         const auto varied=named_rule_constant_variation_source(original,probe,0);
         require(varied&&*varied==constant_variation_candidate(spelling.after),
             "Only the genuine initializer changes across equivalent declarations, comments and literals");
     }
+    const auto genuine_digraph=R"cpp(int cajas_para(int piezas) <%
+    const int capacidad<%4%>;
+    return (piezas + capacidad - 1) / capacidad;
+%>
+bool llega_a_tiempo(int dias) {
+    const int plazo{4};
+    return dias <= plazo;
+}
+int main() { return 0; }
+)cpp";
+    const auto varied_digraph=named_rule_constant_variation_source(genuine_digraph,probe,0);
+    const std::string expected_digraph=R"cpp(int cajas_para(int piezas) <%
+    const int capacidad<%(3)%>;
+    return (piezas + capacidad - 1) / capacidad;
+%>
+bool llega_a_tiempo(int dias) {
+    const int plazo{4};
+    return dias <= plazo;
+}
+int main() { return 0; }
+)cpp";
+    require(varied_digraph && *varied_digraph==expected_digraph,
+        "A valid digraph body and list initializer vary without changing any protected bytes");
     const auto crlf=[](std::string text) {
         std::string result;
         for(const auto c:text){if(c=='\n')result+='\r';result+=c;}
