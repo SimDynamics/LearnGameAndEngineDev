@@ -1,7 +1,7 @@
 """Run the native U6L5 private ownership witness against the real authored C++.
 
 Only the source of the existing editor and the header-only generic probe are
-used. All seven variants compile and execute in a disposable directory; the
+used. All nine variants compile and execute in a disposable directory; the
 student's original files, state and curriculum are never modified.
 """
 from __future__ import annotations
@@ -24,11 +24,13 @@ MARKER = "PASS native independent two-owner transfer identity and cleanup"
 EXPECTED = {
     "correct_move": True,
     "correct_swap_reset": True,
+    "correct_release_reset": True,
     "original_no_transfer": False,
     "copy_instead_of_move": False,
     "swap_without_emptying": False,
     "damages_empty_source_destination": False,
     "same_value_without_identity": False,
+    "correct_transfer_extra_stdout": False,
 }
 
 
@@ -116,17 +118,22 @@ def main() -> int:
                 [str(binary)], cwd=work, capture_output=True,
                 text=True, encoding="utf-8", errors="replace", timeout=15,
             )
-            accepted = execution.returncode == 0 and MARKER in execution.stderr
+            # Production requires the complete private marker and no stdout.
+            # A substring match could wrongly certify a candidate that also
+            # printed unrelated data before the trusted driver finished.
+            accepted = (execution.returncode == 0 and
+                        execution.stdout == "" and execution.stderr == MARKER)
             if accepted != should_accept:
                 raise RuntimeError(
                     f"{name}: expected {'accept' if should_accept else 'reject'}, "
                     f"got exit {execution.returncode}, "
-                    f"marker={MARKER in execution.stderr}; "
+                    f"stdout={execution.stdout[-600:]!r}; "
+                    f"stderr_exact={execution.stderr == MARKER}; "
                     f"stderr={execution.stderr[-600:]}"
                 )
             print(f"PASS private U6L5 {name}: "
                   f"{'accepted with identity/cleanup' if should_accept else 'rejected'}")
-    print("PASS seven U6L5 actual-source private witness executions; "
+    print("PASS nine U6L5 actual-source private witness executions; "
           "no curriculum metadata or saved learner state changed")
     return 0
 
