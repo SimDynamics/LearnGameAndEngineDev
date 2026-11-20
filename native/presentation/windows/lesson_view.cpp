@@ -2312,6 +2312,7 @@ struct LessonView {
         request.abstract_interface_probe=block(index).abstract_interface_probe;
         request.interface_collection_probe=block(index).interface_collection_probe;
         request.polymorphic_clone_probe=block(index).polymorphic_clone_probe;
+        request.dual_interface_probe=block(index).dual_interface_probe;
         request.open_battery_probe=block(index).open_battery_probe;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
@@ -4316,6 +4317,8 @@ struct LessonView {
                      fresh.interface_collection_probe_correct)&&
                     (!block(index).polymorphic_clone_probe||
                      fresh.polymorphic_clone_probe_correct)&&
+                    (!block(index).dual_interface_probe||
+                     fresh.dual_interface_probe_correct)&&
                     (!block(index).derived_preparation_probe||
                     fresh.derived_preparation_probe_correct)&&
                     (!block(index).virtual_lifetime_probe||
@@ -4403,6 +4406,12 @@ struct LessonView {
                         "La salida visible coincide, pero la prueba independiente no confirmó que clonar cree otro objeto de la misma clase concreta y que duplicar conserve los originales, invoque la clonación virtual y limpie sus copias ante un fallo. Revisa únicamente los dos clonar y duplicar.",
                         "Output matches, but independent compilation did not prove concrete clone type, independent ownership, virtual collection copying or cleanup after a controlled failure.",
                         "La sortie correspond, mais la preuve indépendante ne confirme pas les types concrets, les copies indépendantes ni leur nettoyage en cas d'échec.");
+                if(!fresh.dual_interface_probe_correct&&
+                   block(index).dual_interface_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la comprobación independiente no confirmó que valor consulte el dato actual mediante ConValor ni que escribir use el flujo recibido y el código=valor actual mediante ConInforme. Las dos vistas deben observar el mismo objeto antes y después de cambiar. Revisa únicamente los cuerpos de valor y escribir.",
+                        "The visible output matches, but an independent C++ execution did not verify the shared object through both base interfaces, the updated value, or reporting into the supplied stream.",
+                        "La sortie correspond, mais l'exécution indépendante ne confirme pas la même instance à travers deux bases, les données actuelles ni le flux fourni.");
                 if(!fresh.derived_preparation_probe_correct&&
                    block(index).derived_preparation_probe&&preserved_source)
                     text+='\n'+ui(
@@ -4486,7 +4495,8 @@ struct LessonView {
                    !block(index).derived_preparation_probe&&
                    !block(index).abstract_interface_probe&&
                    !block(index).interface_collection_probe&&
-                   !block(index).polymorphic_clone_probe)
+                   !block(index).polymorphic_clone_probe&&
+                   !block(index).dual_interface_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
