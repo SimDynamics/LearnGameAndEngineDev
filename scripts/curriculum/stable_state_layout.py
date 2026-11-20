@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -5328,6 +5328,109 @@ def _validate_compiler_derived_preparation_checks(document: dict) -> None:
 
 
 
+
+def _validate_compiler_interface_collection_checks(document: dict) -> None:
+    """Author-only ownership transfer and virtual reporting, without source edits."""
+    field="compilerInterfaceCollectionChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Interface collection authoring requires a Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Interface collection requires 1..32 compiler owners")
+    required={"activity","baseClass","simpleClass","identifiedClass",
+              "vectorAlias","addFunction","reportFunction","writeMethod",
+              "numberMethod","destinationParameter","sourceParameter",
+              "dataParameter","streamParameter","countLabel",
+              "indexSeparator","numberLabel","codeLabel"}
+    identifiers=required-{"activity","countLabel","indexSeparator",
+                           "numberLabel","codeLabel"}
+    labels={"countLabel","indexSeparator","numberLabel","codeLabel"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Interface collection requires exact declarative symbols")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Repeated interface collection owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&
+                         set(block)),
+                "Interface collection needs the published single-file editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                      "compilerArrayReturnTakeChecks",
+                      "compilerPolymorphicDestructionChecks",
+                      "compilerVirtualLifetimeDispatchChecks",
+                      "compilerDerivedPreparationChecks",
+                      "compilerAbstractInterfaceChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            entries=document.get(other,[])
+            require(type(entries) is list and not any(
+                type(x) is dict and x.get("activity")==identity for x in entries),
+                "Interface collection cannot overlap another private compiler owner")
+        for key in identifiers:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and
+                             value[1].isupper()),
+                    "Invalid interface collection identifier")
+        for key in labels:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=64
+                    and all(32<=ord(ch)<=126 and ch not in '"\\'
+                            for ch in value),
+                    "Invalid interface collection output label")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Interface collection requires original C++ source")
+        base=item["baseClass"]
+        simple=item["simpleClass"]
+        identified=item["identifiedClass"]
+        vector=item["vectorAlias"]
+        number=item["numberMethod"]
+        write=item["writeMethod"]
+        stream=item["streamParameter"]
+        require(len(re.findall(r"\bclass\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(simple)+
+                       r"\s*:\s*public\s+"+re.escape(base)+r"\s*\{",
+                       source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(identified)+
+                       r"\s*:\s*public\s+"+re.escape(base)+r"\s*\{",
+                       source))==1,
+                "Interface collection types or public inheritance missing")
+        require("virtual ~"+base+"() = default;" in source and
+                "virtual int "+number+"() const noexcept = 0;" in source and
+                "virtual void "+write+"(std::ostream& "+stream+
+                    ") const = 0;" in source,
+                "Interface collection requires an actual abstract interface")
+        alias="using "+vector+" = std::vector<std::unique_ptr<"+base+">>;"
+        add=("bool "+item["addFunction"]+"("+vector+"& "+
+             item["destinationParameter"]+", std::unique_ptr<"+base+
+             ">& "+item["sourceParameter"]+") {")
+        report=("void "+item["reportFunction"]+"(const "+vector+"& "+
+                item["dataParameter"]+", std::ostream& "+stream+") {")
+        require(source.count(alias)==1 and source.count(add)==1 and
+                source.count(report)==1 and
+                source.index(alias)<source.index(add)<source.index(report),
+                "Interface collection needs the original alias and two editable bodies")
+
+
 def _validate_compiler_abstract_interface_checks(document: dict) -> None:
     """Four immutable-source-bounded bodies of a published abstract interface."""
     field="compilerAbstractInterfaceChecks"
@@ -6222,6 +6325,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_virtual_lifetime_dispatch_checks(document)
     _validate_compiler_derived_preparation_checks(document)
     _validate_compiler_abstract_interface_checks(document)
+    _validate_compiler_interface_collection_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)
