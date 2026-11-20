@@ -15,6 +15,7 @@
 #include "core/cpp_array_return_take_check.hpp"
 #include "core/cpp_polymorphic_destruction_check.hpp"
 #include "core/cpp_virtual_lifetime_dispatch_check.hpp"
+#include "core/cpp_derived_preparation_check.hpp"
 #include "core/open_battery_check.hpp"
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
@@ -323,6 +324,8 @@ struct Block {
     // Source-bound three-body virtual destruction, factory and owner proof.
     std::optional<CppPolymorphicDestructionPolicy> polymorphic_destruction_probe;
     std::optional<CppVirtualLifetimeDispatchPolicy> virtual_lifetime_probe;
+    // Independent property for preparing a complete derived owner before replacement.
+    std::optional<CppDerivedPreparationPolicy> derived_preparation_probe;
     // The root declares this open CMake battery without changing its
     // previously published block or saved student draft identity.
     std::optional<OpenBatteryProbeSpec> open_battery_probe;
@@ -573,6 +576,8 @@ struct FreshExecution {
     std::string polymorphic_destruction_request_fingerprint;
     bool virtual_lifetime_probe_correct = false;
     std::string virtual_lifetime_request_fingerprint;
+    bool derived_preparation_probe_correct = false;
+    std::string derived_preparation_request_fingerprint;
     bool open_battery_probe_correct = false;
     bool cmake_graph_correct = false;
     bool assertion_abort_verified = false;
