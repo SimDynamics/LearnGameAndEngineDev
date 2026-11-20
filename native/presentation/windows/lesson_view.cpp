@@ -2309,6 +2309,7 @@ struct LessonView {
         request.polymorphic_destruction_probe=block(index).polymorphic_destruction_probe;
         request.virtual_lifetime_probe=block(index).virtual_lifetime_probe;
         request.derived_preparation_probe=block(index).derived_preparation_probe;
+        request.abstract_interface_probe=block(index).abstract_interface_probe;
         request.open_battery_probe=block(index).open_battery_probe;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
@@ -4307,7 +4308,9 @@ struct LessonView {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
                     block(index),running_program);
-                const bool independent=(!block(index).derived_preparation_probe||
+                const bool independent=(!block(index).abstract_interface_probe||
+                    fresh.abstract_interface_probe_correct)&&
+                    (!block(index).derived_preparation_probe||
                     fresh.derived_preparation_probe_correct)&&
                     (!block(index).virtual_lifetime_probe||
                     fresh.virtual_lifetime_probe_correct)&&
@@ -4376,6 +4379,12 @@ struct LessonView {
                         "La salida coincide, pero falta acreditar que el constructor y la asignación por movimiento conservan el mismo objeto, no reservan otro entero y mantienen prohibida la copia.",
                         "The output matches, but the independent proof has not verified that the move constructor and assignment preserve the same object, make no new integer allocation and keep copying forbidden.",
                         "La sortie correspond, mais la preuve indépendante doit encore vérifier l'identité de l'objet déplacé, l'absence d'allocation et l'interdiction de la copie.");
+                if(!fresh.abstract_interface_probe_correct&&
+                   block(index).abstract_interface_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida visible coincide, pero la prueba independiente no confirmó que la fábrica cree el tipo concreto solicitado ni que presentar consulte numero y escribir mediante la interfaz, también con otros tipos compatibles. Revisa únicamente las dos operaciones escribir, crear y presentar.",
+                        "Output matches, but independent C++ execution did not prove correct concrete factory types or virtual number and report operations on an additional implementation.",
+                        "La sortie correspond, mais la preuve indépendante ne confirme pas le type concret demandé ni les appels virtuels pour une autre implémentation conforme.");
                 if(!fresh.derived_preparation_probe_correct&&
                    block(index).derived_preparation_probe&&preserved_source)
                     text+='\n'+ui(
@@ -4456,7 +4465,8 @@ struct LessonView {
                    !block(index).array_return_take_probe&&
                    !block(index).polymorphic_destruction_probe&&
                    !block(index).virtual_lifetime_probe&&
-                   !block(index).derived_preparation_probe)
+                   !block(index).derived_preparation_probe&&
+                   !block(index).abstract_interface_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
