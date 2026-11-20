@@ -403,9 +403,7 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
             relative, *position, old, current,
             previous_document=self.original, current_document=option_last))
         restored = layout.original_projection(option_last)
-        origin_position = next((p, b) for (p, b), storage in
-                               layout.validate(self.original).items()
-                               if storage == position)
+        origin_position = layout.validate(self.original)[position]
         historical = restored["pages"][origin_position[0]]["blocks"][origin_position[1]]
         self.assertEqual(historical["options"], old["options"])
         self.assertEqual(historical["question"], question)
