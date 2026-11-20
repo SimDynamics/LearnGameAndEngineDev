@@ -70,19 +70,28 @@ int indexed_unique_transfer_state_windows(const std::filesystem::path& content,
     const auto& compact=owner(metadata,identity);
     require(actual.indexed_unique_transfer_probe&&
             compact.indexed_unique_transfer_probe&&
-            actual.indexed_unique_transfer_probe==compact.indexed_unique_transfer_probe&&
-            actual.initial_code==published.initial_code&&
-            actual.raw_json==published.raw_json&&
-            actual.output_check&&
-            actual.output_check->cases.size()==published.output_check->cases.size()&&
-            actual.stable_id==published.stable_id&&
+            actual.indexed_unique_transfer_probe==compact.indexed_unique_transfer_probe,
+        "Native full/progress loaders disagree about the unique-owner contract");
+    require(actual.initial_code==published.initial_code&&
+            actual.output_check&&published.output_check&&
+            actual.output_check->cases.size()==published.output_check->cases.size(),
+        "The new root authoring changed the original compiler source or case count");
+    // Re-serializing a complete JSON document in memory legitimately removes
+    // insignificant indentation. Require the identical complete authored
+    // block value instead of treating a whitespace-only JSON roundtrip as an
+    // unauthorized source change. Source C++ bytes above remain exact.
+    require(JsonObject::Parse(winrt::to_hstring(actual.raw_json)).Stringify()==
+                JsonObject::Parse(winrt::to_hstring(published.raw_json)).Stringify(),
+        "The new root authoring changed the content of an original editor");
+    require(actual.stable_id==published.stable_id&&
             actual.address.page==published.address.page&&
             actual.address.block==published.address.block&&
             actual.address.addition_namespace==published.address.addition_namespace&&
-            actual.address.progress_page==published.address.progress_page&&
-            revised.state_layout.signatures==old.state_layout.signatures&&
+            actual.address.progress_page==published.address.progress_page,
+        "The new root authoring moved the historical compiler address");
+    require(revised.state_layout.signatures==old.state_layout.signatures&&
             metadata.state_layout.signatures==old.state_layout.signatures,
-        "Native full/progress loaders changed the original owner or output contract");
+        "The new root authoring changed signed historical state identities");
 
     // A historical stdout-only completion is legitimate history, not proof of
     // the SAME unique_ptr<int> surviving a move. Model only the adapter/storage
