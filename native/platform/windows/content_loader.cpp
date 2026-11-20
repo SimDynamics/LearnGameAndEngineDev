@@ -5744,6 +5744,70 @@ void read_compiler_array_copy_move_checks(const JsonObject& root,Lesson& lesson)
     }
 }
 
+void read_compiler_array_return_take_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerArrayReturnTakeChecks"))return;
+    const auto entries=array(root,"compilerArrayReturnTakeChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Array return/take requires original Spanish v2 compiler owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","className","ownerMember","countMember",
+            "copyFunction","takeFunction","sourceParameter","indexParameter",
+            "valueParameter","destinationParameter","offeredParameter",
+            "limitParameter","quantityMethod","accessMethod",
+            "configureMethod","readMethod","writeMethod","clearMethod"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Array return/take has invalid or duplicate original owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated original array return/take owner identity");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Array return/take requires an independent original single-file editor");
+        CppArrayReturnTakePolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.class_name=text(item,"className");
+        spec.owner_member=text(item,"ownerMember");
+        spec.count_member=text(item,"countMember");
+        spec.copy_function=text(item,"copyFunction");
+        spec.take_function=text(item,"takeFunction");
+        spec.source_parameter=text(item,"sourceParameter");
+        spec.index_parameter=text(item,"indexParameter");
+        spec.value_parameter=text(item,"valueParameter");
+        spec.destination_parameter=text(item,"destinationParameter");
+        spec.offered_parameter=text(item,"offeredParameter");
+        spec.limit_parameter=text(item,"limitParameter");
+        spec.quantity_method=text(item,"quantityMethod");
+        spec.access_method=text(item,"accessMethod");
+        spec.configure_method=text(item,"configureMethod");
+        spec.read_method=text(item,"readMethod");
+        spec.write_method=text(item,"writeMethod");
+        spec.clear_method=text(item,"clearMethod");
+        require(cpp_array_return_take_detail::valid(spec)&&
+                cpp_array_return_take_matches(spec,spec.original_source),
+            "Array return/take cannot bind the original class and two free functions");
+        owner->array_return_take_probe=std::move(spec);
+    }
+}
+
 void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerOpenBatteryChecks"))return;
     const auto entries=array(root,"compilerOpenBatteryChecks");
@@ -6526,6 +6590,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_move_assignment_invariant_checks(root,lesson);
         read_compiler_array_owner_read_checks(root,lesson);
         read_compiler_array_copy_move_checks(root,lesson);
+        read_compiler_array_return_take_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
@@ -6658,6 +6723,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_move_assignment_invariant_checks(root,lesson);
         read_compiler_array_owner_read_checks(root,lesson);
         read_compiler_array_copy_move_checks(root,lesson);
+        read_compiler_array_return_take_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
