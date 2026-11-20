@@ -5937,6 +5937,81 @@ void read_compiler_virtual_lifetime_dispatch_checks(const JsonObject& root,
     }
 }
 
+void read_compiler_derived_preparation_checks(const JsonObject& root,
+        Lesson& lesson) {
+    if(!root.HasKey(L"compilerDerivedPreparationChecks"))return;
+    const auto entries=array(root,"compilerDerivedPreparationChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Derived preparation requires Spanish v2 original compiler owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","baseClass","derivedClass","balanceClass",
+            "resourceClass","replacementFunction","destinationParameter",
+            "numberParameter","codeParameter","modeParameter","balanceParameter",
+            "printMethod","resourceAlive","baseCompleted","derivedCompleted",
+            "resourceCompleted","baseDestroyed","derivedDestroyed",
+            "resourceDestroyed"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Derived preparation has an invalid or repeated original owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated original derived preparation owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&!owner->polymorphic_destruction_probe&&
+                !owner->virtual_lifetime_probe&&!owner->derived_preparation_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Derived preparation needs an independent original single-file editor");
+        CppDerivedPreparationPolicy spec;
+        spec.editable.original_source=owner->initial_code;
+        spec.base_class=text(item,"baseClass");
+        spec.derived_class=text(item,"derivedClass");
+        spec.balance_class=text(item,"balanceClass");
+        spec.resource_class=text(item,"resourceClass");
+        spec.replacement_function=text(item,"replacementFunction");
+        spec.destination_parameter=text(item,"destinationParameter");
+        spec.number_parameter=text(item,"numberParameter");
+        spec.code_parameter=text(item,"codeParameter");
+        spec.mode_parameter=text(item,"modeParameter");
+        spec.balance_parameter=text(item,"balanceParameter");
+        spec.print_method=text(item,"printMethod");
+        spec.resource_alive=text(item,"resourceAlive");
+        spec.base_complete=text(item,"baseCompleted");
+        spec.derived_complete=text(item,"derivedCompleted");
+        spec.resource_complete=text(item,"resourceCompleted");
+        spec.base_destroyed=text(item,"baseDestroyed");
+        spec.derived_destroyed=text(item,"derivedDestroyed");
+        spec.resource_destroyed=text(item,"resourceDestroyed");
+        spec.editable.bodies={{
+            "void "+spec.replacement_function+"(std::unique_ptr<"+
+                spec.base_class+">& "+spec.destination_parameter+", int "+
+                spec.number_parameter+", int "+spec.code_parameter+", int "+
+                spec.mode_parameter+", "+spec.balance_class+"& "+
+                spec.balance_parameter+")",false
+        }};
+        require(cpp_derived_preparation_matches(
+                    spec,spec.editable.original_source),
+            "Derived preparation must bind one original function and real owners");
+        owner->derived_preparation_probe=std::move(spec);
+    }
+}
+
 void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerOpenBatteryChecks"))return;
     const auto entries=array(root,"compilerOpenBatteryChecks");
@@ -6722,6 +6797,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_array_return_take_checks(root,lesson);
         read_compiler_polymorphic_destruction_checks(root,lesson);
         read_compiler_virtual_lifetime_dispatch_checks(root,lesson);
+        read_compiler_derived_preparation_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
@@ -6857,6 +6933,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_array_return_take_checks(root,lesson);
         read_compiler_polymorphic_destruction_checks(root,lesson);
         read_compiler_virtual_lifetime_dispatch_checks(root,lesson);
+        read_compiler_derived_preparation_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
