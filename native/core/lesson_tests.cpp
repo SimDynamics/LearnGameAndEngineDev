@@ -1067,11 +1067,11 @@ void integrated_retirement_contract_tests() {
                 "An integrated ordering lost its independently pinned original grouped order");
             // A new course edition may retire the revised activity. Its last
             // published representation must still match the reading snapshot.
-            const curriculum::Block* represented=nullptr;
+            const Block* represented=nullptr;
             if(position)represented=&current.pages[position->page].blocks[position->block];
             else{
                 const auto retired=std::ranges::find(current.retired_blocks,plan.refined_order,
-                    &curriculum::Block::stable_id);
+                    &Block::stable_id);
                 if(retired!=current.retired_blocks.end())represented=&*retired;
             }
             check(represented&&represented->type==BlockType::order_code,
