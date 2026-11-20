@@ -9,6 +9,7 @@
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 
+#include <array>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -72,7 +73,134 @@ std::string saved_local_receipt(const state::StateData& data) {
         }
     return {};
 }
+// Test the six real, still-unmodified U2 lesson editors, not synthetic IDs.
+// Authoring packets exist only in memory: Work retains control of lesson JSON.
+void validate_other_u2_editors() {
+    struct LessonCase {
+        const char* filename;
+        const char* declaration;
+        std::array<std::string_view,2> owners;
+        std::array<std::string_view,2> sources;
+    };
+    const std::array<LessonCase,3> cases{{
+        {
+            "lesson_objetos_valores_y_tipos.json",
+            R"JSON([
+                {"activity":"block_0004_0002","probes":[
+                    {"variable":"llaves","replacement":13,"outputs":["Llaves: 13","Llaves: 13\n"]}]},
+                {"activity":"block_0004_0006","probes":[
+                    {"variable":"llaves","replacement":19,"outputs":["Llaves: 19","Llaves: 19\n"]}]}
+            ])JSON",
+            {"block_0004_0002","block_0004_0006"},
+            {
+                R"CPP(#include <iostream>
+int main(){int llaves=7; std::cout<<"Llaves: "<<llaves;})CPP",
+                R"CPP(#include <iostream>
+int main(){int llaves{11}; std::cout<<"Llaves: "<<llaves;})CPP"
+            }
+        },{
+            "lesson_declarar_e_inicializar.json",
+            R"JSON([
+                {"activity":"block_0004_0002","probes":[
+                    {"variable":"cajas","replacement":13,"outputs":["Cajas: 13\nSobres: 9","Cajas: 13\nSobres: 9\n"]},
+                    {"variable":"sobres","replacement":17,"outputs":["Cajas: 4\nSobres: 17","Cajas: 4\nSobres: 17\n"]}]},
+                {"activity":"block_0004_0006","probes":[
+                    {"variable":"cajas","replacement":6,"outputs":["Cajas: 6\nSobres: 2","Cajas: 6\nSobres: 2\n"]},
+                    {"variable":"sobres","replacement":17,"outputs":["Cajas: 0\nSobres: 17","Cajas: 0\nSobres: 17\n"]}]}
+            ])JSON",
+            {"block_0004_0002","block_0004_0006"},
+            {
+                R"CPP(#include <iostream>
+int main(){
+    int cajas=4; int sobres{9};
+    std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;
+})CPP",
+                R"CPP(#include <iostream>
+int main(){
+    int cajas{0}; int sobres=2;
+    std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;
+})CPP"
+            }
+        },{
+            "lesson_estado_asignacion_y_copia.json",
+            R"JSON([
+                {"activity":"block_0006_0002","probes":[
+                    {"variable":"aforo","replacement":10,"outputs":["Antes: 10\nAhora: 13","Antes: 10\nAhora: 13\n"]},
+                    {"variable":"anterior","replacement":11,"outputs":["Antes: 11\nAhora: 8","Antes: 11\nAhora: 8\n"]}]},
+                {"activity":"block_0006_0006","probes":[
+                    {"variable":"aforo","replacement":10,"outputs":["Antes: 13\nAhora: 13","Antes: 13\nAhora: 13\n"]},
+                    {"variable":"anterior","replacement":11,"outputs":["Antes: 11\nAhora: 8","Antes: 11\nAhora: 8\n"]}]}
+            ])JSON",
+            {"block_0006_0002","block_0006_0006"},
+            {
+                R"CPP(#include <iostream>
+int main(){
+    int aforo=5; int anterior=aforo; aforo+=3;
+    std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;
+})CPP",
+                R"CPP(#include <iostream>
+int main(){
+    int aforo{5}; aforo+=3; int anterior=aforo;
+    std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;
+})CPP"
+            }
+        }
+    }};
+    const auto root=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado";
+    for(const auto& item:cases) {
+        const auto published=load_lesson(root/item.filename);
+        auto active=JsonObject::Parse(winrt::to_hstring(published.raw_json));
+        active.Insert(L"compilerLocalIntChecks",
+            JsonValue::Parse(winrt::to_hstring(std::string(item.declaration))));
+        const auto original=winrt::to_string(active.Stringify());
+        const auto loaded=parse_lesson_json(original,"es");
+        const auto metadata=parse_lesson_progress_metadata(original,"es");
+        for(std::size_t index=0;index<item.owners.size();++index) {
+            const auto lookup=[&](const Lesson& lesson)->const Block& {
+                const auto position=stable_block_position(lesson,item.owners[index]);
+                require(position.has_value(),"An original U2 editor was displaced");
+                return lesson.pages.at(position->page).blocks.at(position->block);
+            };
+            const auto& before=lookup(published);
+            const auto& after=lookup(loaded);
+            const auto& progress=lookup(metadata);
+            require(before.output_check&&after.output_check&&
+                before.output_check->cases.size()==1&&
+                after.output_check->cases.size()==1&&
+                same_output_case_requirements(before.output_check->cases.front(),
+                    after.output_check->cases.front())&&
+                after.local_int_check&&
+                after.local_int_check==progress.local_int_check&&
+                !before.local_int_check&&
+                after.address.page==before.address.page&&
+                after.address.block==before.address.block&&
+                after.initial_code==before.initial_code,
+                "New U2 root checks replaced, moved or silently credited a published editor");
+            CppRunRequest request;
+            request.request_id=17;request.revision=9;
+            request.project_key="isolated-six-u2-owners";
+            request.source_utf8=std::string(item.sources[index]);
+            request.local_int_check=after.local_int_check;
+            require(compiler_runtime_request_allowed(after,request)&&
+                !cpp_local_int_request_fingerprint(request).empty(),
+                "A valid U2 answer could not prepare its separate private variations");
+            // A printout without the requested int variable cannot prepare
+            // a complete private proof, however its stdout may look right.
+            request.source_utf8=
+                "#include <iostream>\nint main(){std::cout<<\"Llaves: 7\";}";
+            require(cpp_local_int_request_fingerprint(request).empty()&&
+                !compiler_runtime_request_allowed(after,request),
+                "An uncomputed constant was eligible for local-int credit");
+        }
+    }
+    std::cout<<"PASS six real U2 compiler owners: authentic root declarations "
+        "for llaves/cajas/sobres/aforo/anterior, matching progress loader, "
+        "safe source mutations and unchanged historical exercises.\n";
+}
+
 void run() {
+    validate_other_u2_editors();
     const auto file=std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_objetos_valores_y_tipos.json";
     const auto old=load_lesson(file);
