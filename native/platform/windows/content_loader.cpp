@@ -5573,6 +5573,63 @@ void read_compiler_independent_copy_assignment_checks(const JsonObject& root,Les
     }
 }
 
+void read_compiler_move_assignment_invariant_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerMoveAssignmentInvariantChecks"))return;
+    const auto entries=array(root,"compilerMoveAssignmentInvariantChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Move-assignment invariant requires a Spanish v2 root with mapped owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","className","memberName","labelMember",
+            "parameterName","hasMethod","valueMethod","labelMethod",
+            "accessMethod","invariantMethod","putMethod","changeMethod",
+            "retagMethod","clearMethod"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&seen.insert(identity).second,
+            "Invalid or repeated move-assignment invariant owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate move-assignment owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Move-assignment invariant requires a separate original single-file editor");
+        CppMoveAssignmentInvariantPolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.class_name=text(item,"className");
+        spec.member_name=text(item,"memberName");
+        spec.label_member=text(item,"labelMember");
+        spec.parameter_name=text(item,"parameterName");
+        spec.has_method=text(item,"hasMethod");
+        spec.value_method=text(item,"valueMethod");
+        spec.label_method=text(item,"labelMethod");
+        spec.access_method=text(item,"accessMethod");
+        spec.invariant_method=text(item,"invariantMethod");
+        spec.put_method=text(item,"putMethod");
+        spec.change_method=text(item,"changeMethod");
+        spec.retag_method=text(item,"retagMethod");
+        spec.clear_method=text(item,"clearMethod");
+        require(cpp_move_invariant_detail::spec_valid(spec)&&
+                cpp_move_invariant_matches(spec,spec.original_source),
+            "Move-assignment invariant has no authentic class, member or operator");
+        owner->move_assignment_invariant_probe=std::move(spec);
+    }
+}
+
 void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerOpenBatteryChecks"))return;
     const auto entries=array(root,"compilerOpenBatteryChecks");
@@ -6352,6 +6409,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_indexed_unique_transfer_checks(root,lesson);
         read_compiler_defaulted_move_policy_checks(root,lesson);
         read_compiler_independent_copy_assignment_checks(root,lesson);
+        read_compiler_move_assignment_invariant_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
@@ -6481,6 +6539,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_indexed_unique_transfer_checks(root,lesson);
         read_compiler_defaulted_move_policy_checks(root,lesson);
         read_compiler_independent_copy_assignment_checks(root,lesson);
+        read_compiler_move_assignment_invariant_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
