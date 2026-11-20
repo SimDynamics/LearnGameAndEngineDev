@@ -105,11 +105,12 @@ int main(int argc,char** argv)try {
         require(accepted==variation.valid,
             std::string("Incorrect structural verdict: ")+std::string(variation.name));
         if(!accepted)continue;
-        for(const auto& [mode,extension]:
-                std::array<std::pair<CppDefaultedMoveProbe,std::string_view>,3>{{
-                   {CppDefaultedMoveProbe::success,"runtime"},
-                   {CppDefaultedMoveProbe::rejected_copy_constructor,"copy-ctor"},
-                   {CppDefaultedMoveProbe::rejected_copy_assignment,"copy-assign"}}) {
+        constexpr std::array<std::pair<CppDefaultedMoveProbe,std::string_view>,3> modes{{
+            {CppDefaultedMoveProbe::success,"runtime"},
+            {CppDefaultedMoveProbe::rejected_copy_constructor,"copy-ctor"},
+            {CppDefaultedMoveProbe::rejected_copy_assignment,"copy-assign"}
+        }};
+        for(const auto& [mode,extension]:modes) {
             const auto driver=cpp_defaulted_move_policy_probe_source(spec,candidate,mode);
             require(driver.has_value(),"Private driver unavailable for valid source");
             write(std::filesystem::path(argv[2])/
