@@ -1,0 +1,59 @@
+name: Codex P3 all fourteen genuine C++ ownership objectives
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-p3-all-ownership-probes.yml
+      - scripts/curriculum/test_p3_ownership_real_suite.py
+      - scripts/curriculum/test_cpp_*py
+      - docs/examples/p3_ownership_authoring.json
+      - native/core/cpp_*check*.hpp
+      - native/core/cpp_indexed_unique_transfer_probe.hpp
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/**/lesson_*.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Real P3 ${{ matrix.group }} with GCC and Clang
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [U6, U8, U10]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Compile and execute every current P3 private probe and negative case
+        shell: bash
+        run: |
+          for compiler in g++ clang++; do
+            python3 -B scripts/curriculum/test_p3_ownership_real_suite.py \
+              --group "${{ matrix.group }}" --compiler "$compiler"
+          done
+
+  windows-msvc:
+    name: Real P3 ${{ matrix.group }} with hosted MSVC
+    runs-on: windows-2022
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [U6, U8, U10]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile and execute original P3 private probes under native MSVC
+        shell: pwsh
+        run: |
+          python -B scripts/curriculum/test_p3_ownership_real_suite.py --group "${{ matrix.group }}" --compiler cl --windows

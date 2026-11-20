@@ -1,0 +1,28 @@
+name: Codex P3 fourteen ownership declarations and historical-state protection
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-p3-ownership-authoring.yml
+      - docs/CPP_OUTPUT_CHECK.md
+      - docs/examples/p3_ownership_authoring.json
+      - scripts/curriculum/test_p3_ownership_authoring.py
+      - scripts/curriculum/stable_state_layout.py
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/**/lesson_*.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Check all fourteen authentic P3 owners and read-only opt-in contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify state-preserving authoring and reject forged owners
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_p3_ownership_authoring.py -v

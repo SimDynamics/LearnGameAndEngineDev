@@ -511,10 +511,10 @@ struct LessonView {
                 "Arrastra las líneas de código para ordenarlas. Puedes mover las tarjetas vacías si quieres dejar una línea en blanco.",
                 "Drag the code lines to put them in order. You can move blank cards if you want to leave an empty line.",
                 "Faites glisser les lignes de code pour les mettre dans l’ordre. Vous pouvez déplacer les cartes vides pour laisser une ligne blanche.");
-            return ui("Mantén pulsado un bloque y arrástralo hasta la posición correcta.",
+            return ui("Arrastra las líneas de código hasta dejarlas en el orden correcto.",
             "Press and hold a block, then drag it to the correct position.","Maintenez le doigt sur un bloc, puis faites-le glisser jusqu’à la bonne position.");
         }
-        if(type==BlockType::drag_fill_code)return ui("Mantén pulsado un bloque y arrástralo hacia un espacio vacío.",
+        if(type==BlockType::drag_fill_code)return ui("Arrastra cada bloque de código hasta el espacio vacío correspondiente.",
             "Press and hold a block, then drag it to an empty space.","Maintenez le doigt sur un bloc, puis faites-le glisser vers un emplacement vide.");
         return {};
     }

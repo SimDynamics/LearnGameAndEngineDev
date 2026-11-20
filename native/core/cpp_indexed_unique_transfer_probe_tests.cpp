@@ -136,13 +136,21 @@ int main(int argc,char** argv) try {
         candidate("const auto marker=__COUNTER__; (void)marker; return true;"),
         candidate("using std::source_location; return false;"),
         candidate("asm(\"nop\"); return false;"),
+        candidate("std::terminate();"),
+        candidate("std::raise(9);"),
+        candidate("::TerminateJobObject(job,0);"),
+        candidate("std::system(\"echo unsafe\"); return false;"),
+        candidate("auto run=&std::system; (void)run; return false;"),
+        candidate("::CreateProcessW(nullptr,nullptr,nullptr,nullptr,false,0,nullptr,nullptr,nullptr,nullptr);"),
+        candidate("::SetStdHandle(0,nullptr); return false;"),
+        candidate("auto output=std::freopen(\"log\",\"w\",stderr); (void)output;"),
         candidate("#include <cstdlib>\nreturn false;\n")
     })
         require(!cpp_indexed_unique_transfer_probe_source(spec,hostile),
                 "An early exit, source-dependent shortcut or private counter spoof passed");
     require(cpp_indexed_unique_transfer_probe_source(spec,candidate(R"cpp(
-    // std::exit(0), longjmp and lgaed_transfer_qa::Watch are comments only.
-    const auto words=R"test(std::exit(0) lgaed_transfer_qa::Watch)test";
+    // std::exit(0), longjmp, std::system and std::terminate are comments only.
+    const auto words=R"test(std::exit(0) lgaed_transfer_qa::Watch std::system CreateProcessW std::terminate)test";
     (void)words;
     return false;
 )cpp")).has_value(),
