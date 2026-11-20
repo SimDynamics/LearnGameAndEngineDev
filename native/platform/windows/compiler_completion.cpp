@@ -509,6 +509,26 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(request.array_owner_read_probe!=block.array_owner_read_probe)
+        return false;
+    if(block.array_owner_read_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+           request.independent_copy_assignment_probe||
+           request.move_assignment_invariant_probe||request.open_battery_probe||
+           request.boolean_battery_probe||request.reduction_probe||
+           request.integer_battery_probe||request.adjustment_project_probe||
+           request.rejection_probe||request.observation_probe||
+           request.assertion_mode||request.cmake_graph_check||
+           request.capture_cmake_graph||
+           !curriculum::cpp_array_owner_read_matches(
+               *block.array_owner_read_probe,request.source_utf8))
+            return false;
+    }
     if(request.move_assignment_invariant_probe!=block.move_assignment_invariant_probe)
         return false;
     if(block.move_assignment_invariant_probe) {
@@ -888,6 +908,18 @@ std::string move_assignment_invariant_completion_seal(
         token(spec.put_method)+token(spec.change_method)+
         token(spec.retag_method)+token(spec.clear_method));
 }
+std::string array_owner_read_completion_seal(
+        std::string_view key,std::string_view program,
+        const curriculum::CppArrayOwnerReadPolicy& spec) {
+    return state::sha256(std::string("compiler-array-owner-read-v1/")+
+        token(key)+token(program)+token(spec.original_source)+
+        token(spec.class_name)+token(spec.owner_member)+token(spec.count_member)+
+        token(spec.quantity_parameter)+token(spec.index_parameter)+
+        token(spec.output_parameter)+token(spec.configure_method)+
+        token(spec.read_method)+token(spec.quantity_method)+
+        token(spec.access_method)+token(spec.write_method)+
+        token(spec.clear_method)+token(spec.sum_method));
+}
 std::string indexed_transfer_completion_seal(std::string_view key,
         std::string_view program,const curriculum::CppIndexedUniqueTransferProbe& spec) {
     return state::sha256(std::string("compiler-indexed-unique-owner-v1/")+
@@ -918,6 +950,10 @@ static bool stdout_or_diagnostic_completed(const state::StateData& data,const cu
        state::string_value(data,"native_windows",key+"move-invariant/v1")!=
            move_assignment_invariant_completion_seal(key,captured,
                *block.move_assignment_invariant_probe))return false;
+    if(block.array_owner_read_probe&&
+       state::string_value(data,"native_windows",key+"array-owner-read/v1")!=
+           array_owner_read_completion_seal(key,captured,
+               *block.array_owner_read_probe))return false;
     if(captured.empty()||proofs.size()!=(block.compile_check?1:block.output_check->cases.size())||proofs.empty())return false;
     for(std::size_t index=0;index<proofs.size();++index)
         if(!proofs[index].empty()&&
@@ -1139,6 +1175,22 @@ void validate_compiler_puzzle_state(const state::StateData& data,const curriculu
                     "Invalid move-assignment invariant receipt; previous state was preserved.");
         }
     }
+    if(block.array_owner_read_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"array-owner-read/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=array_owner_read_completion_seal(
+                    key,program,*block.array_owner_read_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                    state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid array owner/read receipt; original student state was preserved.");
+        }
+    }
     // Existing objectives retain their historical permissive decoding. The
     // reviewed migration validates every receipt it is about to reuse.
     if(block.compile_check){validate_receipts(data,lesson,block);return;}
@@ -1271,6 +1323,11 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
             execution.move_assignment_invariant_request_fingerprint.empty()||
             execution.move_assignment_invariant_request_fingerprint!=
                 cpp_move_assignment_invariant_request_fingerprint(captured)))||
+       (block.array_owner_read_probe&&
+           (!execution.array_owner_read_probe_correct||
+            execution.array_owner_read_request_fingerprint.empty()||
+            execution.array_owner_read_request_fingerprint!=
+                cpp_array_owner_read_request_fingerprint(captured)))||
        (block.indexed_unique_transfer_probe&&
            (!execution.indexed_unique_transfer_probe_correct||
             execution.indexed_unique_transfer_request_fingerprint.empty()||
@@ -1307,7 +1364,8 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     auto proofs=case_proofs(data,key);
     const auto stored_program=state::string_value(data,"native_windows",key+"program");
     if((block.indexed_unique_transfer_probe||block.defaulted_move_policy_probe||
-        block.independent_copy_assignment_probe||block.move_assignment_invariant_probe)&&
+        block.independent_copy_assignment_probe||block.move_assignment_invariant_probe||
+        block.array_owner_read_probe)&&
        !previously_completed&&stored_program==program&&
        valid_completion_seal(block,key,program,proofs,
            state::string_value(data,"native_windows",key+"completed"))) {
@@ -1329,6 +1387,10 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
             data.preferences["native_windows"][key+"move-invariant/v1"]=
                 move_assignment_invariant_completion_seal(key,program,
                     *block.move_assignment_invariant_probe);
+        if(block.array_owner_read_probe)
+            data.preferences["native_windows"][key+"array-owner-read/v1"]=
+                array_owner_read_completion_seal(key,program,
+                    *block.array_owner_read_probe);
         clear_compiler_puzzle_review(data,lesson,block);
         return true;
     }
@@ -1385,6 +1447,10 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
             values[key+"move-invariant/v1"]=
                 move_assignment_invariant_completion_seal(key,program,
                     *block.move_assignment_invariant_probe);
+        if(block.array_owner_read_probe)
+            values[key+"array-owner-read/v1"]=
+                array_owner_read_completion_seal(key,program,
+                    *block.array_owner_read_probe);
         values[key+"feedback"]=std::string(feedback);
         record_feedback_origin(data,key,block,evaluation.feedback_path,feedback,
             std::get<std::string>(values.at(key+"completed")));
