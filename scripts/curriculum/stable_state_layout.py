@@ -7343,6 +7343,11 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerNamedRuleChecks") or
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
+    require(not baseline.get("compilerLocalIntChecks") or
+            (type(current.get("compilerLocalIntChecks")) is list and
+             current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
+             baseline["compilerLocalIntChecks"]),
+            "Published local-int checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerOpenBatteryChecks") or
             (type(current.get("compilerOpenBatteryChecks")) is list and
              current["compilerOpenBatteryChecks"][:len(baseline["compilerOpenBatteryChecks"])] ==
@@ -7840,6 +7845,11 @@ def validate_transition(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerNamedRuleChecks") or
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
+    require(not baseline.get("compilerLocalIntChecks") or
+            (type(current.get("compilerLocalIntChecks")) is list and
+             current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
+             baseline["compilerLocalIntChecks"]),
+            "Published local-int checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerOpenBatteryChecks") or
             (type(current.get("compilerOpenBatteryChecks")) is list and
              current["compilerOpenBatteryChecks"][:len(baseline["compilerOpenBatteryChecks"])] ==

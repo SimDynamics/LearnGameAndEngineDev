@@ -1,5 +1,7 @@
 """Isolated authoring checks for the opt-in hidden local-int dependency contract."""
 from copy import deepcopy
+import json
+from pathlib import Path
 import unittest
 
 import stable_state_layout as state
@@ -89,6 +91,42 @@ class LocalIntAuthoringTests(unittest.TestCase):
                 item = fixture()
                 item["compilerLocalIntChecks"][0]["probes"][0][key] = value
                 self.rejected(item)
+
+    def test_existing_lesson_root_is_append_only_without_changing_old_editor(self):
+        path = (Path(__file__).resolve().parents[2] /
+                "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                "objetos_y_estado/lesson_objetos_valores_y_tipos.json")
+        before = json.loads(path.read_text(encoding="utf-8-sig"))
+        after = deepcopy(before)
+        after["compilerLocalIntChecks"] = [{
+            "activity": "block_0004_0002",
+            "probes": [{"variable": "llaves", "replacement": 13,
+                        "outputs": ["Llaves: 13", "Llaves: 13\n"]}],
+        }]
+        state.validate_transition(before, after)
+        self.assertEqual(before["pages"], after["pages"])
+        self.assertEqual(before["stateLayout"], after["stateLayout"])
+        expanded = deepcopy(after)
+        expanded["compilerLocalIntChecks"].append({
+            "activity": "block_0004_0006",
+            "probes": [{"variable": "llaves", "replacement": 19,
+                        "outputs": ["Llaves: 19"]}],
+        })
+        state.validate_transition(after, expanded)
+        for altered in (
+            before,
+            {**deepcopy(expanded),
+             "compilerLocalIntChecks": expanded["compilerLocalIntChecks"][::-1]},
+            {**deepcopy(expanded),
+             "compilerLocalIntChecks": [dict(
+                 expanded["compilerLocalIntChecks"][0],
+                 probes=[{"variable": "llaves", "replacement": 14,
+                          "outputs": ["Llaves: 14"]}])]},
+        ):
+            with self.subTest(altered=str(altered.get("compilerLocalIntChecks"))[:45]):
+                with self.assertRaises(state.LayoutError):
+                    state.validate_transition(expanded, altered)
+
 
     def test_rejects_duplicate_edits_and_conflicting_owners(self):
         item = fixture()
