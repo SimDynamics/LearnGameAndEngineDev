@@ -2305,6 +2305,7 @@ struct LessonView {
         request.move_assignment_invariant_probe=block(index).move_assignment_invariant_probe;
         request.array_owner_read_probe=block(index).array_owner_read_probe;
         request.array_copy_move_probe=block(index).array_copy_move_probe;
+        request.array_return_take_probe=block(index).array_return_take_probe;
         request.open_battery_probe=block(index).open_battery_probe;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
@@ -4303,7 +4304,9 @@ struct LessonView {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
                     block(index),running_program);
-                const bool independent=(!block(index).array_copy_move_probe||
+                const bool independent=(!block(index).array_return_take_probe||
+                    fresh.array_return_take_probe_correct)&&
+                    (!block(index).array_copy_move_probe||
                     fresh.array_copy_move_probe_correct)&&
                     (!block(index).array_owner_read_probe||
                     fresh.array_owner_read_probe_correct)&&
@@ -4364,6 +4367,12 @@ struct LessonView {
                         "La salida coincide, pero falta acreditar que el constructor y la asignación por movimiento conservan el mismo objeto, no reservan otro entero y mantienen prohibida la copia.",
                         "The output matches, but the independent proof has not verified that the move constructor and assignment preserve the same object, make no new integer allocation and keep copying forbidden.",
                         "La sortie correspond, mais la preuve indépendante doit encore vérifier l'identité de l'objet déplacé, l'absence d'allocation et l'interdiction de la copie.");
+                if(!fresh.array_return_take_probe_correct&&
+                   block(index).array_return_take_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida coincide, pero la prueba independiente aún no acredita que copia_modificada devuelva un array propio sin alterar el origen, ni que tomar_si_cabe compruebe el límite antes de transferir el mismo objeto. Comprueba ambas funciones sin cambiar la clase ni main.",
+                        "The output matches, but independent evidence has not proved that the returned copy owns a separate array without changing its source, or that the bounded transfer checks its limit before moving the same owner.",
+                        "La sortie correspond, mais le test indépendant ne confirme pas la copie distincte ni le contrôle de limite avant le transfert de propriété.");
                 if(!fresh.array_copy_move_probe_correct&&
                    block(index).array_copy_move_probe&&preserved_source)
                     text+='\n'+ui(
@@ -4416,7 +4425,8 @@ struct LessonView {
                    !block(index).independent_copy_assignment_probe&&
                    !block(index).move_assignment_invariant_probe&&
                    !block(index).array_owner_read_probe&&
-                   !block(index).array_copy_move_probe)
+                   !block(index).array_copy_move_probe&&
+                   !block(index).array_return_take_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
