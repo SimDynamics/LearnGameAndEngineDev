@@ -8,6 +8,7 @@ on:
       - scripts/curriculum/test_cpp_array_copy_move.py
       - scripts/curriculum/test_cpp_array_copy_move_core.py
       - scripts/curriculum/test_cpp_array_copy_move_authoring.py
+      - scripts/curriculum/stable_state_layout.py
       - native/core/cpp_array_copy_move_check.hpp
       - native/core/cpp_array_copy_move_check_tests.cpp
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_copiar_y_mover_arrays_sin_desajustar_la_cantidad.json
@@ -33,6 +34,8 @@ jobs:
             python3 -B scripts/curriculum/test_cpp_array_copy_move_core.py \
               --compiler "$compiler"
           done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_array_copy_move_authoring.py -v
 
   windows-msvc:
     name: Genuine U6L11 copy and move with Windows MSVC C++23
@@ -51,3 +54,4 @@ jobs:
         run: |
           python -B scripts\curriculum\test_cpp_array_copy_move.py --compiler cl --windows
           python -B scripts\curriculum\test_cpp_array_copy_move_core.py --compiler cl --windows
+          python -B -m unittest discover -s scripts\curriculum -p test_cpp_array_copy_move_authoring.py -v
