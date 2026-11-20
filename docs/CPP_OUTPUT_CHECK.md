@@ -54,6 +54,88 @@ comprobando antes de conceder el logro. La incorporación de declaraciones
 curriculares U3L6/U3L8 requiere las verificaciones específicas de Work.
 
 
+## Transferencia de propiedad entre dos miembros: U6L5
+
+Para Programación 3, U6L5, el motor admite la declaración optativa
+`compilerIndexedUniqueTransferChecks` en la raíz española de la lección con
+`stateLayout` v2. Se refiere al editor original `block_0021_0002`, con
+un solo archivo C++ y `outputCheck`. Work puede integrar **exactamente**:
+
+```json
+"compilerIndexedUniqueTransferChecks": [
+  {
+    "activity": "block_0021_0002",
+    "signature": "bool Deposito::transferir(int origen, int destino)",
+    "className": "Deposito",
+    "firstMember": "primero_",
+    "secondMember": "segundo_",
+    "transferMethod": "transferir",
+    "putMethod": "poner",
+    "changeMethod": "cambiar",
+    "clearMethod": "vaciar"
+  }
+]
+```
+
+El contrato conserva la función original, sus propietarios
+`std::unique_ptr<int>`, los casos, el programa `main`, las identidades y
+los borradores. Sólo autoriza modificar el cuerpo de `transferir`. La
+primera comprobación visible se acompaña de una compilación privada que
+verifica la identidad del mismo entero, el vaciado del origen, los rechazos
+sin cambios, la destrucción del destino sustituido y la ausencia de
+reservas durante el traslado. Una copia con el mismo valor, un intercambio
+incompleto o una salida fabricada no acreditan ese contrato.
+
+La regresión Windows `native.u6l5_indexed_unique_transfer_state` comprueba
+cargador, estado histórico y recibo independiente. La ejecución
+`scripts/curriculum/test_cpp_indexed_unique_transfer_runtime.py` compila
+y ejecuta dos soluciones equivalentes y cinco contraejemplos con GCC, Clang
+y MSVC disponible en CI. Estas pruebas **no publican** el campo en el JSON.
+
+## Política de movimiento generada: U6L6
+
+Para Programación 3, U6L6, el editor original `block_0018_0002` puede
+recibir `compilerDefaultedMovePolicyChecks` como propiedad raíz de su
+lección española con `stateLayout` v2:
+
+```json
+"compilerDefaultedMovePolicyChecks": [
+  {
+    "activity": "block_0018_0002",
+    "className": "Ficha",
+    "memberName": "dato_",
+    "putMethod": "poner",
+    "changeMethod": "cambiar",
+    "clearMethod": "vaciar"
+  }
+]
+```
+
+La sonda comprueba la política de constructor predeterminado, construcción
+y asignación por movimiento con `= default`, sin convertir los
+propietarios en copiables. También verifica la identidad del
+`unique_ptr<int>`, la limpieza del destino, el origen vacío y los
+rechazos de copia al compilar. La política forma parte de la comprobación
+interna del primer caso, sin pedir casos manuales adicionales. La
+regresión `native.u6l6_defaulted_move_policy_state` verifica el estado
+y los recibos, y `test_cpp_defaulted_move_policy.py` ejecuta
+las variantes C++ con compiladores reales.
+
+## Referencia conjunta de autoría de la ficha 14
+
+El archivo
+[`p3_ownership_authoring.json`](examples/p3_ownership_authoring.json)
+recoge las **14 declaraciones** correspondientes a U6L5–U10L1, una por
+lección. Es una guía de integración de Codex, no una modificación de las
+lecciones. Su prueba
+`test_p3_ownership_authoring.py` aplica cada declaración sólo en memoria
+al JSON auténtico, comprueba los campos permitidos y valida la transición
+del mapa de estado estable sin alterar las respuestas ni el origen. Work
+decide su publicación y verifica las referencias, las variantes correctas
+y las incorrectas antes de retirar la ficha. Las regresiones de Python,
+las sondas privadas o un éxito de stdout por separado **no** acreditan
+la aceptación visual y auditiva de la aplicación instalada.
+
 ## Asignación por copia independiente en una clase
 
 La raíz de una lección española existente con mapa de estado v2 puede declarar
