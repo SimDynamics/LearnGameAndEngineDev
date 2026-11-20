@@ -43,9 +43,59 @@ inline bool identifier(std::string_view name) {
     });
 }
 
+// Only methods directly declared in the selected class are its editable
+// bodies. A nested helper class can have the same virtual signature without
+// defining or replacing the outer owner's method. Track actual C++ brace
+// nesting while ignoring comments, quoted strings and raw string literals.
+inline std::optional<std::size_t> direct_inline_definition(
+        std::string_view scope,std::string_view signature) {
+    namespace scanner=cpp_member_body_detail;
+    std::optional<std::size_t> found;
+    std::size_t depth=0;
+    bool line_leading=true;
+    for(std::size_t at=0;at<scope.size();) {
+        const auto c=scope[at];
+        if(c=='\n'||c=='\r'){line_leading=true;++at;continue;}
+        if(scanner::horizontal_space(c)){++at;continue;}
+        if(c=='/'&&at+1<scope.size()&&scope[at+1]=='/') {
+            const auto end=scope.find_first_of("\r\n",at+2);
+            at=end==scope.npos?scope.size():end;
+            continue;
+        }
+        if(c=='/'&&at+1<scope.size()&&scope[at+1]=='*') {
+            const auto end=scope.find("*/",at+2);
+            if(end==scope.npos)return {};
+            if(scope.substr(at,end+2-at).find_first_of("\r\n")!=scope.npos)
+                line_leading=true;
+            at=end+2;continue;
+        }
+        if((c=='R'&&at+1<scope.size()&&scope[at+1]=='"')||
+           c=='"'||c=='\'') {
+            const auto end=scanner::quoted_end(scope,at);
+            if(!end)return {};
+            at=*end;line_leading=false;continue;
+        }
+        if(depth==0&&line_leading&&scope.substr(at).starts_with(signature)&&
+           scanner::definition_opening(scope,at+signature.size())) {
+            if(found)return {};
+            found=at;
+        }
+        if(c=='{'||(c=='<'&&at+1<scope.size()&&scope[at+1]=='%')) {
+            ++depth;
+            at+=(c=='{'?1:2);
+        }else if(c=='}'||(c=='%'&&at+1<scope.size()&&scope[at+1]=='>')) {
+            if(depth==0)return {};
+            --depth;
+            at+=(c=='}'?1:2);
+        }else ++at;
+        line_leading=false;
+    }
+    return depth==0?found:std::nullopt;
+}
+
 // Inline methods have identical signatures in the two concrete classes.
-// Discover them by their *original owning class*, not by the first matching
-// signature in the file or by a string such as "Pendiente".
+// Discover them by their *direct owning class*, not by a nested helper,
+// a sibling class, or a string such as "Pendiente".
 inline std::optional<CppMemberBodySpan> inline_body(
         std::string_view code,std::string_view class_name,
         std::string_view base_name,std::string_view signature) {
@@ -67,7 +117,7 @@ inline std::optional<CppMemberBodySpan> inline_body(
     // method in a sibling class or a quoted example is not this owner.
     const auto start=class_open->position+class_open->length;
     const auto scope=code.substr(start,*class_end-start);
-    const auto local_at=scanner::definition_start(scope,signature);
+    const auto local_at=direct_inline_definition(scope,signature);
     if(!local_at)return {};
     const auto method_open=scanner::definition_opening(
         code,start+*local_at+signature.size());

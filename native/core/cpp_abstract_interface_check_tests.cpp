@@ -74,6 +74,33 @@ public:
 )lgaed";
     if(inline_body(repeated,"MuestraSimple","Muestra",signature))
         throw std::runtime_error("A repeated real virtual method passed the source gate");
+
+    // A nested helper may use the same virtual signature. Its body cannot
+    // replace the one belonging directly to the enclosing concrete class.
+    auto nested=source;
+    const auto class_declaration=nested.rfind("\nclass MuestraSimple : public Muestra");
+    const auto access=nested.find("public:\n",class_declaration);
+    if(class_declaration==std::string::npos||access==std::string::npos)
+        throw std::runtime_error("Missing class access in nested owner fixture");
+    const auto insertion=access+std::string("public:\n").size();
+    nested.insert(insertion,R"lgaed(
+    class Inner : public Muestra {
+    public:
+        void escribir(std::ostream& salida) const override { salida << "nested"; }
+    };
+)lgaed");
+    const auto direct=inline_body(nested,"MuestraSimple","Muestra",signature);
+    if(!direct||nested.substr(direct->begin,direct->end-direct->begin).find(
+            "salida << example;")==std::string::npos)
+        throw std::runtime_error("A nested virtual override hid the genuine outer method");
+    const auto inner=nested.find(signature,insertion);
+    const auto outer=inner==std::string::npos?std::string::npos:
+        nested.find(signature,inner+signature.size());
+    if(outer==std::string::npos)
+        throw std::runtime_error("Missing outer method in nested source fixture");
+    nested.replace(outer,signature.size(),"void escribir_otro(std::ostream& salida) const");
+    if(inline_body(nested,"MuestraSimple","Muestra",signature))
+        throw std::runtime_error("A nested override impersonated the missing outer method");
 }
 } // namespace
 
