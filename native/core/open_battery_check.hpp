@@ -3,6 +3,7 @@
 #include "core/boolean_battery_check.hpp"
 
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <cstddef>
 #include <optional>
@@ -136,6 +137,61 @@ inline std::pair<bool,int> open_battery_expected(const OpenBatteryCall& c) {
     return {true,c.value<c.lower?c.lower-c.value:
         c.value>c.upper?c.upper-c.value:0};
 }
+namespace open_battery_detail {
+// Locate the student's real global function definition by the existing C++
+// lexer, never by raw text. Formatting, comments and brace digraphs may vary;
+// the parameter types and names retain the published four-argument contract.
+// Exact source offsets ensure every byte outside the original function's
+// *name* remains unchanged in the private, temporary mutation.
+inline std::optional<std::pair<std::size_t,std::size_t>> library_name_span(
+        std::string_view source,std::string_view function) {
+    if(!open_battery_identifier(function)||function=="main"||
+       function.starts_with("lgaed_open_battery_"))return {};
+    const auto scanned=boolean_battery_detail::tokens(source);
+    if(!scanned)return {};
+    const auto& tokens=*scanned;
+    const std::string function_token="id:"+std::string(function);
+    const std::string renamed_token="id:lgaed_open_battery_original_"+std::string(function);
+    const std::array<std::string_view,14> parameters{
+        "op:(", "id:int", "id:valor", "op:,",
+        "id:int", "id:inferior", "op:,",
+        "id:int", "id:superior", "op:,",
+        "id:int", "op:&", "id:ajuste", "op:)"
+    };
+    std::optional<std::pair<std::size_t,std::size_t>> found;
+    std::size_t depth=0;
+    for(std::size_t at=0;at<tokens.size();++at) {
+        const auto& token=tokens[at];
+        if(token.value==renamed_token)return {};
+        if(token.value.starts_with("directive:")&&depth)return {};
+        if(token.value==function_token&&at>0&&
+           at+1<tokens.size()&&tokens[at+1].value=="op:("&&
+           tokens[at-1].value=="id:bool") {
+            if(depth||(at>1&&tokens[at-2].value!="op:;"&&
+               tokens[at-2].value!="op:}"&&tokens[at-2].value!="op:%>"&&
+               !tokens[at-2].value.starts_with("directive:"))||
+               at+parameters.size()+1>=tokens.size())return {};
+            for(std::size_t i=0;i<parameters.size();++i)
+                if(tokens[at+1+i].value!=parameters[i])return {};
+            const auto& after=tokens[at+1+parameters.size()].value;
+            if(after!="op:;") {
+                if(after!="op:{"&&after!="op:<%")return {};
+                if(found)return {};
+                found=std::pair{token.begin,token.end};
+            }
+        }
+        if(token.value=="op:{"||token.value=="op:<%") {
+            if(++depth>4096)return {};
+        }else if(token.value=="op:}"||token.value=="op:%>") {
+            if(!depth)return {};
+            --depth;
+        }
+    }
+    if(depth)return {};
+    return found;
+}
+} // namespace open_battery_detail
+
 inline std::optional<std::string> open_battery_mutated_library(
         std::string_view original,std::string_view function,
         OpenBatteryMutation mutation,
@@ -147,17 +203,14 @@ inline std::optional<std::string> open_battery_mutated_library(
         mutation!=OpenBatteryMutation::corrupt_destination&&
         mutation!=OpenBatteryMutation::corrupt_nonzero_destination)||
        ((mutation==OpenBatteryMutation::baseline)!=!target.has_value()))return {};
-    const std::string declaration="bool "+std::string(function)+
-        "(int valor, int inferior, int superior, int& ajuste) {";
-    const auto position=original.find(declaration);
-    if(position==original.npos||
-       original.find(declaration,position+declaration.size())!=original.npos)return {};
+    const auto location=open_battery_detail::library_name_span(original,function);
+    if(!location)return {};
+    const auto [name_begin,name_end]=*location;
     const std::string renamed="lgaed_open_battery_original_"+std::string(function);
-    if(original.find(renamed)!=original.npos)return {};
     std::string result="#include <charconv>\n#include <iostream>\n#include <limits>\n";
-    result+=original.substr(0,position);
-    result+="bool "+renamed+"(int valor, int inferior, int superior, int& ajuste) {";
-    result+=original.substr(position+declaration.size());
+    result+=original.substr(0,name_begin);
+    result+=renamed;
+    result+=original.substr(name_end);
     result+="\nbool "+std::string(function)+
         "(int valor, int inferior, int superior, int& ajuste) {\n";
     result+="    const int anterior = ajuste;\n";

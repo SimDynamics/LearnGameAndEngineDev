@@ -93,6 +93,56 @@ void generated() {
         std::string(library)+std::string(library),
         "intentar_ajuste",OpenBatteryMutation::baseline),
         "Ambiguous original function definitions passed");
+    // Formatting is not part of the authored function contract. Preserve
+    // quoted signature examples, inline documentation and all original body
+    // bytes, replacing only the real definition name in the private variant.
+    const std::string source_signature=
+        "bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {";
+    auto formatted=std::string(library);
+    const auto at=formatted.find(source_signature);
+    verify(at!=std::string::npos,"The original adjustment signature was lost");
+    const std::string revised_signature=R"cpp(bool /* guide */ intentar_ajuste(
+    int valor, /* lower bound */ int inferior,
+    int superior, int & ajuste
+) <% )cpp";
+    formatted.replace(at,source_signature.size(),revised_signature);
+    // The tutorial's documentation can legitimately quote the original
+    // signature. Neither a comment nor a raw string is a second definition.
+    formatted=std::string(R"cpp(
+/* bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {} */
+[[maybe_unused]] constexpr const char* signature_example =
+    R"memo(bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {})memo";
+)cpp")+formatted;
+    // The source still uses the original closing brace; the opening digraph
+    // is its C++ equivalent, not a change of control flow.
+    const auto formatted_baseline=open_battery_mutated_library(
+        formatted,"intentar_ajuste",OpenBatteryMutation::baseline);
+    verify(formatted_baseline &&
+        formatted_baseline->find("bool /* guide */ lgaed_open_battery_original_intentar_ajuste(")
+            !=std::string::npos &&
+        formatted_baseline->find(") <% ")!=std::string::npos &&
+        formatted_baseline->find("signature_example")!=std::string::npos &&
+        formatted_baseline->find("LGAED_OPEN_BATTERY_CALL:")!=std::string::npos,
+        "A valid multiline signature or quoted sample was rejected");
+    const auto formatted_mutant=open_battery_mutated_library(
+        formatted,"intentar_ajuste",OpenBatteryMutation::corrupt_destination,
+        OpenBatteryCall{3,3,7,59});
+    verify(formatted_mutant &&
+        formatted_mutant->find("ajuste == 0 ? 1 : 0")!=std::string::npos,
+        "The formatted definition lost its independent destination mutation");
+    auto duplicate_formatted=formatted;
+    duplicate_formatted+="\nbool intentar_ajuste(int valor,int inferior,int superior,int& ajuste) { return false; }\n";
+    verify(!open_battery_mutated_library(
+        duplicate_formatted,"intentar_ajuste",OpenBatteryMutation::baseline),
+        "Two genuine definitions with different spacing were accepted");
+    auto bad_type=formatted;
+    const auto param=bad_type.find("int valor, /* lower bound */");
+    verify(param!=std::string::npos,"Parameter mutation fixture missing");
+    bad_type.replace(param,3,"long");
+    verify(!open_battery_mutated_library(
+        bad_type,"intentar_ajuste",OpenBatteryMutation::baseline),
+        "An incompatible parameter type was treated as a formatting edit");
+
 }
 void parsing() {
     const auto witness=open_battery_parse_calls(
