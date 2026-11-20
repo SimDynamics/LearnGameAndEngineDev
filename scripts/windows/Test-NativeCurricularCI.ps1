@@ -63,7 +63,12 @@ $qaSuiteConfig = switch ($Suite) {
                 'native.move_assignment_invariant_state_live',
                 'native.array_owner_read_state_live',
                 'native.array_copy_move_state_live',
-                'native.array_return_take_state_live'
+                'native.array_return_take_state_live',
+                'native.polymorphic_destruction_state_live',
+                'native.virtual_lifetime_state_live',
+                'native.derived_preparation_state_live',
+                'native.abstract_interface_state_live',
+                'native.interface_collection_state_live'
             )
         }
     }
