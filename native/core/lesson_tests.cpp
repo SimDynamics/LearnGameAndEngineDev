@@ -18,6 +18,7 @@
 #include <fstream>
 #include <iostream>
 #include <numeric>
+#include <set>
 #include <stdexcept>
 
 namespace {
@@ -970,8 +971,15 @@ void retirement_contract_tests(const Lesson& first) {
     check(useful == 6,"U1 retirement lost an independent useful compiler activity");
     const auto final = lgaed::windows::load_lesson(first.source_path.parent_path()/"lesson_resolver_probar_y_recuperar.json");
     for (const auto& page : final.pages) for (const auto& block : page.blocks) if (block.type == BlockType::cpp_compiler) ++useful;
-    check(useful == 8,"The eight useful U1 compiler practices were not preserved");
-    std::cout << "Retired U1 compiler contracts, original slots, active bookmarks and eight useful editors: PASS\n";
+    const bool revised=stable_block_position(final,"p1u1l5_un_salto_en_el_codigo").has_value();
+    const bool added_editor=stable_block_position(final,"p1u1l5_escribir_linea_intermedia").has_value();
+    check(revised==added_editor,
+        "The U1L5 new edition omitted or orphaned its intermediate-line compiler");
+    check(useful == (revised?9u:8u),
+        "U1 retirement lost a historical editor or the newly authored intermediate-line practice");
+    std::cout << "Retired U1 compiler contracts, original slots and active bookmarks: "
+              << useful << " useful editors including "<<(revised?1:0)
+              <<" edition addition(s): PASS\n";
 }
 void integrated_retirement_contract_tests() {
     using namespace winrt::Windows::Data::Json;
@@ -991,6 +999,9 @@ void integrated_retirement_contract_tests() {
         {"lesson_fuente_compilacion_y_diagnostico.json",{"ejecucion_original_fuente_compilacion_y_diagnostico_consigna","ejecucion_original_fuente_compilacion_y_diagnostico_editor"},{},{}}
     }};
     std::size_t useful=0;
+    // Each editor must keep separate progress AND drafts. Checking only the
+    // response owner would miss a collision that overwrites an earlier source.
+    std::set<std::string> active_response_keys,active_draft_keys;
     for(const auto& plan:plans){
         const auto before=lgaed::test::load_pre_retirement_lesson(plan.filename);
         const auto current=lgaed::windows::load_lesson(folder/plan.filename);
@@ -998,13 +1009,19 @@ void integrated_retirement_contract_tests() {
         expected_ids.insert(plan.reading_ids.begin(),plan.reading_ids.end());
         for(const auto& block:current.retired_blocks)actual_ids.insert(block.stable_id);
         for(const auto& record:current.state_layout.retired)layout_ids.insert(record.id);
-        check(current.compiler_puzzles_required&&current.retired_blocks.size()==expected_ids.size()
-            &&current.state_layout.retired.size()==expected_ids.size()&&actual_ids==expected_ids&&layout_ids==expected_ids
-            &&current.state_layout.retirement_history.size()==(plan.reading_ids.empty()?1u:2u),
-            "The integrated U1 asset changed mandatory objectives, its exact archived identities or retirement batches");
+        // Later course editions may retire more original exercises. Keep the
+        // first compiler/reading batches and all original owners immutable,
+        // while allowing independently authenticated later retirement batches.
+        const auto original_batches=plan.reading_ids.empty()?1u:2u;
+        check(current.compiler_puzzles_required&&current.retired_blocks.size()>=expected_ids.size()
+            &&current.state_layout.retired.size()==current.retired_blocks.size()
+            &&actual_ids==layout_ids&&std::includes(actual_ids.begin(),actual_ids.end(),
+                expected_ids.begin(),expected_ids.end())
+            &&current.state_layout.retirement_history.size()>=original_batches,
+            "The integrated U1 asset lost mandatory objectives, archived identities or original retirement batches");
         check(current.state_layout.retirement_history.front().retired==std::vector<std::string>(plan.compiler_ids.begin(),plan.compiler_ids.end())
-            &&(plan.reading_ids.empty()||current.state_layout.retirement_history.back().retired==plan.reading_ids),
-            "Integrated retirement merged or rewrote the published compiler and reading archive batches");
+            &&(plan.reading_ids.empty()||current.state_layout.retirement_history[1].retired==plan.reading_ids),
+            "A later edition rewrote the original compiler or reading retirement batch");
         check(current.state_layout.lineage==before.state_layout.lineage&&current.state_layout.legacy_lineage==before.state_layout.legacy_lineage
             &&current.state_layout.signatures==before.state_layout.signatures,
             "Integrated retirement changed historical state ownership");
@@ -1019,46 +1036,113 @@ void integrated_retirement_contract_tests() {
         for(const auto& identity:expected_ids)check(retired_block(current,identity)&&!stable_block_position(current,identity)
             &&active_block_successor(current,identity).has_value(),"An integrated retired identity remained active or lost its successor");
         for(const auto& block:current.retired_blocks){
-            const auto origin=stable_block_position(before,block.stable_id);check(origin.has_value(),"Integrated retirement invented an archived identity");
+            const auto origin=stable_block_position(before,block.stable_id);
+            check(origin.has_value(),"An integrated U1 retirement invented a historical owner");
             const auto& old=before.pages[origin->page].blocks[origin->block];
-            check(block.type==old.type&&JsonObject::Parse(winrt::to_hstring(block.raw_json)).Stringify()==JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify()
-                &&exercise_key(current,block)==exercise_key(before,old)&&draft_key("programming",current,block)==draft_key("programming",before,old),
-                "An integrated archived compiler or reading reference lost its complete published source or historical slots");
+            check(block.type==old.type&&exercise_key(current,block)==exercise_key(before,old)
+                &&draft_key("programming",current,block)==draft_key("programming",before,old),
+                "A retired U1 owner changed its original type, response or draft slot");
+            if(expected_ids.contains(block.stable_id)){
+                check(JsonObject::Parse(winrt::to_hstring(block.raw_json)).Stringify()==
+                    JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify(),
+                    "An original compiler/reading retirement lost its independently pinned published source");
+            }else{
+                check(std::ranges::any_of(current.state_layout.retirement_history.begin()+original_batches,
+                    current.state_layout.retirement_history.end(),[&](const auto& history){
+                        return std::ranges::find(history.retired,block.stable_id)!=history.retired.end();
+                    }),"A later edition archived a U1 owner without an authenticated retirement batch");
+            }
         }
         check(current.state_layout.order_refinements.size()==(plan.refined_order.empty()?0u:1u),
             "Integrated retirement lost or added a grouped ordering provenance record");
         if(!plan.refined_order.empty()){
             const auto position=stable_block_position(current,plan.refined_order),origin=stable_block_position(before,plan.refined_order);
-            check(position&&origin,"An integrated refined ordering lost its original activity identity");
-            const auto& block=current.pages[position->page].blocks[position->block];
+            check(origin.has_value(),"An integrated ordering lost its original activity identity");
             const auto& old=before.pages[origin->page].blocks[origin->block];
-            check(block.order_refinement&&block.order_refinement->id==plan.refined_order
-                &&block.order_refinement->original_fragments==old.fragments&&block.order_refinement->original_correct_order==old.correct_order
-                &&JsonObject::Parse(winrt::to_hstring(block.order_refinement->raw_json)).Stringify()==JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify(),
-                "Integrated line refinement changed its independently pinned original grouped ordering");
+            const auto& refinement=current.state_layout.order_refinements.front();
+            check(refinement.id==plan.refined_order&&refinement.original_fragments==old.fragments&&
+                refinement.original_correct_order==old.correct_order&&
+                JsonObject::Parse(winrt::to_hstring(refinement.raw_json)).Stringify()==
+                    JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify(),
+                "An integrated ordering lost its independently pinned original grouped order");
+            // A new course edition may retire the revised activity. Its last
+            // published representation must still match the reading snapshot.
+            const Block* represented=nullptr;
+            if(position)represented=&current.pages[position->page].blocks[position->block];
+            else{
+                const auto retired=std::ranges::find(current.retired_blocks,plan.refined_order,
+                    &Block::stable_id);
+                if(retired!=current.retired_blocks.end())represented=&*retired;
+            }
+            check(represented&&represented->type==BlockType::order_code,
+                "A subsequent edition lost the revised ordering in both active and archived content");
+            const auto& reading_snapshot=current.state_layout.retirement_history[1];
             bool preserved=false;
-            for(const auto& page:current.state_layout.retirement_history.back().pages)for(const auto& archived_order:page.blocks)
-                if(archived_order.stable_id==plan.refined_order)preserved=order_representation_frame(archived_order)==order_representation_frame(block);
-            check(preserved,"The later reading archive lost the already-refined ordering representation");
+            for(const auto& page:reading_snapshot.pages)for(const auto& archived_order:page.blocks)
+                if(archived_order.stable_id==plan.refined_order)
+                    preserved=order_representation_frame(archived_order)==order_representation_frame(*represented);
+            check(preserved,"A subsequent course edition changed the previously verified grouped-order representation");
         }
         for(const auto& page:current.pages)for(const auto& block:page.blocks){
-            const auto origin=stable_block_position(before,block.stable_id);check(origin.has_value(),"Integrated retirement invented an active identity");
+            const auto origin=stable_block_position(before,block.stable_id);
+            if(!origin){
+                const auto addition=std::ranges::find_if(current.state_layout.additions,[&](const auto& record){
+                    return record.id==block.stable_id;
+                });
+                check(addition!=current.state_layout.additions.end(),
+                    "A current edition activity has neither an original identity nor an authenticated addition");
+                if(block.type==BlockType::cpp_compiler){
+                    ++useful;
+                    check(block.output_check.has_value(),"An added U1 compiler has no own fresh execution objective");
+                    check(active_response_keys.insert(exercise_key(current,block)).second
+                          &&active_draft_keys.insert(draft_key("programming",current,block)).second,
+                        "An added U1 editor reuses a response or draft owned by an existing editor");
+                }
+                continue;
+            }
             const auto& old=before.pages[origin->page].blocks[origin->block];
             check(exercise_key(current,block)==exercise_key(before,old)&&draft_key("programming",current,block)==draft_key("programming",before,old),
                 "An integrated active block lost its historical response or draft slot");
             if(block.type==BlockType::cpp_compiler){++useful;check(block.output_check.has_value()
                 &&reference_objective_frame(current,block)==reference_objective_frame(before,old),
-                "A useful integrated compiler changed its program, answer or fresh-execution objective");}
+                "A useful integrated compiler changed its program, answer or fresh-execution objective");
+                check(active_response_keys.insert(exercise_key(current,block)).second
+                      &&active_draft_keys.insert(draft_key("programming",current,block)).second,
+                    "A retained U1 editor shares another editor's answer or saved source");
+            }
         }
         for(const auto& relation:current.activity_after)for(const auto& required:relation.prerequisites)
             check(!retired_block(current,required),"A current useful activity still requires a retired execution");
     }
     const auto last=lgaed::windows::load_lesson(folder/"lesson_resolver_probar_y_recuperar.json");
-    check(last.compiler_puzzles_required,"The two final useful U1 compiler objectives stopped being mandatory");
+    check(last.compiler_puzzles_required,"The U1L5 useful compiler objectives stopped being mandatory");
+    const bool revised=stable_block_position(last,"p1u1l5_un_salto_en_el_codigo").has_value();
+    const auto added=stable_block_position(last,"p1u1l5_escribir_linea_intermedia");
+    check(revised==added.has_value(),"A revised U1L5 omitted its new editor or an older edition falsely acquired it");
+    std::size_t final_editors=0;
     for(const auto& page:last.pages)for(const auto& block:page.blocks)if(block.type==BlockType::cpp_compiler){
-        ++useful;check(block.output_check.has_value(),"A final useful U1 compiler lost its objective");}
-    check(useful==8,"Current U1 no longer contains exactly eight useful mandatory compilers");
-    std::cout<<"Integrated U1 assets: exact compiler/reading retirement batches and d1933ed source, preserved ordering provenance/slots, eight mandatory useful objectives and no repeated retirement: PASS\n";
+        ++final_editors;++useful;
+        check(block.output_check.has_value(),"A final useful U1 compiler lost its objective");
+        check(active_response_keys.insert(exercise_key(last,block)).second
+              &&active_draft_keys.insert(draft_key("programming",last,block)).second,
+            "An active U1L5 editor shares an existing response or draft owner");
+    }
+    check(active_response_keys.size()==useful&&active_draft_keys.size()==useful,
+        "Useful U1 editors do not have independently addressable achievements and drafts");
+    check(final_editors==(revised?3u:2u)&&useful==(revised?9u:8u),
+        "Current U1 lost historical useful editors or added an unaccounted compiler");
+    if(added){
+        const auto& block=last.pages[added->page].blocks[added->block];
+        check(added->page==2&&block.type==BlockType::cpp_compiler&&
+            block.initial_code.find("std::cout << \"Puesto\\n\";")!=std::string::npos&&
+            block.initial_code.find("std::cout << \"Fin\";")!=std::string::npos&&
+            block.output_check&&block.output_check->cases.size()==1&&
+            block.output_check->cases.front().outputs==std::vector<std::string>{"Puesto\nMesa B\nFin"},
+            "The new intermediate-line objective no longer checks the three independently ordered lines");
+    }
+    std::cout<<"Integrated U1 assets: exact historical retirements, original slots and "
+             <<useful<<" distinct mandatory compiler objectives (including "<<(revised?1:0)
+             <<" authored addition), no repeated retirement: PASS\n";
 }
 void rejection_semantic_contract_tests() {
     using namespace lgaed::curriculum;
@@ -1624,8 +1708,78 @@ void inline_feedback_optional_contract_tests() {
     }
     std::cout<<"PASS optional inline feedback rejects only present Kotlin-blank fields before evaluation\n";
 }
+void pinned_main_u1_editor_contracts() {
+    // Read original Work assets only from the authenticated Git-object fixture.
+    std::array<wchar_t,32768> executable{};
+    const auto length=GetModuleFileNameW(nullptr,executable.data(),
+        static_cast<DWORD>(executable.size()));
+    check(length&&length<executable.size(),
+        "Cannot locate pinned Work/main U1 edition fixtures");
+    const auto folder=std::filesystem::path(std::wstring_view(executable.data(),length))
+        .parent_path()/"test-fixtures/u1-main-befa8bf9";
+    struct Plan {const char* filename;std::set<std::string> ids;};
+    const std::array<Plan,4> plans{{
+        {"lesson_primer_programa_y_salida.json",
+            {"p1u1l2_construir_salida","p1u1l2_reparar_salida"}},
+        {"lesson_texto_secuencia_y_formato.json",
+            {"p1u1l3_construir_informe","p1u1l3_reparar_informe"}},
+        {"lesson_fuente_compilacion_y_diagnostico.json",
+            {"p1u1l4_reparar_nombre_editor","p1u1l4_reparar_orden_editor"}},
+        {"lesson_resolver_probar_y_recuperar.json",
+            {"p1u1l5_escribir_linea_intermedia","block_0003_0002","block_0005_0006"}}
+    }};
+    std::set<std::string> response_owners,draft_owners;
+    std::size_t count=0;
+    for(const auto& plan:plans){
+        const auto lesson=lgaed::windows::load_lesson(folder/plan.filename);
+        const auto catalog=lgaed::windows::load_lesson_progress_metadata(folder/plan.filename);
+        check(lesson.compiler_puzzles_required&&lesson.pages.size()==catalog.pages.size(),
+            "A pinned main lesson lacks its mandatory compiler or catalog page");
+        std::set<std::string> found;
+        for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
+            if(block.type!=lgaed::curriculum::BlockType::cpp_compiler)continue;
+            check(plan.ids.contains(block.stable_id)&&found.insert(block.stable_id).second,
+                "A Work/main lesson has a duplicate, missing or unaccounted editor");
+            const auto projected=lgaed::curriculum::stable_block_position(catalog,block.stable_id);
+            check(projected&&catalog.pages[projected->page].blocks[projected->block].type==lgaed::curriculum::BlockType::cpp_compiler,
+                "Catalog metadata dropped the pinned main editor");
+            check(block.output_check&&block.output_check->cases.size()>=1,
+                "The current main editor has no distinct first-case output goal");
+            check(response_owners.insert(lgaed::curriculum::exercise_key(lesson,block)).second&&
+                draft_owners.insert(lgaed::curriculum::draft_key("programming",lesson,block)).second,
+                "Two current main editors share a saved response or C++ draft");
+            ++count;
+        }
+        check(found==plan.ids,"The main lesson lost an independently named editor");
+    }
+    check(count==9&&response_owners.size()==9&&draft_owners.size()==9,
+        "The pinned Work/main U1 edition does not contain nine independent editors");
+    const auto last=lgaed::windows::load_lesson(folder/"lesson_resolver_probar_y_recuperar.json");
+    const auto position=lgaed::curriculum::stable_block_position(last,"p1u1l5_escribir_linea_intermedia");
+    check(position&&position->page==2,"The ninth main editor moved away from its authenticated address");
+    const auto& compiler=last.pages[position->page].blocks[position->block];
+    check(compiler.initial_code.find("std::cout << \"Puesto\\n\";")!=std::string::npos&&
+        compiler.initial_code.find("std::cout << \"Fin\";")!=std::string::npos&&
+        compiler.output_check->cases.front().outputs==std::vector<std::string>{"Puesto\nMesa B\nFin"},
+        "The ninth editor lost its two-line start or three-line acceptance goal");
+    std::cout<<"PASS pinned Work/main befa8bf9: nine U1 editors, independent drafts, "
+             <<"separate objective receipts, catalog projection and exact ninth goal\n";
+}
 int main(int argc,char** argv) {
     try {
+        if(argc==2&&std::string_view(argv[1])=="--u1-main-editor-contracts"){
+            pinned_main_u1_editor_contracts();return 0;
+        }
+        if(argc==2&&std::string_view(argv[1])=="--u1-editor-contracts"){
+            // Run the published U1 identity and draft contracts without the
+            // unrelated historical/editorial fixtures used by the full suite.
+            // Codex still has eight until the new Work U1L5 is synchronized.
+            const auto first=lgaed::test::load_pre_retirement_lesson(
+                "lesson_primer_programa_y_salida.json");
+            retirement_contract_tests(first);
+            integrated_retirement_contract_tests();
+            return 0;
+        }
         if(argc==2&&std::string_view(argv[1])=="--compiler-recheck"){
             compiler_recheck_contract();return 0;
         }

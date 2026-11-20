@@ -136,6 +136,11 @@ add_library(lgaed_platform_windows STATIC
     native/platform/windows/cpp_project_history.cpp
     native/platform/windows/cpp_runner.cpp
     native/platform/windows/compiler_completion.cpp)
+# The curricular loader is a large C++23 translation unit. Without /bigobj,
+# MSVC can exhaust the classic COFF section limit (C1128) in Debug builds.
+# Scope the flag to this source, not the whole project or student programs.
+set_source_files_properties(native/platform/windows/content_loader.cpp
+    PROPERTIES COMPILE_OPTIONS "/bigobj")
 target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
 add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
@@ -411,6 +416,22 @@ function(lgaed_add_catalog_history_fixtures)
         COMMENT "Verifying immutable pre-retirement U1 test fixtures from local d1933ed"
         VERBATIM)
     add_custom_target(lgaed_retirement_fixtures DEPENDS ${LGAED_RETIREMENT_FIXTURES})
+    # Read-only fixture of the latest Work/main edition at its pinned commit.
+    # No published curriculum or profile is modified or silently synchronized.
+    set(LGAED_MAIN_U1_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u1-main-befa8bf9")
+    set(LGAED_MAIN_U1_FILES
+        "${LGAED_MAIN_U1_DIR}/lesson_primer_programa_y_salida.json"
+        "${LGAED_MAIN_U1_DIR}/lesson_texto_secuencia_y_formato.json"
+        "${LGAED_MAIN_U1_DIR}/lesson_fuente_compilacion_y_diagnostico.json"
+        "${LGAED_MAIN_U1_DIR}/lesson_resolver_probar_y_recuperar.json")
+    add_custom_command(OUTPUT ${LGAED_MAIN_U1_FILES}
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/u1_main_edition_fixture_source.py"
+            --output-dir "${LGAED_MAIN_U1_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u1_main_edition_fixture_source.py"
+        COMMENT "Verify immutable U1 edition at Work/main befa8bf9"
+        VERBATIM)
+    add_custom_target(lgaed_main_u1_fixtures DEPENDS ${LGAED_MAIN_U1_FILES})
     set(LGAED_DIAGNOSTIC_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/diagnostics-7862f10")
     set(LGAED_DIAGNOSTIC_FIXTURES
         "${LGAED_DIAGNOSTIC_FIXTURE_DIR}/lesson_consultas_const_y_objetos_constantes.json"
@@ -708,11 +729,30 @@ if(LGAED_READER_BUILD_QA_ONLY)
     add_executable(lgaed_lesson_view_tests
         native/presentation/windows/lesson_view_tests.cpp)
     target_link_libraries(lgaed_lesson_view_tests PRIVATE lgaed_curricular_windows)
-    add_dependencies(lgaed_lesson_view_tests lgaed_retirement_fixtures)
+    add_dependencies(lgaed_lesson_view_tests lgaed_retirement_fixtures lgaed_main_u1_fixtures)
+    # The core U1 tests verify that every active editor has independent
+    # response and draft storage, including Work's new edition additions.
+    add_executable(lgaed_lesson_tests native/core/lesson_tests.cpp)
+    target_link_libraries(lgaed_lesson_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_lesson_tests lgaed_retirement_fixtures lgaed_main_u1_fixtures)
+    add_test(NAME native.u1_editor_contracts COMMAND lgaed_lesson_tests --u1-editor-contracts)
+    set_tests_properties(native.u1_editor_contracts PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+    add_test(NAME native.u1_main_editor_contracts
+        COMMAND lgaed_lesson_tests --u1-main-editor-contracts)
+    set_tests_properties(native.u1_main_editor_contracts PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     add_test(NAME native.lesson_scroll_render COMMAND lgaed_lesson_view_tests --scroll-repaint)
     add_test(NAME native.lesson_menu COMMAND lgaed_lesson_view_tests --lesson-menu)
+    add_test(NAME native.lesson_optional_order_help
+        COMMAND lgaed_lesson_view_tests --order-help)
     set_tests_properties(native.lesson_menu native.lesson_scroll_render
-        PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
+        native.lesson_optional_order_help PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
+    # Retain every original compiler and activate the ninth on Work's edition.
+    add_test(NAME native.u1_editor_edition
+        COMMAND lgaed_lesson_view_tests --u1-compiler-edition)
+    set_tests_properties(native.u1_editor_edition PROPERTIES TIMEOUT 480 RUN_SERIAL TRUE)
+    add_test(NAME native.u1_main_editor_execution
+        COMMAND lgaed_lesson_view_tests --u1-main-compiler-edition)
+    set_tests_properties(native.u1_main_editor_execution PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     lgaed_add_catalog_test()
     lgaed_add_course_edition_tests()
     lgaed_add_general_choice_editorial_tests()
@@ -2118,6 +2158,8 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_lesson_tests lgaed_u12_composed_output_fixtures)
     add_dependencies(lgaed_lesson_tests lgaed_u12_composed_output_current_fixtures)
     add_dependencies(lgaed_lesson_tests lgaed_u12_composed_feedback_fixtures)
+    add_test(NAME native.u1_editor_contracts COMMAND lgaed_lesson_tests --u1-editor-contracts)
+    set_tests_properties(native.u1_editor_contracts PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     add_test(NAME native.u12_composed_feedback_contract COMMAND lgaed_lesson_tests --u12-composed-feedback
         "${LGAED_U12_COMPOSED_FEEDBACK_DIR}/before.json" "${LGAED_U12_COMPOSED_FEEDBACK_DIR}/after.json")
     set_tests_properties(native.u12_composed_feedback_contract PROPERTIES TIMEOUT 60)
@@ -2262,6 +2304,12 @@ if(BUILD_TESTING)
     set_tests_properties(native.lesson_navigation_geometry PROPERTIES TIMEOUT 180)
     add_test(NAME native.compiler_puzzles COMMAND lgaed_lesson_view_tests --compiler-puzzles)
     set_tests_properties(native.compiler_puzzles PROPERTIES TIMEOUT 150)
+    add_test(NAME native.u1_editor_edition
+        COMMAND lgaed_lesson_view_tests --u1-compiler-edition)
+    set_tests_properties(native.u1_editor_edition PROPERTIES TIMEOUT 480 RUN_SERIAL TRUE)
+    add_test(NAME native.lesson_optional_order_help
+        COMMAND lgaed_lesson_view_tests --order-help)
+    set_tests_properties(native.lesson_optional_order_help PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
     add_test(NAME native.stderr_objective COMMAND lgaed_lesson_view_tests --stderr-objective)
     set_tests_properties(native.stderr_objective PROPERTIES TIMEOUT 90)
     add_test(NAME native.lesson_menu COMMAND lgaed_lesson_view_tests --lesson-menu)

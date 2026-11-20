@@ -3,13 +3,20 @@ from copy import deepcopy
 from importlib import util
 import json
 from pathlib import Path
+import sys
 import unittest
 
 from test_text_semantics import descriptor, field, units
 from test_worker import Worker
 
 ROOT = Path(__file__).resolve().parents[3]
-spec = util.spec_from_file_location("visible_semantic_layout", ROOT / "scripts/curriculum/stable_state_layout.py")
+CURRICULUM = ROOT / "scripts" / "curriculum"
+# stable_state_layout imports sibling validators (including identifier-rename
+# and source-format guards) by module name. Make that source directory visible
+# when this test is launched independently from a CTest build directory.
+if str(CURRICULUM) not in sys.path:
+    sys.path.insert(0, str(CURRICULUM))
+spec = util.spec_from_file_location("visible_semantic_layout", CURRICULUM / "stable_state_layout.py")
 layout = util.module_from_spec(spec)
 spec.loader.exec_module(layout)
 
