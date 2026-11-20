@@ -760,7 +760,8 @@ std::string abstract_interface_fingerprint(const CppRunRequest& request) {
        request.array_copy_move_probe||request.array_return_take_probe||
        request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
        request.derived_preparation_probe||request.interface_collection_probe||
-       request.polymorphic_clone_probe||request.named_rule_probe||
+       request.polymorphic_clone_probe||request.dual_interface_probe||
+       request.named_rule_probe||
        request.boolean_battery_probe||request.open_battery_probe||
        request.reduction_probe||request.integer_battery_probe||
        request.adjustment_project_probe||request.rejection_probe||
@@ -796,6 +797,7 @@ std::string interface_collection_fingerprint(const CppRunRequest& request) {
        request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
        request.cmake||!request.project_files.empty()||!request.source_files.empty()||
        request.abstract_interface_probe||request.polymorphic_clone_probe||
+       request.dual_interface_probe||
        request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
        request.independent_copy_assignment_probe||
        request.move_assignment_invariant_probe||request.array_owner_read_probe||
@@ -839,7 +841,7 @@ std::string polymorphic_clone_fingerprint(const CppRunRequest& request) {
        request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
        request.cmake||!request.project_files.empty()||!request.source_files.empty()||
        request.abstract_interface_probe||request.interface_collection_probe||
-       request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+       request.dual_interface_probe||request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
        request.independent_copy_assignment_probe||
        request.move_assignment_invariant_probe||request.array_owner_read_probe||
        request.array_copy_move_probe||request.array_return_take_probe||
@@ -868,6 +870,49 @@ std::string polymorphic_clone_fingerprint(const CppRunRequest& request) {
         field(spec.number_method)+field(spec.change_method)+
         field(spec.write_method)+field(spec.code_method)+
         field(spec.source_parameter)+field(spec.stream_parameter)+
+        field(state::sha256(*driver))+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes)));
+}
+
+std::string dual_interface_fingerprint(const CppRunRequest& request) {
+    if(!request.dual_interface_probe||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+       request.cmake||!request.project_files.empty()||!request.source_files.empty()||
+       request.abstract_interface_probe||request.interface_collection_probe||
+       request.polymorphic_clone_probe||
+       request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+       request.independent_copy_assignment_probe||
+       request.move_assignment_invariant_probe||request.array_owner_read_probe||
+       request.array_copy_move_probe||request.array_return_take_probe||
+       request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
+       request.derived_preparation_probe||request.named_rule_probe||
+       request.boolean_battery_probe||request.open_battery_probe||
+       request.reduction_probe||request.integer_battery_probe||
+       request.adjustment_project_probe||request.rejection_probe||
+       request.observation_probe||request.assertion_mode||
+       request.capture_cmake_graph||request.cmake_graph_check)return {};
+    const auto& spec=*request.dual_interface_probe;
+    const auto driver=curriculum::cpp_dual_interface_private_driver(
+        spec,request.source_utf8);
+    if(!driver)return {};
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    return state::sha256(std::string("windows-dual-interface-v1/")+
+        field(std::to_string(request.request_id))+
+        field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+
+        field(request.project_key)+field(spec.original_source)+
+        field(spec.value_interface)+field(spec.report_interface)+
+        field(spec.concrete_class)+field(spec.value_method)+
+        field(spec.write_method)+field(spec.change_method)+
+        field(spec.stream_parameter)+field(spec.change_parameter)+
+        field(spec.code_member)+field(spec.value_member)+
+        field(spec.constructor_code_parameter)+
+        field(spec.constructor_value_parameter)+field(spec.report_separator)+
         field(state::sha256(*driver))+
         field(std::to_string(request.compile_timeout.count()))+
         field(std::to_string(request.execution_timeout.count()))+
@@ -3798,6 +3843,23 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                     curriculum::cpp_polymorphic_clone_completion_marker;
         }
     }
+    if(request.dual_interface_probe) {
+        const auto frame=dual_interface_fingerprint(request);
+        fresh.dual_interface_request_fingerprint=frame;
+        const auto driver=curriculum::cpp_dual_interface_private_driver(
+            *request.dual_interface_probe,request.source_utf8);
+        if(!frame.empty()&&driver&&result.dual_interface_evidence) {
+            const auto& proof=*result.dual_interface_evidence;
+            fresh.dual_interface_probe_correct=
+                proof.driver_sha256==state::sha256(*driver)&&
+                proof.program_sha256==state::sha256(request.source_utf8)&&
+                proof.request_fingerprint==frame&&
+                proof.compilation.succeeded()&&proof.execution.succeeded()&&
+                proof.execution.stdout_bytes.empty()&&
+                proof.execution.stderr_bytes==
+                    curriculum::cpp_dual_interface_completion_marker;
+        }
+    }
     if(request.derived_preparation_probe) {
         const auto frame=derived_preparation_fingerprint(request);
         fresh.derived_preparation_request_fingerprint=frame;
@@ -4319,6 +4381,29 @@ void complete_polymorphic_clone_probe(const CppRunRequest& request,
     const auto proof=run_cpp(private_request,stop);
     if(!proof.error_utf8.empty()||stop.stop_requested())return;
     result.polymorphic_clone_evidence=CppPolymorphicCloneEvidence{
+        state::sha256(*driver),state::sha256(request.source_utf8),frame,
+        proof.compilation,proof.execution};
+}
+
+void complete_dual_interface_probe(const CppRunRequest& request,
+        CppRunResult& result,std::stop_token stop) {
+    if(!request.dual_interface_probe||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto frame=dual_interface_fingerprint(request);
+    if(frame.empty())return;
+    const auto driver=curriculum::cpp_dual_interface_private_driver(
+        *request.dual_interface_probe,request.source_utf8);
+    if(!driver)return;
+    auto private_request=request;
+    private_request.dual_interface_probe.reset();
+    private_request.request_id=~request.request_id;
+    private_request.project_key+="/independent-dual-interface-v1";
+    private_request.source_utf8=*driver;
+    private_request.stdin_utf8.clear();
+    const auto proof=run_cpp(private_request,stop);
+    if(!proof.error_utf8.empty()||stop.stop_requested())return;
+    result.dual_interface_evidence=CppDualInterfaceEvidence{
         state::sha256(*driver),state::sha256(request.source_utf8),frame,
         proof.compilation,proof.execution};
 }
@@ -5459,6 +5544,11 @@ std::string cpp_polymorphic_clone_request_fingerprint(
     return polymorphic_clone_fingerprint(request);
 }
 
+std::string cpp_dual_interface_request_fingerprint(
+        const CppRunRequest& request) {
+    return dual_interface_fingerprint(request);
+}
+
 std::string cpp_indexed_unique_transfer_request_fingerprint(
         const CppRunRequest& request) {
     return indexed_unique_transfer_fingerprint(request);
@@ -5568,7 +5658,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             request.polymorphic_destruction_probe||
             request.virtual_lifetime_probe||request.derived_preparation_probe||
             request.abstract_interface_probe||request.interface_collection_probe||
-            request.polymorphic_clone_probe;
+            request.polymorphic_clone_probe||request.dual_interface_probe;
         const auto private_environment=has_private_probe
             ?compiler_environment():std::vector<wchar_t>{};
         const auto fixed_environment=has_private_probe?&private_environment:nullptr;
@@ -5607,6 +5697,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         complete_abstract_interface_probe(request,result,stop);
         complete_interface_collection_probe(request,result,stop);
         complete_polymorphic_clone_probe(request,result,stop);
+        complete_dual_interface_probe(request,result,stop);
         complete_named_rule_battery_single(request,result,compiler,private_environment,
             initial_toolchain,stop);
         complete_rejection_stream_probe(request,result,stop);
