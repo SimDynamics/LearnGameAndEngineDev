@@ -17,6 +17,7 @@
 #include "core/cpp_virtual_lifetime_dispatch_check.hpp"
 #include "core/cpp_derived_preparation_check.hpp"
 #include "core/cpp_abstract_interface_check.hpp"
+#include "core/cpp_interface_collection_check.hpp"
 #include "core/open_battery_check.hpp"
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
@@ -329,6 +330,7 @@ struct Block {
     std::optional<CppDerivedPreparationPolicy> derived_preparation_probe;
     // Typed abstract-interface/factory/consumer contract with four editable bodies.
     std::optional<CppAbstractInterfacePolicy> abstract_interface_probe;
+    std::optional<CppInterfaceCollectionPolicy> interface_collection_probe;
     // The root declares this open CMake battery without changing its
     // previously published block or saved student draft identity.
     std::optional<OpenBatteryProbeSpec> open_battery_probe;
@@ -583,6 +585,8 @@ struct FreshExecution {
     std::string derived_preparation_request_fingerprint;
     bool abstract_interface_probe_correct = false;
     std::string abstract_interface_request_fingerprint;
+    bool interface_collection_probe_correct = false;
+    std::string interface_collection_request_fingerprint;
     bool open_battery_probe_correct = false;
     bool cmake_graph_correct = false;
     bool assertion_abort_verified = false;
