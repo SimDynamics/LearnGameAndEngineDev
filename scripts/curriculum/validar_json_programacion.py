@@ -1515,16 +1515,46 @@ def preserves_general_choice_option_revision(relative, pn, bn, old, current, *,
                 or _state_layout._general_choice_revision(previous_document, identity) is not None):
             return False
         archive = _state_layout._general_choice_revision(current_document, identity)
-        if (type(archive) is not dict or archive.get("block") != old
+        if (type(archive) is not dict
                 or type(archive.get("optionIndex")) is not int
                 or type(archive.get("replacement")) is not str):
+            return False
+        # A question/explanation may have been authenticated before the choice.
+        # The archived predecessor cannot include any other changed contract.
+        if (archive.get("block") != old and not
+                _state_layout.ordinary_editorial_fields(old, archive.get("block"))):
             return False
         index = archive["optionIndex"]
         if type(old.get("options")) is not list or index not in range(len(old["options"])):
             return False
         expected = copy.deepcopy(old)
         expected["options"][index] = archive["replacement"]
-        return current == expected
+        if current == expected:
+            return True
+        # The publication may skip an intermediate commit: the author first
+        # corrected this option, then refined the SAME owner's prose (or vice
+        # versa). Preserve the original response and the complete signed
+        # revision history without allowing another field to change.
+        prose = _state_layout.ordinary_editorial_fields(expected, current)
+        if not prose:
+            return False
+        semantics = _state_layout.text_semantics.validate(current_document)
+        changed_paths = {"/" + field for field in prose}
+        if not changed_paths <= set(semantics.get(identity, {})):
+            return False
+        root = _state_layout.text_semantics.ROOT_FIELD
+        prior_marks = {entry["path"]: entry
+                       for entry in baseline.get(root, {}).get("fields", [])
+                       if entry.get("block") == identity}
+        latest_marks = {entry["path"]: entry
+                        for entry in current_document.get(root, {}).get("fields", [])
+                        if entry.get("block") == identity}
+        # The option's source marker belongs to its independent revision;
+        # every other unchanged field must keep its exact authored semantics.
+        independently_authored = changed_paths | {f"/options/{index}"}
+        return all(prior_marks.get(path) == latest_marks.get(path)
+                   for path in (prior_marks.keys() | latest_marks.keys())
+                   - independently_authored)
     except (ValueError, KeyError, TypeError, IndexError, AttributeError, RecursionError):
         return False
 

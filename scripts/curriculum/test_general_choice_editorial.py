@@ -299,6 +299,74 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
             with self.subTest(altered=altered), self.assertRaises(ValueError):
                 layout.validate_transition(option_revision, bad)
 
+    def test_option_and_both_prose_fields_survive_skipped_publication(self):
+        """An intermediate Git publication is not required for two signed edits.
+
+        The original and final U9L13 choice have the same response, position
+        and storage. A corrected option followed by an authored question and
+        explanation must pass the curricular guard even when Work publishes
+        the complete result in one update.
+        """
+        import validar_json_programacion as contract
+
+        reviewed = self.revise()
+        revised_question = self.block["question"].replace(
+            "¿Qué falta?", "¿Qué condición debe corregirse?")
+        self.assertNotEqual(self.block["question"], revised_question)
+        revised_explanation = (
+            self.block["explanation"] +
+            " El estado que permanece después del rechazo también debe comprobarse.")
+        previous_explanation = next(
+            (field for field in self.original["textSemantics"]["fields"]
+             if field["block"] == OWNER and field["path"] == "/explanation"), None)
+        preserved_spans = (deepcopy(previous_explanation["spans"])
+                           if previous_explanation is not None else [])
+        final = layout.revise_ordinary_editorial(reviewed, OWNER, {
+            "question": {
+                "text": revised_question,
+                "spans": [layout.text_semantics.select(
+                    revised_question, "enviar", "cpp", reading="technical")]},
+            "explanation": {
+                "text": revised_explanation,
+                "spans": preserved_spans},
+        })
+        layout.validate_transition(self.original, final)
+        layout.validate_transition(reviewed, final)
+        relative = "app/src/main/assets/content/es/" + RELATIVE
+        position = next((p, b)
+                        for p, page in enumerate(self.original["stateLayout"]["current"])
+                        for b, owner in enumerate(page["blocks"]) if owner == OWNER)
+        old, new = self.block, layout._blocks(final)[OWNER]
+        self.assertEqual(old["correctIndex"], new["correctIndex"])
+        self.assertEqual(old["options"][1:], new["options"][1:])
+        self.assertTrue(contract.preserves_general_choice_option_revision(
+            relative, *position, old, new,
+            previous_document=self.original, current_document=final))
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *position, old, new,
+            previous_document=self.original, current_document=final))
+
+        for mutation in ("answer", "other-option", "question-mark", "missing-proof"):
+            forged = deepcopy(final)
+            active = layout._blocks(forged)[OWNER]
+            if mutation == "answer":
+                active["correctIndex"] = 1
+            elif mutation == "other-option":
+                active["options"][1] += " Alteración escondida."
+            elif mutation == "question-mark":
+                marker = next(field for field in forged["textSemantics"]["fields"]
+                              if field["block"] == OWNER and field["path"] == "/question")
+                marker["sourceSha256"] = "0" * 64
+            else:
+                forged["stateLayout"]["editorial"].pop()
+            with self.subTest(mutation=mutation):
+                self.assertFalse(contract.preserves_general_choice_option_revision(
+                    relative, *position, old, active,
+                    previous_document=self.original, current_document=forged))
+                self.assertFalse(contract.preserves_previous_exercise(
+                    relative, *position, old, active,
+                    previous_document=self.original, current_document=forged))
+
     def test_general_option_curricular_guard_rejects_answer_and_history_tampering(self):
         import validar_json_programacion as contract
 
