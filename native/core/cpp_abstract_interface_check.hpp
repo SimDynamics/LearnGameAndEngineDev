@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/cpp_multi_body_check.hpp"
+#include "core/cpp_private_probe_neutral.hpp"
 
 #include <algorithm>
 #include <array>
@@ -8,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace lgaed::curriculum {
 
@@ -43,38 +45,135 @@ inline bool identifier(std::string_view name) {
     });
 }
 
+// Require a genuine direct base-class declaration. Searching the whole
+// source as text can treat a comment, a raw string, or an inner class as the
+// virtual contract that the provided program must actually contain.
+inline bool direct_class_declaration(
+        std::string_view source,std::string_view class_name,
+        std::string_view declaration) {
+    namespace scanner=cpp_member_body_detail;
+    const auto signature="class "+std::string(class_name);
+    const auto class_at=scanner::definition_start(source,signature);
+    if(!class_at)return false;
+    const auto open=scanner::definition_opening(
+        source,*class_at+signature.size());
+    if(!open)return false;
+    const auto end=scanner::closing_brace(source,open->position);
+    if(!end)return false;
+    const auto begin=open->position+open->length;
+    const auto tokens=code_format::cpp_tokens(source.substr(begin,*end-begin));
+    const auto expected=code_format::cpp_tokens(declaration);
+    if(!tokens||!expected||expected->empty())return false;
+    std::vector<std::string_view> actual;
+    actual.reserve(tokens->size());
+    for(const auto& token:*tokens) {
+        if(token.starts_with("comment:"))continue;
+        // A preprocessor branch can change which declaration exists.
+        // Do not authenticate an ambiguous base-class source without it
+        // being resolved by a trusted complete publication.
+        if(token.starts_with("directive:"))return false;
+        actual.push_back(token);
+    }
+    std::size_t depth=0;
+    bool found=false;
+    for(std::size_t i=0;i<actual.size();++i) {
+        if(depth==0 && i+expected->size()<=actual.size() &&
+           std::equal(expected->begin(),expected->end(),actual.begin()+i)) {
+            if(found)return false;
+            found=true;
+        }
+        if(actual[i]=="op:{"||actual[i]=="op:<%")++depth;
+        else if(actual[i]=="op:}"||actual[i]=="op:%>") {
+            if(depth==0)return false;
+            --depth;
+        }
+    }
+    return depth==0&&found;
+}
+
+// Only methods directly declared in the selected class are its editable
+// bodies. A nested helper class can have the same virtual signature without
+// defining or replacing the outer owner's method. Track actual C++ brace
+// nesting while ignoring comments, quoted strings and raw string literals.
+inline std::optional<std::size_t> direct_inline_definition(
+        std::string_view scope,std::string_view signature) {
+    namespace scanner=cpp_member_body_detail;
+    std::optional<std::size_t> found;
+    std::size_t depth=0;
+    bool line_leading=true;
+    for(std::size_t at=0;at<scope.size();) {
+        const auto c=scope[at];
+        if(c=='\n'||c=='\r'){line_leading=true;++at;continue;}
+        if(scanner::horizontal_space(c)){++at;continue;}
+        if(c=='/'&&at+1<scope.size()&&scope[at+1]=='/') {
+            const auto end=scope.find_first_of("\r\n",at+2);
+            at=end==scope.npos?scope.size():end;
+            continue;
+        }
+        if(c=='/'&&at+1<scope.size()&&scope[at+1]=='*') {
+            const auto end=scope.find("*/",at+2);
+            if(end==scope.npos)return {};
+            if(scope.substr(at,end+2-at).find_first_of("\r\n")!=scope.npos)
+                line_leading=true;
+            at=end+2;continue;
+        }
+        if((c=='R'&&at+1<scope.size()&&scope[at+1]=='"')||
+           c=='"'||c=='\'') {
+            const auto end=scanner::quoted_end(scope,at);
+            if(!end)return {};
+            at=*end;line_leading=false;continue;
+        }
+        if(depth==0&&line_leading&&scope.substr(at).starts_with(signature)&&
+           scanner::definition_opening(scope,at+signature.size())) {
+            if(found)return {};
+            found=at;
+        }
+        if(c=='{'||(c=='<'&&at+1<scope.size()&&scope[at+1]=='%')) {
+            ++depth;
+            at+=(c=='{'?1:2);
+        }else if(c=='}'||(c=='%'&&at+1<scope.size()&&scope[at+1]=='>')) {
+            if(depth==0)return {};
+            --depth;
+            at+=(c=='}'?1:2);
+        }else ++at;
+        line_leading=false;
+    }
+    return depth==0?found:std::nullopt;
+}
+
 // Inline methods have identical signatures in the two concrete classes.
-// Discover them by their *original owning class*, not by the first matching
-// signature in the file or by a string such as "Pendiente".
+// Discover them by their *direct owning class*, not by a nested helper,
+// a sibling class, or a string such as "Pendiente".
 inline std::optional<CppMemberBodySpan> inline_body(
         std::string_view code,std::string_view class_name,
         std::string_view base_name,std::string_view signature) {
-    const auto declaration="class "+std::string(class_name)+
-        " : public "+std::string(base_name)+" {";
-    const auto class_at=code.find(declaration);
-    if(class_at==code.npos||code.find(declaration,class_at+1)!=code.npos)
-        return {};
-    const auto opening=class_at+declaration.size()-1;
-    const auto closing=cpp_member_body_detail::closing_brace(code,opening);
-    if(!closing)return {};
-    const auto at=code.find(signature,opening+1);
-    if(at==code.npos||at>=*closing)return {};
-    const auto repeated=code.find(signature,at+1);
-    if(repeated!=code.npos&&repeated<*closing)return {};
-    const auto line_break=code.rfind('\n',at);
-    const auto begin_line=line_break==code.npos?0:line_break+1;
-    for(auto i=begin_line;i<at;++i)
-        if(!cpp_member_body_detail::horizontal_space(code[i]))return {};
-    auto method_open=at+signature.size();
-    while(method_open<code.size()&&
-            (cpp_member_body_detail::horizontal_space(code[method_open])||
-             code[method_open]=='\n'||code[method_open]=='\r'))
-        ++method_open;
-    if(method_open>=*closing||code[method_open]!='{')return {};
-    const auto method_end=
-        cpp_member_body_detail::closing_brace(code,method_open);
-    if(!method_end||*method_end>=*closing)return {};
-    return CppMemberBodySpan{method_open+1,*method_end};
+    namespace scanner=cpp_member_body_detail;
+    // Match genuine line-leading definitions, not example classes copied
+    // into comments, string literals or raw documentation. The same lexical
+    // scanner already protects qualified member definitions and free bodies.
+    const auto class_signature="class "+std::string(class_name)+
+        " : public "+std::string(base_name);
+    const auto class_at=scanner::definition_start(code,class_signature);
+    if(!class_at)return {};
+    const auto class_open=scanner::definition_opening(
+        code,*class_at+class_signature.size());
+    if(!class_open)return {};
+    const auto class_end=scanner::closing_brace(code,class_open->position);
+    if(!class_end)return {};
+
+    // Search only inside the authenticated class. An identical virtual
+    // method in a sibling class or a quoted example is not this owner.
+    const auto start=class_open->position+class_open->length;
+    const auto scope=code.substr(start,*class_end-start);
+    const auto local_at=direct_inline_definition(scope,signature);
+    if(!local_at)return {};
+    const auto method_open=scanner::definition_opening(
+        code,start+*local_at+signature.size());
+    if(!method_open||method_open->position>=*class_end)return {};
+    const auto method_end=scanner::closing_brace(code,method_open->position);
+    if(!method_end||*method_end>=*class_end)return {};
+    return CppMemberBodySpan{
+        method_open->position+method_open->length,*method_end};
 }
 
 inline std::optional<std::array<CppMemberBodySpan,4>> spans(
@@ -102,8 +201,21 @@ inline std::optional<std::array<CppMemberBodySpan,4>> spans(
     const std::array<CppMemberBodySpan,4> parts{*simple,*identified,
                                                 *factory,*presenter};
     if(verify_bodies)
-        for(const auto& part:parts)
+        for(const auto& part:parts) {
             if(!cpp_multi_body_detail::safe_body(source,part))return {};
+            // A source-preserving solution still must not interfere with the
+            // independent executable witness. The real virtual calls and
+            // streams belong to the authored function; private QA types,
+            // terminal output, nonlocal jumps and process controls do not.
+            // Tokens in comments, ordinary and raw strings are not code.
+            const auto tokens=code_format::cpp_tokens(source.substr(
+                part.begin,part.end-part.begin));
+            if(!tokens||!cpp_private_probe_body_neutral(
+                    *tokens,"MuestraAdicional")||
+                !cpp_private_probe_body_neutral(
+                    *tokens,"lgaed_published_original_main"))
+                return {};
+        }
     return parts;
 }
 
@@ -119,21 +231,21 @@ inline bool valid(const CppAbstractInterfacePolicy& p) {
         if(!identifier(value))return false;
     const auto& source=p.original_source;
     if(!spans(p,source,false))return false;
-    const auto original=std::string_view(source);
-    // A real public abstract interface is a prerequisite, not a new student
-    // editing freedom. The matched bodies cannot change these declarations.
-    const auto base="class "+p.base_class+" {";
-    return original.find(base)!=original.npos&&
-        original.find("virtual ~"+p.base_class+"() = default;")!=original.npos&&
-        original.find("virtual int "+p.number_method+
-                      "() const noexcept = 0;")!=original.npos&&
-        original.find("virtual void "+p.write_method+
-                      "(std::ostream& "+p.stream_parameter+
-                      ") const = 0;")!=original.npos&&
-        original.find("int "+p.number_method+"() const noexcept override")!=
-            original.npos&&
-        original.find("int "+p.code_method+"() const noexcept")!=
-            original.npos;
+    // The provided interface and getters are an executable prerequisite,
+    // not a phrase that may be quoted elsewhere in its original source.
+    // Restrict each declaration or body to the real owning class.
+    const auto getter="int "+p.number_method+"() const noexcept override";
+    return direct_class_declaration(source,p.base_class,
+               "virtual ~"+p.base_class+"() = default;")&&
+        direct_class_declaration(source,p.base_class,
+               "virtual int "+p.number_method+"() const noexcept = 0;")&&
+        direct_class_declaration(source,p.base_class,
+               "virtual void "+p.write_method+"(std::ostream& "+
+                   p.stream_parameter+") const = 0;")&&
+        inline_body(source,p.simple_class,p.base_class,getter).has_value()&&
+        inline_body(source,p.identified_class,p.base_class,getter).has_value()&&
+        inline_body(source,p.identified_class,p.base_class,
+               "int "+p.code_method+"() const noexcept").has_value();
 }
 
 inline void substitute(std::string& code,std::string_view key,

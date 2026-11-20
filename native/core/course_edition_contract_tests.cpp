@@ -71,6 +71,23 @@ void descriptor_boundaries() {
         require(!course_edition_frame(valid).empty(),
             "A valid edition descriptor cannot produce its own receipt frame");
     }
+    // Both first and largest generations must leave room for a unit and a
+    // lesson name under the historical 256-byte identifier limit.
+    for(const auto& boundary : {
+            CourseEdition{std::string(236,'c'),"es","revision",1},
+            CourseEdition{std::string(230,'c'),"es","revision",1000000}}) {
+        validate_course_edition(boundary);
+        const auto last_valid = course_edition_prefix(boundary) + "u__l";
+        require(last_valid.size()==256 &&
+                course_edition_lesson_id(boundary,last_valid),
+            "A boundary descriptor lost its shortest valid lesson identity");
+    }
+    rejects([]{validate_course_edition(
+        CourseEdition{std::string(237,'c'),"es","revision",1});},
+        "A descriptor with no room for a first-generation lesson was accepted");
+    rejects([]{validate_course_edition(
+        CourseEdition{std::string(231,'c'),"es","revision",1000000});},
+        "A descriptor with no room for a large-generation lesson was accepted");
     auto invalid = CourseEdition{"cpp_fundamentals","es","revision",1};
     invalid.course_id = "";
     rejects([&]{validate_course_edition(invalid);},"An empty parent course was accepted");

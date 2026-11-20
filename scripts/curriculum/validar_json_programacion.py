@@ -1515,16 +1515,46 @@ def preserves_general_choice_option_revision(relative, pn, bn, old, current, *,
                 or _state_layout._general_choice_revision(previous_document, identity) is not None):
             return False
         archive = _state_layout._general_choice_revision(current_document, identity)
-        if (type(archive) is not dict or archive.get("block") != old
+        if (type(archive) is not dict
                 or type(archive.get("optionIndex")) is not int
                 or type(archive.get("replacement")) is not str):
+            return False
+        # A question/explanation may have been authenticated before the choice.
+        # The archived predecessor cannot include any other changed contract.
+        if (archive.get("block") != old and not
+                _state_layout.ordinary_editorial_fields(old, archive.get("block"))):
             return False
         index = archive["optionIndex"]
         if type(old.get("options")) is not list or index not in range(len(old["options"])):
             return False
         expected = copy.deepcopy(old)
         expected["options"][index] = archive["replacement"]
-        return current == expected
+        if current == expected:
+            return True
+        # The publication may skip an intermediate commit: the author first
+        # corrected this option, then refined the SAME owner's prose (or vice
+        # versa). Preserve the original response and the complete signed
+        # revision history without allowing another field to change.
+        prose = _state_layout.ordinary_editorial_fields(expected, current)
+        if not prose:
+            return False
+        semantics = _state_layout.text_semantics.validate(current_document)
+        changed_paths = {"/" + field for field in prose}
+        if not changed_paths <= set(semantics.get(identity, {})):
+            return False
+        root = _state_layout.text_semantics.ROOT_FIELD
+        prior_marks = {entry["path"]: entry
+                       for entry in baseline.get(root, {}).get("fields", [])
+                       if entry.get("block") == identity}
+        latest_marks = {entry["path"]: entry
+                        for entry in current_document.get(root, {}).get("fields", [])
+                        if entry.get("block") == identity}
+        # The option's source marker belongs to its independent revision;
+        # every other unchanged field must keep its exact authored semantics.
+        independently_authored = changed_paths | {f"/options/{index}"}
+        return all(prior_marks.get(path) == latest_marks.get(path)
+                   for path in (prior_marks.keys() | latest_marks.keys())
+                   - independently_authored)
     except (ValueError, KeyError, TypeError, IndexError, AttributeError, RecursionError):
         return False
 
@@ -1684,7 +1714,12 @@ def preserves_previous_exercise(relative, pn, bn, old, current, *,
         current = {key: value for key, value in current.items() if key != "explanation"}
     if current == old:
         return True
-    lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
+    # A foreign course path is not a legitimate historical Programación 1
+    # exercise, even when the caller selected the legacy course explicitly.
+    try:
+        lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
+    except ValueError:
+        return False
     location = (lesson_path, pn + 1, bn + 1)
     for revision in _state_layout.MATH_LABEL_REVISIONS.values():
         if (location == revision["location"] and old.get("type") == current.get("type") == "math_puzzle"
@@ -1878,6 +1913,12 @@ def _validate_cpp_fundamentals(base_commit):
                 require(item["title"] == lessons[item["id"]]["title"], path, "título no coincide con la lección")
 
     course = load(CONTENT / "course_cpp_fundamentals.json")
+    # Una edición nueva sólo puede activar unidades y lecciones de su propia
+    # generación. El control global de publicación protege el repositorio;
+    # esta comprobación impide que el validador individual acepte una mezcla
+    # cuando se usa de manera independiente durante la autoría de Work.
+    # La edición anterior permanece en archivos históricos inactivos.
+    _state_layout.course_edition.validate_active_course(course, units, lessons)
     require([u["number"] for u in course["units"]] == list(range(1, len(course["units"]) + 1)), "curso", "numeración de unidades discontinua")
     for item in course["units"]:
         require(item["id"] in units, "curso", "referencia a unidad inexistente")

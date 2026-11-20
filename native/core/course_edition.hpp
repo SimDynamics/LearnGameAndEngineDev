@@ -31,6 +31,14 @@ inline void validate_course_edition(const CourseEdition& edition) {
         (edition.locale != "es" && edition.locale != "en" && edition.locale != "fr") ||
         !edition.generation || edition.generation > 1000000)
         throw std::invalid_argument("La edición curricular no tiene un descriptor válido.");
+    // The shortest publishable lesson needs "u__l" after its edition prefix.
+    // Reject a valid-looking descriptor that could never publish any lesson ID.
+    const std::size_t shortest_lesson_id =
+        edition.course_id.size() + std::string_view("__edition_").size() +
+        edition.locale.size() + 1 + std::to_string(edition.generation).size() +
+        std::string_view("__u__l").size();
+    if(shortest_lesson_id > 256)
+        throw std::invalid_argument("La edición curricular excede el límite de ID de lección.");
 }
 inline std::string course_edition_prefix(const CourseEdition& edition) {
     validate_course_edition(edition);

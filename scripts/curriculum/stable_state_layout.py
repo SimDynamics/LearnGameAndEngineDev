@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerLocalIntChecks", "compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -1143,18 +1143,24 @@ def _general_choice_semantic_projection(
 
 
 def _general_choice_projection(item: dict, block: dict) -> dict:
-    """Only the declared option text may differ from the exact archived choice.
+    """Restore the archived response, while retaining later authenticated prose.
 
-    The complete predecessor, response position and other options remain
-    immutable. No arbitrary choice/answer contract is normalized.
+    A corrected choice can subsequently receive an ordinary question or
+    explanation revision on the SAME stable owner. The earlier option edit
+    must never authorize changing a different option, index, answer or guide.
+    An editorial step still needs its own signed edge and text-semantics
+    descriptor in the complete lesson transition.
     """
     original = item["block"]
     expected = deepcopy(original)
     index = item["optionIndex"]
     expected["options"][index] = item["replacement"]
-    require(block == original or block == expected,
-            "General choice review changed another option, answer or authored field")
-    return deepcopy(original)
+    if block != original and block != expected:
+        require(bool(ordinary_editorial_fields(expected, block)),
+                "General choice review changed another option, answer or authored field")
+    result = deepcopy(block)
+    result["options"][index] = original["options"][index]
+    return result
 
 
 def _historical_choice_contract(document: dict, identity: str, block: dict) -> dict:
@@ -2352,6 +2358,20 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             require(type(active) is dict,
                     "General choice review must keep its original activity active")
             _general_choice_projection(item, active)
+            # A later question/explanation edit on the SAME option owner is
+            # a separate publication. Do not inherit the original narration
+            # of a changed sentence or authorize an unmarked wording change.
+            option_only = deepcopy(original)
+            option_only["options"][index] = item["replacement"]
+            for field in ordinary_editorial_fields(option_only, active):
+                overlay = document.get(text_semantics.ROOT_FIELD) or {}
+                require(type(overlay) is dict and type(overlay.get("fields")) is list,
+                        "A later choice-owner prose revision needs authored text semantics")
+                markers = [marker for marker in overlay["fields"]
+                           if type(marker) is dict and marker.get("block") == identity
+                           and marker.get("path") == "/" + field]
+                require(len(markers) == 1,
+                        "A later choice-owner prose revision needs its own text descriptor")
             semantic_before = item["semanticBefore"]
             selected_before = original["options"][index]
             if semantic_before is not None:
@@ -6514,6 +6534,97 @@ def _validate_order_visual_separators(document: dict) -> None:
                 "Visual separators require an original, evaluated order-code owner")
 
 
+def _validate_compiler_local_int_checks(document: dict) -> None:
+    """Require real, independently checked variable dependence, not stdout alone."""
+    if "compilerLocalIntChecks" not in document:
+        return
+    layout = document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version") == 2 and
+            layout.get("locale") == "es",
+            "Local-int checks require an existing Spanish v2 lesson")
+    checks = document["compilerLocalIntChecks"]
+    require(type(checks) is list and 1 <= len(checks) <= 32,
+            "Local-int checks require 1..32 distinct owners")
+    owners, seen = _blocks(document), set()
+    forbidden = {
+        "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks",
+        "compilerOpenBatteryChecks", "compilerReductionChecks",
+        "compilerCmakeGraphChecks", "compilerIndexedUniqueTransferChecks",
+        "compilerDefaultedMovePolicyChecks",
+        "compilerIndependentCopyAssignmentChecks",
+        "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks",
+        "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks",
+        "compilerPolymorphicDestructionChecks",
+        "compilerVirtualLifetimeDispatchChecks",
+        "compilerDerivedPreparationChecks",
+        "compilerAbstractInterfaceChecks",
+        "compilerInterfaceCollectionChecks",
+        "compilerPolymorphicCloneChecks", "compilerDualInterfaceChecks",
+    }
+    for check in checks:
+        require(type(check) is dict and set(check) == {"activity", "probes"},
+                "Local-int owner requires activity and probes only")
+        identity = _identity(check["activity"])
+        require(identity not in seen, "Duplicate local-int owner")
+        seen.add(identity)
+        owner = owners.get(identity)
+        require(type(owner) is dict and owner.get("type") == "cpp_compiler" and
+                owner.get("language", "cpp") == "cpp" and
+                type(owner.get("outputCheck")) is dict and
+                type(owner["outputCheck"].get("cases")) is list and
+                len(owner["outputCheck"]["cases"]) == 1 and
+                type(owner.get("initialCode")) is str and bool(owner["initialCode"]) and
+                not ({"compileCheck", "cmake", "projectFiles", "sourceFiles"} & set(owner)),
+                "A local-int probe requires an original single-file output editor")
+        case = owner["outputCheck"]["cases"][0]
+        require(type(case) is dict and
+                case.get("standardInput") == owner.get("standardInput", "") and
+                case.get("exitCode", 0) == 0 and type(case.get("exitCode", 0)) is int and
+                "target" not in case and
+                not ({"standardError", "standardErrorExact"} & set(case)) and
+                type(case.get("outputs")) is list and bool(case["outputs"]),
+                "Local-int variations require one unchanged normal-output case")
+        for key in forbidden:
+            related = document.get(key, [])
+            if type(related) is list:
+                require(not any(type(item) is dict and item.get("activity") == identity
+                                for item in related),
+                        "Local-int owner conflicts with an existing runtime objective")
+        probes = check["probes"]
+        require(type(probes) is list and 1 <= len(probes) <= 8,
+                "Local-int owner requires 1..8 private variations")
+        known = set()
+        for probe in probes:
+            require(type(probe) is dict and
+                    {"variable", "replacement", "outputs"} <= set(probe) <=
+                    {"variable", "replacement", "outputs", "afterUpdate"},
+                    "Local-int variation requires variable, replacement and outputs")
+            variable, replacement, outputs = (
+                probe["variable"], probe["replacement"], probe["outputs"])
+            require(type(variable) is str and re.fullmatch(
+                r"[A-Za-z_][A-Za-z_0-9]{0,127}", variable) is not None and
+                variable != "main" and not variable.startswith("__") and
+                not (variable.startswith("_") and len(variable) > 1 and variable[1].isupper()),
+                "Invalid local-int variable name")
+            require(type(replacement) is int and -(2 ** 31) <= replacement < 2 ** 31,
+                    "Local-int replacement requires a signed 32-bit integer")
+            after_update = probe.get("afterUpdate", False)
+            require(type(after_update) is bool and
+                    ("afterUpdate" not in probe or after_update is True),
+                    "Local-int afterUpdate must be explicit boolean true")
+            require((variable, replacement, after_update) not in known,
+                    "A local-int variation cannot repeat a prior replacement")
+            known.add((variable, replacement, after_update))
+            require(type(outputs) is list and 1 <= len(outputs) <= 4 and
+                    all(type(o) is str and o and "\x00" not in o and
+                        len(o.encode("utf-8")) <= 4096 and
+                        o.replace("\r\n", "\n") not in {
+                            visible.replace("\r\n", "\n")
+                            for visible in case["outputs"]} for o in outputs) and
+                    len({o.replace("\r\n", "\n") for o in outputs}) == len(outputs),
+                    "Hidden outputs must be distinct, bounded and differ from visible output")
+
+
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
     course_edition.validate_lesson(document, require_layout=True)
@@ -6525,6 +6636,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_workflow_checks(document)
     _validate_compiler_runtime_checks(document)
     _validate_compiler_named_rule_checks(document)
+    _validate_compiler_local_int_checks(document)
     _validate_compiler_indexed_unique_transfer_checks(document)
     _validate_compiler_defaulted_move_policy_checks(document)
     _validate_compiler_independent_copy_assignment_checks(document)
@@ -6736,17 +6848,25 @@ def ordinary_editorial_fields(before: dict, after: dict) -> tuple[str, ...]:
 
 def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
                                           expected: dict | None,
-                                          choice_owners: set[str]) -> dict | None:
-    """Permit only changed prose paths of other intact ordinary owners.
+                                          choice_revisions: dict[str, dict]) -> dict | None:
+    """Compose separately authored prose with a new choice revision.
 
-    Both documents and the append-only proof chain have already been checked
-    by the transition validator. The current overlay has also been validated
-    against exact text, UTF-16 selections and supported public fields.
+    A changed answer-option marker is handled by its own archived choice
+    proof. For that SAME owner, compare the current block against the exact
+    predecessor plus only its authenticated option replacement. All other
+    fields remain protected. Both documents and the append-only editorial
+    chain have already been checked by the full transition validator.
     """
     before, after = _blocks(previous), _blocks(current)
-    allowed = {(identity, "/" + field)
-               for identity, block in before.items() if identity not in choice_owners
-               for field in ordinary_editorial_fields(block, after.get(identity))}
+    allowed = set()
+    for identity, block in before.items():
+        predecessor = block
+        if identity in choice_revisions:
+            choice = choice_revisions[identity]
+            predecessor = deepcopy(block)
+            predecessor["options"][choice["optionIndex"]] = choice["replacement"]
+        allowed.update((identity, "/" + field)
+                       for field in ordinary_editorial_fields(predecessor, after.get(identity)))
     if not allowed:
         return expected
     overlay = current.get(text_semantics.ROOT_FIELD)
@@ -7230,6 +7350,11 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerNamedRuleChecks") or
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
+    require(not baseline.get("compilerLocalIntChecks") or
+            (type(current.get("compilerLocalIntChecks")) is list and
+             current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
+             baseline["compilerLocalIntChecks"]),
+            "Published local-int checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerOpenBatteryChecks") or
             (type(current.get("compilerOpenBatteryChecks")) is list and
              current["compilerOpenBatteryChecks"][:len(baseline["compilerOpenBatteryChecks"])] ==
@@ -7368,8 +7493,27 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(choices[:len(old_choices)] == old_choices,
             "Published choice revisions are append-only and cannot be removed or replaced")
     for item in choices[len(old_choices):]:
-        require(item["id"] in before and fingerprint(item["block"]) == fingerprint(before[item["id"]]),
-                "A new choice revision must preserve its complete previous published block")
+        identity = item["id"]
+        require(identity in before,
+                "A new choice revision must belong to a previously published owner")
+        if fingerprint(item["block"]) != fingerprint(before[identity]):
+            # One separately authenticated prose revision may precede the
+            # option edit within a release that skips the intermediate Git
+            # publication. The choice archive must contain EXACTLY that
+            # predecessor, not an arbitrary substituted exercise contract.
+            require("optionIndex" in item and
+                    bool(ordinary_editorial_fields(before[identity], item["block"])),
+                    "A new choice revision must preserve its complete previous published block")
+            authored = [edge for edge in meta["editorial"][len(old_editorial):]
+                        if edge["id"] == identity]
+            revised_option = deepcopy(item["block"])
+            revised_option["options"][item["optionIndex"]] = item["replacement"]
+            require(len(authored) >= 2
+                    and authored[0]["beforeSha256"] == fingerprint(before[identity])
+                    and authored[0]["afterSha256"] == fingerprint(item["block"])
+                    and authored[1]["beforeSha256"] == fingerprint(item["block"])
+                    and authored[1]["afterSha256"] == fingerprint(revised_option),
+                    "An earlier choice-owner prose revision needs its own complete ordered proof")
         if "optionIndex" in item:
             require(item["semanticBefore"] == _choice_semantic_entry(
                 baseline, item["id"], item["optionIndex"]),
@@ -7409,7 +7553,8 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     marker["sourceSha256"] = hashlib.sha256(
                         item["replacement"].encode("utf-8")).hexdigest()
         expected_semantics = _compose_ordinary_editorial_semantics(
-            baseline, current, expected_semantics, {item["id"] for item in new_general_choices})
+            baseline, current, expected_semantics,
+            {item["id"]: item for item in new_general_choices})
         require(expected_semantics == current.get(text_semantics.ROOT_FIELD),
                 "Editorial choice revised an unrelated text marker or semantic span")
     new_closed_sources = _new_closed_compiler_sources(baseline, current)
@@ -7707,6 +7852,11 @@ def validate_transition(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerNamedRuleChecks") or
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
+    require(not baseline.get("compilerLocalIntChecks") or
+            (type(current.get("compilerLocalIntChecks")) is list and
+             current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
+             baseline["compilerLocalIntChecks"]),
+            "Published local-int checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerOpenBatteryChecks") or
             (type(current.get("compilerOpenBatteryChecks")) is list and
              current["compilerOpenBatteryChecks"][:len(baseline["compilerOpenBatteryChecks"])] ==

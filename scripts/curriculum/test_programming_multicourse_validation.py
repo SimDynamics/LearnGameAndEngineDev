@@ -127,6 +127,84 @@ class StructuralCourseFixtures(unittest.TestCase):
         self.assertIn("lección publicada sin índice en unidad activa", output)
         self.assertIn(f"{COURSE}__fixture__omitida", output)
 
+    def test_programming1_new_edition_is_active_without_reusing_old_owner(self):
+        # La publicación nueva se prepara en un árbol temporal. El curso
+        # histórico queda físicamente presente, pero fuera del índice activo.
+        self.select_course("cpp_fundamentals")
+        old_lesson = self.lesson_path
+        old_unit = self.unit_path
+        legacy_lesson = old_lesson.read_bytes()
+        legacy_unit = old_unit.read_bytes()
+        value = {"version": 1, "courseId": "cpp_fundamentals",
+                 "locale": "es", "id": "qa-first-edition", "generation": 1}
+        edition = layout.course_edition
+        self.unit_id = edition.unit_prefix(value) + "inicio"
+        self.lesson_id = self.unit_id + "__primera"
+        folder = self.content / "edition_es_1__inicio"
+        self.unit_path = folder / "unit_edition_es_1__inicio.json"
+        self.lesson_path = folder / "lesson_primera.json"
+        self.lesson = edition.prepare_edition_lesson({
+            "id": self.lesson_id, "title": "Fundamentos nuevos",
+            "pages": [
+                {"blocks": [{"type": "paragraph",
+                             "text": "Ahora la explicación tiene otra organización."}]},
+                {"blocks": [{"type": "multiple_choice", "id": "nuevo",
+                             "question": "Selecciona el nuevo resultado.",
+                             "options": ["Cuatro", "Siete"], "correctIndex": 1,
+                             "explanation": "El segundo resultado corresponde a la consigna."}]},
+            ],
+        }, value)
+        self.unit = {"courseId": "cpp_fundamentals", "unitId": self.unit_id,
+                     "title": "Nueva unidad", "courseEdition": deepcopy(value),
+                     "lessons": [{"id": self.lesson_id, "number": 1,
+                                  "title": self.lesson["title"]}]}
+        self.course = {"id": "cpp_fundamentals", "title": "Programación 1",
+                       "courseEdition": deepcopy(value),
+                       "units": [{"id": self.unit_id, "number": 1,
+                                  "title": "Nueva unidad"}]}
+        self.save()
+
+        output = self.run_course()
+        self.assertIn("Curso cpp_fundamentals: 2 lecciones, 2 unidades, 4 bloques", output)
+        self.assertEqual(old_lesson.read_bytes(), legacy_lesson)
+        self.assertEqual(old_unit.read_bytes(), legacy_unit)
+        self.assertEqual(self.lesson["stateLayout"]["origin"][1]["blocks"][0]["id"],
+                         "block_0001_0000")
+        self.assertNotEqual(self.lesson_id,
+                            "cpp_fundamentals__fixture__fixture")
+
+        # El validador normal debe rechazar mezclas sin depender de que la
+        # compuerta global (que ya tiene sus propias pruebas) se ejecute.
+        for kind in ("missing-unit-edition", "missing-lesson-edition",
+                     "mixed-generation", "retired-unit-reindexed",
+                     "retired-lesson-reindexed"):
+            with self.subTest(case=kind):
+                unit = deepcopy(self.unit)
+                lesson = deepcopy(self.lesson)
+                course = deepcopy(self.course)
+                if kind == "missing-unit-edition":
+                    unit.pop("courseEdition")
+                elif kind == "missing-lesson-edition":
+                    lesson.pop("courseEdition")
+                elif kind == "mixed-generation":
+                    unit["courseEdition"]["generation"] = 2
+                elif kind == "retired-unit-reindexed":
+                    course["units"][0]["id"] = "cpp_fundamentals__fixture"
+                else:
+                    unit["lessons"][0]["id"] = "cpp_fundamentals__fixture__fixture"
+                original = self.unit, self.lesson, self.course
+                try:
+                    self.unit, self.lesson, self.course = unit, lesson, course
+                    self.save()
+                    rejected = self.run_course(reject=True)
+                    self.assertIn("cpp_fundamentals", rejected)
+                    self.assertIn("contrato del curso inválido", rejected)
+                finally:
+                    self.unit, self.lesson, self.course = original
+                    self.save()
+        self.assertEqual(old_lesson.read_bytes(), legacy_lesson)
+        self.assertEqual(old_unit.read_bytes(), legacy_unit)
+
     def test_usual_programming1_cli_rejects_an_unindexed_active_lesson(self):
         course = "cpp_fundamentals"
         folder = self.cpp / "fixture"
@@ -621,6 +699,137 @@ class PublishedOrdinaryExplanationGuard(unittest.TestCase):
             self.relative, *layout.validate(self.previous)[self.page, self.block],
             self.old, altered, course_id=COURSE))
         self.assertTrue(self.accepts(current))
+
+
+class PublishedU1L4OptionalExplanationGuard(unittest.TestCase):
+    """Real U1L4: add feedback to a published drag-fill without changing credit.
+
+    The immutable Codex ancestor is the predecessor under test. Work may later
+    integrate different author-written wording without changing this proof.
+    No test edits the installed curriculum or an actual learner profile.
+    """
+    BASE = "9a7b9e8540856e4ac60e117efce2053f1183a79e"
+    RELATIVE = ("app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                "programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json")
+    OWNER = "block_0004_0001"
+    TEXT = ("main inicia el programa; << envía Revision lista a la salida y "
+            "el punto y coma termina esa instrucción.")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.path = validator.ROOT / cls.RELATIVE
+        if not (validator.ROOT / ".git").exists():
+            raise unittest.SkipTest("La regresión publicada requiere el historial Git completo")
+        cls.previous, _ = layout.published_family(cls.path, "es", cls.BASE)
+        cls.visible = [(p, b) for p, row in enumerate(
+            cls.previous["stateLayout"]["current"]) for b, owner in enumerate(
+            row["blocks"]) if owner == cls.OWNER]
+        if cls.visible != [(5, 8)]:
+            raise AssertionError("El propietario U1L4 dejó de ocupar su ranura histórica")
+        cls.position = layout.validate(cls.previous)[cls.visible[0]]
+        if cls.position != (4, 1):
+            raise AssertionError("El propietario U1L4 perdió su coordenada original")
+        p, b = cls.visible[0]
+        cls.old = cls.previous["pages"][p]["blocks"][b]
+        if (cls.old.get("type") != "drag_fill_code" or
+                cls.old.get("id") != "piezas_estructura" or
+                "explanation" in cls.old or cls.old.get("correctOrder") != [0, 1, 2]):
+            raise AssertionError("La actividad histórica U1L4 no coincide con la publicada")
+
+    def reviewed(self, *, spans=None):
+        return layout.revise_ordinary_editorial(
+            self.previous, self.OWNER, {"explanation": {
+                "text": self.TEXT, "spans": [] if spans is None else spans}})
+
+    def accepts(self, revised):
+        return validator.preserves_previous_exercise(
+            self.RELATIVE, *self.position, self.old,
+            layout._blocks(revised)[self.OWNER],
+            previous_document=self.previous, current_document=revised,
+            course_id="cpp_fundamentals")
+
+    def test_new_explanation_preserves_grading_identity_and_old_question_marks(self):
+        revised = self.reviewed()
+        layout.validate_transition(self.previous, revised)
+        self.assertTrue(self.accepts(revised))
+        before = self.old
+        after = layout._blocks(revised)[self.OWNER]
+        self.assertEqual(set(after) - set(before), {"explanation"})
+        self.assertEqual({key: after[key] for key in before}, before)
+        self.assertEqual(layout.validate(self.previous), layout.validate(revised))
+        self.assertEqual(self.previous["stateLayout"]["origin"],
+                         revised["stateLayout"]["origin"])
+        self.assertEqual(self.previous["stateLayout"]["family"],
+                         revised["stateLayout"]["family"])
+        self.assertEqual(self.previous["stateLayout"]["current"],
+                         revised["stateLayout"]["current"])
+        self.assertEqual(revised["stateLayout"]["editorial"][:-1],
+                         self.previous["stateLayout"]["editorial"])
+        self.assertEqual(revised["stateLayout"]["editorial"][-1]["id"], self.OWNER)
+        previous_markers = {(m["block"], m["path"]): m
+                            for m in self.previous["textSemantics"]["fields"]}
+        current_markers = {(m["block"], m["path"]): m
+                           for m in revised["textSemantics"]["fields"]}
+        new_key = (self.OWNER, "/explanation")
+        self.assertNotIn(new_key, previous_markers)
+        self.assertEqual(current_markers[new_key]["spans"], [])
+        self.assertEqual(set(current_markers) - set(previous_markers), {new_key})
+        for key, marker in previous_markers.items():
+            self.assertEqual(marker, current_markers[key])
+
+    def test_authored_utf16_explanation_and_wrong_owner_or_contract_are_rejected(self):
+        marked = self.reviewed(spans=[
+            layout.text_semantics.select(self.TEXT, "Revision lista", "output",
+                                         reading="natural")])
+        self.assertTrue(self.accepts(marked))
+        self.assertEqual(len(next(m for m in marked["textSemantics"]["fields"]
+                                  if (m["block"], m["path"]) ==
+                                     (self.OWNER, "/explanation"))["spans"]), 1)
+
+        for kind in ("unproven-prose", "missing-descriptor", "stale-source-hash",
+                     "changed-question-mark", "changed-answer", "changed-choices",
+                     "changed-template", "changed-owner", "changed-question"):
+            candidate = deepcopy(marked)
+            item = layout._blocks(candidate)[self.OWNER]
+            if kind == "unproven-prose":
+                candidate["stateLayout"]["editorial"].pop()
+            elif kind == "missing-descriptor":
+                candidate["textSemantics"]["fields"] = [
+                    m for m in candidate["textSemantics"]["fields"]
+                    if (m["block"], m["path"]) != (self.OWNER, "/explanation")]
+            elif kind == "stale-source-hash":
+                next(m for m in candidate["textSemantics"]["fields"]
+                     if (m["block"], m["path"]) ==
+                        (self.OWNER, "/explanation"))["sourceSha256"] = "0" * 64
+            elif kind == "changed-question-mark":
+                next(m for m in candidate["textSemantics"]["fields"]
+                     if (m["block"], m["path"]) ==
+                        (self.OWNER, "/question"))["spans"][0]["role"] = "prose"
+            elif kind == "changed-answer":
+                item["correctOrder"] = [2, 1, 0]
+            elif kind == "changed-choices":
+                item["choices"][1] = ">";
+            elif kind == "changed-template":
+                item["template"] += "\n"
+            elif kind == "changed-owner":
+                item["id"] = "otro_propietario"
+            else:
+                item["question"] += " Reescrita."
+            with self.subTest(case=kind):
+                self.assertFalse(self.accepts(candidate),
+                    "No se debe admitir un cambio encubierto bajo una explicación")
+
+        self.assertFalse(validator.preserves_previous_exercise(
+            self.RELATIVE, 4, 2, self.old,
+            layout._blocks(marked)[self.OWNER],
+            previous_document=self.previous, current_document=marked,
+            course_id="cpp_fundamentals"))
+        self.assertFalse(validator.preserves_previous_exercise(
+            self.RELATIVE.replace("lesson_fuente_", "lesson_otra_fuente_"),
+            *self.position, self.old,
+            layout._blocks(marked)[self.OWNER],
+            previous_document=self.previous, current_document=marked,
+            course_id="cpp_fundamentals"))
 
 
 if __name__ == "__main__":

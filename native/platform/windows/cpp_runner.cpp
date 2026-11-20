@@ -396,6 +396,46 @@ using winrt::Windows::Data::Json::JsonValue;
 std::filesystem::path project_path(std::string_view path){return std::filesystem::path(winrt::to_hstring(path).c_str());}
 std::string fingerprint(const CppRunRequest& request,bool configuration=false){return state::sha256(curriculum::cpp_project_frame(request.project_files,request.source_files,request.cmake,configuration)+utf8(build::educational_vc_root)+utf8(build::educational_sdk_version)+utf8(build::educational_cmake)+utf8(build::educational_ninja)
     +"/windows-cpp-profile-v1/"+std::to_string(build::cpp_standard)+'/'+utf8(build::cpp_standard_option)+"/Zc:__cplusplus/cmake-rules-v1");}
+// Private integer variations bind the exact student source, input and lesson
+// draft identity to all independently authored expected results. Never reuse
+// an ordinary output receipt as proof of these hidden observations.
+std::string local_int_fingerprint(const CppRunRequest& request) {
+    if(!request.local_int_check||
+       !curriculum::cpp_local_int_check_valid(*request.local_int_check)||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||
+       request.diagnostic||request.cmake||!request.project_files.empty()||
+       !request.source_files.empty()||request.named_rule_probe||
+       request.open_battery_probe||request.boolean_battery_probe||
+       request.reduction_probe||request.integer_battery_probe||
+       request.adjustment_project_probe||request.indexed_unique_transfer_probe||
+       request.defaulted_move_policy_probe||
+       request.independent_copy_assignment_probe||
+       request.move_assignment_invariant_probe||request.array_owner_read_probe||
+       request.array_copy_move_probe||request.array_return_take_probe||
+       request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
+       request.derived_preparation_probe||request.abstract_interface_probe||
+       request.interface_collection_probe||request.polymorphic_clone_probe||
+       request.dual_interface_probe||request.rejection_probe||
+       request.observation_probe||request.assertion_mode||
+       request.cmake_graph_check||request.capture_cmake_graph)return {};
+    const auto field=[](std::string_view part) {
+        return std::to_string(part.size())+":"+std::string(part);
+    };
+    std::string frame="compiler-local-int-dependency-v1/"+field(request.project_key)+
+        field(request.source_utf8)+field(request.stdin_utf8);
+    for(const auto& probe:request.local_int_check->probes) {
+        const auto variant=curriculum::cpp_local_int_override(request.source_utf8,probe);
+        if(!variant)return {};
+        frame+=field(probe.variable)+field(std::to_string(probe.replacement))+
+            field(state::sha256(*variant));
+        if(probe.after_update)frame+=field("after-update-v1");
+        for(const auto& expected:probe.expected_stdout)
+            frame+=field(expected);
+    }
+    return state::sha256(frame);
+}
+
 // This separate domain never alters a historical CMake/source fingerprint.
 // The exact source, trusted owner, request/revision, input and driver all bind
 // the private execution to this specific student attempt.
@@ -3415,6 +3455,38 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(result.execution.exit_code&&*result.execution.exit_code<=255)fresh.exit_code=static_cast<int>(*result.execution.exit_code);
     fresh.standard_input=request.stdin_utf8;fresh.standard_output=result.execution.stdout_bytes;
     fresh.standard_error=result.execution.stderr_bytes;fresh.executable=result.executable;
+    if(request.local_int_check) {
+        const auto frame=local_int_fingerprint(request);
+        fresh.local_int_request_fingerprint=frame;
+        fresh.local_int_check_feedback=
+            "La salida coincide, pero no se acreditó que dependa de las variables int declaradas.";
+        if(!frame.empty()&&result.local_int_request_fingerprint==frame&&
+           fresh.compilation_succeeded&&fresh.execution_succeeded&&
+           result.local_int_evidence.size()==request.local_int_check->probes.size()) {
+            bool passed=true;
+            for(std::size_t i=0;i<request.local_int_check->probes.size();++i) {
+                const auto& probe=request.local_int_check->probes[i];
+                const auto& captured=result.local_int_evidence[i];
+                const auto variant=curriculum::cpp_local_int_override(
+                    request.source_utf8,probe);
+                const bool exact=variant&&
+                    captured.instrumented_source_sha256==state::sha256(*variant)&&
+                    captured.compilation.succeeded()&&captured.execution.succeeded()&&
+                    captured.execution.stderr_bytes.empty()&&
+                    curriculum::cpp_local_int_expected_output(
+                        probe,captured.execution.stdout_bytes);
+                if(!exact) {
+                    passed=false;
+                    fresh.local_int_check_feedback=
+                        "Comprueba que los resultados proceden de la variable int '"+probe.variable+
+                        "' y no de una cifra fija. La prueba independiente no reprodujo el cambio solicitado.";
+                    break;
+                }
+            }
+            fresh.local_int_check_correct=passed;
+            if(passed)fresh.local_int_check_feedback.clear();
+        }
+    }
     if(request.boolean_battery_probe) {
         fresh.execution_completed=false;
         fresh.execution_succeeded=false;
@@ -5439,6 +5511,31 @@ void complete_boolean_battery_probe(const CppRunRequest& request,CppRunResult& r
         result.boolean_battery_evidence=std::move(evidence);
 }
 
+void complete_local_int_check(const CppRunRequest& request,CppRunResult& result,
+        const std::filesystem::path& compiler,const std::vector<wchar_t>& environment,
+        std::string_view initial_toolchain,std::stop_token stop) {
+    if(!request.local_int_check||request.backend!=CppRunRequest::Backend::native_msvc||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto frame=local_int_fingerprint(request);
+    if(frame.empty())return;
+    const auto& probes=request.local_int_check->probes;
+    std::vector<CppLocalIntEvidence> evidence;
+    evidence.reserve(probes.size());
+    const auto make_source=[&](std::size_t index) {
+        return curriculum::cpp_local_int_override(request.source_utf8,probes.at(index));
+    };
+    const auto observe=[&](std::size_t index,const CppPhaseResult& compilation,
+                          const CppPhaseResult& execution) {
+        const auto source=make_source(index);
+        evidence.push_back(CppLocalIntEvidence{
+            source?state::sha256(*source):std::string{},compilation,execution});
+    };
+    if(execute_private_single_file_phases(request,result,compiler,environment,
+            initial_toolchain,probes.size(),make_source,observe,stop))
+        result.local_int_evidence=std::move(evidence);
+}
+
 void complete_reduction_probe(const CppRunRequest& request,CppRunResult& result,
         const std::filesystem::path& compiler,const std::vector<wchar_t>& environment,
         std::string_view initial_toolchain,std::stop_token stop) {
@@ -5487,6 +5584,10 @@ void complete_reduction_probe(const CppRunRequest& request,CppRunResult& result,
         result.reduction_evidence=std::move(evidence);
 }
 } // namespace
+
+std::string cpp_local_int_request_fingerprint(const CppRunRequest& request) {
+    return local_int_fingerprint(request);
+}
 
 std::string cpp_defaulted_move_policy_request_fingerprint(
         const CppRunRequest& request) {
@@ -5565,6 +5666,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         if(named_rule_constant_variations_requested(request))
             result.named_rule_constant_variation_request_fingerprint=
                 named_rule_constant_variation_fingerprint(request);
+        if(request.local_int_check)
+            result.local_int_request_fingerprint=local_int_fingerprint(request);
         if(request.boolean_battery_probe)
             result.boolean_battery_request_fingerprint=boolean_battery_fingerprint(request);
         if(request.reduction_probe)
@@ -5650,7 +5753,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         if(!request.project_files.empty()){run_multifile(request,result,input,compiler_input,stop);return result;}
         write_exact(source, request.source_utf8);
         const auto arguments=single_file_arguments(result.run_directory);
-        const bool has_private_probe=request.boolean_battery_probe||request.reduction_probe||
+        const bool has_private_probe=request.local_int_check||request.boolean_battery_probe||request.reduction_probe||
             named_rule_battery_requested(request)||request.indexed_unique_transfer_probe||
             request.defaulted_move_policy_probe||request.independent_copy_assignment_probe||
             request.move_assignment_invariant_probe||request.array_owner_read_probe||
@@ -5704,6 +5807,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         complete_observation_probes(request,result,stop);
         complete_boolean_battery_probe(request,result,compiler,private_environment,initial_toolchain,stop);
         complete_reduction_probe(request,result,compiler,private_environment,initial_toolchain,stop);
+        complete_local_int_check(request,result,compiler,private_environment,initial_toolchain,stop);
     } catch (const std::exception& exception) {
         result.error_utf8 = exception.what();
         auto& phase = request.diagnostic?result.compilation:request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:

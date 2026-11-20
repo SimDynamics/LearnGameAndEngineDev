@@ -1903,8 +1903,12 @@ Los mensajes abiertos se comprueban por operación, número de petición,
 cantidad o par de campos con sus valores, intervalo 0..20 o 0..9 y acción
 de revisión, sin imponer una frase literal. El intervalo admite notaciones
 claras como «de 0 a 9», «0-9», «0 - 9» o «[0, 9]», siempre
-que se identifique como rango o dominio permitido. También reconoce los
-dos extremos expresamente nombrados: «mínimo 0, máximo 9» o «límite
+que se identifique como rango o dominio permitido. En los mensajes de diagnóstico
+se reconocen también guiones y rayas Unicode, como «0–9» y «0 — 9»,
+y el signo menos matemático en un dato rechazado, como «devoluciones=−1».
+Esta equivalencia se limita a interpretar los hechos del mensaje: no cambia
+los enteros de entrada admitidos, ni acepta límites o valores erróneos.
+También reconoce los dos extremos expresamente nombrados: «mínimo 0, máximo 9» o «límite
 inferior 0, límite superior 9», con esos mismos valores obligatorios.
 Un solo límite no basta, ni puede darse por válido otro mínimo o máximo
 contradictorio. Si el mismo mensaje incluye «rango 0..9, mínimo 1»,
@@ -3621,3 +3625,71 @@ requisitos públicos/privados de encabezados, opciones, lista de objetivos,
 avisos del compilador, cronología de reconstrucciones y prácticas abiertas
 necesitan sus propias comprobaciones. No deducirlas de este grafo.
 
+
+
+## Dependencia real de variables `int` locales
+
+Work puede declarar `compilerLocalIntChecks` en la raíz de una lección
+española v2 sin modificar los editores ya publicados. Ejemplo:
+
+```json
+"compilerLocalIntChecks": [{
+  "activity": "block_0004_0002",
+  "probes": [{
+    "variable": "llaves",
+    "replacement": 13,
+    "outputs": ["Llaves: 13", "Llaves: 13\n"]
+  }]
+}]
+```
+
+El modelo admite entre una y ocho variaciones por editor, y hasta cuatro
+salidas exactas por variación. Cada salida alternativa debe distinguirse
+de las publicadas para el primer caso obligatorio. Un nombre identifica
+un `int` local declarado directamente dentro de `main`; la inicialización
+puede emplear `=`, `{}` o `()`, o una primera asignación inequívoca.
+Se rechazan otros tipos, posiciones ambiguas y preprocesadores que impidan
+una inserción segura. No se cambian literales, comentarios ni otros nombres.
+
+Después de la ejecución pública, el mismo trabajador Windows compila y
+ejecuta cada variante en un entorno privado. La compilación y la salida
+de todas las variantes se contrastan con expectativas autorales, no con
+lo que calcule el propio alumno. Un LF puede presentarse como CRLF nativo.
+Cambiar `cajas` no altera `sobres`; al comprobar una copia de `aforo`
+puede exigirse otra variación de `anterior` para reconocer su uso real.
+La pantalla mantiene una sola pulsación de Comprobar y un solo caso
+visible obligatorio. El borrador y la ejecución pública se conservan.
+
+Un acierto histórico por stdout se mantiene como registro, pero no
+acredita automáticamente el requisito semántico nuevo. Solo una
+comprobación privada real puede añadir su comprobante independiente.
+Si no existe `compilerLocalIntChecks`, no cambia la evaluación anterior.
+Esta capacidad se limita de momento a editores C++ de una sola fuente
+y ejecución MSVC nativa. La revisión curricular y sus valores esperados
+pertenecen a Work.
+
+
+### Mutación del aumento, además del valor inicial (U2L3)
+
+Una sonda puede incluir `"afterUpdate": true` para expresar una
+variación independiente del aumento, sin sustituir la expresión original.
+En ese modo, `replacement` es la **cantidad adicional** que se suma
+después de la primera actualización completa de la variable local.
+Se reconocen actualizaciones directas como `aforo += 3`,
+`aforo = aforo + 3`, `aforo = 3 + aforo`, incremento o resta
+equivalente. El código se conserva; se inserta únicamente
+`aforo += replacement;` después de esa instrucción.
+
+Por ejemplo, U2L3 debe exigir a la vez una variación del inicio y otra
+del aumento de `aforo`, además de contrastar la salida procedente
+de `anterior`. Si `anterior` se copió antes del aumento, la sonda
+del incremento deja intacta su salida «Antes» y cambia «Ahora».
+Si se copió después, ambas salidas deben cambiar. Los programas
+que impriman `aforo` dos veces sin guardar la copia no acreditan
+el conjunto. Esta comprobación sigue siendo interna; no añade
+casos visibles obligatorios al estudiante.
+
+El campo es opcional; su ausencia preserva el comprobante y las
+expectativas históricas de las sondas anteriores. Su presencia
+requiere el booleano JSON `true` y se vincula a la huella de
+la ejecución y al comprobante semántico separado.

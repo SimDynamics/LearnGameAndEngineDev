@@ -1,0 +1,111 @@
+name: Codex portable C++ compiler-case evaluator
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-compiler-case-evaluator.yml
+      - native/core/compiler_case_first_required_tests.cpp
+      - native/core/compiler_case_receipt_adoption.hpp
+      - native/core/compiler_case_receipt_adoption_tests.cpp
+      - native/core/cpp_local_int_probe.hpp
+      - native/core/cpp_local_int_probe_tests.cpp
+      - native/core/cpp_local_int_live_fixtures.cpp
+      - scripts/curriculum/test_local_int_live_compilation.py
+      - native/platform/windows/cpp_runner.cpp
+      - native/platform/windows/local_int_state_tests.cpp
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_local_int_probe_authoring.py
+      - native/platform/windows/compiler_completion.cpp
+      - native/platform/windows/compiler_case_revision_state_tests.cpp
+      - cmake/PortableCompilerCaseBuildQA/CMakeLists.txt
+      - cmake/PortableCompilerGuidanceQA/CMakeLists.txt
+      - scripts/curriculum/compiler_case_revision_fixture_source.py
+      - native/core/lesson.hpp
+      - native/core/lesson.cpp
+      - native/core/cpp_project.cpp
+      - native/core/cpp_project.hpp
+      - native/core/compile_check.cpp
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    name: Real C++ evaluator (${{ matrix.os }}, ${{ matrix.compiler }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ matrix.timeout }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            compiler: g++
+            timeout: 10
+          - os: ubuntu-24.04
+            compiler: clang++
+            timeout: 10
+          - os: windows-2022
+            compiler: MSVC
+            timeout: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Historical fixtures authenticate exact published Git sources.
+          persist-credentials: false
+      - name: Build and run real core evaluator on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          ${{ matrix.compiler }} -std=c++23 -Wall -Wextra -Werror -Wno-error=missing-field-initializers -Wno-error=misleading-indentation -pedantic -Inative \
+            native/core/lesson.cpp native/core/cpp_project.cpp native/core/compile_check.cpp \
+            native/core/compiler_case_first_required_tests.cpp \
+            -o "${RUNNER_TEMP}/lgaed_case_evaluator_tests"
+          "${RUNNER_TEMP}/lgaed_case_evaluator_tests"
+          ${{ matrix.compiler }} -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/compiler_case_receipt_adoption_tests.cpp \
+            -o "${RUNNER_TEMP}/lgaed_case_receipt_adoption_tests"
+          "${RUNNER_TEMP}/lgaed_case_receipt_adoption_tests"
+          ${{ matrix.compiler }} -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/cpp_local_int_probe_tests.cpp \
+            -o "${RUNNER_TEMP}/lgaed_local_int_probe_tests"
+          "${RUNNER_TEMP}/lgaed_local_int_probe_tests"
+          python3 -B -m unittest discover -s scripts/curriculum -p test_local_int_probe_authoring.py -v
+          ${{ matrix.compiler }} -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/cpp_local_int_live_fixtures.cpp \
+            -o "${RUNNER_TEMP}/lgaed_local_int_live_fixtures"
+          python3 -B scripts/curriculum/test_local_int_live_compilation.py \
+            --emitter "${RUNNER_TEMP}/lgaed_local_int_live_fixtures" --compiler "${{ matrix.compiler }}"
+      - name: Select hosted MSVC without changing the pinned full-app toolchain
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Build real core evaluator with MSVC
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative /bigobj native\core\lesson.cpp native\core\cpp_project.cpp native\core\compile_check.cpp native\core\compiler_case_first_required_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_case_evaluator_tests.exe"
+          if errorlevel 1 exit /b 1
+          "%RUNNER_TEMP%\lgaed_case_evaluator_tests.exe"
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative native\core\compiler_case_receipt_adoption_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_case_receipt_adoption_tests.exe"
+          if errorlevel 1 exit /b 1
+          "%RUNNER_TEMP%\lgaed_case_receipt_adoption_tests.exe"
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative native\core\cpp_local_int_probe_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_local_int_probe_tests.exe"
+          if errorlevel 1 exit /b 1
+          "%RUNNER_TEMP%\lgaed_local_int_probe_tests.exe"
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative native\core\cpp_local_int_live_fixtures.cpp /Fe:"%RUNNER_TEMP%\lgaed_local_int_live_fixtures.exe"
+          if errorlevel 1 exit /b 1
+          python -B scripts\curriculum\test_local_int_live_compilation.py --emitter "%RUNNER_TEMP%\lgaed_local_int_live_fixtures.exe" --compiler MSVC
+          if errorlevel 1 exit /b 1
+      - name: Compile native case history against the real generated build configuration
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python -B scripts/curriculum/compiler_case_revision_fixture_source.py --output-dir "$env:RUNNER_TEMP/case-history-qa/test-fixtures/compiler-case-revision"
+          if ($LASTEXITCODE -ne 0) { throw "Authentic compiler-case fixture generation failed." }
+          cmake -S cmake/PortableCompilerCaseBuildQA -B "$env:RUNNER_TEMP/case-history-qa" -G Ninja
+          if ($LASTEXITCODE -ne 0) { throw "Standalone native QA configuration failed." }
+          cmake --build "$env:RUNNER_TEMP/case-history-qa" --target lgaed_compiler_case_revision_state_tests lgaed_local_int_state_tests --parallel 2
+          if ($LASTEXITCODE -ne 0) { throw "Native compiler-case test build failed." }
+          ctest --test-dir "$env:RUNNER_TEMP/case-history-qa" -R "^(native\.compiler_case_return_state|native\.compiler_local_int_state)$" --output-on-failure
+          if ($LASTEXITCODE -ne 0) { throw "Native historical return verification failed." }

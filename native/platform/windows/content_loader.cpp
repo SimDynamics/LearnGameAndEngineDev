@@ -4511,6 +4511,143 @@ std::optional<std::string> narration_language_tag(std::string_view authored) {
     return narration_tag(winrt::to_hstring(authored));
 }
 
+// An opt-in semantic requirement of an existing output-check editor. Each
+// independent probe changes the live int after its own initialization, then
+// compiles the whole program. The original lesson block, source, output case
+// and storage owner remain unchanged.
+void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerLocalIntChecks"))return;
+    const auto entries=array(root,"compilerLocalIntChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Local int checks require existing Spanish v2 compiler owners.");
+    // Windows.Data.Json merges duplicate member names. Check the original
+    // JSON lexically so a second "activity", "replacement" or "outputs"
+    // cannot silently override the authored semantic requirement.
+    const OriginalJson original(lesson.raw_json);
+    const auto raw_entries=original.elements(
+        original.member(original.root(),"compilerLocalIntChecks"));
+    require(raw_entries.size()==entries.Size(),
+        "Original local-int owner count differs from the parsed document.");
+    std::set<std::string> seen;
+    std::size_t owner_index=0;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        const auto raw_item=raw_entries.at(owner_index++);
+        (void)original.member(raw_item,"activity");
+        (void)original.member(raw_item,"probes");
+        allowed_keys(item,{"activity","probes"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&seen.insert(identity).second,
+            "Duplicate or invalid local-int owner.");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate local-int block identity.");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&owner->output_check->cases.size()==1&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->initial_code.empty()&&
+                !owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&
+                !owner->polymorphic_destruction_probe&&
+                !owner->virtual_lifetime_probe&&
+                !owner->derived_preparation_probe&&
+                !owner->abstract_interface_probe&&
+                !owner->interface_collection_probe&&
+                !owner->polymorphic_clone_probe&&
+                !owner->dual_interface_probe&&
+                !owner->open_battery_probe&&!owner->reduction_probe&&
+                !owner->boolean_battery_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Local int check requires one original standalone output-check editor.");
+        // The present scope has one fixed, unambiguous normal-exit sample.
+        // Probes change only authored initial values, not prepared stdin.
+        const auto& first=owner->output_check->cases.front();
+        require(first.standard_input==owner->standard_input.value_or("")&&
+                first.exit_code==0&&!first.executable&&
+                first.standard_error==StandardErrorExpectation::ignored&&
+                !first.standard_error_exact,
+            "Local int checks require one ordinary matching runtime sample.");
+        for(const auto* conflicting:{
+                "compilerWorkflowChecks","compilerRuntimeChecks",
+                "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                "compilerReductionChecks","compilerCmakeGraphChecks",
+                "compilerIndexedUniqueTransferChecks",
+                "compilerDefaultedMovePolicyChecks",
+                "compilerIndependentCopyAssignmentChecks",
+                "compilerMoveAssignmentInvariantChecks",
+                "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                "compilerArrayReturnTakeChecks",
+                "compilerPolymorphicDestructionChecks",
+                "compilerVirtualLifetimeDispatchChecks",
+                "compilerDerivedPreparationChecks",
+                "compilerAbstractInterfaceChecks",
+                "compilerInterfaceCollectionChecks",
+                "compilerPolymorphicCloneChecks","compilerDualInterfaceChecks"}) {
+            if(!root.HasKey(winrt::to_hstring(conflicting)))continue;
+            for(const auto& other:array(root,conflicting))
+                require(text(other.GetObject(),"activity")!=identity,
+                    "A local-int owner cannot share another compiler runtime check.");
+        }
+        const auto authored=array(item,"probes");
+        require(authored.Size()>0&&authored.Size()<=8,
+            "A local-int owner requires 1..8 private mutations.");
+        const auto raw_probes=original.elements(
+            original.member(raw_item,"probes"));
+        require(raw_probes.size()==authored.Size(),
+            "Original local-int probe count differs from the parsed document.");
+        CppLocalIntCheck spec;
+        std::size_t probe_index=0;
+        for(const auto& variant:authored) {
+            const auto probe=variant.GetObject();
+            const auto raw_probe=raw_probes.at(probe_index++);
+            for(const auto field:{"variable","replacement","outputs"})
+                (void)original.member(raw_probe,field);
+            if(probe.HasKey(L"afterUpdate"))
+                (void)original.member(raw_probe,"afterUpdate");
+            allowed_keys(probe,{"variable","replacement","outputs","afterUpdate"});
+            const auto number=probe.GetNamedValue(L"replacement");
+            require(number.ValueType()==JsonValueType::Number&&
+                    std::isfinite(number.GetNumber())&&
+                    std::trunc(number.GetNumber())==number.GetNumber()&&
+                    number.GetNumber()>=std::numeric_limits<std::int32_t>::min()&&
+                    number.GetNumber()<=std::numeric_limits<std::int32_t>::max(),
+                "An integer variation requires a signed 32-bit replacement.");
+            CppLocalIntProbe next;
+            next.variable=text(probe,"variable");
+            next.replacement=static_cast<std::int32_t>(number.GetNumber());
+            next.expected_stdout=strings(array(probe,"outputs"),true);
+            if(probe.HasKey(L"afterUpdate")) {
+                const auto flag=probe.GetNamedValue(L"afterUpdate");
+                require(flag.ValueType()==JsonValueType::Boolean&&
+                        flag.GetBoolean(),
+                    "afterUpdate must be the explicit true option.");
+                next.after_update=true;
+            }
+            // A variant with the same permitted output as the published
+            // unchanged program could never distinguish a hard-coded value.
+            for(const auto& expected:next.expected_stdout)
+                require(!std::ranges::any_of(first.outputs,[&](const auto& visible) {
+                    return cpp_local_int_canonical_stdout(visible)==
+                           cpp_local_int_canonical_stdout(expected);
+                }),"An integer variation must distinguish its original output.");
+            spec.probes.push_back(std::move(next));
+        }
+        require(cpp_local_int_check_valid(spec),
+            "Invalid or duplicated independent int variation.");
+        owner->local_int_check=std::move(spec);
+    }
+}
+
 void read_compiler_workflow_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerWorkflowChecks"))return;
     // Bind the new evidence requirement only after the immutable addresses
@@ -7036,6 +7173,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_order_equivalence_groups(root,lesson);
         read_order_visual_separators(root,lesson);
         read_compiler_workflow_checks(root,lesson);
+        read_compiler_local_int_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_indexed_unique_transfer_checks(root,lesson);
@@ -7176,6 +7314,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_order_equivalence_groups(root,lesson);
         read_order_visual_separators(root,lesson);
         read_compiler_workflow_checks(root,lesson);
+        read_compiler_local_int_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_indexed_unique_transfer_checks(root,lesson);

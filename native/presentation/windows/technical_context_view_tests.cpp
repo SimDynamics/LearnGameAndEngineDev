@@ -7,6 +7,7 @@
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/native_math_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/text_semantic_projection.hpp"
 #include "presentation/windows/reading_shade.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "native_build_config.hpp"
@@ -379,6 +380,52 @@ void naming_options(){
     check(state::read_bytes(path)==original,"Technical-option QA changed the current authored JSON");
     std::cout<<"PASS actual U2L4 naming options: all three valid/invalid samples equally backed, ordinary explanation choices preserved, no solution exposure, selection/reopen, source/narration/state and static backgrounds\n";
 }
+void verify_u2_text_semantic_ranges(View& fixture,HWND target,const curriculum::Block& block){
+    // The author owns the exact UTF-8 spans; the test must follow the active
+    // wording, not an earlier lesson's a/b variable names or literal numbers.
+    const auto at=block.text_semantics.find("/text");
+    check(at!=block.text_semantics.end()&&at->second.source==block.text&&
+          !at->second.spans.empty(),
+        "Current U2 technical prose has no exact authored semantic ranges");
+    const auto displayed=wide(edit_text(target));
+    // Authored starts/ends index UTF-16 positions, NOT UTF-8 bytes. Map them
+    // back to exact source bytes before slicing Spanish text with accents or
+    // future supplementary Unicode scalars. The native visible index also
+    // accounts for any hidden inline-code delimiter before the selection.
+    const auto source_boundaries=semantic_utf8_boundaries(block.text);
+    std::size_t code_count=0,neutral_count=0,citations=0;
+    for(const auto& span:at->second.spans){
+        check(span.start<span.end&&span.end<source_boundaries.size()&&
+              source_boundaries[span.start]!=std::string_view::npos&&
+              source_boundaries[span.end]!=std::string_view::npos,
+            "A U2 semantic range starts or ends inside a Unicode scalar");
+        const auto begin=source_boundaries[span.start],end=source_boundaries[span.end];
+        check(std::string_view(block.text).substr(begin,end-begin)==span.text,
+            "A U2 semantic range changed its exact original source text");
+        const auto start=wide(visible_prose(block.text.substr(0,begin))).size();
+        const auto token=wide(visible_prose(span.text));
+        check(!token.empty()&&start+token.size()<=displayed.size()&&
+              std::wstring_view(displayed).substr(start,token.size())==token,
+            "A U2 semantic range no longer maps to its visible UTF-16 text");
+        if(span.role==curriculum::SemanticRole::cpp){
+            role_reference(fixture,target,token,token,false,start);
+            ++code_count;
+        }else if(span.role==curriculum::SemanticRole::data||
+                 span.role==curriculum::SemanticRole::math||
+                 span.role==curriculum::SemanticRole::output){
+            role_reference(fixture,target,token,token,true,start);
+            ++neutral_count;
+        }else if(span.role==curriculum::SemanticRole::citation){
+            ordinary_span(target,token,token);
+            ++citations;
+        }else{
+            check(false,"Unexpected authored U2 semantic role in the selected prose");
+        }
+    }
+    check(code_count>=2&&neutral_count>0&&citations==1,
+        "The current U2 prose lost its independent code, data or citation roles");
+}
+
 void current_u2_roles(){
     const auto relative="objetos_y_estado/lesson_estado_asignacion_y_copia.json";const auto lesson=load(relative);
     const auto source=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
@@ -389,31 +436,21 @@ void current_u2_roles(){
         check(flush_lesson_view(fixture.view),"Cannot snapshot actual color QA");const auto initial=read_lesson_state(fixture.view);
         const auto verify=[&]{
             if(page==3){const auto index=block_at("block_0003_0001",page);const auto target=fixture.item(index,0);
-                for(const auto instruction:{L"int a = 2;",L"int b = a;",L"a = a + 3;",L"b = a;"})role_reference(fixture,target,instruction,instruction);
-                for(const auto context:{L"a vale 2",L"a y b valen 2",L"a vale 5 y b conserva 2"}){
-                    const std::wstring_view text=context;
-                    for(std::size_t at=0;at<text.size();++at)if(text[at]==L'a'||text[at]==L'b'||text[at]==L'2'||text[at]==L'5'){
-                        // A one-character name must be a whole word; the a/b
-                        // letters inside vale/valen/conserva remain prose.
-                        if((text[at]==L'a'||text[at]==L'b')&&((at&&text[at-1]!=L' ')||(at+1<text.size()&&text[at+1]!=L' ')))continue;
-                        const auto begin=passage_offset(target,text,text)+at;
-                        role_reference(fixture,target,text,text.substr(at,1),false,begin);
-                    }
-                }
-                role_reference(fixture,target,L"ambas valen 5",L"5");ordinary_span(target,L"se debe a una nueva",L"a una nueva");
-                ordinary_span(target,L"(Stroustrup, 2024)",L"(Stroustrup, 2024)");
-                for(const auto token:{L"1.",L"2.",L"3.",L"4."})role_reference(fixture,target,token,std::wstring_view(token).substr(0,1),true);
-                source_and_shading(fixture,target,lesson.pages[page].blocks[index].text,lesson.pages[page].blocks[index].emphasis);
+                const auto& paragraph=lesson.pages[page].blocks[index];
+                verify_u2_text_semantic_ranges(fixture,target,paragraph);
+                // The four structural list numbers remain neutral data,
+                // regardless of the identifiers used inside the code lines.
+                for(const auto number:{L"1.",L"2.",L"3.",L"4."})
+                    role_reference(fixture,target,number,std::wstring_view(number).substr(0,1),true);
+                source_and_shading(fixture,target,paragraph.text,paragraph.emphasis);
                 const auto order=block_at("block_0003_0002",page);const auto prompt=fixture.item(order,0);
                 role_reference(fixture,prompt,L"valor 3 en anterior",L"anterior");role_reference(fixture,prompt,L"valor 3 en anterior",L"3",true);
                 role_reference(fixture,prompt,L"imprimir 8 3",L"8",true);role_reference(fixture,prompt,L"imprimir 8 3",L"3",true);
                 source_and_shading(fixture,prompt,lesson.pages[page].blocks[order].question);
             }else if(page==5){const auto index=block_at("block_0005_0001",page);const auto target=fixture.item(index,0);
-                role_reference(fixture,target,L"3 * 5 produce 15",L"3 * 5");role_reference(fixture,target,L"produce 15",L"15",true);
-                ordinary_span(target,L"inicializador y -= para restar",L"y");ordinary_span(target,L"-= para restar",L"para restar");
-                role_reference(fixture,target,L"-= para restar",L"-=");
-                ordinary_span(target,L"(Stroustrup, 2024)",L"(Stroustrup, 2024)");
-                source_and_shading(fixture,target,lesson.pages[page].blocks[index].text,lesson.pages[page].blocks[index].emphasis);
+                const auto& paragraph=lesson.pages[page].blocks[index];
+                verify_u2_text_semantic_ranges(fixture,target,paragraph);
+                source_and_shading(fixture,target,paragraph.text,paragraph.emphasis);
                 const auto choice=block_at("block_0005_0003",page);role_reference(fixture,fixture.item(choice,0),L"entero turnos",L"turnos");
                 for(std::size_t option=0;option<3;++option){const auto control=fixture.item(choice,21+static_cast<int>(option)*2);
                     const auto text=wide(lesson.pages[page].blocks[choice].options[option]);role_reference(fixture,control,text,text);

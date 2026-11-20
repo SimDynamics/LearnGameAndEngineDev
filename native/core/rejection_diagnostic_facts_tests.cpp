@@ -37,6 +37,7 @@ void accepted_semantics() {
     // The same allowed interval can be expressed in ordinary prose,
     // spaced dashes or a mathematical closed interval. Preserve meaning.
     for(const auto interval:{"de 0 a 20","0-20","0 - 20","0..20",
+                             "0–20","0 — 20","0−20",
                              "[0,20]","[0, 20]","[ 0 , 20 ]"}) {
         for(const auto action:{"Revise","Verifique","Compruebe"}) {
             require(evaluate_rejection_diagnostics(
@@ -45,6 +46,7 @@ void accepted_semantics() {
         }
     }
     for(const auto interval:{"de 0 a 9","0-9","0 - 9","0..9",
+                             "0–9","0 — 9","0−9",
                              "[0,9]","[0, 9]","[ 0 , 9 ]"}) {
         for(const auto action:{"Revise","Verifique","Compruebe"}) {
             require(evaluate_rejection_diagnostics(
@@ -52,6 +54,33 @@ void accepted_semantics() {
                 "An equivalent balances interval or corrective instruction was rejected");
         }
     }
+    // A mathematical minus (U+2212) is an actual negative datum, not a
+    // lost punctuation mark or a positive integer disguised by Unicode.
+    const std::string typographic_boxes=
+        "Cajas, petición 1, piezas=−1: rango permitido 0–20. Revise la cantidad.\n"
+        "Cajas, petición 3, piezas=21: rango permitido 0–20. Verifique la cantidad.\n";
+    require(evaluate_rejection_diagnostics(typographic_boxes,
+        RejectionOperation::boxes,box_facts).correct,
+        "A mathematical negative sign or Unicode range dropped a boxes fact");
+    const std::string typographic_balances=
+        "Saldo, petición 2, cobros=10, devoluciones=0: intervalo entero 0–9. Revise los datos.\n"
+        "Saldo, petición 3, cobros=0, devoluciones=−1: intervalo entero 0–9. Compruebe los datos.\n";
+    require(evaluate_rejection_diagnostics(typographic_balances,
+        RejectionOperation::balance,balance_facts).correct,
+        "A mathematical negative sign or Unicode range dropped a balance fact");
+    require(!evaluate_rejection_diagnostics(boxes("0–21","Revise"),
+        RejectionOperation::boxes,box_facts).correct,
+        "A wrong Unicode upper bound was mistaken for the permitted domain");
+    require(!evaluate_rejection_diagnostics(balances("0–10","Verifique"),
+        RejectionOperation::balance,balance_facts).correct,
+        "A wrong Unicode balance bound was mistaken for the permitted domain");
+    const std::string forged_boxes=
+        "Cajas, petición 1, piezas=−2: rango permitido 0–20. Revise la cantidad.\n"
+        "Cajas, petición 3, piezas=21: rango permitido 0–20. Revise la cantidad.\n";
+    require(!evaluate_rejection_diagnostics(forged_boxes,
+        RejectionOperation::boxes,box_facts).correct,
+        "A mismatched negative value was accepted after Unicode folding");
+
     // An explicitly named lower and upper bound states the same integer
     // domain without requiring a single arbitrary range punctuation style.
     for(const auto interval:{"mínimo 0, máximo 20",

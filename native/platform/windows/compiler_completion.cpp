@@ -1,6 +1,7 @@
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/cpp_history_training.hpp"
 #include "platform/windows/state_store.hpp"
+#include "core/compiler_case_receipt_adoption.hpp"
 #include "core/code_format_compat.hpp"
 #include "core/cpp_expression_repair.hpp"
 #include "core/named_rule_constant_variation_check.hpp"
@@ -250,6 +251,10 @@ std::string review_target(const CppRunRequest& request) {
 }
 bool matches_runtime_capture(const CppRunRequest& captured,const curriculum::FreshExecution& execution) {
     return !captured.diagnostic
+        &&(!captured.local_int_check||
+             (!execution.local_int_request_fingerprint.empty()&&
+              execution.local_int_request_fingerprint==
+                  cpp_local_int_request_fingerprint(captured)))
         &&(!captured.cmake_graph_check||
             (!execution.cmake_graph_request_fingerprint.empty()&&
              execution.cmake_graph_request_fingerprint==
@@ -509,6 +514,18 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(request.local_int_check!=block.local_int_check)return false;
+    if(block.local_int_check) {
+        if(!curriculum::cpp_local_int_check_valid(*block.local_int_check)||
+           cpp_local_int_request_fingerprint(request).empty()||
+           !block.output_check||block.compile_check||block.cmake||
+           request.cmake||request.diagnostic||!block.project_files.empty()||
+           !request.project_files.empty()||!block.source_files.empty()||
+           !request.source_files.empty()||
+           request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||
+           request.stdin_utf8!=block.standard_input.value_or(""))return false;
+    }
     if(request.dual_interface_probe!=block.dual_interface_probe)
         return false;
     if(block.dual_interface_probe) {
@@ -1248,6 +1265,17 @@ std::string dual_interface_completion_seal(
         token(spec.constructor_code_parameter)+
         token(spec.constructor_value_parameter)+token(spec.report_separator));
 }
+std::string local_int_completion_seal(std::string_view key,
+        std::string_view program,const curriculum::CppLocalIntCheck& spec) {
+    auto frame=std::string("compiler-local-int-complete-v1/")+
+        token(key)+token(program);
+    for(const auto& item:spec.probes) {
+        frame+=token(item.variable)+token(std::to_string(item.replacement));
+        if(item.after_update)frame+=token("after-update-v1");
+        for(const auto& output:item.expected_stdout)frame+=token(output);
+    }
+    return state::sha256(frame);
+}
 std::string indexed_transfer_completion_seal(std::string_view key,
         std::string_view program,const curriculum::CppIndexedUniqueTransferProbe& spec) {
     return state::sha256(std::string("compiler-indexed-unique-owner-v1/")+
@@ -1262,6 +1290,9 @@ static bool stdout_or_diagnostic_completed(const state::StateData& data,const cu
     const auto key=base(lesson,block);
     const auto captured=state::string_value(data,"native_windows",key+"program");
     const auto proofs=case_proofs(data,key);
+    if(block.local_int_check&&
+       state::string_value(data,"native_windows",key+"local-int/v1")!=
+           local_int_completion_seal(key,captured,*block.local_int_check))return false;
     if(block.indexed_unique_transfer_probe&&
        state::string_value(data,"native_windows",key+"indexed-unique-transfer/v1")!=
            indexed_transfer_completion_seal(key,captured,
@@ -1475,6 +1506,20 @@ void validate_compiler_puzzle_state(const state::StateData& data,const curriculu
     // An independent owner identity is never an old stdout answer. Absence
     // is legitimate while the learner has not passed the new private witness;
     // a present but wrong/typed-invalid seal is an import-integrity error.
+    if(block.local_int_check) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",key+"local-int/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=local_int_completion_seal(key,program,*block.local_int_check)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid independent local-int execution receipt; historical state was preserved.");
+        }
+    }
     if(block.indexed_unique_transfer_probe) {
         const auto key=base(lesson,block);
         if(const auto* stored=state::find(data,"native_windows",
@@ -1740,33 +1785,35 @@ static void prepare_compiler_expansion(state::StateData& data,const curriculum::
 static void adopt_compiler_case_stage(state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& after,const std::vector<curriculum::Block>& previous_versions) {
     const auto key=base(lesson,after);
-    if(state::find(data,"native_windows",key+"completed"))return;
+    // An already earned first-case result must keep its exact old seal and
+    // feedback. It may still recover matching OPTIONAL receipts from a later
+    // authenticated case epoch of the same program and source client.
+    const bool already_completed=state::find(data,"native_windows",key+"completed")!=nullptr;
     auto program=state::string_value(data,"native_windows",key+"program");
-    auto proofs=case_proofs(data,key);proofs.resize(after.output_check->cases.size());
+    auto proofs=case_proofs(data,key);
+    proofs.resize(after.output_check->cases.size());
     bool added=false;
     for(auto version=previous_versions.rbegin();version!=previous_versions.rend();++version) {
-        if(!version->output_check||version->output_check->input_comparison!=after.output_check->input_comparison||
-           version->compiler_client_epoch!=after.compiler_client_epoch)continue;
+        if(!version->output_check)continue;
         const auto old_key=base(lesson,*version);
         if(old_key==key)continue;
-        const auto previous_program=state::string_value(data,"native_windows",old_key+"program");
-        if(previous_program.empty()||(!program.empty()&&previous_program!=program))continue;
-        const auto previous_proofs=case_proofs(data,old_key);
-        for(std::size_t index=0;index<after.output_check->cases.size();++index) {
-            if(!proofs[index].empty())continue;
-            for(std::size_t prior=0;prior<previous_proofs.size();++prior) {
-                if(previous_proofs[prior].empty()||!curriculum::same_output_case_requirements(
-                        version->output_check->cases[prior],after.output_check->cases[index]))continue;
-                if(program.empty())program=previous_program;
-                proofs[index]=proof(key,program,index,after.output_check->cases[index]);added=true;break;
-            }
-        }
+        const auto historical_program=state::string_value(data,"native_windows",old_key+"program");
+        const auto historical_proofs=case_proofs(data,old_key);
+        const bool adopted=curriculum::adopt_compatible_compiler_case_proofs(
+            *after.output_check,after.compiler_client_epoch,program,proofs,
+            *version->output_check,version->compiler_client_epoch,
+            historical_program,historical_proofs,
+            [&](std::string_view owner,std::size_t index,const curriculum::OutputCase& item) {
+                return proof(key,owner,index,item);
+            });
+        added=adopted||added;
     }
+    if(already_completed&&!added)return;
     if(program.empty()||(!added&&(proofs.empty()||proofs.front().empty())))return;
     auto& values=data.preferences["native_windows"];
-    values[key+"program"]=program;values[key+"cases"]=proofs;
-    // Existing proof positions remain intact, including on an explicit return.
-    // Historical completion by itself never grants this version's first case.
+    values[key+"program"]=program;
+    values[key+"cases"]=proofs;
+    if(already_completed)return; // Never replace a valid earned seal or its narration.
     if(!proofs.empty()&&!proofs.front().empty()) {
         const auto seal=std::ranges::all_of(proofs,[](const auto& item){return !item.empty();})
             ?complete_seal(key,program,proofs):first_case_complete_seal(key,program,proofs);
@@ -1893,6 +1940,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
            block.named_rule_source_check->execution_probe&&
            block.named_rule_source_check->execution_probe->battery_check&&
            !execution.named_rule_battery_correct)||
+       (block.local_int_check&&!execution.local_int_check_correct)||
        (block.open_battery_probe&&!execution.open_battery_probe_correct)||
        (block.adjustment_project_probe&&!execution.adjustment_project_probe_correct)||
         (block.boolean_battery_probe&&!execution.boolean_battery_probe_correct)||
@@ -1916,7 +1964,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     const bool previously_completed=stdout_or_diagnostic_completed(data,lesson,block);
     auto proofs=case_proofs(data,key);
     const auto stored_program=state::string_value(data,"native_windows",key+"program");
-    if((block.indexed_unique_transfer_probe||block.defaulted_move_policy_probe||
+    if((block.local_int_check||block.indexed_unique_transfer_probe||block.defaulted_move_policy_probe||
         block.independent_copy_assignment_probe||block.move_assignment_invariant_probe||
         block.array_owner_read_probe||block.array_copy_move_probe||
         block.array_return_take_probe||
@@ -1930,6 +1978,9 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
            state::string_value(data,"native_windows",key+"completed"))) {
         // Preserve old stdout-only receipts exactly and append just the
         // independently witnessed objective; no historical auto-promotion.
+        if(block.local_int_check)
+            data.preferences["native_windows"][key+"local-int/v1"]=
+                local_int_completion_seal(key,program,*block.local_int_check);
         if(block.indexed_unique_transfer_probe)
             data.preferences["native_windows"][key+"indexed-unique-transfer/v1"]=
                 indexed_transfer_completion_seal(key,program,
@@ -2026,6 +2077,9 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     if(all||first){
         values[key+"completed"]=all?complete_seal(key,program,proofs):
             first_case_complete_seal(key,program,proofs);
+        if(block.local_int_check)
+            values[key+"local-int/v1"]=
+                local_int_completion_seal(key,program,*block.local_int_check);
         if(block.indexed_unique_transfer_probe)
             values[key+"indexed-unique-transfer/v1"]=
                 indexed_transfer_completion_seal(key,program,

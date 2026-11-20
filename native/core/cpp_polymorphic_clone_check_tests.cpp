@@ -22,6 +22,78 @@ void write(const std::filesystem::path& p,std::string_view value) {
     f.write(value.data(),static_cast<std::streamsize>(value.size()));
     if(!f)throw std::runtime_error("Cannot write U8L10 disposable witness");
 }
+void check_original_virtual_declarations(
+        const lgaed::curriculum::CppPolymorphicClonePolicy& policy) {
+    namespace guard=lgaed::curriculum::cpp_polymorphic_clone_detail;
+    if(!guard::valid(policy))
+        throw std::runtime_error("Original polymorphic clone source lost its real contracts");
+    const auto falsify=[&](std::string_view old,std::string_view changed,
+                           std::string_view reason) {
+        auto forged=policy;
+        const auto at=forged.original_source.find(old);
+        if(at==std::string::npos)
+            throw std::runtime_error("Missing original U8L10 lexical fixture");
+        forged.original_source.replace(at,old.size(),changed);
+        if(guard::valid(forged)||
+           lgaed::curriculum::cpp_polymorphic_clone_matches(
+               forged,forged.original_source))
+            throw std::runtime_error(std::string(reason));
+    };
+    falsify("virtual ~Muestra() = default;",
+            "~Muestra() = default; // virtual ~Muestra() = default;",
+            "Quoted virtual destructor concealed a nonvirtual base");
+    falsify("virtual std::unique_ptr<Muestra> clonar() const = 0;",
+            "virtual std::unique_ptr<Muestra> clonar() const; "
+            "/* virtual std::unique_ptr<Muestra> clonar() const = 0; */",
+            "A comment pretended that clone remained abstract");
+    falsify("virtual int numero() const noexcept = 0;",
+            "virtual int numero() const noexcept;\n"
+            "    const char* note = R\"info(virtual int numero() const noexcept = 0;)info\";",
+            "A literal pretended that the number query remained abstract");
+    falsify("virtual void cambiar_numero(int valor) noexcept = 0;",
+            "virtual void cambiar_numero(int valor) noexcept; "
+            "// virtual void cambiar_numero(int valor) noexcept = 0;",
+            "A quoted source changed the required virtual mutation");
+    falsify("virtual void escribir(std::ostream& salida) const = 0;",
+            "virtual void escribir(std::ostream& salida) const; "
+            "/* virtual void escribir(std::ostream& salida) const = 0; */",
+            "A comment replaced the actual pure virtual reporting method");
+    falsify("int numero() const noexcept override { return numero_; }",
+            "int numero_aux() const noexcept { return numero_; } "
+            "// int numero() const noexcept override",
+            "Only the second class contained the genuine number getter");
+    falsify("int codigo() const noexcept { return codigo_; }",
+            "int codigo_aux() const noexcept { return codigo_; } "
+            "// int codigo() const noexcept",
+            "A quoted getter appeared without the concrete code query");
+    // The last unprotected source prerequisite used a substring lookup.
+    // Preserve only the real alias, not matching characters in comments,
+    // raw literals, disabled code or inside an unrelated function.
+    constexpr std::string_view alias="using Muestras = std::vector<std::unique_ptr<Muestra>>;";
+    falsify(alias,
+            "using Muestras = std::vector<Muestra*>; // using Muestras = std::vector<std::unique_ptr<Muestra>>;",
+            "An alias mentioned in a comment passed as an owner collection");
+    falsify(alias,
+            "using Muestras = std::vector<Muestra*>;\n"
+            "const char* note = R\"proof(using Muestras = std::vector<std::unique_ptr<Muestra>>;)proof\";",
+            "A raw literal impersonated the required owning vector alias");
+    falsify(alias,
+            "#if 0\nusing Muestras = std::vector<std::unique_ptr<Muestra>>;\n#endif\n"
+            "using Muestras = std::vector<Muestra*>;",
+            "A disabled alias was mistaken for the compiled owning vector");
+    falsify(alias,
+            "using Muestras = std::vector<std::unique_ptr<Muestra>>;\nusing Muestras = std::vector<std::unique_ptr<Muestra>>;",
+            "Two competing top-level aliases were accepted");
+    auto formatted=policy;
+    const auto at=formatted.original_source.find(alias);
+    if(at==std::string::npos)
+        throw std::runtime_error("The vector alias vanished from original QA");
+    formatted.original_source.replace(at,alias.size(),
+        "using  Muestras /* kept source note */=std::vector<std::unique_ptr<Muestra>>;");
+    if(!guard::valid(formatted))
+        throw std::runtime_error("Safe C++ whitespace/comment formatting of the alias was rejected");
+}
+
 }
 
 int main(int argc,char** argv) try {
@@ -33,6 +105,7 @@ int main(int argc,char** argv) try {
         "Muestras","clonar","duplicar","numero","cambiar_numero",
         "escribir","codigo","origen","salida"
     };
+    check_original_virtual_declarations(policy);
     if(!lgaed::curriculum::cpp_polymorphic_clone_matches(policy,candidate))
         throw std::runtime_error(
             "U8L10 candidate changed protected C++ or unsafe editable bodies");

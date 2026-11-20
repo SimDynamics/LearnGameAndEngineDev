@@ -508,7 +508,7 @@ struct LessonView {
     std::string secondary_instruction(BlockType type,bool optional_separators=false)const{
         if(type==BlockType::order_code){
             if(optional_separators)return ui(
-                "Arrastra las líneas de código para ordenarlas. Puedes mover las tarjetas vacías si quieres dejar una línea en blanco",
+                "Arrastra las líneas de código para ordenarlas. Puedes mover las tarjetas vacías si quieres dejar una línea en blanco.",
                 "Drag the code lines to put them in order. You can move blank cards if you want to leave an empty line.",
                 "Faites glisser les lignes de code pour les mettre dans l’ordre. Vous pouvez déplacer les cartes vides pour laisser une ligne blanche.");
             return ui("Mantén pulsado un bloque y arrástralo hasta la posición correcta.",
@@ -2314,6 +2314,7 @@ struct LessonView {
         request.polymorphic_clone_probe=block(index).polymorphic_clone_probe;
         request.dual_interface_probe=block(index).dual_interface_probe;
         request.open_battery_probe=block(index).open_battery_probe;
+        request.local_int_check=block(index).local_int_check;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
         request.integer_battery_probe=block(index).integer_battery_probe;
@@ -4344,6 +4345,7 @@ struct LessonView {
                     (fresh.named_rule_probe_correct&&
                      (!block(index).named_rule_source_check->execution_probe->battery_check||
                       fresh.named_rule_battery_correct)))&&
+                    (!block(index).local_int_check||fresh.local_int_check_correct)&&
                     (!block(index).open_battery_probe||
                      fresh.open_battery_probe_correct)&&
                     (!block(index).boolean_battery_probe||
@@ -4377,6 +4379,11 @@ struct LessonView {
                         "La structure CMake ne respecte pas encore le contrat : ")
                         +graph.reason;
                 }
+                if(!fresh.local_int_check_correct&&block(index).local_int_check&&preserved_source&&
+                   evaluation.verdict==curriculum::OutputVerdict::correct)
+                    text+='\n'+(fresh.local_int_check_feedback.empty()
+                        ?std::string("La salida visible coincide, pero falta comprobar su dependencia de las variables int declaradas.")
+                        :fresh.local_int_check_feedback);
                 if(!independent&&preserved_source&&block(index).open_battery_probe)
                     text+='\n'+ui(
                         "La batería no acreditó los casos originales y el caso nuevo mediante ejecuciones independientes. Comprueba las llamadas, los resultados esperados y que ningún fallo detenga los casos posteriores.",

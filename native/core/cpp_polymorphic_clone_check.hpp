@@ -2,6 +2,7 @@
 
 #include "core/cpp_abstract_interface_check.hpp"
 #include "core/cpp_multi_body_check.hpp"
+#include "core/cpp_private_probe_neutral.hpp"
 
 #include <algorithm>
 #include <array>
@@ -42,6 +43,51 @@ inline bool identifier(std::string_view text) {
     });
 }
 
+// Authenticate the collection alias as a top-level C++ declaration, not
+// quoted documentation, a comment, a namespace-local name or a disabled
+// preprocessor branch. Compare tokens so ordinary spacing and comments do
+// not create a false incompatibility in the unmodified authored source.
+inline bool authentic_vector_alias(std::string_view source,
+        std::string_view alias,std::string_view base) {
+    const std::string declaration="using "+std::string(alias)+
+        " = std::vector<std::unique_ptr<"+std::string(base)+">>;";
+    const auto expected=code_format::cpp_tokens(declaration);
+    const auto lexed=code_format::cpp_tokens(source);
+    if(!expected||!lexed)return false;
+    std::vector<std::string_view> tokens;
+    tokens.reserve(lexed->size());
+    for(const auto& token:*lexed) {
+        if(token.starts_with("comment:"))continue;
+        if(token.starts_with("directive:")) {
+            // The source used by this lesson needs only #include directives.
+            // #if / #define could otherwise manufacture a lexical alias
+            // that is not part of the actual compiled program.
+            if(!token.starts_with("directive:#include") &&
+               !token.starts_with("directive:%:include"))return false;
+            continue;
+        }
+        tokens.emplace_back(token);
+    }
+    std::size_t braces=0;
+    bool found=false;
+    for(std::size_t i=0;i<tokens.size();++i) {
+        if(braces==0&&i+1<tokens.size()&&
+           tokens[i]=="id:using"&&tokens[i+1]=="id:"+std::string(alias)) {
+            if(found||i+expected->size()>tokens.size()||
+               !std::equal(expected->begin(),expected->end(),
+                           tokens.begin()+static_cast<std::ptrdiff_t>(i)))
+                return false;
+            found=true;
+        }
+        if(tokens[i]=="op:{"||tokens[i]=="op:<%")++braces;
+        else if(tokens[i]=="op:}"||tokens[i]=="op:%>") {
+            if(!braces)return false;
+            --braces;
+        }
+    }
+    return found&&braces==0;
+}
+
 inline std::optional<std::array<CppMemberBodySpan,3>> spans(
         const CppPolymorphicClonePolicy& policy,std::string_view text,
         bool check_contents) {
@@ -65,8 +111,20 @@ inline std::optional<std::array<CppMemberBodySpan,3>> spans(
         *simple,*identified,*duplicate
     };
     if(check_contents)
-        for(const auto& span:result)
+        for(const auto& span:result) {
             if(!multi::safe_body(text,span))return {};
+            // The independently compiled witness is trusted, but these three
+            // function bodies belong to the learner. They must not emit the
+            // private completion marker, modify its streams, escape via a
+            // nonlocal jump, or inspect its unpublished helper types.
+            // Tokens inside prose, comments and raw strings remain inert.
+            const auto tokens=code_format::cpp_tokens(text.substr(
+                span.begin,span.end-span.begin));
+            if(!tokens ||
+               !cpp_private_probe_body_neutral(*tokens,"LgaedNewKind") ||
+               !cpp_private_probe_body_neutral(*tokens,"LgaedCloneCounts"))
+                return {};
+        }
     return result;
 }
 
@@ -85,25 +143,43 @@ inline bool valid(const CppPolymorphicClonePolicy& policy) {
             std::string_view(policy.source_parameter),
             std::string_view(policy.stream_parameter)})
         if(!identifier(name))return false;
+    namespace abstract=cpp_abstract_interface_detail;
     const auto& src=policy.original_source;
+    const auto getter="int "+policy.number_method+"() const noexcept override";
+    const auto changer="void "+policy.change_method+"(int valor) noexcept override";
+    const auto writer="void "+policy.write_method+
+        "(std::ostream& "+policy.stream_parameter+") const override";
+    // The original virtual contract must exist as code directly in the
+    // actual base class. A copied signature in a comment, raw string or a
+    // nested helper cannot authenticate a polymorphic ownership exercise.
     return spans(policy,src,false).has_value()&&
-        src.find("class "+policy.base_class+" {")!=src.npos&&
-        src.find("class "+policy.simple_class+" : public "+
-            policy.base_class+" {")!=src.npos&&
-        src.find("class "+policy.identified_class+" : public "+
-            policy.base_class+" {")!=src.npos&&
-        src.find("virtual ~"+policy.base_class+"() = default;")!=src.npos&&
-        src.find("virtual std::unique_ptr<"+policy.base_class+"> "+
-            policy.clone_method+"() const = 0;")!=src.npos&&
-        src.find("virtual int "+policy.number_method+
-            "() const noexcept = 0;")!=src.npos&&
-        src.find("virtual void "+policy.change_method+
-            "(int valor) noexcept = 0;")!=src.npos&&
-        src.find("virtual void "+policy.write_method+
-            "(std::ostream& "+policy.stream_parameter+") const = 0;")!=
-                src.npos&&
-        src.find("using "+policy.vector_alias+" = std::vector<"
-            "std::unique_ptr<"+policy.base_class+">>;")!=src.npos;
+        abstract::direct_class_declaration(src,policy.base_class,
+            "virtual ~"+policy.base_class+"() = default;")&&
+        abstract::direct_class_declaration(src,policy.base_class,
+            "virtual std::unique_ptr<"+policy.base_class+"> "+
+                policy.clone_method+"() const = 0;")&&
+        abstract::direct_class_declaration(src,policy.base_class,
+            "virtual int "+policy.number_method+"() const noexcept = 0;")&&
+        abstract::direct_class_declaration(src,policy.base_class,
+            "virtual void "+policy.change_method+"(int valor) noexcept = 0;")&&
+        abstract::direct_class_declaration(src,policy.base_class,
+            "virtual void "+policy.write_method+
+                "(std::ostream& "+policy.stream_parameter+") const = 0;")&&
+        abstract::inline_body(src,policy.simple_class,policy.base_class,
+            getter).has_value()&&
+        abstract::inline_body(src,policy.identified_class,policy.base_class,
+            getter).has_value()&&
+        abstract::inline_body(src,policy.simple_class,policy.base_class,
+            changer).has_value()&&
+        abstract::inline_body(src,policy.identified_class,policy.base_class,
+            changer).has_value()&&
+        abstract::inline_body(src,policy.simple_class,policy.base_class,
+            writer).has_value()&&
+        abstract::inline_body(src,policy.identified_class,policy.base_class,
+            writer).has_value()&&
+        abstract::inline_body(src,policy.identified_class,policy.base_class,
+            "int "+policy.code_method+"() const noexcept").has_value()&&
+        authentic_vector_alias(src,policy.vector_alias,policy.base_class);
 }
 
 inline void substitute(std::string& text,std::string_view token,

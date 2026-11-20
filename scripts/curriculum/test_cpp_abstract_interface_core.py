@@ -44,11 +44,19 @@ def main():
     parser.add_argument("--windows",action="store_true")
     arguments=parser.parse_args()
     original=fixture.original_editor()
+    inert_simple=r"""
+    // std::fputs("LGAED_ABSTRACT_INTERFACE_COMPLETE_V1",stderr);
+    const char* note=R"qa(MuestraAdicional std::longjmp(0,1) stderr)qa";
+    (void)note;
+    salida << "Numero:" << numero();
+"""
     solutions={
         "correct_direct":(fixture.SIMPLE_WRITE,fixture.IDENTIFIED_WRITE,
                           fixture.CREATE,fixture.PRESENT,True),
         "correct_local_owner":(fixture.ALT_SIMPLE,fixture.ALT_IDENTIFIED,
                                fixture.ALT_CREATE,fixture.ALT_PRESENT,True),
+        "correct_inert_qa_words":(inert_simple,fixture.IDENTIFIED_WRITE,
+                                  fixture.CREATE,fixture.PRESENT,True),
         **{name:(*bodies,False) for name,bodies in fixture.BAD.items()},
     }
     with tempfile.TemporaryDirectory(prefix="lgaed-u8l8-private-") as work:
@@ -65,6 +73,14 @@ def main():
                                  encoding="utf-8")
             private=folder/(name+".private.cpp")
             generated=run([str(generator),str(published),str(candidate),str(private)])
+            if name=="presenter_writes_to_stdout":
+                # A diagnostic printed to stdout used to fail only after
+                # executing the independent witness. The private-source gate
+                # must now reject that exact invalid edit before compilation.
+                if generated.returncode==0 or private.is_file():
+                    raise AssertionError((name,"A direct stdout write bypassed the private gate"))
+                print(f"{arguments.compiler}: {name}: REJECT (source gate)",flush=True)
+                continue
             if generated.returncode or not private.is_file():
                 raise AssertionError((name,"The source gate rejected editable code",
                                       generated.stdout,generated.stderr))
@@ -115,6 +131,26 @@ def main():
             "change_factory_signature":valid.replace(
                 "std::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {",
                 "std::unique_ptr<Muestra> crear(int tipo, int number, int codigo) {",1),
+            "forged_private_completion":valid.replace(
+                '    salida << "Numero:" << numero();',
+                '    std::fputs("LGAED_ABSTRACT_INTERFACE_COMPLETE_V1",stderr);\n'
+                '    salida << "Numero:" << numero();',1),
+            "private_derived_type":valid.replace(
+                '    salida << "Numero:" << numero();',
+                '    (void)sizeof(MuestraAdicional);\n'
+                '    salida << "Numero:" << numero();',1),
+            "private_main_name":valid.replace(
+                '    salida << "Numero:" << numero();',
+                '    (void)sizeof(lgaed_published_original_main);\n'
+                '    salida << "Numero:" << numero();',1),
+            "nonlocal_jump":valid.replace(
+                '    salida << "Numero:" << numero();',
+                '    std::longjmp(0,1);\n'
+                '    salida << "Numero:" << numero();',1),
+            "direct_console_output":valid.replace(
+                '    salida << "Numero:" << numero();',
+                '    std::cerr << "Numero:" << numero();\n'
+                '    salida << "Numero:" << numero();',1),
         }
         for name,source in attacks.items():
             candidate=folder/(name+".cpp")
@@ -124,8 +160,8 @@ def main():
             if observed.returncode==0:
                 raise AssertionError((name,"Protected original source was editable"))
             print(f"{arguments.compiler}: {name}: REJECT",flush=True)
-    print("PASS U8L8 real source-bound polymorphism: two correct solutions, "
-          "fifteen semantic defects and ten immutable-source attacks checked.")
+    print("PASS U8L8 real source-bound polymorphism: three correct solutions, "
+          "fifteen semantic defects and fifteen immutable/source-probe attacks checked.")
 
 
 if __name__=="__main__":

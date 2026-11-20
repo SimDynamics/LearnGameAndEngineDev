@@ -1,4 +1,5 @@
 #include "platform/windows/catalog_loader.hpp"
+#include "platform/windows/catalog_resource_version.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/compiler_completion.hpp"
@@ -43,13 +44,14 @@ CatalogDocument read(const std::filesystem::path& path, std::size_t maximum = 8 
 }
 struct EditionResourceIdentity {
     std::optional<CourseEdition> edition;
-    std::string id, course_id, unit_id;
+    std::string id, course_id, unit_id, title;
 };
 EditionResourceIdentity edition_resource_identity(const std::filesystem::path& asset,
                                                   std::string_view locale) {
     struct Cached {
         std::filesystem::file_time_type stamp;
         std::uintmax_t size = 0;
+        std::int64_t change_time = 0;
         EditionResourceIdentity identity;
     };
     static std::mutex lock;
@@ -57,11 +59,13 @@ EditionResourceIdentity edition_resource_identity(const std::filesystem::path& a
     const auto path = state::native_io_path(asset);
     const auto stamp = std::filesystem::last_write_time(path);
     const auto size = std::filesystem::file_size(path);
+    const auto change_time = catalog_resource_change_time(path);
     const auto cache_key = std::make_pair(asset,std::string(locale));
     {
         const std::lock_guard guard(lock);
         const auto found = entries.find(cache_key);
-        if (found != entries.end() && found->second.stamp == stamp && found->second.size == size)
+        if (found != entries.end() && found->second.stamp == stamp &&
+            found->second.size == size && found->second.change_time == change_time)
             return found->second.identity;
     }
     const auto document = read(asset,32 * 1024 * 1024);
@@ -71,12 +75,18 @@ EditionResourceIdentity edition_resource_identity(const std::filesystem::path& a
     if (object.HasKey(L"id")) result.id = text(object,L"id");
     if (object.HasKey(L"courseId")) result.course_id = text(object,L"courseId");
     if (object.HasKey(L"unitId")) result.unit_id = text(object,L"unitId");
-    require(std::filesystem::last_write_time(path) == stamp && std::filesystem::file_size(path) == size,
+    if (result.edition) {
+        result.title = text(object,L"title");
+        require(!result.title.empty(),"el recurso de edición necesita un título real.");
+    }
+    require(std::filesystem::last_write_time(path) == stamp &&
+            std::filesystem::file_size(path) == size &&
+            catalog_resource_change_time(path) == change_time,
         "el recurso de edición cambió durante la lectura.");
     {
         const std::lock_guard guard(lock);
         if (entries.size() >= 2048) entries.erase(entries.begin());
-        entries[cache_key] = Cached{stamp,size,result};
+        entries[cache_key] = Cached{stamp,size,change_time,result};
     }
     return result;
 }
@@ -89,6 +99,7 @@ std::shared_ptr<const Lesson> progress_metadata(const CatalogEntry& entry) {
     struct Cached {
         std::filesystem::file_time_type stamp;
         std::uintmax_t size = 0;
+        std::int64_t change_time = 0;
         std::shared_ptr<const Lesson> lesson;
     };
     static std::mutex lock;
@@ -103,23 +114,31 @@ std::shared_ptr<const Lesson> progress_metadata(const CatalogEntry& entry) {
     const auto path = state::native_io_path(entry.asset);
     const auto stamp = std::filesystem::last_write_time(path);
     const auto size = std::filesystem::file_size(path);
+    // Legacy lessons retain their existing cache contract. For new editions
+    // also track the file-change timestamp so a same-length edit with an
+    // explicitly restored LastWriteTime cannot borrow cached lesson credit.
+    const auto change_time = uses_course_edition_namespace(entry.id) ?
+        catalog_resource_change_time(path) : std::int64_t{};
     const auto key = std::make_pair(entry.asset,entry.asset_locale);
     {
         const std::lock_guard guard(lock);
         const auto found = entries.find(key);
-        if (found != entries.end() && found->second.stamp == stamp && found->second.size == size) {
+        if (found != entries.end() && found->second.stamp == stamp &&
+            found->second.size == size && found->second.change_time == change_time) {
             require(found->second.lesson->id == entry.id,"el recurso de progreso pertenece a otra lección.");
             return found->second.lesson;
         }
     }
     auto lesson = std::make_shared<const Lesson>(load_lesson_progress_metadata(path,entry.asset_locale));
     require(lesson->id == entry.id,"el recurso de progreso pertenece a otra lección.");
-    require(std::filesystem::last_write_time(path) == stamp && std::filesystem::file_size(path) == size,
+    require(std::filesystem::last_write_time(path) == stamp &&
+            std::filesystem::file_size(path) == size &&
+            (!change_time || catalog_resource_change_time(path) == change_time),
         "el contenido cambió durante la lectura del progreso.");
     {
         const std::lock_guard guard(lock);
         if (entries.size() >= 2048) entries.erase(entries.begin());
-        entries[key] = Cached{stamp,size,lesson};
+        entries[key] = Cached{stamp,size,change_time,lesson};
     }
     return lesson;
 }
@@ -245,6 +264,12 @@ curriculum::CatalogPage load_catalog(const std::filesystem::path& content_root, 
                 validate_course_edition_physical_path(content_root, entry.asset);
                 const auto child = edition_resource_identity(entry.asset,entry.asset_locale);
                 require(child.edition == edition,"el recurso no declara la misma edición que su índice.");
+                // An index may have the correct owner and generation yet
+                // display a different lesson or unit title. Authenticate
+                // what the student sees against the actual asset every time
+                // metadata is refreshed; the cache retains the same title.
+                require(child.title == entry.title,
+                    "el título del índice no coincide con el recurso de edición.");
                 if (level == CatalogLevel::units)
                     require(child.course_id == edition->course_id && child.unit_id == entry.id,
                         "el recurso de unidad pertenece a otro índice.");

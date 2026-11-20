@@ -146,6 +146,38 @@ class CourseEditionAuthoringTest(unittest.TestCase):
         self.assertTrue(any("/edition_es_1__" in path for path in second))
         self.check_tree(second, deepcopy(second))  # Reopening is not another reset.
 
+    def test_active_edition_titles_numbers_and_index_fields_match_real_resources(self):
+        prior = current_documents()
+        current = {**deepcopy(prior), **current_documents(descriptor())}
+        self.check_tree(prior, current)
+        prefix = f"{CONTENT}/es/programming/{COURSE}"
+        course_path = f"{prefix}/course_{COURSE}.json"
+        unit_path = next(path for path in current if "/edition_es_1__" in path and "/unit_" in path)
+        lesson_path = next(path for path in current if "/edition_es_1__" in path and "/lesson_" in path)
+        mutations = {
+            "course title blank": (course_path, "title", " "),
+            "course unit title mismatch": (course_path, "units_title", "Título equivocado"),
+            "unit lesson title mismatch": (unit_path, "lessons_title", "Título equivocado"),
+            "unit title mismatch": (unit_path, "title", "Título equivocado"),
+            "lesson title mismatch": (lesson_path, "title", "Título equivocado"),
+            "unit position gap": (course_path, "units_number", 2),
+            "lesson position zero": (unit_path, "lessons_number", 0),
+            "boolean position": (unit_path, "lessons_number", True),
+            "floating position": (course_path, "units_number", 1.0),
+            "extra unit index field": (course_path, "units_unreviewed", False),
+            "extra lesson index field": (unit_path, "lessons_unreviewed", False),
+        }
+        for name, (path, field, value) in mutations.items():
+            with self.subTest(case=name):
+                altered = deepcopy(current)
+                if "_" in field:
+                    collection, key = field.split("_", 1)
+                    altered[path][collection][0][key] = value
+                else:
+                    altered[path][field] = value
+                with self.assertRaises(edition.CourseEditionError):
+                    self.check_tree(prior, altered)
+
     def test_rollback_skips_reuse_and_removal_are_rejected(self):
         previous = next(document for path, document in current_documents(descriptor(2)).items()
                         if "/course_" in path)
@@ -593,14 +625,16 @@ class CourseEditionAuthoringTest(unittest.TestCase):
         unit_path = next(path for path in prior if "/edition_es_1__" in path and "/unit_" in path)
         first_unit = prior[unit_path]
         second_lesson = edition.prepare_edition_lesson(
-            dict(lesson_source(value), id=edition.unit_prefix(value) + "inicio__segunda"), value)
+            dict(lesson_source(value), id=edition.unit_prefix(value) + "inicio__segunda",
+                 title="Segunda"), value)
         first_unit["lessons"].append({"id": second_lesson["id"], "number": 2, "title": "Segunda"})
         prior[unit_path.rsplit("/", 1)[0] + "/lesson_segunda.json"] = second_lesson
         second_unit_id = edition.unit_prefix(value) + "continuacion"
         second_unit_folder = second_unit_id[len(COURSE) + 2:]
         second_prefix = f"{CONTENT}/es/programming/{COURSE}/{second_unit_folder}"
         second_unit_lesson = edition.prepare_edition_lesson(
-            dict(lesson_source(value), id=second_unit_id + "__primera"), value)
+            dict(lesson_source(value), id=second_unit_id + "__primera",
+                 title="Primera"), value)
         prior[second_prefix + "/lesson_primera.json"] = second_unit_lesson
         prior[second_prefix + f"/unit_{second_unit_folder}.json"] = {
             "courseId": COURSE, "unitId": second_unit_id, "courseEdition": deepcopy(value),
@@ -713,6 +747,21 @@ class CourseEditionAuthoringTest(unittest.TestCase):
                 path.relative_to(root).as_posix(): path.read_bytes()
                 for path in root.rglob("*.json")
             }, "Failed single-lesson authoring modified source files")
+
+    def test_descriptor_leaves_room_for_a_real_unit_and_lesson(self):
+        for generation, maximum_course in ((1, 236), (1_000_000, 230)):
+            with self.subTest(generation=generation):
+                boundary = dict(descriptor(generation), courseId="c" * maximum_course)
+                self.assertEqual(
+                    edition.descriptor({"courseEdition": boundary}), boundary)
+                lesson = edition.unit_prefix(boundary) + "u__l"
+                self.assertEqual(len(lesson), 256)
+                self.assertEqual(edition.lesson_parts(lesson, boundary)[1:], ("u", "l"))
+                for length in (maximum_course + 1, 256):
+                    oversized = dict(boundary, courseId="c" * length)
+                    with self.subTest(length=length), self.assertRaisesRegex(
+                            ValueError, "cannot fit a lesson ID"):
+                        edition.descriptor({"courseEdition": oversized})
 
     def test_descriptor_and_namespace_reject_ambiguous_or_cross_scope_values(self):
         for value in (dict(descriptor(), version=True), dict(descriptor(), generation=True),

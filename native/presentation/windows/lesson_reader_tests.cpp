@@ -1876,9 +1876,38 @@ void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWo
     const auto asset=std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json";
     const auto original=state::read_bytes(asset);const auto authored=windows::load_lesson(asset);
-    struct Case{std::size_t page,block;bool explanation;const char* anchor;std::size_t letter;const char* ordinary;};
-    const std::array<Case,3> cases{{{3,1,false,"int a = 2;",4,"las etapas son"},
-        {5,1,false,"produce 15",8,"Una asignación como"},{5,3,true,"++turnos;",2,"aumenta"}}};
+    struct Case{
+        std::size_t page,block;
+        bool explanation;
+        std::string anchor;
+        std::size_t letter;
+        std::string ordinary;
+    };
+    const auto locate=[&](std::string_view identity){
+        const auto at=curriculum::stable_block_position(authored,identity);
+        check(at.has_value(),"The current curricular color owner was removed");
+        return *at;
+    };
+    const auto first=locate("block_0003_0001");
+    const auto multiplication=locate("block_0005_0001");
+    const auto decision=locate("block_0005_0003");
+    const auto& paragraph=authored.pages.at(first.page).blocks.at(first.block);
+    const auto descriptor=paragraph.text_semantics.find("/text");
+    check(descriptor!=paragraph.text_semantics.end()&&
+          descriptor->second.source==paragraph.text,
+        "U2L3 reading regression lost its authored text semantics");
+    const auto first_cpp=std::ranges::find_if(descriptor->second.spans,[](const auto& span){
+        return span.role==curriculum::SemanticRole::cpp;
+    });
+    check(first_cpp!=descriptor->second.spans.end()&&first_cpp->text.starts_with("int ")&&
+          first_cpp->text.size()>4,
+        "U2L3 reading regression needs a current complete int declaration");
+    const std::array<Case,3> cases{{
+        {first.page,first.block,false,first_cpp->text,4,
+         paragraph.text.substr(0,paragraph.text.find(' '))},
+        {multiplication.page,multiplication.block,false,"produce 15",8,"Una asignación como"},
+        {decision.page,decision.block,true,"++turnos;",2,"aumenta"}
+    }};
     const auto style=[](HWND target,LONG at){
         CHARRANGE selection{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
         CHARRANGE one{at,at+1};SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&one));
@@ -1897,6 +1926,12 @@ void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWo
         curriculum::Page page;page.stable_id="qa_colors_page";curriculum::Block body;body.type=curriculum::BlockType::paragraph;
         body.stable_id="qa_colors_body";body.text=item.explanation?source.explanation:source.text;
         if(!item.explanation)body.emphasis=source.emphasis;
+        // An isolated paragraph must also carry the current explicit ranges:
+        // copying just its words would turn named code and data back to prose.
+        const auto semantic=source.text_semantics.find(item.explanation?"/explanation":"/text");
+        check(semantic!=source.text_semantics.end()&&semantic->second.source==body.text,
+            "Isolated U2 reading regression lost the current authored ranges");
+        body.text_semantics.emplace("/text",semantic->second);
         check(!body.text.empty(),"The exact current curricular color source is missing");page.blocks.push_back(body);lesson.pages.push_back(page);
         // Exact current text/emphasis in a plain QA page isolates reader ink.
         // This does not claim to activate the original choice's feedback.

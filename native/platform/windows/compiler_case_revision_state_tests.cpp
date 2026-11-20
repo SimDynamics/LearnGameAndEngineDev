@@ -766,6 +766,53 @@ bool explicit_return(const Fixture& fixture) {
     require(data == exact, "An explicit return replayed its proof recovery");
     check_historical_selection(fixture, data);
     check_reset(fixture, original, data);
+    if(fixture.name=="synthetic-return") {
+        // This time the original FIRST case is already complete when an
+        // authenticated middle epoch executes one of its missing OPTIONAL
+        // cases. Returning to the old identity must keep the earned seal
+        // while recovering that compatible optional proof.
+        auto restored=seeded_state(fixture.before,fixture.id);
+        const auto same=personal_program(before,"return-completed-first");
+        seed_case(restored,fixture.before,before,same,0);
+        require(compiler_puzzle_completed(restored,fixture.before,before),
+            "The initial return scenario did not first earn its original case");
+        const auto historical_seal=string_value(restored,"native_windows",
+            receipt_base(fixture.before,before)+"completed");
+        const auto historical_feedback=compiler_puzzle_feedback(
+            restored,fixture.before,before);
+        const auto historical_first=proof_values(restored,fixture.before,before).front();
+        prepare_lesson_state(restored,*intermediate);
+        const auto available=retained_cases(middle,after);
+        std::optional<std::size_t> middle_optional;
+        std::size_t restored_optional=0;
+        for(std::size_t i=1;i<available.size();++i)
+            if(available[i]) {
+                middle_optional=available[i];
+                restored_optional=i;
+                break;
+            }
+        require(middle_optional.has_value(),
+            "The return fixture has no optional case shared with its middle epoch");
+        seed_case(restored,*intermediate,middle,same,*middle_optional);
+        bool later=false;
+        for(const auto& version:fixture.history) {
+            if(&version==intermediate) { later=true;continue; }
+            if(later)prepare_lesson_state(restored,version);
+        }
+        const auto current=proof_values(restored,fixture.after,after);
+        require(compiler_puzzle_completed(restored,fixture.after,after)
+            && compiler_puzzle_case_count(restored,fixture.after,after)>=2
+            && current.front()==historical_first
+            && !current[restored_optional].empty()
+            && string_value(restored,"native_windows",
+                receipt_base(fixture.after,after)+"completed")==historical_seal
+            && compiler_puzzle_feedback(restored,fixture.after,after)==historical_feedback,
+            "A completed historical first case lost a later optional proof or changed its seal");
+        const auto snapshot=restored;
+        prepare_lesson_state(restored,fixture.after);
+        require(restored==snapshot,
+            "Reopening an already credited first case rewrote optional history");
+    }
     std::cout << "PASS case-revision explicit return " << fixture.name
         << ": existing proofs exact, only genuine same-program missing evidence recovered\n";
     return true;
@@ -2247,7 +2294,9 @@ std::size_t invalid_documents(const JsonArray& entries, const std::filesystem::p
 } // namespace
 
 int main(int argc, char** argv) try {
-    require(argc == 3, "Usage: compiler_case_revision_state_tests <fixtures> <isolated-qa-root>");
+    const bool return_only = argc == 4 && std::string_view(argv[3]) == "--return-only";
+    require(argc == 3 || return_only,
+        "Usage: compiler_case_revision_state_tests <fixtures> <isolated-qa-root> [--return-only]");
     winrt::init_apartment();
     const std::filesystem::path fixtures(argv[1]);
     const auto qa = std::filesystem::path(argv[2]) /
@@ -2276,6 +2325,36 @@ int main(int argc, char** argv) try {
         run("load " + name, [&] { cases.push_back(read_fixture(entry, fixtures, originals)); });
     }
     run("fixture inventory", [&] { require(!cases.empty(), "No authenticated case-review fixtures were generated"); });
+    if(return_only) {
+        // The portable Windows run isolates the actual historical return,
+        // including the earned-first plus newly available optional receipt.
+        // No fake compiler execution, proxy StateStore or altered fixture.
+        const auto selected = std::ranges::find_if(cases, [](const auto& item) {
+            return item.name == "synthetic-return";
+        });
+        require(selected != cases.end(), "The historical return fixture is missing");
+        run("return-only publication", [&] { verify_publication(*selected); });
+        run("return-only chronological adoption", [&] { chronological_adoption(*selected); });
+        run("return-only real StateStore", [&] {
+            require(explicit_return(*selected),
+                "The published fixture did not exercise its original case return");
+        });
+        run("return-only fixture integrity", [&] {
+            for(const auto& [path, original] : originals)
+                require(bytes(path) == original,
+                    "The native return test changed an authenticated fixture");
+        });
+        if(failures) {
+            std::cerr << "FAIL compiler case return: " << failures
+                      << " checks failed on the real Win32 state engine.\n";
+            return 1;
+        }
+        std::cout << "PASS native compiler case return: original first receipt, "
+                     "later optional case, unchanged seal, persisted state and "
+                     "historical source bytes.\n";
+        return 0;
+    }
+
     for (const auto& fixture : cases) {
         if (!run(fixture.name + " publication", [&] { verify_publication(fixture); })) continue;
         if (fixture.snapshot_epoch_only) {

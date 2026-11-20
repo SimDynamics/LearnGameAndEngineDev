@@ -227,6 +227,207 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
                 self.assertEqual(original["correctIndex"], updated["correctIndex"])
                 self.assertEqual(original["options"][1:], updated["options"][1:])
 
+    def test_choice_option_then_question_uses_independent_editorial_proofs(self):
+        """Correcting a choice must not prevent refining that owner's question.
+
+        This is a sequential review of a real U9L13 owner, not an exception for
+        either Spanish sentence. Its response remains exactly the publication.
+        """
+        import validar_json_programacion as contract
+
+        option_revision = self.revise()
+        former = layout._blocks(option_revision)[OWNER]
+        revised_question = former["question"].replace(
+            "¿Qué falta?", "¿Qué condición debe corregirse?")
+        self.assertNotEqual(former["question"], revised_question)
+        spans = [layout.text_semantics.select(
+            revised_question, "enviar", "cpp", reading="technical")]
+        updated = layout.revise_ordinary_editorial(
+            option_revision, OWNER,
+            {"question": {"text": revised_question, "spans": spans}})
+        layout.validate_transition(option_revision, updated)
+        reopened = json.loads(json.dumps(updated, ensure_ascii=False))
+        layout.validate(reopened)
+        self.assertEqual(layout._blocks(updated)[OWNER]["question"],
+                         revised_question)
+        self.assertEqual(layout._blocks(updated)[OWNER]["options"][0], REVISED)
+        self.assertEqual(layout._blocks(updated)[OWNER]["correctIndex"], 0)
+        self.assertEqual(layout.validate(self.original), layout.validate(updated))
+        self.assertEqual(self.original["stateLayout"]["origin"],
+                         updated["stateLayout"]["origin"])
+        self.assertEqual(len(updated["stateLayout"]["choiceRevisions"]), 1)
+        self.assertEqual(len(updated["stateLayout"]["editorial"]),
+                         len(self.original["stateLayout"]["editorial"]) + 2)
+        previous_block=layout._blocks(option_revision)[OWNER]
+        changed_block=layout._blocks(updated)[OWNER]
+        relative="app/src/main/assets/content/es/" + RELATIVE
+        origin=layout.validate(self.original)
+        location=next(value for (page, pos), value in origin.items()
+                      if self.original["stateLayout"]["current"][page]["blocks"][pos] == OWNER)
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *location, previous_block, changed_block,
+            previous_document=option_revision, current_document=updated))
+        restored=layout.original_projection(updated)
+        # original_projection intentionally removes stateLayout; its pages
+        # follow the immutable *origin* slots returned by validate().
+        original_choice=restored["pages"][location[0]]["blocks"][location[1]]
+        self.assertEqual(original_choice["options"], self.block["options"])
+        # Its *current* question marker stays bound to its revised prose.
+        # Only the corrected answer-option text and its mark rewind.
+        self.assertEqual(original_choice["question"], revised_question)
+        self.assertEqual(changed_block["explanation"], self.block["explanation"])
+
+        for altered in ("answer", "another-option", "missing-question-mark",
+                        "wrong-question-mark", "missing-editorial-edge"):
+            bad=deepcopy(updated)
+            owner=layout._blocks(bad)[OWNER]
+            if altered=="answer":
+                owner["correctIndex"]=1
+            elif altered=="another-option":
+                owner["options"][1]+=" Versión falsa."
+            elif altered in ("missing-question-mark","wrong-question-mark"):
+                marker=next(marker for marker in bad["textSemantics"]["fields"]
+                            if marker["block"]==OWNER and marker["path"]=="/question")
+                if altered=="missing-question-mark":
+                    bad["textSemantics"]["fields"].remove(marker)
+                else:
+                    marker["sourceSha256"]="0"*64
+            else:
+                bad["stateLayout"]["editorial"].pop()
+            if altered in ("answer","another-option"):
+                bad["stateLayout"]["editorial"][-1]["afterSha256"]=layout.fingerprint(owner)
+            with self.subTest(altered=altered), self.assertRaises(ValueError):
+                layout.validate_transition(option_revision, bad)
+
+    def test_option_and_both_prose_fields_survive_skipped_publication(self):
+        """An intermediate Git publication is not required for two signed edits.
+
+        The original and final U9L13 choice have the same response, position
+        and storage. A corrected option followed by an authored question and
+        explanation must pass the curricular guard even when Work publishes
+        the complete result in one update.
+        """
+        import validar_json_programacion as contract
+
+        reviewed = self.revise()
+        revised_question = self.block["question"].replace(
+            "¿Qué falta?", "¿Qué condición debe corregirse?")
+        self.assertNotEqual(self.block["question"], revised_question)
+        revised_explanation = (
+            self.block["explanation"] +
+            " El estado que permanece después del rechazo también debe comprobarse.")
+        previous_explanation = next(
+            (field for field in self.original["textSemantics"]["fields"]
+             if field["block"] == OWNER and field["path"] == "/explanation"), None)
+        preserved_spans = (deepcopy(previous_explanation["spans"])
+                           if previous_explanation is not None else [])
+        final = layout.revise_ordinary_editorial(reviewed, OWNER, {
+            "question": {
+                "text": revised_question,
+                "spans": [layout.text_semantics.select(
+                    revised_question, "enviar", "cpp", reading="technical")]},
+            "explanation": {
+                "text": revised_explanation,
+                "spans": preserved_spans},
+        })
+        layout.validate_transition(self.original, final)
+        layout.validate_transition(reviewed, final)
+        relative = "app/src/main/assets/content/es/" + RELATIVE
+        position = next((p, b)
+                        for p, page in enumerate(self.original["stateLayout"]["current"])
+                        for b, owner in enumerate(page["blocks"]) if owner == OWNER)
+        old, new = self.block, layout._blocks(final)[OWNER]
+        self.assertEqual(old["correctIndex"], new["correctIndex"])
+        self.assertEqual(old["options"][1:], new["options"][1:])
+        self.assertTrue(contract.preserves_general_choice_option_revision(
+            relative, *position, old, new,
+            previous_document=self.original, current_document=final))
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *position, old, new,
+            previous_document=self.original, current_document=final))
+
+        for mutation in ("answer", "other-option", "question-mark", "missing-proof"):
+            forged = deepcopy(final)
+            active = layout._blocks(forged)[OWNER]
+            if mutation == "answer":
+                active["correctIndex"] = 1
+            elif mutation == "other-option":
+                active["options"][1] += " Alteración escondida."
+            elif mutation == "question-mark":
+                marker = next(field for field in forged["textSemantics"]["fields"]
+                              if field["block"] == OWNER and field["path"] == "/question")
+                marker["sourceSha256"] = "0" * 64
+            else:
+                forged["stateLayout"]["editorial"].pop()
+            with self.subTest(mutation=mutation):
+                self.assertFalse(contract.preserves_general_choice_option_revision(
+                    relative, *position, old, active,
+                    previous_document=self.original, current_document=forged))
+                self.assertFalse(contract.preserves_previous_exercise(
+                    relative, *position, old, active,
+                    previous_document=self.original, current_document=forged))
+
+    def test_prose_before_option_survives_skipped_publication_without_reusing_answer(self):
+        """A signed question correction may precede the independently archived option.
+
+        The final document must verify against the original published U9 owner,
+        even if Work did not publish the intermediate wording-only snapshot.
+        """
+        import validar_json_programacion as contract
+
+        question = self.block["question"].replace(
+            "¿Qué falta?", "¿Qué condición debe corregirse?")
+        self.assertNotEqual(question, self.block["question"])
+        prose_first = layout.revise_ordinary_editorial(self.original, OWNER, {
+            "question": {"text": question, "spans": [
+                layout.text_semantics.select(question, "enviar", "cpp",
+                                             reading="technical")]}})
+        option_last = layout.revise_choice_editorial(prose_first, OWNER, 0, REVISED)
+        layout.validate_transition(self.original, prose_first)
+        layout.validate_transition(prose_first, option_last)
+        layout.validate_transition(self.original, option_last)
+        self.assertEqual(layout.validate(self.original), layout.validate(option_last))
+        self.assertEqual(self.original["stateLayout"]["origin"],
+                         option_last["stateLayout"]["origin"])
+        old, current = self.block, layout._blocks(option_last)[OWNER]
+        self.assertEqual(current["options"][0], REVISED)
+        self.assertEqual(current["options"][1:], old["options"][1:])
+        self.assertEqual(current["correctIndex"], old["correctIndex"])
+        self.assertEqual(current["explanation"], old["explanation"])
+        self.assertEqual(current["question"], question)
+        relative = "app/src/main/assets/content/es/" + RELATIVE
+        position = next((p, b)
+                        for p, page in enumerate(self.original["stateLayout"]["current"])
+                        for b, owner in enumerate(page["blocks"]) if owner == OWNER)
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *position, old, current,
+            previous_document=self.original, current_document=option_last))
+        restored = layout.original_projection(option_last)
+        origin_position = layout.validate(self.original)[position]
+        historical = restored["pages"][origin_position[0]]["blocks"][origin_position[1]]
+        self.assertEqual(historical["options"], old["options"])
+        self.assertEqual(historical["question"], question)
+
+        for mutation in ("missing-prior-proof", "forged-option-predecessor",
+                         "changed-answer", "stale-question-marker"):
+            bad = deepcopy(option_last)
+            active = layout._blocks(bad)[OWNER]
+            if mutation == "missing-prior-proof":
+                bad["stateLayout"]["editorial"].pop(-2)
+            elif mutation == "forged-option-predecessor":
+                bad["stateLayout"]["choiceRevisions"][0]["block"]["explanation"] += " Alterada."
+            elif mutation == "changed-answer":
+                active["correctIndex"] = 1
+            else:
+                marker = next(field for field in bad["textSemantics"]["fields"]
+                              if field["block"] == OWNER and field["path"] == "/question")
+                marker["sourceSha256"] = "0" * 64
+            with self.subTest(mutation=mutation), self.assertRaises(layout.LayoutError):
+                layout.validate_transition(self.original, bad)
+            self.assertFalse(contract.preserves_previous_exercise(
+                relative, *position, old, active,
+                previous_document=self.original, current_document=bad))
+
     def test_general_option_curricular_guard_rejects_answer_and_history_tampering(self):
         import validar_json_programacion as contract
 

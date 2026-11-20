@@ -2391,7 +2391,7 @@ void optional_separator_help_matches_screen_reader_and_grading() {
     // Presentation-only blanks are not answer fragments, and retired hide
     // shortcuts must not be announced by either the visible help or the reader.
     const std::string instruction=
-        "Arrastra las líneas de código para ordenarlas. Puedes mover las tarjetas vacías si quieres dejar una línea en blanco";
+        "Arrastra las líneas de código para ordenarlas. Puedes mover las tarjetas vacías si quieres dejar una línea en blanco.";
     Fixture fixture({},[](const curriculum::Lesson&) {
         auto lesson=windows::parse_lesson_json(R"json({
           "id":"qa_optional_order_help","title":"Tarjetas vacías",
