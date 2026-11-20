@@ -29,6 +29,8 @@ jobs:
           for compiler in g++ clang++; do
             python3 -B scripts/curriculum/test_cpp_move_assignment_invariants.py \
               --compiler "$compiler"
+            python3 -B scripts/curriculum/test_cpp_move_assignment_invariant_core.py \
+              --compiler "$compiler"
           done
 
   windows-msvc:
@@ -47,3 +49,4 @@ jobs:
         shell: cmd
         run: |
           python -B scripts\curriculum\test_cpp_move_assignment_invariants.py --compiler cl --windows
+          python -B scripts\curriculum\test_cpp_move_assignment_invariant_core.py --compiler cl --windows
