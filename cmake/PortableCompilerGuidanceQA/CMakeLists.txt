@@ -77,7 +77,8 @@ target_link_libraries(lgaed_guidance_platform PUBLIC
 
 add_executable(lgaed_compiler_guidance_portable_qa
     "${LGAED_ROOT}/native/platform/windows/compiler_guidance_state_tests.cpp"
-    "${LGAED_ROOT}/native/platform/windows/math_matching_text_state_tests.cpp")
+    "${LGAED_ROOT}/native/platform/windows/math_matching_text_state_tests.cpp"
+    "${LGAED_ROOT}/native/platform/windows/indexed_unique_transfer_state_tests.cpp")
 target_link_libraries(lgaed_compiler_guidance_portable_qa PRIVATE
     lgaed_guidance_platform lgaed_guidance_qa_options)
 target_link_options(lgaed_compiler_guidance_portable_qa PRIVATE /OPT:REF)
@@ -94,9 +95,12 @@ add_test(NAME native.u5l13_identifier_rename_historical
     COMMAND lgaed_compiler_guidance_portable_qa --identifier-rename-live)
 add_test(NAME native.u5l13_math_matching_text_historical
     COMMAND lgaed_compiler_guidance_portable_qa --math-matching-text-live)
+add_test(NAME native.u6l5_indexed_unique_transfer_state
+    COMMAND lgaed_compiler_guidance_portable_qa --indexed-unique-transfer-state-live)
 set_tests_properties(native.compiler_guidance_state
     native.compiler_review_guidance_priority
     native.u12l24_authored_compiler_guides
     native.u9l13_general_choice_editorial
     native.u5l13_identifier_rename_historical
-    native.u5l13_math_matching_text_historical PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+    native.u5l13_math_matching_text_historical
+    native.u6l5_indexed_unique_transfer_state PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)

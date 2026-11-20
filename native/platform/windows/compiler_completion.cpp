@@ -977,6 +977,25 @@ void validate_compiler_puzzle_state(const state::StateData& data,const curriculu
         state::find(data,"native_windows",selective_history_key(lesson,block))&&
         !selective_history_receipt_valid(data,lesson,block))
         throw std::runtime_error("Invalid selective recovery provenance; historical completion was preserved.");
+    // An independent owner identity is never an old stdout answer. Absence
+    // is legitimate while the learner has not passed the new private witness;
+    // a present but wrong/typed-invalid seal is an import-integrity error.
+    if(block.indexed_unique_transfer_probe) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",
+                key+"indexed-unique-transfer/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=indexed_transfer_completion_seal(
+                    key,program,*block.indexed_unique_transfer_probe)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid independent C++ owner identity receipt; historical state was preserved.");
+        }
+    }
     // Existing objectives retain their historical permissive decoding. The
     // reviewed migration validates every receipt it is about to reuse.
     if(block.compile_check){validate_receipts(data,lesson,block);return;}

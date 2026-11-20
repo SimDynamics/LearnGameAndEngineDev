@@ -166,15 +166,41 @@ int indexed_unique_transfer_state_windows(const std::filesystem::path& content,
         require(found!=updated.end()&&found->second==value,
             "Identity adoption rewrote an earlier output-only completion");
     }
-    const auto independent=updated.find(
-        "compiler-puzzle/v1/es/"+revised.id+"/"+exercise_key(revised,actual)+
-        "/indexed-unique-transfer/v1");
-    require(independent!=updated.end(),
-        "Independent owner completion did not create its separate state seal");
+    // A compiler receipt lives under its reference-objective SHA, not
+    // directly under the exercise key. Use exactly the same fully qualified
+    // identity as production base(lesson,block), including this SHA segment.
+    const auto ownership_key=
+        "compiler-puzzle/v1/"+revised.locale+"/"+revised.id+"/"+
+        exercise_key(revised,actual)+"/"+
+        state::sha256(reference_objective_frame(revised,actual))+
+        "/indexed-unique-transfer/v1";
+    const auto independent=updated.find(ownership_key);
+    require(independent!=updated.end()&&
+            std::get_if<std::string>(&independent->second)!=nullptr,
+        "Independent owner completion did not create its typed state seal");
+    require(updated.size()==historical.size()+1,
+        "Identity adoption added or removed unrelated native receipt fields");
     require(state::get_draft(data,draft_key("programming",revised,actual),
                 published.initial_code).source==draft.source&&
             state::string_value(data,"qa-unrelated","opaque")=="leave exact",
         "Identity adoption changed the learner draft or foreign preferences");
+    // A tampered supplemental seal must never silently validate on import.
+    // The accepted profile and the historical stdout proof remain unchanged.
+    auto forged_state=data;
+    forged_state.preferences["native_windows"][ownership_key]=std::string(64,'0');
+    const auto forged_snapshot=forged_state;
+    require(!compiler_puzzle_completed(forged_state,revised,actual),
+        "A forged independent owner receipt was treated as completed");
+    bool rejected_forged_import=false;
+    try {state::validate_lesson_state(forged_state,revised);}
+    catch(const std::runtime_error&) {rejected_forged_import=true;}
+    require(rejected_forged_import&&forged_state==forged_snapshot,
+        "A corrupted independent owner seal was accepted or import mutated state");
+    auto missing_history=data;
+    missing_history.preferences["native_windows"].erase(
+        ownership_key);
+    require(!compiler_puzzle_completed(missing_history,revised,actual),
+        "A historical stdout-only answer was promoted without a private seal");
     store.save(data);
     const auto persisted=reopen(store);
     require(persisted==data&&compiler_puzzle_completed(persisted,revised,actual),
