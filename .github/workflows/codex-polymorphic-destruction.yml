@@ -11,6 +11,8 @@ on:
       - native/core/cpp_polymorphic_destruction_check.hpp
       - native/core/cpp_polymorphic_destruction_check_tests.cpp
       - scripts/curriculum/test_cpp_polymorphic_destruction_core.py
+      - scripts/curriculum/test_cpp_polymorphic_destruction_authoring.py
+      - scripts/curriculum/stable_state_layout.py
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/composicion_y_herencia_publica/lesson_destruir_una_derivada_mediante_la_base.json
   workflow_dispatch:
 
@@ -34,6 +36,8 @@ jobs:
             python3 -B scripts/curriculum/test_cpp_polymorphic_destruction_core.py \
               --compiler "$compiler"
           done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_polymorphic_destruction_authoring.py -v
 
       - name: Verify authenticated multi-body source preservation
         run: |
@@ -65,3 +69,4 @@ jobs:
         run: |
           python -B scripts\curriculum\test_cpp_polymorphic_destruction.py --compiler cl --windows
           python -B scripts\curriculum\test_cpp_polymorphic_destruction_core.py --compiler cl --windows
+          python -B -m unittest discover -s scripts\curriculum -p test_cpp_polymorphic_destruction_authoring.py -v
