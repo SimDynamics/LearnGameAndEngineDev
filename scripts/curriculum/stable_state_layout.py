@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -4965,6 +4965,89 @@ def _validate_compiler_array_copy_move_checks(document: dict) -> None:
                 "Array copy/move requires the two original distinct operator bodies")
 
 
+def _validate_compiler_array_return_take_checks(document: dict) -> None:
+    """Authenticate two global-function bodies on the existing v2 compiler owner."""
+    field="compilerArrayReturnTakeChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Array return/take requires the original Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Array return/take requires 1..32 original compiler owners")
+    required={"activity","className","ownerMember","countMember",
+              "copyFunction","takeFunction","sourceParameter","indexParameter",
+              "valueParameter","destinationParameter","offeredParameter",
+              "limitParameter","quantityMethod","accessMethod",
+              "configureMethod","readMethod","writeMethod","clearMethod"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Array return/take requires exactly the declared original symbols")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate array return/take owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Array return/take must bind a historical single-source output editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            others=document.get(other,[])
+            require(type(others) is list and not any(
+                    type(x) is dict and x.get("activity")==identity
+                    for x in others),
+                "Array return/take must not share a different private compiler owner")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Array return/take requires the complete original C++ source")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid identifier in array return/take authoring")
+        name=item["className"]
+        require(len(re.findall(
+                    r"\b(?:class|struct)\s+"+re.escape(name)+r"\s*\{",
+                    source))==1,
+                "Array return/take original class missing or ambiguous")
+        require(re.search(
+                    r"\bstd\s*::\s*unique_ptr\s*<\s*int\s*\[\s*\]\s*>\s*"+
+                    re.escape(item["ownerMember"])+r"\b",source) is not None,
+                "Array return/take original unique_ptr<int[]> member missing")
+        require(re.search(r"\bint\s+"+re.escape(item["countMember"])+r"\b",
+                          source) is not None,
+                "Array return/take original count field missing")
+        copy=(re.escape(name)+r"\s+"+re.escape(item["copyFunction"])+
+              r"\s*\(\s*const\s+"+re.escape(name)+r"\s*&\s*"+
+              re.escape(item["sourceParameter"])+r"\s*,\s*int\s+"+
+              re.escape(item["indexParameter"])+r"\s*,\s*int\s+"+
+              re.escape(item["valueParameter"])+r"\s*\)\s*\{")
+        take=(r"\bbool\s+"+re.escape(item["takeFunction"])+
+              r"\s*\(\s*"+re.escape(name)+r"\s*&\s*"+
+              re.escape(item["destinationParameter"])+r"\s*,\s*"+
+              re.escape(name)+r"\s*&&\s*"+
+              re.escape(item["offeredParameter"])+r"\s*,\s*int\s+"+
+              re.escape(item["limitParameter"])+r"\s*\)\s*noexcept\s*\{")
+        require(len(re.findall(copy,source))==1 and
+                len(re.findall(take,source))==1,
+                "Array return/take requires both original external function signatures")
+
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
@@ -5761,6 +5844,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_move_assignment_invariant_checks(document)
     _validate_compiler_array_owner_read_checks(document)
     _validate_compiler_array_copy_move_checks(document)
+    _validate_compiler_array_return_take_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)
