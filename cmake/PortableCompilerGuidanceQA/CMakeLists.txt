@@ -157,6 +157,18 @@ set_tests_properties(native.compiler_guidance_state
     native.u8l10_polymorphic_clone_state
     native.u10l1_dual_interface_state PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
 
+# Read-only authoring reference for Work: validate each proposed property
+# with the actual WinRT full and compact loaders without writing lesson JSON.
+add_executable(lgaed_p3_authoring_state_tests
+    "${LGAED_ROOT}/native/platform/windows/p3_ownership_authoring_state_tests.cpp")
+target_link_libraries(lgaed_p3_authoring_state_tests PRIVATE
+    lgaed_guidance_platform lgaed_guidance_qa_options)
+target_link_options(lgaed_p3_authoring_state_tests PRIVATE /OPT:REF)
+add_test(NAME native.p3_fourteen_ownership_authoring
+    COMMAND lgaed_p3_authoring_state_tests)
+set_tests_properties(native.p3_fourteen_ownership_authoring PROPERTIES
+    TIMEOUT 180 RUN_SERIAL TRUE)
+
 # Local-int contracts use the real WinRT loader and StateStore codec without
 # running student binaries or changing the pinned Windows toolchain.
 add_executable(lgaed_local_int_state_tests
