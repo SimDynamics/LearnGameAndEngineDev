@@ -56,10 +56,12 @@ TAKE={
 }
 BAD_COPY={
     "does_not_modify_requested_index":r"""
+    (void)indice; (void)valor;
     Tramo resultado(origen);
     return resultado;
 """,
     "always_modifies_first_index":r"""
+    (void)indice;
     Tramo resultado(origen);
     resultado.escribir(0, valor);
     return resultado;
