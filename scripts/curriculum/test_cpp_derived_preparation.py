@@ -83,6 +83,7 @@ BAD={
     destino=std::make_unique<MedidaIdentificada>(numero,codigo,modo,balance);
 """,
     "report_success_by_leaving_previous_owner":r"""
+    (void)destino;
     auto candidate=std::make_unique<MedidaIdentificada>(numero,codigo,modo,balance);
     (void)candidate;
 """,
