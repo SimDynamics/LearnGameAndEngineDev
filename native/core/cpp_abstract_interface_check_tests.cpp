@@ -93,9 +93,10 @@ public:
     if(!direct||nested.substr(direct->begin,direct->end-direct->begin).find(
             "salida << example;")==std::string::npos)
         throw std::runtime_error("A nested virtual override hid the genuine outer method");
-    const auto inner=nested.find(signature,insertion);
-    const auto outer=inner==std::string::npos?std::string::npos:
-        nested.find(signature,inner+signature.size());
+    // Locate the direct implementation after its actual body statement.
+    // A nearer occurrence is deliberately present inside an author comment.
+    const auto outer=nested.rfind(signature,
+        nested.find("salida << example;"));
     if(outer==std::string::npos)
         throw std::runtime_error("Missing outer method in nested source fixture");
     nested.replace(outer,signature.size(),"void escribir_otro(std::ostream& salida) const");
