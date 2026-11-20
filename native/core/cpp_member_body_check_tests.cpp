@@ -76,7 +76,7 @@ int main() { return 0; }
             signature_pos+check.signature.size());
         require(brace_pos!=std::string::npos,"Method opening fixture missing");
         digraph.original_source.replace(brace_pos,1,"<%");
-        const auto close_pos=digraph.original_source.find("\n}\n\nint main()",brace_pos);
+        const auto close_pos=digraph.original_source.find("\n}\nint main()",brace_pos);
         require(close_pos!=std::string::npos,"Method closing fixture missing");
         digraph.original_source.replace(close_pos+1,1,"%>");
         const auto digraph_span=cpp_member_body_span(digraph);
