@@ -607,17 +607,25 @@ if ($Suite -eq 'ReaderBuild') {
     # Keep the other focal checks and execute each registered test once.
     $qaFocalPattern = '^native\.(rich_text_hit_geometry|cpp_cmake_graph|cpp_project_u3_cmake_structure|u3_runtime_semantics|named_rule_runtime)$'
     $qaCompletedPattern = "($qaSimulationPattern)|($qaGesturePattern)|($qaFocalPattern)"
-    & $qaCTest --test-dir $qaBuild -R $qaFocalPattern --verbose --output-on-failure --no-tests=error --timeout 300
-    if ($LASTEXITCODE -ne 0) { throw 'A native glyph, CMake structure, U3 semantic or named-rule regression failed.' }
-    # Run all independent regressions even when one fails. --stop-on-failure
-    # previously hid later diagnostics (e.g. optional prose and simulation
-    # after a course-edition failure), requiring another full Windows build
-    # to discover the next problem. CTest still exits nonzero on any failure.
-    # Persist machine-readable and human-readable outcomes in the QA build.
+    # Keep an independent receipt for the five early checks even if one
+    # crashes. Do not abandon the other registered tests or lower their gates.
+    & $qaCTest --test-dir $qaBuild -R $qaFocalPattern --verbose --output-on-failure --no-tests=error --timeout 300 `
+        --output-junit (Join-Path $qaBuild 'reader-build-focal.xml') `
+        --output-log (Join-Path $qaBuild 'reader-build-focal.log')
+    $qaFocalExit = $LASTEXITCODE
+    if ($qaFocalExit -ne 0) {
+        Write-Warning 'ReaderBuild focal regressions failed. Continuing independent cases without granting success.'
+    }
+    # A failed CMake graph, glyph or U3 focal test must not hide the remaining
+    # catalog, compiler or Win32 regressions. Both groups retain independent
+    # JUnit/log evidence, and either nonzero exit fails the entire workflow.
     & $qaCTest --test-dir $qaBuild -E $qaCompletedPattern --output-on-failure --no-tests=error --timeout 300 `
         --output-junit (Join-Path $qaBuild 'reader-build-regressions.xml') `
         --output-log (Join-Path $qaBuild 'reader-build-regressions.log')
-    if ($LASTEXITCODE -ne 0) { throw 'A focused native reader, catalog, compiler or Win32 regression failed; see reader-build-regressions.xml and reader-build-regressions.log.' }
+    $qaRemainingExit = $LASTEXITCODE
+    if ($qaFocalExit -ne 0 -or $qaRemainingExit -ne 0) {
+        throw "ReaderBuild native regressions failed: focal exit=$qaFocalExit, remaining exit=$qaRemainingExit. See reader-build-focal.xml/log and reader-build-regressions.xml/log."
+    }
     Write-Host 'PASS original reader/U6 executables compiled and linked; catalog, general-choice reading preservation, boolean battery execution/provenance, console fullscreen/zoom and Escape, actual Win32 History dialogs and focused published lesson execution/reopen/reset tested. No reader/audio playback executed.'
     return
 }
