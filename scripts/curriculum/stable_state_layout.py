@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPolymorphicDestructionChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -5148,6 +5148,90 @@ def _validate_compiler_polymorphic_destruction_checks(document: dict) -> None:
                 "Polymorphic destruction needs precisely three original bodies")
 
 
+
+def _validate_compiler_virtual_lifetime_dispatch_checks(document: dict) -> None:
+    """Bind two published C++ member bodies to an independent dispatch probe."""
+    field="compilerVirtualLifetimeDispatchChecks"
+    if field not in document:
+        return
+    layout=document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version")==2 and
+            layout.get("locale")=="es",
+            "Virtual lifetime dispatch requires a Spanish v2 lesson")
+    checks=document[field]
+    require(type(checks) is list and 0<len(checks)<=32,
+            "Virtual lifetime dispatch requires 1..32 existing editors")
+    required={"activity","baseClass","derivedClass","registerMethod",
+              "writeMethod","phaseParameter","registerStream","writeStream"}
+    owners=_blocks(document)
+    seen=set()
+    for item in checks:
+        require(type(item) is dict and set(item)==required,
+                "Virtual lifetime dispatch requires its exact authoring symbols")
+        identity=_identity(item["activity"])
+        require(identity not in seen,"Duplicate virtual lifetime dispatch owner")
+        seen.add(identity)
+        block=owners.get(identity)
+        require(type(block) is dict and block.get("type")=="cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"])
+                and not ({"compileCheck","cmake","projectFiles","sourceFiles"}&set(block)),
+                "Virtual lifetime dispatch needs an original single-source editor")
+        for other in ("compilerIndexedUniqueTransferChecks",
+                      "compilerDefaultedMovePolicyChecks",
+                      "compilerIndependentCopyAssignmentChecks",
+                      "compilerMoveAssignmentInvariantChecks",
+                      "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks",
+                      "compilerArrayReturnTakeChecks",
+                      "compilerPolymorphicDestructionChecks",
+                      "compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                      "compilerReductionChecks","compilerCmakeGraphChecks",
+                      "compilerIntegerBatteryChecks"):
+            others=document.get(other,[])
+            require(type(others) is list and not any(
+                    type(x) is dict and x.get("activity")==identity for x in others),
+                "Virtual lifetime dispatch cannot share another private editor")
+        source=block.get("initialCode")
+        require(type(source) is str and bool(source),
+                "Virtual lifetime dispatch requires original full C++ source")
+        for key in required-{"activity"}:
+            value=item[key]
+            require(type(value) is str and 0<len(value)<=96
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value)
+                    and not value.startswith("__")
+                    and not (len(value)>1 and value[0]=="_" and value[1].isupper()),
+                "Invalid virtual dispatch authoring identifier")
+        base=item["baseClass"]
+        derived=item["derivedClass"]
+        register=item["registerMethod"]
+        write=item["writeMethod"]
+        phase=item["phaseParameter"]
+        stream=item["registerStream"]
+        derived_stream=item["writeStream"]
+        require(len(re.findall(r"\bclass\s+"+re.escape(base)+r"\s*\{",source))==1
+                and len(re.findall(r"\bclass\s+"+re.escape(derived)+
+                                   r"\s*:\s*public\s+"+re.escape(base)+r"\s*\{",
+                                   source))==1
+                and re.search(r"\bvirtual\s+~"+re.escape(base)+r"\s*\(",source)
+                    is not None,
+                "Published virtual base and concrete derived class are missing")
+        require(re.search(r"\bvirtual\s+void\s+"+re.escape(write)+
+                          r"\s*\(\s*std\s*::\s*ostream\s*&",source) is not None
+                and re.search(r"\bvoid\s+"+re.escape(write)+
+                          r"\s*\(\s*std\s*::\s*ostream\s*&\s*"+
+                          re.escape(derived_stream)+r"\s*\)\s*const\s+override\s*;",
+                          source) is not None,
+                "Original virtual reporting interface or derived override missing")
+        register_signature=("void "+base+"::"+register+"(const char* "+
+                            phase+", std::ostream& "+stream+") const {")
+        write_signature=("void "+derived+"::"+write+"(std::ostream& "+
+                         derived_stream+") const {")
+        require(source.count(register_signature)==1 and
+                source.count(write_signature)==1,
+                "Virtual lifetime dispatch needs both original member bodies")
+
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
@@ -5946,6 +6030,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_array_copy_move_checks(document)
     _validate_compiler_array_return_take_checks(document)
     _validate_compiler_polymorphic_destruction_checks(document)
+    _validate_compiler_virtual_lifetime_dispatch_checks(document)
     _validate_compiler_open_battery_checks(document)
     _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)
