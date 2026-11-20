@@ -1,0 +1,55 @@
+name: Codex portable C++ compiler-case evaluator
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-compiler-case-evaluator.yml
+      - native/core/compiler_case_first_required_tests.cpp
+      - native/core/lesson.hpp
+      - native/core/lesson.cpp
+      - native/core/cpp_project.cpp
+      - native/core/cpp_project.hpp
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    name: Real C++ evaluator (${{ matrix.os }}, ${{ matrix.compiler }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            compiler: g++
+          - os: ubuntu-24.04
+            compiler: clang++
+          - os: windows-2022
+            compiler: MSVC
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build and run real core evaluator on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          ${{ matrix.compiler }} -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/lesson.cpp native/core/cpp_project.cpp \
+            native/core/compiler_case_first_required_tests.cpp \
+            -o "${RUNNER_TEMP}/lgaed_case_evaluator_tests"
+          "${RUNNER_TEMP}/lgaed_case_evaluator_tests"
+      - name: Select hosted MSVC without changing the pinned full-app toolchain
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Build real core evaluator with MSVC
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative /bigobj native\core\lesson.cpp native\core\cpp_project.cpp native\core\compiler_case_first_required_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_case_evaluator_tests.exe"
+          if errorlevel 1 exit /b 1
+          "%RUNNER_TEMP%\lgaed_case_evaluator_tests.exe"
