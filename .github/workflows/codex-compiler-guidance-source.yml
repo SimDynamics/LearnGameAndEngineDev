@@ -13,6 +13,7 @@ on:
       - native/platform/windows/indexed_unique_transfer_state_tests.cpp
       - native/platform/windows/defaulted_move_policy_state_tests.cpp
       - native/platform/windows/independent_copy_assignment_state_tests.cpp
+      - native/presentation/windows/lesson_view.cpp
       - native/core/cpp_independent_copy_assignment_check.hpp
       - native/core/cpp_independent_copy_assignment_check_tests.cpp
       - scripts/curriculum/test_cpp_independent_copy_assignment_authoring.py
@@ -94,6 +95,15 @@ jobs:
           /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
           native\platform\windows\compiler_completion.cpp
           /Fo:"%RUNNER_TEMP%\compiler_guidance_completion.obj"
+      - name: Compile real Win32 curriculum editor presentation
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /permissive- /bigobj
+          /Zc:__cplusplus /utf-8 /I native /I "%RUNNER_TEMP%\guidance-generated"
+          /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX
+          /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
+          native\presentation\windows\lesson_view.cpp
+          /Fo:"%RUNNER_TEMP%\lesson_view_u6l7.obj"
       - name: Compile authentic guidance, archival and receipt regressions
         shell: cmd
         run: >
