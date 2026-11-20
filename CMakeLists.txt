@@ -141,6 +141,10 @@ add_library(lgaed_platform_windows STATIC
 # Scope the flag to this source, not the whole project or student programs.
 set_source_files_properties(native/platform/windows/content_loader.cpp
     PROPERTIES COMPILE_OPTIONS "/bigobj")
+# The runner's many independently verified C++23 probes also exceed the
+# classic COFF section ceiling under some MSVC Debug toolsets.
+set_source_files_properties(native/platform/windows/cpp_runner.cpp
+    PROPERTIES COMPILE_OPTIONS "/bigobj")
 target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
 add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
