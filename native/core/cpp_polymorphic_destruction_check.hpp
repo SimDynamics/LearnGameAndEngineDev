@@ -174,7 +174,7 @@ int main() {
 )lgaed";
     std::string witness(driver);
     for(const auto& [key,value]:
-            std::array<std::pair<std::string_view,std::string_view>,13>{{
+            std::array<std::pair<std::string_view,std::string_view>,11>{{
         {"@BASE@",p.base_class},{"@DERIVED@",p.derived_class},
         {"@CYCLE@",p.cycle_class},{"@FACTORY@",p.factory_function},
         {"@WRITE@",p.write_method},
@@ -182,8 +182,7 @@ int main() {
         {"@OWNED_ALIVE@",p.owned_alive},
         {"@BASE_DEAD@",p.base_destroyed},
         {"@DERIVED_DEAD@",p.derived_destroyed},
-        {"@OWNED_DEAD@",p.owned_destroyed},
-        {"@UNUSED1@",p.owned_class},{"@UNUSED2@",p.owned_member}
+        {"@OWNED_DEAD@",p.owned_destroyed}
     }})cpp_polymorphic_destruction_detail::substitute(witness,key,value);
     return std::string(prelude)+std::string(candidate)+witness;
 }
