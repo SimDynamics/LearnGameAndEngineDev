@@ -78,7 +78,7 @@ REJECT={
         dato_ = std::move(otra.dato_);
         etiqueta_ = std::exchange(otra.etiqueta_, 0);
     }
-    return otra;
+    return static_cast<Muestra&>(otra);
 """,
     "forges_tag":r"""
     if (this == &otra) return *this;
