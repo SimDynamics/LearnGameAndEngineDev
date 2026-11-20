@@ -509,6 +509,23 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(request.indexed_unique_transfer_probe!=block.indexed_unique_transfer_probe)
+        return false;
+    if(block.indexed_unique_transfer_probe) {
+        if(request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake||block.cmake||!request.project_files.empty()||
+           !request.source_files.empty()||!block.project_files.empty()||
+           !block.source_files.empty()||request.named_rule_probe||
+           request.open_battery_probe||request.boolean_battery_probe||
+           request.reduction_probe||request.integer_battery_probe||
+           request.adjustment_project_probe||request.rejection_probe||
+           request.observation_probe||request.assertion_mode||
+           request.cmake_graph_check||request.capture_cmake_graph||
+           !curriculum::cpp_indexed_unique_transfer_probe_source(
+               *block.indexed_unique_transfer_probe,request.source_utf8))
+            return false;
+    }
     if(request.adjustment_project_probe!=block.adjustment_project_probe)return false;
     if(block.adjustment_project_probe) {
         const auto& spec=*block.adjustment_project_probe;
@@ -785,11 +802,27 @@ std::string compiler_program_frame(const CppRunRequest& request) {
     if(configuration)configuration->target.clear();
     return "project-v1/"+curriculum::cpp_project_frame(request.project_files,request.source_files,configuration);
 }
+
+// A second, independent objective never changes or inherits the historical
+// stdout-only receipt. It adds one separate, source-bound completion seal.
+std::string indexed_transfer_completion_seal(std::string_view key,
+        std::string_view program,const curriculum::CppIndexedUniqueTransferProbe& spec) {
+    return state::sha256(std::string("compiler-indexed-unique-owner-v1/")+
+        token(key)+token(program)+token(spec.member.original_source)+
+        token(spec.member.signature)+token(spec.class_name)+
+        token(spec.first_member)+token(spec.second_member)+
+        token(spec.transfer_method)+token(spec.put_method)+
+        token(spec.change_method)+token(spec.clear_method));
+}
 static bool stdout_or_diagnostic_completed(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!curriculum::has_compiler_objective(block))return false;
     const auto key=base(lesson,block);
     const auto captured=state::string_value(data,"native_windows",key+"program");
     const auto proofs=case_proofs(data,key);
+    if(block.indexed_unique_transfer_probe&&
+       state::string_value(data,"native_windows",key+"indexed-unique-transfer/v1")!=
+           indexed_transfer_completion_seal(key,captured,
+               *block.indexed_unique_transfer_probe))return false;
     if(captured.empty()||proofs.size()!=(block.compile_check?1:block.output_check->cases.size())||proofs.empty())return false;
     for(std::size_t index=0;index<proofs.size();++index)
         if(!proofs[index].empty()&&
@@ -1061,6 +1094,11 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
         const CppRunRequest& captured,const curriculum::FreshExecution& execution,std::string_view feedback) {
     if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||
        !matches_runtime_capture(captured,execution)||!compiler_runtime_request_allowed(block,captured)||
+       (block.indexed_unique_transfer_probe&&
+           (!execution.indexed_unique_transfer_probe_correct||
+            execution.indexed_unique_transfer_request_fingerprint.empty()||
+            execution.indexed_unique_transfer_request_fingerprint!=
+                cpp_indexed_unique_transfer_request_fingerprint(captured)))||
        (block.named_rule_source_check&&
            block.named_rule_source_check->execution_probe&&
            !execution.named_rule_probe_correct)||
@@ -1091,6 +1129,18 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     const bool previously_completed=stdout_or_diagnostic_completed(data,lesson,block);
     auto proofs=case_proofs(data,key);
     const auto stored_program=state::string_value(data,"native_windows",key+"program");
+    if(block.indexed_unique_transfer_probe&&!previously_completed&&
+       stored_program==program&&
+       valid_completion_seal(block,key,program,proofs,
+           state::string_value(data,"native_windows",key+"completed"))) {
+        // The original stdout-only completion and feedback remain byte-for-byte
+        // unchanged. A fresh verified identity run appends its separate seal.
+        data.preferences["native_windows"][key+"indexed-unique-transfer/v1"]=
+            indexed_transfer_completion_seal(key,program,
+                *block.indexed_unique_transfer_probe);
+        clear_compiler_puzzle_review(data,lesson,block);
+        return true;
+    }
     // All-case V1 achievements and achievements for another program are
     // immutable. Only a new first-case achievement of this same program may
     // collect optional extra case receipts afterwards.
@@ -1128,6 +1178,10 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     if(all||first){
         values[key+"completed"]=all?complete_seal(key,program,proofs):
             first_case_complete_seal(key,program,proofs);
+        if(block.indexed_unique_transfer_probe)
+            values[key+"indexed-unique-transfer/v1"]=
+                indexed_transfer_completion_seal(key,program,
+                    *block.indexed_unique_transfer_probe);
         values[key+"feedback"]=std::string(feedback);
         record_feedback_origin(data,key,block,evaluation.feedback_path,feedback,
             std::get<std::string>(values.at(key+"completed")));

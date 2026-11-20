@@ -295,6 +295,11 @@ struct CppProjectAvailability {
 // Read-only inspection. Never configures, builds, executes or rewrites a draft.
 [[nodiscard]] CppProjectAvailability inspect_cpp_project(const CppRunRequest&);
 
+// Bind an opt-in private identity witness to the exact student request.
+// This is an internal frame, not a persisted answer or learner achievement.
+[[nodiscard]] std::string cpp_indexed_unique_transfer_request_fingerprint(
+    const CppRunRequest& request);
+
 // Blocking adapter: invoke on an owned worker, never the window thread. A stop
 // request kills the entire child job before returning. The caller rejects stale
 // request/revision results. This is bounded execution, not a security sandbox.

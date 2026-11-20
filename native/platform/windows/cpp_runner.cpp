@@ -4403,6 +4403,11 @@ void complete_reduction_probe(const CppRunRequest& request,CppRunResult& result,
 }
 } // namespace
 
+std::string cpp_indexed_unique_transfer_request_fingerprint(
+        const CppRunRequest& request) {
+    return indexed_unique_transfer_fingerprint(request);
+}
+
 CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
     CppRunResult result;
     result.request_id = request.request_id;
