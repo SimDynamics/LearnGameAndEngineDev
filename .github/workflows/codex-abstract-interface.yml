@@ -6,6 +6,10 @@ on:
     paths:
       - .github/workflows/codex-abstract-interface.yml
       - scripts/curriculum/test_cpp_abstract_interface.py
+      - scripts/curriculum/test_cpp_abstract_interface_core.py
+      - native/core/cpp_abstract_interface_check.hpp
+      - native/core/cpp_abstract_interface_check_tests.cpp
+      - native/core/cpp_multi_body_check.hpp
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/composicion_y_herencia_publica/lesson_definir_una_interfaz_abstracta.json
   workflow_dispatch:
 
@@ -26,6 +30,8 @@ jobs:
           for compiler in g++ clang++; do
             python3 -B scripts/curriculum/test_cpp_abstract_interface.py \
               --compiler "$compiler"
+            python3 -B scripts/curriculum/test_cpp_abstract_interface_core.py \
+              --compiler "$compiler"
           done
 
   windows-msvc:
@@ -44,3 +50,4 @@ jobs:
         shell: cmd
         run: |
           python -B scripts\curriculum\test_cpp_abstract_interface.py --compiler cl --windows
+          python -B scripts\curriculum\test_cpp_abstract_interface_core.py --compiler cl --windows
