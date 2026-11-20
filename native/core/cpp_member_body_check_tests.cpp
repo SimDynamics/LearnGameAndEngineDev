@@ -134,6 +134,31 @@ bool Deposito::transferir(int origen, int destino) { return false; }
             documented.original_source.substr(documented_span->end);
         require(cpp_member_body_preserves_source(documented,revised_documented),
                 "A permitted member edit failed when the same signature was documented");
+        // A C++ block comment is whitespace even on the signature's line.
+        // The protected prefix includes its exact bytes.
+        const auto signature_at=check.original_source.find(check.signature);
+        require(signature_at!=std::string::npos,"Original method signature disappeared");
+        for(const auto note : {"/* documented */ ", "/* a note\ncontinued */ "}) {
+            auto commented=check;
+            commented.original_source.insert(signature_at,note);
+            const auto position=cpp_member_body_span(commented);
+            require(position.has_value() &&
+                    cpp_member_body_preserves_source(commented,commented.original_source),
+                    "A real method after a block comment was rejected");
+            const auto edited=commented.original_source.substr(0,position->begin)+
+                std::string("\n    return false;\n")+
+                commented.original_source.substr(position->end);
+            require(cpp_member_body_preserves_source(commented,edited),
+                    "A body-only edit after a documentation comment was rejected");
+        }
+        auto blocked=check;
+        blocked.original_source.insert(signature_at,"int unrelated=0; /* note */ ");
+        require(!cpp_member_body_span(blocked),
+                "A method following another real token on the line was accepted");
+        blocked=check;
+        blocked.original_source.insert(signature_at,"/* unfinished comment ");
+        require(!cpp_member_body_span(blocked),
+                "An unclosed preceding comment was accepted");
         auto invalid_literal=check;
         invalid_literal.original_source=std::string("const char* broken = \"unfinished\n")+
             check.original_source;

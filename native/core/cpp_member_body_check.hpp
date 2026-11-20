@@ -146,9 +146,11 @@ inline std::optional<std::size_t> definition_start(
         if(c == '/' && i + 1 < source.size() && source[i+1] == '*') {
             const auto end = source.find("*/",i+2);
             if(end == source.npos) return {};
-            // A comment preceding a signature on the same physical line
-            // is not a line-leading definition, even if it contains newlines.
-            line_leading = false;
+            // Comments are preprocessing whitespace, including a comment
+            // immediately before the signature. If the comment spans physical
+            // lines, the next real token starts a new line.
+            if(source.substr(i,end+2-i).find_first_of("\r\n") != source.npos)
+                line_leading = true;
             i = end+2;
             continue;
         }
@@ -190,17 +192,10 @@ inline std::optional<CppMemberBodySpan> cpp_member_body_span(
        cpp_member_body_detail::physical_splice(source)) return {};
     const auto definition = cpp_member_body_detail::definition_start(source,signature);
     if(!definition) return {};
+    // definition_start() already proved the source before this token is
+    // line-leading whitespace or comments. Rechecking raw bytes would
+    // incorrectly reject a real method after a block comment.
     const auto at = *definition;
-    const auto prior_newline = source.rfind('\n', at);
-    const auto line_begin = prior_newline == source.npos ? 0 : prior_newline + 1;
-    for(auto i = line_begin; i < at; ++i)
-        if(!cpp_member_body_detail::horizontal_space(source[i])) return {};
-    if(at > 0) {
-        const auto before = static_cast<unsigned char>(source[at - 1]);
-        if((before >= '0' && before <= '9') ||
-           (before >= 'A' && before <= 'Z') ||
-           (before >= 'a' && before <= 'z') || before == '_') return {};
-    }
     auto opening = at + signature.size();
     while(opening < source.size() &&
           (cpp_member_body_detail::horizontal_space(source[opening]) ||
