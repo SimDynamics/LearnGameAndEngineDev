@@ -1,0 +1,46 @@
+name: Codex U6L7 independent copy assignment semantics
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-copy-assignment-independence.yml
+      - scripts/curriculum/test_cpp_copy_assignment_independence.py
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_definir_copia_independiente_y_conservar_el_destino.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Original U6L7 strong copy and bad_alloc with GCC / Clang
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify independent identity, source protection and exception guarantees
+        run: |
+          for compiler in g++ clang++; do
+            python3 -B scripts/curriculum/test_cpp_copy_assignment_independence.py \
+              --compiler "$compiler"
+          done
+
+  windows-msvc:
+    name: Original U6L7 strong copy and bad_alloc with MSVC
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Verify the original U6L7 class with the available runner compiler
+        shell: cmd
+        run: |
+          python -B scripts\curriculum\test_cpp_copy_assignment_independence.py --compiler cl --windows
