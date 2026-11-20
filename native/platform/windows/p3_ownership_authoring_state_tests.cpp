@@ -3,6 +3,7 @@
 // This checks real loader and progress projections, not running student code.
 #include "core/lesson.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/state_store.hpp"
 #include "native_build_config.hpp"
 #include <winrt/Windows.Data.Json.h>
@@ -109,6 +110,8 @@ int main() try {
     std::vector<Lesson> originals,revisions;
     std::vector<std::string> owners;
     std::vector<state::Draft> saved_drafts;
+    std::vector<CppRunRequest> historical_requests;
+    std::vector<FreshExecution> historical_executions;
     std::set<std::string> draft_keys;
     for(unsigned i=0;i<entries.Size();++i) {
         const auto item=entries.GetObjectAt(i);
@@ -173,6 +176,33 @@ int main() try {
         require(draft_keys.insert(saved_key).second,
             "Two historical P3 editors share a draft storage key");
         state::put_draft(historical,saved_key,draft);
+        // Synthetic saved-output *state* fixture, not a claim to execute
+        // unfinished initialCode. Private C++ variants are tested separately.
+        // The first public case alone is sufficient: optional cases do not
+        // create extra mandatory work for the learner.
+        const auto& first=old.output_check->cases.front();
+        require(!first.outputs.empty(),"P3 lost its first public stdout oracle");
+        CppRunRequest request;
+        request.request_id=1000+i;
+        request.revision=2000+i;
+        request.source_utf8=old.initial_code;
+        request.stdin_utf8=first.standard_input;
+        FreshExecution execution;
+        execution.source_revision=request.revision;
+        execution.compilation_succeeded=true;
+        execution.execution_succeeded=true;
+        execution.execution_completed=true;
+        execution.exit_code=first.exit_code;
+        execution.standard_input=first.standard_input;
+        execution.standard_output=first.outputs.front();
+        execution.executable=first.executable;
+        require(record_compiler_puzzle_case(
+                    historical,before,old,request,execution,
+                    "Synthetic prior stdout-only receipt")&&
+                compiler_puzzle_completed(historical,before,old),
+            "P3 historical first-case receipt was not retained independently");
+        historical_requests.push_back(std::move(request));
+        historical_executions.push_back(std::move(execution));
         const auto loaded_draft=state::get_draft(historical,saved_key,
             old.initial_code,old.standard_input.value_or(""));
         require(loaded_draft.source==draft.source&&loaded_draft.input==draft.input,
@@ -198,6 +228,9 @@ int main() try {
     require(store.load().preferences.empty(),
         "An isolated P3 profile unexpectedly contained learner data");
     const auto initial=historical;
+    // Archive every old receipt before opt-in, including its data type and
+    // seal. New semantic checks may only append their own authenticated proof.
+    const auto historical_receipts=historical.preferences.at("native_windows");
     store.save(historical);
     state::StateStore imported(profile);
     auto current=imported.load();
@@ -213,6 +246,17 @@ int main() try {
             "Authoring a P3 semantic goal changed its historical draft key");
         state::prepare_lesson_state(current,after);
         state::validate_lesson_state(current,after);
+        require(compiler_puzzle_completed(current,before,old)&&
+                !compiler_puzzle_completed(current,after,active),
+            "Historical P3 stdout was promoted into a new ownership objective");
+        const auto untouched=current;
+        // Replaying the old first case must never grant the newly authored
+        // semantic goal without fresh source-bound independent evidence.
+        require(!record_compiler_puzzle_case(
+                    current,after,active,historical_requests[i],
+                    historical_executions[i],"Unwitnessed historic replay")&&
+                current==untouched,
+            "Unwitnessed P3 replay changed the shared student profile");
         require(state::get_draft(current,
                     draft_key("programming",after,active),
                     active.initial_code,
@@ -229,6 +273,12 @@ int main() try {
     require(state::string_value(current,"qa-p3-other-course","opaque")==
                 "retain exactly",
         "Enabling P3 owners modified an unrelated course preference");
+    const auto& current_receipts=current.preferences.at("native_windows");
+    for(const auto& [key,value]:historical_receipts) {
+        const auto found=current_receipts.find(key);
+        require(found!=current_receipts.end()&&found->second==value,
+            "Enabling another P3 goal rewrote an old signed stdout receipt");
+    }
     imported.save(current);
     state::StateStore final_reader(profile);
     const auto restored=final_reader.load();
@@ -244,10 +294,14 @@ int main() try {
                 draft.input==saved_drafts[i].input,
             "One P3 adoption overwrote another lesson's historical draft");
         state::validate_lesson_state(restored,lesson);
+        require(!compiler_puzzle_completed(restored,lesson,block)&&
+                compiler_puzzle_completed(restored,originals[i],
+                    owner(originals[i],owners[i])),
+            "P3 durable reopen promoted or discarded a legacy stdout receipt");
     }
-    std::cout<<"PASS P3 shared profile: fourteen independent original drafts "
-             <<"and unrelated settings preserved through all opt-ins, "
-             <<"StateStore save and two durable reopens\n";
+    std::cout<<"PASS P3 shared profile: fourteen first-case stdout receipts "
+             <<"retained without semantic promotion, private replays refused, "
+             <<"drafts and foreign preferences preserved through two reopens\n";
     std::cout<<"PASS fourteen P3 native authoring projections; "
              <<"no student code, lesson or progress modified\n";
     return 0;
