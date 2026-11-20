@@ -929,6 +929,13 @@ if(LGAED_READER_BUILD_QA_ONLY)
     add_executable(lgaed_cpp_cmake_runner_tests
         native/platform/windows/cpp_cmake_runner_tests.cpp)
     target_link_libraries(lgaed_cpp_cmake_runner_tests PRIVATE lgaed_platform_windows)
+    # This QA program keeps many independent CppRunResult objects alive in
+    # one comprehensive main. MSVC's default 1 MiB process stack can be
+    # exhausted before the first CMake check begins; no application target
+    # needs this larger reserve. Keep the actual graph evaluation unchanged.
+    if(MSVC)
+        target_link_options(lgaed_cpp_cmake_runner_tests PRIVATE "/STACK:8388608")
+    endif()
     add_test(NAME native.cpp_cmake_graph
         COMMAND lgaed_cpp_cmake_runner_tests --graph)
     # Includes authentic fixed-report counterexamples for both repair owners.
@@ -2385,6 +2392,10 @@ if(BUILD_TESTING)
     set_tests_properties(native.cpp_project PROPERTIES TIMEOUT 30)
     add_executable(lgaed_cpp_cmake_runner_tests native/platform/windows/cpp_cmake_runner_tests.cpp)
     target_link_libraries(lgaed_cpp_cmake_runner_tests PRIVATE lgaed_platform_windows)
+    # The full native test uses the same large, independent CMake QA program.
+    if(MSVC)
+        target_link_options(lgaed_cpp_cmake_runner_tests PRIVATE "/STACK:8388608")
+    endif()
     add_test(NAME native.cpp_cmake_runner COMMAND lgaed_cpp_cmake_runner_tests)
     set_tests_properties(native.cpp_cmake_runner PROPERTIES TIMEOUT 180)
     add_executable(lgaed_cpp_project_history_tests native/platform/windows/cpp_project_history_tests.cpp)
