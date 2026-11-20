@@ -7,6 +7,8 @@ on:
       - .github/workflows/codex-virtual-lifetime-dispatch.yml
       - scripts/curriculum/test_cpp_virtual_lifetime_dispatch.py
       - scripts/curriculum/test_cpp_virtual_lifetime_dispatch_core.py
+      - scripts/curriculum/test_cpp_virtual_lifetime_dispatch_authoring.py
+      - scripts/curriculum/stable_state_layout.py
       - native/core/cpp_virtual_lifetime_dispatch_check.hpp
       - native/core/cpp_virtual_lifetime_dispatch_check_tests.cpp
       - native/core/cpp_multi_body_check.hpp
@@ -33,6 +35,8 @@ jobs:
             python3 -B scripts/curriculum/test_cpp_virtual_lifetime_dispatch_core.py \
               --compiler "$compiler"
           done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_virtual_lifetime_dispatch_authoring.py -v
 
   windows-msvc:
     name: Actual virtual base/derived phases in MSVC C++23
@@ -51,3 +55,4 @@ jobs:
         run: |
           python -B scripts\curriculum\test_cpp_virtual_lifetime_dispatch.py --compiler cl --windows
           python -B scripts\curriculum\test_cpp_virtual_lifetime_dispatch_core.py --compiler cl --windows
+          python -B -m unittest discover -s scripts\curriculum -p test_cpp_virtual_lifetime_dispatch_authoring.py -v
