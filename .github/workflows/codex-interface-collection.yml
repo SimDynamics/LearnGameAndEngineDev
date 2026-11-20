@@ -6,6 +6,8 @@ on:
     paths:
       - .github/workflows/codex-interface-collection.yml
       - scripts/curriculum/test_cpp_interface_collection.py
+      - scripts/curriculum/test_cpp_interface_collection_authoring.py
+      - scripts/curriculum/stable_state_layout.py
       - native/core/cpp_interface_collection_check.hpp
       - native/core/cpp_interface_collection_check_tests.cpp
       - native/core/cpp_multi_body_check.hpp
@@ -32,6 +34,8 @@ jobs:
             python3 -B scripts/curriculum/test_cpp_interface_collection.py \
               --compiler "$compiler"
           done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_interface_collection_authoring.py -v
 
   msvc:
     name: U8L9 portable ownership proof with MSVC
@@ -49,3 +53,4 @@ jobs:
         shell: cmd
         run: |
           python -B scripts\curriculum\test_cpp_interface_collection.py --compiler cl --windows
+          python -B -m unittest discover -s scripts\curriculum -p test_cpp_interface_collection_authoring.py -v
