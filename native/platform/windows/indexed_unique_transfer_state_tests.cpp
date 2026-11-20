@@ -185,6 +185,29 @@ int indexed_unique_transfer_state_windows(const std::filesystem::path& content,
     reject_competing_probe(&CppRunRequest::local_int_check,"local int");
     require(data==before_verification,
         "Rejected competing P3 probe modified an earlier student receipt");
+    // Even a copied legitimate identity fingerprint cannot turn a malformed
+    // mixed request into progress. Reject it at the actual receipt boundary.
+    auto mixed_request=request;
+    mixed_request.defaulted_move_policy_probe.emplace();
+    auto borrowed_result=result;
+    borrowed_result.indexed_unique_transfer_probe_correct=true;
+    borrowed_result.indexed_unique_transfer_request_fingerprint=
+        owner_request_fingerprint;
+    require(!record_compiler_puzzle_case(data,revised,actual,mixed_request,
+                borrowed_result,"QA mixed-probe fingerprint replay")&&
+            data==before_verification,
+        "A mixed semantic request replayed another request's valid owner seal");
+    // The request fingerprint also binds the input and source revision.
+    auto different_revision=request;
+    ++different_revision.revision;
+    require(cpp_indexed_unique_transfer_request_fingerprint(different_revision)!=
+                owner_request_fingerprint,
+        "An independent owner witness is not tied to the source revision");
+    auto different_input=request;
+    different_input.stdin_utf8+="\n";
+    require(cpp_indexed_unique_transfer_request_fingerprint(different_input)!=
+                owner_request_fingerprint,
+        "An independent owner witness is not tied to the prepared input");
     require(!record_compiler_puzzle_case(data,revised,actual,request,result,"QA missing witness")&&
             data==before_verification,
         "A fresh correct stdout without private identity evidence changed progress");
