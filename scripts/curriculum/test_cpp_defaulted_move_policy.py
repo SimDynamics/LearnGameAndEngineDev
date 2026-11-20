@@ -59,7 +59,9 @@ def main():
     with tempfile.TemporaryDirectory(prefix="lgaed-defaulted-move-") as directory:
         workspace=Path(directory)
         filename=workspace/"original-u6l6.cpp"
-        filename.write_text(original,encoding="utf-8")
+        # In Windows, write_text() may turn LF into CRLF. Preserve the
+        # exact UTF-8 bytes owned by the published original, on every OS.
+        filename.write_bytes(original.encode("utf-8"))
         exe=".exe" if options.windows else ""
         generator=workspace/("move-policy-generator"+exe)
         compiled=compile_cpp(options.compiler,
