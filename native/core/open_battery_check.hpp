@@ -152,6 +152,33 @@ inline std::optional<std::pair<std::size_t,std::size_t>> library_name_span(
     const auto scanned=boolean_battery_detail::tokens(source);
     if(!scanned)return {};
     const auto& tokens=*scanned;
+    // This method is compiled again under a private wrapper. A source that
+    // observes compile-time file, position, function or build metadata could
+    // use those differences to pass only the independent test compilation.
+    // Process-termination calls could also bypass the generated witness.
+    // Test actual lexical identifiers, never comments or string contents.
+    constexpr std::string_view environment_sensitive[]{
+        "__LINE__","__FILE__","__FILEW__","__BASE_FILE__",
+        "__COUNTER__","__INCLUDE_LEVEL__","__DATE__","__TIME__",
+        "__TIMESTAMP__","__PRETTY_FUNCTION__","__FUNCSIG__",
+        "__FUNCDNAME__","__builtin_LINE","__builtin_COLUMN",
+        "__builtin_FILE","__builtin_FUNCTION",
+        "__builtin_source_location","source_location"
+    };
+    constexpr std::string_view process_termination[]{
+        "exit","_Exit","_exit","quick_exit","ExitProcess",
+        "TerminateProcess","TerminateJobObject","ExitThread",
+        "_endthread","_endthreadex","_c_exit","abort","terminate","raise"
+    };
+    for(const auto& item:tokens) {
+        if(!item.value.starts_with("id:"))continue;
+        const std::string_view name(item.value.data()+3,item.value.size()-3);
+        if(std::ranges::find(environment_sensitive,name)!=
+                std::end(environment_sensitive) ||
+           std::ranges::find(process_termination,name)!=
+                std::end(process_termination))
+            return {};
+    }
     const std::string function_token="id:"+std::string(function);
     const std::string renamed_token="id:lgaed_open_battery_original_"+std::string(function);
     const auto after_parameters=[&](std::size_t first)

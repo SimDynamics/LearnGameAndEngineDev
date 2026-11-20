@@ -182,6 +182,34 @@ bool intentar_ajuste(const int dato, int const minimo, const int maximo, int& sa
            invalid_named("int& salida","int& dato") &&
            invalid_named("const int dato","const auto dato"),
         "A different function type or duplicated parameter identity earned credit");
+    // A private recompilation adds includes and a second definition. Compile
+    // metadata and early process termination must not be accepted as evidence
+    // of the original library's behavior under the student's own project.
+    const auto first_brace=renamed.find('{');
+    verify(first_brace!=std::string::npos,"The real library fixture has no body");
+    for(const auto suspicious:{
+            "__LINE__", "__FILE__", "__FILEW__", "__BASE_FILE__",
+            "__COUNTER__", "__INCLUDE_LEVEL__", "__DATE__", "__TIME__",
+            "__TIMESTAMP__", "__PRETTY_FUNCTION__", "__FUNCSIG__",
+            "__FUNCDNAME__", "__builtin_LINE", "__builtin_COLUMN",
+            "__builtin_FILE", "__builtin_FUNCTION", "source_location",
+            "std::exit(0)", "std::abort()", "std::terminate()"}) {
+        auto candidate=renamed;
+        candidate.insert(first_brace+1,
+            "\n    (void)"+std::string(suspicious)+";\n");
+        verify(!open_battery_mutated_library(
+            candidate,"intentar_ajuste",OpenBatteryMutation::baseline),
+            "An observable private build or early exit gained source credit");
+    }
+    auto prose=renamed;
+    prose.insert(first_brace+1,R"cpp(
+    // __LINE__, __FILE__, std::exit(0) and source_location are documentation.
+    const char* description=R"memo(__COUNTER__ __DATE__ std::terminate())memo";
+    (void)description;
+)cpp");
+    verify(open_battery_mutated_library(
+        prose,"intentar_ajuste",OpenBatteryMutation::baseline).has_value(),
+        "Harmless documentation was mistaken for a private build observer");
 
 }
 void parsing() {
