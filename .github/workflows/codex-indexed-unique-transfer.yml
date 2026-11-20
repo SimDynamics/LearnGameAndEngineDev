@@ -1,0 +1,49 @@
+name: Codex U6L5 genuine private ownership witness
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-indexed-unique-transfer.yml
+      - scripts/curriculum/test_cpp_indexed_unique_transfer_runtime.py
+      - native/core/cpp_indexed_unique_transfer_probe.hpp
+      - native/core/cpp_indexed_unique_transfer_probe_tests.cpp
+      - native/core/cpp_member_body_check.hpp
+      - native/core/code_format_compat.hpp
+      - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_transferir_propiedad_entre_unique_ptr.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Execute actual U6L5 transfer variants with GCC and Clang
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Compile and execute seven safe ownership witnesses
+        run: |
+          for compiler in g++ clang++; do
+            python3 -B scripts/curriculum/test_cpp_indexed_unique_transfer_runtime.py --compiler "$compiler"
+          done
+
+  windows-msvc:
+    name: Execute actual U6L5 transfer variants with hosted MSVC
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile and execute seven safe ownership witnesses
+        shell: cmd
+        run: |
+          python -B scripts\curriculum\test_cpp_indexed_unique_transfer_runtime.py --compiler cl --windows
