@@ -54,8 +54,8 @@ ALT_DUPLICATE=r"""
 BAD={
     "simple_null":("    return {};",IDENTIFIED,DUPLICATE),
     "simple_zero":("    return std::make_unique<MuestraSimple>(0);",IDENTIFIED,DUPLICATE),
-    "simple_wrong_concrete":(
-        "    return std::make_unique<MuestraIdentificada>(numero(),0);",
+    "simple_collapses_values":(
+        "    return std::make_unique<MuestraSimple>(numero()==0 ? 1 : 0);",
         IDENTIFIED,DUPLICATE),
     "identified_null":(SIMPLE,"    return {};",DUPLICATE),
     "identified_bad_code":(
