@@ -1041,7 +1041,12 @@ void integrated_retirement_contract_tests() {
             originals_untouched&&new_signatures.size()>=old_signatures.size()&&
             new_additions.size()>=old_additions.size()&&
             std::ranges::equal(old_additions,new_additions.begin(),
-                new_additions.begin()+static_cast<std::ptrdiff_t>(old_additions.size()))&&
+                new_additions.begin()+static_cast<std::ptrdiff_t>(old_additions.size()),
+                [](const auto& prior,const auto& current){
+                    return prior.id==current.id&&prior.sha256==current.sha256&&
+                        prior.storage==current.storage&&
+                        prior.progress_page==current.progress_page;
+                })&&
             new_signatures.size()-old_signatures.size()==
                 new_additions.size()-old_additions.size(),
             "Integrated retirement changed historical state ownership");
