@@ -55,7 +55,8 @@ inline bool probe_neutral_body(const CppMemberBodyCheck& check,
     const auto body=candidate.substr(original->begin,
         candidate.size()-suffix_bytes-original->begin);
     const auto tokens=code_format::cpp_tokens(body);
-    if(!tokens || code_format::cpp_position_sensitive_tokens(*tokens))
+    if(!tokens || code_format::cpp_position_sensitive_tokens(*tokens) ||
+       code_format::cpp_process_termination_tokens(*tokens))
         return false;
     constexpr std::string_view forbidden[]={
         "exit","_Exit","_exit","quick_exit","abort","_abort",
@@ -65,6 +66,13 @@ inline bool probe_neutral_body(const CppMemberBodyCheck& check,
         // Bypass of unique_ptr lifecycle observation, or executing arbitrary
         // platform instructions instead of the declared transfer.
         "malloc","calloc","realloc","free","_aligned_malloc","_aligned_free",
+        // A private driver must not execute shell commands, replace its
+        // handles or redirect the completion witness to unrelated files.
+        "system","_wsystem","popen","_popen",
+        "CreateProcessA","CreateProcessW","WinExec",
+        "ShellExecuteA","ShellExecuteW","ShellExecuteExA","ShellExecuteExW",
+        "SetStdHandle","WriteProcessMemory","dup2","_dup2",
+        "freopen","freopen_s",
         "asm","__asm","__asm__","__pragma","_Pragma","import",
         // Internal test counters must never be an input to student behavior.
         "lgaed_transfer_qa","Watch",
