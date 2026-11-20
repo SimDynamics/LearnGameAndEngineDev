@@ -9,6 +9,7 @@
 #include "presentation/windows/icons.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/winrt_apartment.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "core/retirement_test_fixture.hpp"
 #include "core/profile.hpp"
@@ -3586,6 +3587,9 @@ LessonViewHooks u1_matching_qa_hooks() {
     LessonViewHooks hooks;
     hooks.validate_math=[](std::string_view original,std::string_view answers,
             std::string_view language,std::stop_token stop) -> std::string {
+        // This callback runs on the lesson's background validation thread.
+        // Parsing WinRT JSON there requires its own live runtime apartment.
+        windows::ensure_winrt_apartment();
         require(language=="es"&&!stop.stop_requested(),
             "U1 QA matching evaluation was cancelled or changed locale");
         const auto source=JsonObject::Parse(winrt::to_hstring(original));
