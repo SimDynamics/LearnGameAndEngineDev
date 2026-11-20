@@ -93,6 +93,71 @@ int main() try {
     expect(lgaed::curriculum::cpp_multi_body_matches(p, one),
            "A legitimate single-body change was rejected");
 
+    // Printed source excerpts and tutorial examples never create another
+    // member or free-function definition. The original bytes are retained.
+    auto documented=p;
+    documented.original_source.insert(0,R"lgaed(
+const char* signature_example=R"docs(
+Medida::~Medida() noexcept { report("only text"); }
+)docs";
+/* MedidaIdentificada::~MedidaIdentificada() noexcept { report("not code"); } */
+// std::unique_ptr<Medida> crear_medida(int numero, int codigo, Ciclo& ciclo) {}
+)lgaed");
+    expect(lgaed::curriculum::cpp_multi_body_matches(
+        documented,documented.original_source),
+        "Signatures quoted in raw text/comments prevented the real definitions");
+    expect(lgaed::curriculum::cpp_multi_body_matches(
+        documented,candidate(documented,valid)),
+        "Legitimate edits were rejected when the same signatures were documented");
+
+    // A leading C++ comment is whitespace, including a multiline comment
+    // directly before the actual signature on the same physical line.
+    auto documented_method=p;
+    const auto method_pos=documented_method.original_source.find(
+        p.bodies.front().signature);
+    expect(method_pos!=std::string::npos,"First genuine member signature vanished");
+    documented_method.original_source.insert(method_pos,
+        "/* notes\n   retained */ ");
+    expect(lgaed::curriculum::cpp_multi_body_matches(
+        documented_method,documented_method.original_source) &&
+        lgaed::curriculum::cpp_multi_body_matches(
+            documented_method,candidate(documented_method,valid)),
+        "A real definition after explanatory block comments was rejected");
+
+    // A whole method may use the <%/%> digraph pair. Comments between the
+    // signature and the opening are protected original source, not body.
+    auto digraph=p;
+    const auto first_at=digraph.original_source.find(p.bodies.front().signature);
+    expect(first_at!=std::string::npos,"First method signature disappeared");
+    const auto brace_at=digraph.original_source.find(
+        '{',first_at+p.bodies.front().signature.size());
+    expect(brace_at!=std::string::npos,"First method opening disappeared");
+    const std::string opening_with_comment=" /* original author note */\n<%";
+    digraph.original_source.replace(brace_at,1,opening_with_comment);
+    const auto digraph_at=brace_at+opening_with_comment.size()-2;
+    const auto close= lgaed::curriculum::cpp_member_body_detail::closing_brace(
+        digraph.original_source,digraph_at);
+    expect(close.has_value(),"Cannot locate original method's real closing brace");
+    digraph.original_source.replace(*close,1,"%>");
+    expect(lgaed::curriculum::cpp_multi_body_matches(
+        digraph,digraph.original_source) &&
+        lgaed::curriculum::cpp_multi_body_matches(
+            digraph,candidate(digraph,valid)),
+        "A documented function with full <%/%> braces was rejected");
+    auto damaged_digraph=candidate(digraph,valid);
+    const auto rewritten_close=damaged_digraph.find("%>",digraph_at);
+    expect(rewritten_close!=std::string::npos,"Original digraph closing missing");
+    damaged_digraph.replace(rewritten_close,2,"}");
+    expect(!lgaed::curriculum::cpp_multi_body_matches(digraph,damaged_digraph),
+        "The protected closing digraph was changed outside the editable body");
+
+    auto duplicate=p;
+    duplicate.original_source+=
+        "\nMedida::~Medida() noexcept { report(\"duplicate real body\"); }\n";
+    expect(!lgaed::curriculum::cpp_multi_body_matches(
+        duplicate,duplicate.original_source),
+        "Two genuine source definitions claimed one author-declared method");
+
     auto edited = a;
     const auto main_at = edited.find("int main()");
     expect(main_at != std::string::npos, "Fixture lost main");
@@ -124,8 +189,8 @@ int main() try {
 
     injection = valid;
     injection[1] = "\n    // MedidaIdentificada::~MedidaIdentificada() noexcept\n";
-    expect(!lgaed::curriculum::cpp_multi_body_matches(p, candidate(p, injection)),
-           "A duplicate signature hidden inside a comment was accepted");
+    expect(lgaed::curriculum::cpp_multi_body_matches(p,candidate(p,injection)),
+           "An inert description of a method was mistaken for a second definition");
 
     injection = valid;
     injection[1] = "\n    const char* literal = \"unterminated;\n";
