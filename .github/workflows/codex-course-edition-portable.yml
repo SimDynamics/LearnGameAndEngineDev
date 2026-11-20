@@ -75,7 +75,9 @@ jobs:
         shell: cmd
         run: >
           cl /nologo /std:c++latest /EHsc /W4 /permissive- /bigobj
-          /Zc:__cplusplus /utf-8 /Inative /c
+          /Zc:__cplusplus /utf-8 /DUNICODE /D_UNICODE
+          /DWIN32_LEAN_AND_MEAN /DNOMINMAX /D_WIN32_WINNT=0x0A00
+          /DWINVER=0x0A00 /Inative /c
           native\platform\windows\course_edition_tests.cpp
           /Fo:"%RUNNER_TEMP%\lgaed_course_edition_reader_tests.obj"
 
