@@ -7,6 +7,8 @@ on:
       - .github/workflows/codex-abstract-interface.yml
       - scripts/curriculum/test_cpp_abstract_interface.py
       - scripts/curriculum/test_cpp_abstract_interface_core.py
+      - scripts/curriculum/test_cpp_abstract_interface_authoring.py
+      - scripts/curriculum/stable_state_layout.py
       - native/core/cpp_abstract_interface_check.hpp
       - native/core/cpp_abstract_interface_check_tests.cpp
       - native/core/cpp_multi_body_check.hpp
@@ -33,6 +35,8 @@ jobs:
             python3 -B scripts/curriculum/test_cpp_abstract_interface_core.py \
               --compiler "$compiler"
           done
+          python3 -B -m unittest discover -s scripts/curriculum \
+            -p test_cpp_abstract_interface_authoring.py -v
 
   windows-msvc:
     name: U8L8 original polymorphism with Windows MSVC C++23
@@ -51,3 +55,4 @@ jobs:
         run: |
           python -B scripts\curriculum\test_cpp_abstract_interface.py --compiler cl --windows
           python -B scripts\curriculum\test_cpp_abstract_interface_core.py --compiler cl --windows
+          python -B -m unittest discover -s scripts\curriculum -p test_cpp_abstract_interface_authoring.py -v
