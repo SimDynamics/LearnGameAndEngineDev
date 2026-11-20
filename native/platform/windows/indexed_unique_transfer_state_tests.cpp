@@ -13,6 +13,7 @@
 #include <string>
 #include <string_view>
 #include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 
 namespace lgaed::test {
 namespace {
