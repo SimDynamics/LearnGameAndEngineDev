@@ -1,7 +1,7 @@
 """Run the native U6L5 private ownership witness against the real authored C++.
 
 Only the source of the existing editor and the header-only generic probe are
-used. All nine variants compile and execute in a disposable directory; the
+used. All ten variants compile and execute in a disposable directory; the
 student's original files, state and curriculum are never modified.
 """
 from __future__ import annotations
@@ -31,6 +31,7 @@ EXPECTED = {
     "damages_empty_source_destination": False,
     "same_value_without_identity": False,
     "correct_transfer_extra_stdout": False,
+    "equal_value_hidden_copy": False,
 }
 
 
@@ -133,7 +134,7 @@ def main() -> int:
                 )
             print(f"PASS private U6L5 {name}: "
                   f"{'accepted with identity/cleanup' if should_accept else 'rejected'}")
-    print("PASS nine U6L5 actual-source private witness executions; "
+    print("PASS ten U6L5 actual-source private witness executions; "
           "no curriculum metadata or saved learner state changed")
     return 0
 
