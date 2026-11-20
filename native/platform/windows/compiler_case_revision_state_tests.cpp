@@ -2294,7 +2294,9 @@ std::size_t invalid_documents(const JsonArray& entries, const std::filesystem::p
 } // namespace
 
 int main(int argc, char** argv) try {
-    require(argc == 3, "Usage: compiler_case_revision_state_tests <fixtures> <isolated-qa-root>");
+    const bool return_only = argc == 4 && std::string_view(argv[3]) == "--return-only";
+    require(argc == 3 || return_only,
+        "Usage: compiler_case_revision_state_tests <fixtures> <isolated-qa-root> [--return-only]");
     winrt::init_apartment();
     const std::filesystem::path fixtures(argv[1]);
     const auto qa = std::filesystem::path(argv[2]) /
@@ -2323,6 +2325,36 @@ int main(int argc, char** argv) try {
         run("load " + name, [&] { cases.push_back(read_fixture(entry, fixtures, originals)); });
     }
     run("fixture inventory", [&] { require(!cases.empty(), "No authenticated case-review fixtures were generated"); });
+    if(return_only) {
+        // The portable Windows run isolates the actual historical return,
+        // including the earned-first plus newly available optional receipt.
+        // No fake compiler execution, proxy StateStore or altered fixture.
+        const auto selected = std::ranges::find_if(cases, [](const auto& item) {
+            return item.name == "synthetic-return";
+        });
+        require(selected != cases.end(), "The historical return fixture is missing");
+        run("return-only publication", [&] { verify_publication(*selected); });
+        run("return-only chronological adoption", [&] { chronological_adoption(*selected); });
+        run("return-only real StateStore", [&] {
+            require(explicit_return(*selected),
+                "The published fixture did not exercise its original case return");
+        });
+        run("return-only fixture integrity", [&] {
+            for(const auto& [path, original] : originals)
+                require(bytes(path) == original,
+                    "The native return test changed an authenticated fixture");
+        });
+        if(failures) {
+            std::cerr << "FAIL compiler case return: " << failures
+                      << " checks failed on the real Win32 state engine.\n";
+            return 1;
+        }
+        std::cout << "PASS native compiler case return: original first receipt, "
+                     "later optional case, unchanged seal, persisted state and "
+                     "historical source bytes.\n";
+        return 0;
+    }
+
     for (const auto& fixture : cases) {
         if (!run(fixture.name + " publication", [&] { verify_publication(fixture); })) continue;
         if (fixture.snapshot_epoch_only) {
