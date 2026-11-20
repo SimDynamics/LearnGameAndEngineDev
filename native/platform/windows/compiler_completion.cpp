@@ -1650,6 +1650,10 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
             values[key+"array-return-take/v1"]=
                 array_return_take_completion_seal(key,program,
                     *block.array_return_take_probe);
+        if(block.polymorphic_destruction_probe)
+            values[key+"polymorphic-destruction/v1"]=
+                polymorphic_destruction_completion_seal(key,program,
+                    *block.polymorphic_destruction_probe);
         values[key+"feedback"]=std::string(feedback);
         record_feedback_origin(data,key,block,evaluation.feedback_path,feedback,
             std::get<std::string>(values.at(key+"completed")));
