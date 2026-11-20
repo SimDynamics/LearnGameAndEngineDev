@@ -6,6 +6,9 @@ on:
     paths:
       - .github/workflows/codex-copy-assignment-independence.yml
       - scripts/curriculum/test_cpp_copy_assignment_independence.py
+      - scripts/curriculum/test_cpp_independent_copy_assignment_core.py
+      - native/core/cpp_independent_copy_assignment_check.hpp
+      - native/core/cpp_independent_copy_assignment_check_tests.cpp
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_definir_copia_independiente_y_conservar_el_destino.json
   workflow_dispatch:
 
@@ -26,6 +29,8 @@ jobs:
           for compiler in g++ clang++; do
             python3 -B scripts/curriculum/test_cpp_copy_assignment_independence.py \
               --compiler "$compiler"
+            python3 -B scripts/curriculum/test_cpp_independent_copy_assignment_core.py \
+              --compiler "$compiler"
           done
 
   windows-msvc:
@@ -44,3 +49,4 @@ jobs:
         shell: cmd
         run: |
           python -B scripts\curriculum\test_cpp_copy_assignment_independence.py --compiler cl --windows
+          python -B scripts\curriculum\test_cpp_independent_copy_assignment_core.py --compiler cl --windows
