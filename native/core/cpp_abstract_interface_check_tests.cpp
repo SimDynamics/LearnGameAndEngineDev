@@ -23,9 +23,62 @@ void write(const std::filesystem::path& path,std::string_view data) {
     output.write(data.data(),static_cast<std::streamsize>(data.size()));
     if(!output)throw std::runtime_error("Cannot write U8L8 semantic driver");
 }
+void lexical_inline_owner_regression() {
+    using lgaed::curriculum::cpp_abstract_interface_detail::inline_body;
+    constexpr std::string_view signature=
+        "void escribir(std::ostream& salida) const override";
+    // The apparent class and method in this literal are NOT definitions.
+    // A tutorial may quote the exact signature without granting it ownership.
+    const std::string source=R"lgaed(
+const char* example=R"comment(
+class MuestraSimple : public Muestra {
+    void escribir(std::ostream& salida) const override { fake(); }
+};
+)comment";
+/* class MuestraSimple : public Muestra {
+    void escribir(std::ostream& salida) const override { fake(); }
+}; */
+class MuestraSimple : public Muestra /* author note */ {
+public:
+    /* A second signature in documentation is not an overloaded method:
+       void escribir(std::ostream& salida) const override { fake(); } */
+    void escribir(std::ostream& salida) const override /* unchanged note */ {
+        const auto example = R"quoted( } { )quoted";
+        salida << example;
+    }
+};
+)lgaed";
+    const auto actual=inline_body(source,"MuestraSimple","Muestra",signature);
+    if(!actual||source.substr(actual->begin,actual->end-actual->begin).find(
+            "salida << example;")==std::string::npos)
+        throw std::runtime_error(
+            "A quoted/commented inline definition stole the real C++ owner");
+    const auto duplicated=source+R"lgaed(
+class MuestraSimple : public Muestra {
+public:
+    void escribir(std::ostream& salida) const override { salida << 1; }
+};
+)lgaed";
+    if(inline_body(duplicated,"MuestraSimple","Muestra",signature))
+        throw std::runtime_error("Two real inline classes were treated as one owner");
+    const auto class_start=source.rfind("\nclass MuestraSimple : public Muestra");
+    if(class_start==std::string::npos)
+        throw std::runtime_error("Missing real class in inline scanner fixture");
+    const auto quoted_only=source.substr(0,class_start);
+    if(inline_body(quoted_only,"MuestraSimple","Muestra",signature))
+        throw std::runtime_error("A quoted class acquired a fabricated method owner");
+    const auto repeated=source.substr(0,source.rfind("\n};"))+
+        R"lgaed(
+    void escribir(std::ostream& salida) const override { salida << 2; }
+};
+)lgaed";
+    if(inline_body(repeated,"MuestraSimple","Muestra",signature))
+        throw std::runtime_error("A repeated real virtual method passed the source gate");
+}
 } // namespace
 
 int main(int argc,char** argv) try {
+    lexical_inline_owner_regression();
     if(argc!=4)throw std::runtime_error(
         "Usage: abstract-interface-generator ORIGINAL_CPP CANDIDATE_CPP DRIVER_CPP");
     const auto original=read(argv[1]),candidate=read(argv[2]);

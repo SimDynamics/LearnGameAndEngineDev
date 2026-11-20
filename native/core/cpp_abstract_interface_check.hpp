@@ -49,32 +49,33 @@ inline bool identifier(std::string_view name) {
 inline std::optional<CppMemberBodySpan> inline_body(
         std::string_view code,std::string_view class_name,
         std::string_view base_name,std::string_view signature) {
-    const auto declaration="class "+std::string(class_name)+
-        " : public "+std::string(base_name)+" {";
-    const auto class_at=code.find(declaration);
-    if(class_at==code.npos||code.find(declaration,class_at+1)!=code.npos)
-        return {};
-    const auto opening=class_at+declaration.size()-1;
-    const auto closing=cpp_member_body_detail::closing_brace(code,opening);
-    if(!closing)return {};
-    const auto at=code.find(signature,opening+1);
-    if(at==code.npos||at>=*closing)return {};
-    const auto repeated=code.find(signature,at+1);
-    if(repeated!=code.npos&&repeated<*closing)return {};
-    const auto line_break=code.rfind('\n',at);
-    const auto begin_line=line_break==code.npos?0:line_break+1;
-    for(auto i=begin_line;i<at;++i)
-        if(!cpp_member_body_detail::horizontal_space(code[i]))return {};
-    auto method_open=at+signature.size();
-    while(method_open<code.size()&&
-            (cpp_member_body_detail::horizontal_space(code[method_open])||
-             code[method_open]=='\n'||code[method_open]=='\r'))
-        ++method_open;
-    if(method_open>=*closing||code[method_open]!='{')return {};
-    const auto method_end=
-        cpp_member_body_detail::closing_brace(code,method_open);
-    if(!method_end||*method_end>=*closing)return {};
-    return CppMemberBodySpan{method_open+1,*method_end};
+    namespace scanner=cpp_member_body_detail;
+    // Match genuine line-leading definitions, not example classes copied
+    // into comments, string literals or raw documentation. The same lexical
+    // scanner already protects qualified member definitions and free bodies.
+    const auto class_signature="class "+std::string(class_name)+
+        " : public "+std::string(base_name);
+    const auto class_at=scanner::definition_start(code,class_signature);
+    if(!class_at)return {};
+    const auto class_open=scanner::definition_opening(
+        code,*class_at+class_signature.size());
+    if(!class_open)return {};
+    const auto class_end=scanner::closing_brace(code,class_open->position);
+    if(!class_end)return {};
+
+    // Search only inside the authenticated class. An identical virtual
+    // method in a sibling class or a quoted example is not this owner.
+    const auto start=class_open->position+class_open->length;
+    const auto scope=code.substr(start,*class_end-start);
+    const auto local_at=scanner::definition_start(scope,signature);
+    if(!local_at)return {};
+    const auto method_open=scanner::definition_opening(
+        code,start+*local_at+signature.size());
+    if(!method_open||method_open->position>=*class_end)return {};
+    const auto method_end=scanner::closing_brace(code,method_open->position);
+    if(!method_end||*method_end>=*class_end)return {};
+    return CppMemberBodySpan{
+        method_open->position+method_open->length,*method_end};
 }
 
 inline std::optional<std::array<CppMemberBodySpan,4>> spans(
