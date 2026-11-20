@@ -578,6 +578,87 @@ declaración y comprobará su presentación cuando corresponda. Las
 sondas de C++ y las pruebas aisladas de conservación no sustituyen la
 validación integral nativa de la app Windows.
 
+## Preparar un objeto derivado y conservar el anterior ante una excepción
+
+Programación 3, U8L7, dispone de una prueba independiente de construcción
+segura. Work puede añadir a la raíz de la lección española de estado estable
+`v2` una declaración `compilerDerivedPreparationChecks` sin
+modificar el bloque C++ original, sus cinco casos ni sus direcciones históricas:
+
+```json
+"compilerDerivedPreparationChecks": [
+  {
+    "activity": "block_0016_0002",
+    "baseClass": "Medida",
+    "derivedClass": "MedidaIdentificada",
+    "balanceClass": "Balance",
+    "resourceClass": "Recurso",
+    "replacementFunction": "sustituir",
+    "destinationParameter": "destino",
+    "numberParameter": "numero",
+    "codeParameter": "codigo",
+    "modeParameter": "modo",
+    "balanceParameter": "balance",
+    "printMethod": "escribir",
+    "resourceAlive": "recursos_vivos",
+    "baseCompleted": "bases_completadas",
+    "derivedCompleted": "derivadas_completadas",
+    "resourceCompleted": "recursos_completados",
+    "baseDestroyed": "bases_destruidas",
+    "derivedDestroyed": "derivadas_destruidas",
+    "resourceDestroyed": "recursos_destruidos"
+  }
+]
+```
+
+El único cuerpo editable es el de:
+
+```cpp
+void sustituir(std::unique_ptr<Medida>& destino,
+               int numero, int codigo, int modo, Balance& balance)
+```
+
+Se conserva byte por byte el resto del archivo original: las clases
+`Recurso`, `Medida` y `MedidaIdentificada`,
+sus políticas de propiedad, constructores, destructores, contadores
+`Balance`, `main`, entradas, salidas y contratos. El
+comprobador rechaza cambios fuera de ese cuerpo, escapes de llaves
+o nuevas directivas. No se impone una única implementación: preparar
+un propietario local y después moverlo o intercambiarlo, o completar
+la construcción del lado derecho antes de asignar, son alternativas
+correctas bajo el contrato publicado.
+
+Una sonda C++ privada compilada desde la fuente entregada comprueba
+que un fallo de construcción en el cuerpo base, en el miembro derivado
+o en el cuerpo derivado deja intacto **el mismo propietario de destino**
+y sus valores. La excepción controlada debe propagarse. Los recursos
+del intento incompleto terminan por las reglas RAII de C++, sin ejecutar
+el destructor de una clase cuya construcción no llegó a completarse.
+Los contadores registran las operaciones reales y no tienen que
+retroceder al estado previo para que la propiedad del destino se conserve.
+
+La sonda prueba destinos inicialmente ocupados y vacíos, aceptación
+con datos cero y negativos, nueva identidad cuando los valores se repiten,
+destrucción única del destino reemplazado, registros de recursos
+independientes y limpieza al salir mediante otra excepción. No utiliza
+punteros después de destruir su objeto ni dobles propietarios para
+provocar una evidencia.
+
+La salida visible correcta por sí sola no acredita el nuevo objetivo.
+La primera entrada `outputCheck` es la única obligatoria
+para avanzar; las otras cuatro permanecen opcionales. El recibo
+`derived-preparation/v1` se incorpora únicamente después de
+una sonda nueva, correcta y vinculada a la fuente original, la declaración
+editorial, el controlador privado, la solicitud y la revisión concreta.
+Los recibos antiguos se conservan sin atribuirles automáticamente la
+acreditación adicional. También permanecen intactos borradores,
+respuestas, estado de lectura y progreso de otros cursos.
+
+Codex proporciona el mecanismo técnico sin modificar los JSON de Work.
+La prueba independiente de C++ y la conservación de StateStore no
+constituyen, por sí mismas, una aceptación de la app nativa completa
+en el Windows del usuario.
+
 ## Baterías abiertas de una función booleana con dos enteros
 
 Windows admite la variante `boolean-pair-v1` dentro de la lista raíz
