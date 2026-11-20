@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace lgaed::curriculum {
 
@@ -41,6 +42,52 @@ inline bool identifier(std::string_view name) {
     return std::all_of(name.begin()+1,name.end(),[&](unsigned char c) {
         return alpha(c)||(c>='0'&&c<='9');
     });
+}
+
+// Require a genuine direct base-class declaration. Searching the whole
+// source as text can treat a comment, a raw string, or an inner class as the
+// virtual contract that the provided program must actually contain.
+inline bool direct_class_declaration(
+        std::string_view source,std::string_view class_name,
+        std::string_view declaration) {
+    namespace scanner=cpp_member_body_detail;
+    const auto signature="class "+std::string(class_name);
+    const auto class_at=scanner::definition_start(source,signature);
+    if(!class_at)return false;
+    const auto open=scanner::definition_opening(
+        source,*class_at+signature.size());
+    if(!open)return false;
+    const auto end=scanner::closing_brace(source,open->position);
+    if(!end)return false;
+    const auto begin=open->position+open->length;
+    const auto tokens=code_format::cpp_tokens(source.substr(begin,*end-begin));
+    const auto expected=code_format::cpp_tokens(declaration);
+    if(!tokens||!expected||expected->empty())return false;
+    std::vector<std::string_view> actual;
+    actual.reserve(tokens->size());
+    for(const auto& token:*tokens) {
+        if(token.starts_with("comment:"))continue;
+        // A preprocessor branch can change which declaration exists.
+        // Do not authenticate an ambiguous base-class source without it
+        // being resolved by a trusted complete publication.
+        if(token.starts_with("directive:"))return false;
+        actual.push_back(token);
+    }
+    std::size_t depth=0;
+    bool found=false;
+    for(std::size_t i=0;i<actual.size();++i) {
+        if(depth==0 && i+expected->size()<=actual.size() &&
+           std::equal(expected->begin(),expected->end(),actual.begin()+i)) {
+            if(found)return false;
+            found=true;
+        }
+        if(actual[i]=="op:{"||actual[i]=="op:<%")++depth;
+        else if(actual[i]=="op:}"||actual[i]=="op:%>") {
+            if(depth==0)return false;
+            --depth;
+        }
+    }
+    return depth==0&&found;
 }
 
 // Only methods directly declared in the selected class are its editable
@@ -170,21 +217,21 @@ inline bool valid(const CppAbstractInterfacePolicy& p) {
         if(!identifier(value))return false;
     const auto& source=p.original_source;
     if(!spans(p,source,false))return false;
-    const auto original=std::string_view(source);
-    // A real public abstract interface is a prerequisite, not a new student
-    // editing freedom. The matched bodies cannot change these declarations.
-    const auto base="class "+p.base_class+" {";
-    return original.find(base)!=original.npos&&
-        original.find("virtual ~"+p.base_class+"() = default;")!=original.npos&&
-        original.find("virtual int "+p.number_method+
-                      "() const noexcept = 0;")!=original.npos&&
-        original.find("virtual void "+p.write_method+
-                      "(std::ostream& "+p.stream_parameter+
-                      ") const = 0;")!=original.npos&&
-        original.find("int "+p.number_method+"() const noexcept override")!=
-            original.npos&&
-        original.find("int "+p.code_method+"() const noexcept")!=
-            original.npos;
+    // The provided interface and getters are an executable prerequisite,
+    // not a phrase that may be quoted elsewhere in its original source.
+    // Restrict each declaration or body to the real owning class.
+    const auto getter="int "+p.number_method+"() const noexcept override";
+    return direct_class_declaration(source,p.base_class,
+               "virtual ~"+p.base_class+"() = default;")&&
+        direct_class_declaration(source,p.base_class,
+               "virtual int "+p.number_method+"() const noexcept = 0;")&&
+        direct_class_declaration(source,p.base_class,
+               "virtual void "+p.write_method+"(std::ostream& "+
+                   p.stream_parameter+") const = 0;")&&
+        inline_body(source,p.simple_class,p.base_class,getter).has_value()&&
+        inline_body(source,p.identified_class,p.base_class,getter).has_value()&&
+        inline_body(source,p.identified_class,p.base_class,
+               "int "+p.code_method+"() const noexcept").has_value();
 }
 
 inline void substitute(std::string& code,std::string_view key,

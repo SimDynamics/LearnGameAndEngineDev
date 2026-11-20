@@ -103,6 +103,46 @@ public:
     if(inline_body(nested,"MuestraSimple","Muestra",signature))
         throw std::runtime_error("A nested override impersonated the missing outer method");
 }
+void source_declaration_regression(
+        const lgaed::curriculum::CppAbstractInterfacePolicy& original) {
+    namespace check=lgaed::curriculum::cpp_abstract_interface_detail;
+    if(!check::valid(original))
+        throw std::runtime_error("Original interface lost its real pure virtual declarations");
+    const auto invalid=[&](std::string_view before,std::string_view after,
+                           std::string_view reason) {
+        auto altered=original;
+        const auto pos=altered.original_source.find(before);
+        if(pos==std::string::npos)
+            throw std::runtime_error("The original C++ declaration fixture changed");
+        altered.original_source.replace(pos,before.size(),after);
+        if(check::valid(altered)||
+           lgaed::curriculum::cpp_abstract_interface_matches(
+               altered,altered.original_source))
+            throw std::runtime_error(std::string(reason));
+    };
+    // All old substrings remain in a COMMENT or a literal. A raw substring
+    // lookup would credit a missing virtual/pure declaration.
+    invalid("virtual ~Muestra() = default;",
+            "~Muestra() = default; // virtual ~Muestra() = default;",
+            "A comment impersonated the virtual base destructor");
+    invalid("virtual int numero() const noexcept = 0;",
+            "virtual int numero() const noexcept;\n"
+            "    const char* note = R\"fake(virtual int numero() const noexcept = 0;)fake\";",
+            "A raw literal impersonated a pure virtual number getter");
+    invalid("virtual void escribir(std::ostream& salida) const = 0;",
+            "virtual void escribir(std::ostream& salida) const; "
+            "/* virtual void escribir(std::ostream& salida) const = 0; */",
+            "A comment impersonated the pure virtual stream interface");
+    invalid("int numero() const noexcept override { return numero_; }",
+            "int numero_aux() const noexcept { return numero_; } "
+            "// int numero() const noexcept override",
+            "A getter in the second class impersonated the first class getter");
+    invalid("int codigo() const noexcept { return codigo_; }",
+            "int codigo_aux() const noexcept { return codigo_; } "
+            "// int codigo() const noexcept",
+            "A commented code getter impersonated the real identified getter");
+}
+
 } // namespace
 
 int main(int argc,char** argv) try {
@@ -116,6 +156,7 @@ int main(int argc,char** argv) try {
         "crear","presentar","numero","codigo","escribir",
         "salida","tipo","numero","codigo","dato"
     };
+    source_declaration_regression(policy);
     if(!lgaed::curriculum::cpp_abstract_interface_matches(policy,candidate))
         throw std::runtime_error(
             "The candidate changed abstract declarations, getters, constructors "
