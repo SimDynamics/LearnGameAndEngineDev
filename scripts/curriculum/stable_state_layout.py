@@ -5123,11 +5123,21 @@ def _validate_compiler_polymorphic_destruction_checks(document: dict) -> None:
                           re.escape(owner)+r"\s*>\s*"+re.escape(member)+r"\b",
                           source) is not None,
                 "Original virtual lifetime or derived owner member missing")
+        require(re.search(r"\b(?:class|struct)\s+"+re.escape(owner)+r"\s*\{",
+                          source) is not None and
+                re.search(r"\b(?:virtual\s+)?void\s+"+
+                          re.escape(item["writeMethod"])+r"\s*\(",
+                          source) is not None,
+                "Declared owner type or stream-reporting method is absent")
+        cycle_declaration=re.search(r"\bstruct\s+"+re.escape(cycle)+
+                                    r"\s*\{([^{}]*)\};",source,re.DOTALL)
+        require(cycle_declaration is not None,
+                "Original cycle record definition is missing or ambiguous")
         for property_name in ("baseAlive","derivedAlive","ownedAlive",
                               "baseDestroyed","derivedDestroyed","ownedDestroyed"):
-            require(len(re.findall(r"\b"+re.escape(item[property_name])+r"\b",
-                                   source))>=2,
-                    "Missing original lifetime counter: "+property_name)
+            require(re.search(r"\bint\s+"+re.escape(item[property_name])+
+                              r"\b",cycle_declaration.group(1)) is not None,
+                    "Missing original lifetime counter field: "+property_name)
         factory=("std::unique_ptr<"+base+"> "+item["factoryFunction"]+
                  "(int "+item["numberParameter"]+
                  ", int "+item["codeParameter"]+
