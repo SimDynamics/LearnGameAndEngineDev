@@ -185,6 +185,79 @@ la declaración al JSON original de la lección y verificar su integración;
 los archivos de prueba con metadatos temporales no publican dicha autoría.
 
 
+## Arrays propietarios y lectura con límites
+
+En Programación 3, U6L10, el motor admite añadir a la raíz de la lección
+española con `stateLayout` v2 una declaración
+`compilerArrayOwnerReadChecks`. Se vincula a un editor `cpp_compiler`
+existente de archivo único que ya dispone de `outputCheck`.
+No cambia los casos originales, la fuente, los borradores, los identificadores
+ni sus direcciones de progreso.
+
+```json
+"compilerArrayOwnerReadChecks": [
+  {
+    "activity": "block_0017_0002",
+    "className": "Lote",
+    "ownerMember": "datos_",
+    "countMember": "cantidad_",
+    "quantityParameter": "cantidad",
+    "indexParameter": "indice",
+    "outputParameter": "resultado",
+    "configureMethod": "configurar",
+    "readMethod": "leer",
+    "quantityMethod": "cantidad",
+    "accessMethod": "acceso",
+    "writeMethod": "escribir",
+    "clearMethod": "vaciar",
+    "sumMethod": "sumar"
+  }
+]
+```
+
+La declaración identifica la clase y sus métodos y miembros originales.
+El estudiante puede construir implementaciones semánticamente equivalentes
+dentro de los **dos cuerpos editables**:
+`bool Lote::configurar(int cantidad) noexcept` y
+`bool Lote::leer(int indice, int& resultado) const noexcept`.
+La comprobación conserva exactamente los bytes externos a ambos cuerpos,
+incluidas firmas, prohibiciones de copia y movimiento, `escribir`,
+`vaciar`, `sumar` y `main`. Las directivas de preprocesador no
+pueden introducirse ocultamente dentro de los cuerpos.
+
+`configurar` admite cero (vacía y libera sin reservar) y cantidades
+positivas de uno a cuatro. Una cantidad válida prepara un nuevo
+`int[]` inicializado a cero antes de sustituir el array anterior.
+Esto incluye repetir la misma cantidad con los mismos valores: escribir
+ceros en el array existente no acredita la sustitución. Una cantidad
+inválida o una reserva fallida controlada debe conservar exactamente
+el propietario, el tamaño y sus valores, y devolver falso sin propagar
+`std::bad_alloc` desde el método `noexcept`.
+
+`leer` exige comprobar el índice antes del acceso y modificar la referencia
+de salida sólo si es válido. Al rechazar, debe conservar cualquier valor
+anterior de esa referencia, incluido `8`, `88` u otro distinto de `-1`.
+La sonda independiente comprueba los límites lógicos mediante un array
+temporal con memoria física adicional, evitando accesos físicos inválidos
+en los contraejemplos preparados. También comprueba limpieza con
+`delete[]`, reutilización, cero presente y salida por excepción del
+llamador. No expone la sonda ni exige ensayos manuales adicionales.
+
+El motor ejecuta primero el caso visible y después la compilación
+privada con el código del estudiante preservado. La prueba privada
+lleva una huella propia de fuente, declaración, controlador, solicitud y
+revisión. Una comprobación histórica basada únicamente en stdout no
+concede este objetivo: sólo una comprobación nueva y válida añade el
+sello `array-owner-read/v1`. El resto de logros, respuestas y borradores
+permanece intacto.
+
+La implementación admite estos dos métodos y su contrato concreto.
+No acredita por sí sola la copia o movimiento de arrays de U6L11.
+Work incorpora la declaración raíz al JSON auténtico cuando corresponda,
+valida su transición y verifica el ejercicio en la aplicación.
+Las pruebas temporales de Codex no publican metadatos curriculares.
+
+
 ## Baterías abiertas de una función booleana con dos enteros
 
 Windows admite la variante `boolean-pair-v1` dentro de la lista raíz
