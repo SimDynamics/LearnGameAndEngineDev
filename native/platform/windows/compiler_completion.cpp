@@ -1,6 +1,7 @@
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/cpp_history_training.hpp"
 #include "platform/windows/state_store.hpp"
+#include "core/compiler_case_receipt_adoption.hpp"
 #include "core/code_format_compat.hpp"
 #include "core/cpp_expression_repair.hpp"
 #include "core/named_rule_constant_variation_check.hpp"
@@ -1740,33 +1741,35 @@ static void prepare_compiler_expansion(state::StateData& data,const curriculum::
 static void adopt_compiler_case_stage(state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& after,const std::vector<curriculum::Block>& previous_versions) {
     const auto key=base(lesson,after);
-    if(state::find(data,"native_windows",key+"completed"))return;
+    // An already earned first-case result must keep its exact old seal and
+    // feedback. It may still recover matching OPTIONAL receipts from a later
+    // authenticated case epoch of the same program and source client.
+    const bool already_completed=state::find(data,"native_windows",key+"completed")!=nullptr;
     auto program=state::string_value(data,"native_windows",key+"program");
-    auto proofs=case_proofs(data,key);proofs.resize(after.output_check->cases.size());
+    auto proofs=case_proofs(data,key);
+    proofs.resize(after.output_check->cases.size());
     bool added=false;
     for(auto version=previous_versions.rbegin();version!=previous_versions.rend();++version) {
-        if(!version->output_check||version->output_check->input_comparison!=after.output_check->input_comparison||
-           version->compiler_client_epoch!=after.compiler_client_epoch)continue;
+        if(!version->output_check)continue;
         const auto old_key=base(lesson,*version);
         if(old_key==key)continue;
-        const auto previous_program=state::string_value(data,"native_windows",old_key+"program");
-        if(previous_program.empty()||(!program.empty()&&previous_program!=program))continue;
-        const auto previous_proofs=case_proofs(data,old_key);
-        for(std::size_t index=0;index<after.output_check->cases.size();++index) {
-            if(!proofs[index].empty())continue;
-            for(std::size_t prior=0;prior<previous_proofs.size();++prior) {
-                if(previous_proofs[prior].empty()||!curriculum::same_output_case_requirements(
-                        version->output_check->cases[prior],after.output_check->cases[index]))continue;
-                if(program.empty())program=previous_program;
-                proofs[index]=proof(key,program,index,after.output_check->cases[index]);added=true;break;
-            }
-        }
+        const auto historical_program=state::string_value(data,"native_windows",old_key+"program");
+        const auto historical_proofs=case_proofs(data,old_key);
+        const bool adopted=curriculum::adopt_compatible_compiler_case_proofs(
+            *after.output_check,after.compiler_client_epoch,program,proofs,
+            *version->output_check,version->compiler_client_epoch,
+            historical_program,historical_proofs,
+            [&](std::string_view owner,std::size_t index,const curriculum::OutputCase& item) {
+                return proof(key,owner,index,item);
+            });
+        added=adopted||added;
     }
+    if(already_completed&&!added)return;
     if(program.empty()||(!added&&(proofs.empty()||proofs.front().empty())))return;
     auto& values=data.preferences["native_windows"];
-    values[key+"program"]=program;values[key+"cases"]=proofs;
-    // Existing proof positions remain intact, including on an explicit return.
-    // Historical completion by itself never grants this version's first case.
+    values[key+"program"]=program;
+    values[key+"cases"]=proofs;
+    if(already_completed)return; // Never replace a valid earned seal or its narration.
     if(!proofs.empty()&&!proofs.front().empty()) {
         const auto seal=std::ranges::all_of(proofs,[](const auto& item){return !item.empty();})
             ?complete_seal(key,program,proofs):first_case_complete_seal(key,program,proofs);

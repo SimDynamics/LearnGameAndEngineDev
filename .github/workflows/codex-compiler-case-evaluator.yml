@@ -6,6 +6,10 @@ on:
     paths:
       - .github/workflows/codex-compiler-case-evaluator.yml
       - native/core/compiler_case_first_required_tests.cpp
+      - native/core/compiler_case_receipt_adoption.hpp
+      - native/core/compiler_case_receipt_adoption_tests.cpp
+      - native/platform/windows/compiler_completion.cpp
+      - native/platform/windows/compiler_case_revision_state_tests.cpp
       - native/core/lesson.hpp
       - native/core/lesson.cpp
       - native/core/cpp_project.cpp
@@ -44,6 +48,10 @@ jobs:
             native/core/compiler_case_first_required_tests.cpp \
             -o "${RUNNER_TEMP}/lgaed_case_evaluator_tests"
           "${RUNNER_TEMP}/lgaed_case_evaluator_tests"
+          ${{ matrix.compiler }} -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/compiler_case_receipt_adoption_tests.cpp \
+            -o "${RUNNER_TEMP}/lgaed_case_receipt_adoption_tests"
+          "${RUNNER_TEMP}/lgaed_case_receipt_adoption_tests"
       - name: Select hosted MSVC without changing the pinned full-app toolchain
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
@@ -54,3 +62,9 @@ jobs:
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative /bigobj native\core\lesson.cpp native\core\cpp_project.cpp native\core\compile_check.cpp native\core\compiler_case_first_required_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_case_evaluator_tests.exe"
           if errorlevel 1 exit /b 1
           "%RUNNER_TEMP%\lgaed_case_evaluator_tests.exe"
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative native\core\compiler_case_receipt_adoption_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_case_receipt_adoption_tests.exe"
+          if errorlevel 1 exit /b 1
+          "%RUNNER_TEMP%\lgaed_case_receipt_adoption_tests.exe"
+          cl /nologo /std:c++latest /EHsc /W4 /permissive- /bigobj /Zc:__cplusplus /utf-8 /Inative /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c native\platform\windows\compiler_completion.cpp /Fo:"%RUNNER_TEMP%\lgaed_compiler_completion.obj"
+          if errorlevel 1 exit /b 1
+          cl /nologo /std:c++latest /EHsc /W4 /permissive- /bigobj /Zc:__cplusplus /utf-8 /Inative /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c native\platform\windows\compiler_case_revision_state_tests.cpp /Fo:"%RUNNER_TEMP%\lgaed_case_revision_state_tests.obj"
