@@ -10,6 +10,8 @@ on:
       - native/core/compiler_case_receipt_adoption_tests.cpp
       - native/core/cpp_local_int_probe.hpp
       - native/core/cpp_local_int_probe_tests.cpp
+      - native/core/cpp_local_int_live_fixtures.cpp
+      - scripts/curriculum/test_local_int_live_compilation.py
       - native/platform/windows/cpp_runner.cpp
       - native/platform/windows/local_int_state_tests.cpp
       - scripts/curriculum/stable_state_layout.py
@@ -70,6 +72,11 @@ jobs:
             -o "${RUNNER_TEMP}/lgaed_local_int_probe_tests"
           "${RUNNER_TEMP}/lgaed_local_int_probe_tests"
           python3 -B -m unittest discover -s scripts/curriculum -p test_local_int_probe_authoring.py -v
+          ${{ matrix.compiler }} -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/cpp_local_int_live_fixtures.cpp \
+            -o "${RUNNER_TEMP}/lgaed_local_int_live_fixtures"
+          python3 -B scripts/curriculum/test_local_int_live_compilation.py \
+            --emitter "${RUNNER_TEMP}/lgaed_local_int_live_fixtures" --compiler "${{ matrix.compiler }}"
       - name: Select hosted MSVC without changing the pinned full-app toolchain
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
@@ -86,6 +93,10 @@ jobs:
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative native\core\cpp_local_int_probe_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_local_int_probe_tests.exe"
           if errorlevel 1 exit /b 1
           "%RUNNER_TEMP%\lgaed_local_int_probe_tests.exe"
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative native\core\cpp_local_int_live_fixtures.cpp /Fe:"%RUNNER_TEMP%\lgaed_local_int_live_fixtures.exe"
+          if errorlevel 1 exit /b 1
+          python -B scripts\curriculum\test_local_int_live_compilation.py --emitter "%RUNNER_TEMP%\lgaed_local_int_live_fixtures.exe" --compiler MSVC
+          if errorlevel 1 exit /b 1
       - name: Compile native case history against the real generated build configuration
         if: runner.os == 'Windows'
         shell: pwsh
