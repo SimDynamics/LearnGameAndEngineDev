@@ -529,6 +529,8 @@ struct FreshExecution {
     bool rejection_probe_correct = false;
     bool report_probe_correct = false;
     bool named_rule_probe_correct = false;
+    bool indexed_unique_transfer_probe_correct = false;
+    std::string indexed_unique_transfer_request_fingerprint;
     bool open_battery_probe_correct = false;
     bool cmake_graph_correct = false;
     bool assertion_abort_verified = false;

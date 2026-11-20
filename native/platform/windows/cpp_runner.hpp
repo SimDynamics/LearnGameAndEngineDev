@@ -8,6 +8,7 @@
 #include "core/integer_battery_check.hpp"
 #include "core/cmake_graph_check.hpp"
 #include "core/adjustment_project_check.hpp"
+#include "core/cpp_indexed_unique_transfer_probe.hpp"
 
 #include <chrono>
 #include <cstddef>
@@ -108,6 +109,8 @@ struct CppRunRequest {
     std::optional<curriculum::RejectionOperation> rejection_probe;
     std::optional<curriculum::ReportMode> observation_probe;
     std::optional<curriculum::NamedRuleExecutionProbe> named_rule_probe;
+    // A lesson-owned, opt-in, independent two-owner identity witness.
+    std::optional<curriculum::CppIndexedUniqueTransferProbe> indexed_unique_transfer_probe;
     std::optional<curriculum::OpenBatteryProbeSpec> open_battery_probe;
     std::optional<curriculum::AssertionMode> assertion_mode;
     // Ordinary CMake builds and private probes do not need to parse the
@@ -145,6 +148,10 @@ struct CppAssertionProbe {
 };
 struct CppNamedRuleProbe {
     std::string source_sha256, project_sha256;
+    CppPhaseResult compilation, execution;
+};
+struct CppIndexedUniqueTransferEvidence {
+    std::string driver_sha256, program_sha256, request_fingerprint;
     CppPhaseResult compilation, execution;
 };
 struct CppNamedRuleConstantVariationProbe {
@@ -243,6 +250,7 @@ struct CppRunResult {
     std::optional<CppDiagnosticEvidence> diagnostic;
     std::optional<CppRejectionProbe> rejection_probe;
     std::optional<CppNamedRuleProbe> named_rule_probe;
+    std::optional<CppIndexedUniqueTransferEvidence> indexed_unique_transfer_evidence;
     std::optional<CppNamedRuleBatteryEvidence> named_rule_battery_evidence;
     std::string named_rule_battery_request_fingerprint;
     std::optional<CppOpenBatteryEvidence> open_battery_evidence;

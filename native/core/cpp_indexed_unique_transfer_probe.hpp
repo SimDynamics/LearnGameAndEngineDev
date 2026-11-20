@@ -10,6 +10,10 @@
 
 namespace lgaed::curriculum {
 
+// Exact binary completion witness with no CRLF ambiguity on MSVC stdout/stderr.
+inline constexpr std::string_view cpp_indexed_unique_transfer_completion_marker =
+    "PASS native independent two-owner transfer identity and cleanup";
+
 // A narrowly defined, reusable two-slot unique_ptr<int> runtime witness.
 // All names and the original lesson source are supplied by trusted authoring,
 // never by the student's edited code. No JSON fields or achievements are added.
@@ -261,7 +265,7 @@ int main() {
     }
     Watch::active=false;
     if(!moved || Watch::created!=2 || Watch::deleted!=2)return 8;
-    std::fputs("PASS native independent two-owner transfer identity and cleanup\n",stderr);
+    std::fputs("PASS native independent two-owner transfer identity and cleanup",stderr);
     return 0;
 }
 )probe";

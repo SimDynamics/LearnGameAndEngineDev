@@ -3,6 +3,7 @@
 #include "core/cmake_message_trace.hpp"
 #include "core/cpp_expression_repair.hpp"
 #include "core/named_rule_constant_variation_check.hpp"
+#include "core/cpp_indexed_unique_transfer_probe.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 #include "native_build_config.hpp"
@@ -385,6 +386,45 @@ using winrt::Windows::Data::Json::JsonValue;
 std::filesystem::path project_path(std::string_view path){return std::filesystem::path(winrt::to_hstring(path).c_str());}
 std::string fingerprint(const CppRunRequest& request,bool configuration=false){return state::sha256(curriculum::cpp_project_frame(request.project_files,request.source_files,request.cmake,configuration)+utf8(build::educational_vc_root)+utf8(build::educational_sdk_version)+utf8(build::educational_cmake)+utf8(build::educational_ninja)
     +"/windows-cpp-profile-v1/"+std::to_string(build::cpp_standard)+'/'+utf8(build::cpp_standard_option)+"/Zc:__cplusplus/cmake-rules-v1");}
+// This separate domain never alters a historical CMake/source fingerprint.
+// The exact source, trusted owner, request/revision, input and driver all bind
+// the private execution to this specific student attempt.
+
+std::string indexed_unique_transfer_fingerprint(const CppRunRequest& request) {
+    if(!request.indexed_unique_transfer_probe ||
+       request.backend!=CppRunRequest::Backend::native_msvc ||
+       request.action!=CppRunRequest::Action::compile_run || request.diagnostic ||
+       request.cmake || !request.project_files.empty() ||
+       !request.source_files.empty() || request.named_rule_probe ||
+       request.open_battery_probe || request.boolean_battery_probe ||
+       request.reduction_probe || request.integer_battery_probe ||
+       request.adjustment_project_probe || request.rejection_probe ||
+       request.observation_probe || request.assertion_mode ||
+       request.capture_cmake_graph || request.cmake_graph_check)
+        return {};
+    const auto& spec=*request.indexed_unique_transfer_probe;
+    const auto driver=curriculum::cpp_indexed_unique_transfer_probe_source(
+        spec,request.source_utf8);
+    if(!driver)return {};
+    const auto field=[](std::string_view value){
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    auto frame=std::string("win32-indexed-unique-transfer-proof-v1/")+
+        field(std::to_string(request.request_id))+
+        field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+
+        field(request.project_key)+field(spec.member.original_source)+
+        field(spec.member.signature)+field(spec.class_name)+
+        field(spec.first_member)+field(spec.second_member)+
+        field(spec.transfer_method)+field(spec.put_method)+
+        field(spec.change_method)+field(spec.clear_method)+
+        field(state::sha256(*driver))+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes));
+    return state::sha256(frame);
+}
+
 // A separate domain preserves every existing CMake fingerprint. Source and
 // prepared input must participate when no projectFiles exist.
 bool named_rule_battery_requested(const CppRunRequest& request) {
@@ -3115,6 +3155,23 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                 request.open_battery_probe->original_cases,
                 request.open_battery_probe->original_case_numbers,evidence.runs,frame).accepted;
     }
+    if(request.indexed_unique_transfer_probe) {
+        const auto frame=indexed_unique_transfer_fingerprint(request);
+        fresh.indexed_unique_transfer_request_fingerprint=frame;
+        const auto driver=curriculum::cpp_indexed_unique_transfer_probe_source(
+            *request.indexed_unique_transfer_probe,request.source_utf8);
+        if(!frame.empty()&&driver&&result.indexed_unique_transfer_evidence) {
+            const auto& proof=*result.indexed_unique_transfer_evidence;
+            fresh.indexed_unique_transfer_probe_correct=
+                proof.driver_sha256==state::sha256(*driver)&&
+                proof.program_sha256==state::sha256(request.source_utf8)&&
+                proof.request_fingerprint==frame&&
+                proof.compilation.succeeded()&&proof.execution.succeeded()&&
+                proof.execution.stdout_bytes.empty()&&
+                proof.execution.stderr_bytes==
+                    curriculum::cpp_indexed_unique_transfer_completion_marker;
+        }
+    }
     if(request.named_rule_probe&&result.named_rule_probe) {
         const auto independent=request.cmake?
             curriculum::named_rule_probe_source(*request.named_rule_probe):
@@ -3263,6 +3320,32 @@ void complete_cmake_option_probe(const CppRunRequest& request,
         observed.error_utf8,observed.executable,observed.compilation,
         observed.execution,observed.configuration,observed.cmake_graph};
 }
+// The student's unmodified submitted program runs first. Only afterward may
+// a second private native program observe the real identity and cleanup.
+// This never edits an existing draft, curricular asset or saved achievement.
+void complete_indexed_unique_transfer_probe(const CppRunRequest& request,
+        CppRunResult& result,std::stop_token stop) {
+    if(!request.indexed_unique_transfer_probe||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto frame=indexed_unique_transfer_fingerprint(request);
+    if(frame.empty())return;
+    const auto driver=curriculum::cpp_indexed_unique_transfer_probe_source(
+        *request.indexed_unique_transfer_probe,request.source_utf8);
+    if(!driver)return;
+    auto private_request=request;
+    private_request.indexed_unique_transfer_probe.reset(); // no recursion
+    private_request.source_utf8=*driver;
+    private_request.stdin_utf8.clear();
+    private_request.request_id=~request.request_id;
+    private_request.project_key+="/independent-transfer-v1";
+    const auto proof=run_cpp(private_request,stop);
+    if(!proof.error_utf8.empty()||stop.stop_requested())return;
+    result.indexed_unique_transfer_evidence=CppIndexedUniqueTransferEvidence{
+        state::sha256(*driver),state::sha256(request.source_utf8),frame,
+        proof.compilation,proof.execution};
+}
+
 void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result,
         std::stop_token stop) {
     if(!request.named_rule_probe||
@@ -4417,7 +4500,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         write_exact(source, request.source_utf8);
         const auto arguments=single_file_arguments(result.run_directory);
         const bool has_private_probe=request.boolean_battery_probe||request.reduction_probe||
-            named_rule_battery_requested(request);
+            named_rule_battery_requested(request)||request.indexed_unique_transfer_probe;
         const auto private_environment=has_private_probe
             ?compiler_environment():std::vector<wchar_t>{};
         const auto fixed_environment=has_private_probe?&private_environment:nullptr;
@@ -4443,6 +4526,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             }
         }
         complete_named_rule_probe(request,result,stop);
+        complete_indexed_unique_transfer_probe(request,result,stop);
         complete_named_rule_battery_single(request,result,compiler,private_environment,
             initial_toolchain,stop);
         complete_rejection_stream_probe(request,result,stop);
