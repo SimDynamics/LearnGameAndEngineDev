@@ -6,32 +6,50 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Un lugar para conservar un dato"
+          "text": "Guardar una cantidad y mostrarla"
         },
         {
           "type": "paragraph",
-          "text": "Una estación tiene seis cascos disponibles. El programa necesita conservar esa cantidad para utilizarla al preparar distintos mensajes. Un objeto es una zona de memoria que guarda un valor de un tipo determinado (Stroustrup, 2024).\n\nEl tipo determina qué valores puede guardar el objeto y qué operaciones se pueden realizar con ellos. Para contar los cascos utilizaremos int, un tipo de número entero: representa valores sin parte fraccionaria y tiene un conjunto finito de valores que puede guardar. La cantidad guardada y el texto que la describe cumplen funciones diferentes (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "Un objeto es una zona de memoria que guarda un valor de un tipo determinado"
-            },
-            {
-              "text": "El tipo determina qué valores puede guardar el objeto"
-            }
-          ]
+          "text": "Una estación tiene seis cascos. El programa va a guardar esa cantidad para poder usarla en sus mensajes. Observa la primera línea que escribiremos dentro de main."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int cascos = 6;"
         },
         {
           "type": "paragraph",
-          "text": "Un objeto que tiene nombre es una variable. La instrucción `int cascos = 6;` define una variable: `int` indica el tipo y `cascos` es el nombre (Stroustrup, 2024).\n\nInicializar consiste en preparar el objeto con su primer valor. El inicializador indica cómo realizar esa preparación. Aquí utiliza la notación `= 6`: el signo `=` introduce la inicialización y `6` es un literal entero, una forma de escribir el valor entero seis directamente en el código. Al ejecutar esta definición dentro de `main`, el objeto comienza con ese valor inicial, antes de que la instrucción de salida lo consulte (Stroustrup, 2024).\n\nEl nombre nos permite consultar el dato guardado. Al escribir cascos en la instrucción de salida, el programa utiliza su valor; al escribir \"cascos\", utiliza los caracteres de un literal de texto. Las comillas cambian qué dato estamos enviando a std::cout (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "Un objeto que tiene nombre es una variable"
-            },
-            {
-              "text": "el signo `=` introduce la inicialización",
-              "style": "bold"
-            }
-          ]
+          "text": "Esta línea presenta el nombre cascos e indica su tipo, int. Una línea así se llama declaración. En este caso, la declaración también es una definición. Cuando el programa llega a ella, empieza a existir la variable cascos. En este ejemplo, la variable es un objeto con nombre. Tiene un espacio donde guardar un dato de tipo int, que admite enteros como cero, seis o menos uno (Stroustrup, 2024).\n\nDar a ese objeto su primer valor se llama inicializar. Aquí, = 6 es el inicializador. El signo = introduce el valor inicial y el literal entero 6 escribe ese valor directamente en el código."
+        },
+        {
+          "type": "paragraph",
+          "text": "La línea siguiente usa el número guardado. A la derecha de << aparece cascos. El programa consulta el valor de esa variable y lo envía a std::cout para mostrarlo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << cascos;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si en ese lugar escribes el literal \"cascos\", el texto que se envía a std::cout cambia."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::cout << \"cascos\";"
+        },
+        {
+          "type": "multiple_choice",
+          "correctIndex": 1,
+          "id": "p1u2l1_distinguir_cascos",
+          "question": "¿Qué escribiría la instrucción del último fragmento si la usamos después de la declaración de cascos?",
+          "options": [
+            "6",
+            "cascos",
+            "\"cascos\""
+          ],
+          "explanation": "El literal \"cascos\" aporta las letras. Las comillas delimitan el literal en el código. En cambio, std::cout << cascos; consulta la variable y escribe 6."
         },
         {
           "type": "code",
@@ -40,7 +58,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Este programa muestra 6. La definición prepara ese valor y la instrucción siguiente lo envía a std::cout. El nombre cascos identifica la variable en el código; no se convierte por sí solo en texto de salida.\n\nEl nombre `cascos`, usado para consultar el valor de la variable, es una expresión: una parte del código que aquí permite obtener un valor. Una función puede recibir datos mediante argumentos. En `std::cout << cascos`, la operación `<<` utiliza una función de salida de `std::cout`; `cascos` es el argumento que le proporciona el valor `6` (Köppe et al., 2023).\n\nEn cambio, `std::cout << \"cascos\"` proporciona un literal de texto y muestra sus caracteres. El nombre de la variable permite consultar el número guardado; el texto entre comillas conserva las letras escritas en el código."
+          "text": "Sigue el programa dentro de main:\n\n1. int cascos = 6; crea la variable y guarda 6.\n2. std::cout << cascos; consulta ese dato y escribe 6 en la consola.\n3. return 0; termina main.\n\nEste ejemplo escribe un valor que ya está en el código. Al ejecutarse, el programa muestra el número sin pedir datos al usuario."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función es una parte de código que hace una tarea y puede recibir datos. Un argumento es la parte del código que aporta uno de esos datos al usar la función. En std::cout << cascos, << usa la función de escritura para enteros. cascos es el argumento del que obtiene el valor 6 (Köppe et al., 2023)."
         }
       ]
     },
@@ -52,12 +74,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para leer una definición, separa tres preguntas: cómo se llama el objeto, de qué tipo es y con qué valor comienza. En int cascos = 6;, esas respuestas son cascos, int y 6. El nombre identifica el objeto; el tipo establece las reglas de sus valores y operaciones; el valor es el dato guardado en ese momento (Stroustrup, 2024).\n\nLa comparación con una caja etiquetada ayuda a distinguir esas funciones: la etiqueta corresponde al nombre y el contenido al valor. Es un apoyo para razonar, no un dibujo del almacenamiento físico de la computadora (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "cómo se llama el objeto, de qué tipo es y con qué valor comienza"
-            }
-          ]
+          "text": "Al leer int cascos = 6;, fíjate en qué puedes hacer con cada parte:\n\nint elige el tipo de dato. Un entero representa un número sin parte fraccionaria y admite operaciones como la suma.\ncascos es el nombre. Lo usas en otra línea para consultar el dato.\n6 escribe el valor inicial. Es el dato que obtendrás al consultar cascos en la siguiente línea (Stroustrup, 2024)."
         },
         {
           "type": "multiple_choice",
@@ -73,7 +90,7 @@
         {
           "type": "fill_code",
           "language": "cpp",
-          "question": "Completa sólo el tipo entero usado para las cantidades de esta lección, ahora para conservar nueve bicicletas.",
+          "question": "Completa el hueco con el tipo entero que usamos para contar. La variable bicicletas debe guardar el valor inicial 9.",
           "code": "#include <iostream>\n\nint main() {\n    ___ bicicletas = 9;\n    std::cout << bicicletas;\n    return 0;\n}\n",
           "answers": [
             "int",
@@ -81,7 +98,29 @@
             "signed int",
             "int signed"
           ],
-          "explanation": "int representa valores enteros; la definición conserva 9 bajo el nombre bicicletas."
+          "explanation": "Al escribir int en el hueco, la variable bicicletas guarda un entero. El valor inicial viene del literal 9."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = ___;\n    std::cout << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "id": "p1u2l1_inicializador_cajas",
+          "question": "Escribe sólo el literal entero que debe ir tras = para que cajas comience con cinco.",
+          "explanation": "Con el literal 5, la declaración guarda 5 en cajas. La instrucción siguiente consulta esa variable y muestra 5."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int extintores = 3;\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "extintores"
+          ],
+          "id": "p1u2l1_leer_extintores",
+          "question": "Escribe el nombre de la variable que debe consultar std::cout para mostrar cuántos extintores hay.",
+          "explanation": "El nombre extintores se refiere a la variable de la línea anterior. El valor que se obtiene es 3, así que en la consola aparece 3."
         },
         {
           "type": "output_prediction",
@@ -99,16 +138,16 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Leer un dato no lo modifica"
+          "text": "Consultar el mismo dato dos veces"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int vales = 4;\nstd::cout << vales << \"\\n\";\nstd::cout << vales;"
         },
         {
           "type": "paragraph",
-          "text": "Consultar una variable para mostrar su valor no consume el dato ni vacía el objeto. Una segunda instrucción puede volver a utilizarlo. En los ejemplos siguientes, leer significa consultar el valor ya guardado; todavía no estamos solicitando datos al usuario (Stroustrup, 2024).\n\nAl seguir cada salida, distingue el texto entre comillas de la variable que aparece fuera de ellas. En el programa de botellas no hay ninguna instrucción que cambie el dato entre sus dos lecturas.",
-          "emphasis": [
-            {
-              "text": "no consume el dato ni vacía el objeto"
-            }
-          ]
+          "text": "En el fragmento, la primera instrucción con std::cout lee el número guardado en vales y escribe 4 seguido de un salto de línea. Al llegar a la segunda instrucción, vales todavía guarda 4. La segunda consulta obtiene ese mismo número (Stroustrup, 2024).\n\n4\n4\n\nAquí, leer la variable significa utilizar el dato guardado. El programa muestra ambos números sin pedir que el usuario teclee un dato."
         },
         {
           "type": "output_prediction",
@@ -128,7 +167,7 @@
           "answers": [
             "saldo\n8"
           ],
-          "explanation": "El literal imprime el nombre escrito; la variable imprime su valor."
+          "explanation": "La instrucción con std::cout escribe los caracteres de \"saldo\", hace un salto de línea y consulta el número guardado en saldo. En la segunda línea aparece 8."
         },
         {
           "type": "multiple_choice",
@@ -139,7 +178,7 @@
             "El valor se conserva entre las instrucciones."
           ],
           "correctIndex": 2,
-          "explanation": "La memoria conserva el dato; cout recibe sus valores, no reproduce mágicamente una salida anterior."
+          "explanation": "Cada vez que se usa el nombre de la variable con std::cout, se obtiene el dato guardado. Entre una consulta y la otra el programa conserva ese dato, así que ambas obtienen el mismo valor."
         }
       ]
     },
@@ -151,15 +190,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El significado del dato orienta la elección de su representación. Una cantidad de mesas completas se cuenta con enteros; una longitud como 1.25 metros tiene parte fraccionaria; una etiqueta como Sector 4 es texto aunque incluya un dígito; una respuesta de sí o no puede representarse con un valor lógico. C++ ofrece tipos diferentes para esas clases de valores, que desarrollaremos en las próximas lecciones (Stroustrup, 2024).\n\nConservar símbolos y conservar una cantidad tampoco son el mismo objetivo. El texto \"1.2\" guarda los caracteres que forman una etiqueta; un valor numérico permite realizar operaciones numéricas. Antes de elegir el tipo, identifica qué debe conservar el programa y qué necesita hacer con ello (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "El significado del dato orienta la elección de su representación"
-            },
-            {
-              "text": "Conservar símbolos y conservar una cantidad tampoco son el mismo objetivo"
-            }
-          ]
+          "text": "Antes de elegir un tipo, piensa qué vas a hacer con el dato. Estos ejemplos necesitan valores distintos (Stroustrup, 2024).\n\nContar mesas completas. Para sumar las cantidades de dos salas, guarda sus conteos como enteros.\nMedir una longitud. Una medida de 1.25 metros incluye una parte de otro metro. El tipo debe poder representar cantidades con parte fraccionaria.\nIdentificar una caja. Si su código es 0042 y debe conservar los dos ceros iniciales, guarda el código como texto.\nRegistrar si una sala está abierta. Basta un valor que indique sí o no."
         },
         {
           "type": "multiple_choice",
@@ -181,11 +212,23 @@
             "Una cantidad que se debe sumar."
           ],
           "correctIndex": 0,
-          "explanation": "0042 es una identificación. Conservar sus símbolos importa más que interpretarla como cantidad."
+          "explanation": "Para identificar la caja importa conservar los cuatro caracteres de 0042, incluidos los dos ceros. Una etiqueta de texto guarda esos caracteres en el mismo orden."
         },
         {
           "type": "note",
-          "text": "Un tipo delimita valores y operaciones del lenguaje. El conjunto de valores que puede representar int también incluye enteros negativos (Stroustrup, 2024).\n\nEl programa debe respetar además las condiciones de la tarea. Si estamos contando las mesas de una sala, una cantidad negativa no describe una situación válida. Elegir int resuelve cómo representar el dato, y comprobar su significado será otra parte del trabajo."
+          "text": "int puede guardar números negativos, como −2. Supón que alguien anota «menos dos mesas» en una sala. int puede guardar ese número, pero ese dato no sirve como conteo de mesas. Para este conteo, los datos válidos comienzan en cero (Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "correctIndex": 2,
+          "id": "p1u2l1_tipo_y_conteo",
+          "question": "Un programa debe contar mesas. ¿Qué ocurre si se ejecuta la declaración int mesas = -2;?",
+          "options": [
+            "El entero se convierte en una etiqueta de texto.",
+            "El dato queda guardado como cero.",
+            "La variable guarda −2, un número que queda fuera del conteo válido de mesas."
+          ],
+          "explanation": "int admite el número −2. Lo que descarta esa cantidad es la tarea: una sala puede tener cero mesas o más."
         }
       ]
     },
@@ -193,16 +236,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Construye antes de comparar"
+          "text": "Guardar y mostrar la cantidad de llaves"
         },
         {
           "type": "paragraph",
-          "text": "Usa el editor de código para construir un programa que conserve la cantidad de llaves de un taller en una variable llamada `llaves`, con valor inicial `7`. La consola debe mostrar `Llaves: 7`, con un espacio después de los dos puntos. La instrucción de salida debe utilizar la variable.\n\nPulsa «Compilar, ejecutar y comprobar». La comprobación contrasta el mensaje completo con ese objetivo; puedes terminarlo con o sin un salto de línea. Si hay diferencias, corrige el mismo programa y vuelve a comprobarlo.",
-          "emphasis": [
-            {
-              "text": "La instrucción de salida debe utilizar la variable"
-            }
-          ]
+          "text": "El cuerpo de main tiene un comentario que indica dónde escribir. Añade dos instrucciones:\n\n1. Define llaves como un entero con valor inicial 7.\n2. Con std::cout, escribe el rótulo \"Llaves: \" y después consulta llaves para mostrar el número.\n\nLa consola debe mostrar este mensaje. Puedes terminarlo con o sin un salto de línea.\n\nLlaves: 7\n\nPulsa «Compilar, ejecutar y comprobar». Si el texto difiere, localiza la primera diferencia y revisa qué parte de la instrucción la produce."
         },
         {
           "type": "cpp_compiler",
@@ -223,15 +261,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba también el código: la definición debe preparar el valor antes de utilizarlo y la salida debe consultar `llaves`. La coincidencia de la consola no demuestra por sí sola que hayas usado la variable.\n\nLa siguiente actividad cambia un dato inicial y conserva la instrucción que lo muestra."
+          "text": "La app comprueba el mensaje de la consola. Escribir todo el mensaje como un literal de texto también puede producir Llaves: 7. Para comprobar si el número viene de la variable, observa qué pasa al cambiar su valor inicial sin tocar la línea con std::cout."
         },
         {
           "type": "heading",
-          "text": "Otra cantidad inicial"
+          "text": "Cambiar el valor inicial y conservar la lectura"
         },
         {
           "type": "paragraph",
-          "text": "El programa de este editor comienza con siete llaves. Cambia únicamente el inicializador de `llaves` a `11`; conserva la instrucción de salida.\n\nPulsa «Compilar, ejecutar y comprobar». El objetivo de esta actividad es `Llaves: 11`, con un espacio después de los dos puntos y un salto final opcional. Si el número mostrado no responde al cambio, revisa si la salida consulta la variable o utiliza un número fijo."
+          "text": "En este editor, llaves comienza con el valor 7. Cambia ese número en la declaración para que el nuevo valor inicial sea 11. Deja intacta la línea con std::cout.\n\nPulsa «Compilar, ejecutar y comprobar». La consola debe mostrar este renglón, con un espacio después de los dos puntos. El salto final es opcional.\n\nLlaves: 11"
         },
         {
           "type": "cpp_compiler",
@@ -255,7 +293,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Una solución y una nueva lectura"
+          "text": "Seguir el valor desde la declaración hasta la consola"
         },
         {
           "type": "code",
@@ -264,7 +302,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En esta solución, int llaves = 7; crea la variable con el valor inicial 7. La instrucción de salida combina el literal \"Llaves: \" con el valor que consulta mediante el nombre llaves. El espacio después de los dos puntos está dentro del literal.\n\nCambiar el inicializador a 11 prepara otro valor al ejecutar de nuevo el programa. La instrucción de salida permanece igual y consulta el valor preparado en esa ejecución. Comprueba las dos lecturas en los puzzles siguientes."
+          "text": "Busca llaves en dos lugares. La primera línea que lo contiene es la declaración. Allí se guarda el valor inicial. En la línea con std::cout, el mismo nombre indica de dónde obtener el número. El espacio después de los dos puntos viene del literal \"Llaves: \".\n\nCuando escribes 11 en lugar de 7 en la declaración y vuelves a ejecutar el programa, la variable empieza con 11. La misma línea con std::cout consulta ese valor y escribe Llaves: 11."
         },
         {
           "type": "output_prediction",
@@ -284,13 +322,13 @@
           "answers": [
             "paquetes"
           ],
-          "explanation": "El nombre permite acceder al valor del objeto; \"paquetes\" imprimiría texto fijo."
+          "explanation": "Escribe paquetes para que std::cout reciba el número guardado. Con \"paquetes\", escribiría las letras de esa palabra."
         },
         {
           "type": "output_prediction",
           "id": "u2_lectura_llaves_siete",
           "language": "cpp",
-          "question": "Después de construir tu programa, predice la salida de esta versión. Escribe únicamente el mensaje producido y conserva su espacio después de los dos puntos.",
+          "question": "Lee la declaración y la instrucción con std::cout. Escribe el renglón que muestra el programa, con el espacio después de los dos puntos.",
           "code": "#include <iostream>\n\nint main() {\n    int llaves = 7;\n    std::cout << \"Llaves: \" << llaves;\n    return 0;\n}\n",
           "answers": [
             "Llaves: 7"
@@ -302,13 +340,25 @@
           "type": "output_prediction",
           "id": "u2_lectura_llaves_once",
           "language": "cpp",
-          "question": "En esta versión cambió sólo el inicializador. Predice el mensaje que produce la misma instrucción de salida y conserva su espacio después de los dos puntos.",
+          "question": "Compara la declaración de llaves con la del puzle anterior. ¿Qué renglón muestra ahora la misma instrucción con std::cout? Conserva el espacio después de los dos puntos.",
           "code": "#include <iostream>\n\nint main() {\n    int llaves = 11;\n    std::cout << \"Llaves: \" << llaves;\n    return 0;\n}\n",
           "answers": [
             "Llaves: 11"
           ],
           "explanation": "El literal aporta Llaves: y el espacio; el nombre llaves consulta el valor inicial 11. La salida combina esas dos partes sin añadir un salto de línea.",
           "reviewFeedback": "Distingue el texto fijo entre comillas del nombre situado fuera de ellas. Revisa el valor con el que comienza la variable en esta ejecución y conserva los caracteres del literal."
+        },
+        {
+          "type": "multiple_choice",
+          "correctIndex": 0,
+          "id": "p1u2l1_comprobar_dependencia_llaves",
+          "question": "Dos programas muestran Llaves: 7. El primero usa std::cout << \"Llaves: \" << llaves; y el segundo usa std::cout << \"Llaves: 7\";. En ambos cambias el valor inicial de llaves a 11. ¿Qué muestra cada programa al ejecutarlo de nuevo?",
+          "options": [
+            "El primero muestra Llaves: 11 y el segundo muestra Llaves: 7.",
+            "Ambos muestran Llaves: 11.",
+            "Ambos muestran Llaves: 7."
+          ],
+          "explanation": "El primero consulta llaves y obtiene el nuevo valor. El segundo escribe los caracteres del literal \"Llaves: 7\". Como no le pide el valor a la variable, cambiar la declaración no modifica ese mensaje."
         }
       ]
     },
@@ -316,20 +366,15 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Solución de referencia: Cantidad de llaves"
+          "text": "Otra forma de escribir el valor inicial"
         },
         {
           "type": "note",
-          "text": "Es otra forma de escribir el programa que respeta el mismo objetivo; el resultado solicitado y el uso de la variable permiten comprobarla."
+          "text": "Esta versión coloca el valor inicial entre llaves justo después del nombre de la variable."
         },
         {
           "type": "paragraph",
-          "text": "La variable se llama llaves, comienza con 7 y se utiliza para mostrar el número. La salida es Llaves: 7, con un espacio después de los dos puntos. Al cambiar únicamente el valor inicial a 11, la misma instrucción debe producir Llaves: 11. Son válidas otras formas de definición y salida que cumplan esas condiciones.\n\nEn la referencia siguiente aparece int llaves{7};. Las llaves situadas inmediatamente después del nombre contienen el inicializador: preparan llaves con el valor 7. Para este entero, la definición tiene el mismo efecto que int llaves = 7;. La próxima lección desarrollará esta notación y su protección frente a ciertas conversiones (Stroustrup, 2024).\n\nEstas llaves de inicialización tienen una función diferente de las llaves que rodean todas las instrucciones de main. Las de main delimitan su cuerpo; las de llaves{7} pertenecen a la preparación de esa variable (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "Las de main delimitan su cuerpo"
-            }
-          ]
+          "text": "Compara la línea de la solución anterior con la de esta versión.\n\nint llaves = 7;\nint llaves{7};\n\nLas dos crean la variable llaves de tipo int y la inicializan con 7. Las llaves de {7} rodean el valor inicial. El par de llaves de main rodea todas las instrucciones que forman su cuerpo. En la próxima lección practicarás cómo declarar e inicializar con estas llaves (Stroustrup, 2024)."
         },
         {
           "type": "code",
@@ -338,7 +383,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En las dos soluciones, `\"Llaves: \"` es texto fijo y `llaves` consulta el valor actual. Con `{7}`, la salida muestra siete; con `{11}`, muestra once. La instrucción de salida conserva su forma porque lee el valor preparado en cada programa.\n\nImprimir siempre el número fijo `7` o el texto `\"llaves\"` no satisface esa relación, aunque una ejecución pueda parecer correcta."
+          "text": "Los dos programas escriben Llaves: 7 porque leen el valor guardado en llaves. Si cambias su valor inicial a 11, ambos pasan a escribir Llaves: 11. Fíjate en que el cambio está en la declaración y que la instrucción con std::cout sigue leyendo la misma variable."
         }
       ]
     }
@@ -545,9 +590,16 @@
         "blocks": [
           "block_0000_0000",
           "block_0000_0001",
+          "p1u2l1_definir_cascos",
           "block_0000_0002",
+          "p1u2l1_consultar_el_numero",
+          "p1u2l1_leer_cascos",
+          "p1u2l1_predecir_cascos",
+          "p1u2l1_cascos_entre_comillas",
+          "p1u2l1_distinguir_cascos",
           "block_0000_0003",
-          "block_0000_0004"
+          "block_0000_0004",
+          "p1u2l1_argumento"
         ]
       },
       {
@@ -557,6 +609,8 @@
           "block_0001_0001",
           "block_0001_0002",
           "block_0001_0003",
+          "p1u2l1_inicializador_cajas",
+          "p1u2l1_leer_extintores",
           "block_0001_0004"
         ]
       },
@@ -564,6 +618,7 @@
         "id": "page_0002",
         "blocks": [
           "block_0002_0000",
+          "p1u2l1_leer_dos_veces",
           "block_0002_0001",
           "block_0002_0002",
           "block_0002_0003",
@@ -577,7 +632,8 @@
           "block_0003_0001",
           "block_0003_0002",
           "block_0003_0003",
-          "block_0003_0004"
+          "block_0003_0004",
+          "p1u2l1_tipo_y_conteo"
         ]
       },
       {
@@ -601,7 +657,8 @@
           "block_0005_0003",
           "block_0005_0004",
           "block_0005_0005",
-          "block_0005_0006"
+          "block_0005_0006",
+          "p1u2l1_comprobar_dependencia_llaves"
         ]
       },
       {
@@ -1165,7 +1222,116 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "p1u2l1_definir_cascos",
+        "sha256": "6fd56e5fca031765cc19a5b2c6a92c3d9ebb35e79ef3df5883cc2e75123af37f",
+        "storage": {
+          "page": 7,
+          "block": 0
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l1_consultar_el_numero",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 1
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l1_leer_cascos",
+        "sha256": "d9ef317cd4355afe450ad2db2a073bd1526ee7f947137a85ba893ed4f4bdc243",
+        "storage": {
+          "page": 7,
+          "block": 2
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l1_predecir_cascos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 3
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l1_cascos_entre_comillas",
+        "sha256": "c5ef83e4f6eb6b5e14dfe130c4359f0ed98b038689a0bf378a215ed00807306d",
+        "storage": {
+          "page": 7,
+          "block": 4
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l1_distinguir_cascos",
+        "sha256": "3995d24d1b419c74e176dc7e9e57d8268a5bd1cea7ccae5fc6ea20abf91b7d0a",
+        "storage": {
+          "page": 7,
+          "block": 5
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l1_argumento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 6
+        },
+        "progressPage": "page_0000"
+      },
+      {
+        "id": "p1u2l1_inicializador_cajas",
+        "sha256": "68ba81e6e7b5872f86b6cbc4b2740b7039375b1bae69228b5a0ef5d05ed7ac04",
+        "storage": {
+          "page": 7,
+          "block": 7
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u2l1_leer_extintores",
+        "sha256": "e722380113bcaf5afa35d11753502adcb8ed28524f71cd68c307fa05966f7c2e",
+        "storage": {
+          "page": 7,
+          "block": 8
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u2l1_leer_dos_veces",
+        "sha256": "bb0897ff7d3f2761862ced40af81beb2a879f518c3633908643d00d38bb93156",
+        "storage": {
+          "page": 7,
+          "block": 9
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "p1u2l1_tipo_y_conteo",
+        "sha256": "d3cab96f28007ca295166194f7ab41f65961b8860b633624432ee231c0ef12ee",
+        "storage": {
+          "page": 7,
+          "block": 10
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u2l1_comprobar_dependencia_llaves",
+        "sha256": "7ecdbdbd775193cc15161241e92602486c1e802799f2b6db33d27a1bda5bf07b",
+        "storage": {
+          "page": 7,
+          "block": 11
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0002",
@@ -1186,6 +1352,141 @@
         "id": "block_0000_0001",
         "beforeSha256": "cb67077d7aef422f400da7e6e356a6b178d807a1c2e331e456b1c7b78421b879",
         "afterSha256": "92f70c78536694a5702b99319dcec3babe1315aa12d31bde9f535ec246320504"
+      },
+      {
+        "id": "block_0000_0000",
+        "beforeSha256": "2024398704e63b1d52310d3aa3291e1a31eec3aa52e942c1ebb68be24a899197",
+        "afterSha256": "6500f77f8500c41c2168b84372dc8c0792eb421898ef4a43aa4fe68f81e6614d"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "92f70c78536694a5702b99319dcec3babe1315aa12d31bde9f535ec246320504",
+        "afterSha256": "ed998b0fe6423afaa431061e93dd499c4d15b8faac075abbc66c60ddd1d53ced"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "17cd1e59ea635f2d9e2c7deb1854aa101be577ce11cc7491b2be43a28d2eb4eb",
+        "afterSha256": "d72cbc0eb73859a9c8f05b98f1afd0991c6d696757fb209dc3cad32bd89e1176"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "2e2eefafc5d77e885207c0117453e64faecd4572f387699c6873abf656822bd3",
+        "afterSha256": "55a5b5c046e11ee2cababcf2c27aa6bbf1d09ac94a327519cc508bde18d7f363"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "a0fb43ef92cd3d60f34f54f0c079d05ca294b90705147988d8f875f669941620",
+        "afterSha256": "d9160b1bbeb5427131d6e5a84588edcc52a41485e3acaeaa5ee65da0660191fa"
+      },
+      {
+        "id": "block_0002_0000",
+        "beforeSha256": "bf6c00f335aa858174272fe020e1326ed9b8c728dd71adc348307e98364cf63d",
+        "afterSha256": "236e863ed47973ae102b91f355331d13e24a9248a9322d8de2acfed3906ea1f0"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "a8fa6bd7f1adcc07d35c56e4bdffea1890ac8ccf1b1d0db2c04b02e5437bad98",
+        "afterSha256": "c9428bb3019ca9817466d6c17ea6b5d2eb06ff62df45cbd94bb55277d7726ffa"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "9d2e8833a459a293aef9c93e8e67ec44ecdc53a9ae4ca5fd3808e1a720cbe12b",
+        "afterSha256": "0184f51c6593cdfaa6b8a0694e9d4c71b90c75c6ebba263860f65b3f82d42d80"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "a2cda9618392f0e41c9038e94ea258b048c9b6d63f846ba8f6830964ecc59af1",
+        "afterSha256": "9b6e8a609dfa72b122e53b4a6c40a4976991131e2068393e77f9d934561e5b7b"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "ea9657b57b92b32d7493422a24a1ae306986b68def31830aec72687d1aa2fa5f",
+        "afterSha256": "ab863a7c650ca66c87f6ed0fd089b3fe363ee401ed7984373ec6b58fd9ba78de"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "162ea354176798132da49c65bd9b887bb6ef383626c9cefbe9e8774680316a7c",
+        "afterSha256": "06c03ccb380cc39a8d381777a24755d8c7ef9cc5542ba14a199f5a19e5185187"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "b1a955bd77e68096646746eb6b9f4fa40c5d86b8cc7de07eac82066e739cbfc5",
+        "afterSha256": "26f3c645aae04537ee1f2d27bc179f62d6d97374c6ebd7d0cf4ee91d8237b386"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "c9796aadd544299c2a1d1679aeb0f4adf41d84f66008c29ba1616e6a9e8efc68",
+        "afterSha256": "4babc82e0e81543f405e3854eb4e6bc227a0fe4fc866dfca2107bbc4f2c28c4d"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "d47fe60c727b500b80c976701bee220e0916f85409b09649d52a2e55b28c9272",
+        "afterSha256": "2b713e23a348a3d7850d4be66571f960993d83b104962c013a6fcd181c4627ff"
+      },
+      {
+        "id": "block_0005_0000",
+        "beforeSha256": "4cae225f3dadf769d4aa87d0fb55373062516a5d4043636d0f5b3a440c8250de",
+        "afterSha256": "f2e9e3c0f6a17338fef89f7fb4b7c7fc17d234f88c14187d21853907a9bf7c2e"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "711e576b7c04cd1f1afb3aba3c468feb2e76c77750cf83b625b3c810ec514418",
+        "afterSha256": "1b31fc2b10355f2b04d4c19f635b6add9de760bbcca979443ab9059e61236701"
+      },
+      {
+        "id": "block_0006_0000",
+        "beforeSha256": "7f17389c4193ef915c649471f65966038b1eb846cc3459aa85437453d3bf9a63",
+        "afterSha256": "cf0f38fa9962127cda85d40641b39f2e94388fdcacb45c4acf32bcd99084f3a4"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "10f0228552772688097455f3ee73ec51d4f90112593703eef10f2052ad9428f5",
+        "afterSha256": "231a335172ca6f7024abd9a4d97fd25fd121d65fb7c6a3a03acada2968c664bf"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "dec86f934e878516df3e11b308a83b73c4b6f53b823be41ea66fb40a61a161d9",
+        "afterSha256": "6d88ff98d14f0d4baf5203a8519250377afb0d7d2f583d347f0dcdca01b2cfb8"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "f3b2e391b0c7540cd8757566cd3de3b1c13f20f39cfbf2d3f007c1953b54140b",
+        "afterSha256": "1e17cff9438d09544e6ae9ecdd1f509042a8bb9c5932a2e857570a253928eaa7"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "de324b81303449e4bf93904fa4300ba27633d56003e1207e2de96726e93bff34",
+        "afterSha256": "a4a8fba268637dfcac41a6fc85af83b187d6d73d0dc2fc2ea11c4134cb7038bb"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "c5a60bd8425e8f1f11a9585d0246926c1f249039bf6f8582b05dbd2765671f55",
+        "afterSha256": "a3038d0b7713651fe323eff23ff3941cf9b5586a5c10eed0f09b03f1a567f99e"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "60ef5e04fa48722551691b766735b48deaeb52562fb605dac7028db4027524c4",
+        "afterSha256": "2c20289f94855893bd6c25a3637e40ddb32ba1e63b99b2cc1cdf1b2648117add"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "c8ce4b15b4c52eaa4def1a3e216b2c373de573434c8e275b90e84705ba3cd8a2",
+        "afterSha256": "bf0bc2ff14f1b0ec6e4672773b77edaffc9cc7def0dbace5e80a3fc4faefdc6a"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "01c8157131dba0514b802e787d74a370c80efcf04906a461fbd0f417d9a15d24",
+        "afterSha256": "9cf60cd6266c009d5284bb1b77d971811bb62aa294218af05f0d0401865eddb5"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "41163c5d9c790abbd58bcded3dc343f02c92960ca41bd748ff9e29efa6b5dc08",
+        "afterSha256": "0ba34b6cde320429be1507a167a41810ecd30cbfc4a59dc6f0ffad299c36a607"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "d5451dad8f6fbbecc0288d8f874b04a423395575a06881d95559d65d097048c9",
+        "afterSha256": "4a1ac493087c5c4c1e2b1cbb7ecb1fe4db52cba30ff27461944523252e34bb74"
       }
     ]
   },
@@ -1230,228 +1531,137 @@
       {
         "block": "block_0000_0000",
         "path": "/text",
-        "sourceSha256": "1e77183d8488356d31a1b156d5bda1b8e69085f1cb086598703afd8d40785428",
+        "sourceSha256": "ebdda62878beae431c64bcef350c8c3b7786ba36d1899fe584f667e0c05c3af0",
         "spans": []
       },
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "63e5bc50aa6cbead512016216b6ec3c2e56f9a0b9292a47203d958da9eb90f0c",
+        "sourceSha256": "2e6ed1be7a5aaf9e19a74ba6ecff137034718351729f4cfa9281cfd9ca444d53",
         "spans": [
           {
-            "start": 19,
-            "end": 23,
-            "text": "seis",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 120,
-            "end": 123,
-            "text": "int",
+            "start": 157,
+            "end": 161,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 212,
-            "end": 230,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 578,
-            "end": 596,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "d4263edca53e2829d8485607df08c5e4df666a2f345a896523604224ffbc78ea",
+        "sourceSha256": "499ca0fabb2b6d2a96ff702adcf8ee9278d8b5981345fedcfb7f26cc2cc422a6",
         "spans": [
           {
-            "start": 60,
-            "end": 75,
-            "text": "int cascos = 6;",
+            "start": 30,
+            "end": 36,
+            "text": "cascos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 99,
-            "end": 102,
+            "start": 55,
+            "end": 58,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 122,
-            "end": 128,
+            "start": 215,
+            "end": 221,
             "text": "cascos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 143,
-            "end": 161,
+            "start": 324,
+            "end": 327,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 376,
+            "end": 394,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 309,
-            "end": 312,
+            "start": 458,
+            "end": 461,
             "text": "= 6",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 325,
-            "end": 326,
+            "start": 492,
+            "end": 493,
             "text": "=",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 359,
-            "end": 360,
+            "start": 541,
+            "end": 542,
             "text": "6",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 422,
-            "end": 426,
-            "text": "seis",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 493,
-            "end": 497,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 592,
-            "end": 610,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 675,
-            "end": 681,
-            "text": "cascos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 753,
-            "end": 761,
-            "text": "\"cascos\"",
-            "role": "string",
-            "reading": "natural"
-          },
-          {
-            "start": 859,
-            "end": 868,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 869,
-            "end": 887,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "5d99614765866991e62bc5801ac9f0366ebdc3c793d6dddc2186d7bb3629ff32",
+        "sourceSha256": "64dfc29e4894a9be6c2753d630cced99927061d1853b2dda7fc9c467e370f635",
         "spans": [
           {
-            "start": 22,
-            "end": 23,
+            "start": 28,
+            "end": 32,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 53,
+            "text": "int cascos = 6;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 81,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 106,
+            "text": "std::cout << cascos;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 135,
+            "end": 136,
             "text": "6",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 95,
-            "end": 104,
-            "text": "std::cout",
+            "start": 155,
+            "end": 164,
+            "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 116,
-            "end": 122,
-            "text": "cascos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 220,
-            "end": 226,
-            "text": "cascos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 406,
-            "end": 425,
-            "text": "std::cout << cascos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 442,
-            "end": 444,
-            "text": "<<",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 480,
-            "end": 489,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 493,
-            "end": 499,
-            "text": "cascos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 546,
-            "end": 547,
-            "text": "6",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 549,
-            "end": 569,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 584,
-            "end": 605,
-            "text": "std::cout << \"cascos\"",
+            "start": 173,
+            "end": 177,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1466,53 +1676,46 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "1ae6405f84c99d3dde508e1fd4182b249d644a8415bc040591f9fa173d2b3b7a",
+        "sourceSha256": "dad84d56d940f004914e968e1c90645985aecbf451cc4cd20e358440a831f5f2",
         "spans": [
           {
-            "start": 33,
-            "end": 37,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 118,
-            "end": 133,
+            "start": 8,
+            "end": 23,
             "text": "int cascos = 6;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 155,
-            "end": 161,
-            "text": "cascos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 163,
-            "end": 166,
+            "start": 69,
+            "end": 72,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 169,
-            "end": 170,
+            "start": 185,
+            "end": 191,
+            "text": "cascos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 252,
+            "end": 253,
             "text": "6",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 307,
-            "end": 325,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
+            "start": 318,
+            "end": 324,
+            "text": "cascos",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 544,
-            "end": 562,
+            "start": 347,
+            "end": 365,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1589,12 +1792,19 @@
       {
         "block": "block_0001_0003",
         "path": "/question",
-        "sourceSha256": "42052b2944bab78b20e6ef637bbb1ae961592973c59e5caf91e13933c1c6f5c6",
+        "sourceSha256": "0ff83edfe67c8c56dc59c580ff65fcc5e495910c69ebaa6fc16f4fb76a421cd8",
         "spans": [
           {
-            "start": 93,
-            "end": 98,
-            "text": "nueve",
+            "start": 73,
+            "end": 83,
+            "text": "bicicletas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 115,
+            "text": "9",
             "role": "data",
             "reading": "natural"
           }
@@ -1603,26 +1813,26 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "1cf4a71342dd37e7f0999139583e35a90f9ea4fdd6978ba3f7a73bb88c6686cc",
+        "sourceSha256": "63efc2bfab51e0ab18292cf415f7e97057267110d2220f3a6f32a97f595a90b8",
         "spans": [
           {
-            "start": 0,
-            "end": 3,
+            "start": 12,
+            "end": 15,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 55,
-            "end": 56,
-            "text": "9",
+            "start": 41,
+            "end": 51,
+            "text": "bicicletas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 72,
-            "end": 82,
-            "text": "bicicletas",
+            "start": 105,
+            "end": 106,
+            "text": "9",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1651,26 +1861,61 @@
       {
         "block": "block_0002_0000",
         "path": "/text",
-        "sourceSha256": "97e3b24f6ab6d21550f8483a8f35a73f98ded87ea8d2441b1bc67ff1630f977d",
+        "sourceSha256": "263e39be4a22173ad8f80223311999979113b0f4b8713818fe9f881daf3be3cd",
         "spans": []
       },
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "a2537b5b1636b7856c2a3eca20408cb8da839feab7e782ed7900cb682b3d5cb7",
+        "sourceSha256": "0ce95daed7eb1148d30c9687284ee269fb08f2e3f9f431ab3f95a90ca502a327",
         "spans": [
           {
-            "start": 258,
-            "end": 276,
+            "start": 44,
+            "end": 53,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 85,
+            "text": "vales",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 97,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 169,
+            "text": "vales",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 185,
+            "end": 186,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 251,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 462,
-            "end": 465,
-            "text": "dos",
-            "role": "data",
+            "start": 254,
+            "end": 257,
+            "text": "4\n4",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1704,8 +1949,37 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "0ded62231925cbed0cf2b6d13a6d0fff402f7a88f5b39900fb478fd0e7449a07",
-        "spans": []
+        "sourceSha256": "4b69f62a89ebaa4ddb383c65b80e99fb2b81ee9a6997c44aa8034a5e04b414b2",
+        "spans": [
+          {
+            "start": 19,
+            "end": 28,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 62,
+            "text": "\"saldo\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 125,
+            "text": "saldo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 156,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
@@ -1724,12 +1998,12 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "6ed4a11706122ffb38d57189c99e19e829b025519e406326bf976d2f0eaead68",
+        "sourceSha256": "99e58e804381e385fb9899777a4035e30a818c5e74844515227650536b6a1f72",
         "spans": [
           {
-            "start": 29,
-            "end": 33,
-            "text": "cout",
+            "start": 49,
+            "end": 58,
+            "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1762,41 +2036,27 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "0f5c6b8192d177ed3635407a67e2b22f1825c691bf885e26addb04c8bca8c098",
+        "sourceSha256": "ca7d470fb017d22fa005a7601ec308a93513587b5a059187637b48e839fc92c1",
         "spans": [
           {
-            "start": 139,
-            "end": 143,
+            "start": 104,
+            "end": 122,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 260,
             "text": "1.25",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 195,
-            "end": 203,
-            "text": "Sector 4",
+            "start": 405,
+            "end": 409,
+            "text": "0042",
             "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 408,
-            "end": 426,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 514,
-            "end": 517,
-            "text": "1.2",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 721,
-            "end": 739,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
             "reading": "natural"
           }
         ]
@@ -1863,14 +2123,14 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "35feda7511a9a7cc5808dab7451bf3d8b2ecb580ea18c246a23d09d168e0543a",
+        "sourceSha256": "cae4726fa9a1a7829762fe8a009fca531aca2e9da0c09ee407820ac33ff1803a",
         "spans": [
           {
-            "start": 0,
-            "end": 4,
+            "start": 68,
+            "end": 72,
             "text": "0042",
             "role": "data",
-            "reading": "characters"
+            "reading": "natural"
           }
         ]
       },
@@ -1895,59 +2155,94 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "968bcc6f93cb41af910aac68cfda89530babf6623a5f9b2dde109469eec67470",
+        "sourceSha256": "218c3e5b0e1e280ac3f9de8d636de068b6edd2996c10cf68f6e92ef9fc2b8c00",
         "spans": [
           {
-            "start": 98,
-            "end": 101,
+            "start": 0,
+            "end": 3,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 136,
-            "end": 154,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
+            "start": 42,
+            "end": 44,
+            "text": "−2",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 325,
-            "end": 328,
+            "start": 101,
+            "end": 104,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 248,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0004_0000",
         "path": "/text",
-        "sourceSha256": "38a6adeba70b13ce17f69818c2d28a9aed8bd9a1aed1638f14eada0a3ddc5fcb",
+        "sourceSha256": "48dd0e37c9fe0dbbf336fd4da11d83d98056b91e2bc1395203ac058b9b51f779",
         "spans": []
       },
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "7c82e59e0f2c7e5918409a8c71a2652df7b5c117bcc91201f3ce2f44a14719da",
+        "sourceSha256": "392a8f7c2f323fa4c6ee79cbbd80632b15772242f1ea236dae37ea13307f5e2b",
         "spans": [
           {
-            "start": 124,
-            "end": 130,
+            "start": 13,
+            "end": 17,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 107,
             "text": "llaves",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 152,
-            "end": 153,
+            "start": 141,
+            "end": 142,
             "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 160,
+            "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 181,
+            "start": 180,
             "end": 190,
+            "text": "\"Llaves: \"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 216,
+            "text": "llaves",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 328,
+            "end": 337,
             "text": "Llaves: 7",
             "role": "output",
             "reading": "natural"
@@ -1963,12 +2258,19 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "b970e163d3a8432010fb36d01295c90eb2df4623d5f799ac3825c797dbf6126a",
+        "sourceSha256": "87e8c35120ddc62561c678d4bcdc5259010f7c903a25bef0f3d5408a9d462a6f",
         "spans": [
           {
-            "start": 114,
-            "end": 120,
-            "text": "llaves",
+            "start": 116,
+            "end": 125,
+            "text": "Llaves: 7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 254,
+            "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1977,38 +2279,45 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "f8722ddedb16b921e5e59a8229b7275ef8462bebd1290e65b53d682d8c98ef4c",
+        "sourceSha256": "29de63b020f3265365323325db079ddfbbf172365cbc60714baf5d69b162cb31",
         "spans": []
       },
       {
         "block": "block_0004_0005",
         "path": "/text",
-        "sourceSha256": "f7ef9168877dacd2fa8dfe5deefc145661ffe269a7beef41f9edf64a9ba6fbc7",
+        "sourceSha256": "5d3bd156c2fe90045efeac0fb34073e3f164e5e604a43b6bdac35009d6fb5715",
         "spans": [
           {
-            "start": 40,
-            "end": 45,
-            "text": "siete",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 93,
-            "end": 99,
+            "start": 16,
+            "end": 22,
             "text": "llaves",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 104,
-            "end": 106,
+            "start": 45,
+            "end": 46,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 122,
             "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 159,
+            "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 219,
-            "end": 229,
+            "start": 311,
+            "end": 321,
             "text": "Llaves: 11",
             "role": "output",
             "reading": "natural"
@@ -2018,54 +2327,68 @@
       {
         "block": "block_0005_0000",
         "path": "/text",
-        "sourceSha256": "3635dd529a65e661745571374cc40c0fb043c72e539c00333eb1a2e127611b52",
+        "sourceSha256": "6a998baeb79b01cd101f16dfebfa067a242165c307bebe643d2d9e6a7d79dd52",
         "spans": []
       },
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "a38ecd9ad4a5c4d24039de177addb8b6308882356d8d2a327c42c8b2ab74bf03",
+        "sourceSha256": "fb9cadb8857e86c1e1a96172bf6d830cc52630a8bd93244b0481e87b9a7e1778",
         "spans": [
           {
-            "start": 18,
-            "end": 33,
-            "text": "int llaves = 7;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 72,
-            "end": 73,
-            "text": "7",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 119,
-            "end": 129,
-            "text": "\"Llaves: \"",
-            "role": "string",
-            "reading": "natural"
-          },
-          {
-            "start": 175,
-            "end": 181,
+            "start": 6,
+            "end": 12,
             "text": "llaves",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 273,
-            "end": 275,
+            "start": 130,
+            "end": 139,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 247,
+            "end": 257,
+            "text": "\"Llaves: \"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 278,
             "text": "11",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 432,
-            "end": 435,
-            "text": "dos",
+            "start": 291,
+            "end": 292,
+            "text": "7",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 369,
+            "end": 371,
+            "text": "11",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 392,
+            "end": 401,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 431,
+            "end": 441,
+            "text": "Llaves: 11",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2107,11 +2430,25 @@
       {
         "block": "block_0005_0004",
         "path": "/explanation",
-        "sourceSha256": "d32c2e8bb55c4f816a8ce4764cb9d3d9c1998a468bc91c222309207075734442",
+        "sourceSha256": "c2e8f37c141fe7a06c95e402770d2226c5530e176490696323bc2dbdd5abd7d0",
         "spans": [
           {
-            "start": 47,
-            "end": 57,
+            "start": 8,
+            "end": 16,
+            "text": "paquetes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 26,
+            "end": 35,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 77,
             "text": "\"paquetes\"",
             "role": "string",
             "reading": "natural"
@@ -2121,8 +2458,16 @@
       {
         "block": "block_0005_0005",
         "path": "/question",
-        "sourceSha256": "1d0d27baaeab31d52acc9d47ce2fa8c41daf3e45a3479809de3aa4fc5276f29b",
-        "spans": []
+        "sourceSha256": "97ebd97e07d68ba3c454806266dbc993cf64e8d7f537268cc22809f09d1bc90d",
+        "spans": [
+          {
+            "start": 40,
+            "end": 49,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0005",
@@ -2168,8 +2513,23 @@
       {
         "block": "block_0005_0006",
         "path": "/question",
-        "sourceSha256": "0c941c42630638ecaa5ad3b425ab3231e754b9c8a59c7c40d2dfef445dd76ce5",
-        "spans": []
+        "sourceSha256": "c3c6e87300ad7b3dccf2f70b709b86e0491619b0448dea2d6390209a05032d5b",
+        "spans": [
+          {
+            "start": 26,
+            "end": 32,
+            "text": "llaves",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 121,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0006",
@@ -2215,114 +2575,72 @@
       {
         "block": "block_0006_0000",
         "path": "/text",
-        "sourceSha256": "d92d7ed42ec9fb9c3e731ccb992f192c4874070821608beaaf6c98289dd0e9ce",
+        "sourceSha256": "351fa29becc1da593c95e4d3c363cc75a156ed44c8de9fb6ac5b4311c63c18f4",
         "spans": []
       },
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "0ae9f2fd0a9e5f6a8f32b07d64d63ebec46771e8012cbe6c064cca9278fdb86d",
+        "sourceSha256": "f00032e3cd28d65166518ec65e5942a22a418be07e14eba955a85b65c7cc84ec",
         "spans": []
       },
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "1c8e207045840ca2d4d1594a4b43f85ea37684d83a0f76cce8d2ef1d7fd17da2",
+        "sourceSha256": "963c368560b97224ed153bc92789ec951ce813d6fba85ef4dbd1917944f5f450",
         "spans": [
           {
-            "start": 21,
-            "end": 27,
-            "text": "llaves",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 42,
-            "end": 43,
-            "text": "7",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 94,
-            "end": 103,
-            "text": "Llaves: 7",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 188,
-            "end": 190,
-            "text": "11",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 227,
-            "end": 237,
-            "text": "Llaves: 11",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 353,
-            "end": 367,
-            "text": "int llaves{7};",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 460,
-            "end": 466,
-            "text": "llaves",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 480,
-            "end": 481,
-            "text": "7",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 541,
-            "end": 556,
+            "start": 66,
+            "end": 81,
             "text": "int llaves = 7;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 650,
-            "end": 668,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
+            "start": 82,
+            "end": 96,
+            "text": "int llaves{7};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 130,
+            "text": "llaves",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 142,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 164,
+            "end": 165,
+            "text": "7",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 783,
-            "end": 787,
+            "start": 181,
+            "end": 184,
+            "text": "{7}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 234,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 796,
-            "end": 800,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 829,
-            "end": 838,
-            "text": "llaves{7}",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 883,
-            "end": 901,
+            "start": 366,
+            "end": 384,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -2332,69 +2650,487 @@
       {
         "block": "block_0006_0004",
         "path": "/text",
-        "sourceSha256": "9c8f1c4c44735a51723cd5c73e733b4073f654c130abcd0bcc821dc8b061a2d7",
+        "sourceSha256": "390b9ee24e3c5722f2f502eb76817e5f7aa388c104be2042e168e53b812d9314",
         "spans": [
           {
-            "start": 7,
-            "end": 10,
-            "text": "dos",
-            "role": "data",
+            "start": 27,
+            "end": 36,
+            "text": "Llaves: 7",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 24,
-            "end": 34,
-            "text": "\"Llaves: \"",
-            "role": "string",
-            "reading": "natural"
-          },
-          {
-            "start": 53,
-            "end": 59,
+            "start": 70,
+            "end": 76,
             "text": "llaves",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 92,
-            "end": 95,
-            "text": "{7}",
+            "start": 108,
+            "end": 110,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 145,
+            "text": "Llaves: 11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 228,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_consultar_el_numero",
+        "path": "/text",
+        "sourceSha256": "38b097a468140adea883bc751ab9ba23eb1b823ea2b7e2a1eec99f7ddde4ab1b",
+        "spans": [
+          {
+            "start": 59,
+            "end": 61,
+            "text": "<<",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 116,
-            "end": 121,
-            "text": "siete",
+            "start": 70,
+            "end": 76,
+            "text": "cascos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 146,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_predecir_cascos",
+        "path": "/text",
+        "sourceSha256": "ae6079b7cc073548f2f099304923e9720c7f0c98740e12556d32692ffce4b6d1",
+        "spans": [
+          {
+            "start": 36,
+            "end": 44,
+            "text": "\"cascos\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 79,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_distinguir_cascos",
+        "path": "/question",
+        "sourceSha256": "750de6ef5e552c0ccda2b67ec95e5a91c5e8ba4c15c4b971b7a646504fdd5213",
+        "spans": [
+          {
+            "start": 94,
+            "end": 100,
+            "text": "cascos",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_distinguir_cascos",
+        "path": "/explanation",
+        "sourceSha256": "84d159b7fe15bc611884be64edc03e853dc05dc509c9ec88f4ca317b2a831a16",
+        "spans": [
+          {
+            "start": 11,
+            "end": 19,
+            "text": "\"cascos\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 118,
+            "text": "std::cout << cascos;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 151,
+            "text": "6",
             "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_distinguir_cascos",
+        "path": "/options/0",
+        "sourceSha256": "e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_distinguir_cascos",
+        "path": "/options/1",
+        "sourceSha256": "402e96c623995ba269853f626b7535022cb300e07e46f992f4b1d295e8641294",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "cascos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_distinguir_cascos",
+        "path": "/options/2",
+        "sourceSha256": "d393d5975ee3f55a0f9e01ef1c40488ca1c8630362ca5b3b327de3bef8bb2b66",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "\"cascos\"",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_argumento",
+        "path": "/text",
+        "sourceSha256": "e06d857d10313894f1db2adbae1ba209e41fd1e3412ed449fc64c9da3715d51c",
+        "spans": [
+          {
+            "start": 165,
+            "end": 184,
+            "text": "std::cout << cascos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 188,
+            "text": "<<",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 231,
+            "end": 237,
+            "text": "cascos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 279,
+            "end": 280,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 281,
+            "end": 301,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_inicializador_cajas",
+        "path": "/question",
+        "sourceSha256": "2422d63917c877bf811b9b1ad933ad81fcebdcc847aaee83c616bf47a348e96d",
+        "spans": [
+          {
+            "start": 48,
+            "end": 49,
+            "text": "=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 64,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_inicializador_cajas",
+        "path": "/explanation",
+        "sourceSha256": "ff0f6f99f5e9a6bf9f3df295f39f21ff9377ae70e1994c759deff750ea31220d",
+        "spans": [
+          {
+            "start": 15,
+            "end": 16,
+            "text": "5",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 50,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 110,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_leer_extintores",
+        "path": "/question",
+        "sourceSha256": "f8d43be51623df10db18cf16efa2ce32d8dc93fbd866bdd160bd949d71d14654",
+        "spans": [
+          {
+            "start": 52,
+            "end": 61,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_leer_extintores",
+        "path": "/explanation",
+        "sourceSha256": "3cd6a50a2f221828a704a55488bc10ed689f99c6187eca2a0630a50a3479e5d0",
+        "spans": [
+          {
+            "start": 10,
+            "end": 20,
+            "text": "extintores",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 96,
+            "text": "3",
+            "role": "data",
             "reading": "natural"
           },
           {
             "start": 128,
-            "end": 132,
-            "text": "{11}",
+            "end": 129,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_tipo_y_conteo",
+        "path": "/question",
+        "sourceSha256": "5d0f673f22a443c624e98db70f71bcfedfca5d48be575b3c75e1c4883f3c9a79",
+        "spans": [
+          {
+            "start": 72,
+            "end": 87,
+            "text": "int mesas = -2;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_tipo_y_conteo",
+        "path": "/explanation",
+        "sourceSha256": "9546c2b28d0f5b1fd3ce1eb493eb6edb6b4eb25a16630c394ab172cbdf4d0462",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 143,
-            "end": 147,
-            "text": "once",
+            "start": 21,
+            "end": 23,
+            "text": "−2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_tipo_y_conteo",
+        "path": "/options/0",
+        "sourceSha256": "91bb098089449434abdc92c06a2b64981a9a810c736c1766d4ee35bbdce9d66e",
+        "spans": []
+      },
+      {
+        "block": "p1u2l1_tipo_y_conteo",
+        "path": "/options/1",
+        "sourceSha256": "70f3f4ed74341964c31dc8c5baf33f1f07dbc83d34cbc7a948c4e17255cb642c",
+        "spans": []
+      },
+      {
+        "block": "p1u2l1_tipo_y_conteo",
+        "path": "/options/2",
+        "sourceSha256": "46fc346b1d9518a8d9a6e9648d3b26d8d3b204f48b01ce6aa3d4a2be972a3459",
+        "spans": [
+          {
+            "start": 19,
+            "end": 21,
+            "text": "−2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_comprobar_dependencia_llaves",
+        "path": "/question",
+        "sourceSha256": "d359bbd623b9f65814a403a24648dd3f5da1671733299fb04e086a80ce5fbbd6",
+        "spans": [
+          {
+            "start": 23,
+            "end": 32,
+            "text": "Llaves: 7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 274,
-            "end": 275,
-            "text": "7",
+            "start": 49,
+            "end": 83,
+            "text": "std::cout << \"Llaves: \" << llaves;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 289,
-            "end": 297,
-            "text": "\"llaves\"",
+            "start": 101,
+            "end": 126,
+            "text": "std::cout << \"Llaves: 7\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 165,
+            "end": 171,
+            "text": "llaves",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 174,
+            "end": 176,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_comprobar_dependencia_llaves",
+        "path": "/explanation",
+        "sourceSha256": "7652be3789f06a62e2136cea5a40e7a4ff05b9f7b183ed5cb3d86fcf0ec21360",
+        "spans": [
+          {
+            "start": 20,
+            "end": 26,
+            "text": "llaves",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 99,
+            "end": 110,
+            "text": "\"Llaves: 7\"",
             "role": "string",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_comprobar_dependencia_llaves",
+        "path": "/options/0",
+        "sourceSha256": "4f9d26e168bdbd10eb343d0241227a5120ec25dc5eb24cab7ed1221ad33a94d6",
+        "spans": [
+          {
+            "start": 19,
+            "end": 29,
+            "text": "Llaves: 11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 60,
+            "text": "Llaves: 7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_comprobar_dependencia_llaves",
+        "path": "/options/1",
+        "sourceSha256": "55fc282e115a58318bdaff5fd7d2177c1a2885f90de1b0330e42c46697dff64e",
+        "spans": [
+          {
+            "start": 15,
+            "end": 25,
+            "text": "Llaves: 11",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l1_comprobar_dependencia_llaves",
+        "path": "/options/2",
+        "sourceSha256": "258df9951b0949aba8ae4f359a9444d7b7950999cba27568a07dc0c5d2503878",
+        "spans": [
+          {
+            "start": 15,
+            "end": 24,
+            "text": "Llaves: 7",
+            "role": "output",
             "reading": "natural"
           }
         ]

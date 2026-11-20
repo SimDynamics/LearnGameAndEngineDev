@@ -31,6 +31,13 @@ Sin pendientes.
 - **CRITERIOS DE VERIFICACIÓN:** cargar una lección reorganizada con actividades sustituidas y páginas distintas; comprobar que comienza pendiente, evalúa sus objetivos actuales y permite el estudio lineal. Verificar que no quedan referencias activas a bloques retirados ni respuestas o pausas antiguas aplicadas a objetivos nuevos. Acreditar que progreso, borradores y configuración de los demás cursos permanecen intactos. Proporcionar el mecanismo de autoría y su comprobación sin una excepción por lección o frase.
 - **RESPONSABILIDADES:** Work desarrolla directamente los contenidos y las prácticas ya compatibles; Codex habilita esta capacidad para quitar los límites restantes. No detener la redacción a la espera del mecanismo ni presentar el reinicio técnico como realizado antes de verificarlo.
 
+### P1_U2_ACREDITACION_DEL_USO_DE_UNA_VARIABLE
+
+- **ESTADO:** PENDIENTE.
+- **UBICACIÓN:** Programación 1, U2L1, `objetos_y_estado/lesson_objetos_valores_y_tipos.json`, editores `block_0004_0002` y `block_0004_0006`.
+- **CAPACIDAD FALTANTE:** acreditar que el número mostrado procede de la variable local `llaves` de tipo `int`. Las comprobaciones actuales únicamente reconocen el texto de salida. La práctica adicional `p1u2l1_comprobar_dependencia_llaves` comprueba que el estudiante distingue las dos implementaciones.
+- **CRITERIO:** aceptar las soluciones correctas con inicialización equivalente y con o sin salto final. Detectar cuando el programa escribe un número fijo y mantiene el mismo mensaje tras variar únicamente el valor inicial. Mantener una sola comprobación visible obligatoria por editor y conservar los borradores y resultados históricos.
+
 ### CPP_RENOMBRADO_COMPATIBLE_DE_IDENTIFICADORES
 
 - **ESTADO:** PENDIENTE. Primera ubicación detectada: Programación 1, U5L13, páginas 6–8. La revisión integral actual comienza en U1 y exige nombres descriptivos. Para Programación 1, la autorización posterior de nueva edición y reinicio permite sustituir contenidos sin conservar sus contratos anteriores; coordinar esta capacidad con CURRICULO_NUEVA_EDICION_Y_REINICIO_LIMITADO_AL_CURSO, sin frenar la autoría por preservar nombres opacos.
