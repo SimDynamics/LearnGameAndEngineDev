@@ -6012,6 +6012,67 @@ void read_compiler_derived_preparation_checks(const JsonObject& root,
     }
 }
 
+void read_compiler_abstract_interface_checks(const JsonObject& root,
+        Lesson& lesson) {
+    if(!root.HasKey(L"compilerAbstractInterfaceChecks"))return;
+    const auto entries=array(root,"compilerAbstractInterfaceChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Abstract interface checks require Spanish v2 compiler owners");
+    std::set<std::string> seen;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","baseClass","simpleClass","identifiedClass",
+            "createFunction","presentFunction","numberMethod","codeMethod",
+            "writeMethod","streamParameter","typeParameter","numberParameter",
+            "codeParameter","objectParameter"},true);
+        const auto id=text(item,"activity");
+        require(valid_id(id)&&seen.insert(id).second,
+            "Invalid or repeated abstract-interface compiler owner");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==id) {
+                require(!owner,"Repeated original abstract-interface owner");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&!owner->polymorphic_destruction_probe&&
+                !owner->virtual_lifetime_probe&&!owner->derived_preparation_probe&&
+                !owner->abstract_interface_probe&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Abstract interface requires an independent original single-file editor");
+        CppAbstractInterfacePolicy spec;
+        spec.original_source=owner->initial_code;
+        spec.base_class=text(item,"baseClass");
+        spec.simple_class=text(item,"simpleClass");
+        spec.identified_class=text(item,"identifiedClass");
+        spec.create_function=text(item,"createFunction");
+        spec.present_function=text(item,"presentFunction");
+        spec.number_method=text(item,"numberMethod");
+        spec.code_method=text(item,"codeMethod");
+        spec.write_method=text(item,"writeMethod");
+        spec.stream_parameter=text(item,"streamParameter");
+        spec.type_parameter=text(item,"typeParameter");
+        spec.number_parameter=text(item,"numberParameter");
+        spec.code_parameter=text(item,"codeParameter");
+        spec.object_parameter=text(item,"objectParameter");
+        require(cpp_abstract_interface_matches(spec,spec.original_source),
+            "Abstract-interface source cannot bind original classes and four bodies");
+        owner->abstract_interface_probe=std::move(spec);
+    }
+}
+
 void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerOpenBatteryChecks"))return;
     const auto entries=array(root,"compilerOpenBatteryChecks");
@@ -6798,6 +6859,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_polymorphic_destruction_checks(root,lesson);
         read_compiler_virtual_lifetime_dispatch_checks(root,lesson);
         read_compiler_derived_preparation_checks(root,lesson);
+        read_compiler_abstract_interface_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
@@ -6934,6 +6996,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_polymorphic_destruction_checks(root,lesson);
         read_compiler_virtual_lifetime_dispatch_checks(root,lesson);
         read_compiler_derived_preparation_checks(root,lesson);
+        read_compiler_abstract_interface_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
         read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
