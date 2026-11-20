@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/cpp_multi_body_check.hpp"
+#include "core/cpp_private_probe_neutral.hpp"
 
 #include <algorithm>
 #include <array>
@@ -200,8 +201,21 @@ inline std::optional<std::array<CppMemberBodySpan,4>> spans(
     const std::array<CppMemberBodySpan,4> parts{*simple,*identified,
                                                 *factory,*presenter};
     if(verify_bodies)
-        for(const auto& part:parts)
+        for(const auto& part:parts) {
             if(!cpp_multi_body_detail::safe_body(source,part))return {};
+            // A source-preserving solution still must not interfere with the
+            // independent executable witness. The real virtual calls and
+            // streams belong to the authored function; private QA types,
+            // terminal output, nonlocal jumps and process controls do not.
+            // Tokens in comments, ordinary and raw strings are not code.
+            const auto tokens=code_format::cpp_tokens(source.substr(
+                part.begin,part.end-part.begin));
+            if(!tokens||!cpp_private_probe_body_neutral(
+                    *tokens,"MuestraAdicional")||
+                !cpp_private_probe_body_neutral(
+                    *tokens,"lgaed_published_original_main"))
+                return {};
+        }
     return parts;
 }
 
