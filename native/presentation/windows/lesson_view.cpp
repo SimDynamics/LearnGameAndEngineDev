@@ -2311,6 +2311,7 @@ struct LessonView {
         request.derived_preparation_probe=block(index).derived_preparation_probe;
         request.abstract_interface_probe=block(index).abstract_interface_probe;
         request.interface_collection_probe=block(index).interface_collection_probe;
+        request.polymorphic_clone_probe=block(index).polymorphic_clone_probe;
         request.open_battery_probe=block(index).open_battery_probe;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
@@ -4313,6 +4314,8 @@ struct LessonView {
                     fresh.abstract_interface_probe_correct)&&
                     (!block(index).interface_collection_probe||
                      fresh.interface_collection_probe_correct)&&
+                    (!block(index).polymorphic_clone_probe||
+                     fresh.polymorphic_clone_probe_correct)&&
                     (!block(index).derived_preparation_probe||
                     fresh.derived_preparation_probe_correct)&&
                     (!block(index).virtual_lifetime_probe||
@@ -4394,6 +4397,12 @@ struct LessonView {
                         "La salida coincide, pero la comprobación independiente no confirmó la transferencia del mismo objeto al vector, el rechazo de propietarios vacíos, la conservación del orden ni la consulta virtual de escribir en el flujo recibido. Revisa únicamente agregar e informar.",
                         "Output matches, but the independent proof did not confirm original object identity, empty-owner rejection, ordering or virtual reporting into the requested stream.",
                         "La sortie correspond, mais la vérification indépendante n'a pas confirmé l'identité, le rejet d'un propriétaire vide, l'ordre et l'écriture virtuelle.");
+                if(!fresh.polymorphic_clone_probe_correct&&
+                   block(index).polymorphic_clone_probe&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida visible coincide, pero la prueba independiente no confirmó que clonar cree otro objeto de la misma clase concreta y que duplicar conserve los originales, invoque la clonación virtual y limpie sus copias ante un fallo. Revisa únicamente los dos clonar y duplicar.",
+                        "Output matches, but independent compilation did not prove concrete clone type, independent ownership, virtual collection copying or cleanup after a controlled failure.",
+                        "La sortie correspond, mais la preuve indépendante ne confirme pas les types concrets, les copies indépendantes ni leur nettoyage en cas d'échec.");
                 if(!fresh.derived_preparation_probe_correct&&
                    block(index).derived_preparation_probe&&preserved_source)
                     text+='\n'+ui(
@@ -4476,7 +4485,8 @@ struct LessonView {
                    !block(index).virtual_lifetime_probe&&
                    !block(index).derived_preparation_probe&&
                    !block(index).abstract_interface_probe&&
-                   !block(index).interface_collection_probe)
+                   !block(index).interface_collection_probe&&
+                   !block(index).polymorphic_clone_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
