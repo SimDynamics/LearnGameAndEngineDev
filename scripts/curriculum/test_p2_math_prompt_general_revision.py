@@ -111,8 +111,11 @@ class PublishedP2MathPromptRevisionTest(unittest.TestCase):
                     changed["textSemantics"]["fields"] = [
                         field for field in changed["textSemantics"]["fields"]
                         if (field["block"], field["path"]) != (OWNER, "/prompt")]
+                # A document can be internally well-formed yet substitute
+                # another published language family. Authenticity belongs to
+                # the comparison with the exact preceding publication.
                 with self.assertRaises((ValueError, KeyError, TypeError)):
-                    layout.validate(changed)
+                    layout.validate_transition(self.original, changed)
                 self.assertFalse(self.compatible(changed))
 
 

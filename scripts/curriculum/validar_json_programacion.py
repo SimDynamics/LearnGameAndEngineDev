@@ -1714,7 +1714,12 @@ def preserves_previous_exercise(relative, pn, bn, old, current, *,
         current = {key: value for key, value in current.items() if key != "explanation"}
     if current == old:
         return True
-    lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
+    # A foreign course path is not a legitimate historical Programación 1
+    # exercise, even when the caller selected the legacy course explicitly.
+    try:
+        lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
+    except ValueError:
+        return False
     location = (lesson_path, pn + 1, bn + 1)
     for revision in _state_layout.MATH_LABEL_REVISIONS.values():
         if (location == revision["location"] and old.get("type") == current.get("type") == "math_puzzle"
