@@ -129,15 +129,22 @@ void published_id_boundaries() {
            !course_edition_identifier(std::string(257,'c'),256) &&
            !course_edition_identifier("curso/externo",256),
         "An unsafe or oversized course identifier was accepted");
-    // The full unit/lesson limit includes the edition prefix, not just slugs.
-    const auto unit_boundary = prefix + std::string(256-prefix.size(),'x');
-    require(course_edition_unit_id(edition,unit_boundary) &&
-        !course_edition_unit_id(edition,unit_boundary+'x'),
+    // The combined ID has a 256-byte ceiling, but each individual
+    // unit/lesson slug also has its own 128-byte ceiling. Choose a longer
+    // valid course ID so the complete boundary is tested without violating
+    // the independent slug rule.
+    const CourseEdition long_course{std::string(130,'c'),"es","revision",1};
+    const auto long_prefix = course_edition_prefix(long_course);
+    require(long_prefix.size()<256 && 256-long_prefix.size()<=128,
+        "The long-course boundary fixture is not a valid slug");
+    const auto unit_boundary = long_prefix + std::string(256-long_prefix.size(),'x');
+    require(course_edition_unit_id(long_course,unit_boundary) &&
+        !course_edition_unit_id(long_course,unit_boundary+'x'),
         "An edition unit exceeded the fixed historical ID limit");
-    const auto lesson_prefix = prefix + "u__";
+    const auto lesson_prefix = long_prefix + "u__";
     const auto lesson_boundary = lesson_prefix + std::string(256-lesson_prefix.size(),'x');
-    require(course_edition_lesson_id(edition,lesson_boundary) &&
-        !course_edition_lesson_id(edition,lesson_boundary+'x'),
+    require(course_edition_lesson_id(long_course,lesson_boundary) &&
+        !course_edition_lesson_id(long_course,lesson_boundary+'x'),
         "An edition lesson exceeded the fixed historical ID limit");
 }
 } // namespace
