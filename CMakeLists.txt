@@ -1127,7 +1127,12 @@ if(BUILD_TESTING)
     add_executable(lgaed_compiler_feedback_source_tests native/platform/windows/compiler_feedback_source_tests.cpp)
     target_link_libraries(lgaed_compiler_feedback_source_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.compiler_feedback_source COMMAND lgaed_compiler_feedback_source_tests)
-    add_executable(lgaed_compiler_guidance_state_tests native/platform/windows/compiler_guidance_state_tests.cpp)
+    # The state-test CLI dispatches --math-matching-text-live to a separate
+    # implementation unit. Link it explicitly to avoid an unresolved external
+    # when compiling the full windows-x64-release target.
+    add_executable(lgaed_compiler_guidance_state_tests
+        native/platform/windows/compiler_guidance_state_tests.cpp
+        native/platform/windows/math_matching_text_state_tests.cpp)
     target_link_libraries(lgaed_compiler_guidance_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.compiler_guidance_state COMMAND lgaed_compiler_guidance_state_tests)
     set_tests_properties(native.compiler_guidance_state PROPERTIES TIMEOUT 30)
