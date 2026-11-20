@@ -73,7 +73,8 @@ inline bool safe_body(std::string_view source, CppMemberBodySpan body) {
     const auto text = source.substr(body.begin, body.end - body.begin);
     if (code_format::physical_splice(text)) return false;
     const auto tokens = code_format::cpp_tokens(text);
-    if (!tokens || code_format::cpp_position_sensitive_tokens(*tokens))
+    if (!tokens || code_format::cpp_position_sensitive_tokens(*tokens) ||
+        code_format::cpp_process_termination_tokens(*tokens))
         return false;
     for (const auto& token : *tokens)
         if (token.starts_with("directive:") || token == "op:#" ||

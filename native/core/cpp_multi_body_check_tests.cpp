@@ -132,6 +132,31 @@ int main() try {
     expect(!lgaed::curriculum::cpp_multi_body_matches(p, candidate(p, injection)),
            "An unterminated string was accepted");
 
+    // An editable body cannot print a private witness and exit before
+    // the independent driver has checked the remaining cases.
+    for (const auto early : {"std::exit(0)", "std::_Exit(0)",
+                             "::quick_exit(0)", "ExitProcess(0)",
+                             "::abort()", "::TerminateProcess(0, 0)"}) {
+        injection = valid;
+        injection[0] = "\n    std::fputs(\"LGAED_DUAL_INTERFACE_COMPLETE_V1\", stderr);\n    " +
+                       std::string(early) + ";\n";
+        expect(!lgaed::curriculum::cpp_multi_body_matches(p,candidate(p,injection)),
+               "Premature process termination forged a private completion witness");
+    }
+    injection = valid;
+    injection[0] = "\n    auto finish = &std::exit;\n    finish(0);\n";
+    expect(!lgaed::curriculum::cpp_multi_body_matches(p,candidate(p,injection)),
+           "A function pointer escaped the process termination source gate");
+    injection = valid;
+    injection[0] = R"lgaed(
+    // std::exit(0) is documentation, not a call.
+    const auto note = R"demo(quick_exit(0))demo";
+    (void)note;
+    report("base");
+)lgaed";
+    expect(lgaed::curriculum::cpp_multi_body_matches(p,candidate(p,injection)),
+           "Comments and raw strings were mistaken for process termination");
+
     edited = a;
     edited.insert(0, "#define main something_else\n");
     expect(!lgaed::curriculum::cpp_multi_body_matches(p, edited),
