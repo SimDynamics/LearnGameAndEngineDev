@@ -96,7 +96,8 @@ struct Emphasis {
     std::string style = "bold";
 };
 struct EmphasisRange { std::size_t start = 0, end = 0; std::string style; };
-// Offsets address UTF-8 source bytes. Presentation converts them to UTF-16 positions.
+// Semantic source text uses UTF-8, but authored span offsets index UTF-16 positions.
+// Presentation maps those positions to source bytes and displayed RichEdit glyphs.
 // Pure, presentation-only search. Keep it independent of the compiler and
 // lesson-evaluation translation unit so the native reader can reuse exactly
 // the same ranges in a focused Win32 QA binary.

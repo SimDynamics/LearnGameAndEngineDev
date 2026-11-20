@@ -7,6 +7,7 @@
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/native_math_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/text_semantic_projection.hpp"
 #include "presentation/windows/reading_shade.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "native_build_config.hpp"
@@ -387,12 +388,21 @@ void verify_u2_text_semantic_ranges(View& fixture,HWND target,const curriculum::
           !at->second.spans.empty(),
         "Current U2 technical prose has no exact authored semantic ranges");
     const auto displayed=wide(edit_text(target));
+    // Authored starts/ends index UTF-16 positions, NOT UTF-8 bytes. Map them
+    // back to exact source bytes before slicing Spanish text with accents or
+    // future supplementary Unicode scalars. The native visible index also
+    // accounts for any hidden inline-code delimiter before the selection.
+    const auto source_boundaries=semantic_utf8_boundaries(block.text);
     std::size_t code_count=0,neutral_count=0,citations=0;
     for(const auto& span:at->second.spans){
-        check(span.start<span.end&&span.end<=block.text.size()&&
-              std::string_view(block.text).substr(span.start,span.end-span.start)==span.text,
-            "A U2 semantic range changed its original source bytes");
-        const auto start=wide(visible_prose(block.text.substr(0,span.start))).size();
+        check(span.start<span.end&&span.end<source_boundaries.size()&&
+              source_boundaries[span.start]!=std::string_view::npos&&
+              source_boundaries[span.end]!=std::string_view::npos,
+            "A U2 semantic range starts or ends inside a Unicode scalar");
+        const auto begin=source_boundaries[span.start],end=source_boundaries[span.end];
+        check(std::string_view(block.text).substr(begin,end-begin)==span.text,
+            "A U2 semantic range changed its exact original source text");
+        const auto start=wide(visible_prose(block.text.substr(0,begin))).size();
         const auto token=wide(visible_prose(span.text));
         check(!token.empty()&&start+token.size()<=displayed.size()&&
               std::wstring_view(displayed).substr(start,token.size())==token,
