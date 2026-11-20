@@ -85,23 +85,42 @@ inline bool valid(const CppPolymorphicClonePolicy& policy) {
             std::string_view(policy.source_parameter),
             std::string_view(policy.stream_parameter)})
         if(!identifier(name))return false;
+    namespace abstract=cpp_abstract_interface_detail;
     const auto& src=policy.original_source;
+    const auto getter="int "+policy.number_method+"() const noexcept override";
+    const auto changer="void "+policy.change_method+"(int valor) noexcept override";
+    const auto writer="void "+policy.write_method+
+        "(std::ostream& "+policy.stream_parameter+") const override";
+    // The original virtual contract must exist as code directly in the
+    // actual base class. A copied signature in a comment, raw string or a
+    // nested helper cannot authenticate a polymorphic ownership exercise.
     return spans(policy,src,false).has_value()&&
-        src.find("class "+policy.base_class+" {")!=src.npos&&
-        src.find("class "+policy.simple_class+" : public "+
-            policy.base_class+" {")!=src.npos&&
-        src.find("class "+policy.identified_class+" : public "+
-            policy.base_class+" {")!=src.npos&&
-        src.find("virtual ~"+policy.base_class+"() = default;")!=src.npos&&
-        src.find("virtual std::unique_ptr<"+policy.base_class+"> "+
-            policy.clone_method+"() const = 0;")!=src.npos&&
-        src.find("virtual int "+policy.number_method+
-            "() const noexcept = 0;")!=src.npos&&
-        src.find("virtual void "+policy.change_method+
-            "(int valor) noexcept = 0;")!=src.npos&&
-        src.find("virtual void "+policy.write_method+
-            "(std::ostream& "+policy.stream_parameter+") const = 0;")!=
-                src.npos&&
+        abstract::direct_class_declaration(src,policy.base_class,
+            "virtual ~"+policy.base_class+"() = default;")&&
+        abstract::direct_class_declaration(src,policy.base_class,
+            "virtual std::unique_ptr<"+policy.base_class+"> "+
+                policy.clone_method+"() const = 0;")&&
+        abstract::direct_class_declaration(src,policy.base_class,
+            "virtual int "+policy.number_method+"() const noexcept = 0;")&&
+        abstract::direct_class_declaration(src,policy.base_class,
+            "virtual void "+policy.change_method+"(int valor) noexcept = 0;")&&
+        abstract::direct_class_declaration(src,policy.base_class,
+            "virtual void "+policy.write_method+
+                "(std::ostream& "+policy.stream_parameter+") const = 0;")&&
+        abstract::inline_body(src,policy.simple_class,policy.base_class,
+            getter).has_value()&&
+        abstract::inline_body(src,policy.identified_class,policy.base_class,
+            getter).has_value()&&
+        abstract::inline_body(src,policy.simple_class,policy.base_class,
+            changer).has_value()&&
+        abstract::inline_body(src,policy.identified_class,policy.base_class,
+            changer).has_value()&&
+        abstract::inline_body(src,policy.simple_class,policy.base_class,
+            writer).has_value()&&
+        abstract::inline_body(src,policy.identified_class,policy.base_class,
+            writer).has_value()&&
+        abstract::inline_body(src,policy.identified_class,policy.base_class,
+            "int "+policy.code_method+"() const noexcept").has_value()&&
         src.find("using "+policy.vector_alias+" = std::vector<"
             "std::unique_ptr<"+policy.base_class+">>;")!=src.npos;
 }
