@@ -87,7 +87,7 @@ BAD={
     return true;
 """,REPORT),
     "constant_report":(ADD,'    (void)datos; salida << "Cantidad:0\\n";'),
-    "wrong_count":(ADD,REPORT.replace('datos.size()', '0')),
+    "wrong_count":(ADD,REPORT.replace('salida << "Cantidad:" << datos.size()', 'salida << "Cantidad:" << (datos.size()+1)')),
     "reverse_reporting":(ADD,r"""
     salida << "Cantidad:" << datos.size() << '\n';
     for(std::size_t i=datos.size();i>0;--i) {
