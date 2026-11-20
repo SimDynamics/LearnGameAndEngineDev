@@ -365,29 +365,36 @@ void run() {
     // both the full loader and the progress-side loader with raw, valid JSON
     // instead of pre-parsing the malicious source and losing the duplicates.
     const auto canonical=winrt::to_string(raw.Stringify());
+    const auto local_int_start=canonical.find("\"compilerLocalIntChecks\"");
+    require(local_int_start!=canonical.npos,
+        "The canonical JSON lost the local-int declaration");
+    // Existing lessons also contain "activity" properties in relationship
+    // objects. Malformed local-int tests must target the opt-in contract,
+    // never whichever similarly named property appears first in the lesson.
+    const auto duplicate_local_int=[&](std::string_view before,
+                                       std::string_view after) {
+        return canonical.substr(0,local_int_start)+
+            overwrite_first(canonical.substr(local_int_start),before,after);
+    };
     const auto duplicated_root=std::string("{\"compilerLocalIntChecks\":")+
         winrt::to_string(raw.GetNamedArray(L"compilerLocalIntChecks").Stringify())+
         ","+canonical.substr(1);
     rejects_raw(duplicated_root);
-    rejects_raw(overwrite_first(canonical,
+    rejects_raw(duplicate_local_int(
         "\"activity\":\"block_0004_0002\"",
         "\"activity\":\"block_0004_0002\",\"activity\":\"block_0004_0002\""));
-    rejects_raw(overwrite_first(canonical,
+    rejects_raw(duplicate_local_int(
         "\"replacement\":13",
         "\"replacement\":13,\"replacement\":17"));
-    rejects_raw(overwrite_first(canonical,
+    rejects_raw(duplicate_local_int(
         "\"variable\":\"llaves\"",
         "\"variable\":\"llaves\",\"variable\":\"llaves\""));
-    rejects_raw(overwrite_first(canonical,
+    rejects_raw(duplicate_local_int(
         "\"variable\":\"llaves\"",
         "\"variable\":\"llaves\",\"afterUpdate\":true,\"afterUpdate\":true"));
-    const auto local_int_start=canonical.find("\"compilerLocalIntChecks\"");
-    require(local_int_start!=canonical.npos,
-        "The canonical JSON lost the local-int declaration");
-    rejects_raw(canonical.substr(0,local_int_start)+
-        overwrite_first(canonical.substr(local_int_start),
-            "\"outputs\":[\"",
-            "\"outputs\":[],\"outputs\":[\""));
+    rejects_raw(duplicate_local_int(
+        "\"outputs\":[\"",
+        "\"outputs\":[],\"outputs\":[\""));
     auto wrong=JsonObject::Parse(winrt::to_hstring(raw.Stringify()));
     auto first=wrong.GetNamedArray(L"compilerLocalIntChecks").GetObjectAt(0)
         .GetNamedArray(L"probes").GetObjectAt(0);
