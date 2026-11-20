@@ -8,6 +8,7 @@
 #include "core/named_rule_check.hpp"
 #include "core/cpp_indexed_unique_transfer_probe.hpp"
 #include "core/cpp_defaulted_move_policy_check.hpp"
+#include "core/cpp_independent_copy_assignment_check.hpp"
 #include "core/open_battery_check.hpp"
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
@@ -303,6 +304,8 @@ struct Block {
     std::optional<CppIndexedUniqueTransferProbe> indexed_unique_transfer_probe;
     // Independently compiled class policy, selected only by original v2 root.
     std::optional<CppDefaultedMovePolicy> defaulted_move_policy_probe;
+    // Opt-in independent semantics for the original copy-assignment body.
+    std::optional<CppIndependentCopyAssignmentPolicy> independent_copy_assignment_probe;
     // The root declares this open CMake battery without changing its
     // previously published block or saved student draft identity.
     std::optional<OpenBatteryProbeSpec> open_battery_probe;
@@ -539,6 +542,8 @@ struct FreshExecution {
     std::string indexed_unique_transfer_request_fingerprint;
     bool defaulted_move_policy_probe_correct = false;
     std::string defaulted_move_policy_request_fingerprint;
+    bool independent_copy_assignment_probe_correct = false;
+    std::string independent_copy_assignment_request_fingerprint;
     bool open_battery_probe_correct = false;
     bool cmake_graph_correct = false;
     bool assertion_abort_verified = false;
