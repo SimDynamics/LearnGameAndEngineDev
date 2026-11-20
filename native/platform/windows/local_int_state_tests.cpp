@@ -118,6 +118,54 @@ void run() {
     require(!probe.empty()&&compiler_runtime_request_allowed(block,request)&&
         !compiler_runtime_request_allowed(block,old_request),
         "The new owner cannot bind a complete student request");
+    // Probe collection and grading must be bound to the actual request,
+    // source variant and each independent Win32 process observation. These
+    // synthetic phase records exercise the real capture function; they are
+    // NOT presented as executions of an installed student compiler.
+    CppRunResult observed;
+    observed.request_id=request.request_id;
+    observed.revision=request.revision;
+    observed.local_int_request_fingerprint=probe;
+    observed.compilation.status=CppPhaseStatus::completed;
+    observed.compilation.exit_code=0;
+    observed.execution.status=CppPhaseStatus::completed;
+    observed.execution.exit_code=0;
+    observed.execution.stdout_bytes="Llaves: 7";
+    for(const auto& variation:request.local_int_check->probes) {
+        const auto source_variant=cpp_local_int_override(request.source_utf8,variation);
+        require(source_variant.has_value(),
+            "The Windows capture cannot derive a declared independent source");
+        CppLocalIntEvidence evidence;
+        evidence.instrumented_source_sha256=state::sha256(*source_variant);
+        evidence.compilation=observed.compilation;
+        evidence.execution=observed.execution;
+        evidence.execution.stdout_bytes=variation.expected_stdout.front();
+        observed.local_int_evidence.push_back(std::move(evidence));
+    }
+    const auto first_capture=capture_cpp_execution(request,observed);
+    require(first_capture.local_int_check_correct&&
+        first_capture.local_int_request_fingerprint==probe,
+        "Two bound private phases failed to authorize their original source");
+    auto tampered=observed;
+    tampered.local_int_evidence.back().instrumented_source_sha256="foreign";
+    require(!capture_cpp_execution(request,tampered).local_int_check_correct,
+        "An unrelated instrumented source was accepted as a native probe");
+    tampered=observed;
+    tampered.local_int_evidence.front().execution.stdout_bytes="Llaves: 7";
+    require(!capture_cpp_execution(request,tampered).local_int_check_correct,
+        "Hard-coded visible output passed a changed-int phase");
+    tampered=observed;
+    tampered.local_int_evidence.back().execution.exit_code=1;
+    require(!capture_cpp_execution(request,tampered).local_int_check_correct,
+        "A failed independent process earned a successful variable receipt");
+    tampered=observed;
+    tampered.local_int_evidence.pop_back();
+    require(!capture_cpp_execution(request,tampered).local_int_check_correct,
+        "One successful phase hid a missing second mutation");
+    tampered=observed;
+    tampered.local_int_request_fingerprint="other-program";
+    require(!capture_cpp_execution(request,tampered).local_int_check_correct,
+        "Probes from another request acquired the learner's identity");
     auto old_fresh=visible_result(old_request.revision);
     state::StateData learner;
     learner.preferences["learning_progress"]["another_course_untouched"]=std::int64_t{7};
