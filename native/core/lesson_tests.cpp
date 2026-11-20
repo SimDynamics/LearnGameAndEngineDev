@@ -1057,27 +1057,31 @@ void integrated_retirement_contract_tests() {
             "Integrated retirement lost or added a grouped ordering provenance record");
         if(!plan.refined_order.empty()){
             const auto position=stable_block_position(current,plan.refined_order),origin=stable_block_position(before,plan.refined_order);
-            check(origin&&current.state_layout.order_refinements.front().id==plan.refined_order,
-                "An integrated ordering lost its original revision provenance");
+            check(origin,"An integrated ordering lost its original activity identity");
             const auto& old=before.pages[origin->page].blocks[origin->block];
-            // The course restart may archive the refined order instead of
-            // keeping it active. Its pre-restart reading snapshot must survive.
+            const auto& refinement=current.state_layout.order_refinements.front();
+            check(refinement.id==plan.refined_order&&refinement.original_fragments==old.fragments&&
+                refinement.original_correct_order==old.correct_order&&
+                JsonObject::Parse(winrt::to_hstring(refinement.raw_json)).Stringify()==
+                    JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify(),
+                "An integrated ordering lost its independently pinned original grouped order");
+            // A new course edition may retire the revised activity. Its last
+            // published representation must still match the reading snapshot.
+            const curriculum::Block* represented=nullptr;
+            if(position)represented=&current.pages[position->page].blocks[position->block];
+            else{
+                const auto retired=std::ranges::find(current.retired_blocks,plan.refined_order,
+                    &curriculum::Block::stable_id);
+                if(retired!=current.retired_blocks.end())represented=&*retired;
+            }
+            check(represented&&represented->type==BlockType::order_code,
+                "A subsequent edition lost the revised ordering in both active and archived content");
             const auto& reading_snapshot=current.state_layout.retirement_history[1];
             bool preserved=false;
             for(const auto& page:reading_snapshot.pages)for(const auto& archived_order:page.blocks)
-                if(archived_order.stable_id==plan.refined_order){
-                    preserved=archived_order.order_refinement&&
-                        archived_order.order_refinement->id==plan.refined_order&&
-                        archived_order.order_refinement->original_fragments==old.fragments&&
-                        archived_order.order_refinement->original_correct_order==old.correct_order&&
-                        JsonObject::Parse(winrt::to_hstring(archived_order.order_refinement->raw_json)).Stringify()==
-                            JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify();
-                    if(position)preserved=preserved&&
-                        order_representation_frame(archived_order)==order_representation_frame(
-                            current.pages[position->page].blocks[position->block]);
-                }
-            check(preserved&&(position.has_value()||retired_block(current,plan.refined_order)),
-                "A subsequent course edition lost the authenticated grouped-order representation");
+                if(archived_order.stable_id==plan.refined_order)
+                    preserved=order_representation_frame(archived_order)==order_representation_frame(*represented);
+            check(preserved,"A subsequent course edition changed the previously verified grouped-order representation");
         }
         for(const auto& page:current.pages)for(const auto& block:page.blocks){
             const auto origin=stable_block_position(before,block.stable_id);
