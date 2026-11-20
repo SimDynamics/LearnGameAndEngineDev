@@ -159,7 +159,8 @@ function(lgaed_add_compiler_guidance_state_target)
         native/platform/windows/indexed_unique_transfer_state_tests.cpp
         native/platform/windows/defaulted_move_policy_state_tests.cpp
         native/platform/windows/independent_copy_assignment_state_tests.cpp
-        native/platform/windows/move_assignment_invariant_state_tests.cpp)
+        native/platform/windows/move_assignment_invariant_state_tests.cpp
+        native/platform/windows/array_owner_read_state_tests.cpp)
     target_link_libraries(lgaed_compiler_guidance_state_tests
         PRIVATE lgaed_platform_windows lgaed_host_options)
 endfunction()
@@ -242,12 +243,15 @@ if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
             COMMAND lgaed_compiler_guidance_state_tests --independent-copy-assignment-state-live)
         add_test(NAME native.move_assignment_invariant_state_live
             COMMAND lgaed_compiler_guidance_state_tests --move-assignment-invariant-state-live)
+        add_test(NAME native.array_owner_read_state_live
+            COMMAND lgaed_compiler_guidance_state_tests --array-owner-read-state-live)
         set_tests_properties(native.math_matching_text_live
             native.general_choice_live native.identifier_rename_live
             native.indexed_unique_transfer_state_live
             native.defaulted_move_policy_state_live
             native.independent_copy_assignment_state_live
             native.move_assignment_invariant_state_live
+            native.array_owner_read_state_live
             PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
         # The remaining guidance modes still require fixtures from the full
         # native configuration; the StateImport profile does not run those modes.
@@ -827,10 +831,13 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_compiler_guidance_state_tests --independent-copy-assignment-state-live)
     add_test(NAME native.move_assignment_invariant_state_live
         COMMAND lgaed_compiler_guidance_state_tests --move-assignment-invariant-state-live)
+    add_test(NAME native.array_owner_read_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --array-owner-read-state-live)
     set_tests_properties(native.general_choice_live native.identifier_rename_live
         native.indexed_unique_transfer_state_live native.defaulted_move_policy_state_live
         native.independent_copy_assignment_state_live
         native.move_assignment_invariant_state_live
+        native.array_owner_read_state_live
         PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     # Run the real Win32 compiler view against thirteen authored inputs.
     # Exactly the first must unlock navigation; all others remain optional.
@@ -1217,10 +1224,13 @@ if(BUILD_TESTING)
         COMMAND lgaed_compiler_guidance_state_tests --independent-copy-assignment-state-live)
     add_test(NAME native.move_assignment_invariant_state_live
         COMMAND lgaed_compiler_guidance_state_tests --move-assignment-invariant-state-live)
+    add_test(NAME native.array_owner_read_state_live
+        COMMAND lgaed_compiler_guidance_state_tests --array-owner-read-state-live)
     set_tests_properties(native.general_choice_live native.identifier_rename_live
         native.indexed_unique_transfer_state_live native.defaulted_move_policy_state_live
         native.independent_copy_assignment_state_live
         native.move_assignment_invariant_state_live
+        native.array_owner_read_state_live
         PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     add_test(NAME curriculum.compiler_guidance_projection COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_compiler_guidance_projection.py)
