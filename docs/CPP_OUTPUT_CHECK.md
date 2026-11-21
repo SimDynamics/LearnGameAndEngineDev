@@ -3871,7 +3871,12 @@ española v2 sin modificar los editores ya publicados. Ejemplo:
 
 El modelo admite entre una y ocho variaciones por editor, y hasta cuatro
 salidas exactas por variación. Cada salida alternativa debe distinguirse
-de las publicadas para el primer caso obligatorio. Un nombre identifica
+de las publicadas para el primer caso obligatorio. Los nombres de
+variables en las sondas deben ser identificadores léxicos C++ reales:
+`9llaves`, `llaves-extra`, `true` o `nullptr` se rechazan antes de
+preparar las variantes, y se conservan los identificadores no ASCII ya
+admitidos por el analizador de fuentes, como `número`. No basta con
+que una cadena de autoría no sea una palabra reservada. Un nombre identifica
 un `int` local declarado directamente dentro de `main`; la inicialización
 puede emplear `=`, `{}` o `()`, o una primera asignación inequívoca.
 También se admiten declaradores enteros agrupados de un mismo tipo, como
@@ -4000,7 +4005,9 @@ posterior al punto y coma ocultaría la dependencia real.
 `auto` conserva su validación conservadora de una variable por declaración.
 
 La definición y la instrucción de destino deben ser inequívocas en el
-ámbito directo de `main`. Una macro, un ámbito ambiguo, un nombre
+ámbito directo de `main`. Los nombres de las sondas `std::string`
+siguen las mismas reglas léxicas C++ y conservan los identificadores
+Unicode que el editor ya admite. Una macro, un ámbito ambiguo, un nombre
 ausente, una lectura que nunca sucede o una variante que no compila
 impiden acreditar la capacidad; no producen una aprobación falsa. Las
 cadenas se inyectan mediante escapes octales de bytes UTF-8, conservando
