@@ -194,13 +194,14 @@ jobs:
         shell: pwsh
         run: >
           cmake --build "$env:RUNNER_TEMP/feedback-font-qa"
-          --target lgaed_feedback_font_portable_qa lgaed_u2_semantic_portable_qa --parallel 2
-      - name: Run real feedback controls and current U2L3 colors without speech
+          --target lgaed_feedback_font_portable_qa lgaed_u2_semantic_portable_qa
+          lgaed_inline_feedback_portable_qa --parallel 2
+      - name: Run original nine inline activities, feedback and U2 colors without speech
         shell: pwsh
         run: >
           ctest --test-dir "$env:RUNNER_TEMP/feedback-font-qa"
           --output-on-failure --no-tests=error -j 1
-          -R "(feedback_font_portable|u2_semantic_view_portable)"
+          -R "(feedback_font_portable|u2_semantic_view_portable|inline_feedback_u2l5_portable)"
 
   native-guidance-reopen:
     name: Real Windows compiler guide, StateStore and U12 reader fixtures (MSVC)
