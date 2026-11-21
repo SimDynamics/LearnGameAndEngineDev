@@ -536,7 +536,7 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
     // activities. Evaluate the authored answers in a private state store and
     // record those page visits in order. Do not seed a compiler receipt or
     // claim that the student's real profile completed any of these pages.
-    constexpr std::size_t prior_ordinary=15;
+    constexpr std::size_t prior_ordinary=14;
     Fixture f(backend,false,true,true,"es",lesson,false,first.page,false,true,{},
         [&](state::StateData& data){
             using namespace winrt::Windows::Data::Json;
@@ -594,7 +594,7 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
                     "Current U2L5 QA lost its sequential page visit");
             }
             check(solved==prior_ordinary&&state::can_reach_page(data,lesson,first.page),
-                "The current U2L5 prefix changed its fifteen isolated prerequisites");
+                "The current U2L5 prefix changed its fourteen isolated prerequisites");
             state::validate_lesson_state(data,lesson);
             data.preferences["u2l5_reader_qa"]["synthetic_ordinary_prefix"]=static_cast<std::int64_t>(solved);
         });
