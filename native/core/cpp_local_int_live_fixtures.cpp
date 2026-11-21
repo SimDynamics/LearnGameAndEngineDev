@@ -331,11 +331,12 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo+3;})CPP";
     // The student's own arithmetic is defined, but perturbing it in a
     // private run would exceed int32 bounds. The independent variant must
     // return a controlled failure before the injected compound assignment.
-    for(const auto& limit:std::array{
-            std::pair{"reject_private_positive_overflow",
+    struct IntLimitCase { const char* first; const char* second; int third; };
+    for(const auto& limit:std::array<IntLimitCase,2>{{
+            {"reject_private_positive_overflow",
                 "int main(){int aforo{2147483646};aforo+=1;return aforo==0;}",4},
-            std::pair{"reject_private_negative_underflow",
-                "int main(){int aforo{-2147483646};aforo-=1;return aforo==0;}",-4}}) {
+            {"reject_private_negative_underflow",
+                "int main(){int aforo{-2147483646};aforo-=1;return aforo==0;}",-4}}}) {
         const auto variant=cpp_local_int_override(
             limit.second,{"aforo",limit.third,{},true});
         if(!variant)throw std::runtime_error("Cannot instrument signed-int boundary");
