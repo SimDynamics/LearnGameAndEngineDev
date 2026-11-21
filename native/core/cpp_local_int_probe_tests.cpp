@@ -536,7 +536,12 @@ void composed_neutral_updates_cannot_fake_u2l3_increase() {
         "aforo=(aforo+7)-7;",
         "aforo+=(2+3-5);",
         "aforo-=(4-3-1);",
-        "aforo=aforo+(+6)-6;"
+        "aforo=aforo+(+6)-6;",
+        "aforo=aforo*(2-1);",
+        "aforo=aforo/(9/3-2);",
+        "aforo+=(4/2-2);",
+        "aforo-=(6%3);",
+        "aforo=aforo+((3*3)-9);"
     }) {
         require(!cpp_local_int_override(start+neutral+output,
             {"aforo",4,{},true}),
@@ -568,7 +573,10 @@ void composed_neutral_updates_cannot_fake_u2l3_increase() {
     for(const auto* genuine_additive:{
         "aforo=aforo+2-1;",
         "aforo=aforo+3-2-2;",
-        "aforo+=(2+3-4);"
+        "aforo+=(2+3-4);",
+        "aforo=aforo*(3-1);",
+        "aforo+=(9/3-2);",
+        "aforo=aforo+(7%3);"
     }) {
         const auto source=start+std::string(genuine_additive)+output;
         const auto variant=cpp_local_int_override(source,{"aforo",4,{},true});

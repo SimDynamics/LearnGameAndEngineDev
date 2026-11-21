@@ -400,6 +400,65 @@ inline bool int_probe_trivial_noop(const Tokens& code,std::size_t statement,
         }
         return std::pair{a,b};
     };
+    // Evaluate only bounded, side-effect-free decimal int constants. This
+    // handles expressions such as (2-1), (4/2-2), and (6%3), without guessing
+    // about a variable, a call, a cast, an unsigned suffix or a floating type.
+    // Every intermediate is small enough to avoid signed overflow.
+    const auto small_constant=[&](auto&& self,std::size_t first,
+            std::size_t last,unsigned depth)->std::optional<std::int64_t> {
+        if(depth>32||first>=last)return {};
+        const auto [start,stop]=unwrapped(first,last);
+        if(start>=stop)return {};
+        if(stop==start+1) {
+            if(!code[start].value.starts_with("number:"))return {};
+            const auto digits=std::string_view(code[start].value).substr(7);
+            if(digits.empty()||(digits.size()>1&&digits.front()=='0'))return {};
+            std::int32_t literal=0;
+            const auto [parsed_end,parse_error]=std::from_chars(
+                digits.data(),digits.data()+digits.size(),literal,10);
+            if(parse_error!=std::errc{}||
+               parsed_end!=digits.data()+digits.size()||
+               literal>4096)return {};
+            return literal;
+        }
+        if(code[start].value=="op:+"||code[start].value=="op:-") {
+            const auto inner=self(self,start+1,stop,depth+1);
+            if(!inner)return {};
+            return code[start].value=="op:-"?-*inner:*inner;
+        }
+        const auto top_operator=[&](bool additive)->std::size_t {
+            std::size_t found=stop,nested=0;
+            for(auto i=start;i<stop;++i) {
+                const auto token=std::string_view(code[i].value);
+                if(token=="op:(")++nested;
+                else if(token=="op:)") {
+                    if(!nested)return stop;
+                    --nested;
+                }else if(!nested&&i>start&&i+1<stop&&
+                    (additive?(token=="op:+"||token=="op:-"):
+                              (token=="op:*"||token=="op:/"||token=="op:%")))
+                    found=i;
+            }
+            return nested?stop:found;
+        };
+        auto split=top_operator(true);
+        if(split==stop)split=top_operator(false);
+        if(split==stop)return {};
+        const auto left=self(self,start,split,depth+1);
+        const auto right=self(self,split+1,stop,depth+1);
+        if(!left||!right)return {};
+        const auto op_value=std::string_view(code[split].value);
+        std::int64_t result=0;
+        if(op_value=="op:+")result=*left+*right;
+        else if(op_value=="op:-")result=*left-*right;
+        else if(op_value=="op:*")result=*left**right;
+        else if(op_value=="op:/"||op_value=="op:%") {
+            if(*right==0)return {};
+            result=op_value=="op:/"?*left / *right:*left % *right;
+        }else return {};
+        if(result < -4096||result>4096)return {};
+        return result;
+    };
     const auto known=[&](auto&& self,std::size_t first,
                          std::size_t last,unsigned depth)->Known {
         if(depth>64||first>=last)return Known::unknown;
@@ -411,6 +470,12 @@ inline bool int_probe_trivial_noop(const Tokens& code,std::size_t statement,
             if(int_probe_literal_is(code[a].value,'0'))return Known::zero;
             if(int_probe_literal_is(code[a].value,'1'))return Known::one;
             return Known::unknown;
+        }
+        // Only literal arithmetic can be folded. A computed identity factor
+        // must not turn a harmless assignment into a fake U2L3 increase.
+        if(const auto value=small_constant(small_constant,a,b,0)) {
+            if(*value==0)return Known::zero;
+            if(*value==1)return Known::one;
         }
         // Unary signs are permitted only where they cannot introduce an
         // unproved value (a negated zero stays zero).

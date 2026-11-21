@@ -270,7 +270,10 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo+3;})CPP";
         "aforo=aforo+2-2;",
         "aforo=aforo-2+2;",
         "aforo+=(2+3-5);",
-        "aforo=aforo+(+6)-6;"
+        "aforo=aforo+(+6)-6;",
+        "aforo=aforo*(2-1);",
+        "aforo+=(4/2-2);",
+        "aforo=aforo/(9/3-2);"
     }) {
         const auto source=std::string(
             "#include <iostream>\nint main(){int aforo{5};int anterior=aforo;")
