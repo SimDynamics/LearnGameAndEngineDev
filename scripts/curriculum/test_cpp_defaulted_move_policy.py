@@ -52,6 +52,15 @@ def main():
     p,i=positions[0]
     block=lesson["pages"][p]["blocks"][i]
     assert block["type"]=="cpp_compiler" and len(block["outputCheck"]["cases"])==3
+    public_cases=block["outputCheck"]["cases"]
+    for index,case in enumerate(public_cases,1):
+        if (not isinstance(case,dict) or
+            not isinstance(case.get("standardInput"),str) or
+            not isinstance(case.get("outputs"),list) or
+            not case["outputs"] or
+            not all(isinstance(value,str) for value in case["outputs"]) or
+            type(case.get("exitCode",0)) is not int):
+            raise RuntimeError(f"Invalid original U6L6 public case {index}")
     original=block["initialCode"]
     assert "std::unique_ptr<int> dato_ = std::make_unique<int>(4);" in original
     assert "Ficha(const Ficha&) = delete;" in original
@@ -100,6 +109,30 @@ def main():
                         "An original forbidden copy was not specifically rejected",
                         attempted.returncode,diagnostics))
                 print(f"{options.compiler}: {name} {variant}: REJECT",flush=True)
+            # The independent owner witness must not hide a regression in
+            # the unmodified original main. These three public cases run as
+            # internal QA only: the learner still owes just the first case.
+            public_source=generated/(name+"-public.cpp")
+            if not public_source.is_file():
+                raise RuntimeError(name+": missing source-preserved public QA")
+            public_binary=workspace/(name+"-public"+exe)
+            built=compile_cpp(options.compiler,public_source,public_binary,options.windows)
+            if built.returncode:
+                raise RuntimeError(name+": original main no longer compiles\n"+
+                                   built.stdout+built.stderr)
+            for index,case in enumerate(public_cases,1):
+                run=subprocess.run(
+                    [str(public_binary)],cwd=ROOT,input=case["standardInput"],
+                    text=True,errors="replace",capture_output=True,
+                    check=False,timeout=15)
+                if (run.returncode!=case.get("exitCode",0) or
+                    run.stdout not in case["outputs"] or run.stderr):
+                    raise RuntimeError(
+                        f"{name}: original public case {index} differs; "+
+                        f"exit={run.returncode}, stdout={run.stdout[-500:]!r}, "+
+                        f"stderr={run.stderr[-500:]!r}")
+            print(f"{options.compiler}: {name} all "+
+                  f"{len(public_cases)} optional/public cases: PASS",flush=True)
     print("PASS genuine U6L6 move policy: two valid = default variants, "
           "unchanged historical type/main, no allocation during moves, "
           "real forbidden-copy compiler diagnostics, identity and cleanup.")
