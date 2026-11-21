@@ -684,11 +684,11 @@ void private_marker_in_comments_and_strings_is_not_an_identifier() {
 void exact_authored_increase_cannot_be_hidden_in_stdout() {
     using lgaed::curriculum::CppLocalIntCheck;
     using lgaed::curriculum::cpp_local_int_check_valid;
-    const CppLocalIntProbe exact{"aforo",4,{"Antes: 5\\nAhora: 12"},true,3};
+    const CppLocalIntProbe exact{"aforo",4,{"Antes: 5\nAhora: 12"},true,3};
     require(cpp_local_int_check_valid({{exact}}),
         "An independently authored positive int increase was rejected");
     const auto valid = cpp_local_int_override(
-        "#include <iostream>\\nint main(){int aforo{5};int anterior=aforo;"
+        "#include <iostream>\nint main(){int aforo{5};int anterior=aforo;"
         "aforo+=3;std::cout<<anterior<<aforo;}",exact);
     require(valid && valid->find(
         " - static_cast<long long>(lgaed_local_int_before_6cb8e71d) "

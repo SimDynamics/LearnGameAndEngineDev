@@ -366,25 +366,25 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo+3;})CPP";
     // Both programs below reproduce the authored visible U2L3 output.
     // A fixed arithmetic adjustment at print time also passes all older
     // afterUpdate stdout perturbations, but cannot pass the *state* witness.
-    constexpr CppLocalIntProbe exact_delta{"aforo",4,{},true,3};
+    const CppLocalIntProbe exact_delta{"aforo",4,{},true,3};
     for(const auto& entry:std::array{
         std::pair{"u2l3_exact_increase_plus_equal",
             R"CPP(#include <iostream>
 int main(){int aforo{5};int anterior=aforo;aforo+=3;
-std::cout<<"Antes: "<<anterior<<"\\nAhora: "<<aforo;})CPP"},
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP"},
         std::pair{"u2l3_exact_increase_equivalent",
             R"CPP(#include <iostream>
 int main(){int aforo{5};int anterior=aforo;aforo=aforo+2+1;
-std::cout<<"Antes: "<<anterior<<"\\nAhora: "<<aforo;})CPP"}
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP"}
     }) {
         const auto variant=cpp_local_int_override(entry.second,exact_delta);
         if(!variant)throw std::runtime_error("Cannot instrument a genuine exact +3");
-        emit(directory,entry.first,*variant,"Antes: 5\\nAhora: 12",true);
+        emit(directory,entry.first,*variant,"Antes: 5\nAhora: 12",true);
         ++emitted;
     }
     constexpr std::string_view compensated=R"CPP(#include <iostream>
 int main(){int aforo{5};int anterior=aforo;aforo+=5;
-std::cout<<"Antes: "<<anterior<<"\\nAhora: "<<(aforo-2);})CPP";
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<(aforo-2);})CPP";
     const auto rejected_compensation=cpp_local_int_override(compensated,exact_delta);
     if(!rejected_compensation)
         throw std::runtime_error("Cannot expose the wrong-but-compensated increment");
