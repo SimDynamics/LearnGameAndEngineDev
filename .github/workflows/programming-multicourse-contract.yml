@@ -40,6 +40,12 @@ jobs:
     runs-on: windows-2022
     env:
       PYTHONPATH: scripts/curriculum
+      # Git for Windows cannot inspect historical lesson blobs with paths
+      # longer than MAX_PATH unless long paths are enabled in its own child
+      # process configuration. Never change the runner/global Git settings.
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     timeout-minutes: 25
     steps:
       - name: Obtener publicación y mapas históricos auténticos
