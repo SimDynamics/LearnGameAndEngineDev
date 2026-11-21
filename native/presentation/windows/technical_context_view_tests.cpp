@@ -733,6 +733,9 @@ void current_u2l6_native_reader_gates() {
                 relation.prerequisites.size()==1&&
                 relation.prerequisites.front()==first.stable_id;
         }),"The two U2L6 editors lost their independent source-owned goals");
+    if(second.stable_id=="p1u2l6_reparar_conversion")
+        check(first.local_int_check&&second.local_int_check,
+            "Current U2L6 requires independent int-variation evidence for both editors");
 
     const auto reference=[&](std::string_view activity,
                              std::string_view expected_id)->std::optional<curriculum::StatePosition>{
@@ -764,10 +767,28 @@ void current_u2l6_native_reader_gates() {
     const auto mock_receipt=[&](state::StateData& data,const curriculum::Block& owner,
                                 const std::string& source){
         windows::CppRunRequest request;request.revision=1;request.source_utf8=source;
+        request.local_int_check=owner.local_int_check;
         const auto& goal=owner.output_check->cases.front();
         curriculum::FreshExecution observation{1,true,true,0,
             goal.standard_input,goal.outputs.front()};
         observation.executable=goal.executable;
+        if(owner.local_int_check) {
+            // The current U2L6 edition requires source-owned, mutated-value
+            // evidence. A successful stdout alone must never release the gate.
+            check(!windows::record_compiler_puzzle_case(
+                data,lesson,owner,request,observation,"Unverified QA stdout"),
+                "U2L6 credited stdout without the mandatory int-variation proof");
+            observation.local_int_check_correct=true;
+            observation.local_int_request_fingerprint=
+                windows::cpp_local_int_request_fingerprint(request);
+            check(!observation.local_int_request_fingerprint.empty(),
+                "U2L6 reference has no valid int-variation request fingerprint");
+            auto forged=observation;
+            forged.local_int_request_fingerprint="different-source";
+            check(!windows::record_compiler_puzzle_case(
+                data,lesson,owner,request,forged,"Wrong-source QA fingerprint"),
+                "U2L6 accepted a foreign int-variation source fingerprint");
+        }
         check(windows::record_compiler_puzzle_case(
             data,lesson,owner,request,observation,
             "Synthetic U2L6 reader-only fixture, not a compiler execution"),
