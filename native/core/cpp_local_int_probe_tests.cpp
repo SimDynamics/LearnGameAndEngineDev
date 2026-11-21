@@ -183,6 +183,36 @@ void separate_assignment_and_copy_before_update() {
     require(computed&&
         computed->find("llaves = 3 + 4;\n    llaves = 19;\n")!=std::string::npos,
         "A first assignment computed only from initialized values was rejected");
+    const std::string homonyms=R"CPP(#include <iostream>
+namespace ajustes { inline int llaves = 7; }
+struct Datos { int llaves{7}; };
+int main() {
+    Datos datos;
+    Datos* puntero = &datos;
+    int llaves;
+    llaves = datos.llaves;
+    std::cout << llaves;
+}
+)CPP";
+    const auto field=cpp_local_int_override(homonyms,{"llaves",19});
+    require(field&&
+        field->find("llaves = datos.llaves;\n    llaves = 19;\n")!=std::string::npos&&
+        field->find("struct Datos { int llaves{7}; };")!=std::string::npos,
+        "A field with the same name was treated as a self-read of the uninitialized local");
+    const auto pointer=cpp_local_int_override(
+        "#include <iostream>\nstruct Datos{int llaves{7};};\n"
+        "int main(){Datos d;Datos* p=&d;int llaves;llaves=p->llaves;std::cout<<llaves;}",
+        {"llaves",19});
+    require(pointer&&
+        pointer->find("llaves=p->llaves;\n    llaves = 19;\n")!=std::string::npos,
+        "An arrow member access to another initialized object was rejected");
+    const auto qualified=cpp_local_int_override(
+        "#include <iostream>\nnamespace ajustes {inline int llaves=7;}\n"
+        "int main(){int llaves;llaves=ajustes::llaves;std::cout<<llaves;}",
+        {"llaves",19});
+    require(qualified&&
+        qualified->find("llaves=ajustes::llaves;\n    llaves = 19;\n")!=std::string::npos,
+        "A namespace-qualified value was confused with the local int");
     for(const auto* unsafe:{
         "llaves = llaves + 7;",
         "llaves = (7 + llaves);",
