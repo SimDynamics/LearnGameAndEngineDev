@@ -103,8 +103,7 @@ def documents() -> tuple[dict[str, object], dict[str, str]]:
              "reviewFeedback": "Revisa el literal inicial."},
         ]}],
     }
-    guidance = stable_state_layout.prepare_v2(
-        guidance_base, "es", {"es": guidance_base})
+    guidance = prepare_edition_lesson(guidance_base, DESCRIPTOR)
     guidance = stable_state_layout.revise_ordinary_editorial(
         guidance, "block_0000_0000", {
             "question": {"text": "Elige el resultado de dos más dos.", "spans": []},
