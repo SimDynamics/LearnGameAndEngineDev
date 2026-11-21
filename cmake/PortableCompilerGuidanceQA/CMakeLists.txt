@@ -197,6 +197,9 @@ add_executable(lgaed_native_assertion_runner_tests
 target_link_libraries(lgaed_native_assertion_runner_tests PRIVATE
     lgaed_guidance_platform lgaed_guidance_qa_options)
 target_link_options(lgaed_native_assertion_runner_tests PRIVATE /OPT:REF)
+# The real worker launches this UTF-8 console companion for every MSVC
+# compilation. Keep it beside the isolated QA executable, as in production.
+add_dependencies(lgaed_native_assertion_runner_tests lgaed_cpp_tool_host)
 add_test(NAME native.u3l9_assertion_contracts
     COMMAND lgaed_native_assertion_runner_tests)
 set_tests_properties(native.u3l9_assertion_contracts PROPERTIES
