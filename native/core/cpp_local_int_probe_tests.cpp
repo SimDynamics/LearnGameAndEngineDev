@@ -164,7 +164,7 @@ void unsafe_ambiguous_and_other_scope_are_rejected() {
         "long int llaves=7;",
         "long signed int llaves=7;",
         "signed int *llaves=nullptr;",
-        "signed llaves{7}, extra{8};"
+        "signed llaves{7}, extra{8};",
         "auto llaves=7;",
         "int *llaves=nullptr;",
         "int llaves[1]{7};",
