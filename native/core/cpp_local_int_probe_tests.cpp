@@ -153,6 +153,15 @@ void grouped_integer_declarations_keep_independent_data() {
         require(!cpp_local_int_override(src,{"cajas",13}),
             "A dependent, pointer, array or duplicate sibling was credited as independent");
     }
+    const std::string dependent=
+        "int main(){int cajas=4, sobres=cajas+5; std::cout<<sobres;}";
+    const auto changed_envelopes=cpp_local_int_override(dependent,{"sobres",17});
+    require(!cpp_local_int_override(dependent,{"cajas",13})&&
+            changed_envelopes&&
+            changed_envelopes->find(
+                "int cajas=4, sobres=cajas+5;\n    sobres = 17;\n")!=std::string::npos&&
+            changed_envelopes->find("std::cout<<sobres;")!=std::string::npos,
+        "A later dependent int must be independently variable even when its source is not");
 }
 
 void separate_assignment_and_copy_before_update() {
