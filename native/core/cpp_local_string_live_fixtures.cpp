@@ -123,6 +123,19 @@ int main() {
             "Aula-04",
             {{{"edificio","Sala Norte",init,{}},"Sala Norte-04"},
              {{"codigo","003",init,{}},"Aula-003"}}},
+        {"u2l7_member_named_etiqueta",
+            R"CPP(#include <iostream>
+#include <string>
+struct Datos {std::string etiqueta{"EXTERNA"};};
+int main() {
+    Datos datos;
+    std::string copia{datos.etiqueta}, etiqueta{"Aula-04"};
+    std::cout << datos.etiqueta;
+    std::cout << etiqueta;
+})CPP",
+            "EXTERNAAula-04",
+            {{{"etiqueta","CONTROL",init,{}},"EXTERNACONTROL"},
+             {{"etiqueta","CONTROL",output,{}},"EXTERNACONTROL"}}},
         {"u2l7_member_assign_update",
             R"CPP(#include <iostream>
 #include <string>
@@ -186,9 +199,9 @@ int main(){std::string edificio{"Aula"};std::string codigo{"04"};
 std::string etiqueta=edificio+"-"+codigo;std::cout<<edificio<<"-"<<codigo;})CPP";
     if(cpp_local_string_override(unread,{"etiqueta","CONTROL",output,{}}))
         throw std::runtime_error("An unread etiqueta passed the private output control");
-    if(accepted!=22||rejected!=3)
+    if(accepted!=25||rejected!=3)
         throw std::runtime_error("Private source fixture count changed unexpectedly");
-    std::cout<<"PASS generated 25 private C++ string cases (22 positive, "
+    std::cout<<"PASS generated 28 private C++ string cases (25 positive, "
                 "3 hard-coded negative) and one structurally rejected unread etiqueta\n";
     return 0;
 }catch(const std::exception& error) {
