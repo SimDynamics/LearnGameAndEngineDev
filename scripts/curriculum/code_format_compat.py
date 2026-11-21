@@ -312,6 +312,34 @@ def _cmake_command_gaps(src: str, tokens: tuple[str, ...]) -> tuple[int, ...]:
         raise SourceFormatError("Unbalanced CMake command parentheses")
     return tuple(gaps)
 
+def _cpp_literal_include(token: str) -> bool:
+    """A literal header path cannot evaluate a source-position query."""
+    if not token.startswith("directive:"):
+        return False
+    value = token[len("directive:"):]
+    if value.startswith("#"):
+        value = value[1:]
+    elif value.startswith("%:"):
+        value = value[2:]
+    else:
+        return False
+    value = value.lstrip()
+    if not value.startswith("include"):
+        return False
+    value = value[len("include"):]
+    if value and (value[0].isalnum() or value[0] == "_"):
+        return False
+    value = value.lstrip()
+    if not value or value[0] not in '<"':
+        return False
+    close = value.find(">" if value[0] == "<" else '"', 1)
+    if close <= 1:
+        return False
+    try:
+        return all(part.startswith("comment:") for part in _cpp_tokens(value[close + 1:]))
+    except SourceFormatError:
+        return False
+
 def _cpp_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
     """Only executable identifiers and directives can observe source position."""
     markers = {"__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN",
@@ -323,7 +351,8 @@ def _cpp_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
             return True
         if token.startswith("id:") and token[3:] in markers:
             return True
-        if token.startswith("directive:") and any(name in token for name in markers):
+        if (token.startswith("directive:") and not _cpp_literal_include(token)
+                and any(name in token for name in markers)):
             return True
     return False
 
