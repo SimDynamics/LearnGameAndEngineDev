@@ -880,6 +880,46 @@ void capacity() {
                    (capacidad ^ capacidad) + (0 & capacidad);
         })cpp",rules,true,"Decorative bitwise neutral terms hid a correct named rule");
 
+    // C++23 two's-complement laws make these pure results independent
+    // of the student's named int. A fake rule cannot hide a hardcoded
+    // quotient by adding zero or -1 and compensate on the next token.
+    for(const auto* neutral:{
+        "(capacidad & ~capacidad)",
+        "((~capacidad) & (capacidad))",
+        "(capacidad bitand compl capacidad)",
+        "((capacidad) & (~(capacidad)))",
+        "((capacidad | ~capacidad) + 1)",
+        "((~capacidad bitor capacidad) + 1)",
+        "((capacidad ^ (~capacidad)) + 1)",
+        "((capacidad xor compl capacidad) + 1)",
+        "((capacidad + ~capacidad) + 1)",
+        "((~capacidad + capacidad) + 1)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
+            rules,false,"Complementary bitwise pairs fabricated independent named-rule evidence");
+    }
+    // A complement of a *different expression* does not generally
+    // cancel this constant. Preserve its lexical evidence, leaving numeric
+    // correctness to the independent compiled counterfactual.
+    for(const auto* productive:{
+        "capacidad & ~(capacidad + 1)",
+        "capacidad | ~(capacidad + 1)",
+        "capacidad ^ ~(capacidad + 1)",
+        "capacidad - ~capacidad"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(productive)+"); }",
+            rules,true,"An actually dependent complement expression was falsely neutralized");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad & ~capacidad);
+        })cpp",rules,true,
+        "A neutral complement term erased a separate valid divisor and adjustment");
+
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};

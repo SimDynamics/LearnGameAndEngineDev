@@ -515,6 +515,13 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
         unwrap(first,last);
         return first<last&&op(t[first],"-")&&single(first+1,last);
     };
+    const auto complemented=[&](std::size_t first,std::size_t last) {
+        unwrap(first,last);
+        // C++23 signed integral complement is the exact all-bits inverse.
+        // A pure local int and its complement yield a constant under
+        // &, |, ^ or +, regardless of the local agreement's value.
+        return first<last&&op(t[first],"~")&&single(first+1,last);
+    };
     const auto neutral=[&](std::size_t first,std::size_t last) {
         unwrap(first,last);
         std::size_t depth=0;
@@ -540,6 +547,14 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
                 (literal_is(first,at,0)&&single(at+1,last))))return true;
             if(op(t[at],"%")&&single(first,at)&&
                literal_is(at+1,last,1))return true;
+            // A bitwise complement pair is also constant-valued:
+            // x & ~x == 0; x | ~x == x ^ ~x == x + ~x == -1.
+            // Check exact operands, never substrings, side effects or
+            // more complicated expressions such as x & ~(x + 1).
+            if((op(t[at],"&")||op(t[at],"|")||
+                op(t[at],"^")||op(t[at],"+"))&&
+               ((single(first,at)&&complemented(at+1,last))||
+                (complemented(first,at)&&single(at+1,last))))return true;
             // The two lexical references also cancel as x+(-x) or (-x)+x.
             if(op(t[at],"+")&&
                 ((single(first,at)&&negated(at+1,last))||
