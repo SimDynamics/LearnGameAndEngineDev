@@ -109,6 +109,27 @@ def main():
     parser.add_argument("--windows",action="store_true")
     args=parser.parse_args()
     original=published()
+    # Keep the public stdout oracle separate from the private interface
+    # contract. Every original case prints through std::cout, so a
+    # hardcoded stream can mimic those cases while breaking other callers.
+    document=json.loads(LESSON.read_text(encoding="utf-8"))
+    positions=[(p,b) for p,page in enumerate(document["stateLayout"]["current"])
+               for b,identity in enumerate(page["blocks"]) if identity==OWNER]
+    if len(positions)!=1:
+        raise AssertionError("U10L1 stable editor owner changed")
+    p,b=positions[0]
+    block=document["pages"][p]["blocks"][b]
+    if block["type"]!="cpp_compiler" or block["initialCode"]!=original:
+        raise AssertionError("Original U10L1 C++ code differs from public editor")
+    public_cases=block["outputCheck"]["cases"]
+    if len(public_cases)!=3 or public_cases[0]["standardInput"]!="7 3 -2\\n".replace("\\n","\n"):
+        raise AssertionError("Original U10L1 public cases changed")
+    for number,case in enumerate(public_cases,1):
+        if (not isinstance(case.get("standardInput"),str) or
+            not isinstance(case.get("outputs"),list) or not case["outputs"] or
+            not all(isinstance(out,str) for out in case["outputs"]) or
+            type(case.get("exitCode",0)) is not int):
+            raise AssertionError(f"Invalid U10L1 original public case {number}")
     candidates={
         "correct_direct":(VALUE,WRITE,True),
         "correct_method_and_put":(ALT_VALUE,ALT_WRITE,True),
@@ -120,11 +141,17 @@ def main():
         executable=folder/("generator"+suffix)
         compile_source(args.compiler,GENERATOR,executable,args.windows,True)
         original_path=folder/"published.cpp"
-        original_path.write_text(original,encoding="utf-8")
+        original_path.write_bytes(original.encode("utf-8"))
+        # Two correct solutions and a deliberately incorrect output-stream
+        # shortcut. All three must pass the original public stdout, while
+        # only the two valid ones pass the separately compiled private check.
+        public_variants={"correct_direct","correct_method_and_put",
+                         "report_stdout_instead"}
+        public_runs=0
         for name,(value,report,should_pass) in candidates.items():
             candidate=folder/(name+".cpp")
-            candidate.write_text(compose(original,(value,report)),
-                                 encoding="utf-8")
+            candidate.write_bytes(
+                compose(original,(value,report)).encode("utf-8"))
             probe_source=folder/(name+".private.cpp")
             gen=run([str(executable),str(original_path),
                      str(candidate),str(probe_source)])
@@ -141,6 +168,30 @@ def main():
                     observed.returncode,observed.stdout,observed.stderr))
             print(f"{args.compiler}: {name}: "
                   f"{'PASS' if success else 'REJECT'}",flush=True)
+            # Cases 2-3 remain optional for the learner; all three run only
+            # in disposable QA and never grant a curriculum completion.
+            if name in public_variants:
+                public_binary=folder/(name+"-public"+suffix)
+                compile_source(args.compiler,candidate,public_binary,args.windows)
+                for number,case in enumerate(public_cases,1):
+                    visible=subprocess.run(
+                        [str(public_binary)],cwd=ROOT,
+                        input=case["standardInput"],text=True,
+                        encoding="utf-8",errors="replace",
+                        capture_output=True,check=False,timeout=15)
+                    if (visible.returncode!=case.get("exitCode",0) or
+                        visible.stdout not in case["outputs"] or visible.stderr):
+                        raise AssertionError(
+                            (name,number,"Authentic U10L1 public output changed",
+                             visible.returncode,visible.stdout[-500:],
+                             visible.stderr[-500:]))
+                    public_runs+=1
+                print(f"{args.compiler}: public {name}: "
+                      f"{len(public_cases)} authored cases PASS; "
+                      f"private interfaces {'PASS' if success else 'REJECT'}",
+                      flush=True)
+        if public_runs!=len(public_variants)*len(public_cases):
+            raise AssertionError("U10L1 public/private QA omitted a variant")
 
         valid=compose(original,(VALUE,WRITE))
         attacks={
@@ -186,7 +237,9 @@ def main():
                 raise AssertionError((name,"Protected source mutation accepted"))
             print(f"{args.compiler}: {name}: REJECT",flush=True)
     print(f"PASS U10L1 two-base contract: two valid, "
-          f"{len(BAD)} semantic negatives and {len(attacks)} source attacks")
+          f"{len(BAD)} semantic negatives and {len(attacks)} source attacks; "
+          f"three authentic stdout cases also pass for a defective "
+          f"std::cout-only reporter rejected by the private stream probe.")
 
 if __name__=="__main__":
     try:main()
