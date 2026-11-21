@@ -2,28 +2,34 @@
 # test executables. They do not consume the SMO shaders or numerical backends.
 include_guard(GLOBAL)
 
+# Both the installed app and a disposable standalone QA build include this
+# target list. Anchor its ORIGINAL production sources to this file, never to
+# whichever CMake directory happens to include it.
+get_filename_component(_lgaed_curricular_root
+    "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+
 add_library(lgaed_curricular_windows STATIC
-    native/presentation/windows/window_fullscreen.cpp
-    native/presentation/windows/internal_window.cpp
-    native/presentation/windows/lesson_view.cpp
-    native/presentation/windows/cpp_project_view.cpp
-    native/presentation/windows/cpp_fill_view.cpp
-    native/presentation/windows/order_code_view.cpp
-    native/presentation/windows/curricular_image_view.cpp
-    native/presentation/windows/simulation_view.cpp
-    native/presentation/windows/math_puzzle_view.cpp
-    native/presentation/windows/math_expression_editor.cpp
-    native/presentation/windows/native_math_text.cpp
-    native/presentation/windows/card_list.cpp
-    native/presentation/windows/settings_view.cpp
-    native/presentation/windows/reading_shade.cpp
-    native/presentation/windows/lesson_reader.cpp
-    native/presentation/windows/icons.cpp
-    native/presentation/windows/native_menu.cpp
-    native/presentation/windows/rich_text.cpp
-    native/presentation/windows/reader_theme.cpp
-    native/presentation/windows/editing_bar.cpp
-    native/presentation/windows/code_gutter.cpp
+    "${_lgaed_curricular_root}/native/presentation/windows/window_fullscreen.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/internal_window.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/lesson_view.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/cpp_project_view.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/cpp_fill_view.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/order_code_view.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/curricular_image_view.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/simulation_view.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/math_puzzle_view.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/math_expression_editor.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/native_math_text.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/card_list.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/settings_view.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/reading_shade.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/lesson_reader.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/icons.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/native_menu.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/rich_text.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/reader_theme.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/editing_bar.cpp"
+    "${_lgaed_curricular_root}/native/presentation/windows/code_gutter.cpp"
     native/presentation/windows/code_editor.cpp)
 target_link_libraries(lgaed_curricular_windows PUBLIC
     lgaed_platform_windows lgaed_host_options user32 gdi32 gdiplus shell32 ole32 oleacc advapi32 comctl32 comdlg32 uuid uxtheme dwmapi)
@@ -38,12 +44,12 @@ target_link_options(lgaed_curricular_windows INTERFACE
 # The normal build attaches its unchanged runtime/fixture dependencies and
 # CTest commands. ReaderBuild calls only this compilation/link definition.
 function(lgaed_add_curricular_reader_test_targets)
-    add_executable(lgaed_lesson_reader_tests native/presentation/windows/lesson_reader_tests.cpp)
+    add_executable(lgaed_lesson_reader_tests "${_lgaed_curricular_root}/native/presentation/windows/lesson_reader_tests.cpp")
     target_link_libraries(lgaed_lesson_reader_tests PRIVATE lgaed_curricular_windows)
     # The complete reader regression translation unit exceeds MSVC's standard object section limit (C1128).
     target_compile_options(lgaed_lesson_reader_tests PRIVATE /bigobj)
-    add_executable(lgaed_u11_declarations_reader_tests native/presentation/windows/u11_declarations_reader_tests.cpp)
+    add_executable(lgaed_u11_declarations_reader_tests "${_lgaed_curricular_root}/native/presentation/windows/u11_declarations_reader_tests.cpp")
     target_link_libraries(lgaed_u11_declarations_reader_tests PRIVATE lgaed_curricular_windows)
-    add_executable(lgaed_u6_diagnostic_flow_tests native/presentation/windows/u6_diagnostic_flow_tests.cpp)
+    add_executable(lgaed_u6_diagnostic_flow_tests "${_lgaed_curricular_root}/native/presentation/windows/u6_diagnostic_flow_tests.cpp")
     target_link_libraries(lgaed_u6_diagnostic_flow_tests PRIVATE lgaed_curricular_windows)
 endfunction()
