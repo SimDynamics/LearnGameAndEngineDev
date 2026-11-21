@@ -389,9 +389,18 @@ inline bool actionable(const std::vector<Word>& words) {
         // directs the reader to review rejected data. It is not the same as
         // reporting a completed verification or saying it is unnecessary.
         if(nominal_request) {
-            const bool necessary=i+1<words.size()&&one_of(words[i+1].text,
-                {"necesaria","necesario","obligatoria","obligatorio",
-                 "requerida","requerido"});
+            const auto requirement=[](std::string_view word) {
+                return one_of(word,{"necesaria","necesario","obligatoria",
+                    "obligatorio","requerida","requerido"});
+            };
+            // Both "revisión necesaria" and "la revisión es necesaria"
+            // are ordinary affirmative requests; a negated predicate
+            // remains rejected by the existing clause-scoped denial gate.
+            const bool necessary=(i+1<words.size()&&
+                requirement(words[i+1].text))||
+                (i+2<words.size()&&
+                 one_of(words[i+1].text,{"es","esta","resulta"})&&
+                 requirement(words[i+2].text));
             // "Se requiere una revision" and "es necesaria una revision"
             // are instructions too. Do not require the adjective to follow
             // its noun, but do require a nearby affirmative modal expression.

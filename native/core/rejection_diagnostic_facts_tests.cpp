@@ -511,8 +511,14 @@ void corrective_actions_require_real_verbs_not_shared_stems() {
             "Rectifique la cantidad.",
             "Modifique los datos.",
             "Ajuste la entrada.",
-            "La revisión es necesaria."
+            "La revisión es necesaria.",
+            "La verificación resulta obligatoria."
         })verify(wording,true);
+        for(const auto wording:{
+            "La revisión no es necesaria.",
+            "No es necesaria la revisión.",
+            "La verificación ya fue realizada."
+        })verify(wording,false);
     }
 }
 
