@@ -29,6 +29,27 @@ using namespace winrt::Windows::Data::Json;
 void require(bool condition,std::string_view reason) {
     if(!condition)throw std::runtime_error(std::string(reason));
 }
+
+// A real on-disk round trip, always under a unique QA instance of Codex.
+// Do not open, migrate or rewrite either personal Work/Codex profile.
+state::StateData reopen_isolated_int_qa_state(
+        const state::StateData& saved,std::wstring_view scenario) {
+    require(!scenario.empty(),"A local-int test needs a named QA instance");
+    const auto label=L"local-int-"+std::wstring(scenario)+
+        L"-"+std::to_wstring(GetCurrentProcessId())+
+        L"-"+std::to_wstring(GetTickCount64());
+    const auto options=LaunchOptions{ProfileId::Codex,label,false};
+    const auto environment=resolve_windows_environment(options);
+    require(environment.options.qa_instance.has_value()&&
+            !environment.options.qa_instance->empty(),
+        "Local-int persistence would target a personal profile");
+    initialize_profile_directories(environment.paths);
+    state::StateStore store(environment.paths.root);
+    (void)store.load();
+    store.save(saved);
+    return store.load();
+}
+
 const Block& owner(const Lesson& lesson) {
     const auto position=stable_block_position(lesson,"block_0004_0002");
     require(position.has_value(),"Published U2L1 compiler owner was not found");
@@ -415,6 +436,20 @@ void validate_current_u2l5_editor_state() {
         visible(restored,true)&&visible(restored,false),
         "Reopening authentic encoded U2L5 receipts lost progress or reader gates");
 
+    const auto disk_reopened=reopen_isolated_int_qa_state(restored,L"u2l5");
+    state::validate_lesson_state(disk_reopened,lesson);
+    verify_drafts(disk_reopened);
+    require(disk_reopened==restored&&
+        compiler_puzzle_completed(disk_reopened,lesson,first)&&
+        compiler_puzzle_completed(disk_reopened,lesson,second)&&
+        visible(disk_reopened,true)&&visible(disk_reopened,false)&&
+        disk_reopened.preferences.at("learning_progress").at("other_course_unchanged")==
+            state::Value{std::int64_t{42}}&&
+        disk_reopened.preferences.at("native_windows").at("unrelated_reader_setting")==
+            state::Value{std::string("keep")},
+        "A real disk reopen merged U2L5 drafts, discarded an editor receipt "
+        "or modified another course or reader setting");
+
     auto reset=restored;
     reset_compiler_puzzle(reset,lesson,second);
     require(compiler_puzzle_completed(reset,lesson,first)&&
@@ -428,7 +463,7 @@ void validate_current_u2l5_editor_state() {
         "Resetting both editors left a visible protected reference");
     std::cout<<"PASS published U2L5 WinRT StateStore: two independent real "
         "objectives, preserved three-editor archive, source-pinned fingerprints, "
-        "separate saved drafts, synthetic receipts, reopen, reference gates "
+        "separate saved drafts, synthetic receipts, real QA-disk reopen, reference gates "
         "and isolated resets; no student execution or audio asserted.\n";
 }
 
@@ -567,18 +602,8 @@ void run() {
     require(compiler_puzzle_completed(decoded,current,block),
         "An encoded state round trip lost the independent local-int proof");
 
-    // The encoded round trip above is not a disk reopen. Exercise the real
-    // Win32 StateStore in a unique QA-only subprofile, never the learner's
-    // Codex profile, and verify the unrelated course and historical receipt.
-    const auto options=LaunchOptions{ProfileId::Codex,
-        L"local-int-u2l1-"+std::to_wstring(GetCurrentProcessId())+
-        L"-"+std::to_wstring(GetTickCount64()),false};
-    const auto environment=resolve_windows_environment(options);
-    initialize_profile_directories(environment.paths);
-    state::StateStore disk_store(environment.paths.root);
-    (void)disk_store.load();
-    disk_store.save(decoded);
-    const auto disk_reopened=disk_store.load();
+    // An in-memory codec round trip is not a disk reopen.
+    const auto disk_reopened=reopen_isolated_int_qa_state(decoded,L"u2l1");
     require(disk_reopened==decoded&&
         compiler_puzzle_completed(disk_reopened,current,block)&&
         saved_local_receipt(disk_reopened)==saved_local_receipt(decoded)&&
