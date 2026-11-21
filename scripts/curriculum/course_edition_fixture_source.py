@@ -89,8 +89,14 @@ def documents() -> tuple[dict[str, object], dict[str, str]]:
     # Publish an isolated two-owner example through the SAME authoring
     # operation available to Work. The Windows loader must accept typed
     # reviewPaths without changing response ownership or option indices.
+    guidance_descriptor = {
+        "version": 1, "courseId": "qa_guidance", "locale": "es",
+        "id": "qa-guidance-1", "generation": 1,
+    }
+    guidance_unit = "qa_guidance__edition_es_1__inicio"
+    guidance_id = guidance_unit + "__guia_autorizada"
     guidance_base = {
-        "id": "qa_edition__edition_es_1__inicio__guia_autorizada",
+        "id": guidance_id,
         "title": "Guía curricular QA",
         "pages": [{"blocks": [
             {"type": "multiple_choice", "question": "Elige un resultado.",
@@ -103,7 +109,7 @@ def documents() -> tuple[dict[str, object], dict[str, str]]:
              "reviewFeedback": "Revisa el literal inicial."},
         ]}],
     }
-    guidance = prepare_edition_lesson(guidance_base, DESCRIPTOR)
+    guidance = prepare_edition_lesson(guidance_base, guidance_descriptor)
     guidance = stable_state_layout.revise_ordinary_editorial(
         guidance, "block_0000_0000", {
             "question": {"text": "Elige el resultado de dos más dos.", "spans": []},
@@ -120,7 +126,9 @@ def documents() -> tuple[dict[str, object], dict[str, str]]:
         })
     paths = {
         "course": "content/es/programming/qa_edition/course_qa_edition.json",
-        "reviewedGuides": "content/es/programming/qa_edition/edition_es_1__inicio/lesson_guia_autorizada.json",
+        "reviewedGuides": "content/es/programming/qa_guidance/edition_es_1__inicio/lesson_guia_autorizada.json",
+        "reviewedGuidesCourse": "content/es/programming/qa_guidance/course_qa_guidance.json",
+        "reviewedGuidesUnit": "content/es/programming/qa_guidance/edition_es_1__inicio/unit_edition_es_1__inicio.json",
         "legacyCourse": "legacy-course.json",
         "legacyUnit": "content/es/programming/qa_edition/original/unit_original.json",
         "legacyLesson": "content/es/programming/qa_edition/original/lesson_primera.json",
@@ -158,6 +166,17 @@ def documents() -> tuple[dict[str, object], dict[str, str]]:
         paths["legacyLesson"]: old,
         paths["lesson"]: current,
         paths["reviewedGuides"]: guidance,
+        paths["reviewedGuidesCourse"]: {
+            "id": "qa_guidance", "title": "Índice técnico de pistas QA",
+            "courseEdition": deepcopy(guidance_descriptor),
+            "units": [{"id": guidance_unit, "number": 1, "title": "Unidad técnica QA"}],
+        },
+        paths["reviewedGuidesUnit"]: {
+            "courseId": "qa_guidance", "unitId": guidance_unit,
+            "title": "Unidad técnica QA",
+            "courseEdition": deepcopy(guidance_descriptor),
+            "lessons": [{"id": guidance_id, "number": 1, "title": "Guía curricular QA"}],
+        },
         paths["nextLesson"]: following,
         "content/es/programming/qa_other/course_qa_other.json": {
             "id": "qa_other", "title": "Curso ajeno QA",

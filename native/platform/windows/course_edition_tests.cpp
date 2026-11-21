@@ -130,7 +130,7 @@ struct Fixture {
             require(originals.contains(file), "El manifiesto señala un recurso ausente.");
             paths.emplace(name, file);
         }
-        require(originals.size() == 12, "El fixture tiene un alcance distinto del esperado.");
+        require(originals.size() == 14, "El fixture tiene un alcance distinto del esperado.");
     }
     fs::path path(std::string_view key) const { return root / relative_path(paths.at(std::string(key))); }
     void old_catalog() { write(path("course"), bytes(path("legacyCourse"))); }
@@ -804,7 +804,7 @@ void reviewed_guidance_loader(const Fixture& fixture) {
     const auto path=fixture.path("reviewedGuides");
     const auto source=bytes(path);
     const auto loaded=windows::load_lesson(path);
-    require(loaded.id=="qa_edition__edition_es_1__inicio__guia_autorizada"
+    require(loaded.id=="qa_guidance__edition_es_1__inicio__guia_autorizada"
             && loaded.state_layout.version==2&&loaded.pages.size()==1
             && loaded.pages[0].blocks.size()==2,
         "The native loader rejected an independently authored guidance edition");
