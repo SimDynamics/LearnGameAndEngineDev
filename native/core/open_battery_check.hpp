@@ -628,7 +628,8 @@ inline OpenBatteryVerdict open_battery_verify_baseline(
        !open_battery_case_numbers_valid(baseline.case_numbers))
         return {false,"Cada comparación necesita un número propio y no repetido.",{}};
     if(baseline.comparison_results.size()!=baseline.calls.size()||
-       std::ranges::any_of(baseline.comparison_results,[](bool correct){return !correct;}))
+       std::ranges::any_of(baseline.comparison_results,
+           [](unsigned char result){return result!=1u;}))
         return {false,"Cada caso original debe devolver una comparación correcta.",{}};
     for(std::size_t i=0;i<original.size();++i) {
         const auto found=std::ranges::find(baseline.calls,original[i]);
@@ -687,7 +688,8 @@ inline OpenBatteryVerdict open_battery_verify(
                 return {false,"El número de una comparación cambió entre ejecuciones.",baseline.added};
             // Only the independently mutated target may fail its comparison.
             // A fabricated failure count or fixed nonzero return is insufficient.
-            const bool should_match=call!=*required.target;
+            const unsigned char should_match=
+                static_cast<unsigned char>(call!=*required.target);
             if(run.comparison_results[index]!=should_match)
                 return {false,"El comparador no detectó exactamente la mutación del caso.",baseline.added};
         }
