@@ -34,11 +34,11 @@ def main() -> int:
         output = Path(tmp)
         emitted = subprocess.run([str(args.emitter.resolve()), str(output)],
                                  capture_output=True, timeout=30, check=True)
-        if b"PASS generated 30" not in emitted.stdout:
+        if b"PASS generated 33" not in emitted.stdout:
             raise RuntimeError("The real source-mutation fixture did not finish")
         sources = sorted(output.glob("*.cpp"))
-        if len(sources) != 30:
-            raise RuntimeError(f"Expected exactly 30 source programs, got {len(sources)}")
+        if len(sources) != 33:
+            raise RuntimeError(f"Expected exactly 33 source programs, got {len(sources)}")
         # Verify that the emitted U2L5 originals remain the EXACT currently
         # authored code references, not a convenient rewritten illustration.
         # The private probes must also match their published values/outputs.
