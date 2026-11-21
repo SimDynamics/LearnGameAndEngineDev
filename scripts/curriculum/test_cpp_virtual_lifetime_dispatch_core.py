@@ -7,6 +7,7 @@ declarations, constructors, destructors, main or saved output cases.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -44,6 +45,25 @@ def main():
     parser.add_argument("--windows",action="store_true")
     args=parser.parse_args()
     original=fixture.original_editor()
+    lesson=json.loads(fixture.LESSON.read_text(encoding="utf-8"))
+    owners=[(p,b) for p,page in enumerate(lesson["stateLayout"]["current"])
+            for b,identity in enumerate(page["blocks"])
+            if identity==fixture.OWNER]
+    if len(owners)!=1:
+        raise AssertionError("U8L6 authentic editor owner changed")
+    p,b=owners[0]
+    editor=lesson["pages"][p]["blocks"][b]
+    if editor["type"]!="cpp_compiler" or editor["initialCode"]!=original:
+        raise AssertionError("U8L6 original source differs from published editor")
+    public_cases=editor["outputCheck"]["cases"]
+    if len(public_cases)!=5:
+        raise AssertionError("U8L6 published public cases changed")
+    for number,case in enumerate(public_cases,1):
+        if (not isinstance(case.get("standardInput"),str) or
+            not isinstance(case.get("outputs"),list) or not case["outputs"] or
+            not all(isinstance(value,str) for value in case["outputs"]) or
+            type(case.get("exitCode",0)) is not int):
+            raise AssertionError(f"Invalid authentic U8L6 public case {number}")
     examples={
         "real_virtual_calls":(fixture.GOOD_REG,fixture.GOOD_WRITE,True),
         "equivalent_virtual_calls":(fixture.ALT_REG,fixture.ALT_WRITE,True),
@@ -58,10 +78,18 @@ def main():
         generator=temp/("probe_generator"+suffix)
         compile_generator(args.compiler,GENERATOR,generator,args.windows)
         published=temp/"original.cpp"
-        published.write_text(original,encoding="utf-8")
+        published.write_bytes(original.encode("utf-8"))
+        # This bad registrar guesses virtual dispatch from the phase label.
+        # It reproduces every public case, but fails when an ordinary live
+        # derived object is queried using a construction/destruction label.
+        public_variants={
+            "real_virtual_calls","equivalent_virtual_calls",
+            "guesses_virtual_dispatch_from_phase_label"
+        }
+        public_runs=0
         for name,(reg,write,expected) in examples.items():
             code=temp/(name+".cpp")
-            code.write_text(fixture.compose(original,reg,write),encoding="utf-8")
+            code.write_bytes(fixture.compose(original,reg,write).encode("utf-8"))
             proof=temp/(name+".private.cpp")
             result=run([str(generator),str(published),str(code),str(proof)])
             if result.returncode or not proof.is_file():
@@ -81,6 +109,36 @@ def main():
                                       observed.stdout,observed.stderr))
             print(f"{args.compiler}: {name}: "
                   f"{'PASS' if accepted else 'REJECT'}",flush=True)
+            # Run the untouched original main in QA, distinct from the
+            # instrumented private driver. Only the first case is compulsory
+            # for the student; all five are internal regression evidence.
+            if name in public_variants:
+                public_binary=temp/(name+"-public"+suffix)
+                public_compiled=fixture.compile_cpp(
+                    args.compiler,code,public_binary,args.windows)
+                if public_compiled.returncode:
+                    raise AssertionError(
+                        (name,"Published U8L6 main failed to compile",
+                         public_compiled.stdout,public_compiled.stderr))
+                for number,case in enumerate(public_cases,1):
+                    visible=subprocess.run(
+                        [str(public_binary)],cwd=ROOT,
+                        input=case["standardInput"],text=True,
+                        encoding="utf-8",errors="replace",
+                        capture_output=True,check=False,timeout=15)
+                    if (visible.returncode!=case.get("exitCode",0) or
+                        visible.stdout not in case["outputs"] or visible.stderr):
+                        raise AssertionError(
+                            (name,number,"Genuine public U8L6 oracle changed",
+                             visible.returncode,
+                             visible.stdout[-500:],visible.stderr[-500:]))
+                    public_runs+=1
+                print(f"{args.compiler}: public {name}: "
+                      f"{len(public_cases)} authored cases PASS; "
+                      f"private dispatch {'PASS' if accepted else 'REJECT'}",
+                      flush=True)
+        if public_runs!=len(public_cases)*len(public_variants):
+            raise AssertionError("U8L6 public QA omitted an expected variant")
         good=fixture.compose(
             original,fixture.GOOD_REG,fixture.GOOD_WRITE)
         forged={
@@ -111,8 +169,10 @@ def main():
             if result.returncode==0:
                 raise AssertionError((name,"Forged source escaped native boundary"))
             print(f"{args.compiler}: {name}: REJECT",flush=True)
-    print("PASS U8L6 independent native source gate, two correct implementations "
-          "and twelve semantic counterexamples, protected class and main.")
+    print("PASS U8L6 native source gate, two correct implementations and "
+          "twelve counterexamples, authentic source and unchanged main; "
+          "all five public cases distinguish neither correct dispatch "
+          "from the phase-label shortcut nor replace private semantics.")
 
 
 if __name__=="__main__":
