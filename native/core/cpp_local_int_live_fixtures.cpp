@@ -44,7 +44,7 @@ int main(int argc,char** argv) try {
     if(argc!=2)return 2;
     const std::filesystem::path directory=argv[1];
     std::filesystem::create_directories(directory);
-    const std::array<Scenario,9> examples{{
+    const std::array<Scenario,11> examples{{
         {"u2l1_llaves_7",
             R"CPP(#include <iostream>
 int main(){int llaves=3+4; std::cout<<"Llaves: "<<llaves;})CPP",
@@ -71,6 +71,20 @@ std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;})CPP",
             "Cajas: 0\nSobres: 2",
             {{{"cajas",6,{}},{"sobres",17,{}},{}}},
             {{"Cajas: 6\nSobres: 2","Cajas: 0\nSobres: 17",""}},2},
+        {"u2l2_grouped_int_braces",
+            R"CPP(#include <iostream>
+int main(){int cajas{4}, sobres{9};
+std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;})CPP",
+            "Cajas: 4\nSobres: 9",
+            {{{"cajas",13,{}},{"sobres",17,{}},{}}},
+            {{"Cajas: 13\nSobres: 9","Cajas: 4\nSobres: 17",""}},2},
+        {"u2l2_grouped_assignments",
+            R"CPP(#include <iostream>
+int main(){int cajas, sobres; cajas=4; sobres=9;
+std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;})CPP",
+            "Cajas: 4\nSobres: 9",
+            {{{"cajas",13,{}},{"sobres",17,{}},{}}},
+            {{"Cajas: 13\nSobres: 9","Cajas: 4\nSobres: 17",""}},2},
         {"u2l2_signed_type_spellings",
             R"CPP(#include <iostream>
 int main(){int signed cajas{4}; signed sobres=9;
@@ -203,8 +217,14 @@ int main() {
     if(!missing_addend)throw std::runtime_error("Cannot probe hard-coded U2L5 addend");
     emit(directory,"reject_u2l5_fixed_addend",*missing_addend,"Parte: 3.75 m",false);
     ++emitted;
-    if(emitted!=33)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 33 isolated C++ executions for eight U2 owners, one signed-type spelling and six adversaries\n";
+    // Varying cajas after a multi-declarator statement would be too late
+    // to observe a sibling initialized from cajas. Reject this structurally.
+    if(cpp_local_int_override(
+        "int main(){int cajas=4, sobres=cajas+5; std::cout<<cajas<<sobres;}",
+        {"cajas",13,{}}))
+        throw std::runtime_error("A grouped dependent int could receive false credit");
+    if(emitted!=39)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 39 isolated C++ executions for U2 integer owners, grouped declarations and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';
