@@ -45,9 +45,23 @@ int main(int argc,char** argv) {
                 };
                 replace_range("–");replace_range("—");
                 const auto ascii_forward=lgaed::windows::bibliography::only_parenthetical_locator_removal(ascii,after);
+                const auto before_utf16=winrt::to_hstring(before);
+                const auto ascii_utf16=winrt::to_hstring(ascii);
+                auto source_wide=std::wstring_view(before_utf16.c_str(),before_utf16.size());
+                auto ascii_wide=std::wstring_view(ascii_utf16.c_str(),ascii_utf16.size());
+                const auto locate_dash=[](std::wstring_view text){
+                    std::string result;
+                    for(std::size_t i=0;i<text.size();++i)
+                        if(text[i]==L'-'||text[i]==L'\\u2013'||text[i]==L'\\u2014') {
+                            result+=std::to_string(i)+"/"+std::to_string(static_cast<unsigned>(text[i]))+";";
+                        }
+                    return result;
+                };
                 std::cerr<<"Bibliography range debug: singular/original="<<before
                     <<" original="<<forward<<" reverse="<<reverse
-                    <<" ascii="<<ascii_forward<<" asciiBefore="<<ascii<<"\n";
+                    <<" ascii="<<ascii_forward<<" asciiBefore="<<ascii
+                    <<" utf16Original="<<locate_dash(source_wide)
+                    <<" utf16Ascii="<<locate_dash(ascii_wide)<<"\n";
                 throw std::runtime_error("Valid bibliography range failed or allowed reversal: "+std::string(tail));
             }
         }
