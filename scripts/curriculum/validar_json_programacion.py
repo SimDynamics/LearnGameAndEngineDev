@@ -1708,10 +1708,14 @@ def preserves_previous_exercise(relative, pn, bn, old, current, *,
         return current == old
     old = without_review_feedback(old)
     current = without_review_feedback(current)
-    # La explicación opcional nueva de inline no reemplaza ningún dato anterior.
-    # Si ya existía en el bloque de referencia, su texto sigue protegido.
-    if old.get("type") == "inline_fill_code" and "explanation" not in old:
-        current = {key: value for key, value in current.items() if key != "explanation"}
+    # An added inline-fill explanation is public educational prose, not an
+    # answer extension. It must pass the authenticated ordinary editorial
+    # revision above, even when the original owner had no explanation at all.
+    # Stripping an unsigned new explanation to force equality would bypass
+    # the provenance, narrated-spans and published-identity safeguards.
+    if old.get("type") == "inline_fill_code" and "explanation" not in old \
+            and "explanation" in current:
+        return False
     if current == old:
         return True
     # A foreign course path is not a legitimate historical Programación 1

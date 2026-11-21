@@ -50,6 +50,56 @@ def check_provenance(test, before, after, changed_paths):
 
 
 class ReviewFeedbackProseRevisionTest(unittest.TestCase):
+    def test_new_inline_explanation_requires_authenticated_review(self):
+        # A formerly absent explanation cannot be silently dropped by the
+        # legacy comparison and credited as unchanged educational material.
+        source = {
+            "id": "cpp_fundamentals__qa__guidance_edition",
+            "title": "Fixture without an explanation",
+            "pages": [{"blocks": [{
+                "type": "inline_fill_code",
+                "question": "Completa el código.",
+                "language": "cpp", "template": "int [] = 3;",
+                "answers": ["cantidad"],
+            }]}],
+        }
+        before = layout.prepare_v2(source, "es", {"es": source})
+        original = layout._blocks(before)[IDENTITY]
+        self.assertNotIn("explanation", original)
+        forged = deepcopy(before)
+        unproven = layout._blocks(forged)[IDENTITY]
+        unproven["explanation"] = "El identificador guarda un número entero."
+        self.assertNotEqual(original, unproven)
+        self.assertFalse(contract.preserves_previous_exercise(
+            PATH, 0, 0, original, unproven,
+            previous_document=before, current_document=forged))
+        self.assertFalse(contract.preserves_previous_exercise(
+            PATH, 0, 0, original, unproven))
+        with self.assertRaises(ValueError):
+            layout.validate_transition(before, forged)
+        approved = layout.revise_ordinary_editorial(before, IDENTITY, {
+            "explanation": {
+                "text": unproven["explanation"], "spans": [],
+            },
+        })
+        current = layout._blocks(approved)[IDENTITY]
+        self.assertEqual(current["answers"], original["answers"])
+        self.assertEqual(current["template"], original["template"])
+        self.assertTrue(contract.preserves_previous_exercise(
+            PATH, 0, 0, original, current,
+            previous_document=before, current_document=approved))
+        self.assertEqual(len(approved["stateLayout"]["editorial"]),
+                         len(before["stateLayout"]["editorial"]) + 1)
+        self.assertIn(
+            (IDENTITY, "/explanation"),
+            {(field["block"], field["path"])
+             for field in approved["textSemantics"]["fields"]})
+        tampered = deepcopy(approved)
+        tampered["stateLayout"]["editorial"][-1]["afterSha256"] = "0" * 64
+        self.assertFalse(contract.preserves_previous_exercise(
+            PATH, 0, 0, original, layout._blocks(tampered)[IDENTITY],
+            previous_document=before, current_document=tampered))
+
     def test_string_guidance_with_question_or_explanation(self):
         for kind in ("fill_code", "output_prediction"):
             for prose in ("question", "explanation"):
