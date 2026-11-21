@@ -167,17 +167,68 @@ struct Declaration {
     bool initialized;
 };
 
+// Walk all declarators in one complete signed/int statement. An inserted
+// mutation belongs AFTER the final semicolon, never between declarators.
+// Reject pointers, references, arrays, duplicate names and a later initializer
+// that reads the probed int: mutating after the statement would otherwise
+// miss that data dependency and could falsely credit an independent output.
+inline std::optional<Declaration> simple_int_declaration(
+        const Tokens& code, std::size_t at, std::size_t closing,
+        std::string_view variable) {
+    const std::string wanted="id:"+std::string(variable);
+    std::optional<bool> initialized;
+    for(;;) {
+        if(at+1>=closing||!code[at].value.starts_with("id:")||
+           !cpp_expression_repair_detail::identifier(
+               std::string_view(code[at].value).substr(3)))return {};
+        const bool owns=code[at].value==wanted;
+        const auto first=code[at+1].value;
+        if(first!="op:="&&first!="op:{"&&first!="op:("&&
+           first!="op:,"&&first!="op:;")return {};
+        if(owns) {
+            if(initialized)return {};
+            initialized=first!="op:,"&&first!="op:;";
+        }
+        std::size_t parentheses=0,braces=0,brackets=0;
+        std::size_t end=at+1;
+        for(;end<closing;++end) {
+            const auto& token=code[end].value;
+            if(!parentheses&&!braces&&!brackets&&
+               (token=="op:,"||token=="op:;"))break;
+            // A sibling initialized from this value would be frozen before
+            // our after-statement variation, giving a misleading result.
+            if(token==wanted)return {};
+            if(token=="op:(")++parentheses;
+            else if(token=="op:{")++braces;
+            else if(token=="op:[")++brackets;
+            else if(token=="op:)") {
+                if(!parentheses)return {};
+                --parentheses;
+            }else if(token=="op:}") {
+                if(!braces)return {};
+                --braces;
+            }else if(token=="op:]") {
+                if(!brackets)return {};
+                --brackets;
+            }
+        }
+        if(end>=closing||parentheses||braces||brackets)return {};
+        if(code[end].value=="op:;")
+            return initialized?std::optional<Declaration>{
+                Declaration{end,*initialized}}:std::nullopt;
+        at=end+1;
+    }
+}
+
 inline std::optional<Declaration> local_declaration(
         const Tokens& code, std::size_t opening, std::size_t closing,
         std::string_view variable) {
     std::optional<Declaration> result;
     std::size_t braces = 1, parentheses = 0, brackets = 0;
-    const auto wanted = "id:" + std::string(variable);
     for (auto i = opening + 1; i < closing; ++i) {
         const auto& t = code[i].value;
         // signed, signed int and int signed all declare the C++ type int.
-        // Match the start of a complete root-level declaration only. This
-        // avoids mistaking the 'int' in 'signed int name' for a second owner.
+        // Match only complete main-body declarations, not nested scopes.
         if (braces == 1 && !parentheses && !brackets &&
             i > 0 && boundary(code[i - 1].value) &&
             (t == "id:int" || t == "id:signed")) {
@@ -186,14 +237,12 @@ inline std::optional<Declaration> local_declaration(
                 ((t == "id:signed" && code[name].value == "id:int") ||
                  (t == "id:int" && code[name].value == "id:signed")))
                 ++name;
-            if (name + 1 < closing && code[name].value == wanted) {
-                if (result) return {};
-                const auto& start = code[name + 1].value;
-                if (start != "op:=" && start != "op:{" &&
-                    start != "op:(" && start != "op:;") return {};
-                const auto end = statement_end(code, name + 1, closing);
-                if (!end) return {};
-                result = Declaration{*end, start != "op:;"};
+            if(name < closing) {
+                if(const auto found=simple_int_declaration(
+                        code,name,closing,variable)) {
+                    if(result)return {};
+                    result=*found;
+                }
             }
         }
         if (t == "op:{") ++braces;
