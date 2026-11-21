@@ -321,6 +321,30 @@ void unsafe_ambiguous_and_other_scope_are_rejected() {
         {"llaves", 15}), "Ambiguous main functions were accepted");
 }
 
+void local_probe_names_follow_real_cpp_token_boundaries() {
+    const std::string source=
+        "int main(){int llaves{7};std::cout<<llaves;}";
+    for(const auto* bad:{
+            "9llaves", "llaves-extra", "llaves.codigo",
+            "llaves codigo", "true", "false", "nullptr", "__oculta",
+            "llaves\notra"}) {
+        lgaed::curriculum::CppLocalIntCheck spec{
+            {{bad,13,{"Llaves: 13"}}}};
+        require(!lgaed::curriculum::cpp_local_int_check_valid(spec)&&
+                !cpp_local_int_override(source,{bad,13}),
+            "An invalid C++ identifier was accepted as a local-int owner");
+    }
+    const std::string unicode=
+        "int main(){int número{7};std::cout<<número;}";
+    const auto variation=cpp_local_int_override(unicode,{"número",13});
+    lgaed::curriculum::CppLocalIntCheck valid{
+        {{"número",13,{"Llaves: 13"}}}};
+    require(variation&&
+            variation->find("número = 13;")!=std::string::npos&&
+            lgaed::curriculum::cpp_local_int_check_valid(valid),
+        "The source tokenizer's non-ASCII identifiers were accidentally disabled");
+}
+
 void int32_limits_and_old_text_are_preserved() {
     const std::string source = "int main() { int llaves{}; std::cout << llaves; }";
     const auto low = cpp_local_int_override(source, {"llaves", INT32_MIN});
@@ -445,6 +469,7 @@ int main() {
         separate_assignment_and_copy_before_update();
         comments_literals_and_similar_names_are_inert();
         unsafe_ambiguous_and_other_scope_are_rejected();
+        local_probe_names_follow_real_cpp_token_boundaries();
         int32_limits_and_old_text_are_preserved();
         expected_outputs_are_independent_and_reversible();
         changed_increase_is_observed_at_the_actual_update();
