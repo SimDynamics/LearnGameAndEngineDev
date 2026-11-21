@@ -533,11 +533,11 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
         "The current U2L5 regression no longer owns two required executable objectives");
     // A fresh QA bookmark at page six is not enough for forward navigation:
     // the current lesson requires the first six pages and their ordinary
-    // activities. Evaluate the authored answers in a private state store and
-    // record those page visits in order. Do not seed a compiler receipt or
-    // claim that the student's real profile completed any of these pages.
+    // activities. Start on page zero, evaluate the authored answers and record
+    // each page visit in order BEFORE reaching the first compiler page. Never
+    // seed a compiler receipt or claim that a student's profile studied them.
     constexpr std::size_t prior_ordinary=14;
-    Fixture f(backend,false,true,true,"es",lesson,false,first.page,false,true,{},
+    Fixture f(backend,false,true,true,"es",lesson,false,0,false,true,{},
         [&](state::StateData& data){
             using namespace winrt::Windows::Data::Json;
             std::size_t solved=0;
@@ -595,6 +595,10 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
             }
             check(solved==prior_ordinary&&state::can_reach_page(data,lesson,first.page),
                 "The current U2L5 prefix changed its fourteen isolated prerequisites");
+            state::save_current_page(data,lesson,first.page);
+            check(state::current_page(data,lesson)==first.page&&
+                  state::page_reachability(data,lesson).first_unreached==first.page+1,
+                "The U2L5 QA bookmark did not follow the six sequential prerequisite pages");
             state::validate_lesson_state(data,lesson);
             data.preferences["u2l5_reader_qa"]["synthetic_ordinary_prefix"]=static_cast<std::int64_t>(solved);
         });
