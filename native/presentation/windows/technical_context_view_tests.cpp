@@ -438,6 +438,16 @@ void current_u2_roles(){
             if(page==3){const auto index=block_at("block_0003_0001",page);const auto target=fixture.item(index,0);
                 const auto& paragraph=lesson.pages[page].blocks[index];
                 verify_u2_text_semantic_ranges(fixture,target,paragraph);
+                const auto semantic=paragraph.text_semantics.find("/text");
+                check(semantic!=paragraph.text_semantics.end(),
+                    "The current boletos paragraph lost its authored semantic map");
+                for(const std::string_view variable:{"boletos_disponibles","boletos_registrados"}){
+                    check(std::ranges::any_of(semantic->second.spans,[&](const auto& span){
+                        return span.role==curriculum::SemanticRole::cpp&&
+                            span.text.starts_with("int ")&&
+                            span.text.find(variable)!=std::string::npos;
+                    }),"A current U2 boletos declaration lost its exact C++ ink and range");
+                }
                 // Only explicitly marked list numerals may receive a
                 // technical background. In the revised edition, unmarked
                 // "1." through "4." remain ordinary prose.
