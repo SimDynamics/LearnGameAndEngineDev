@@ -13,6 +13,11 @@ on:
       - native/platform/windows/content_loader.cpp
       - scripts/curriculum/course_edition_fixture_source.py
       - native/platform/windows/local_int_state_tests.cpp
+      - native/platform/windows/local_string_state_tests.cpp
+      - native/core/cpp_local_string_probe.hpp
+      - native/core/lesson.hpp
+      - native/platform/windows/cpp_runner.hpp
+      - scripts/curriculum/test_local_string_probe_authoring.py
       - native/platform/windows/u6l19_case_split_state_tests.cpp
       - native/platform/windows/u3_runtime_semantics_tests.cpp
       - native/platform/windows/named_rule_runtime_tests.cpp
@@ -83,7 +88,7 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           cmake -S cmake/HostedCourseEditionQA -B $build -G Ninja -DCMAKE_BUILD_TYPE=Debug
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build $build --target lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
+          cmake --build $build --target lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Execute edition replacement, native quiz, scoped reset and reopen
         shell: pwsh
@@ -120,6 +125,12 @@ jobs:
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           ctest --test-dir $build -R '^native[.]current_u2_local_int_state$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u2-local-int-state.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify U2L7 string variables through actual hosted MSVC and StateStore
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]current_u2_local_string_state$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u2-local-string-state.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Check nine current inline-fill controls through real Win32 LessonView
         shell: pwsh
@@ -159,6 +170,7 @@ jobs:
             ${{ runner.temp }}/lgaed-course-edition-qa/current-u2-win32.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l6-reading-gate.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u2-local-int-state.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/u2-local-string-state.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/inline-feedback-win32.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u6l19-case-split-state.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u3-runtime-semantic-probes.xml

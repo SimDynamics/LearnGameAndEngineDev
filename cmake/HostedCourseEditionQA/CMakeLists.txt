@@ -206,6 +206,14 @@ add_test(NAME native.current_u2_local_int_state
 set_tests_properties(native.current_u2_local_int_state
     PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
 
+# Test the original U2L7 owners with the unchanged production MSVC runner.
+# Keep all prospective curriculum authoring and stored progress in isolated QA.
+add_executable(lgaed_local_string_state_tests
+    "${_lgaed_root}/native/platform/windows/local_string_state_tests.cpp")
+target_link_libraries(lgaed_local_string_state_tests PRIVATE lgaed_platform_windows)
+add_test(NAME native.current_u2_local_string_state COMMAND lgaed_local_string_state_tests)
+set_tests_properties(native.current_u2_local_string_state PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
+
 # Test the nine current inline-answer Win32 controls through the original
 # production LessonView translation unit (no copied mock implementation).
 # The fixture's prior completions are modelled, NOT student executions or
