@@ -7,6 +7,7 @@ curriculum JSON are untouched.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -45,6 +46,27 @@ def main() -> None:
     parser.add_argument("--windows", action="store_true")
     arguments = parser.parse_args()
     original=fixture.original_editor()
+    # Resolve every oracle through the authentic current stable owner.
+    # No answer is inferred from the source or a copied example.
+    lesson=json.loads(fixture.LESSON.read_text(encoding="utf-8"))
+    owners=[(i,j) for i,page in enumerate(lesson["stateLayout"]["current"])
+            for j,identity in enumerate(page["blocks"]) if identity==fixture.OWNER]
+    if len(owners)!=1:
+        raise AssertionError("Original U8L5 owner is missing or duplicated")
+    i,j=owners[0]
+    editor=lesson["pages"][i]["blocks"][j]
+    if editor["type"]!="cpp_compiler" or editor["initialCode"]!=original:
+        raise AssertionError("U8L5 public editor differs from native probe source")
+    public_cases=editor["outputCheck"]["cases"]
+    if len(public_cases)!=5:
+        raise AssertionError("U8L5 published public case count changed")
+    for index,case in enumerate(public_cases,1):
+        if (not isinstance(case.get("standardInput"),str) or
+            not isinstance(case.get("outputs"),list) or
+            not case["outputs"] or
+            not all(isinstance(value,str) for value in case["outputs"]) or
+            type(case.get("exitCode",0)) is not int):
+            raise AssertionError(f"Invalid published U8L5 case {index}")
     cases = {
         "direct_derived_factory": (
             fixture.GOOD_BASE, fixture.GOOD_DERIVED,
@@ -71,12 +93,19 @@ def main() -> None:
         tool=folder / ("polymorphic_generator" + suffix)
         build(arguments.compiler, CPP, tool, arguments.windows)
         original_path=folder / "published.cpp"
-        original_path.write_text(original, encoding="utf-8")
+        original_path.write_bytes(original.encode("utf-8"))
+        # A destructor that assigns zero to a live-object counter happens to
+        # pass all five public cases (which hold only one object at a time).
+        # The separately compiled driver must reject it with two live owners.
+        public_variants={
+            "direct_derived_factory","independent_move_factory",
+            "base_resets_all_live_objects"
+        }
+        public_runs=0
         for name, (base, derived, factory, expected) in cases.items():
             code=folder / (name + ".cpp")
-            code.write_text(
-                fixture.compose(original, base, derived, factory),
-                encoding="utf-8")
+            code.write_bytes(
+                fixture.compose(original, base, derived, factory).encode("utf-8"))
             private=folder / (name + ".private.cpp")
             generated=run([str(tool), str(original_path), str(code), str(private)])
             if generated.returncode or not private.is_file():
@@ -94,6 +123,32 @@ def main() -> None:
                      observed.returncode, observed.stdout, observed.stderr))
             print(f"{arguments.compiler}: {name}: "
                   f"{'PASS' if passed else 'REJECT'}", flush=True)
+            # Public cases 2-5 remain optional for the learner. Running
+            # them in disposable QA must never replace the private semantic
+            # requirement or create a learner completion receipt.
+            if name in public_variants:
+                public_binary=folder/(name+"-public"+suffix)
+                build(arguments.compiler,code,public_binary,arguments.windows)
+                for index,case in enumerate(public_cases,1):
+                    visible=subprocess.run(
+                        [str(public_binary)],cwd=ROOT,
+                        input=case["standardInput"],text=True,
+                        encoding="utf-8",errors="replace",
+                        capture_output=True,check=False,timeout=15)
+                    if (visible.returncode!=case.get("exitCode",0) or
+                        visible.stdout not in case["outputs"] or
+                        visible.stderr):
+                        raise AssertionError(
+                            (name,index,"Authentic public U8L5 result changed",
+                             visible.returncode,visible.stdout[-500:],
+                             visible.stderr[-500:]))
+                    public_runs+=1
+                print(f"{arguments.compiler}: public {name}: "
+                      f"{len(public_cases)} authentic cases PASS; "
+                      f"private semantics {'PASS' if passed else 'REJECT'}",
+                      flush=True)
+        if public_runs!=len(public_variants)*len(public_cases):
+            raise AssertionError("U8L5 public/private comparison omitted a case")
 
         valid=fixture.compose(
             original, fixture.GOOD_BASE, fixture.GOOD_DERIVED,
@@ -122,8 +177,11 @@ def main() -> None:
             if generated.returncode == 0:
                 raise AssertionError((name, "protected student source was altered"))
             print(f"{arguments.compiler}: {name}: REJECT", flush=True)
-    print("PASS original-source U8L5 three-body private code and "
-          "counterexamples; no history or curriculum files modified.")
+    print("PASS original U8L5 source and three-body private probe: "
+          "two valid implementations and the false-positive destructor "
+          "matched all five authentic public cases, but only the valid "
+          "implementations satisfied the private lifetime checks. "
+          "No history or curriculum files modified.")
 
 
 if __name__ == "__main__":
