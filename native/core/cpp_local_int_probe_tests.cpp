@@ -463,6 +463,47 @@ void changed_increase_is_observed_at_the_actual_update() {
         "A repeated after-update mutation was treated as a distinct probe");
 }
 
+void neutral_updates_cannot_fake_u2l3_increase() {
+    const std::string prefix=
+        "#include <iostream>\nint main(){int aforo{5};"
+        "int anterior=aforo;";
+    const std::string output=
+        "std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo+3;}";
+    for(const auto* unchanged:{
+        "aforo=aforo+0;",
+        "aforo=(aforo+0);",
+        "aforo=aforo+(0);",
+        "aforo=0+aforo;",
+        "aforo=aforo-0;",
+        "aforo=aforo*1;",
+        "aforo=1*aforo;",
+        "aforo=aforo/1;",
+        "aforo+=0;",
+        "aforo-=(0x0u);",
+        "aforo=aforo+00;",
+        "aforo=(aforo);"
+    }) {
+        const auto program=prefix+unchanged+output;
+        require(!cpp_local_int_override(program,{"aforo",4,{},true}),
+            "A neutral state operation was credited as the original increase");
+    }
+    // A harmless no-op does not disqualify a subsequent genuine update.
+    const auto later=cpp_local_int_override(
+        prefix+"aforo=aforo+0;aforo+=3;std::cout<<aforo;}",
+        {"aforo",4,{},true});
+    require(later&&
+        later->find("aforo+=3;\n    aforo += 4;\n")!=std::string::npos&&
+        later->find("aforo=aforo+0;")<
+            later->find("aforo += 4;"),
+        "A harmless earlier neutral expression obscured the later real increase");
+    const auto combined=cpp_local_int_override(
+        prefix+"aforo=aforo+0+3;std::cout<<aforo;}",
+        {"aforo",4,{},true});
+    require(combined&&
+        combined->find("aforo=aforo+0+3;\n    aforo += 4;\n")!=std::string::npos,
+        "A genuine update with a redundant zero was rejected");
+}
+
 void expected_outputs_are_independent_and_reversible() {
     using lgaed::curriculum::CppLocalIntCheck;
     using lgaed::curriculum::cpp_local_int_check_valid;
@@ -505,6 +546,7 @@ int main() {
         int32_limits_and_old_text_are_preserved();
         expected_outputs_are_independent_and_reversible();
         changed_increase_is_observed_at_the_actual_update();
+        neutral_updates_cannot_fake_u2l3_increase();
         std::cout << "PASS local int probes: equivalent initialization, independent "
                      "variables, copy state, safe token positions.\n";
         return 0;
