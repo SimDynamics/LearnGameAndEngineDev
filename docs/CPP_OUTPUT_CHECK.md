@@ -3936,9 +3936,14 @@ neutras como `aforo = aforo + 0`, `aforo += 0`,
 `aforo = 0 + aforo` y `aforo = aforo * 1`. Si existe un aumento
 posterior inequívoco, la sonda se coloca después de ese aumento, no
 después del cálculo neutro. Se preservan expresiones con un cambio real,
-como `aforo = aforo + 0 + 3`. Esta barrera es estructural y
-conservadora: no sustituye la compilación real de las variantes ni
-pretende demostrar el resultado de expresiones C++ arbitrarias.
+como `aforo = aforo + 0 + 3`. Los literales de identidad
+solo se reconocen si realmente representan cero o uno en su base:
+`01`, `0x01` y `0b01` equivalen a uno, pero `10`, `010`,
+`0x10` y `0b10` no. Una multiplicación por diez debe poder
+someterse a la variación real, no descartarse como si fuese neutra.
+Esta barrera es estructural y conservadora: no sustituye la
+compilación real de las variantes ni pretende demostrar el
+resultado de expresiones C++ arbitrarias.
 
 Las demás sondas independientes y sus salidas siguen siendo obligatorias
 para acreditar la dependencia del valor inicial y de la copia.
