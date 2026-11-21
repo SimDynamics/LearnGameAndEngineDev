@@ -300,10 +300,20 @@ int main() {
             count_receipts(saved)==2,
         "Second independent string contract reused a receipt from the first");
 
-    state::StateStore store(environment.paths.root);
-    (void)store.load();
-    store.save(saved);
-    const auto reopened=store.load();
+    require(environment.options.qa_instance.has_value()&&
+            !environment.options.qa_instance->empty(),
+        "U2L7 persistence test would target a personal profile");
+    {
+        state::StateStore writer(environment.paths.root);
+        require(writer.empty(),
+            "The supposedly fresh U2L7 QA instance contains old progress");
+        (void)writer.load();
+        writer.save(saved);
+    }
+    state::StateStore reader(environment.paths.root);
+    require(!reader.empty(),
+        "The U2L7 QA write did not publish its active state file");
+    const auto reopened=reader.load();
     require(compiler_puzzle_completed(reopened,reviewed,owner(reviewed,first))&&
             compiler_puzzle_completed(reopened,reviewed,owner(reviewed,second))&&
             count_receipts(reopened)==2,
