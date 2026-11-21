@@ -108,6 +108,33 @@ inline bool qualified_member_name(const Tokens& code,std::size_t index) {
     return previous=="op:."||previous=="op:->"||previous=="op:::";
 }
 
+// The private probe recompiles a modified file. A learner must not be able
+// to produce the "changed" stdout from the probe's extra source lines,
+// file name, build time or a premature exit rather than the local int.
+// Inspect lexical identifiers only: comments and C++ string/raw literals
+// explaining __LINE__ or exit are inert and must remain admissible.
+inline bool recompile_observation_neutral(const Tokens& code) {
+    constexpr std::string_view sensitive[]{
+        "__LINE__", "__FILE__", "__FILEW__", "__BASE_FILE__", "__COUNTER__",
+        "__INCLUDE_LEVEL__", "__DATE__", "__TIME__", "__TIMESTAMP__",
+        "__func__", "__FUNCTION__", "__PRETTY_FUNCTION__", "__FUNCSIG__",
+        "__FUNCDNAME__", "__builtin_LINE", "__builtin_COLUMN",
+        "__builtin_FILE", "__builtin_FUNCTION", "__builtin_source_location",
+        "source_location",
+        // An early process exit can bypass the after-update state witness.
+        // These are not required by elementary local-variable exercises.
+        "exit", "_Exit", "_exit", "quick_exit", "_c_exit", "ExitProcess",
+        "ExitThread", "TerminateProcess", "TerminateJobObject",
+        "_endthread", "_endthreadex", "abort", "terminate",
+        "longjmp", "_longjmp", "siglongjmp"
+    };
+    return std::ranges::none_of(code,[&](const Token& token) {
+        if(!token.value.starts_with("id:"))return false;
+        const auto name=std::string_view(token.value).substr(3);
+        return std::ranges::find(sensitive,name)!=std::end(sensitive);
+    });
+}
+
 inline std::optional<Tokens> lexical(std::string_view source) {
     auto parsed = cpp_expression_repair_detail::tokens(source);
     if (!parsed || !cpp_expression_repair_detail::source_tokens_valid(*parsed))
@@ -116,6 +143,7 @@ inline std::optional<Tokens> lexical(std::string_view source) {
     code.reserve(parsed->size());
     for (auto& item : *parsed)
         if (!item.value.starts_with("comment:")) code.push_back(std::move(item));
+    if(!recompile_observation_neutral(code))return {};
     return code;
 }
 

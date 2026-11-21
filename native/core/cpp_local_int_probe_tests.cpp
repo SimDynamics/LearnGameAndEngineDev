@@ -619,6 +619,43 @@ void opaque_noop_requires_runtime_state_change() {
 }
 
 
+void private_recompile_cannot_consume_build_markers_or_exit_early() {
+    const std::string beginning=
+        "#include <iostream>\n#include <cstdlib>\n#include <source_location>\n"
+        "int main(){int llaves{7};llaves+=3;\n";
+    const std::string ending="std::cout<<llaves;return 0;}\n";
+    // Both initial replacement and after-update deltas must use the same
+    // protected source analysis, not trust a location-dependent report.
+    for(const auto* hostile:{
+        "__LINE__;", "__FILE__;", "__COUNTER__;", "__BASE_FILE__;",
+        "__INCLUDE_LEVEL__;", "__DATE__;", "__TIME__;", "__TIMESTAMP__;",
+        "__func__;", "__PRETTY_FUNCTION__;", "__FUNCSIG__;",
+        "__builtin_LINE();", "__builtin_FILE();",
+        "std::source_location::current().line();",
+        "std::exit(0);", "std::quick_exit(0);", "std::_Exit(0);",
+        "ExitProcess(0);", "TerminateProcess(0,0);"
+    }) {
+        const auto candidate=beginning+hostile+ending;
+        require(!cpp_local_int_override(candidate,{"llaves",13,{},false})&&
+                !cpp_local_int_override(candidate,{"llaves",4,{},true}),
+            "A build-derived observation or early exit bypassed the private int gate");
+    }
+    const std::string harmless=beginning+
+        "// __LINE__, __FILE__, std::exit(0), source_location\n"
+        "const char* plain=\"__COUNTER__ __DATE__ quick_exit\";\n"
+        "const char* raw=R\"help(__FILE__ __builtin_LINE() std::exit(0))help\";\n"
+        "(void)plain;(void)raw;\n"+ending;
+    const auto original=harmless;
+    const auto initial=cpp_local_int_override(harmless,{"llaves",13,{},false});
+    const auto after=cpp_local_int_override(harmless,{"llaves",4,{},true});
+    require(initial&&after&&harmless==original&&
+            initial->find("__COUNTER__ __DATE__ quick_exit")!=std::string::npos&&
+            after->find("R\"help(__FILE__ __builtin_LINE() std::exit(0))help\"")!=
+                std::string::npos&&
+            after->find("llaves += 4;")!=std::string::npos,
+        "Inert comments or literals were confused with an active build marker");
+}
+
 void private_marker_in_comments_and_strings_is_not_an_identifier() {
     const std::string identifier="lgaed_local_int_before_6cb8e71d";
     const std::string source=
@@ -781,6 +818,7 @@ int main() {
         composed_neutral_updates_cannot_fake_u2l3_increase();
         opaque_noop_requires_runtime_state_change();
         private_marker_in_comments_and_strings_is_not_an_identifier();
+        private_recompile_cannot_consume_build_markers_or_exit_early();
         private_delta_respects_signed_int_bounds();
         crlf_after_update_preserves_source_and_comment();
         numeric_literal_identity_distinguishes_one_from_ten();
