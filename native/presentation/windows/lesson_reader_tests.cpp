@@ -1984,12 +1984,18 @@ void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWo
     const auto first_cpp=std::ranges::find_if(descriptor->second.spans,[](const auto& span){
         return span.role==curriculum::SemanticRole::cpp;
     });
+    const auto copied_cpp=std::ranges::find_if(descriptor->second.spans,[](const auto& span){
+        return span.role==curriculum::SemanticRole::cpp&&span.text.starts_with("int ")&&
+            span.text.find("boletos_registrados")!=std::string::npos;
+    });
     check(first_cpp!=descriptor->second.spans.end()&&first_cpp->text.starts_with("int ")&&
-          first_cpp->text.size()>4,
-        "U2L3 reading regression needs a current complete int declaration");
-    const std::array<Case,3> cases{{
-        {first.page,first.block,false,first_cpp->text,4,
-         paragraph.text.substr(0,paragraph.text.find(' '))},
+          first_cpp->text.find("boletos_disponibles")!=std::string::npos&&
+          copied_cpp!=descriptor->second.spans.end(),
+        "U2L3 reading regression needs both active boletos declarations");
+    const auto ordinary=paragraph.text.substr(0,paragraph.text.find(' '));
+    const std::array<Case,4> cases{{
+        {first.page,first.block,false,first_cpp->text,4,ordinary},
+        {first.page,first.block,false,copied_cpp->text,4,ordinary},
         {multiplication.page,multiplication.block,false,"produce 15",8,"Una asignación como"},
         {decision.page,decision.block,true,"++turnos;",2,"aumenta"}
     }};
