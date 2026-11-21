@@ -1,0 +1,36 @@
+name: Codex MSVC assertion migration baseline (Windows)
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-native-assertion-migration.yml
+      - scripts/curriculum/test_native_assertions_msvc.py
+      - native/core/assertion_runtime_check.hpp
+      - native/platform/windows/cpp_runner.cpp
+      - native/platform/windows/cpp_runner_tests.cpp
+      - native/platform/windows/compiler_completion.cpp
+      - native/platform/windows/content_loader.cpp
+      - native/presentation/windows/lesson_view.cpp
+      - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_comprobar_acuerdos_internos_con_aserciones.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-assertions:
+    name: Three authentic U3L9 assertions with native MSVC C++23
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile and run unchanged, NDEBUG and repaired sources plus hidden cases
+        shell: pwsh
+        run: python -B -m unittest discover -s scripts/curriculum -p test_native_assertions_msvc.py -v
