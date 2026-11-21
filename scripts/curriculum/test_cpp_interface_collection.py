@@ -210,6 +210,7 @@ def main()->None:
         "valid_push":(ADD,REPORT,True),
         "valid_emplace":(ALT_ADD,ALT_REPORT,True),
         "documented_interface":(ADD,REPORT,True),
+        "unrelated_local_alias":(ADD,REPORT,True),
         **{name:(a,b,False) for name,(a,b) in BAD.items()}
     }
     with tempfile.TemporaryDirectory(prefix="lgaed-u8l9-owners-") as d:
@@ -223,7 +224,8 @@ def main()->None:
         # A hardcoded dynamic_cast chain can match each of them while failing
         # to consume a third valid Muestra interface implementation.
         public_variants={"valid_push","valid_emplace",
-                         "documented_interface","known_types_only"}
+                         "documented_interface","unrelated_local_alias",
+                         "known_types_only"}
         public_runs=0
         for name,(add,report,expected) in solutions.items():
             edited=folder/(name+".cpp")
@@ -236,6 +238,16 @@ def main()->None:
                 source_for_case=folder/"documented-original.cpp"
                 source_for_case.write_bytes((note+original).encode("utf-8"))
                 candidate=note+candidate
+            if name=="unrelated_local_alias":
+                # A real, top-level alias remains the owned contract even
+                # when a separate function declares a shadowing local alias.
+                extra=("\nvoid lgaed_alias_example() {\n"
+                       "  using Muestras = std::vector<std::unique_ptr<MuestraSimple>>;\n"
+                       "  (void)sizeof(Muestras);\n"
+                       "}\n")
+                source_for_case=folder/"alias-original.cpp"
+                source_for_case.write_bytes((original+extra).encode("utf-8"))
+                candidate+=extra
             edited.write_bytes(candidate.encode("utf-8"))
             witness=folder/(name+".private.cpp")
             created=run([str(generator),str(source_for_case),str(edited),str(witness)])
@@ -317,7 +329,7 @@ def main()->None:
                 raise AssertionError((name,"Immutable source accepted mutation"))
             print(f"{args.compiler}: {name}: REJECT",flush=True)
     print(f"PASS U8L9 independent ownership/interface proof: "
-          f"three valid, {len(BAD)} defective and {len(attacks)} tampered sources; "
+          f"four valid, {len(BAD)} defective and {len(attacks)} tampered sources; "
           f"all five original public cases match even for the "
           f"known-types-only counterexample, which the private third-type "
           f"and owner-identity probe rejects.")

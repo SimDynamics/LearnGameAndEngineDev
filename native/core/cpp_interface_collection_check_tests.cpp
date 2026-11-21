@@ -73,6 +73,29 @@ int main(int argc,char** argv) try {
         reject("// "+text+"\n"+source,
                "A comment impersonated the actual polymorphic owner alias");
     }
+    {
+        // A global vector of the wrong owner cannot borrow a correctly
+        // spelled alias from a local helper or unrelated namespace. The old
+        // unscoped token search admitted both of these authoring forgeries.
+        const std::string alias=
+            "using Muestras = std::vector<std::unique_ptr<Muestra>>;";
+        const auto wrong=
+            "using Muestras = std::vector<std::unique_ptr<MuestraSimple>>;";
+        auto forged=original;
+        const auto at=forged.find("\n"+alias);
+        if(at==std::string::npos)
+            throw std::runtime_error("Published global Muestras alias missing");
+        forged.replace(at+1,alias.size(),wrong);
+        reject(forged+
+               "\nvoid auxiliar_no_relacionado() { "+alias+" }\n",
+               "A local owner alias impersonated the wrong global vector");
+        reject(forged+
+               "\nnamespace OtroAlcance { "+alias+" }\n",
+               "A namespace owner alias impersonated the wrong global vector");
+        auto duplicated=original;
+        duplicated+="\n"+alias+"\n";
+        reject(duplicated,"Two global aliases were accepted as one owner");
+    }
     if(!lgaed::curriculum::cpp_interface_collection_matches(policy,candidate))
         throw std::runtime_error(
             "Edited source modified an immutable declaration, factory, "

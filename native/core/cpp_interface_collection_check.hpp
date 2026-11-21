@@ -123,15 +123,14 @@ inline bool valid(const CppInterfaceCollectionPolicy& policy) {
             "id:"+policy.stream_parameter,"op:)","id:const",
             "op:=","number:0","op:;"}))
         return false;
-    // The exact vector ownership alias is a global declaration in the
-    // protected original. Two closing C++ template brackets form "op:>>".
-    const std::vector<std::string> alias={
+    // The alias must belong to the translation unit, not a nested helper
+    // that shadows an incorrect global vector. Do not infer its scope from
+    // merely finding the right sequence of lexemes somewhere in the file.
+    return cpp_class_structure::global_alias(*code,policy.vector_alias,{
         "id:using","id:"+policy.vector_alias,"op:=",
         "id:std","op:::","id:vector","op:<",
         "id:std","op:::","id:unique_ptr","op:<",
-        "id:"+policy.base_class,"op:>>","op:;"};
-    return std::search(code->begin(),code->end(),
-                       alias.begin(),alias.end())!=code->end();
+        "id:"+policy.base_class,"op:>>","op:;"});
 }
 
 inline void substitute(std::string& source,std::string_view name,

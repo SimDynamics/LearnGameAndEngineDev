@@ -113,6 +113,34 @@ inline std::optional<Scope> defined_public_bases(
     return found;
 }
 
+// A named alias required by the published source must be a genuine
+// translation-unit declaration. A matching alias inside a function, class
+// or namespace cannot impersonate the global API used by the student.
+// Reject multiple top-level aliases and a wrong top-level definition even
+// if an unrelated local declaration happens to match the expected tokens.
+inline bool global_alias(const Tokens& code,std::string_view name,
+        std::initializer_list<std::string> expected) {
+    if(name.empty()||expected.size()<4)return false;
+    std::size_t depth=0;
+    bool found=false;
+    for(std::size_t i=0;i<code.size();++i) {
+        if(depth==0&&i+1<code.size()&&
+           code[i]=="id:using"&&code[i+1]=="id:"+std::string(name)) {
+            if(found||i+expected.size()>code.size()||
+               !std::equal(expected.begin(),expected.end(),
+                           code.begin()+static_cast<std::ptrdiff_t>(i)))
+                return false;
+            found=true;
+        }
+        if(open_brace(code[i]))++depth;
+        else if(close_brace(code[i])) {
+            if(!depth)return false;
+            --depth;
+        }
+    }
+    return found&&depth==0;
+}
+
 // A declaration must be directly inside its owner, never in another method,
 // a nested type, an unrelated global declaration or instructional prose.
 inline bool direct_contains(const Tokens& code,Scope scope,
