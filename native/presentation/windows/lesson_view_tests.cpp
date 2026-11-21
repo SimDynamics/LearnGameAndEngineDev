@@ -5478,12 +5478,34 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
                             "The audited inline prefix needs a new compiler prerequisite policy");
                         windows::CppRunRequest request;request.revision=1;request.source_utf8=block.initial_code;
                         request.project_files=block.project_files;request.source_files=block.source_files;request.cmake=block.cmake;
+                        if(block.local_int_check){
+                            // Synthetic QA arrival, NEVER evidence of a student run.
+                            // Only this audited prerequisite has a source-pinned private
+                            // integer probe; native.required_compiler_reader runs it for
+                            // real through the Windows compiler in a separate regression.
+                            require(block.stable_id=="block_0006_0002",
+                                "An unaudited compiler acquired a local-int prerequisite");
+                            const auto reference=curriculum::stable_block_position(lesson,"block_0007_0001");
+                            require(reference.has_value()&&
+                                lesson.pages[reference->page].blocks[reference->block].type==BlockType::code,
+                                "U2L5 synthetic arrival lost its active checked reference");
+                            request.source_utf8=lesson.pages[reference->page].blocks[reference->block].code;
+                            request.local_int_check=block.local_int_check;
+                            require(!windows::cpp_local_int_request_fingerprint(request).empty(),
+                                "U2L5 synthetic arrival has no complete local-int request fingerprint");
+                        }
                         for(const auto& item:block.output_check->cases){
                             require(item.exit_code==0&&!item.outputs.empty(),"The inline prefix acquired another process-result contract");
                             request.stdin_utf8=item.standard_input;
                             curriculum::FreshExecution result{1,true,true,0,item.standard_input,item.outputs.front()};result.executable=item.executable;
                             if(item.standard_error==curriculum::StandardErrorExpectation::non_blank)result.standard_error="Synthetic QA prerequisite only";
-                            (void)windows::record_compiler_puzzle_case(data,lesson,block,request,result,"Synthetic inline QA prerequisite only");
+                            if(block.local_int_check){
+                                result.local_int_check_correct=true;
+                                result.local_int_request_fingerprint=windows::cpp_local_int_request_fingerprint(request);
+                            }
+                            require(windows::record_compiler_puzzle_case(data,lesson,block,request,result,
+                                "Synthetic inline QA prerequisite only; not a real execution"),
+                                "The audited synthetic prefix was rejected by its native completion contract");
                         }
                         require(windows::compiler_puzzle_completed(data,lesson,block),"The synthetic inline prefix did not satisfy its owned compiler gate");
                         compilers.push_back(block.stable_id);continue;
