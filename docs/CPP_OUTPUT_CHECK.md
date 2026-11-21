@@ -3963,6 +3963,19 @@ primera salida de `std::cout` que **lee realmente** esa variable. No
 basta que el texto coincida con un literal o que se imprima la
 concatenación de las variables originales omitiendo `etiqueta`.
 
+Además de declaraciones individuales, la sonda admite declaraciones
+completas de varias cadenas con el mismo tipo explícito, como
+`std::string edificio{"Aula"}, codigo{"04"};`. La variación se inserta
+**después del punto y coma de toda la declaración**, nunca entre
+declaradores. También admite `std::string edificio, codigo;` seguido de
+asignaciones directas: para `afterInitialization`, sustituye el valor
+**después de la primera asignación completa**, de modo que la instrucción
+original no borre la variación antes del cálculo. Estas formas equivalentes
+siguen exigiendo compilaciones y salidas independientes correctas.
+Las declaraciones ambiguas que mezclen punteros o propietarios de otro
+tipo se rechazan; `auto` conserva su validación conservadora de una
+variable por declaración.
+
 La definición y la instrucción de destino deben ser inequívocas en el
 ámbito directo de `main`. Una macro, un ámbito ambiguo, un nombre
 ausente, una lectura que nunca sucede o una variante que no compila
