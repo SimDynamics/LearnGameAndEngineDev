@@ -172,6 +172,18 @@ add_test(NAME native.p3_fourteen_ownership_authoring
 set_tests_properties(native.p3_fourteen_ownership_authoring PROPERTIES
     TIMEOUT 180 RUN_SERIAL TRUE)
 
+# Reject accidental mixed-generation course scopes before mutating ANY
+# stored state; this runs the actual production Catalog implementation.
+add_executable(lgaed_course_edition_scope_qa
+    "${LGAED_ROOT}/native/core/course_edition_scope_tests.cpp")
+target_link_libraries(lgaed_course_edition_scope_qa PRIVATE
+    lgaed_guidance_platform lgaed_guidance_qa_options)
+target_link_options(lgaed_course_edition_scope_qa PRIVATE /OPT:REF)
+add_test(NAME native.course_edition_reset_scope
+    COMMAND lgaed_course_edition_scope_qa)
+set_tests_properties(native.course_edition_reset_scope PROPERTIES
+    TIMEOUT 120 RUN_SERIAL TRUE)
+
 # Local-int contracts use the real WinRT loader and StateStore codec without
 # running student binaries or changing the pinned Windows toolchain.
 add_executable(lgaed_local_int_state_tests
