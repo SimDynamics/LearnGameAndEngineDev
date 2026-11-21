@@ -1,0 +1,34 @@
+name: Codex U2L5 real first-case MSVC execution
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-u2l5-real-compiler.yml
+      - scripts/windows/test_u2l5_real_compiler.py
+      - scripts/windows/u2l5_local_int_variant.cpp
+      - native/core/cpp_local_int_probe.hpp
+      - native/core/cpp_expression_repair.hpp
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_enteros_y_aproximaciones.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  first-case-native:
+    name: Compile and execute both current U2L5 goals and private probes with hosted MSVC
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Read exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Activate hosted MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Run real C++ execution and source-probe regression without changing student profiles
+        shell: pwsh
+        run: |
+          python -X utf8 scripts/windows/test_u2l5_real_compiler.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
