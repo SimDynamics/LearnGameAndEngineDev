@@ -517,79 +517,88 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
     const auto asset_hash=state::sha256(state::read_bytes(path));
     const auto lesson=windows::load_lesson(path);
     const auto first=identity_position(lesson,"block_0006_0002");
-    const auto second=identity_position(lesson,"block_0006_0006");
-    const auto third=identity_position(lesson,"block_0007_0009");
-    check(first.page==6&&first.block==2&&second.page==6&&second.block==6&&third.page==7&&third.block==9,
-        "The reported U2L5 compiler chain moved from its authored identities");
-    const auto& goal=lesson.pages[first.page].blocks[first.block];
-    const auto& next_goal=lesson.pages[second.page].blocks[second.block];
-    check(goal.question.empty()&&goal.output_check&&lesson.compiler_puzzles_required
-        &&next_goal.question.empty()&&next_goal.output_check,
-        "The current compiler regression no longer covers the actual questionless required objectives");
+    const auto second=identity_position(lesson,"p1u2l5_reparar_agrupacion");
+    const auto first_reference=identity_position(lesson,"block_0007_0001");
+    const auto second_reference=identity_position(lesson,"p1u2l5_referencia_agrupacion");
+    check(first.page==6&&first.block==2&&second.page==7&&second.block==9&&
+        first_reference.page==7&&first_reference.block==1&&second_reference.page==8,
+        "The active U2L5 compiler chain or its solution identities moved");
+    const auto& first_goal=lesson.pages[first.page].blocks[first.block];
+    const auto& second_goal=lesson.pages[second.page].blocks[second.block];
+    const auto& first_source=lesson.pages[first_reference.page].blocks[first_reference.block].code;
+    const auto& second_source=lesson.pages[second_reference.page].blocks[second_reference.block].code;
+    check(first_goal.question.empty()&&first_goal.output_check&&second_goal.question.empty()&&
+        second_goal.output_check&&lesson.compiler_puzzles_required&&
+        !first_source.empty()&&!second_source.empty(),
+        "The current U2L5 regression no longer owns two required executable objectives");
     Fixture f(backend,false,true,true,"es",lesson,false,first.page);
-    check(lesson_page_state(f.view).index==first.page,"The reported compiler page was not reached in its isolated profile");
-    check(!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,goal),
-        "The untouched reported compiler already has execution credit");
-    const auto no_later_regions=[&](std::size_t boundary){
+    check(lesson_page_state(f.view).index==first.page&&
+        !windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,first_goal),
+        "The current first compiler already had a private execution receipt");
+    const auto no_later_regions=[&](std::size_t boundary,std::size_t page){
+        check(lesson_page_state(f.view).index==page,"The compiler gate changed its owning page");
         const auto regions=lesson_reading_regions(f.view);
         check(std::ranges::any_of(regions,[&](const auto& region){
             return region.block_index==boundary&&region.required_compiler&&region.is_exercise&&!region.solved;
-        }),"The actual U2L5 p7 compiler objective has no pending reader boundary");
+        }),"The pending current compiler has no required reader boundary");
         check(std::ranges::none_of(regions,[&](const auto& region){
             return region.block_index!=std::numeric_limits<std::size_t>::max()&&region.block_index>boundary;
-        }),"An unchecked actual compiler exposed following prose or editor narration");
-        check(!lesson_page_state(f.view).can_next&&!navigate_lesson_view(f.view,third.page),
+        }),"An unchecked compiler exposed following curricular narration");
+        check(!lesson_page_state(f.view).can_next&&!navigate_lesson_view(f.view,page+1),
             "The pending compiler allowed page navigation");
     };
     const auto wait_at_gate=[&](std::size_t boundary){
         wait([&]{const auto value=f.snapshot();
             check(value.segments[value.index].block==std::numeric_limits<std::size_t>::max()
-                ||value.segments[value.index].block<=boundary,"The reader played beyond an unchecked actual compiler");
+                ||value.segments[value.index].block<=boundary,
+                "The reader played beyond an unchecked actual compiler");
             return value.waiting_gate&&!value.playing&&!value.allocated&&value.segments[value.index].block==boundary;
-        },"actual required compiler reader waits for its own check");
+        },"current required compiler reader waits for its own check");
         check(!f.snapshot().finished,"A required compiler prompt falsely finished the page");
     };
-    no_later_regions(first.block);
+    no_later_regions(first.block,first.page);
     f.reader->restart();f.reader->pause();f.reader->seek_seconds(100000);
-    const auto sought=f.snapshot();
-    check(sought.segments[sought.index].block==first.block&&!sought.finished&&!sought.allocated,
-        "Forward seek bypassed the untouched actual required compiler");
+    check(f.snapshot().segments[f.snapshot().index].block==first.block&&!f.snapshot().finished,
+        "Forward seek bypassed the untouched current compiler");
     f.reader->seek_seconds(-1);f.reader->toggle();wait_at_gate(first.block);
     f.reader->seek_seconds(100000);check(f.snapshot().segments[f.snapshot().index].block==first.block,
-        "A seek while waiting bypassed the actual compiler");
+        "Seeking while waiting bypassed the current first compiler");
     f.reader->seek_seconds(-1);f.reader->toggle();wait_at_gate(first.block);
-    // The untouched authored template compiles but prints nothing. Its actual
-    // execution, not a synthetic receipt, must produce the ordinary retry stop.
+    // The authored starter compiles, but it does not implement the requested division.
     f.run_program(first.block,false);
     wait([&]{const auto value=f.snapshot();return !value.playing&&!value.allocated&&!value.preparing
         &&value.segments[value.index].block==first.block&&value.segments[value.index].feedback;},
-        "the actual required compiler's incorrect verdict finishes and stops");
+        "the first current compiler's incorrect verdict finishes and stops");
     const auto rejected=f.snapshot();
-    check(!rejected.finished&&!rejected.segments[rejected.index].correct
-        &&!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,goal),
-        "An incorrect actual compiler attempt granted completion");
+    check(!rejected.finished&&!rejected.segments[rejected.index].correct&&
+        !windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,first_goal),
+        "The starter code granted false completion");
     const auto wrong_audio=verify_feedback_recording(rejected.segments[rejected.index]);
-    no_later_regions(first.block);
+    no_later_regions(first.block,first.page);
     f.reader->seek_seconds(-1);f.reader->toggle();
     wait([&]{const auto value=f.snapshot();return value.playing&&value.segments[value.index].feedback;},
-        "the actual rejected compiler verdict replays after rewind");
+        "the rejected first verdict replays after rewind");
     f.reader->pause();
-    // The second authored program performs exactly the first task's nine-metre
-    // division. Enter it through the first real editor; do not award it a proof.
-    f.edit_program(next_goal.initial_code,first.block);f.ready();f.run_program(first.block,false);
+    // A literal copy of stdout is insufficient: authored local probes vary partes.
+    const auto false_first=std::string("#include <iostream>\nint main() { std::cout << \"")+
+        first_goal.output_check->cases.front().outputs.front()+"\"; }\n";
+    f.edit_program(false_first,first.block);f.ready();f.run_program(first.block,true);
+    check(!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,first_goal),
+        "A fixed first-editor output bypassed the authored local-int probes");
+    f.edit_program(first_source,first.block);f.ready();f.run_program(first.block,true);
     const auto accepted=f.snapshot();const auto accepted_part=accepted.segments[accepted.index];
     check(accepted_part.block==first.block&&accepted_part.feedback&&accepted_part.correct&&accepted.offset==0
-        &&!accepted.playing&&!accepted.allocated&&!accepted.finished
-        &&windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,goal)
-        &&!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,next_goal),
-        "The actual success ignored manual pause, lost feedback priority or credited the next compiler");
+        &&!accepted.playing&&!accepted.allocated&&!accepted.finished&&
+        windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,first_goal)&&
+        !windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal),
+        "Real first-editor success lost paused feedback or credited the later editor");
     const auto accepted_audio=verify_feedback_recording(accepted_part);
-    no_later_regions(second.block);
-    // Close and reopen the whole lesson against only its new private QA profile.
-    // Preserve the real source, selected correct explanation and exact offset.
-    f.reader.reset();check(flush_lesson_view(f.view),"Cannot flush the isolated actual compiler lesson");
+    check(!navigate_lesson_view(f.view,second.page),
+        "The first compiler alone skipped the remaining page-six exercise");
+    // Whole-view reopen must retain this editor's draft and exact audio bookmark.
+    f.reader.reset();check(flush_lesson_view(f.view),"Cannot flush the first current compiler");
     DestroyWindow(f.view);f.view=create_lesson_view(f.host,f.environment,lesson);
-    check(f.view!=nullptr,"Cannot reopen the isolated actual compiler lesson");MoveWindow(f.view,0,0,980,720,TRUE);
+    check(f.view!=nullptr,"Cannot reopen the first current compiler");MoveWindow(f.view,0,0,980,720,TRUE);
     LessonViewHooks hooks;hooks.before_page_change=[&](HWND){if(f.reader)f.reader->pause();};
     hooks.content_changed=[&](HWND){if(f.reader)f.reader->content_changed();};
     hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(f.reader)f.reader->feedback(block,correct);};
@@ -598,28 +607,103 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
     const auto restored=f.snapshot();
     check(restored.key==accepted.key&&restored.index==accepted.index&&restored.offset==accepted.offset
         &&restored.heard_through==accepted.heard_through&&!restored.playing&&!restored.allocated
-        &&edit_text(child(f.view,1010+static_cast<int>(first.block)*100))==next_goal.initial_code
+        &&edit_text(child(f.view,1010+static_cast<int>(first.block)*100))==first_source
         &&state::sha256(state::read_bytes(accepted_part.recording))==accepted_audio
         &&state::sha256(state::read_bytes(rejected.segments[rejected.index].recording))==wrong_audio,
-        "Reopening lost the exact approved-feedback bookmark, source or compatible recording");
+        "Reopening lost first-editor source, paused bookmark or compatible PCM");
     f.reader->toggle();
-    wait([&]{const auto value=f.snapshot();return value.playing&&value.segments[value.index].block==first.block+1;},
-        "the fully heard actual correct feedback continues into the following curricular paragraph");
-    wait_at_gate(second.block);no_later_regions(second.block);
-    f.reader->seek_seconds(100000);check(f.snapshot().segments[f.snapshot().index].block==second.block,
-        "Completing the first compiler allowed seeking past the second pending objective");
-    f.reader->restart();f.reader->pause();f.reader->seek_seconds(100000);
-    check(f.snapshot().segments[f.snapshot().index].feedback&&f.snapshot().segments[f.snapshot().index].correct
-        &&f.snapshot().heard_through==0&&!f.snapshot().finished,
-        "Restart retained listening credit or bypassed the ordinary unheard correct-feedback gate");
-    f.reader->pause();SendMessageW(child(f.view,1012+static_cast<int>(first.block)*100),BM_CLICK,0,0);f.ready();
-    no_later_regions(first.block);
-    check(!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,goal)
-        &&!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,next_goal)
-        &&edit_text(child(f.view,1010+static_cast<int>(first.block)*100))==goal.initial_code
-        &&state::sha256(state::read_bytes(path))==asset_hash,
-        "Reset failed to restore the actual pending goal, invented another achievement or modified the asset");
-    std::cout<<"PASS current U2L5 p7: actual questionless required compiler waits; seeks/rewind/restart, real rejected and accepted PCM, paused whole-view restore, heard-feedback continuation, independent next gate and Reset\n";
+    wait([&]{const auto value=f.snapshot();
+        return value.playing&&value.segments[value.index].block==first.block+1;},
+        "the approved first feedback did not continue to its following paragraph");
+    f.reader->pause();
+    // Complete the last page-six choice through its real control, not a forged receipt.
+    const auto choice_index=first.block+2;
+    const auto& choice=lesson.pages[first.page].blocks.at(choice_index);
+    check(choice.type==curriculum::BlockType::multiple_choice&&choice.correct_index,
+        "The current U2L5 transition lost its authored choice");
+    SendMessageW(child(f.view,1020+static_cast<int>(choice_index)*100+
+        static_cast<int>(*choice.correct_index)*2),BM_CLICK,0,0);
+    SendMessageW(child(f.view,1003+static_cast<int>(choice_index)*100),BM_CLICK,0,0);
+    f.reader->pause();f.ready();
+    const auto selected=state::get_response(read_lesson_state(f.view),lesson,choice);
+    check(selected&&selected->correct,"The actual last page-six choice was not checked");
+    f.page(second.page);
+    check(lesson_page_state(f.view).index==second.page,"The first editor and choice failed to unlock page seven");
+    // Earlier authored exercises on page seven are independent requirements;
+    // solve them through their controls before checking the second editor.
+    for(std::size_t index=0;index<second.block;++index){
+        const auto& block=lesson.pages[second.page].blocks[index];
+        if(block.type==curriculum::BlockType::output_prediction){
+            check(!block.answers.empty(),"A current preceding prediction lacks its authored answer");
+            f.answer(block.answers.front(),index);
+        }else if(block.type==curriculum::BlockType::multiple_choice){
+            check(block.correct_index,"A current preceding choice lacks its expected answer");
+            SendMessageW(child(f.view,1020+static_cast<int>(index)*100+
+                static_cast<int>(*block.correct_index)*2),BM_CLICK,0,0);
+            SendMessageW(child(f.view,1003+static_cast<int>(index)*100),BM_CLICK,0,0);
+            f.reader->pause();f.ready();
+        }else if(block.type==curriculum::BlockType::inline_fill_code){
+            const auto panel=child(f.view,1005+static_cast<int>(index)*100);
+            check(panel!=nullptr&&!block.answers.empty(),"The current preceding inline editor is missing");
+            for(std::size_t hole=0;hole<block.answers.size();++hole){
+                const auto field=GetDlgItem(panel,100+static_cast<int>(hole));
+                check(field!=nullptr,"A current preceding inline field is missing");
+                const auto value=wide(block.answers[hole]);SendMessageW(field,EM_SETSEL,0,-1);
+                SendMessageW(field,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(value.c_str()));
+            }
+            SendMessageW(child(f.view,1003+static_cast<int>(index)*100),BM_CLICK,0,0);
+            f.reader->pause();f.ready();
+        }else continue;
+        const auto solved=state::get_response(read_lesson_state(f.view),lesson,block);
+        check(solved&&solved->correct,"A real preceding U2L5 exercise was not credited");
+    }
+    const auto second_action=child(f.view,1011+static_cast<int>(second.block)*100);
+    check(second_action&&IsWindowEnabled(second_action),
+        "The second compiler remained disabled despite the first-editor proof");
+    check(!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal)&&
+        !lesson_page_state(f.view).can_next&&!navigate_lesson_view(f.view,second.page+1),
+        "The second compiler was pre-credited or allowed premature page-eight access");
+    f.run_program(second.block,true);
+    check(!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal),
+        "The second editor's original incorrect grouping earned completion");
+    const auto false_second=std::string("#include <iostream>\nint main() { std::cout << \"")+
+        second_goal.output_check->cases.front().outputs.front()+"\"; }\n";
+    f.edit_program(false_second,second.block);f.ready();f.run_program(second.block,true);
+    check(!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal),
+        "A fixed second-editor output bypassed the authored local-int probes");
+    f.edit_program(second_source,second.block);f.ready();f.run_program(second.block,true);
+    check(windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal)&&
+        windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,first_goal)&&
+        edit_text(child(f.view,1010+static_cast<int>(second.block)*100))==second_source,
+        "The current repaired grouping did not earn independent execution credit");
+    // Reopen the same private profile and verify the second editor's actual draft.
+    f.reader.reset();check(flush_lesson_view(f.view),"Cannot flush the second current compiler");
+    DestroyWindow(f.view);f.view=create_lesson_view(f.host,f.environment,lesson);
+    check(f.view!=nullptr,"Cannot reopen the second current compiler");MoveWindow(f.view,0,0,980,720,TRUE);
+    LessonViewHooks next_hooks;next_hooks.before_page_change=[&](HWND){if(f.reader)f.reader->pause();};
+    next_hooks.content_changed=[&](HWND){if(f.reader)f.reader->content_changed();};
+    next_hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(f.reader)f.reader->feedback(block,correct);};
+    set_lesson_view_hooks(f.view,std::move(next_hooks));
+    f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();
+    check(lesson_page_state(f.view).index==second.page&&
+        edit_text(child(f.view,1010+static_cast<int>(second.block)*100))==second_source&&
+        windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal),
+        "Reopening lost the independent second-editor draft or checked result");
+    f.reader->pause();
+    SendMessageW(child(f.view,1012+static_cast<int>(second.block)*100),BM_CLICK,0,0);f.ready();
+    check(!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal)&&
+        windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,first_goal)&&
+        edit_text(child(f.view,1010+static_cast<int>(second.block)*100))==second_goal.initial_code,
+        "Resetting the second editor changed the first proof or failed to restore its starter");
+    f.page(first.page);f.reader->pause();
+    SendMessageW(child(f.view,1012+static_cast<int>(first.block)*100),BM_CLICK,0,0);f.ready();
+    no_later_regions(first.block,first.page);
+    check(!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,first_goal)&&
+        !windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal)&&
+        edit_text(child(f.view,1010+static_cast<int>(first.block)*100))==first_goal.initial_code&&
+        state::sha256(state::read_bytes(path))==asset_hash,
+        "First-editor Reset did not restore the current pending goal or modified the actual asset");
+    std::cout<<"PASS current U2L5: two active required editors, separate pages and stable IDs; real initial/fixed/accepted executions, private local-int probes, reader gate, pause/reopen/PCM, independent drafts and Reset\n";
 }
 void integrated_u1_reader_flow(const std::shared_ptr<windows::NarrationWorker>& backend){
     auto lesson=windows::load_lesson(std::filesystem::path(build::source_root)/
