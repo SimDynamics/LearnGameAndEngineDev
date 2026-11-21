@@ -5,6 +5,8 @@
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <filesystem>
+#include <array>
+#include <utility>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -45,6 +47,18 @@ int main(int argc,char** argv) {
                 if(old_citation!=std::string::npos&&new_citation!=std::string::npos) {
                     probe("just-citation","Una explicación "+before.substr(old_citation),
                           "Una explicación "+after.substr(new_citation));
+                    const auto short_guide=std::string("Una explicación (Autor, 2024).");
+                    for(const auto& [name,suffix]:std::array<std::pair<const char*,const char*>,6>{{
+                        {"simple-section","sección 5.13.3"},
+                        {"singular-range","párr. 1–3"},
+                        {"plural-simple","párrs. 1"},
+                        {"plural-range","párrs. 1–3"},
+                        {"plural-ascii-range","párrs. 1-3"},
+                        {"full-range","sección 5.13.3, párrs. 1–3 y tabla 9"}
+                    }}) {
+                        probe(name,"Una explicación (Autor, 2024, "+std::string(suffix)+").",
+                            short_guide);
+                    }
                     const auto old_paragraph=before.rfind("\n\n");
                     const auto new_paragraph=after.rfind("\n\n");
                     if(old_paragraph!=std::string::npos&&new_paragraph!=std::string::npos)
