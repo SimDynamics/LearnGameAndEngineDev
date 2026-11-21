@@ -774,10 +774,20 @@ void current_u2l6_native_reader_gates() {
             "A source-owned U2L6 model receipt was not accepted by the real completion gate");
     };
     const auto saved_pauses=[&](state::StateData& data){
-        auto history=narration::begin({},"qa-u2l6-first-page","qa-u2l6-reader",
-            {0,137,0,false},"qa-u2l6-first",lesson.pages[6].stable_id);
-        history=narration::begin(std::move(history),"qa-u2l6-second-page",
-            "qa-u2l6-reader",{1,239,0,false},"qa-u2l6-second",lesson.pages[6].stable_id);
+        // The narration history owns ONE bookmark per page. Two compiler
+        // cards on U2L6 page 7 share that page's reading position; a new
+        // recording for the same page replaces its old bookmark by design.
+        // Preserve an earlier page's independent pause instead of forging
+        // simultaneous positions for two cards on the same reading page.
+        check(lesson.pages.size()>6&&
+            lesson.pages[5].stable_id!=lesson.pages[6].stable_id,
+            "U2L6 QA requires independent preceding/current page identities");
+        auto history=narration::begin({},"qa-u2l6-previous-page","qa-u2l6-reader",
+            {0,137,0,false},"qa-u2l6-previous",lesson.pages[5].stable_id);
+        history=narration::begin(std::move(history),"qa-u2l6-current-page",
+            "qa-u2l6-reader",{1,239,0,false},"qa-u2l6-current",lesson.pages[6].stable_id);
+        check(history.entries.size()==2&&history.entries[0].page!=history.entries[1].page,
+            "U2L6 QA must preserve two distinct page-scoped pauses");
         narration::write_history(data,history);
     };
     const auto pending=[&](View& fixture,std::size_t owner){
