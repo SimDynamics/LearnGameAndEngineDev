@@ -177,6 +177,24 @@ void separate_assignment_and_copy_before_update() {
     require(signed_separate &&
         signed_separate->find("llaves = 7;\n    llaves = 19;\n") != std::string::npos,
         "A signed int initialized by separate assignment was rejected");
+    const auto computed=cpp_local_int_override(
+        "int main(){int llaves; llaves = 3 + 4; std::cout<<llaves;}",
+        {"llaves",19});
+    require(computed&&
+        computed->find("llaves = 3 + 4;\n    llaves = 19;\n")!=std::string::npos,
+        "A first assignment computed only from initialized values was rejected");
+    for(const auto* unsafe:{
+        "llaves = llaves + 7;",
+        "llaves = (7 + llaves);",
+        "llaves = std::max(llaves, 7);"
+    }) {
+        const std::string invalid=
+            "#include <iostream>\n#include <algorithm>\n"
+            "int main(){int llaves; "+std::string(unsafe)+
+            " std::cout<<llaves;}";
+        require(!cpp_local_int_override(invalid,{"llaves",19}),
+            "An uninitialized int read in its own first assignment received a probe");
+    }
     const std::string source = R"(#include <iostream>
 int main() {
     int aforo = 5;
