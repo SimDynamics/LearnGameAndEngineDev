@@ -1055,6 +1055,17 @@ Una acreditación histórica de salida **no obtiene** ese recibo
 automáticamente. Se conservan respuestas, intentos, borradores y el
 progreso de los demás cursos.
 
+La regresión `test_cpp_interface_collection.py` compara también el
+`main` original con sus **cinco casos públicos** para dos soluciones
+correctas y una implementación que identifica exclusivamente
+`MuestraSimple` y `MuestraIdentificada` con `dynamic_cast`. Los tres
+programas imprimen los resultados publicados; el tercero falla al
+informar otra implementación legítima de `Muestra`, introducida por la
+sonda privada. Se verifica así que imitar las clases presentes en stdout
+no acredita el despacho virtual general. Los cuatro casos posteriores al
+primero siguen siendo opcionales para el alumno: esta comparación
+adicional se ejecuta únicamente en QA, sin modificar sus recibos.
+
 Comprobaciones de alcance separado:
 
 ```text
