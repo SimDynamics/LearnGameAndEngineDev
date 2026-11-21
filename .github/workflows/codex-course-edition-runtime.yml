@@ -1,4 +1,4 @@
-name: Codex isolated Win32 course-edition runtime QA
+name: Codex isolated Win32 course-edition and simulation runtime QA
 
 on:
   push:
@@ -10,6 +10,14 @@ on:
       - cmake/native_build_config.hpp.in
       - native/platform/windows/course_edition_tests.cpp
       - scripts/curriculum/course_edition_fixture_source.py
+      - native/core/simulation.cpp
+      - native/core/simulation.hpp
+      - native/core/simulation_tests.cpp
+      - native/presentation/windows/simulation_view.cpp
+      - native/presentation/windows/simulation_view_tests.cpp
+      - native/presentation/windows/simulation_lesson_tests.cpp
+      - docs/examples/array_runs_empty_text_simulation.json
+      - docs/examples/array_runs_simulation.json
   workflow_dispatch:
 
 permissions:
@@ -17,7 +25,7 @@ permissions:
 
 jobs:
   run-real-course-edition:
-    name: Run real Win32 LessonView and StateStore with isolated edition data
+    name: Run native Win32 edition and simulation QA with isolated data
     runs-on: windows-2025-vs2026
     timeout-minutes: 45
     steps:
@@ -47,13 +55,19 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           cmake -S cmake/HostedCourseEditionQA -B $build -G Ninja -DCMAKE_BUILD_TYPE=Debug
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build $build --target lgaed_course_edition_tests --parallel 3
+          cmake --build $build --target lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Execute edition replacement, native quiz, scoped reset and reopen
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           ctest --test-dir $build -R '^native\.course_edition$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'course-edition-runtime.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Execute real arrayRunsV1 model and Win32 empty-text controls
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native\.simulation_(model|empty_text_controls|empty_text_lesson)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'simulation-empty-text-runtime.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve native test and compile evidence
         if: always()
@@ -64,5 +78,6 @@ jobs:
           if-no-files-found: warn
           path: |
             ${{ runner.temp }}/lgaed-course-edition-qa/course-edition-runtime.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/simulation-empty-text-runtime.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/Testing/Temporary/*.log
             ${{ runner.temp }}/lgaed-course-edition-qa/CMakeFiles/CMakeConfigureLog.yaml

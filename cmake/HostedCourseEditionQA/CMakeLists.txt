@@ -122,3 +122,27 @@ enable_testing()
 add_test(NAME native.course_edition
     COMMAND lgaed_course_edition_tests "${_edition_dir}")
 set_tests_properties(native.course_edition PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+
+# Windows-only integration: the original simulation model, its real RichEdit
+# controls and its authored example in the production LessonView.
+add_executable(lgaed_simulation_tests
+    "${_lgaed_root}/native/core/simulation_tests.cpp")
+target_link_libraries(lgaed_simulation_tests PRIVATE lgaed_core)
+add_executable(lgaed_simulation_view_tests
+    "${_lgaed_root}/native/presentation/windows/simulation_view_tests.cpp")
+target_link_libraries(lgaed_simulation_view_tests PRIVATE lgaed_curricular_windows)
+target_compile_options(lgaed_simulation_view_tests PRIVATE /bigobj)
+add_executable(lgaed_simulation_lesson_tests
+    "${_lgaed_root}/native/presentation/windows/simulation_lesson_tests.cpp")
+target_link_libraries(lgaed_simulation_lesson_tests PRIVATE lgaed_curricular_windows)
+add_test(NAME native.simulation_model COMMAND lgaed_simulation_tests)
+add_test(NAME native.simulation_empty_text_controls
+    COMMAND lgaed_simulation_view_tests --blank-label)
+add_test(NAME native.simulation_empty_text_lesson
+    COMMAND lgaed_simulation_lesson_tests
+    "${_lgaed_root}/docs/examples/array_runs_simulation.json"
+    "${_lgaed_root}/native/presentation/windows/fixtures/simulation_state_layout.json"
+    "${_lgaed_root}/docs/examples/array_runs_empty_text_simulation.json")
+set_tests_properties(native.simulation_model PROPERTIES TIMEOUT 40)
+set_tests_properties(native.simulation_empty_text_controls
+    native.simulation_empty_text_lesson PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
