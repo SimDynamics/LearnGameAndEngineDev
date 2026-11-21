@@ -146,3 +146,68 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B scripts/curriculum/test_local_int_live_compilation.py --emitter "$emitter" --compiler MSVC
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  evidence-status:
+    name: Publish focused source-only compiler evidence
+    # This tests hosted source probes, not the production-pinned Windows app.
+    if: ${{ always() }}
+    needs: [authoring, portable, hosted-msvc]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      statuses: write
+    steps:
+      - name: Report the exact commit's compiler-probe status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTHORING: ${{ needs.authoring.result }}
+          PORTABLE: ${{ needs.portable.result }}
+          HOSTED_MSVC: ${{ needs.hosted-msvc.result }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from urllib.request import Request, urlopen
+
+          results = {
+              "authoring": os.environ["AUTHORING"],
+              "gcc_clang": os.environ["PORTABLE"],
+              "hosted_msvc": os.environ["HOSTED_MSVC"],
+          }
+          state = ("success" if all(v == "success" for v in results.values())
+                   else "failure")
+          payload = {
+              "state": state,
+              "context": "codex/local-variable-source",
+              "description": (
+                  f"Authoring={results['authoring']}; "
+                  f"GCC/Clang={results['gcc_clang']}; "
+                  f"hosted MSVC={results['hosted_msvc']}; source-only"
+              ),
+              "target_url": (
+                  f"{os.environ['GITHUB_SERVER_URL']}/"
+                  f"{os.environ['GITHUB_REPOSITORY']}/actions/runs/"
+                  f"{os.environ['GITHUB_RUN_ID']}"
+              ),
+          }
+          endpoint = (
+              f"{os.environ['GITHUB_API_URL']}/repos/"
+              f"{os.environ['GITHUB_REPOSITORY']}/statuses/"
+              f"{os.environ['GITHUB_SHA']}"
+          )
+          request = Request(
+              endpoint,
+              data=json.dumps(payload).encode("utf-8"),
+              method="POST",
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+                  "Content-Type": "application/json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          with urlopen(request, timeout=15) as response:
+              if response.status != 201:
+                  raise RuntimeError("The commit status was not accepted")
+          print("Source-only probe CI status:", state, results)
+          PY
