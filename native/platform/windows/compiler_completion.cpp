@@ -326,9 +326,9 @@ std::string review_rules(const curriculum::Block& block,bool legacy=false) {
             ? "observation-complete-v1" : "observation-differences-v1");
     if(check.assertion_check)
         frame+=token(*check.assertion_check==curriculum::AssertionMode::enabled_abort
-            ? "wasm-assertion-abort-v1"
+            ? "windows-msvc-assertion-abort-v2"
             : *check.assertion_check==curriculum::AssertionMode::disabled
-                ? "wasm-assertion-suppressed-v1" : "wasm-assertion-repair-v1");
+                ? "windows-msvc-assertion-suppressed-v2" : "windows-msvc-assertion-repair-v2");
     for(const auto& item:check.cases){
         frame+=token(item.standard_input)+token(item.executable.value_or(""));
         if(item.balance_three_pairs)frame+=token("semantic-balance-three-pairs-v1");
@@ -1074,7 +1074,7 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
             ?curriculum::AssertionMode::enabled_abort
             :goal==curriculum::CompilerWorkflowCheck::assertion_suppressed_wasi_v1
                 ?curriculum::AssertionMode::disabled:curriculum::AssertionMode::repaired;
-        return request.backend==CppRunRequest::Backend::wasi&&
+        return request.backend==CppRunRequest::Backend::native_msvc&&
             !request.cmake&&!request.diagnostic&&
             !request.rejection_probe&&!request.observation_probe&&
             request.project_files.empty()&&request.source_files.empty()&&

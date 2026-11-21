@@ -7,6 +7,7 @@ on:
       - .github/workflows/codex-native-assertion-migration.yml
       - scripts/curriculum/test_native_assertions_msvc.py
       - native/core/assertion_runtime_check.hpp
+      - native/core/assertion_native_check_tests.cpp
       - native/platform/windows/cpp_runner.cpp
       - native/platform/windows/cpp_runner_tests.cpp
       - native/platform/windows/compiler_completion.cpp
@@ -34,3 +35,9 @@ jobs:
       - name: Compile and run unchanged, NDEBUG and repaired sources plus hidden cases
         shell: pwsh
         run: python -B -m unittest discover -s scripts/curriculum -p test_native_assertions_msvc.py -v
+      - name: Validate native CRT assertion proof on MSVC C++23
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\assertion_native_check_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_assertion_native_qa.exe"
+          if errorlevel 1 exit /b 1
+          "%RUNNER_TEMP%\lgaed_assertion_native_qa.exe"

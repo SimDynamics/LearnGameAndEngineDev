@@ -3779,18 +3779,21 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             }
         }
     }
-    if(request.assertion_mode && request.backend==CppRunRequest::Backend::wasi &&
-        result.compilation.succeeded()&&
-        result.target_type=="WASI_COMMAND"&&
-        result.artifact.extension()==L".wasm"&&
+    if(request.assertion_mode && request.backend==CppRunRequest::Backend::native_msvc &&
+        request.action==CppRunRequest::Action::compile_run&&!request.cmake&&
+        !request.diagnostic&&request.project_files.empty()&&
+        request.source_files.empty()&&result.compilation.succeeded()&&
+        result.target_type=="EXECUTABLE"&&
+        result.artifact.extension()==L".exe"&&
         std::filesystem::is_regular_file(result.artifact)) {
         if(*request.assertion_mode==curriculum::AssertionMode::enabled_abort) {
             fresh.assertion_abort_verified =
                 result.execution.status==CppPhaseStatus::completed&&
-                result.execution.exit_code&&*result.execution.exit_code>0&&
-                *result.execution.exit_code<=255&&
-                curriculum::assertion_runtime_trap(result.execution.stdout_bytes,
-                    result.execution.stderr_bytes);
+                result.execution.exit_code&&
+                curriculum::assertion_native_abort(result.execution.stdout_bytes,
+                    result.execution.stderr_bytes,*result.execution.exit_code);
+            if(fresh.assertion_abort_verified)
+                fresh.execution_completed=true; // intentional native CRT fast-fail
         }else if(*request.assertion_mode==curriculum::AssertionMode::repaired&&
                  result.assertion_probes.size()==curriculum::repaired_assertion_inputs.size()) {
             fresh.assertion_repair_probes_correct=true;
@@ -4785,12 +4788,12 @@ void complete_observation_probes(const CppRunRequest& request,CppRunResult& resu
 }
 
 // A repaired formula must also work for new data without disabling assert
-// or fabricating the prepared stdout. These disposable WASI executions retain
+// or fabricating the prepared stdout. These disposable MSVC runs retain
 // the original source and are sealed to the captured revision and input.
 void complete_assertion_probes(const CppRunRequest& request,CppRunResult& result,
         std::stop_token stop) {
     if(request.assertion_mode!=curriculum::AssertionMode::repaired||
-       request.backend!=CppRunRequest::Backend::wasi||
+       request.backend!=CppRunRequest::Backend::native_msvc||
        request.action!=CppRunRequest::Action::compile_run||
        !request.project_files.empty()||request.cmake||request.diagnostic||
        !result.compilation.succeeded()||
@@ -5921,6 +5924,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             initial_toolchain,stop);
         complete_rejection_stream_probe(request,result,stop);
         complete_observation_probes(request,result,stop);
+        complete_assertion_probes(request,result,stop);
         complete_boolean_battery_probe(request,result,compiler,private_environment,initial_toolchain,stop);
         complete_reduction_probe(request,result,compiler,private_environment,initial_toolchain,stop);
         complete_local_int_check(request,result,compiler,private_environment,initial_toolchain,stop);

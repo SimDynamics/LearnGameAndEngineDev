@@ -2330,8 +2330,8 @@ struct LessonView {
             request.cmake_initial_observation_prerequisite=
                 windows::compiler_cmake_initial_observation_prerequisite(
                     data,lesson,block(index),request);
-        // All C++ exercises use the native MSVC backend while the optional WASI
-        // alternative is not confirmed compatible with Windows app protection.
+        // All C++ exercises, including the three U3L9 assertion contracts,
+        // use the native MSVC backend and the bounded Win32 child-process job.
         if(block(index).compile_check){
             request.diagnostic=windows::prepare_cpp_diagnostic_request(block(index),request);
         }
@@ -2343,9 +2343,8 @@ struct LessonView {
                 ?curriculum::AssertionMode::enabled_abort
                 :workflow==curriculum::CompilerWorkflowCheck::assertion_suppressed_wasi_v1
                     ?curriculum::AssertionMode::disabled:curriculum::AssertionMode::repaired;
-            // Assertions are observed on the actual WASI toolchain, never a
-            // guessed MSVC termination code or an unsigned native replacement.
-            request.backend=windows::CppRunRequest::Backend::wasi;
+            // Preserve source and NDEBUG exactly; the runner proves an MSVC
+            // abort from its CRT diagnostic, not a guessed nonzero exit code.
             if(curriculum::assertion_source_allowed(mode,block(index).initial_code,request.source_utf8))
                 request.assertion_mode=mode;
         }
@@ -4236,9 +4235,9 @@ struct LessonView {
                      block(index).output_check->assertion_check==curriculum::AssertionMode::enabled_abort&&
                      result->compilation.succeeded()) {
                 status=fresh.assertion_abort_verified
-                    ?ui("Aserción comprobada: la ejecución fue abortada en WASI.",
-                        "Assertion verified: execution aborted in WASI.",
-                        "Assertion vérifiée : l'exécution a été interrompue dans WASI.")
+                    ?ui("Aserción comprobada: la ejecución fue abortada por MSVC.",
+                        "Assertion verified: execution aborted by MSVC.",
+                        "Assertion vérifiée : l'exécution a été interrompue par MSVC.")
                     :ui("No se verificó el aborto por la aserción solicitada.",
                         "The requested assertion abort was not verified.",
                         "L'arrêt par l'assertion demandée n'a pas été vérifié.");
