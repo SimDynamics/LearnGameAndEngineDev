@@ -121,6 +121,18 @@ BAD_TAKE={
         return true;
     } catch (const std::bad_alloc&) { return false; }
 """,
+    # Sentinel: this wrong implementation deliberately preserves self-take
+    # and all published stdout, but manufactures a second owner when moving.
+    "copies_distinct_owner_preserves_self":r"""
+    if (limite < 0 || limite > 4 || origen.cantidad() > limite) return false;
+    if (&destino == &origen) return true;
+    try {
+        Tramo copia(origen);
+        destino = std::move(copia);
+        origen.vaciar();
+        return true;
+    } catch (const std::bad_alloc&) { return false; }
+""",
     "leaves_old_destination_in_source":r"""
     if (limite<0 || limite>4 || origen.cantidad()>limite) return false;
     destino.intercambiar(origen);
@@ -453,7 +465,7 @@ def main():
                 raise AssertionError((name,"unexpected copy/transfer semantics",
                                       result.returncode,result.stdout,result.stderr))
             print(f"{o.compiler}: {name}: {'PASS' if accepted else 'REJECT'}",flush=True)
-    print("PASS U6L12 original Tramo: two valid solutions, sixteen defective "
+    print("PASS U6L12 original Tramo: two valid solutions, seventeen defective "
           "semantic variants rejected; live array identity, bad_alloc, alias "
           "preservation, rejected &&, no allocation on move and RAII cleanup.")
 
