@@ -73,6 +73,26 @@ class WindowsCompilerPolicy(unittest.TestCase):
         self.assertIn("if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }",
                       guarded[second:])
 
+    def test_assetcheck_reference_build_uses_one_explicit_windows_generator(self):
+        # The four authentic reference executables were already built on
+        # Windows VS 2026. A one-item matrix added no coverage and could
+        # hide a future generator/report mismatch.
+        source = (WORKFLOWS / "assetcheck-curricular-oracles.yml").read_text(
+            encoding="utf-8")
+        self.assertIn("runs-on: windows-2025-vs2026", source)
+        self.assertNotIn("matrix.", source)
+        self.assertNotIn("matrix:", source)
+        self.assertIn('--generator "Visual Studio 18 2026"', source)
+        self.assertIn('--report "out/qa/assetcheck-curriculum/msvc-x64.json"',
+                      source)
+        self.assertIn("name: assetcheck-curriculum-msvc-x64-${{ github.sha }}",
+                      source)
+        self.assertIn("path: out/qa/assetcheck-curriculum/msvc-x64.json",
+                      source)
+        for job in ("check-contracts:", "compile-curricular-references:",
+                    "check-cmake-preparation:", "capture-u4l3-real-console:"):
+            self.assertIn(job, source)
+
     def test_no_obsolete_android_build_workflows(self):
         for name in ("android-code-format-compat.yml", "build-clang23-android.yml"):
             self.assertFalse((WORKFLOWS / name).exists(), name)

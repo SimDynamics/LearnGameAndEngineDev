@@ -50,16 +50,9 @@ jobs:
         run: python -B -m unittest -v scripts/curriculum/test_assetcheck_curricular_oracles.py
 
   compile-curricular-references:
-    name: "Compile actual curricular C++23 references (${{ matrix.report }})"
-    runs-on: ${{ matrix.os }}
+    name: Compile actual curricular C++23 references (MSVC x64)
+    runs-on: windows-2025-vs2026
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-2025-vs2026
-            generator: "Visual Studio 18 2026"
-            report: msvc-x64
     steps:
       - name: Read original after-attempt reference and editor code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -72,15 +65,15 @@ jobs:
       - name: Resolve published editors and references by their stable identities
         run: python -B -m unittest discover -s scripts/curriculum -p test_assetcheck_editor_references_cpp23.py -v
       - name: Build four isolated C++23 reference executables and verify outputs
-        run: python scripts/curriculum/verify_assetcheck_editor_references_cpp23.py --generator "${{ matrix.generator }}" --report "out/qa/assetcheck-curriculum/${{ matrix.report }}.json"
+        run: python scripts/curriculum/verify_assetcheck_editor_references_cpp23.py --generator "Visual Studio 18 2026" --report "out/qa/assetcheck-curriculum/msvc-x64.json"
       - name: Preserve exact curricular-only results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: assetcheck-curriculum-${{ matrix.report }}-${{ github.sha }}
+          name: assetcheck-curriculum-msvc-x64-${{ github.sha }}
           retention-days: 14
           if-no-files-found: warn
-          path: out/qa/assetcheck-curriculum/${{ matrix.report }}.json
+          path: out/qa/assetcheck-curriculum/msvc-x64.json
 
   check-cmake-preparation:
     name: Reproduce U4L3 CMake edit/rebuild with MSVC x64 and Ninja
