@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 
@@ -19,7 +20,18 @@ def main():
     parser.add_argument("--compiler",required=True)
     parser.add_argument("--windows",action="store_true")
     options=parser.parse_args()
-    original=qa.original_block()["initialCode"]
+    block=qa.original_block()
+    original=block["initialCode"]
+    public_cases=block["outputCheck"]["cases"]
+    if len(public_cases)!=3:
+        raise AssertionError("U6L12 original public case count changed")
+    for number,case in enumerate(public_cases,1):
+        if (not isinstance(case.get("standardInput"),str) or
+            not isinstance(case.get("outputs"),list) or
+            not case["outputs"] or
+            not all(isinstance(value,str) for value in case["outputs"]) or
+            type(case.get("exitCode",0)) is not int):
+            raise AssertionError(f"Invalid published U6L12 public case {number}")
     with tempfile.TemporaryDirectory(prefix="lgaed-u6l12-core-") as directory:
         root=Path(directory)
         exe=".exe" if options.windows else ""
@@ -57,6 +69,17 @@ def main():
             **{name:(qa.COPY["copy_then_edit"],body)
                for name,body in qa.BAD_TAKE.items()},
         }
+        # Public stdout is deliberately insufficient for these three
+        # semantically invalid programs: allocation failure and equality
+        # are not observed by main, and a forged owner can mimic a real move.
+        public_variants={
+            "copy_then_take","public_api_and_swap",
+            "swallows_allocation_failure","returns_unmodified_for_equal_value",
+            "copies_distinct_owner_preserves_self"
+        }
+        if "copies_distinct_owner_preserves_self" not in qa.BAD_TAKE:
+            raise AssertionError("U6L12 copy-instead-of-move sentinel missing")
+        public_runs=0
         for name,(copy,take) in [*accepted.items(),*invalid.items()]:
             candidate=root/(name+"-student.cpp")
             candidate.write_bytes(qa.compose(original,copy,take).encode("utf-8"))
@@ -78,6 +101,37 @@ def main():
                                       result.returncode,result.stdout,result.stderr))
             print(f"{options.compiler}: native {name}: "
                   f"{'PASS' if passed else 'REJECT'}",flush=True)
+            # Retain the actual untouched main rather than trusting the
+            # independent driver's stdout. Only the first published case is
+            # mandatory for a learner; all three are exercised here in QA.
+            if name in public_variants:
+                public_binary=root/(name+"-public"+exe)
+                public_compiled=qa.compile_cpp(
+                    options.compiler,candidate,public_binary,options.windows)
+                if public_compiled.returncode:
+                    raise AssertionError(
+                        (name,"original U6L12 main failed to compile",
+                         public_compiled.stdout,public_compiled.stderr))
+                for number,case in enumerate(public_cases,1):
+                    visible=subprocess.run(
+                        [str(public_binary)],cwd=qa.ROOT,
+                        input=case["standardInput"],encoding="utf-8",
+                        errors="replace",text=True,capture_output=True,
+                        check=False,timeout=15)
+                    if (visible.returncode!=case.get("exitCode",0) or
+                        visible.stdout not in case["outputs"] or
+                        visible.stderr):
+                        raise AssertionError(
+                            (name,number,"authored U6L12 public case changed",
+                             visible.returncode,visible.stdout[-500:],
+                             visible.stderr[-500:]))
+                    public_runs+=1
+                print(f"{options.compiler}: public {name}: "
+                      f"{len(public_cases)} authored cases PASS; "
+                      f"private owner {'PASS' if passed else 'REJECT'}",
+                      flush=True)
+        if public_runs!=len(public_cases)*len(public_variants):
+            raise AssertionError("U6L12 public/private comparison omitted a variant")
         correct=qa.compose(original,qa.COPY["copy_then_edit"],
                            qa.TAKE["check_then_assign"])
         protected_changes={
@@ -143,9 +197,10 @@ def main():
                 raise AssertionError((name,"Modified protected source approved",
                                       gated.stdout,gated.stderr))
             print(f"{options.compiler}: protected {name}: REJECT",flush=True)
-    print("PASS U6L12 native source gate: 3 valid authoring variants, "
-          "16 defective cases, 12 protected source changes rejected, "
-          "private Tramo identity and exception witness executed.")
+    print("PASS U6L12 original-owner source gate: valid and invalid copy/take "
+          "functions, protected class and main, private identity and exception "
+          "checks, plus three authentic public cases for two correct and "
+          "three deceptive variants. No additional manual student cases.")
 
 
 if __name__=="__main__":
