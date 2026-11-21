@@ -78,7 +78,7 @@ std::optional<std::vector<Component>> components(Text text){
     // ECMAScript [\\s\\S] is not a reliable any-character class for
     // non-ASCII UTF-16 punctuation in the Windows MSVC regex engine.
     // Match Unicode glyphs with '.' and preserve CR/LF explicitly.
-    static const std::wregex header(LR"(([^0-9()]+?),[ \\t\\r\\n]+[0-9]{4}[a-z]?((?:.|\\r|\\n)*))");
+    static const std::wregex header(LR"(([^0-9()]+?),[ \t\r\n]+[0-9]{4}[a-z]?((?:.|\r|\n)*))");
     std::vector<Component> result;
     for(std::size_t first=0,index=0;;++index){
         const auto end=text.find(L';',first);const auto part=text.substr(first,end==missing?missing:end-first);
