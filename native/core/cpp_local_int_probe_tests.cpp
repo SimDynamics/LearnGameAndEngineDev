@@ -213,6 +213,28 @@ int main() {
     require(qualified&&
         qualified->find("llaves=ajustes::llaves;\n    llaves = 19;\n")!=std::string::npos,
         "A namespace-qualified value was confused with the local int");
+    const auto earlier_member=cpp_local_int_override(
+        "#include <iostream>\nstruct Datos{int llaves{7};};\n"
+        "int main(){Datos datos;int llaves;int anterior=datos.llaves;"
+        "llaves=anterior;std::cout<<llaves;}",
+        {"llaves",19});
+    require(earlier_member&&
+        earlier_member->find("llaves=anterior;\n    llaves = 19;\n")!=std::string::npos,
+        "Reading a separate member before first assignment falsely rejected the local");
+    const auto earlier_grouped_member=cpp_local_int_override(
+        "#include <iostream>\nstruct Datos{int llaves{7};};\n"
+        "int main(){Datos datos;int copia=datos.llaves, llaves=7;std::cout<<llaves;}",
+        {"llaves",19});
+    require(earlier_grouped_member&&
+        earlier_grouped_member->find(
+            "int copia=datos.llaves, llaves=7;\n    llaves = 19;\n")!=std::string::npos,
+        "A grouped member name was confused with the later local declaration");
+    require(!cpp_local_int_override(
+        "#include <iostream>\nstruct Datos{int llaves{7};};\n"
+        "int main(){Datos datos;int llaves;llaves=datos.llaves+llaves;"
+        "std::cout<<llaves;}",
+        {"llaves",19}),
+        "A member reference hid a real uninitialized self-read");
     for(const auto* unsafe:{
         "llaves = llaves + 7;",
         "llaves = (7 + llaves);",
