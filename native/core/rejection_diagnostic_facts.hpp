@@ -160,6 +160,21 @@ inline bool labelled(std::string_view source,const std::vector<Word>& words,
                        ((next==','||next=='-'||next=='+')&&
                         digit(following)))return false;
                 }
+                // A fractional or arithmetic expression is not the observed
+                // whole integer. Spaces around '/' or '*' do not make
+                // "piezas=-1 / 2" mean the integer -1. A slash followed by
+                // another field label remains ordinary readable punctuation.
+                const auto operation=skip_spaces(folded,end);
+                if(operation<folded.size()&&
+                   (folded[operation]=='/'||folded[operation]=='*'||
+                    folded[operation]=='%'||folded[operation]=='^')) {
+                    const auto operand=skip_spaces(folded,operation+1);
+                    if(operand<folded.size()&&
+                       (digit(folded[operand])||
+                        ((folded[operand]=='+'||folded[operand]=='-')&&
+                         operand+1<folded.size()&&digit(folded[operand+1]))))
+                        return false;
+                }
                 if(*words[j].number!=expected)return false;
                 found=true;
                 break;
