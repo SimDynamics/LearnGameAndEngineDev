@@ -3931,6 +3931,15 @@ acreditan reinicios fijos (`aforo = 8;`), copias idénticas
 (`aforo = aforo;`) ni lecturas de un campo de otro objeto
 (`aforo = datos.aforo;`). Un resultado visible correcto seguido
 de una suma privada tampoco demuestra un aumento original.
+El detector también descarta operaciones aritméticas demostrablemente
+neutras como `aforo = aforo + 0`, `aforo += 0`,
+`aforo = 0 + aforo` y `aforo = aforo * 1`. Si existe un aumento
+posterior inequívoco, la sonda se coloca después de ese aumento, no
+después del cálculo neutro. Se preservan expresiones con un cambio real,
+como `aforo = aforo + 0 + 3`. Esta barrera es estructural y
+conservadora: no sustituye la compilación real de las variantes ni
+pretende demostrar el resultado de expresiones C++ arbitrarias.
+
 Las demás sondas independientes y sus salidas siguen siendo obligatorias
 para acreditar la dependencia del valor inicial y de la copia.
 
