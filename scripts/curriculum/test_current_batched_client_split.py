@@ -4,7 +4,6 @@ Only in-memory authoring; never rewrites Work JSON, student drafts or progress.
 """
 from copy import deepcopy
 import json
-import os
 import sys
 from pathlib import Path
 import subprocess
@@ -142,13 +141,10 @@ class CurrentBatchSplit(unittest.TestCase):
                 ("individual", CLIENT, expected_individual),
             ):
                 (directory / "main.cpp").write_text(client, encoding="utf-8")
-                exe = directory / (label + (".exe" if os.name == "nt" else ".bin"))
-                if os.name == "nt":
-                    command = ["cl", "/nologo", "/std:c++latest", "/EHsc",
-                               "/utf-8", "main.cpp", "sobres.cpp", "/Fe:" + str(exe)]
-                else:
-                    command = ["g++", "-std=c++23", "-Wall", "-Wextra",
-                               "-pedantic", "main.cpp", "sobres.cpp", "-o", str(exe)]
+                exe = directory / (label + ".exe")
+                command = ["cl", "/nologo", "/std:c++latest", "/EHsc",
+                           "/W4", "/permissive-", "/utf-8", "main.cpp",
+                           "sobres.cpp", "/Fe:" + str(exe)]
                 compiled = subprocess.run(command, cwd=directory,
                                           capture_output=True, timeout=90, check=False)
                 self.assertEqual(compiled.returncode, 0,

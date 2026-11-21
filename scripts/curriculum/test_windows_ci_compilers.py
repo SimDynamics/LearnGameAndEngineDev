@@ -42,6 +42,15 @@ class WindowsCompilerPolicy(unittest.TestCase):
         self.assertIn("Install-WasiTools.ps1", wasi)
         self.assertIn("Test-NativeCurricularCI.ps1", wasi)
 
+    def test_windows_source_execution_probes_do_not_use_gcc(self):
+        for relative in (
+                "scripts/curriculum/test_real_code_format_pilot.py",
+                "scripts/curriculum/test_current_batched_client_split.py"):
+            with self.subTest(source=relative):
+                source = (ROOT / relative).read_text(encoding="utf-8")
+                self.assertIn('"cl"', source)
+                self.assertNotRegex(source, r'["\'](?:g\+\+|clang\+\+|c\+\+)["\']')
+
     def test_real_rename_runtime_uses_msvc_not_unneeded_compilers(self):
         source = (ROOT / "scripts/curriculum/test_identifier_rename_execution.py").read_text(
             encoding="utf-8")
