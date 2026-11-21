@@ -11,6 +11,7 @@ on:
       - native/core/cpp_local_string_probe_tests.cpp
       - native/core/cpp_local_string_live_fixtures.cpp
       - scripts/windows/Test-LocalVariableDependency.ps1
+      - scripts/windows/Test-LocalVariableState.ps1
       - scripts/curriculum/test_local_string_live_compilation.py
       - native/core/cpp_local_int_live_fixtures.cpp
       - native/core/cpp_expression_repair.hpp
@@ -100,17 +101,23 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Parse the native Windows QA entry point without running it
+      - name: Parse both local Windows QA entry points without running them
         run: |
-          $path = Join-Path (Get-Location).Path 'scripts/windows/Test-LocalVariableDependency.ps1'
-          if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw 'Local QA script missing' }
-          $tokens = $null
-          $parseErrors = $null
-          [void][System.Management.Automation.Language.Parser]::ParseFile(
-            $path, [ref]$tokens, [ref]$parseErrors)
-          if ($parseErrors.Count -ne 0) {
-            $parseErrors | ForEach-Object { Write-Error $_.Message }
-            throw 'Local Windows QA script has PowerShell syntax errors'
+          foreach ($relative in @(
+              'scripts/windows/Test-LocalVariableDependency.ps1',
+              'scripts/windows/Test-LocalVariableState.ps1')) {
+            $path = Join-Path (Get-Location).Path $relative
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+              throw "Local QA script missing: $relative"
+            }
+            $tokens = $null
+            $parseErrors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile(
+              $path, [ref]$tokens, [ref]$parseErrors)
+            if ($parseErrors.Count -ne 0) {
+              $parseErrors | ForEach-Object { Write-Error $_.Message }
+              throw "Local Windows QA script has PowerShell syntax errors: $relative"
+            }
           }
       - name: Prepare hosted Visual C++ for isolated source tests
         uses: ilammy/msvc-dev-cmd@v1
