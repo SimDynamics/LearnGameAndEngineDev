@@ -66,8 +66,18 @@ int main(int argc,char** argv) try {
         if(!lexed)throw std::runtime_error("Cannot tokenize documented derived class");
         const auto inherited=lgaed::curriculum::cpp_class_structure::defined_class(
             *lexed,"MedidaIdentificada","Medida");
-        if(inherited)throw std::runtime_error(
-            "Tokenizer counted commented public inheritance as real");
+        if(inherited) {
+            std::string tokens;
+            for(std::size_t i=0;i+1<lexed->size();++i) {
+                if((*lexed)[i]!="id:class"||
+                   (*lexed)[i+1]!="id:MedidaIdentificada")continue;
+                for(std::size_t j=i;j<lexed->size()&&j<i+8;++j)
+                    tokens+=(*lexed)[j]+" ";
+                tokens+=" | ";
+            }
+            throw std::runtime_error(
+                "Tokenizer counted commented public inheritance as real: "+tokens);
+        }
         reject_original(documented,"Comment faked public inheritance");
     }
     if(!lgaed::curriculum::cpp_virtual_lifetime_dispatch_matches(spec,candidate))
