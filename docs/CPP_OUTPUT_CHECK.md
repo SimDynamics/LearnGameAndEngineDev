@@ -564,6 +564,16 @@ La QA nativa de Codex con la declaración temporal no publica
 por sí sola nuevos objetivos dentro de las lecciones.
 Esta capacidad no acredita por sí sola las jerarquías posteriores.
 
+La regresión `test_cpp_array_return_take_core.py` contrasta también el
+`main` original con los tres casos públicos en dos soluciones válidas
+y tres contraejemplos: suprimir `std::bad_alloc`, devolver un array vacío
+cuando se copia un valor igual y fabricar otro array antes de fingir
+una transferencia. Los tres defectos pueden reproducir el mismo stdout,
+por lo que la sonda privada debe comprobar excepciones, identidad real
+del propietario, conservación de rechazos y limpieza. Los dos casos
+públicos posteriores siguen siendo opcionales para el estudiante;
+esta batería adicional se ejecuta únicamente en QA.
+
 
 ## Destrucción polimórfica y propiedad de objetos derivados
 
