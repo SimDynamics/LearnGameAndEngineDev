@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerLocalIntChecks", "compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerLocalIntChecks", "compilerLocalStringChecks", "compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -6563,7 +6563,7 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
     owners, seen = _blocks(document), set()
     forbidden = {
         "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks",
-        "compilerOpenBatteryChecks", "compilerReductionChecks",
+        "compilerLocalStringChecks", "compilerOpenBatteryChecks", "compilerReductionChecks",
         "compilerCmakeGraphChecks", "compilerIndexedUniqueTransferChecks",
         "compilerDefaultedMovePolicyChecks",
         "compilerIndependentCopyAssignmentChecks",
@@ -6640,6 +6640,96 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
                     "Hidden outputs must be distinct, bounded and differ from visible output")
 
 
+def _validate_compiler_local_string_checks(document: dict) -> None:
+    """Verify independently authored string mutations without changing old response IDs."""
+    if "compilerLocalStringChecks" not in document:
+        return
+    layout = document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version") == 2 and
+            layout.get("locale") == "es",
+            "Local string checks require an existing Spanish v2 lesson")
+    checks = document["compilerLocalStringChecks"]
+    require(type(checks) is list and 1 <= len(checks) <= 32,
+            "Local string checks require 1..32 distinct source owners")
+    owners, seen = _blocks(document), set()
+    forbidden = {
+        "compilerLocalIntChecks", "compilerWorkflowChecks",
+        "compilerRuntimeChecks", "compilerNamedRuleChecks",
+        "compilerOpenBatteryChecks", "compilerReductionChecks",
+        "compilerCmakeGraphChecks", "compilerIndexedUniqueTransferChecks",
+        "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks",
+        "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks",
+        "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks",
+        "compilerPolymorphicDestructionChecks",
+        "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks",
+        "compilerAbstractInterfaceChecks", "compilerInterfaceCollectionChecks",
+        "compilerPolymorphicCloneChecks", "compilerDualInterfaceChecks",
+    }
+    moments = {"afterInitialization", "afterFirstAssignment", "beforeOutput"}
+    for check in checks:
+        require(type(check) is dict and set(check) == {"activity", "probes"},
+                "A local string owner requires exactly activity and probes")
+        identity = _identity(check["activity"])
+        require(identity not in seen, "A local string owner cannot be repeated")
+        seen.add(identity)
+        owner = owners.get(identity)
+        require(type(owner) is dict and owner.get("type") == "cpp_compiler" and
+                owner.get("language", "cpp") == "cpp" and
+                type(owner.get("outputCheck")) is dict and
+                type(owner["outputCheck"].get("cases")) is list and
+                len(owner["outputCheck"]["cases"]) == 1 and
+                type(owner.get("initialCode")) is str and bool(owner["initialCode"]) and
+                not ({"compileCheck", "cmake", "projectFiles", "sourceFiles"} & set(owner)),
+                "A string dependency needs an original one-case single-file C++ editor")
+        case = owner["outputCheck"]["cases"][0]
+        require(type(case) is dict and
+                case.get("standardInput") == owner.get("standardInput", "") and
+                case.get("exitCode", 0) == 0 and type(case.get("exitCode", 0)) is int and
+                "target" not in case and
+                not ({"standardError", "standardErrorExact"} & set(case)) and
+                type(case.get("outputs")) is list and
+                bool(case["outputs"]),
+                "A local string probe must retain its original normal output contract")
+        for key in forbidden:
+            related = document.get(key, [])
+            if type(related) is list:
+                require(not any(type(item) is dict and
+                                item.get("activity") == identity for item in related),
+                        "A local string source owner cannot share another runtime goal")
+        probes = check["probes"]
+        require(type(probes) is list and 1 <= len(probes) <= 12,
+                "A local string source owner needs 1..12 hidden variations")
+        unique = set()
+        for probe in probes:
+            require(type(probe) is dict and set(probe) ==
+                    {"variable", "replacement", "moment", "outputs"},
+                    "A string variation needs variable, replacement, moment and outputs")
+            variable, replacement = probe["variable"], probe["replacement"]
+            moment, outputs = probe["moment"], probe["outputs"]
+            require(type(variable) is str and re.fullmatch(
+                r"[A-Za-z_][A-Za-z_0-9]{0,127}", variable) is not None and
+                variable != "main" and not variable.startswith("__") and
+                not (variable.startswith("_") and len(variable) > 1 and variable[1].isupper()),
+                "Invalid local string identifier")
+            require(type(replacement) is str and replacement and "\x00" not in replacement and
+                    len(replacement.encode("utf-8")) <= 128,
+                    "A local string replacement must be a bounded nonempty UTF-8 value")
+            require(type(moment) is str and moment in moments,
+                    "A local string probe has an unsupported mutation moment")
+            require((variable, moment) not in unique,
+                    "A local string variable has a repeated mutation phase")
+            unique.add((variable, moment))
+            require(type(outputs) is list and 1 <= len(outputs) <= 4 and
+                    all(type(text) is str and text and "\x00" not in text and
+                        len(text.encode("utf-8")) <= 4096 for text in outputs),
+                    "A local string variation needs 1..4 bounded exact outputs")
+            observed = [text.replace("\r\n", "\n") for text in outputs]
+            previous = {text.replace("\r\n", "\n") for text in case["outputs"]}
+            require(len(set(observed)) == len(observed) and
+                    not (set(observed) & previous),
+                    "A hidden local string output must differ from the visible case")
+
+
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
     course_edition.validate_lesson(document, require_layout=True)
@@ -6652,6 +6742,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_runtime_checks(document)
     _validate_compiler_named_rule_checks(document)
     _validate_compiler_local_int_checks(document)
+    _validate_compiler_local_string_checks(document)
     _validate_compiler_indexed_unique_transfer_checks(document)
     _validate_compiler_defaulted_move_policy_checks(document)
     _validate_compiler_independent_copy_assignment_checks(document)
@@ -7425,6 +7516,11 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
              current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
              baseline["compilerLocalIntChecks"]),
             "Published local-int checks cannot be removed, reordered or rewritten")
+    require(not baseline.get("compilerLocalStringChecks") or
+            (type(current.get("compilerLocalStringChecks")) is list and
+             current["compilerLocalStringChecks"][:len(baseline["compilerLocalStringChecks"])] ==
+             baseline["compilerLocalStringChecks"]),
+            "Published local-string checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerOpenBatteryChecks") or
             (type(current.get("compilerOpenBatteryChecks")) is list and
              current["compilerOpenBatteryChecks"][:len(baseline["compilerOpenBatteryChecks"])] ==
@@ -7967,6 +8063,11 @@ def validate_transition(previous: dict, current: dict) -> None:
              current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
              baseline["compilerLocalIntChecks"]),
             "Published local-int checks cannot be removed, reordered or rewritten")
+    require(not baseline.get("compilerLocalStringChecks") or
+            (type(current.get("compilerLocalStringChecks")) is list and
+             current["compilerLocalStringChecks"][:len(baseline["compilerLocalStringChecks"])] ==
+             baseline["compilerLocalStringChecks"]),
+            "Published local-string checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerOpenBatteryChecks") or
             (type(current.get("compilerOpenBatteryChecks")) is list and
              current["compilerOpenBatteryChecks"][:len(baseline["compilerOpenBatteryChecks"])] ==

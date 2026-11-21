@@ -4656,6 +4656,7 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
             "Local int checks require one ordinary matching runtime sample.");
         for(const auto* conflicting:{
                 "compilerWorkflowChecks","compilerRuntimeChecks",
+                "compilerLocalStringChecks",
                 "compilerNamedRuleChecks","compilerOpenBatteryChecks",
                 "compilerReductionChecks","compilerCmakeGraphChecks",
                 "compilerIndexedUniqueTransferChecks",
@@ -4722,6 +4723,119 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
         require(cpp_local_int_check_valid(spec),
             "Invalid or duplicated independent int variation.");
         owner->local_int_check=std::move(spec);
+    }
+}
+
+// An additional, independently verified std::string dependency, authored
+// once at the lesson root. The visible output, original code and state layout
+// are unchanged. Both normal and progress-only loaders parse this contract.
+void read_compiler_local_string_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerLocalStringChecks"))return;
+    const auto entries=array(root,"compilerLocalStringChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Local string checks require original Spanish v2 compiler owners.");
+    const OriginalJson original(lesson.raw_json);
+    const auto raw_entries=original.elements(
+        original.member(original.root(),"compilerLocalStringChecks"));
+    require(raw_entries.size()==entries.Size(),
+        "Original local string owner count differs from the parsed declaration.");
+    std::set<std::string> seen;
+    std::size_t owner_index=0;
+    for(const auto& value:entries) {
+        const auto item=value.GetObject();
+        const auto raw_item=raw_entries.at(owner_index++);
+        (void)original.member(raw_item,"activity");
+        (void)original.member(raw_item,"probes");
+        allowed_keys(item,{"activity","probes"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&seen.insert(identity).second,
+            "Duplicate or invalid local string owner.");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate local string block identity.");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&owner->output_check->cases.size()==1&&
+                !owner->compile_check&&!owner->cmake&&!owner->local_int_check&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->initial_code.empty()&&
+                !owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&
+                !owner->polymorphic_destruction_probe&&!owner->virtual_lifetime_probe&&
+                !owner->derived_preparation_probe&&!owner->abstract_interface_probe&&
+                !owner->interface_collection_probe&&!owner->polymorphic_clone_probe&&
+                !owner->dual_interface_probe&&
+                !owner->open_battery_probe&&!owner->reduction_probe&&
+                !owner->boolean_battery_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Local string check requires one standalone unchanged output editor.");
+        const auto& first=owner->output_check->cases.front();
+        require(first.standard_input==owner->standard_input.value_or("")&&
+                first.exit_code==0&&!first.executable&&
+                first.standard_error==StandardErrorExpectation::ignored&&
+                !first.standard_error_exact,
+            "Local string checks need one original normal-exit output case.");
+        for(const auto* conflicting:{
+                "compilerLocalIntChecks","compilerWorkflowChecks",
+                "compilerRuntimeChecks","compilerNamedRuleChecks",
+                "compilerOpenBatteryChecks","compilerReductionChecks",
+                "compilerCmakeGraphChecks","compilerIndexedUniqueTransferChecks",
+                "compilerDefaultedMovePolicyChecks","compilerIndependentCopyAssignmentChecks",
+                "compilerMoveAssignmentInvariantChecks","compilerArrayOwnerReadChecks",
+                "compilerArrayCopyMoveChecks","compilerArrayReturnTakeChecks",
+                "compilerPolymorphicDestructionChecks","compilerVirtualLifetimeDispatchChecks",
+                "compilerDerivedPreparationChecks","compilerAbstractInterfaceChecks",
+                "compilerInterfaceCollectionChecks","compilerPolymorphicCloneChecks",
+                "compilerDualInterfaceChecks"}) {
+            if(!root.HasKey(winrt::to_hstring(conflicting)))continue;
+            for(const auto& other:array(root,conflicting))
+                require(text(other.GetObject(),"activity")!=identity,
+                    "An independent local-string owner cannot share another runtime check.");
+        }
+        const auto probes=array(item,"probes");
+        require(probes.Size()>0&&probes.Size()<=12,
+            "Local string checks require 1..12 independently authored changes.");
+        const auto raw_probes=original.elements(original.member(raw_item,"probes"));
+        require(raw_probes.size()==probes.Size(),
+            "Original string probe count does not match its parsed declaration.");
+        CppLocalStringCheck spec;
+        std::size_t probe_index=0;
+        for(const auto& entry:probes) {
+            const auto probe=entry.GetObject();
+            const auto raw_probe=raw_probes.at(probe_index++);
+            for(const auto field:{"variable","replacement","moment","outputs"})
+                (void)original.member(raw_probe,field);
+            allowed_keys(probe,{"variable","replacement","moment","outputs"},true);
+            CppLocalStringProbe next;
+            next.variable=text(probe,"variable");
+            next.replacement=text(probe,"replacement");
+            next.expected_stdout=strings(array(probe,"outputs"),true);
+            const auto moment=text(probe,"moment");
+            if(moment=="afterInitialization")
+                next.moment=CppLocalStringMoment::after_initialization;
+            else if(moment=="afterFirstAssignment")
+                next.moment=CppLocalStringMoment::after_first_assignment;
+            else if(moment=="beforeOutput")
+                next.moment=CppLocalStringMoment::before_output;
+            else require(false,"Unknown string-variable perturbation moment.");
+            for(const auto& expected:next.expected_stdout)
+                require(!std::ranges::any_of(first.outputs,[&](const auto& visible) {
+                    return cpp_local_int_canonical_stdout(expected)==
+                           cpp_local_int_canonical_stdout(visible);
+                }),"A local string variation must distinguish the visible output.");
+            spec.probes.push_back(std::move(next));
+        }
+        require(cpp_local_string_check_valid(spec),
+            "Invalid, duplicate or incomplete private string variation.");
+        owner->local_string_check=std::move(spec);
     }
 }
 
@@ -7251,6 +7365,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_order_visual_separators(root,lesson);
         read_compiler_workflow_checks(root,lesson);
         read_compiler_local_int_checks(root,lesson);
+        read_compiler_local_string_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_indexed_unique_transfer_checks(root,lesson);
@@ -7392,6 +7507,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_order_visual_separators(root,lesson);
         read_compiler_workflow_checks(root,lesson);
         read_compiler_local_int_checks(root,lesson);
+        read_compiler_local_string_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_indexed_unique_transfer_checks(root,lesson);
