@@ -263,6 +263,17 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo+3;})CPP";
     if(cpp_local_int_override(neutral_update,{"aforo",4,{},true}))
         throw std::runtime_error(
             "A neutral U2L3 update passed every private output variation");
+    // A multiplier such as 10 (decimal), 010 (octal), 0x10 (hex) or
+    // 0b10 (binary) is not the identity multiplier one. A lexical
+    // shortcut must not reject a valid after-update variation.
+    for(const auto* multiplier:{"10","010","0x10","0b10","0B10"}) {
+        const auto src=std::string(
+            "int main(){int aforo{5};aforo=aforo*")+
+            multiplier+";std::cout<<aforo;}";
+        if(!cpp_local_int_override(src,{"aforo",4,{},true}))
+            throw std::runtime_error(
+                "A non-unit multiplier was incorrectly rejected as a no-op");
+    }
     if(emitted!=43)throw std::runtime_error("Unexpected live fixture count");
     std::cout<<"PASS generated 43 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
