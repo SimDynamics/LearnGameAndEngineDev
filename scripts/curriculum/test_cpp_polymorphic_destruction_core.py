@@ -74,6 +74,9 @@ def main() -> None:
         "independent_move_factory": (
             fixture.GOOD_BASE_ALT, fixture.GOOD_DERIVED_ALT,
             fixture.GOOD_FACTORY_ALT, True),
+        "commented_cycle_declaration": (
+            fixture.GOOD_BASE, fixture.GOOD_DERIVED,
+            fixture.GOOD_FACTORY, True),
         **{
             name: (body, fixture.GOOD_DERIVED, fixture.GOOD_FACTORY, False)
             for name, body in fixture.BAD_BASE.items()
@@ -99,15 +102,22 @@ def main() -> None:
         # The separately compiled driver must reject it with two live owners.
         public_variants={
             "direct_derived_factory","independent_move_factory",
-            "base_resets_all_live_objects"
+            "commented_cycle_declaration","base_resets_all_live_objects"
         }
         public_runs=0
         for name, (base, derived, factory, expected) in cases.items():
             code=folder / (name + ".cpp")
-            code.write_bytes(
-                fixture.compose(original, base, derived, factory).encode("utf-8"))
+            source_for_case=original_path
+            candidate=fixture.compose(original, base, derived, factory)
+            if name=="commented_cycle_declaration":
+                # This sentence used to close Ciclo before its real fields.
+                note="// Example only: struct Ciclo { }; class Ficha {\n"
+                source_for_case=folder / "commented-original.cpp"
+                source_for_case.write_bytes((note+original).encode("utf-8"))
+                candidate=note+candidate
+            code.write_bytes(candidate.encode("utf-8"))
             private=folder / (name + ".private.cpp")
-            generated=run([str(tool), str(original_path), str(code), str(private)])
+            generated=run([str(tool), str(source_for_case), str(code), str(private)])
             if generated.returncode or not private.is_file():
                 raise AssertionError((name, "genuine source gate rejected a "
                                       "legitimate body edit", generated.stdout,
@@ -178,7 +188,7 @@ def main() -> None:
                 raise AssertionError((name, "protected student source was altered"))
             print(f"{arguments.compiler}: {name}: REJECT", flush=True)
     print("PASS original U8L5 source and three-body private probe: "
-          "two valid implementations and the false-positive destructor "
+          "three valid implementations and the false-positive destructor "
           "matched all five authentic public cases, but only the valid "
           "implementations satisfied the private lifetime checks. "
           "No history or curriculum files modified.")

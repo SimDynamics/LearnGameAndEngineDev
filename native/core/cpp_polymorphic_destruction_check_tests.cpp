@@ -45,6 +45,17 @@ int main(int argc, char** argv) try {
         "bases_vivas", "derivadas_vivas", "fichas_vivas",
         "bases_destruidas", "derivadas_destruidas", "fichas_destruidas",
     };
+    // Source metadata cannot borrow a counter from a comment.
+    const auto at=original.find("    int bases_vivas = 0;");
+    if(at==std::string::npos)
+        throw std::runtime_error("Authentic Ciclo counter disappeared");
+    auto fake_original=original;
+    fake_original.insert(at,"    // int autor_solo_en_comentario = 0;\n");
+    auto bad_authoring=spec;
+    bad_authoring.editable.original_source=fake_original;
+    bad_authoring.base_alive="autor_solo_en_comentario";
+    if(cpp_polymorphic_destruction_detail::valid(bad_authoring))
+        throw std::runtime_error("A comment impersonated a Ciclo counter");
     if (!cpp_polymorphic_destruction_matches(spec, candidate))
         throw std::runtime_error(
             "The submitted source changed protected class, main, "

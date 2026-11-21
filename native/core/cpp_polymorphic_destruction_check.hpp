@@ -1,12 +1,15 @@
 #pragma once
 
 #include "core/cpp_multi_body_check.hpp"
+#include "core/cpp_class_definition_instrumentation.hpp"
 
 #include <algorithm>
 #include <array>
+#include <initializer_list>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace lgaed::curriculum {
 
@@ -61,29 +64,66 @@ inline bool valid(const CppPolymorphicDestructionPolicy& p) {
        bodies[2].signature.find("std::unique_ptr<"+p.base_class+"> "+
           p.factory_function+"(")!=0)
         return false;
-    // Keep the declared names bound to actual source objects. Otherwise
-    // well-formed but misspelled author metadata would make every valid
-    // student solution fail the private C++ check after the first case.
-    const auto owned_type=source.find("class "+p.owned_class+" {")!=std::string::npos||
-        source.find("struct "+p.owned_class+" {")!=std::string::npos;
-    const auto write_operation=source.find("void "+p.write_method+"(")!=std::string::npos;
-    const auto cycle_at=source.find("struct "+p.cycle_class+" {");
-    const auto cycle_end=cycle_at==std::string::npos
-        ?std::string::npos:source.find("};",cycle_at);
-    if(!owned_type||!write_operation||cycle_end==std::string::npos)return false;
-    const auto cycle=std::string_view(source).substr(cycle_at,cycle_end-cycle_at);
-    for(std::string_view field:{std::string_view(p.base_alive),
-            std::string_view(p.derived_alive),std::string_view(p.owned_alive),
-            std::string_view(p.base_destroyed),
+    // Require actual C++ declarations: text in comments or raw literals
+    // must not invent a Ficha owner, close Ciclo early, or supply its fields.
+    if(!cpp_class_definition_instrumentation::body_insertion(source,p.owned_class))
+        return false;
+    const auto scanned=code_format::cpp_tokens(source);
+    if(!scanned)return false;
+    std::vector<std::string> code;
+    code.reserve(scanned->size());
+    for(const auto& token:*scanned)
+        if(!token.starts_with("comment:"))code.push_back(token);
+    const auto contains=[&](std::initializer_list<std::string> pattern) {
+        return std::search(code.begin(),code.end(),
+            pattern.begin(),pattern.end())!=code.end();
+    };
+    std::optional<std::pair<std::size_t,std::size_t>> cycle;
+    for(std::size_t i=0;i+2<code.size();++i) {
+        if(code[i]!="id:struct"||code[i+1]!="id:"+p.cycle_class||
+           code[i+2]!="op:{")continue;
+        if(cycle)return false; // The author cannot pick among two owners.
+        std::size_t depth=1;
+        for(std::size_t j=i+3;j<code.size();++j) {
+            if(code[j]=="op:{")++depth;
+            else if(code[j]=="op:}"&&--depth==0) {
+                if(j+1>=code.size()||code[j+1]!="op:;")return false;
+                cycle=std::pair{i+2,j};
+                break;
+            }
+        }
+        if(!cycle)return false;
+    }
+    if(!cycle)return false;
+    for(const std::string_view field:{
+            std::string_view(p.base_alive),std::string_view(p.derived_alive),
+            std::string_view(p.owned_alive),std::string_view(p.base_destroyed),
             std::string_view(p.derived_destroyed),
-            std::string_view(p.owned_destroyed)})
-        if(cycle.find("int "+std::string(field))==cycle.npos)return false;
-    // The actual base virtuality and single-owner member are immutable.
-    // The private driver verifies real derived identity and complete cleanup.
-    return source.find("virtual ~"+p.base_class+"() noexcept;")!=std::string::npos&&
-        source.find("~"+p.derived_class+"() noexcept override;")!=std::string::npos&&
-        source.find("std::unique_ptr<"+p.owned_class+"> "+p.owned_member+";")!=
-            std::string::npos;
+            std::string_view(p.owned_destroyed)}) {
+        bool found=false;
+        std::size_t depth=1;
+        for(std::size_t j=cycle->first+1;j<cycle->second;++j) {
+            if(depth==1&&j+2<cycle->second&&code[j]=="id:int"&&
+               code[j+1]=="id:"+std::string(field)&&
+               (code[j+2]=="op:="||code[j+2]=="op:;"||
+                code[j+2]=="op:{")) {
+                if(found)return false;
+                found=true;
+            }
+            if(code[j]=="op:{")++depth;
+            else if(code[j]=="op:}")--depth;
+        }
+        if(!found)return false;
+    }
+    // These are protected original source declarations, not an inferred
+    // runtime result. The private native probe still checks real semantics.
+    return contains({"id:void","id:"+p.write_method,"op:("})&&
+        contains({"id:virtual","op:~","id:"+p.base_class,
+                  "op:(","op:)","id:noexcept","op:;"})&&
+        contains({"op:~","id:"+p.derived_class,"op:(","op:)",
+                  "id:noexcept","id:override","op:;"})&&
+        contains({"id:std","op:::","id:unique_ptr","op:<",
+                  "id:"+p.owned_class,"op:>","id:"+p.owned_member,"op:;"});
 }
 inline void substitute(std::string& source,std::string_view key,
                        std::string_view replacement) {
