@@ -38,7 +38,7 @@ inline bool cpp_local_string_check_valid(const CppLocalStringCheck& check) {
     if(check.probes.empty() || check.probes.size()>12)return false;
     std::set<std::pair<std::string,CppLocalStringMoment>> distinct;
     for(const auto& probe:check.probes) {
-        if(!cpp_expression_repair_detail::identifier(probe.variable)||
+        if(!cpp_local_probe_identifier(probe.variable)||
            probe.variable=="main"||probe.replacement.empty()||
            probe.replacement.size()>128||probe.replacement.find('\0')!=std::string::npos||
            probe.expected_stdout.empty()||probe.expected_stdout.size()>4||
@@ -89,7 +89,7 @@ inline std::optional<StringDeclaration> declared_string(
     const std::string wanted="id:"+std::string(variable);
     for(;;) {
         if(at+1>=close||!code[at].value.starts_with("id:")||
-           !cpp_expression_repair_detail::identifier(
+           !cpp_local_probe_identifier(
                std::string_view(code[at].value).substr(3)))return {};
         const bool owns=code[at].value==wanted;
         const auto first=code[at+1].value;
@@ -265,7 +265,7 @@ inline std::string cpp_bytes_literal(std::string_view value) {
 
 [[nodiscard]] inline std::optional<std::string> cpp_local_string_override(
         std::string_view source,const CppLocalStringProbe& probe) {
-    if(!cpp_expression_repair_detail::identifier(probe.variable)||
+    if(!cpp_local_probe_identifier(probe.variable)||
        probe.variable=="main"||probe.replacement.empty()||
        probe.replacement.size()>128||
        probe.replacement.find('\0')!=std::string::npos)return {};
