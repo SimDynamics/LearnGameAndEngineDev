@@ -3877,6 +3877,10 @@ puede emplear `=`, `{}` o `()`, o una primera asignación inequívoca.
 También se admiten declaradores enteros agrupados de un mismo tipo, como
 `int cajas{4}, sobres{9};` o `int cajas, sobres;` con asignaciones separadas.
 La sonda se inserta **después del punto y coma completo**, no entre variables.
+Una primera asignación separada no puede leer el propio entero todavía
+sin inicializar: `int llaves; llaves = llaves + 7;` se rechaza antes de
+generar o ejecutar variantes. En cambio, `int llaves; llaves = 3 + 4;`
+mantiene el comportamiento válido y comprobable.
 Si otro declarador usa el entero que se pretende variar (por ejemplo,
 `int cajas=4, sobres=cajas+5;`), se rechaza: mutarlo después ocultaría
 esa dependencia y podría acreditar un resultado falso. También se rechazan
