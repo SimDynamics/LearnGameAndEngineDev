@@ -2276,19 +2276,22 @@ se activa únicamente mediante estas declaraciones de raíz en la lección espa�
 ]
 ```
 
-Cada editor utiliza su identidad histórica y **un solo caso visible obligatorio**.
-Su código inicial y la entrada `-1 5\n` se conservan. El lector selecciona
-específicamente WASI, con la versión de SDK y runtime fijadas para el proyecto;
-no sustituye la terminación por un código de MSVC ni acepta un número distinto
-de cero como demostración suficiente de una aserción.
+Las claves `wasiAssertion*V1` son identificadores **históricos del contrato
+curricular**, no una solicitud de usar el compilador WASI. Conservan las
+direcciones, respuestas y registros publicados. Cada editor exige **un solo
+caso visible correcto**. El código original y la entrada `-1 5\n` se
+conservan; el lector utiliza exclusivamente MSVC C++23 en Windows. Los recibos
+de ejecución se autentican con un nuevo contrato `windows-msvc-assertion-*-v2`,
+sin heredar aprobaciones antiguas de WASI.
 
-**Aserción activa:** se ejecuta la fuente original sin edición. La prueba
-comprueba una captura de ejecución real con fuente y artefacto WebAssembly,
-el rechazo público anterior, la expresión que falló, el archivo y función
-`cajas_para`, la ruta por `__assert_fail` y la trampa de Wasmtime. No se
-establece universalmente el código de aborto: se verifica la causa observable
-de esta compilación concreta. Una salida inventada, timeout o fallo genérico
-del runtime no acredita la actividad.
+**Aserción activa:** se compila y ejecuta la fuente original, sin editar.
+La captura del ejecutor Win32 exige el rechazo público anterior en stderr,
+el mensaje real del CRT de MSVC con la expresión `cajas * piezas_por_caja >=
+piezas`, el archivo `main.cpp`, la línea 7, stdout vacío y un código de
+aborto reconocido del CRT (por ejemplo, `0xC0000409`). Se comprueba su
+terminación y fuente auténticas bajo el Job Object del intento. Una salida
+inventada, otro fallo no cero, una excepción ajena, un timeout o una
+compilación fallida no acreditan la actividad.
 
 **`NDEBUG`:** se mantiene la directiva antes de `<cassert>` y se usa la fuente
 original. La entrada preparada produce stdout `Cajas=1\n`, el rechazo público
@@ -2305,11 +2308,14 @@ cubren cero, múltiplos, sobrantes, la frontera superior y rechazos exteriores.
 El comprobador deriva independientemente los valores correctos y no admite
 una expresión literal que sólo acierte el primer caso.
 
-Work integró las tres declaraciones en la raíz del JSON español y conservó los
-editores, las entradas, las referencias, los identificadores y las direcciones
-históricas de progreso. La comprobación funcional en Windows y la aprobación
-de las nuevas ejecuciones de CI son requisitos separados para cerrar la ficha:
-la integración curricular por sí sola no acredita el aborto ni la reparación.
+Work integró las tres declaraciones en la raíz del JSON español y conservó
+los editores, las entradas, las referencias y las direcciones históricas.
+La prueba nativa dedicada compila las mismas tres fuentes y pasa por el
+cargador, el trabajador Win32, el verificador de entradas y la evaluación
+curricular. Las ejecuciones adicionales y los contraejemplos se verifican sin
+exigir casos manuales distintos del primero ni revelar respuestas antes del
+intento. La aceptación completa de la aplicación instalada sigue separada
+de las pruebas automáticas en el runner de GitHub.
 
 ## Entrada del laboratorio
 

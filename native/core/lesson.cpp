@@ -432,9 +432,9 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             ? "observation-complete-v1" : "observation-differences-v1");
     if(activity.output_check->assertion_check)
         token(*activity.output_check->assertion_check==AssertionMode::enabled_abort
-            ? "wasm-assertion-abort-v1"
+            ? "windows-msvc-assertion-abort-v2"
             : *activity.output_check->assertion_check==AssertionMode::disabled
-                ? "wasm-assertion-suppressed-v1" : "wasm-assertion-repair-v1");
+                ? "windows-msvc-assertion-suppressed-v2" : "windows-msvc-assertion-repair-v2");
     // An authored source prerequisite changes the objective, not the stable
     // student identity. Old stdout-only receipts must never grant it.
     if(activity.named_rule_source_check) {
@@ -890,10 +890,16 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
         return {correct?OutputVerdict::correct:OutputVerdict::incorrect,
             feedback,proved,proved,exit_correct};
     }
+    // An authenticated native assert can terminate by Windows fast-fail
+    // (0xC0000409). No ordinary output objective may accept that process
+    // status; this unique opt-in proof is checked independently below.
+    const bool proven_abort=check.assertion_check==AssertionMode::enabled_abort&&
+        execution.assertion_abort_verified;
     if (execution.source_revision != current_revision || !execution.compilation_succeeded ||
         (!execution.execution_succeeded && !execution.execution_completed) ||
-        execution.exit_code < 0 || execution.exit_code > 255 ||
-        (execution.exit_code != 0 && !execution.execution_completed)) return {};
+        (!proven_abort&&(execution.exit_code < 0 || execution.exit_code > 255)) ||
+        (!proven_abort&&execution.exit_code!=0&&!execution.execution_completed))
+        return {};
     const OutputCase* selected = nullptr;
     for (const auto& item : check.cases) {
         const bool input_matches = item.balance_three_pairs
@@ -932,18 +938,24 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
     const bool stdout_correct = (check.open_battery_check
         ? execution.open_battery_probe_correct
         : (selected->balance_three_pairs ||
-           std::ranges::find(selected->outputs, execution.standard_output) != selected->outputs.end())) &&
+           std::ranges::any_of(selected->outputs,[&](const auto& candidate) {
+               return check.assertion_check
+                   ?assertion_native_lines(candidate,execution.standard_output)
+                   :candidate==execution.standard_output;
+           }))) &&
         (!expected||equivalent_stdout(expected->standard_output,execution.standard_output)) &&
         (!report_expected||report_detail::exact_or_native_crlf(
             report_expected->standard_output,execution.standard_output));
     bool stderr_correct = selected->standard_error_exact
-        ? execution.standard_error == *selected->standard_error_exact
+        ? (check.assertion_check
+            ? assertion_native_lines(*selected->standard_error_exact,execution.standard_error)
+            : execution.standard_error == *selected->standard_error_exact)
         : (selected->standard_error == StandardErrorExpectation::ignored ||
            !trimmed(execution.standard_error).empty());
     std::string semantic_feedback;
     if(verify_abort) {
         if(!execution.assertion_abort_verified) {
-            semantic_feedback="La captura no demuestra un aborto causado por la aserción solicitada en WASI.";
+            semantic_feedback="El proceso no acredita un aborto de la aserción solicitada mediante el CRT de MSVC.";
             stderr_correct=false;
         }else stderr_correct=true;
     } else if(check.assertion_check==AssertionMode::repaired &&
@@ -979,7 +991,7 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
         }
     }
     const bool exit_code_correct = verify_abort
-        ? execution.assertion_abort_verified&&execution.exit_code!=0
+        ? execution.assertion_abort_verified
         : execution.exit_code == selected->exit_code;
     if (!exit_code_correct) return {OutputVerdict::incorrect, {}, stdout_correct, stderr_correct, false};
     if (stdout_correct && stderr_correct) {

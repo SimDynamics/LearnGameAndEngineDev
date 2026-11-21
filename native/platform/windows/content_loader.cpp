@@ -7147,10 +7147,10 @@ void read_compiler_runtime_checks(const JsonObject& root,Lesson& lesson) {
             if(mode==AssertionMode::enabled_abort) {
                 run.outputs={""};
                 // Normal exit codes never authenticate a runtime trap. The
-                // special evaluator requires separately checked Wasmtime
-                // source, assertion expression, callstack and trap evidence.
+                // special evaluator checks the exact MSVC assertion diagnostic,
+                // the genuine source and the Windows CRT termination code.
                 run.exit_code=0;
-                run.explanation="La aserción activa detectó una condición interna falsa y abortó la ejecución WASI.";
+                run.explanation="La aserción activa detectó una condición interna falsa y abortó la ejecución de MSVC.";
             } else {
                 run.outputs={mode==AssertionMode::disabled?"Cajas=1\n":"Cajas=2\n"};
                 run.exit_code=1;
