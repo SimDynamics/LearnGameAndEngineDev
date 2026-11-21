@@ -215,6 +215,28 @@ def main()->None:
     parser.add_argument("--windows",action="store_true")
     args=parser.parse_args()
     original=original_editor()
+    # Bind the real student-facing main to all five original stdout cases.
+    # These cases are not semantic evidence of clone identity or exception
+    # propagation; the separately compiled driver proves those properties.
+    document=json.loads(LESSON.read_text(encoding="utf-8"))
+    owners=[(page,index) for page,item in enumerate(
+        document["stateLayout"]["current"])
+        for index,identity in enumerate(item["blocks"]) if identity==OWNER]
+    if len(owners)!=1:
+        raise AssertionError("Original U8L10 editor identity changed")
+    page,index=owners[0]
+    editor=document["pages"][page]["blocks"][index]
+    if editor["type"]!="cpp_compiler" or editor["initialCode"]!=original:
+        raise AssertionError("U8L10 public source differs from original")
+    public_cases=editor["outputCheck"]["cases"]
+    if len(public_cases)!=5:
+        raise AssertionError("U8L10 original public oracle count changed")
+    for number,case in enumerate(public_cases,1):
+        if (not isinstance(case.get("standardInput"),str) or
+            not isinstance(case.get("outputs"),list) or not case["outputs"] or
+            not all(isinstance(answer,str) for answer in case["outputs"]) or
+            type(case.get("exitCode",0)) is not int):
+            raise AssertionError(f"Invalid U8L10 public case {number}")
     solutions={
         "correct_direct":(SIMPLE,IDENTIFIED,DUPLICATE,True),
         "correct_reserved":(ALT_SIMPLE,ALT_IDENTIFIED,ALT_DUPLICATE,True),
@@ -227,11 +249,20 @@ def main()->None:
         generator=folder/("generator"+suffix)
         compile_cpp(args.compiler,GENERATOR,generator,args.windows,True)
         published=folder/"published.cpp"
-        published.write_text(original,encoding="utf-8")
+        published.write_bytes(original.encode("utf-8"))
+        # The first case is mandatory for the learner, and later public
+        # cases remain optional. All run here as disposable regression QA.
+        # Known-types-only and swallowed allocation failures are deceptive:
+        # both can match every published stdout without meeting ownership.
+        public_variants={
+            "correct_direct","correct_reserved","correct_with_inert_notes",
+            "duplicate_known_types_only","duplicate_swallows_bad_alloc"
+        }
+        public_runs=0
         for name,record in solutions.items():
             *bodies,expected=record
             source=folder/(name+".cpp")
-            source.write_text(compose(original,tuple(bodies)),encoding="utf-8")
+            source.write_bytes(compose(original,tuple(bodies)).encode("utf-8"))
             private=folder/(name+".private.cpp")
             generated=run([str(generator),str(published),str(source),str(private)])
             if generated.returncode or not private.is_file():
@@ -248,6 +279,31 @@ def main()->None:
                                       observed.stderr))
             print(f"{args.compiler}: {name}: "
                   f"{'PASS' if passed else 'REJECT'}",flush=True)
+            if name in public_variants:
+                public_binary=folder/(name+"-public"+suffix)
+                # Compile the ORIGINAL main, not the private instrumented one.
+                compile_cpp(args.compiler,source,public_binary,args.windows)
+                for number,case in enumerate(public_cases,1):
+                    observed_public=subprocess.run(
+                        [str(public_binary)],cwd=ROOT,
+                        input=case["standardInput"],text=True,
+                        encoding="utf-8",errors="replace",
+                        capture_output=True,check=False,timeout=15)
+                    if (observed_public.returncode!=case.get("exitCode",0) or
+                        observed_public.stdout not in case["outputs"] or
+                        observed_public.stderr):
+                        raise AssertionError(
+                            (name,number,"Authentic U8L10 output differs",
+                             observed_public.returncode,
+                             observed_public.stdout[-500:],
+                             observed_public.stderr[-500:]))
+                    public_runs+=1
+                print(f"{args.compiler}: public {name}: "
+                      f"{len(public_cases)} authored cases PASS; "
+                      f"private clone semantics {'PASS' if passed else 'REJECT'}",
+                      flush=True)
+        if public_runs!=len(public_variants)*len(public_cases):
+            raise AssertionError("U8L10 public QA omitted an original case")
 
         correct=compose(original,(SIMPLE,IDENTIFIED,DUPLICATE))
         attacks={
@@ -312,7 +368,10 @@ def main()->None:
                 raise AssertionError((name,"Protected declarations were editable"))
             print(f"{args.compiler}: {name}: REJECT",flush=True)
     print(f"PASS U8L10 deep polymorphic cloning: 3 accepted, "
-          f"{len(BAD)} semantic negatives, {len(attacks)} source attacks")
+          f"{len(BAD)} semantic negatives, {len(attacks)} source attacks; "
+          f"all five authentic stdout cases checked for the three valid "
+          f"solutions and two deceptive ownership implementations. "
+          f"Only the independently compiled private witness grants semantics.")
 
 
 if __name__=="__main__":
