@@ -30,7 +30,7 @@ add_library(lgaed_curricular_windows STATIC
     "${_lgaed_curricular_root}/native/presentation/windows/reader_theme.cpp"
     "${_lgaed_curricular_root}/native/presentation/windows/editing_bar.cpp"
     "${_lgaed_curricular_root}/native/presentation/windows/code_gutter.cpp"
-    native/presentation/windows/code_editor.cpp)
+    "${_lgaed_curricular_root}/native/presentation/windows/code_editor.cpp")
 target_link_libraries(lgaed_curricular_windows PUBLIC
     lgaed_platform_windows lgaed_host_options user32 gdi32 gdiplus shell32 ole32 oleacc advapi32 comctl32 comdlg32 uuid uxtheme dwmapi)
 
