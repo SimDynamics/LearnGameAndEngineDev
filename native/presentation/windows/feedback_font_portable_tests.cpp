@@ -62,6 +62,25 @@ void replace(HWND host,HWND view,int block,std::string_view source){
     dispatch(host);
     require(edit_text(target)==source,"The native answer editor changed its source text");
 }
+void replace_inline(HWND host,HWND view,int block,std::string_view first,std::string_view second){
+    const std::array<std::string_view,2> sources{first,second};
+    for(int i=0;i<2;++i){
+        const auto panel=control(view,id(block,5));
+        const auto field=GetDlgItem(panel,100+i);
+        require(field!=nullptr,"A real inline-fill answer field is missing");
+        const auto value=wide(sources[i]);
+        SendMessageW(field,EM_SETSEL,0,-1);
+        SendMessageW(field,EM_REPLACESEL,TRUE,
+            reinterpret_cast<LPARAM>(value.c_str()));
+    }
+    dispatch(host);
+    for(int i=0;i<2;++i){
+        const auto panel=control(view,id(block,5));
+        const auto field=GetDlgItem(panel,100+i);
+        require(field&&edit_text(field)==sources[i],
+            "A real inline-fill field changed the authored answer");
+    }
+}
 LONG point_height(HWND edit,LONG at){
     CHARRANGE previous{},position{at,at+1};
     SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&previous));
@@ -107,7 +126,11 @@ struct Fixture{
              "explanation":"La salida es siete."},
             {"type":"order_code","question":"Ordena las líneas.",
              "fragments":["return 0;","int main() {","}"],
-             "correctOrder":[1,0,2],"explanation":"La función empieza antes del retorno."}
+             "correctOrder":[1,0,2],"explanation":"La función empieza antes del retorno."},
+            {"type":"inline_fill_code","question":"Completa las dos variables.",
+             "language":"cpp","template":"int llaves = [];\nint cajas = [];",
+             "answers":["7","2"],"explanation":"Ambos valores se conservan.",
+             "reviewFeedback":"Comprueba las dos inicializaciones."}
           ]}]
         })json";
         lesson=windows::parse_lesson_json(file,"es");
@@ -173,6 +196,10 @@ void exercise(){
     require(edit_text(control(f.view,id(2,4))).starts_with("✗ Incorrecto"),
         "The real choice incorrect attempt was not reviewed");
     verify(2,100);
+    replace_inline(f.host,f.view,5,"9","2");click(f.host,f.view,5,3);
+    require(edit_text(control(f.view,id(5,4))).starts_with("✗ Incorrecto"),
+        "The real inline-fill wrong attempt was not reviewed");
+    verify(5,100);
     replace(f.host,f.view,1,"7");click(f.host,f.view,1,3);
     click(f.host,f.view,2,22);click(f.host,f.view,2,3);
     replace(f.host,f.view,3,"7");click(f.host,f.view,3,3);
@@ -182,8 +209,9 @@ void exercise(){
     SendMessageW(line,WM_SYSKEYDOWN,VK_DOWN,LPARAM{1}<<29);
     dispatch(f.host);
     click(f.host,f.view,4,3);
-    std::array<std::string,4> original{};
-    for(int i=0;i<4;++i){
+    replace_inline(f.host,f.view,5,"7","2");click(f.host,f.view,5,3);
+    std::array<std::string,5> original{};
+    for(int i=0;i<5;++i){
         original[i]=edit_text(control(f.view,id(i+1,4)));
         require(original[i].starts_with("✓ Correcto"),
             "An original ordinary puzzle did not produce correct feedback");
@@ -205,7 +233,7 @@ void exercise(){
                 static_cast<std::int64_t>(zoom);
         });
         dispatch(f.host);
-        for(int i=0;i<4;++i){
+        for(int i=0;i<5;++i){
             require(edit_text(control(f.view,id(i+1,4)))==original[i],
                 "Changing font size changed the validated text");
             verify(i+1,zoom);
@@ -213,14 +241,14 @@ void exercise(){
         unchanged();
     }
     f.reopen();
-    for(int i=0;i<4;++i){
+    for(int i=0;i<5;++i){
         require(edit_text(control(f.view,id(i+1,4)))==original[i],
             "Reopening lost a correct puzzle response or guide");
         verify(i+1,150);
     }
     unchanged();
     std::cout<<"PASS real LessonView feedback: fill_code, choice, prediction, "
-        "order_code, correct/incorrect and 75/100/125/150% shared 18sp; "
+        "order_code, inline_fill_code, correct/incorrect and 75/100/125/150% shared 18sp; "
         "reopen and narration preserved.\n";
 }
 }

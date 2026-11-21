@@ -1748,13 +1748,17 @@ void exercise_feedback_matches_curricular_body_font() {
         "The ordinary lesson prose lost its published 18sp baseline");
     const auto verify=[&](std::size_t puzzle,int scale) {
         const auto target=fixture.control(puzzle,4);
+        // Zoom and reopen may recreate RichEdit controls. Never inspect
+        // a prose HWND captured before the view was rebuilt.
+        const auto current_prose=fixture.control(0,0);
         const auto source=fixture.text(puzzle,4);
         require(!source.empty(),"A checked native puzzle has no visible feedback");
         const auto first=character_format(target);
         const auto final=character_format(target,static_cast<LONG>(wide(source).size()-1));
         require((first.dwMask&CFM_SIZE)&&(final.dwMask&CFM_SIZE)&&
             first.yHeight==body_size&&final.yHeight==body_size&&
-            rich_edit_scale(prose)==scale&&rich_edit_scale(target)==scale,
+            character_format(current_prose).yHeight==body_size&&
+            rich_edit_scale(current_prose)==scale&&rich_edit_scale(target)==scale,
             "Puzzle feedback font differs from curricular 18sp body/zoom: block="+
                 std::to_string(puzzle)+", scale="+std::to_string(scale)+
                 ", first="+std::to_string(first.yHeight)+
