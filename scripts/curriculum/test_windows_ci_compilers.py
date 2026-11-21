@@ -53,22 +53,53 @@ class WindowsCompilerPolicy(unittest.TestCase):
         for name in ("android-code-format-compat.yml", "build-clang23-android.yml"):
             self.assertFalse((WORKFLOWS / name).exists(), name)
 
+    @staticmethod
+    def _uses_non_windows_runner(source):
+        # A runner may be a scalar, an inline list or one item of a matrix.
+        # Checking only 'runs-on: ubuntu' misses 'os: [windows, linux]'.
+        unsupported = re.compile(r"(?i)\b(?:ubuntu|linux|macos)(?:[-.][\w.]+)?\b")
+        runner_key = re.compile(r"(?i)^\s*(?:-\s*)?(?:runs-on|os)\s*:\s*(.*)$")
+        matrix_item = re.compile(r"(?i)^\s*-\s*([a-z][a-z0-9_.-]*)\s*$")
+        for line in source.splitlines():
+            line = line.partition("#")[0]  # Comments are not runnable labels.
+            key = runner_key.match(line)
+            if key and unsupported.search(key.group(1)):
+                return True
+            item = matrix_item.match(line)
+            if item and unsupported.fullmatch(item.group(1)):
+                return True
+        return False
+
     def test_all_workflow_runners_and_python_commands_remain_windows_only(self):
-        # A new workflow or matrix entry cannot silently restore Linux jobs
-        # after the C++23/MSVC migration, even if a known filename changes.
         workflows = sorted((*WORKFLOWS.glob("*.yml"), *WORKFLOWS.glob("*.yaml")))
         self.assertTrue(workflows)
-        linux_runner = re.compile(
-            r"(?im)^\s*(?:runs-on:|[-]\s*os:|os:)\s*(?:ubuntu|linux|macos)\b")
-        linux_matrix = re.compile(
-            r"(?im)^\s*-\s*(?:ubuntu|linux|macos)(?:[-\s]|$)")
         for path in workflows:
             with self.subTest(workflow=path.name):
                 source = path.read_text(encoding="utf-8")
-                self.assertNotRegex(source, linux_runner)
-                self.assertNotRegex(source, linux_matrix)
-                self.assertNotIn("ubuntu-", source.lower())
+                self.assertFalse(
+                    self._uses_non_windows_runner(source),
+                    "A workflow or inline matrix restored a non-Windows runner")
                 self.assertNotRegex(source, r"(?i)\bpython3(?:[.]exe)?\b")
+
+    def test_linux_runner_hidden_in_inline_matrix_is_detected(self):
+        bad = (
+            "runs-on: ubuntu-24.04",
+            "runs-on: [self-hosted, linux, x64]",
+            "strategy:\n  matrix:\n    os: [windows-2022, linux]",
+            "strategy:\n  matrix:\n    include:\n      - os: macos-15",
+            "strategy:\n  matrix:\n    os:\n      - windows-2022\n      - ubuntu-24.04",
+        )
+        for source in bad:
+            with self.subTest(source=source):
+                self.assertTrue(self._uses_non_windows_runner(source))
+        for source in (
+            "runs-on: windows-2022",
+            "runs-on: ${{ matrix.os }}\nstrategy:\n  matrix:\n    os: [windows-2022, windows-2025-vs2026]",
+            "runs-on: windows-2022 # linux was retired",
+            "name: Linux was removed\nruns-on: windows-2022",
+        ):
+            with self.subTest(source=source):
+                self.assertFalse(self._uses_non_windows_runner(source))
 
     def test_active_workflows_do_not_invoke_gcc_or_desktop_clang(self):
         # Match executable/runner tokens, not words like the curricular
