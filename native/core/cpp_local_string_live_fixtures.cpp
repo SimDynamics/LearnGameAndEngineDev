@@ -85,7 +85,31 @@ int main() noexcept {
 })CPP",
             "Aula-04",
             {{{"edificio","Sala Norte",init,{}},"Sala Norte-04"},
-             {{"etiqueta","CONTROL",output,{}},"CONTROL"}}}
+             {{"etiqueta","CONTROL",output,{}},"CONTROL"}}},
+        {"u2l7_grouped_string_declarations",
+            R"CPP(#include <iostream>
+#include <string>
+int main() {
+    std::string edificio{"Aula"}, codigo{"04"};
+    std::string etiqueta{edificio+"-"+codigo};
+    std::cout << etiqueta;
+})CPP",
+            "Aula-04",
+            {{{"edificio","Sala Norte",init,{}},"Sala Norte-04"},
+             {{"codigo","003",init,{}},"Aula-003"}}},
+        {"u2l7_delayed_string_assignments",
+            R"CPP(#include <iostream>
+#include <string>
+int main() {
+    std::string edificio, codigo;
+    edificio = "Aula";
+    codigo = "04";
+    std::string etiqueta = edificio+"-"+codigo;
+    std::cout << etiqueta;
+})CPP",
+            "Aula-04",
+            {{{"edificio","Sala Norte",init,{}},"Sala Norte-04"},
+             {{"codigo","003",init,{}},"Aula-003"}}}
     };
     std::size_t accepted=0,rejected=0;
     for(const auto& scenario:scenarios) {
@@ -135,9 +159,9 @@ int main(){std::string edificio{"Aula"};std::string codigo{"04"};
 std::string etiqueta=edificio+"-"+codigo;std::cout<<edificio<<"-"<<codigo;})CPP";
     if(cpp_local_string_override(unread,{"etiqueta","CONTROL",output,{}}))
         throw std::runtime_error("An unread etiqueta passed the private output control");
-    if(accepted!=10||rejected!=3)
+    if(accepted!=16||rejected!=3)
         throw std::runtime_error("Private source fixture count changed unexpectedly");
-    std::cout<<"PASS generated 13 private C++ string cases (10 positive, "
+    std::cout<<"PASS generated 19 private C++ string cases (16 positive, "
                 "3 hard-coded negative) and one structurally rejected unread etiqueta\n";
     return 0;
 }catch(const std::exception& error) {
