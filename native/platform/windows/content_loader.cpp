@@ -3321,7 +3321,84 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         require(revisions.Size()<=100000,"Too many editorial proofs");
         for (const auto& value : revisions) {
             const auto change = value.GetObject();
-            allowed_keys(change, {"id", "beforeSha256", "afterSha256", "returnTo", "bibliography"});
+            allowed_keys(change, {"id", "beforeSha256", "afterSha256", "returnTo",
+                                  "bibliography", "reviewPaths"});
+            if(change.HasKey(L"reviewPaths")) {
+                // A feedback review names its exact existing option or its
+                // scalar guide, never a new response or an inferred sibling.
+                // The Python authoring/transition validator also proves that
+                // this change accompanied genuine question/explanation prose.
+                require(!change.HasKey(L"bibliography"),
+                    "An ordinary feedback revision cannot borrow a bibliography archive");
+                const auto listed=array(change,"reviewPaths");
+                require(listed.Size()>0&&listed.Size()<=128,
+                    "Reviewed guidance needs a bounded nonempty path list");
+                std::vector<std::string> paths;
+                paths.reserve(listed.Size());
+                for(const auto& value:listed) {
+                    require(value.ValueType()==JsonValueType::String,
+                        "Reviewed guidance path must be a string");
+                    const auto path=utf8(value.GetString());
+                    if(path!="/reviewFeedback") {
+                        constexpr std::string_view prefix="/reviewFeedback/";
+                        require(path.starts_with(prefix),
+                            "Reviewed guidance path must identify the original option index");
+                        const auto digits=std::string_view(path).substr(prefix.size());
+                        require(!digits.empty()&&digits.size()<=8&&
+                            (digits=="0"||digits.front()!='0')&&
+                            std::ranges::all_of(digits,[](unsigned char c){return c>='0'&&c<='9';}),
+                            "Reviewed guidance index is not a canonical option position");
+                    }
+                    require(std::ranges::find(paths,path)==paths.end(),
+                        "Repeated authored guidance path");
+                    if(!paths.empty()) {
+                        const auto preceding=std::string_view(paths.back());
+                        // Canonical numeric ordering, not lexicographic: /2
+                        // precedes /10; scalar /reviewFeedback is a singleton.
+                        require(path!="/reviewFeedback"&&preceding!="/reviewFeedback",
+                            "A scalar guide cannot be combined with indexed guides");
+                        const auto earlier=preceding.substr(std::string_view("/reviewFeedback/").size());
+                        const auto current=std::string_view(path).substr(std::string_view("/reviewFeedback/").size());
+                        require(earlier.size()<current.size()||
+                                (earlier.size()==current.size()&&earlier<current),
+                            "Reviewed option guidance paths must be strictly ordered");
+                    }
+                    paths.push_back(path);
+                }
+                require(root.HasKey(L"textSemantics"),
+                    "Reviewed guidance needs authenticated reading descriptors");
+                const auto descriptors=array(root.GetNamedObject(L"textSemantics"),"fields");
+                const auto& identity=text(change,"id");
+                collect_actual();
+                const auto actual=return_actual_blocks.find(identity);
+                require(actual!=return_actual_blocks.end(),
+                    "Reviewed guidance lost its existing block owner");
+                const auto& owner=actual->second;
+                require(owner.HasKey(L"reviewFeedback"),
+                    "Reviewed guidance cannot add an unowned guide field");
+                const auto feedback=owner.GetNamedValue(L"reviewFeedback");
+                for(const auto& path:paths) {
+                    const bool scalar=path=="/reviewFeedback";
+                    require(feedback.ValueType()==(scalar?JsonValueType::String:JsonValueType::Array),
+                        "A revised hint must preserve the original guidance structure");
+                    if(!scalar) {
+                        const auto digits=std::string_view(path).substr(std::string_view("/reviewFeedback/").size());
+                        std::size_t index=0;
+                        for(const auto digit:digits)index=index*10+static_cast<std::size_t>(digit-'0');
+                        require(index<feedback.GetArray().Size(),
+                            "A revised hint refers to a nonexistent option");
+                    }
+                    bool described=false;
+                    for(const auto& value:descriptors) {
+                        if(value.ValueType()!=JsonValueType::Object)continue;
+                        const auto entry=value.GetObject();
+                        described=described||(text(entry,"block")==identity&&
+                            text(entry,"path")==path);
+                    }
+                    require(described,
+                        "Each revised hint requires a matching authored text descriptor");
+                }
+            }
             for(const auto field:{L"id",L"beforeSha256",L"afterSha256"})require(change.HasKey(field),"Incomplete editorial record");
             const auto id = text(change, "id"), before = text(change, "beforeSha256"), after = text(change, "afterSha256");
             require(result.signatures.contains(id) && valid_hash(before) && valid_hash(after) && before != after, "Invalid editorial record");
