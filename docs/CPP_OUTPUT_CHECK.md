@@ -909,6 +909,15 @@ ejecución visual de la app ni la aceptación en el Windows personal
 del estudiante. Un ejecutor Windows alojado utiliza su propio
 toolchain; solo acredita el alcance y la versión que realmente ejecuta.
 
+La regresión `test_cpp_dual_interface.py` compara además los **tres
+casos públicos auténticos** para las dos implementaciones equivalentes
+y un contraejemplo que ignora `salida` y escribe directamente en
+`std::cout`. Los tres programas pueden reproducir las salidas del
+`main` original porque éste también usa `std::cout`. La comprobación
+privada debe rechazar el contraejemplo al pasarle dos flujos de salida
+independientes. Esta prueba automática no obliga al alumno a ejecutar
+los otros dos casos públicos: solo el primero es necesario para avanzar.
+
 ## Clonar sin perder la clase concreta ni duplicar propietarios
 
 Para Programación 3, **U8L10**, la raíz de una lección española con
