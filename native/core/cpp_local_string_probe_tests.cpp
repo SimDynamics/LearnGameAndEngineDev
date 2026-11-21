@@ -293,6 +293,31 @@ void exact_text_bytes_and_type_checks() {
         "A hidden C++ string probe admitted an embedded NUL");
 }
 
+void source_identifier_contract_matches_string_probe_authoring() {
+    const std::string source=
+        "#include <string>\nint main(){std::string etiqueta{\"OK\"};"
+        "std::cout<<etiqueta;}";
+    for(const auto* bad:{
+            "9etiqueta", "etiqueta-otra", "etiqueta.codigo",
+            "etiqueta otra", "true", "false", "nullptr", "__oculta"}) {
+        CppLocalStringCheck invalid{{{bad,"CONTROL",initialized,{"CONTROL"}}}};
+        require(!cpp_local_string_check_valid(invalid)&&
+                !cpp_local_string_override(source,{bad,"CONTROL",initialized,{}}),
+            "An invalid C++ owner was accepted by the local-string source probe");
+    }
+    const std::string unicode=
+        "#include <string>\nint main(){std::string código{\"04\"};"
+        "std::cout<<código;}";
+    const auto changed=cpp_local_string_override(
+        unicode,{"código","003",initialized,{}});
+    CppLocalStringCheck valid{
+        {{"código","003",initialized,{"003"}}}};
+    require(changed&&
+            changed->find("código = std::string{")!=std::string::npos&&
+            cpp_local_string_check_valid(valid),
+        "A previously supported Unicode local name was rejected");
+}
+
 void unsafe_or_ambiguous_positions_reject() {
     const std::string front="#include <iostream>\n#include <string>\nint main() {\n";
     const std::string back="\n std::cout << etiqueta;\n}\n";
@@ -347,6 +372,7 @@ int main() {
         after_real_assignment_and_noexcept();
         member_assign_updates_are_detected_without_guesswork();
         exact_text_bytes_and_type_checks();
+        source_identifier_contract_matches_string_probe_authoring();
         unsafe_or_ambiguous_positions_reject();
         std::cout<<"PASS local string source probes: independent text values, "
             "reassignment, real output reads, UTF-8 byte preservation, "
