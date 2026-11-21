@@ -1019,8 +1019,43 @@ void capacity() {
             const int capacidad{4};
             return (piezas + 3) / 4 +
                    ((capacidad == capacidad && piezas > 0) ? 1 : 0);
+        })cpp",rules,false,
+        "A reflexive subcondition still lacks value dependence inside a larger input test");
+
+    // Even a larger && / || clause can contain a provably constant
+    // comparison. These two references must remain inert while separately
+    // meaningful comparisons retain their normal source evidence.
+    for(const auto* neutral:{
+        "((capacidad == capacidad && piezas > 0) ? 1 : 0)",
+        "((capacidad != capacidad || piezas > 0) ? 1 : 0)",
+        "((capacidad < capacidad || piezas > 0) ? 1 : 0)",
+        "((capacidad >= capacidad && piezas > 0) ? 1 : 0)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
+            rules,false,"A constant logical operand fabricated purpose-rule uses");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad == capacidad && capacidad > 2);
+        })cpp",rules,false,
+        "One genuine predicate must not inherit two inert self-comparison uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad > 2 && capacidad < piezas);
         })cpp",rules,true,
-        "A self-comparison within a larger input-dependent test is not a full constant condition");
+        "Distinct meaningful comparisons are not neutral logical operands");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad == capacidad && piezas > 0);
+        })cpp",rules,true,
+        "A neutral logical operand must not erase separate capacity-derived arithmetic");
 
     // A complement of a *different expression* does not generally
     // cancel this constant. Preserve its lexical evidence, leaving numeric

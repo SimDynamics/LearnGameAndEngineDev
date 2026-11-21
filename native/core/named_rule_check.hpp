@@ -582,6 +582,27 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
         }
         return false;
     };
+    // && and || combine complete boolean operands. A reflexive condition
+    // remains constant even when the whole logical expression also depends
+    // on input, e.g. (capacity == capacity && pieces > 0).
+    // Suppress only references in that exact constant operand.
+    const auto neutral_logical_operand=[&](std::size_t first,std::size_t last) {
+        std::size_t begin=first,depth=0;
+        bool has_separator=false;
+        for(auto at=first;at<last;++at) {
+            if(op(t[at],"(")){++depth;continue;}
+            if(op(t[at],")")){
+                if(!depth)return false;
+                --depth;continue;
+            }
+            if(depth||(!op(t[at],"&&")&&!op(t[at],"||")))continue;
+            has_separator=true;
+            if(i>=begin&&i<at)return neutral(begin,at);
+            begin=at+1;
+        }
+        return has_separator&&!depth&&i>=begin&&i<last&&
+            neutral(begin,last);
+    };
     // A condition that is provably independent of the named int cannot
     // contribute evidence merely because its ternary chooses between two
     // different values. Check the COMPLETE top-level condition, not an
@@ -620,6 +641,7 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
         const auto close=closing(t,open,"(",")");
         if(close&&*close>i&&
            (neutral(open+1,*close)||
+            neutral_logical_operand(open+1,*close)||
             constant_ternary_condition(open+1,*close)))return true;
     }
     // Also handle a complete unparenthesized return/assignment such as
@@ -631,7 +653,8 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
         --first;
     auto last=i+1;
     while(last<t.size()&&!op(t[last],";")&&!op(t[last],"}"))++last;
-    return constant_ternary_condition(first,last)||neutral(first,last);
+    return constant_ternary_condition(first,last)||
+        neutral_logical_operand(first,last)||neutral(first,last);
 }
 // In the built-in comma operator, every left operand is evaluated and
 // discarded. A plain named integer or side-effect-free arithmetic on that
