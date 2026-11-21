@@ -531,7 +531,73 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
         second_goal.output_check&&lesson.compiler_puzzles_required&&
         !first_source.empty()&&!second_source.empty(),
         "The current U2L5 regression no longer owns two required executable objectives");
-    Fixture f(backend,false,true,true,"es",lesson,false,first.page);
+    // A fresh QA bookmark at page six is not enough for forward navigation:
+    // the current lesson requires the first six pages and their ordinary
+    // activities. Evaluate the authored answers in a private state store and
+    // record those page visits in order. Do not seed a compiler receipt or
+    // claim that the student's real profile completed any of these pages.
+    constexpr std::size_t prior_ordinary=15;
+    Fixture f(backend,false,true,true,"es",lesson,false,first.page,false,true,{},
+        [&](state::StateData& data){
+            using namespace winrt::Windows::Data::Json;
+            std::size_t solved=0;
+            for(std::size_t page=0;page<first.page;++page){
+                check(state::can_reach_page(data,lesson,page),
+                    "Current U2L5 QA attempted to skip an unreached prefix page");
+                for(const auto& block:lesson.pages[page].blocks){
+                    state::Response response;
+                    curriculum::AnswerEvaluation result;
+                    bool required=true;
+                    if(block.type==curriculum::BlockType::multiple_choice){
+                        check(block.correct_index&&*block.correct_index<block.options.size(),
+                            "A U2L5 prefix choice lost its authored answer");
+                        response.selected=static_cast<std::int64_t>(*block.correct_index);
+                        response.answer=block.options[*block.correct_index];
+                        result=curriculum::evaluate_choice(block,*block.correct_index);
+                    }else if(block.type==curriculum::BlockType::order_code){
+                        response.order.assign(block.correct_order.begin(),block.correct_order.end());
+                        result=curriculum::evaluate_order(block,block.correct_order);
+                    }else if(block.type==curriculum::BlockType::inline_fill_code||
+                             block.type==curriculum::BlockType::drag_fill_code){
+                        JsonObject record;JsonArray fields;
+                        if(block.type==curriculum::BlockType::inline_fill_code){
+                            result=curriculum::evaluate_hole_answers(block,block.answers);
+                            for(const auto& answer:block.answers)
+                                fields.Append(JsonValue::CreateStringValue(winrt::to_hstring(answer)));
+                        }else{
+                            result=curriculum::evaluate_drag_answers(block,block.correct_order);
+                            for(const auto option:block.correct_order)
+                                fields.Append(JsonValue::CreateNumberValue(static_cast<double>(option)));
+                        }
+                        record.Insert(block.type==curriculum::BlockType::inline_fill_code?L"answers":L"slots",fields);
+                        response.raw_json=winrt::to_string(record.Stringify());
+                    }else if(block.type==curriculum::BlockType::fill_code||
+                             block.type==curriculum::BlockType::output_prediction){
+                        check(!block.answers.empty(),"A current U2L5 text prerequisite has no answer");
+                        response.answer=block.answers.front();
+                        result=curriculum::evaluate_text_answer(block,response.answer);
+                    }else{
+                        check(block.type!=curriculum::BlockType::cpp_compiler&&
+                              block.type!=curriculum::BlockType::math_puzzle,
+                            "U2L5 QA acquired a prerequisite that needs independent native proof");
+                        required=false;
+                    }
+                    if(!required)continue;
+                    check(result.correct&&!state::get_response(data,lesson,block),
+                        "A current U2L5 prefix exercise was already solved or cannot be evaluated");
+                    response.correct=true;
+                    state::mark_response_reviewed(response,block);
+                    state::put_response(data,lesson,block,response);
+                    ++solved;
+                }
+                check(state::mark_page_reached(data,lesson,page),
+                    "Current U2L5 QA lost its sequential page visit");
+            }
+            check(solved==prior_ordinary&&state::can_reach_page(data,lesson,first.page),
+                "The current U2L5 prefix changed its fifteen isolated prerequisites");
+            state::validate_lesson_state(data,lesson);
+            data.preferences["u2l5_reader_qa"]["synthetic_ordinary_prefix"]=std::int64_t{solved};
+        });
     check(lesson_page_state(f.view).index==first.page&&
         !windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,first_goal),
         "The current first compiler already had a private execution receipt");
