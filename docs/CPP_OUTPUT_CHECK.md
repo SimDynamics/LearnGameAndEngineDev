@@ -3874,8 +3874,15 @@ salidas exactas por variación. Cada salida alternativa debe distinguirse
 de las publicadas para el primer caso obligatorio. Un nombre identifica
 un `int` local declarado directamente dentro de `main`; la inicialización
 puede emplear `=`, `{}` o `()`, o una primera asignación inequívoca.
-Se rechazan otros tipos, posiciones ambiguas y preprocesadores que impidan
-una inserción segura. No se cambian literales, comentarios ni otros nombres.
+También se admiten declaradores enteros agrupados de un mismo tipo, como
+`int cajas{4}, sobres{9};` o `int cajas, sobres;` con asignaciones separadas.
+La sonda se inserta **después del punto y coma completo**, no entre variables.
+Si otro declarador usa el entero que se pretende variar (por ejemplo,
+`int cajas=4, sobres=cajas+5;`), se rechaza: mutarlo después ocultaría
+esa dependencia y podría acreditar un resultado falso. También se rechazan
+punteros, referencias, arrays, duplicados, otros tipos, posiciones ambiguas
+y preprocesadores que impidan una inserción segura. No se cambian
+literales, comentarios ni otros nombres.
 
 Después de la ejecución pública, el mismo trabajador Windows compila y
 ejecuta cada variante en un entorno privado. La compilación y la salida
@@ -3975,8 +3982,10 @@ del cálculo. Lo mismo se aplica a `afterFirstAssignment` cuando la actualizaci�
 usa `assign(...)`. Estas formas equivalentes
 siguen exigiendo compilaciones y salidas independientes correctas.
 Las declaraciones ambiguas que mezclen punteros o propietarios de otro
-tipo se rechazan; `auto` conserva su validación conservadora de una
-variable por declaración.
+tipo se rechazan. También se rechaza una declaración agrupada cuyo
+inicializador hermano lea la variable intervenida, porque una variación
+posterior al punto y coma ocultaría la dependencia real.
+`auto` conserva su validación conservadora de una variable por declaración.
 
 La definición y la instrucción de destino deben ser inequívocas en el
 ámbito directo de `main`. Una macro, un ámbito ambiguo, un nombre
