@@ -17,6 +17,8 @@ on:
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/test_current_combined_format_guidance.py
       - scripts/curriculum/test_current_equal_reference_format.py
+      - scripts/curriculum/test_current_expanded_reference_format.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_*.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_cerrar_reemplazar_y_anadir_datos.json
       - scripts/curriculum/code_format_compat.py
       - scripts/curriculum/text_semantics.py
@@ -130,3 +132,5 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_current_combined_format_guidance.py -v
       - name: Distinguish equal C++ references at their own stable addresses
         run: python -B -m unittest discover -s scripts/curriculum -p test_current_equal_reference_format.py -v
+      - name: Validate nine expanded interpreter references with exact source history
+        run: python -B -m unittest discover -s scripts/curriculum -p test_current_expanded_reference_format.py -v
