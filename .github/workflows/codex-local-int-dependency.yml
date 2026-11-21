@@ -12,6 +12,10 @@ on:
       - native/core/cpp_local_string_live_fixtures.cpp
       - scripts/windows/Test-LocalVariableDependency.ps1
       - scripts/windows/Test-LocalVariableState.ps1
+      - CMakeLists.txt
+      - native/platform/windows/local_int_state_tests.cpp
+      - native/platform/windows/local_string_state_tests.cpp
+      - cmake/native_build_config.hpp.in
       - scripts/curriculum/test_local_string_live_compilation.py
       - native/core/cpp_local_int_live_fixtures.cpp
       - native/core/cpp_expression_repair.hpp
@@ -154,11 +158,74 @@ jobs:
           python -B scripts/curriculum/test_local_int_live_compilation.py --emitter "$emitter" --compiler MSVC
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+  hosted-win32-state-source:
+    # Syntax-only proof for the two registered Win32 StateStore/loader tests.
+    # Hosted VS 2022 is NOT the production-pinned Windows 2026 toolchain.
+    name: Compile both Win32 integration test sources (hosted MSVC)
+    runs-on: windows-2022
+    timeout-minutes: 12
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Read the exact Codex revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Prepare hosted Visual C++
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Generate existing build configuration header for this exact checkout
+        run: |
+          $root = (Get-Location).Path.Replace('\', '/')
+          $generated = Join-Path $env:RUNNER_TEMP 'local-state-generated'
+          [void][System.IO.Directory]::CreateDirectory($generated)
+          $template = Get-Content -LiteralPath 'cmake/native_build_config.hpp.in' -Raw -Encoding UTF8
+          $replacements = @{
+            '@LGAED_CPP_STANDARD@' = '23'
+            '@LGAED_CPP_STANDARD_OPTION@' = '/std:c++latest'
+            '@LGAED_DEFAULT_PROFILE@' = 'Codex'
+            '@CMAKE_SOURCE_DIR@' = $root
+            '@LGAED_DEP_ROOT@' = ''
+            '@LGAED_EDUCATIONAL_VC_ROOT@' = $env:VCToolsInstallDir.Replace('\', '/')
+            '@LGAED_EDUCATIONAL_SDK_ROOT@' = $env:WindowsSdkDir.Replace('\', '/')
+            '@CMAKE_COMMAND@' = 'cmake'
+            '@CMAKE_MAKE_PROGRAM@' = 'ninja'
+            '@CMAKE_RC_COMPILER@' = 'rc'
+            '@CMAKE_CURRENT_BINARY_DIR@' = $generated.Replace('\', '/')
+          }
+          foreach ($entry in $replacements.GetEnumerator()) {
+            $template = $template.Replace($entry.Key, $entry.Value)
+          }
+          if ($template -match '@[A-Z_]+@') {
+            throw 'Native test configuration has unresolved placeholders'
+          }
+          [System.IO.File]::WriteAllText(
+            (Join-Path $generated 'native_build_config.hpp'), $template,
+            [System.Text.UTF8Encoding]::new($false))
+      - name: Compile the two original native integration test translation units
+        run: |
+          $generated = Join-Path $env:RUNNER_TEMP 'local-state-generated'
+          $flags = @(
+            '/nologo', '/std:c++latest', '/EHsc', '/W4', '/WX',
+            '/permissive-', '/Zc:__cplusplus', '/utf-8', '/bigobj',
+            '/DUNICODE', '/D_UNICODE', '/DWIN32_LEAN_AND_MEAN', '/DNOMINMAX',
+            '/D_WIN32_WINNT=0x0A00', '/DWINVER=0x0A00',
+            '/I', 'native', '/I', $generated, '/c'
+          )
+          foreach ($source in @(
+              'native/platform/windows/local_int_state_tests.cpp',
+              'native/platform/windows/local_string_state_tests.cpp')) {
+            $object = Join-Path $env:RUNNER_TEMP (
+              [System.IO.Path]::GetFileNameWithoutExtension($source) + '.obj')
+            & cl @flags $source "/Fo:$object"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
   evidence-status:
     name: Publish focused source-only compiler evidence
     # This tests hosted source probes, not the production-pinned Windows app.
     if: ${{ always() }}
-    needs: [authoring, portable, hosted-msvc]
+    needs: [authoring, portable, hosted-msvc, hosted-win32-state-source]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     permissions:
@@ -170,6 +237,7 @@ jobs:
           AUTHORING: ${{ needs.authoring.result }}
           PORTABLE: ${{ needs.portable.result }}
           HOSTED_MSVC: ${{ needs.hosted-msvc.result }}
+          WIN32_OBJECTS: ${{ needs.hosted-win32-state-source.result }}
         run: |
           python3 - <<'PY'
           import json
@@ -180,6 +248,7 @@ jobs:
               "authoring": os.environ["AUTHORING"],
               "gcc_clang": os.environ["PORTABLE"],
               "hosted_msvc": os.environ["HOSTED_MSVC"],
+              "win32_objects": os.environ["WIN32_OBJECTS"],
           }
           state = ("success" if all(v == "success" for v in results.values())
                    else "failure")
@@ -189,7 +258,8 @@ jobs:
               "description": (
                   f"Authoring={results['authoring']}; "
                   f"GCC/Clang={results['gcc_clang']}; "
-                  f"hosted MSVC={results['hosted_msvc']}; source-only"
+                  f"hosted MSVC={results['hosted_msvc']}; "
+                  f"Win32 objects={results['win32_objects']}; source-only"
               ),
               "target_url": (
                   f"{os.environ['GITHUB_SERVER_URL']}/"
