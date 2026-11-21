@@ -13,6 +13,11 @@ on:
       - native/platform/windows/local_int_state_tests.cpp
       - native/platform/windows/u6l19_case_split_state_tests.cpp
       - native/platform/windows/u3_runtime_semantics_tests.cpp
+      - native/platform/windows/named_rule_runtime_tests.cpp
+      - native/core/named_rule_check.hpp
+      - native/core/named_rule_constant_variation_check.hpp
+      - native/core/named_rule_battery_check.hpp
+      - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json
       - native/core/rejection_diagnostic_facts.hpp
       - native/core/report_observation_check.hpp
       - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_diagnosticos_para_corregir_una_peticion.json
@@ -75,7 +80,7 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           cmake -S cmake/HostedCourseEditionQA -B $build -G Ninja -DCMAKE_BUILD_TYPE=Debug
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build $build --target lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_local_int_state_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests --parallel 3
+          cmake --build $build --target lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_local_int_state_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Execute edition replacement, native quiz, scoped reset and reopen
         shell: pwsh
@@ -125,6 +130,12 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           ctest --test-dir $build -R '^native[.]u3_runtime_semantics$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u3-runtime-semantic-probes.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Check named constants, independent functions and their counterfactuals in U3 with real MSVC
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]u3_named_rules_single_file$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u3-named-rules-win32.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve native test and compile evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -141,5 +152,6 @@ jobs:
             ${{ runner.temp }}/lgaed-course-edition-qa/inline-feedback-win32.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u6l19-case-split-state.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u3-runtime-semantic-probes.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/u3-named-rules-win32.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/Testing/Temporary/*.log
             ${{ runner.temp }}/lgaed-course-edition-qa/CMakeFiles/CMakeConfigureLog.yaml
