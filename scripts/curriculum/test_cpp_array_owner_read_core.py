@@ -79,9 +79,10 @@ def main():
         # private friend, and the original lesson file stays untouched.
         descriptive_prefixes={
             "comment_before_class":
-                "// C++ example: class Lote { is declared below.\n",
+                "// A class example before the real declaration:\n"
+                "// class Lote {\n",
             "raw_literal_before_class":
-                'const char* documented = R"info(class Lote {\\n)info";\n',
+                'const char* documented = R"info(class Lote {\n)info";\n',
         }
         for label in descriptive_prefixes:
             allowed[label]=(qa.CONFIGURE["allocate_then_swap"],
@@ -101,6 +102,8 @@ def main():
             source_original=original_file
             if label in descriptive_prefixes:
                 prefix=descriptive_prefixes[label]
+                if "class Lote {\n" not in prefix:
+                    raise AssertionError("The class shadow must have exact original bytes")
                 source_original=root/(label+"-original.cpp")
                 source_original.write_bytes((prefix+original).encode("utf-8"))
                 candidate=prefix+candidate
