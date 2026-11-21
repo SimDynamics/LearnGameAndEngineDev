@@ -7,7 +7,9 @@ both invalid logical indices. This is QA, not a student progress mutation.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 
@@ -20,6 +22,26 @@ def main():
     p.add_argument("--windows",action="store_true")
     options=p.parse_args()
     original=qa.initial_code()
+    lesson=json.loads(qa.LESSON.read_text(encoding="utf-8"))
+    identities=[(p,b) for p,page in enumerate(lesson["stateLayout"]["current"])
+                for b,identity in enumerate(page["blocks"])
+                if identity==qa.OWNER]
+    if len(identities)!=1:
+        raise AssertionError("U6L10 authentic editor owner is not unique")
+    p,b=identities[0]
+    block=lesson["pages"][p]["blocks"][b]
+    if block["initialCode"]!=original:
+        raise AssertionError("U6L10 original C++ source changed between reads")
+    cases=block["outputCheck"]["cases"]
+    if len(cases)!=3:
+        raise AssertionError("U6L10 original public cases changed")
+    for number,case in enumerate(cases,1):
+        if (not isinstance(case.get("standardInput"),str) or
+            not isinstance(case.get("outputs"),list) or
+            not case["outputs"] or
+            not all(isinstance(x,str) for x in case["outputs"]) or
+            type(case.get("exitCode",0)) is not int):
+            raise AssertionError(f"Invalid U6L10 public case {number}")
     with tempfile.TemporaryDirectory(prefix="lgaed-u6l10-array-core-") as name:
         root=Path(name)
         suffix=".exe" if options.windows else ""
@@ -58,6 +80,8 @@ def main():
             **{name:(qa.CONFIGURE["allocate_then_swap"],body)
                for name,body in qa.BAD_READ.items()},
         }
+        public_variants=("swap_and_bounds","new_and_range","reject_changes_output")
+        public_runs=0
         for label,(configure,read) in [*allowed.items(),*deficient.items()]:
             candidate=qa.compose(original,configure,read)
             candidate_file=root/(label+"-student.cpp")
@@ -83,6 +107,38 @@ def main():
                                       executed.stdout,executed.stderr))
             print(f"{options.compiler}: native {label}: "
                   f"{'PASS' if valid else 'REJECT'}",flush=True)
+            # The public main initializes its output argument to -1.
+            # A defective leer() may overwrite a different caller's sentinel
+            # when rejecting, yet match ALL original visible stdout cases.
+            # The separate private padded-window probe catches that defect.
+            # Later cases are automatic QA only, not required student inputs.
+            if label in public_variants:
+                public_binary=root/(label+"-public"+suffix)
+                compiled_public=qa.compile_cpp(
+                    options.compiler,candidate_file,public_binary,options.windows)
+                if compiled_public.returncode:
+                    raise AssertionError(
+                        (label,"published C++ main no longer compiles",
+                         compiled_public.stdout,compiled_public.stderr))
+                for number,case in enumerate(cases,1):
+                    output=subprocess.run(
+                        [str(public_binary)],cwd=qa.ROOT,
+                        input=case["standardInput"],text=True,
+                        encoding="utf-8",errors="replace",
+                        capture_output=True,check=False,timeout=15)
+                    if (output.returncode!=case.get("exitCode",0) or
+                        output.stdout not in case["outputs"] or output.stderr):
+                        raise AssertionError(
+                            (label,number,"authored public result changed",
+                             output.returncode,output.stdout[-500:],
+                             output.stderr[-500:]))
+                    public_runs+=1
+                print(f"{options.compiler}: public {label}: "
+                      f"{len(cases)} cases PASS; "
+                      f"private semantics {'PASS' if valid else 'REJECT'}",
+                      flush=True)
+        if public_runs!=len(public_variants)*len(cases):
+            raise AssertionError("U6L10 genuine public QA lost a variant")
 
         correct=qa.compose(original,qa.CONFIGURE["allocate_then_swap"],
                            qa.READ["bounds_first"])
@@ -143,9 +199,10 @@ def main():
                                       checked.stdout,checked.stderr))
             print(f"{options.compiler}: protected {label}: REJECT",flush=True)
 
-    print("PASS real U6L10 native source gate: three valid variants, "
-          "nine faulty semantics rejected, nine protected changes rejected, "
-          "independent padded safe-read and array-allocation witness.")
+    print("PASS U6L10 native source and semantic probe, including three "
+          "authentic public cases for both valid variants and the invalid "
+          "output-overwrite counterexample. Public stdout does not replace "
+          "the independent padded read and array-allocation witness.")
 
 
 if __name__=="__main__":
