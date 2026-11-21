@@ -10,6 +10,15 @@ Sin pendientes.
 
 ## CAPACIDADES POR IMPLEMENTAR E INTEGRAR
 
+### WINDOWS_SIMPLIFICAR_COMPILADORES_Y_PRUEBAS
+
+- **Encargo para Codex.** Aplicar la elección del usuario de mantener únicamente las herramientas necesarias para Windows. MSVC x64 con C++23 es el compilador de referencia. El maestro físico contiene la regla vigente en el apartado de compiladores.
+- **Automatizaciones.** Revisar .github/workflows/. Retirar las ramas de ejecución GCC/Clang en Ubuntu que duplican comprobaciones MSVC, como codex-dual-interface.yml, codex-defaulted-move-policy.yml, codex-p3-all-ownership-probes.yml y codex-source-format-portable.yml. Trasladar primero a Windows los escenarios útiles que solo tengan ejecución GCC, como codex-identifier-rename.yml. Conservar la comprobación del comportamiento y los casos que detectan implementaciones incorrectas.
+- **Android y web.** Retirar de este repositorio Windows build-clang23-android.yml, android-code-format-compat.yml y los scripts, descargas y requisitos exclusivos que queden sin usuarios. Revisar también los trabajos Python de Ubuntu para ejecutarlos en el entorno Windows del proyecto. El proyecto Android independiente conserva sus archivos.
+- **Dependencia activa de Clang.** native/presentation/windows/lesson_view.cpp selecciona WASI para los tres editores de app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_comprobar_acuerdos_internos_con_aserciones.json, identidades block_0002_0003, block_0003_0007 y block_0004_0007. Sus declaraciones son wasiAssertionAbortV1, wasiAssertionSuppressedV1 y wasiAssertionRepairV1. native/platform/windows/cpp_runner.cpp los compila con Clang del WASI SDK y ejecuta con Wasmtime. Trasladar la comprobación a MSVC antes de retirar esa ruta y su instalación. Verificar la causa real de la detención de assert, el caso con NDEBUG y la reparación, con sus stdout, stderr y terminaciones correspondientes. Si persiste una necesidad técnica, documentar la función activa que requiere conservarla.
+- **Limpieza.** Revisar CMake, presets, instaladores, documentación y descargas para retirar requisitos sin uso. Identificar referencias y propietario de cada carpeta antes de borrar archivos propios. Conservar instalaciones compartidas, borradores, logros, preferencias, audios y datos de otros proyectos.
+- **Cierre.** Comprobar localmente con MSVC en Windows los escenarios afectados y el acceso a los tres ejercicios de aserciones. Preservar su evaluación, referencias y progreso mediante las transiciones compatibles que hagan falta. Los trabajos remotos adicionales requieren una necesidad concreta. Comunicar qué archivos y dependencias se retiraron y cualquier función que todavía necesite otra herramienta.
+
 ### SIMULACION_ARRAY_RUNS_ETIQUETAS_VACIAS
 
 - **ESTADO:** PENDIENTE. La simulación `arrayRunsV1` integrada admite textos no vacíos; el ejercicio curricular también admite una etiqueta vacía.
