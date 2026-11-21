@@ -455,6 +455,17 @@ pero no publican la nueva declaración en el currículo. Este contrato
 no acredita por sí solo las funciones externas de U6L12 ni las
 jerarquías posteriores.
 
+La regresión `test_cpp_array_copy_move_core.py` conserva los dos
+operadores auténticos fuera de sus cuerpos editables y contrasta el
+`main` original con **sus tres casos públicos**. Dos implementaciones
+válidas y tres incorrectas pueden imprimir exactamente las mismas
+salidas: reutilizar un array de igual tamaño durante una copia, ocultar
+`std::bad_alloc` o devolver la referencia al origen al mover. La sonda
+semántica independiente debe aceptar únicamente las correctas, al
+comprobar identidad y nuevas reservas, conservación ante fallo y
+retorno al destino. Esta batería es automática y no convierte los dos
+casos públicos posteriores en requisitos manuales para el alumno.
+
 
 ## Devolver una copia y recibir un propietario sin consumirlo al rechazar
 
