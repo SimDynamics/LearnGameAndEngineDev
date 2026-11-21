@@ -565,11 +565,33 @@ void current_u2_roles(){
                 for(std::size_t option=0;option<3;++option){const auto control=fixture.item(choice,21+static_cast<int>(option)*2);
                     const auto text=wide(lesson.pages[page].blocks[choice].options[option]);role_reference(fixture,control,text,text);
                     source_and_shading(fixture,control,lesson.pages[page].blocks[choice].options[option]);}
-                const auto fill=block_at("block_0005_0004",page);const auto& question=lesson.pages[page].blocks[fill].question;
-                const bool code_literal=question=="Completa las partes derechas para duplicar `4` y luego reducir el resultado en dos.";
-                check(code_literal||question=="Completa las partes derechas para duplicar 4 y luego reducir el resultado en dos.",
-                    "The current duplication question is neither reviewed exact presentation");
-                role_reference(fixture,fixture.item(fill,0),L"duplicar 4",L"4",!code_literal);
+                const auto fill=block_at("block_0005_0004",page);
+                const auto& goal=lesson.pages[page].blocks[fill];
+                // The active authoring declares a role independently of any
+                // optional backtick wrapper. The old literal-based heuristic
+                // was treating a marked C++ value as neutral prose.
+                const auto descriptor=goal.text_semantics.find("/question");
+                check(descriptor!=goal.text_semantics.end()&&descriptor->second.source==goal.question,
+                    "The current duplication question has no matching authored semantic descriptor");
+                const auto token=std::ranges::find_if(descriptor->second.spans,[](const auto& span){
+                    return span.text=="4";
+                });
+                check(token!=descriptor->second.spans.end()&&
+                    (token->role==curriculum::SemanticRole::cpp||
+                     token->role==curriculum::SemanticRole::data||
+                     token->role==curriculum::SemanticRole::math||
+                     token->role==curriculum::SemanticRole::output),
+                    "The current exercise has no explicitly typed value reference");
+                const auto boundaries=semantic_utf8_boundaries(goal.question);
+                check(token->start<token->end&&token->end<boundaries.size()&&
+                    boundaries[token->start]!=std::string_view::npos&&
+                    boundaries[token->end]!=std::string_view::npos,
+                    "The authored value reference crosses an invalid UTF-16 boundary");
+                const auto position=wide(visible_prose(goal.question.substr(0,boundaries[token->start]))).size();
+                const auto visible=wide(visible_prose(token->text));
+                check(!visible.empty(),"The authored value reference is invisible");
+                role_reference(fixture,fixture.item(fill,0),visible,visible,
+                    token->role!=curriculum::SemanticRole::cpp,position);
                 check(edit_text(fixture.item(choice,4)).empty(),"Unanswered U2 choice exposed its solution for color inference");
             }else{
                 const std::vector<std::string_view> ids=page==6?std::vector<std::string_view>{"block_0006_0001","block_0006_0005"}:std::vector<std::string_view>{"block_0008_0002"};
