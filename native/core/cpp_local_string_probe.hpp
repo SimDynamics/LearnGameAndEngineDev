@@ -109,7 +109,8 @@ inline std::optional<StringDeclaration> declared_string(
             // A sibling initializer that reads this same string has already
             // executed when an after-declaration probe is injected. Refuse
             // that layout instead of hiding a real data dependency.
-            if(token==wanted)return {};
+            if(token==wanted&&
+               !cpp_local_int_probe_detail::qualified_member_name(code,index))return {};
             if(token=="op:(")++parentheses;
             else if(token=="op:{")++braces;
             else if(token=="op:[")++brackets;
@@ -221,7 +222,9 @@ inline std::optional<std::size_t> first_output_start(
                 bool inserted=false,reads_variable=false;
                 for(auto n=first+1;n<*end;++n) {
                     inserted=inserted||code[n].value=="op:<<";
-                    reads_variable=reads_variable||code[n].value==wanted;
+                    reads_variable=reads_variable||
+                        (code[n].value==wanted&&
+                         !cpp_local_int_probe_detail::qualified_member_name(code,n));
                 }
                 if(inserted&&reads_variable)return i;
             }
