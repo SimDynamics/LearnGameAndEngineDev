@@ -9,6 +9,8 @@ on:
       - cmake/CurricularWindows.cmake
       - docs/examples/p3_ownership_authoring.json
       - native/platform/windows/p3_ownership_authoring_state_tests.cpp
+      - native/platform/windows/bibliography_u2l8_regression_tests.cpp
+      - native/platform/windows/bibliography_revision.cpp
       - native/platform/windows/compiler_completion.cpp
       - native/platform/windows/compiler_completion.hpp
       - native/platform/windows/local_int_state_tests.cpp
@@ -83,6 +85,29 @@ permissions:
   contents: read
 
 jobs:
+  published-bibliography-u2l8:
+    name: Verify eight published citation-only revisions with real Windows parser
+    runs-on: windows-2022
+    timeout-minutes: 7
+    steps:
+      - name: Read exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Activate Visual C++ on disposable runner
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile the unchanged native bibliography predicate and current source test
+        shell: pwsh
+        run: |
+          $target = Join-Path $env:RUNNER_TEMP 'bibliography-u2l8-qa.exe'
+          cl /nologo /std:c++latest /EHsc /W4 /permissive- /utf-8 /Zc:__cplusplus /I native /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 native\platform\windows\bibliography_revision.cpp native\platform\windows\bibliography_u2l8_regression_tests.cpp "/Fe:$target" windowsapp.lib runtimeobject.lib ole32.lib
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Validate every authenticated bibliography pair without editing the asset
+        shell: pwsh
+        run: |
+          & (Join-Path $env:RUNNER_TEMP 'bibliography-u2l8-qa.exe') 'app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_caracteres_y_valores_logicos.json'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
   native-guidance-source:
     # Compiles the unchanged production translation units with hosted MSVC.
     # Does not claim to run CTest, WinRT state-store integration, narration,
