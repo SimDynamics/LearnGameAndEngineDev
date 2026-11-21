@@ -16,6 +16,7 @@ on:
       - native/core/catalog.cpp
       - native/core/course_edition_scope_tests.cpp
       - native/platform/windows/local_int_state_tests.cpp
+      - native/platform/windows/local_string_state_tests.cpp
       - scripts/windows/test_u2_six_local_int_real_compiler.py
       - scripts/windows/test_u2l5_real_compiler.py
       - scripts/windows/u2l5_local_int_variant.cpp
@@ -272,3 +273,54 @@ jobs:
           path: ${{ runner.temp }}/compiler-guidance-qa/ctest-results.xml
           if-no-files-found: warn
           retention-days: 30
+
+  local-variable-integration-status:
+    # The Win32 suite runs on disposable hosted VS 2022 with its SDK.
+    # This signal does not certify the separately pinned VS 2026 PC build.
+    name: Report hosted CTest integration of local-variable StateStore
+    if: ${{ always() }}
+    needs: [native-guidance-reopen]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      statuses: write
+    steps:
+      - name: Record hosted integration result against this exact Codex SHA
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOSTED_CTEST: ${{ needs.native-guidance-reopen.result }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from urllib.request import Request, urlopen
+
+          result = os.environ["HOSTED_CTEST"]
+          payload = {
+              "state": "success" if result == "success" else "failure",
+              "context": "codex/local-variable-hosted-ctest",
+              "description": f"Hosted Win32 CTest={result}; not production-pinned MSVC",
+              "target_url": (
+                  f"{os.environ['GITHUB_SERVER_URL']}/"
+                  f"{os.environ['GITHUB_REPOSITORY']}/actions/runs/"
+                  f"{os.environ['GITHUB_RUN_ID']}"
+              ),
+          }
+          url = (f"{os.environ['GITHUB_API_URL']}/repos/"
+                 f"{os.environ['GITHUB_REPOSITORY']}/statuses/"
+                 f"{os.environ['GITHUB_SHA']}")
+          request = Request(
+              url, method="POST",
+              data=json.dumps(payload).encode("utf-8"),
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+                  "Content-Type": "application/json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          with urlopen(request, timeout=15) as response:
+              if response.status != 201:
+                  raise RuntimeError("GitHub did not record the hosted CTest result")
+          print("Hosted Win32 StateStore CTest:", result)
+          PY
