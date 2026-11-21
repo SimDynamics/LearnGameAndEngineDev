@@ -19,25 +19,6 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    name: Genuine U6L11 copy and move with GCC and Clang C++23
-    runs-on: ubuntu-24.04
-    timeout-minutes: 14
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Compile original Tramo and private ownership probes
-        run: |
-          for compiler in g++ clang++; do
-            python3 -B scripts/curriculum/test_cpp_array_copy_move.py \
-              --compiler "$compiler"
-            python3 -B scripts/curriculum/test_cpp_array_copy_move_core.py \
-              --compiler "$compiler"
-          done
-          python3 -B -m unittest discover -s scripts/curriculum \
-            -p test_cpp_array_copy_move_authoring.py -v
-
   windows-msvc:
     name: Genuine U6L11 copy and move with Windows MSVC C++23
     runs-on: windows-2022

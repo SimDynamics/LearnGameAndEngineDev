@@ -19,25 +19,6 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    name: Genuine U6L10 arrays and read bounds with GCC and Clang
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Check safe fresh allocation, logical read indices and invalid source preservation
-        run: |
-          for compiler in g++ clang++; do
-            python3 -B scripts/curriculum/test_cpp_array_owner_read.py \
-              --compiler "$compiler"
-            python3 -B scripts/curriculum/test_cpp_array_owner_read_core.py \
-              --compiler "$compiler"
-          done
-          python3 -B -m unittest discover -s scripts/curriculum \
-            -p test_cpp_array_owner_read_authoring.py -v
-
   windows-msvc:
     name: Genuine U6L10 arrays and read bounds with Windows MSVC
     runs-on: windows-2022

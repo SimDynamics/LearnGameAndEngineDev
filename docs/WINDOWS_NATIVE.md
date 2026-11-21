@@ -47,6 +47,17 @@ Visual Studio 2026 estable. CMake se instala bajo `C:\LGP-Tools\CMake`.
 Una selección incompatible
 falla con un diagnóstico, en lugar de cambiar silenciosamente de herramientas.
 
+**Política de compiladores para el producto Windows:** MSVC es el compilador
+principal para la aplicación, los editores y las comprobaciones nativas C++.
+No se exige GCC ni un segundo Clang de escritorio, y Codex no repite las
+regresiones de C++ en Linux solo para contrastar compiladores. Para ejecutar
+programas de estudiantes de forma aislada, se conserva WASI SDK con su propio
+Clang orientado a WebAssembly y Wasmtime como ejecutor **local en Windows**;
+esto no representa una versión web de la aplicación. Las pruebas de autoría
+Python, los contratos históricos y las pruebas de MSVC continúan vigentes.
+La selección exacta de MSVC/SDK del manifiesto principal no se flexibiliza
+porque un runner de GitHub disponga de otra versión.
+
 `toolchains/windows.versions.json` fija también Python `3.15.2`, FFmpeg `9.0.2`,
 Vulkan SDK para Windows `1.4.363.0` y el JDK completo OpenJDK `27.0.1.0.3`. El SDK de
 Vulkan se instala para el usuario con `copy_only=1`: contiene las herramientas

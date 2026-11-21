@@ -19,25 +19,6 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    name: Actual virtual base/derived phases in GCC and Clang C++23
-    runs-on: ubuntu-24.04
-    timeout-minutes: 14
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Compile original U8L6 and contrast real dispatch with phase-label frauds
-        run: |
-          for compiler in g++ clang++; do
-            python3 -B scripts/curriculum/test_cpp_virtual_lifetime_dispatch.py \
-              --compiler "$compiler"
-            python3 -B scripts/curriculum/test_cpp_virtual_lifetime_dispatch_core.py \
-              --compiler "$compiler"
-          done
-          python3 -B -m unittest discover -s scripts/curriculum \
-            -p test_cpp_virtual_lifetime_dispatch_authoring.py -v
-
   windows-msvc:
     name: Actual virtual base/derived phases in MSVC C++23
     runs-on: windows-2022

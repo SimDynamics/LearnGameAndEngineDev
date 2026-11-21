@@ -20,33 +20,6 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    name: Original U8L5 derived ownership and destruction with GCC and Clang
-    runs-on: ubuntu-24.04
-    timeout-minutes: 14
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Check independent polymorphic destructors and counterexamples
-        run: |
-          for compiler in g++ clang++; do
-            python3 -B scripts/curriculum/test_cpp_polymorphic_destruction.py \
-              --compiler "$compiler"
-            python3 -B scripts/curriculum/test_cpp_polymorphic_destruction_core.py \
-              --compiler "$compiler"
-          done
-          python3 -B -m unittest discover -s scripts/curriculum \
-            -p test_cpp_polymorphic_destruction_authoring.py -v
-
-      - name: Verify authenticated multi-body source preservation
-        run: |
-          for compiler in g++ clang++; do
-            "$compiler" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-              native/core/cpp_multi_body_check_tests.cpp -o multi_body_qa
-            ./multi_body_qa
-          done
-
   windows-msvc:
     name: Original U8L5 derived ownership and destruction with MSVC
     runs-on: windows-2022

@@ -17,20 +17,6 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    name: Execute actual U6L5 transfer variants with GCC and Clang
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Run ten private ownership witnesses and authentic public output cases
-        run: |
-          for compiler in g++ clang++; do
-            python3 -B scripts/curriculum/test_cpp_indexed_unique_transfer_runtime.py --compiler "$compiler"
-          done
-
   windows-msvc:
     name: Execute actual U6L5 transfer variants with hosted MSVC
     runs-on: windows-2022

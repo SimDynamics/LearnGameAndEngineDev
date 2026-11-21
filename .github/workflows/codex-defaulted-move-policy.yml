@@ -18,23 +18,6 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    name: Genuine U6L6 defaulted policy with GCC and Clang C++23
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Verify source conservation, unique_ptr identity and rejected copies
-        run: |
-          for compiler in g++ clang++; do
-            python3 -B scripts/curriculum/test_cpp_defaulted_move_policy.py \
-              --compiler "$compiler"
-          done
-          python3 -B -m unittest discover -s scripts/curriculum \
-            -p test_cpp_defaulted_move_policy_authoring.py -v
-
   windows-msvc:
     name: Genuine U6L6 generated moves and rejected copies with MSVC C++23
     runs-on: windows-2022
@@ -51,3 +34,6 @@ jobs:
         shell: cmd
         run: |
           python -B scripts\curriculum\test_cpp_defaulted_move_policy.py --compiler cl --windows
+      - name: Verify original owner and defaulted-move authoring contract
+        shell: cmd
+        run: python -B -m unittest discover -s scripts\curriculum -p test_cpp_defaulted_move_policy_authoring.py -v

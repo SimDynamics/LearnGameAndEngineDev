@@ -1,4 +1,4 @@
-name: Codex portable source-format safety (GCC, Clang and MSVC)
+name: Codex C++ source-format safety (Windows MSVC)
 
 on:
   push:
@@ -13,30 +13,6 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    name: C++23 header format checks (${{ matrix.compiler }})
-    runs-on: ubuntu-24.04
-    timeout-minutes: 8
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler: [g++, clang++]
-    steps:
-      - name: Checkout the exact Codex source revision
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Compile native formatter in strict C++23
-        env:
-          CXX: ${{ matrix.compiler }}
-        run: |
-          "$CXX" --version
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-            native/core/code_format_portable_tests.cpp \
-            -o "${RUNNER_TEMP}/lgaed_source_format_portable"
-      - name: Verify C++23 context, header unit protection and CMake gaps
-        run: "${RUNNER_TEMP}/lgaed_source_format_portable"
-
   msvc:
     name: C++23 header format checks (MSVC)
     runs-on: windows-2022

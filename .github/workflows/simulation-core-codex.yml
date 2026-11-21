@@ -1,4 +1,4 @@
-name: Codex portable array simulation model (GCC, Clang and MSVC)
+name: Codex Windows array simulation model and Win32 interaction
 
 on:
   push:
@@ -32,30 +32,6 @@ jobs:
           persist-credentials: false
       - name: Validate source, scenarios and input contracts
         run: python3 -B -m unittest discover -s scripts/curriculum -p test_simulation.py -v
-
-  portable-model:
-    name: Portable C++ simulation (${{ matrix.compiler }})
-    runs-on: ubuntu-24.04
-    timeout-minutes: 8
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler: [g++, clang++]
-    steps:
-      - name: Read exact Codex revision
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Build model and exhaustive replay regressions
-        env:
-          CXX: ${{ matrix.compiler }}
-        run: |
-          "$CXX" --version
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-            native/core/simulation.cpp native/core/simulation_tests.cpp \
-            -o "${RUNNER_TEMP}/lgaed_simulation_model_tests"
-      - name: Execute model, UTF-8, empty-text, overflow and session checks
-        run: "${RUNNER_TEMP}/lgaed_simulation_model_tests"
 
   portable-model-msvc:
     # These portable C++ assertions run on Windows, but do NOT replace

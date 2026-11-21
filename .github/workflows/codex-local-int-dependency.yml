@@ -49,50 +49,6 @@ jobs:
       - name: Validate two authentic U2L7 text owners and original answer contracts
         run: python3 -B -m unittest discover -s scripts/curriculum -p test_local_string_probe_authoring.py -v
 
-  portable:
-    name: Probe mutations and 55 live C++ programs on ${{ matrix.compiler }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler: [g++, clang++]
-    steps:
-      - name: Read the exact revision
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Compile and run the exact production probe's unit tests
-        env:
-          CXX: ${{ matrix.compiler }}
-        run: |
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-            native/core/cpp_local_int_probe_tests.cpp -o "$RUNNER_TEMP/lgaed_local_int_probe_tests"
-          "$RUNNER_TEMP/lgaed_local_int_probe_tests"
-      - name: Verify portable local-string source perturbations
-        env:
-          CXX: ${{ matrix.compiler }}
-        run: |
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-            native/core/cpp_local_string_probe_tests.cpp -o "$RUNNER_TEMP/lgaed_local_string_probe_tests"
-          "$RUNNER_TEMP/lgaed_local_string_probe_tests"
-      - name: Execute real C++23 text-variable dependencies and hard-coded counterexamples
-        env:
-          CXX: ${{ matrix.compiler }}
-        run: |
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-            native/core/cpp_local_string_live_fixtures.cpp -o "$RUNNER_TEMP/lgaed_string_emitter"
-          python3 -B scripts/curriculum/test_local_string_live_compilation.py \
-            --emitter "$RUNNER_TEMP/lgaed_string_emitter" --compiler "$CXX"
-      - name: Compile variant emitter and execute every original and mutated C++ case
-        env:
-          CXX: ${{ matrix.compiler }}
-        run: |
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-            native/core/cpp_local_int_live_fixtures.cpp -o "$RUNNER_TEMP/lgaed_local_int_fixtures"
-          python3 -B scripts/curriculum/test_local_int_live_compilation.py \
-            --emitter "$RUNNER_TEMP/lgaed_local_int_fixtures" --compiler "$CXX"
-
   hosted-msvc:
     name: Source-only MSVC, not the production-pinned Windows app
     runs-on: windows-2022
@@ -225,7 +181,7 @@ jobs:
     name: Publish focused source-only compiler evidence
     # This tests hosted source probes, not the production-pinned Windows app.
     if: ${{ always() }}
-    needs: [authoring, portable, hosted-msvc, hosted-win32-state-source]
+    needs: [authoring, hosted-msvc, hosted-win32-state-source]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     permissions:
@@ -235,7 +191,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AUTHORING: ${{ needs.authoring.result }}
-          PORTABLE: ${{ needs.portable.result }}
           HOSTED_MSVC: ${{ needs.hosted-msvc.result }}
           WIN32_OBJECTS: ${{ needs.hosted-win32-state-source.result }}
         run: |
@@ -246,7 +201,6 @@ jobs:
 
           results = {
               "authoring": os.environ["AUTHORING"],
-              "gcc_clang": os.environ["PORTABLE"],
               "hosted_msvc": os.environ["HOSTED_MSVC"],
               "win32_objects": os.environ["WIN32_OBJECTS"],
           }
@@ -257,7 +211,6 @@ jobs:
               "context": "codex/local-variable-source",
               "description": (
                   f"Authoring={results['authoring']}; "
-                  f"GCC/Clang={results['gcc_clang']}; "
                   f"hosted MSVC={results['hosted_msvc']}; "
                   f"Win32 objects={results['win32_objects']}; source-only"
               ),

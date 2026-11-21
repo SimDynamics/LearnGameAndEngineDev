@@ -14,26 +14,6 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        cxx: [g++, clang++]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Verify CMake and Ninja
-        run: |
-          cmake --version
-          ninja --version
-      - name: Run genuine CMake test and private mutations
-        env:
-          CXX: ${{ matrix.cxx }}
-        run: python3 -B -m unittest discover -s scripts/curriculum -p test_u3_l10_extended_battery_probe.py -v
-
   msvc:
     runs-on: windows-2022
     timeout-minutes: 25

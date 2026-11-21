@@ -1,4 +1,4 @@
-name: Codex portable catalog progress reset (GCC and Clang)
+name: Codex catalog progress reset (Windows MSVC)
 
 on:
   push:
@@ -18,41 +18,6 @@ permissions:
   contents: read
 
 jobs:
-  scoped-progress-reset:
-    name: Atomic catalog reset (${{ matrix.compiler }})
-    runs-on: ubuntu-24.04
-    timeout-minutes: 8
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler: [g++, clang++]
-    steps:
-      - name: Checkout exact Codex revision
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Compile real portable catalog and state store
-        env:
-          CXX: ${{ matrix.compiler }}
-        run: |
-          "$CXX" --version
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic \
-            -ffunction-sections -fdata-sections -Inative \
-            native/core/catalog.cpp \
-            native/core/lesson_state.cpp \
-            native/core/catalog_reset_portable_tests.cpp \
-            -Wl,--gc-sections -o "${RUNNER_TEMP}/lgaed_catalog_reset_tests"
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic \
-            -ffunction-sections -fdata-sections -Inative \
-            native/core/catalog.cpp \
-            native/core/lesson_state.cpp \
-            native/core/course_edition_scope_tests.cpp \
-            -Wl,--gc-sections -o "${RUNNER_TEMP}/lgaed_course_edition_scope_tests"
-      - name: Prove corrupted coverage rollback preserves bytes and unrelated courses
-        run: "${RUNNER_TEMP}/lgaed_catalog_reset_tests"
-      - name: Prove explicit legacy/new course scopes and idempotent limited reset
-        run: "${RUNNER_TEMP}/lgaed_course_edition_scope_tests"
-
   scoped-progress-reset-msvc:
     # Portable native-state assertions only. This is not the full pinned
     # Win32 application build or a test on the student's computer.
