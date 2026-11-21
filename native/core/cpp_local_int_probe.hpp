@@ -35,6 +35,21 @@ struct CppLocalIntCheck {
     bool operator==(const CppLocalIntCheck&) const = default;
 };
 
+// The expression evaluator also recognizes tokens such as numeric literals
+// and bool constants; its keyword test alone is not a C++ identifier lexer.
+// Require the same identifier boundaries as the source tokenizer, including
+// its existing support for non-ASCII identifier bytes.
+[[nodiscard]] inline bool cpp_local_probe_identifier(std::string_view name) {
+    if(!cpp_expression_repair_detail::identifier(name)||
+       name=="true"||name=="false"||name=="nullptr")return false;
+    if(!code_format::identifier_start(static_cast<unsigned char>(name.front())))
+        return false;
+    for(std::size_t i=1;i<name.size();++i)
+        if(!code_format::identifier_part(static_cast<unsigned char>(name[i])))
+            return false;
+    return true;
+}
+
 // A console may spell one line ending as LF or CRLF. Normalize those
 // spellings before deciding whether two expected observations really differ.
 [[nodiscard]] inline std::string cpp_local_int_canonical_stdout(
@@ -52,7 +67,7 @@ inline bool cpp_local_int_check_valid(const CppLocalIntCheck& check) {
     if(check.probes.empty() || check.probes.size()>8)return false;
     for(std::size_t index=0;index<check.probes.size();++index) {
         const auto& probe=check.probes[index];
-        if(!cpp_expression_repair_detail::identifier(probe.variable)||
+        if(!cpp_local_probe_identifier(probe.variable)||
            probe.variable=="main"||probe.expected_stdout.empty()||
            probe.expected_stdout.size()>4)return false;
         std::set<std::string> distinct;
@@ -187,7 +202,7 @@ inline std::optional<Declaration> simple_int_declaration(
     std::optional<bool> initialized;
     for(;;) {
         if(at+1>=closing||!code[at].value.starts_with("id:")||
-           !cpp_expression_repair_detail::identifier(
+           !cpp_local_probe_identifier(
                std::string_view(code[at].value).substr(3)))return {};
         const bool owns=code[at].value==wanted;
         const auto first=code[at+1].value;
@@ -383,7 +398,7 @@ inline std::optional<std::size_t> first_state_update(
 // substituting coincidental names in strings, comments or unrelated code.
 [[nodiscard]] inline std::optional<std::string> cpp_local_int_override(
         std::string_view source, const CppLocalIntProbe& probe) {
-    if (!cpp_expression_repair_detail::identifier(probe.variable) ||
+    if (!cpp_local_probe_identifier(probe.variable) ||
         probe.variable == "main") return {};
     const auto code = cpp_local_int_probe_detail::lexical(source);
     if (!code) return {};
