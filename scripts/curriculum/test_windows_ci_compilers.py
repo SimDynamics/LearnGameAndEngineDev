@@ -123,6 +123,25 @@ class WindowsCompilerPolicy(unittest.TestCase):
             with self.subTest(workflow=path.name):
                 self.assertNotRegex(path.read_text(encoding="utf-8"), unused)
 
+    def test_compiler_policy_uses_focused_ci_without_unrelated_native_rebuilds(self):
+        policy = "scripts/curriculum/test_windows_ci_compilers.py"
+        fast = (WORKFLOWS / "codex-batched-client-split.yml").read_text(encoding="utf-8")
+        self.assertIn("- .github/workflows/**", fast)
+        self.assertIn("- " + policy, fast)
+        self.assertIn("test_windows_ci_compilers.py -v", fast)
+        multicourse = (WORKFLOWS / "programming-multicourse-contract.yml").read_text(
+            encoding="utf-8")
+        self.assertNotIn(policy, multicourse)
+        self.assertNotIn("unittest -v test_windows_ci_compilers", multicourse)
+        self.assertIn("test_programming_multicourse_validation.py", multicourse)
+        state_import = (WORKFLOWS / "windows-state-import.yml").read_text(
+            encoding="utf-8")
+        self.assertLess(
+            state_import.index("      - scripts/curriculum/**"),
+            state_import.index("      - '!scripts/curriculum/test_windows_ci_compilers.py'"))
+        self.assertIn("      - native/core/**", state_import)
+        self.assertIn("Test-StateImportCI.ps1", state_import)
+
     def test_historical_state_import_runs_python_before_pinned_msvc_preflight(self):
         workflow = (WORKFLOWS / "windows-state-import.yml").read_text(encoding="utf-8")
         python = workflow.index("Select the declared Python version")
