@@ -512,10 +512,10 @@ struct LessonView {
                 "Drag the code lines to put them in order. You can move blank cards if you want to leave an empty line.",
                 "Faites glisser les lignes de code pour les mettre dans l’ordre. Vous pouvez déplacer les cartes vides pour laisser une ligne blanche.");
             return ui("Arrastra las líneas de código hasta dejarlas en el orden correcto.",
-            "Press and hold a block, then drag it to the correct position.","Maintenez le doigt sur un bloc, puis faites-le glisser jusqu’à la bonne position.");
+            "Drag the code lines into the correct order.","Faites glisser les lignes de code pour les mettre dans le bon ordre.");
         }
         if(type==BlockType::drag_fill_code)return ui("Arrastra cada bloque de código hasta el espacio vacío correspondiente.",
-            "Press and hold a block, then drag it to an empty space.","Maintenez le doigt sur un bloc, puis faites-le glisser vers un emplacement vide.");
+            "Drag each code block into its matching empty slot.","Faites glisser chaque bloc de code vers l’emplacement vide correspondant.");
         return {};
     }
     std::string laboratory_description()const{return ui("Compilación local con MSVC y ejecución nativa x64, completamente offline.","Local compilation with MSVC and native x64 execution, completely offline.","Compilation locale avec MSVC et exécution native x64, entièrement hors ligne.");}
