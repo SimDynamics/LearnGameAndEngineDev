@@ -16,6 +16,8 @@ on:
       - native/core/code_format_compat.hpp
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/test_local_int_probe_authoring.py
+      - scripts/curriculum/test_local_string_probe_authoring.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_cadenas_y_texto.json
       - scripts/curriculum/test_local_int_live_compilation.py
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_objetos_valores_y_tipos.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_declarar_e_inicializar.json
@@ -38,6 +40,8 @@ jobs:
           persist-credentials: false
       - name: Verify append-only probes and original stable-state identities
         run: python3 -B -m unittest discover -s scripts/curriculum -p test_local_int_probe_authoring.py -v
+      - name: Validate two authentic U2L7 text owners and original answer contracts
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_local_string_probe_authoring.py -v
 
   portable:
     name: Probe mutations and 33 live C++ programs on ${{ matrix.compiler }}
