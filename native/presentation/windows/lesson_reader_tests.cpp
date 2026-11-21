@@ -596,7 +596,7 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
             check(solved==prior_ordinary&&state::can_reach_page(data,lesson,first.page),
                 "The current U2L5 prefix changed its fifteen isolated prerequisites");
             state::validate_lesson_state(data,lesson);
-            data.preferences["u2l5_reader_qa"]["synthetic_ordinary_prefix"]=std::int64_t{solved};
+            data.preferences["u2l5_reader_qa"]["synthetic_ordinary_prefix"]=static_cast<std::int64_t>(solved);
         });
     check(lesson_page_state(f.view).index==first.page&&
         !windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,first_goal),
