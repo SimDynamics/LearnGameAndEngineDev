@@ -4050,8 +4050,8 @@ desde el checkout nativo autorizado, en la rama `Codex`, mediante:
 El script comprueba el checkout y la rama antes de compilar, resuelve el
 toolset MSVC y el Windows SDK fijados en el proyecto, y ejecuta las pruebas
 unitarias de `cpp_local_int_probe` y `cpp_local_string_probe`.
-A continuación genera y compila con MSVC los **41 casos de enteros** y
-**28 casos de cadenas**, contrastando las salidas y los rechazos reales
+A continuación genera y compila con MSVC los **43 casos de enteros** y
+**30 casos de cadenas**, contrastando las salidas y los rechazos reales
 con los dos validadores Python existentes. Los dos códigos iniciales de
 U2L5 también se compilan y se comprueba que no acrediten sus objetivos.
 
