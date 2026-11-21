@@ -1,12 +1,12 @@
 #pragma once
 
 #include "core/code_format_compat.hpp"
+#include "core/cpp_class_definition_instrumentation.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cstddef>
 #include <optional>
-#include <regex>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -195,13 +195,14 @@ inline std::optional<std::string> cpp_defaulted_move_policy_probe_source(
         const CppDefaultedMovePolicy& spec,std::string_view candidate,
         CppDefaultedMoveProbe mode=CppDefaultedMoveProbe::success) {
     if(!cpp_defaulted_move_policy_matches(spec,candidate))return {};
-    const std::string class_pattern=
-        R"(\b(class|struct)\s+)"+spec.class_name+R"(\s*\{)";
-    const std::regex opening(class_pattern);
-    std::match_results<std::string_view::const_iterator> match;
-    if(!std::regex_search(candidate.begin(),candidate.end(),match,opening))return {};
+    // The preserved real declaration has already passed the structural
+    // source gate. The friend must attach to that definition, never to
+    // prose in a comment or a literal that happens to spell "class Ficha {".
+    const auto insertion=cpp_class_definition_instrumentation::body_insertion(
+        candidate,spec.class_name);
+    if(!insertion)return {};
     auto instrumented=std::string(candidate);
-    instrumented.insert(static_cast<std::size_t>(match.position()+match.length()),
+    instrumented.insert(*insertion,
         "\nfriend struct lgaed_move_policy_qa::Access;\n");
 
     static constexpr std::string_view prelude=R"qa(#include <cstddef>

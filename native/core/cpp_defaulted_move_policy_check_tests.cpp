@@ -123,6 +123,49 @@ int main(int argc,char** argv)try {
         }
         std::cout<<variation.name<<" PASS\n";
     }
+    // The same source policy must remain sound when a class definition is
+    // *described* before its real declaration. These are temporary QA-only
+    // source variants, never edits to the published U6L6 lesson.
+    const auto documented=[&](std::string_view name,std::string_view prefix) {
+        auto documented_original=std::string(prefix)+original;
+        auto reviewed=spec;
+        reviewed.original_source=documented_original;
+        const auto at=documented_original.find("public:\n");
+        require(at!=std::string::npos,
+                "Documented U6L6 source lost the real public section");
+        auto candidate=documented_original;
+        candidate.insert(at+std::string_view("public:\n").size(),
+                         variations.front().insert);
+        require(cpp_defaulted_move_policy_matches(reviewed,candidate),
+                "An unrelated comment or literal changed the real move policy");
+        write(std::filesystem::path(argv[2])/
+              (std::string(name)+"-public.cpp"),candidate);
+        constexpr std::array<std::pair<CppDefaultedMoveProbe,std::string_view>,3>
+            modes{{
+                {CppDefaultedMoveProbe::success,"runtime"},
+                {CppDefaultedMoveProbe::rejected_copy_constructor,"copy-ctor"},
+                {CppDefaultedMoveProbe::rejected_copy_assignment,"copy-assign"}
+            }};
+        for(const auto& [mode,extension]:modes) {
+            const auto driver=cpp_defaulted_move_policy_probe_source(
+                reviewed,candidate,mode);
+            require(driver.has_value(),
+                    "A private friend was inserted into a comment or raw string");
+            write(std::filesystem::path(argv[2])/
+                  (std::string(name)+"-"+std::string(extension)+".cpp"),
+                  *driver);
+        }
+        std::cout<<name<<" PASS\n";
+    };
+    documented("comment_before_class",
+               "// Lesson note: class Ficha { is declared below.\n");
+    documented("raw_literal_before_class",
+               "const char* note = R\"memo(class Ficha {\n)memo\";\n");
+    // Two genuine definitions with the same class name are never a valid
+    // insertion target even when a regex could pick their first occurrence.
+    require(!cpp_class_definition_instrumentation::body_insertion(
+                "class Ficha { int a; }; class Ficha { int b; };","Ficha"),
+            "Two class definitions were incorrectly accepted for one owner");
     const auto good=edit(variations.front().insert);
     auto changed=good;
     const auto member=changed.find("std::make_unique<int>(4)");
@@ -158,7 +201,7 @@ int main(int argc,char** argv)try {
                   variations.front().insert);
     require(!cpp_defaulted_move_policy_matches(spec,changed),
         "Defining generated public policy privately passed");
-    std::cout<<"PASS genuine U6L6 defaulted move policies: two equivalent declarations, "
+    std::cout<<"PASS genuine U6L6 defaulted move policies: four equivalent declarations, "
         "eight rejected declarations, protected members/copies/main and private "
         "runtime/compilation witnesses generated.\n";
     return 0;
