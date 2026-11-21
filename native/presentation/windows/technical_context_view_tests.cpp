@@ -526,18 +526,23 @@ void prepare_u2_visual_prefix(state::StateData& data,
             state::put_response(data,lesson,block,response);
             ++ordinary;
         }
-        // The actual destination's compiler remains pending: its page can
-        // be OPEN without being marked completely reached for the NEXT page.
-        // Otherwise the QA seed itself would manufacture forward reachability.
-        if(!keep_last_compiler_pending||page+1<destination)
-            (void)state::mark_page_reached(data,lesson,page);
+        // A real user HAS visited the current page even while its last
+        // compiler is pending. Preserve that state so navigating to the next
+        // page cannot be rejected merely for lack of visit history: the
+        // ACTUAL LessonView compiler gate must reject it independently.
+        (void)state::mark_page_reached(data,lesson,page);
     }
     const auto bookmark=keep_last_compiler_pending?destination-1:destination;
     check(bookmark<lesson.pages.size()&&state::can_reach_page(data,lesson,bookmark),
         "U2 visual QA could not reach its requested active page");
-    if(keep_last_compiler_pending)
-        check(!state::can_reach_page(data,lesson,destination),
-            "An unverified compiler unexpectedly released the next curricular page");
+    if(keep_last_compiler_pending){
+        check(state::can_reach_page(data,lesson,destination),
+            "U2L5 QA must prove the pending compiler gate, not a missing page visit");
+        check(std::ranges::any_of(lesson.pages[bookmark].blocks,[&](const auto& block){
+            return block.type==curriculum::BlockType::cpp_compiler&&
+                !windows::compiler_puzzle_completed(data,lesson,block);
+        }),"The current U2L5 model lost its genuine pending compiler barrier");
+    }
     state::save_current_page(data,lesson,bookmark);
     check(state::current_page(data,lesson)==bookmark,
         "U2 visual QA saved a stale bookmark before completing its prefix");
