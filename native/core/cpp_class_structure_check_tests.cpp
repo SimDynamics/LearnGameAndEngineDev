@@ -65,6 +65,44 @@ class Owner {};
         !cs::defined_class(*inert_literal,"FakeOwner"),
         "Preprocessor-like words inside a raw string were treated as directives");
 
+    // These lookalikes have real C++ braces and global names, but cannot
+    // authenticate a concrete owner or a two-interface implementation.
+    for(const auto candidate:{
+            "enum class Owner { value };",
+            "enum struct Owner { value };",
+            "template<class T> class Owner { int count_; };",
+            "template<typename T> struct Owner { int count_; };"
+        }) {
+        const auto tokens=cs::lexical(candidate);
+        require(tokens&& !cs::defined_class(*tokens,"Owner"),
+            "An enum or a class template was accepted as a concrete Owner");
+    }
+    const auto generic_base=cs::lexical(R"source(
+struct Base {};
+template<class T> struct Owner : public Base {};
+)source");
+    require(generic_base&& !cs::defined_class(*generic_base,"Owner","Base"),
+        "A class template impersonated concrete public inheritance");
+    const auto generic_pair=cs::lexical(R"source(
+struct Left {};
+struct Right {};
+template<class T> class Combined : public Left, public Right {};
+)source");
+    require(generic_pair&&
+        !cs::defined_public_bases(*generic_pair,"Combined",{"Left","Right"}),
+        "A class template impersonated a concrete two-interface owner");
+    const auto distinct_plain=cs::lexical(R"source(
+template<class T> struct Other {};
+struct Owner {};
+struct Left {};
+struct Right {};
+struct Combined : public Left, public Right {};
+)source");
+    require(distinct_plain&&
+        cs::defined_class(*distinct_plain,"Owner")&&
+        cs::defined_public_bases(*distinct_plain,"Combined",{"Left","Right"}),
+        "A preceding terminated template hid later real global classes");
+
     // A data member must be an individual object's field. It is not enough
     // that a method or an inline static field has the required type and name.
     const auto instance=cs::lexical(R"source(

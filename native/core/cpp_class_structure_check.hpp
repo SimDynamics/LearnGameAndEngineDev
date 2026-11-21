@@ -67,6 +67,23 @@ inline std::optional<std::vector<std::size_t>> brace_depths(const Tokens& code) 
     return result;
 }
 
+// An enum class/struct is not a class with data members or virtual methods.
+// Nor is a class template a concrete type usable by the authored driver.
+// Inspect the top-level declaration prefix, not an arbitrary nearby
+// "template" in a previous, already terminated declaration.
+inline bool plain_class_declaration(const Tokens& code,
+        const std::vector<std::size_t>& depths,std::size_t at) {
+    if(at && code[at-1]=="id:enum")return false;
+    for(auto i=at;i>0;) {
+        --i;
+        if(close_brace(code[i])&&depths[i]==1)break;
+        if(depths[i]!=0)continue;
+        if(code[i]=="op:;"||close_brace(code[i]))break;
+        if(code[i]=="id:template")return false;
+    }
+    return true;
+}
+
 // Bind a genuine translation-unit class/struct definition and (when
 // declared) direct public inheritance. Reject ambiguous duplicate global
 // definitions, malformed scopes and nested lookalikes.
@@ -79,7 +96,7 @@ inline std::optional<Scope> defined_class(const Tokens& code,
     for(std::size_t i=0;i+2<code.size();++i) {
         if((*depths)[i]!=0||
            (code[i]!="id:class"&&code[i]!="id:struct")||
-            code[i+1]!=self)continue;
+            code[i+1]!=self||!plain_class_declaration(code,*depths,i))continue;
         auto at=i+2;
         if(at<code.size()&&code[at]=="id:final")++at;
         if(!public_base.empty()) {
@@ -120,7 +137,7 @@ inline std::optional<Scope> defined_public_bases(
     for(std::size_t i=0;i+3<code.size();++i) {
         if((*depths)[i]!=0||
            (code[i]!="id:class"&&code[i]!="id:struct")||
-           code[i+1]!=self)continue;
+           code[i+1]!=self||!plain_class_declaration(code,*depths,i))continue;
         auto at=i+2;
         if(at<code.size()&&code[at]=="id:final")++at;
         if(at>=code.size()||code[at++]!="op::")continue;
