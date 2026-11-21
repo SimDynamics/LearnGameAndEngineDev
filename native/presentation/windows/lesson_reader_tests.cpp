@@ -696,10 +696,12 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
     f.page(second.page);
     check(lesson_page_state(f.view).index==second.page,"The first editor and choice failed to unlock page seven");
     const auto first_regions=lesson_reading_regions(f.view);
-    check(std::ranges::any_of(first_regions,[&](const auto& region){
-        return region.block_index==first_reference.block&&
-            region.source_text.find("int main")!=std::string::npos;
-    }),"Finishing the first editor did not expose its own authored C++ reference to the reader");
+    const auto first_code=child(f.view,1001+static_cast<int>(first_reference.block)*100);
+    check(first_code&&edit_text(first_code)==first_source&&
+        std::ranges::any_of(first_regions,[&](const auto& region){
+            return region.block_index==first_reference.block&&region.passive_label&&
+                region.source_text.find("Ejemplo de código")!=std::string::npos;
+        }),"The first accepted editor did not expose its exact read-only example and spoken code label");
     // Earlier authored exercises on page seven are independent requirements;
     // solve them through their controls before checking the second editor.
     for(std::size_t index=0;index<second.block;++index){
@@ -776,10 +778,12 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
     check(lesson_page_state(f.view).can_next&&
         navigate_lesson_view(f.view,second_reference.page),
         "The accepted second compiler did not unlock its own reference page");
-    check(std::ranges::any_of(lesson_reading_regions(f.view),[&](const auto& region){
-        return region.block_index==second_reference.block&&
-            region.source_text.find("int main")!=std::string::npos;
-    }),"The accepted second compiler did not expose its reference to native narration");
+    const auto second_code=child(f.view,1001+static_cast<int>(second_reference.block)*100);
+    check(second_code&&edit_text(second_code)==second_source&&
+        std::ranges::any_of(lesson_reading_regions(f.view),[&](const auto& region){
+            return region.block_index==second_reference.block&&region.passive_label&&
+                region.source_text.find("Ejemplo de código")!=std::string::npos;
+        }),"The accepted second editor did not expose its exact read-only example and spoken code label");
     check(navigate_lesson_view(f.view,second.page),
         "The current U2L5 QA could not return to reset the accepted editor");
     SendMessageW(child(f.view,1012+static_cast<int>(second.block)*100),BM_CLICK,0,0);f.ready();
