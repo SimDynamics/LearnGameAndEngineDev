@@ -8,6 +8,7 @@ The source-format guard remains independent and continues rejecting renames.
 from __future__ import annotations
 
 from collections import Counter
+import math
 import re
 
 import code_format_compat as source_format
@@ -84,7 +85,17 @@ def same_json_value_and_types(previous: object, current: object) -> bool:
             return (len(before) == len(after)
                     and all(equal(a, b, depth + 1)
                             for a, b in zip(before, after)))
-        if before is None or type(before) in (str, bool, int, float):
+        if type(before) is float:
+            # Python considers 0.0 == -0.0, but a sign-preserving JSON
+            # representation (and a possible C++ floating-point contract)
+            # must not change inside an identifier-only source revision.
+            # NaN and infinity are not legal JSON numbers at all.
+            return (math.isfinite(before) and math.isfinite(after)
+                    and before == after
+                    and (before != 0.0
+                         or math.copysign(1.0, before) ==
+                            math.copysign(1.0, after)))
+        if before is None or type(before) in (str, bool, int):
             return before == after
         return False
 
