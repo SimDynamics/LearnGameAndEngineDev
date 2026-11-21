@@ -39,9 +39,12 @@ jobs:
         with:
           python-version: '3.12'
       - name: Verify historical and published U3 runtime declarations
+        shell: pwsh
         run: |
           python -B -m unittest discover -s scripts/curriculum -p test_u3_rejection_runtime_contract.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B -m unittest discover -s scripts/curriculum -p test_u3_observation_runtime_contract.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   windows-semantics:
     runs-on: windows-2022

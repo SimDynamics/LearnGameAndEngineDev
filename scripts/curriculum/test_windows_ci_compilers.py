@@ -212,6 +212,20 @@ class WindowsCompilerPolicy(unittest.TestCase):
         self.assertLess(pinned, native)
         self.assertIn("-Suite StateImport -MsvcPreflightOnly", workflow)
 
+    def test_u3_diagnostic_authoring_checks_fail_independently(self):
+        # The second U3 editorial audit must not mask an earlier rejected
+        # contract just because it completes successfully afterward.
+        workflow = (WORKFLOWS / "codex-u3-diagnostic-facts.yml").read_text(
+            encoding="utf-8")
+        first = workflow.index("test_u3_rejection_runtime_contract.py -v")
+        second = workflow.index("test_u3_observation_runtime_contract.py -v", first)
+        guard = "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }"
+        self.assertIn("shell: pwsh", workflow[:first])
+        self.assertIn(guard, workflow[first:second])
+        self.assertIn(guard, workflow[second:])
+        self.assertIn("runs-on: windows-2022", workflow)
+        self.assertIn("native/core/rejection_diagnostic_facts_tests.cpp", workflow)
+
     def test_native_pins_and_removed_wasi_dependencies(self):
         manifest = json.loads((ROOT / "toolchains/windows.versions.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["cpp"]["standard"], 23)
