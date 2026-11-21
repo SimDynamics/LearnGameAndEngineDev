@@ -1,5 +1,7 @@
 """Authenticated co-edition of exercise wording and existing response guidance."""
 from copy import deepcopy
+import json
+from pathlib import Path
 import unittest
 
 import stable_state_layout as layout
@@ -95,6 +97,88 @@ class ReviewFeedbackProseRevisionTest(unittest.TestCase):
         self.assertNotIn("reviewPaths", follow_up["stateLayout"]["editorial"][-1])
         self.assertEqual(revised["stateLayout"]["editorial"],
                          follow_up["stateLayout"]["editorial"][:-1])
+
+    def test_published_u2l6_and_u2l7_preserve_real_review_contracts(self):
+        # Exercise the actual active Spanish v2 assets that blocked Work's
+        # combined wording/hint revision. No curricular file is rewritten.
+        prefix = ("app/src/main/assets/content/es/programming/"
+                  "cpp_fundamentals/objetos_y_estado/")
+        cases = (
+            ("lesson_conversiones_y_deduccion.json", "multiple_choice", "question"),
+            ("lesson_cadenas_y_texto.json", "fill_code", "explanation"),
+        )
+        for filename, kind, prose in cases:
+            with self.subTest(lesson=filename, kind=kind, prose=prose):
+                relative = prefix + filename
+                before = json.loads(
+                    (Path(__file__).resolve().parents[2] / relative).read_text(
+                        encoding="utf-8"))
+                positions = layout.validate(before)
+                owners = layout._blocks(before)
+                candidates = [
+                    (page, block, identity)
+                    for page, record in enumerate(before["stateLayout"]["current"])
+                    for block, identity in enumerate(record["blocks"])
+                    if (owners[identity].get("type") == kind
+                        and owners[identity].get("question")
+                        and owners[identity].get("explanation")
+                        and owners[identity].get("reviewFeedback"))
+                ]
+                self.assertTrue(candidates, "Published U2 review owner is missing")
+                page, block, identity = candidates[0]
+                previous = owners[identity]
+
+                def authored_spans(path):
+                    matching = [
+                        field["spans"] for field in
+                        before.get("textSemantics", {}).get("fields", [])
+                        if field["block"] == identity and field["path"] == path
+                    ]
+                    self.assertLessEqual(len(matching), 1)
+                    return deepcopy(matching[0] if matching else [])
+
+                changes = {
+                    prose: {
+                        "text": previous[prose] + " Revisión de prosa QA.",
+                        "spans": authored_spans("/" + prose),
+                    },
+                }
+                if kind == "multiple_choice":
+                    changes["reviewFeedback"] = {
+                        "0": {
+                            "text": previous["reviewFeedback"][0] +
+                                    " Revisión de orientación QA.",
+                            "spans": authored_spans("/reviewFeedback/0"),
+                        },
+                    }
+                    hint_paths = ["/reviewFeedback/0"]
+                else:
+                    changes["reviewFeedback"] = {
+                        "text": previous["reviewFeedback"] +
+                                " Revisión de orientación QA.",
+                        "spans": authored_spans("/reviewFeedback"),
+                    }
+                    hint_paths = ["/reviewFeedback"]
+
+                after = layout.revise_ordinary_editorial(before, identity, changes)
+                current = layout._blocks(after)[identity]
+                origin = positions[(page, block)]
+                self.assertTrue(contract.preserves_ordinary_explanation_revision(
+                    relative, *origin, previous, current,
+                    previous_document=before, current_document=after))
+                self.assertEqual(layout.state_fingerprint(previous),
+                                 layout.state_fingerprint(current))
+                self.assertEqual(before["stateLayout"]["origin"],
+                                 after["stateLayout"]["origin"])
+                self.assertEqual(before["stateLayout"]["current"],
+                                 after["stateLayout"]["current"])
+                self.assertEqual(before["stateLayout"]["editorial"],
+                                 after["stateLayout"]["editorial"][:-1])
+                self.assertEqual(
+                    ["/" + prose, *hint_paths],
+                    list(layout.ordinary_editorial_paths(previous, current)))
+                for field in set(previous) - {prose, "reviewFeedback"}:
+                    self.assertEqual(previous[field], current[field])
 
     def test_rejects_guide_only_addition_and_mismatched_choice_positions(self):
         for kind in ("fill_code", "multiple_choice"):
