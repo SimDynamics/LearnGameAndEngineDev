@@ -223,6 +223,13 @@ int main() {
         "int main(){int cajas=4, sobres=cajas+5; std::cout<<cajas<<sobres;}",
         {"cajas",13,{}}))
         throw std::runtime_error("A grouped dependent int could receive false credit");
+    // A source-only guard: compiling and running an uninitialized read would
+    // itself have undefined behavior, so it must be rejected BEFORE emitting
+    // a variant or counting a compiler execution.
+    if(cpp_local_int_override(
+        "int main(){int llaves; llaves=llaves+7; std::cout<<llaves;}",
+        {"llaves",13,{}}))
+        throw std::runtime_error("A self-read before int initialization received a probe");
     if(emitted!=39)throw std::runtime_error("Unexpected live fixture count");
     std::cout<<"PASS generated 39 isolated C++ executions for U2 integer owners, grouped declarations and six adversaries\n";
     return 0;
