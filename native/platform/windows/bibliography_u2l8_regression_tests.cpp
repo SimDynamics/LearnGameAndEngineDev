@@ -52,7 +52,7 @@ int main(int argc,char** argv) {
                 const auto locate_dash=[](std::wstring_view text){
                     std::string result;
                     for(std::size_t i=0;i<text.size();++i)
-                        if(text[i]==L'-'||text[i]==L'\\u2013'||text[i]==L'\\u2014') {
+                        if(text[i]==L'-'||text[i]==0x2013||text[i]==0x2014) {
                             result+=std::to_string(i)+"/"+std::to_string(static_cast<unsigned>(text[i]))+";";
                         }
                     return result;
