@@ -791,7 +791,6 @@ inline bool productive(const Tokens& t,std::size_t i,
                 if(!op(t[at],"||"))or_only=false;
             }
         }
-        if(constant_ternary_condition(open+1,*close))return true;
         if(!ambiguous&&!logical_operators.empty()&&(and_only||or_only)) {
             const auto literal_operand=[&](std::size_t first,std::size_t last,
                     bool desired) {
@@ -838,6 +837,7 @@ inline bool productive(const Tokens& t,std::size_t i,
                 }
             }
         }
+        if(constant_ternary_condition(open+1,*close))return true;
         // Equal, integral constant results cannot convey a named rule,
         // whatever the condition does. In "capacidad > 0 ? 0 : 0" the
         // constant appears in a condition but neither outcome depends on it.
