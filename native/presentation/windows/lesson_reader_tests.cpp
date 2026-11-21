@@ -695,6 +695,11 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
     check(selected&&selected->correct,"The actual last page-six choice was not checked");
     f.page(second.page);
     check(lesson_page_state(f.view).index==second.page,"The first editor and choice failed to unlock page seven");
+    const auto first_regions=lesson_reading_regions(f.view);
+    check(std::ranges::any_of(first_regions,[&](const auto& region){
+        return region.block_index==first_reference.block&&
+            region.source_text.find("int main")!=std::string::npos;
+    }),"Finishing the first editor did not expose its own authored C++ reference to the reader");
     // Earlier authored exercises on page seven are independent requirements;
     // solve them through their controls before checking the second editor.
     for(std::size_t index=0;index<second.block;++index){
@@ -738,10 +743,14 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
     check(!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal),
         "A fixed second-editor output bypassed the authored local-int probes");
     f.edit_program(second_source,second.block);f.ready();f.run_program(second.block,true);
+    const auto approved_second=f.snapshot();
     check(windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal)&&
         windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,first_goal)&&
-        edit_text(child(f.view,1010+static_cast<int>(second.block)*100))==second_source,
-        "The current repaired grouping did not earn independent execution credit");
+        edit_text(child(f.view,1010+static_cast<int>(second.block)*100))==second_source&&
+        approved_second.segments[approved_second.index].feedback&&
+        approved_second.segments[approved_second.index].correct&&
+        !approved_second.playing&&!approved_second.allocated,
+        "The current repaired grouping did not earn an independently paused success");
     // Reopen the same private profile and verify the second editor's actual draft.
     f.reader.reset();check(flush_lesson_view(f.view),"Cannot flush the second current compiler");
     DestroyWindow(f.view);f.view=create_lesson_view(f.host,f.environment,lesson);
@@ -751,11 +760,28 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
     next_hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(f.reader)f.reader->feedback(block,correct);};
     set_lesson_view_hooks(f.view,std::move(next_hooks));
     f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();
+    const auto reopened_second=f.snapshot();
     check(lesson_page_state(f.view).index==second.page&&
         edit_text(child(f.view,1010+static_cast<int>(second.block)*100))==second_source&&
-        windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal),
-        "Reopening lost the independent second-editor draft or checked result");
+        windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal)&&
+        reopened_second.key==approved_second.key&&
+        reopened_second.index==approved_second.index&&
+        reopened_second.offset==approved_second.offset&&
+        reopened_second.heard_through==approved_second.heard_through&&
+        !reopened_second.playing&&!reopened_second.allocated,
+        "Reopening lost the second editor's source, checked result or paused narration");
     f.reader->pause();
+    // The second solution is on the next page. Verify the native reader's
+    // actual source regions, not merely an authored referenceAfter declaration.
+    check(lesson_page_state(f.view).can_next&&
+        navigate_lesson_view(f.view,second_reference.page),
+        "The accepted second compiler did not unlock its own reference page");
+    check(std::ranges::any_of(lesson_reading_regions(f.view),[&](const auto& region){
+        return region.block_index==second_reference.block&&
+            region.source_text.find("int main")!=std::string::npos;
+    }),"The accepted second compiler did not expose its reference to native narration");
+    check(navigate_lesson_view(f.view,second.page),
+        "The current U2L5 QA could not return to reset the accepted editor");
     SendMessageW(child(f.view,1012+static_cast<int>(second.block)*100),BM_CLICK,0,0);f.ready();
     check(!windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,second_goal)&&
         windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,first_goal)&&
