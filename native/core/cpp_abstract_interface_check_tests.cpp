@@ -159,11 +159,14 @@ void source_declaration_regression(
             throw std::runtime_error(
                 "Unrelated namespaced Muestra displaced the real base class");
         auto missing_global=original;
-        const auto name=missing_global.original_source.find("class Muestra {");
-        if(name==std::string::npos)
+        // Remove the entire global base declaration rather than merely
+        // changing its name: no real curricular Muestra may remain in scope.
+        const auto name=missing_global.original_source.find("\nclass Muestra {");
+        const auto closing=name==std::string::npos?std::string::npos:
+            missing_global.original_source.find("\n};",name);
+        if(name==std::string::npos||closing==std::string::npos)
             throw std::runtime_error("Missing original global Muestra declaration");
-        missing_global.original_source.replace(
-            name,std::string("class Muestra {").size(),"class LgaedWrongOwner {");
+        missing_global.original_source.erase(name,closing+3-name);
         missing_global.original_source+=extra;
         const auto scan=lgaed::curriculum::cpp_class_structure::lexical(
             missing_global.original_source);
