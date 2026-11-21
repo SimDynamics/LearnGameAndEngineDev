@@ -151,9 +151,16 @@ void exercise(){
         const auto length=static_cast<LONG>(wide(source).size());
         const auto size_first=point_height(feedback,0);
         const auto size_last=point_height(feedback,length-1);
+        const feedback_scale=scale(feedback),prose_scale=scale(prose);
         require(size_first==base&&size_last==base&&
-            scale(feedback)==expected_scale&&scale(prose)==expected_scale,
-            "A real puzzle feedback used a smaller font or another zoom");
+            feedback_scale==expected_scale&&prose_scale==expected_scale,
+            "Font parity changed: block="+std::to_string(block)+
+            ", requested="+std::to_string(expected_scale)+
+            ", feedbackScale="+std::to_string(feedback_scale)+
+            ", proseScale="+std::to_string(prose_scale)+
+            ", feedbackFirst="+std::to_string(size_first)+
+            ", feedbackLast="+std::to_string(size_last)+
+            ", prose="+std::to_string(base));
     };
     replace(f.host,f.view,1,"9");click(f.host,f.view,1,3);
     require(edit_text(control(f.view,id(1,4))).starts_with("✗ Incorrecto"),
