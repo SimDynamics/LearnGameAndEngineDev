@@ -88,23 +88,7 @@ jobs:
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          ctest --test-dir $build -R '^native[.]current_u2(_roles|l5_gates) --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'current-u2-win32.xml')
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Preserve native test and compile evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: hosted-win32-course-edition-${{ github.sha }}
-          retention-days: 7
-          if-no-files-found: warn
-          path: |
-            ${{ runner.temp }}/lgaed-course-edition-qa/course-edition-runtime.xml
-            ${{ runner.temp }}/lgaed-course-edition-qa/simulation-empty-text-runtime.xml
-            ${{ runner.temp }}/lgaed-course-edition-qa/compiler-first-case-win32.xml
-            ${{ runner.temp }}/lgaed-course-edition-qa/current-u2-win32.xml
-            ${{ runner.temp }}/lgaed-course-edition-qa/Testing/Temporary/*.log
-            ${{ runner.temp }}/lgaed-course-edition-qa/CMakeFiles/CMakeConfigureLog.yaml
- --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'current-u2-win32.xml')
+          ctest --test-dir $build -R '^native[.]current_u2(_roles|l5_gates)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'current-u2-win32.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve native test and compile evidence
         if: always()
