@@ -4,9 +4,11 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/cpp_runner.hpp"
+#include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "native_build_config.hpp"
 
+#include <windows.h>
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 
@@ -563,8 +565,28 @@ void run() {
             "The original program, cases, feedback or first-case seal was rewritten");
     const auto decoded=state::decode(state::encode(learner));
     require(compiler_puzzle_completed(decoded,current,block),
-        "Real encoded StateStore lost the independent proof on reopen");
-    auto corrupted=decoded;
+        "An encoded state round trip lost the independent local-int proof");
+
+    // The encoded round trip above is not a disk reopen. Exercise the real
+    // Win32 StateStore in a unique QA-only subprofile, never the learner's
+    // Codex profile, and verify the unrelated course and historical receipt.
+    const auto options=LaunchOptions{ProfileId::Codex,
+        L"local-int-u2l1-"+std::to_wstring(GetCurrentProcessId())+
+        L"-"+std::to_wstring(GetTickCount64()),false};
+    const auto environment=resolve_windows_environment(options);
+    initialize_profile_directories(environment.paths);
+    state::StateStore disk_store(environment.paths.root);
+    (void)disk_store.load();
+    disk_store.save(decoded);
+    const auto disk_reopened=disk_store.load();
+    require(disk_reopened==decoded&&
+        compiler_puzzle_completed(disk_reopened,current,block)&&
+        saved_local_receipt(disk_reopened)==saved_local_receipt(decoded)&&
+        disk_reopened.preferences.at("learning_progress")==
+            before.preferences.at("learning_progress"),
+        "The isolated on-disk StateStore lost the local-int proof, "
+        "historical receipt or unrelated course progress");
+    auto corrupted=disk_reopened;
     for(auto& [key,value]:corrupted.preferences["native_windows"])
         if(key.ends_with("/local-int/v1"))value=std::string("forged");
     bool rejected=false;
@@ -632,7 +654,7 @@ void run() {
             !compiler_runtime_request_allowed(owner(declared),missing),
         "Missing required local variable passed the private source mutation");
     std::cout<<"PASS Windows local-int contract: two load paths, existing U2L1 owner, "
-        "uncredited old stdout, separate same-source receipt, StateStore reopen, "
+        "uncredited old stdout, separate same-source receipt, real isolated StateStore reopen, "
         "tampering rejection and absent-variable rejection; no student execution claimed.\n";
 }
 }
