@@ -818,6 +818,15 @@ La prueba independiente de C++ y la conservación de StateStore no
 constituyen, por sí mismas, una aceptación de la app nativa completa
 en el Windows del usuario.
 
+La regresión `test_cpp_derived_preparation_core.py` contrasta también
+los **cinco casos públicos auténticos** para tres implementaciones
+válidas y un contraejemplo que construye un objeto correcto, pero lo
+descarta cuando el destino recibido está vacío. Las salidas públicas
+coinciden porque el `main` original siempre entrega un destino ocupado.
+La sonda privada prueba ambos estados del destino y rechaza el programa
+que no instala el propietario construido. Esta QA no convierte los
+cuatro casos posteriores en pruebas manuales obligatorias.
+
 ## Dos interfaces independientes sobre un único objeto vivo
 
 Programación 3, **U10L1**, dispone de la declaración opcional
