@@ -9,6 +9,8 @@ on:
       - native/core/cpp_local_int_probe_tests.cpp
       - native/core/cpp_local_string_probe.hpp
       - native/core/cpp_local_string_probe_tests.cpp
+      - native/core/cpp_local_string_live_fixtures.cpp
+      - scripts/curriculum/test_local_string_live_compilation.py
       - native/core/cpp_local_int_live_fixtures.cpp
       - native/core/cpp_expression_repair.hpp
       - native/core/code_format_compat.hpp
@@ -64,6 +66,14 @@ jobs:
           "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
             native/core/cpp_local_string_probe_tests.cpp -o "$RUNNER_TEMP/lgaed_local_string_probe_tests"
           "$RUNNER_TEMP/lgaed_local_string_probe_tests"
+      - name: Execute real C++23 text-variable dependencies and hard-coded counterexamples
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/cpp_local_string_live_fixtures.cpp -o "$RUNNER_TEMP/lgaed_string_emitter"
+          python3 -B scripts/curriculum/test_local_string_live_compilation.py \
+            --emitter "$RUNNER_TEMP/lgaed_string_emitter" --compiler "$CXX"
       - name: Compile variant emitter and execute every original and mutated C++ case
         env:
           CXX: ${{ matrix.compiler }}
@@ -102,6 +112,14 @@ jobs:
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /utf-8 /I native native\core\cpp_local_string_probe_tests.cpp "/Fe:$unit" "/Fo:$obj"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & $unit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile and execute 13 generated string programs on hosted MSVC
+        run: |
+          $emitter = Join-Path $env:RUNNER_TEMP 'lgaed_local_string_fixtures.exe'
+          $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_string_fixtures.obj'
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /utf-8 /I native native\core\cpp_local_string_live_fixtures.cpp "/Fe:$emitter" "/Fo:$obj"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B scripts/curriculum/test_local_string_live_compilation.py --emitter "$emitter" --compiler MSVC
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Compile and execute 33 original/mutated C++ programs on hosted MSVC
         run: |
