@@ -50,7 +50,7 @@ jobs:
         run: python3 -B -m unittest discover -s scripts/curriculum -p test_local_string_probe_authoring.py -v
 
   portable:
-    name: Probe mutations and 52 live C++ programs on ${{ matrix.compiler }}
+    name: Probe mutations and 55 live C++ programs on ${{ matrix.compiler }}
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     strategy:
@@ -149,7 +149,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B scripts/curriculum/test_local_string_live_compilation.py --emitter "$emitter" --compiler MSVC
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Compile and execute 52 original/mutated C++ programs on hosted MSVC
+      - name: Compile and execute 55 original/mutated C++ programs on hosted MSVC
         run: |
           $emitter = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_fixtures.exe'
           $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_fixtures.obj'

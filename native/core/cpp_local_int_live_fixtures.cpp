@@ -391,8 +391,37 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<(aforo-2);})CPP";
     emit(directory,"reject_u2l3_compensated_plus_five",*rejected_compensation,
          "",false,true);
     ++emitted;
-    if(emitted!=52)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 52 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
+    // Two valid spellings of the exact +3 use consecutive state changes.
+    // The hidden +4 must follow the whole sequence and preserve the copy.
+    for(const auto& candidate:std::array{
+        std::pair{"u2l3_exact_split_additions",
+            R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo+=1;aforo+=2;
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP"},
+        std::pair{"u2l3_exact_split_assignments",
+            R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo=aforo+1; /* conservar */
+aforo=aforo+2;std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP"}
+    }) {
+        const auto variant=cpp_local_int_override(candidate.second,exact_delta);
+        if(!variant)throw std::runtime_error(
+            "Cannot verify consecutive equivalent +3 updates");
+        emit(directory,candidate.first,*variant,"Antes: 5\nAhora: 12",true);
+        ++emitted;
+    }
+    // A consecutive +1 and +4 also reproduces the visible/perturbed
+    // outputs if the learner subtracts two when printing. It is not +3.
+    constexpr std::string_view split_compensation=R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo+=1;aforo+=4;
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<(aforo-2);})CPP";
+    const auto split_wrong=cpp_local_int_override(split_compensation,exact_delta);
+    if(!split_wrong)throw std::runtime_error(
+        "Cannot expose a compensated two-statement +5");
+    emit(directory,"reject_u2l3_split_compensated_plus_five",*split_wrong,
+         "",false,true);
+    ++emitted;
+    if(emitted!=55)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 55 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';

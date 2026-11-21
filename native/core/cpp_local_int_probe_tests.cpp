@@ -717,6 +717,46 @@ void exact_authored_increase_cannot_be_hidden_in_stdout() {
         "A negative expectedIncrease was allowed as a required increase");
 }
 
+void exact_increment_accepts_consecutive_updates_without_reordering() {
+    // A valid learner solution may express +3 as two ordinary statements.
+    // No private mutation may be injected between them or before a saved
+    // copy. Comments are copied literally, not parsed as update statements.
+    const std::string source =
+        "#include <iostream>\nint main(){int aforo{5};int anterior=aforo;"
+        "aforo+=1; /* primer cambio */\n"
+        "aforo=aforo+2;"
+        "std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo;}";
+    const auto original=source;
+    const CppLocalIntProbe exact{"aforo",4,{},true,3};
+    const auto changed=cpp_local_int_override(source,exact);
+    require(changed&&source==original &&
+        changed->find("aforo+=1;")!=std::string::npos &&
+        changed->find("/* primer cambio */")!=std::string::npos &&
+        changed->find("aforo=aforo+2;")!=std::string::npos,
+        "Two genuine consecutive updates lost source or could not be probed");
+    const auto first=changed->find("aforo+=1;");
+    const auto second=changed->find("aforo=aforo+2;");
+    const auto witness=changed->find("!= 3LL) return 1;");
+    const auto delta=changed->find("aforo += 4;");
+    const auto output=changed->find("std::cout<<");
+    require(first<second&&second<witness&&witness<delta&&delta<output &&
+        changed->find("const int lgaed_local_int_before_6cb8e71d = aforo;")<first,
+        "The private exact +3 check was inserted between the student's updates");
+    const auto previous=cpp_local_int_override(source,{"aforo",4,{},true});
+    require(previous&&previous->find("aforo += 4;")<
+        previous->find("aforo=aforo+2;")&&
+        previous->find("!= 3LL) return 1;")==std::string::npos,
+        "The original afterUpdate contract was silently widened");
+    const std::string interrupted=
+        "int main(){int aforo{5};aforo+=1;"
+        "int anterior=aforo;aforo+=2;std::cout<<anterior<<aforo;}";
+    const auto protected_copy=cpp_local_int_override(interrupted,exact);
+    require(protected_copy &&
+        protected_copy->find("!= 3LL) return 1;")<
+        protected_copy->find("int anterior=aforo;"),
+        "The exact test incorrectly crossed an intervening saved copy");
+}
+
 void private_delta_respects_signed_int_bounds() {
     // The chosen learner update itself is valid. Only the *extra* private
     // delta would overflow int. This must fail before += executes, rather
@@ -856,6 +896,7 @@ int main() {
         private_marker_in_comments_and_strings_is_not_an_identifier();
         private_recompile_cannot_consume_build_markers_or_exit_early();
         exact_authored_increase_cannot_be_hidden_in_stdout();
+        exact_increment_accepts_consecutive_updates_without_reordering();
         private_delta_respects_signed_int_bounds();
         crlf_after_update_preserves_source_and_comment();
         numeric_literal_identity_distinguishes_one_from_ten();

@@ -3927,7 +3927,13 @@ Esta comprobación es independiente de la salida: `aforo += 5` seguido
 por `std::cout << aforo - 2` puede reproducir el resultado visible y
 la salida de todas las variaciones, pero se rechaza si la edición exigía
 `expectedIncrease: 3`. Se admiten expresiones equivalentes que producen
-realmente ese aumento, por ejemplo `aforo = aforo + 2 + 1`.
+realmente ese aumento, por ejemplo `aforo = aforo + 2 + 1` o dos
+actualizaciones consecutivas `aforo += 1; aforo += 2;`. Para esta
+modalidad, la sonda observa el aumento conjunto de las actualizaciones
+contiguas de la misma variable, sin insertar ninguna variación privada
+entre ellas. Una copia, una impresión u otra instrucción intermedia
+cierra la secuencia: no se atribuye retroactivamente un cambio posterior
+a los datos que ya se utilizaron.
 El valor debe ser un entero positivo de 32 bits y exige `afterUpdate: true`;
 no puede declararse en una sustitución del valor inicial. Las salidas
 privadas siguen siendo expectativas independientes y obligatorias.

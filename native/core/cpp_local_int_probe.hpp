@@ -736,6 +736,20 @@ inline std::optional<std::pair<std::size_t,std::size_t>> first_state_update(
         if (!updated) return {};
         update_begin = (*code)[updated->first].begin;
         end = updated->second;
+        if(probe.expected_increase) {
+            // An exact authored increase may be written as consecutive
+            // root-level updates, e.g. aforo += 1; aforo += 2;. Compare
+            // the state AFTER this uninterrupted sequence, never after
+            // only its first statement. Stop before ANY intervening
+            // statement (copy, call, output, branch or another owner).
+            // Legacy afterUpdate retains its original first-update witness.
+            for(std::size_t count=0;count<32;++count) {
+                const auto next=cpp_local_int_probe_detail::first_state_update(
+                    *code,end+1,body->second,probe.variable);
+                if(!next||next->first!=end+1)break;
+                end=next->second;
+            }
+        }
     }
     const auto offset = (*code)[end].end;
     if(probe.after_update) {
