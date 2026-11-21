@@ -58,7 +58,7 @@ struct OpenBatteryRun {
     // Each number and boolean verdict belongs to the actual library call
     // at the same position. Reports and process exit are separate evidence.
     std::vector<int> case_numbers;
-    std::vector<bool> comparison_results;
+    std::vector<unsigned char> comparison_results;
 };
 struct OpenBatteryVerdict {
     bool accepted=false;
@@ -523,7 +523,7 @@ inline std::optional<std::vector<OpenBatteryCall>> open_battery_parse_calls(
 struct OpenBatteryTrace {
     std::vector<OpenBatteryCall> calls;
     std::vector<int> case_numbers;
-    std::vector<bool> comparison_results;
+    std::vector<unsigned char> comparison_results;
     std::string visible;
 };
 // This stricter decoder is used only for the numbered-comparison objective.

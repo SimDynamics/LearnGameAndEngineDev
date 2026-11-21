@@ -307,7 +307,7 @@ void numbered_trace_parsing() {
     const auto parsed=open_battery_parse_trace("Antes="+first+"Entre\n"+second+"Después");
     verify(parsed&&parsed->calls==std::vector<OpenBatteryCall>{{3,3,7,59},{-20,20,20,-8}}&&
         parsed->case_numbers==std::vector<int>{std::numeric_limits<int>::min(),std::numeric_limits<int>::max()}&&
-        parsed->comparison_results==std::vector<bool>{true,false}&&
+        parsed->comparison_results==std::vector<unsigned char>{1,0}&&
         parsed->visible=="Antes=Entre\nDespués",
         "Numbered records lost signed facts, CRLF or partial student diagnostics");
     const auto interleaved=open_battery_parse_trace(
@@ -316,7 +316,7 @@ void numbered_trace_parsing() {
         "Resultado=" "LGAED_OPEN_BATTERY_RESULT:1\n"
         "LGAED_OPEN_BATTERY_END:0\n" "OK\n");
     verify(interleaved&&interleaved->case_numbers==std::vector<int>{0}&&
-        interleaved->comparison_results==std::vector<bool>{true}&&
+        interleaved->comparison_results==std::vector<unsigned char>{1}&&
         interleaved->visible=="Preparado=OK\nResultado=OK\n",
         "Visible messages inside a comparison were removed or zero was not a case number");
     const auto ordinary=open_battery_parse_trace("Sólo diagnóstico\n");
