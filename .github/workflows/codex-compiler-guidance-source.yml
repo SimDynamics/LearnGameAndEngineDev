@@ -14,6 +14,9 @@ on:
       - native/platform/windows/compiler_completion.cpp
       - native/platform/windows/compiler_completion.hpp
       - native/platform/windows/local_int_state_tests.cpp
+      - scripts/windows/test_u2_six_local_int_real_compiler.py
+      - scripts/windows/test_u2l5_real_compiler.py
+      - scripts/windows/u2l5_local_int_variant.cpp
       - native/core/cpp_local_int_probe.hpp
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_enteros_y_aproximaciones.json
       - native/platform/windows/compiler_guidance_state_tests.cpp
@@ -254,6 +257,11 @@ jobs:
           ctest --test-dir "$env:RUNNER_TEMP/compiler-guidance-qa"
           --output-on-failure --no-tests=error -j 1
           --output-junit "$env:RUNNER_TEMP/compiler-guidance-qa/ctest-results.xml"
+      - name: Execute all six current U2L1-U2L3 first cases and private int mutations with real MSVC
+        shell: pwsh
+        run: |
+          python -X utf8 scripts/windows/test_u2_six_local_int_real_compiler.py --state-fixture "$env:RUNNER_TEMP/compiler-guidance-qa/lgaed_local_int_state_tests.exe"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Publish inspectable Windows CTest evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@v4

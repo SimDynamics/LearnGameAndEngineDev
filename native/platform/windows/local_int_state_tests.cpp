@@ -93,7 +93,7 @@ std::string saved_local_receipt(const state::StateData& data) {
 }
 // Test the six real, still-unmodified U2 lesson editors, not synthetic IDs.
 // Authoring packets exist only in memory: Work retains control of lesson JSON.
-void validate_other_u2_editors() {
+void validate_other_u2_editors(bool export_plan=false) {
     struct LessonCase {
         const char* filename;
         const char* declaration;
@@ -168,6 +168,28 @@ int main(){
             }
         }
     }};
+    if(export_plan){
+        // The same in-memory opt-in proposal used by the WinRT state tests
+        // can be exercised with REAL hosted MSVC. Print no student data and
+        // never change a published lesson or its historical identities.
+        JsonArray examples;
+        for(const auto& item:cases){
+            JsonObject entry;
+            entry.Insert(L"filename",JsonValue::CreateStringValue(winrt::to_hstring(item.filename)));
+            entry.Insert(L"checks",JsonValue::Parse(winrt::to_hstring(std::string(item.declaration))));
+            JsonArray answers;
+            for(std::size_t i=0;i<item.owners.size();++i){
+                JsonObject owner;
+                owner.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(item.owners[i])));
+                owner.Insert(L"source",JsonValue::CreateStringValue(winrt::to_hstring(item.sources[i])));
+                answers.Append(owner);
+            }
+            entry.Insert(L"answers",answers);
+            examples.Append(entry);
+        }
+        std::cout<<winrt::to_string(examples.Stringify())<<'\n';
+        return;
+    }
     const auto root=std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado";
     for(const auto& item:cases) {
@@ -614,8 +636,12 @@ void run() {
         "tampering rejection and absent-variable rejection; no student execution claimed.\n";
 }
 }
-int main()try {
+int main(int argc,char** argv)try {
     winrt::init_apartment();
+    if(argc==2&&std::string_view(argv[1])=="--export-six-u2-qa"){
+        validate_other_u2_editors(true);return 0;
+    }
+    require(argc==1,"Unknown local-int QA command");
     run();
     return 0;
 }catch(const winrt::hresult_error& e){
