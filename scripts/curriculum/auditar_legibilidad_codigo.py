@@ -191,6 +191,8 @@ def audit(content_root: Path) -> dict:
         except (OSError, UnicodeError, json.JSONDecodeError) as error:
             problems.append(f"JSON no disponible o inválido: {type(error).__name__}: {error}")
             doc = None
+        if doc is None and not problems:
+            problems.append("raíz JSON debe ser un objeto, no null")
         if doc is not None:
             if not isinstance(doc, dict):
                 problems.append("raíz JSON debe ser un objeto")
