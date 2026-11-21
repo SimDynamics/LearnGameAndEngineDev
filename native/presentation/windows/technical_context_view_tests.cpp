@@ -402,6 +402,10 @@ void verify_u2_text_semantic_ranges(View& fixture,HWND target,const curriculum::
     // future supplementary Unicode scalars. The native visible index also
     // accounts for any hidden inline-code delimiter before the selection.
     const auto source_boundaries=semantic_utf8_boundaries(block.text);
+    // Inspect EVERY projected UTF-16 glyph, not just a sample from each
+    // authored range. A marker may not leak into punctuation or prose.
+    std::vector<bool> expected_references(displayed.size(),false);
+    const auto prose_ink=displayed.empty()?COLORREF{}:character(target,0).crTextColor;
     std::size_t code_count=0,neutral_count=0,citations=0;
     for(const auto& span:at->second.spans){
         check(span.start<span.end&&span.end<source_boundaries.size()&&
@@ -416,6 +420,13 @@ void verify_u2_text_semantic_ranges(View& fixture,HWND target,const curriculum::
         check(!token.empty()&&start+token.size()<=displayed.size()&&
               std::wstring_view(displayed).substr(start,token.size())==token,
             "A U2 semantic range no longer maps to its visible UTF-16 text");
+        if(semantic_reference(span.role)){
+            for(auto index=start;index<start+token.size();++index){
+                check(!expected_references[index],
+                    "A U2 semantic reference overlaps a separately authored reference");
+                expected_references[index]=true;
+            }
+        }
         if(span.role==curriculum::SemanticRole::cpp){
             role_reference(fixture,target,token,token,false,start);
             ++code_count;
@@ -433,6 +444,27 @@ void verify_u2_text_semantic_ranges(View& fixture,HWND target,const curriculum::
     }
     check(code_count>=2&&neutral_count>0&&citations==1,
         "The current U2 prose lost its independent code, data or citation roles");
+    const auto actual_references=rich_text_reference_ranges(target);
+    for(std::size_t index=0;index<displayed.size();++index){
+        const bool actual=std::ranges::any_of(actual_references,[&](const auto& range){
+            return range.first<=index&&index<range.second;
+        });
+        if(actual!=expected_references[index])
+            std::cerr<<"U2 semantic extent mismatch: lesson="<<fixture.lesson.id
+                <<" page="<<lesson_page_state(fixture.view).index+1
+                <<" utf16="<<index<<" expected="<<expected_references[index]
+                <<" actual="<<actual<<'\n';
+        check(actual==expected_references[index],
+            "U2 RichEdit reference extent differs from the exact authored ranges");
+        // Paragraph separators have native RichEdit formatting rules.
+        // Ordinary visible glyphs must remain entirely unhighlighted.
+        if(actual||displayed[index]==L'\n'||displayed[index]==L'\r')continue;
+        const auto style=character(target,static_cast<LONG>(index));
+        check(style.crTextColor==prose_ink&&
+              (style.dwEffects&CFE_AUTOBACKCOLOR)&&
+              !(style.dwEffects&CFE_UNDERLINE),
+            "Unmarked U2 prose changed its ink, background or underline");
+    }
 }
 
 // Formatting-only entry: exercise the real authored ordinary evaluators in
