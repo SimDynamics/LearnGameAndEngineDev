@@ -154,12 +154,12 @@ def main() -> int:
                 accepted += 1
             else:
                 rejected += 1
-        if (accepted, rejected) != (24, 6):
+        if (accepted, rejected) != (27, 6):
             raise RuntimeError(f"Incorrect execution counts: {(accepted, rejected)}")
         print(f"PASS {args.compiler} on {sys.platform}: {accepted} positive "
               f"original/probe executions, {rejected} actual hard-coded-copy "
               "counterexamples rejected; 2 actual incomplete U2L5 starters " 
-              "observed; 32 real C++ compile-and-run cases.")
+              "observed; 35 real C++ compile-and-run cases.")
     return 0
 
 
