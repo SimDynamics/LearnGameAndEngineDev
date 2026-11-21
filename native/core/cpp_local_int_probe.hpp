@@ -31,7 +31,7 @@ struct CppLocalIntProbe {
     // Optional authored, exact state increase across the selected statement.
     // This is independent of the replacement delta and visible stdout.
     // An absent value preserves the previously published afterUpdate contract.
-    std::optional<std::int32_t> expected_increase;
+    std::optional<std::int32_t> expected_increase = std::nullopt;
     bool operator==(const CppLocalIntProbe&) const = default;
 };
 
