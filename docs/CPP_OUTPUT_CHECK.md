@@ -89,8 +89,18 @@ incompleto o una salida fabricada no acreditan ese contrato.
 La regresión Windows `native.u6l5_indexed_unique_transfer_state` comprueba
 cargador, estado histórico y recibo independiente. La ejecución
 `scripts/curriculum/test_cpp_indexed_unique_transfer_runtime.py` compila
-y ejecuta dos soluciones equivalentes y cinco contraejemplos con GCC, Clang
-y MSVC disponible en CI. Estas pruebas **no publican** el campo en el JSON.
+y ejecuta tres soluciones equivalentes y siete variantes rechazadas (una
+por contaminar stdout y otra por copiar un entero cuando los valores de ambos
+propietarios coinciden) con GCC, Clang
+y MSVC disponible en CI. El comprobador privado exige stdout vacío y que stderr sea exactamente
+el marcador final emitido tras todas las verificaciones; una coincidencia
+parcial del marcador no demuestra éxito. El ejecutor de QA compila además cada una de las tres soluciones correctas
+con el `main` original y las contrasta con **todos** los casos públicos
+publicados, incluidos los dos que permanecen opcionales para el alumno.
+También comprueba que la implementación incorrecta que copia un entero
+cuando ambos valores coinciden supera el primer caso de stdout y, pese
+a ello, es rechazada por la sonda privada de identidad. La QA no exige
+realizar manualmente los casos opcionales. Estas pruebas **no publican** el campo en el JSON.
 
 ## Política de movimiento generada: U6L6
 
@@ -119,7 +129,11 @@ rechazos de copia al compilar. La política forma parte de la comprobación
 interna del primer caso, sin pedir casos manuales adicionales. La
 regresión `native.u6l6_defaulted_move_policy_state` verifica el estado
 y los recibos, y `test_cpp_defaulted_move_policy.py` ejecuta
-las variantes C++ con compiladores reales.
+las variantes C++ con compiladores reales. La misma QA conserva el
+`main` original de ambas soluciones correctas y contrasta automáticamente
+sus tres casos públicos, sin convertir los dos casos posteriores en
+obligatorios para el estudiante ni acreditar el contrato de propiedad por
+una coincidencia de stdout.
 
 ## Referencia conjunta de autoría de la ficha 14
 
@@ -266,6 +280,16 @@ extiende por sí sola a arrays, copias o jerarquías. Work debe añadir
 la declaración al JSON original de la lección y verificar su integración;
 los archivos de prueba con metadatos temporales no publican dicha autoría.
 
+La regresión `test_cpp_move_assignment_invariant_core.py` compila el
+`main` original y contrasta sus tres casos públicos para las dos
+implementaciones válidas y para un contraejemplo cuyo operador omite
+reiniciar la etiqueta del parámetro de origen. Ese contraejemplo puede
+producir las mismas salidas porque `main` destruye la intermedia
+inmediatamente; únicamente la sonda privada directa revela el
+incumplimiento del invariante. Las dos entradas posteriores del editor
+siguen siendo opcionales para el estudiante: esta batería adicional
+pertenece solo a QA.
+
 
 ## Arrays propietarios y lectura con límites
 
@@ -338,6 +362,15 @@ No acredita por sí sola la copia o movimiento de arrays de U6L11.
 Work incorpora la declaración raíz al JSON auténtico cuando corresponda,
 valida su transición y verifica el ejercicio en la aplicación.
 Las pruebas temporales de Codex no publican metadatos curriculares.
+La regresión `test_cpp_array_owner_read_core.py` compila el programa
+original para las dos soluciones válidas y para un contraejemplo de
+`leer` que escribe `-1` cuando rechaza un índice. Los tres programas
+pueden coincidir con **los tres casos públicos** porque el `main`
+prepara la variable de salida con ese mismo valor. El contraejemplo
+se rechaza únicamente al comprobar la referencia de salida con otros
+centinelas mediante la sonda privada segura. Los casos posteriores al
+primero siguen siendo opcionales para el alumno; esta batería es QA
+automática y no una exigencia de ejecución manual.
 
 
 ## Copia y movimiento independientes de un array propietario
@@ -421,6 +454,17 @@ Codex con metadatos temporales comprueban la capacidad del motor,
 pero no publican la nueva declaración en el currículo. Este contrato
 no acredita por sí solo las funciones externas de U6L12 ni las
 jerarquías posteriores.
+
+La regresión `test_cpp_array_copy_move_core.py` conserva los dos
+operadores auténticos fuera de sus cuerpos editables y contrasta el
+`main` original con **sus tres casos públicos**. Dos implementaciones
+válidas y tres incorrectas pueden imprimir exactamente las mismas
+salidas: reutilizar un array de igual tamaño durante una copia, ocultar
+`std::bad_alloc` o devolver la referencia al origen al mover. La sonda
+semántica independiente debe aceptar únicamente las correctas, al
+comprobar identidad y nuevas reservas, conservación ante fallo y
+retorno al destino. Esta batería es automática y no convierte los dos
+casos públicos posteriores en requisitos manuales para el alumno.
 
 
 ## Devolver una copia y recibir un propietario sin consumirlo al rechazar

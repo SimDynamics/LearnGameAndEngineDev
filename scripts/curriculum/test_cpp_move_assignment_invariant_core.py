@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 
@@ -19,7 +20,18 @@ def main():
     parser.add_argument("--compiler",required=True)
     parser.add_argument("--windows",action="store_true")
     options=parser.parse_args()
-    original=qa.original_block()["initialCode"]
+    block=qa.original_block()
+    original=block["initialCode"]
+    public_cases=block["outputCheck"]["cases"]
+    if len(public_cases)!=3:
+        raise AssertionError("U6L8 published public case count changed")
+    for index,case in enumerate(public_cases,1):
+        if (not isinstance(case.get("standardInput"),str) or
+            not isinstance(case.get("outputs"),list) or
+            not case["outputs"] or
+            not all(isinstance(item,str) for item in case["outputs"]) or
+            type(case.get("exitCode",0)) is not int):
+            raise AssertionError(f"Invalid authentic U6L8 public case {index}")
     sig="Muestra& Muestra::operator=(Muestra&& otra) {"
     first=original.index(sig)+len(sig)
     final=original.index("\n}\nbool Muestra::poner(int valor, int etiqueta)",first)+1
@@ -49,6 +61,7 @@ def main():
                       '__COUNTER__ std::exit(0))memo";\n'
                       '    (void)note;\n' + qa.VALID["exchange_label"])}
         variants={**positive,**qa.REJECT}
+        public_runs=0
         for name,body in variants.items():
             candidate=prefix+body+suffix
             student=root/(name+"-student.cpp")
@@ -71,6 +84,38 @@ def main():
                                       run.returncode,run.stdout,run.stderr))
             print(f"{options.compiler}: native {name}: "
                   f"{'PASS' if good else 'REJECT'}",flush=True)
+            # The unchanged published main can hide a broken invariant when
+            # its moved-from intermediate dies before the next observation.
+            # Automatic QA runs every authored case, but learners still need
+            # only the first. A counterfeit stdout is never semantic proof.
+            if name in qa.VALID or name=="source_label_not_cleared":
+                public_binary=root/(name+"-public"+exe)
+                built=qa.compile_cpp(options.compiler,student,public_binary,
+                                     options.windows)
+                if built.returncode:
+                    raise AssertionError(
+                        (name,"original U6L8 student main cannot compile",
+                         built.stdout,built.stderr))
+                for index,case in enumerate(public_cases,1):
+                    observed=subprocess.run(
+                        [str(public_binary)],cwd=qa.ROOT,
+                        input=case["standardInput"],text=True,
+                        encoding="utf-8",errors="replace",
+                        capture_output=True,check=False,timeout=15)
+                    if (observed.returncode!=case.get("exitCode",0) or
+                        observed.stdout not in case["outputs"] or
+                        observed.stderr):
+                        raise AssertionError(
+                            (name,index,"authored public result changed",
+                             observed.returncode,observed.stdout[-500:],
+                             observed.stderr[-500:]))
+                    public_runs+=1
+                print(f"{options.compiler}: public {name}: "
+                      f"{len(public_cases)} cases PASS; "
+                      f"private invariant {'PASS' if good else 'REJECT'}",
+                      flush=True)
+        if public_runs!=len(public_cases)*3:
+            raise AssertionError("U6L8 authentic public QA lost an owner")
         original_correct=prefix+qa.VALID["exchange_label"]+suffix
         tampered={
             "altered_constructor":original_correct.replace(
@@ -132,9 +177,10 @@ def main():
                 raise AssertionError((name,"forged source passed protected owner",
                                       tested.stdout,tested.stderr))
             print(f"{options.compiler}: protected {name}: REJECT",flush=True)
-    print("PASS U6L8 native class/method authoring: equivalent correct bodies, "
-          "behavioral decoys, and protected private-witness/source changes; "
-          "independent C++ ownership and invariant proof.")
+    print("PASS U6L8 native authoring: source preservation, equivalent move "
+          "bodies, protected private witness, plus authentic public cases "
+          "that deliberately cannot distinguish a broken source label. "
+          "Private identity and invariant checks remain mandatory.")
 
 
 if __name__=="__main__":

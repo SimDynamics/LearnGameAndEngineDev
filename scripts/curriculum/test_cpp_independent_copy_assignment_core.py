@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 
@@ -27,7 +28,18 @@ def main() -> None:
                  for j, owner in enumerate(page["blocks"]) if owner == qa.OWNER]
     assert len(locations) == 1
     i, j = locations[0]
-    original = lesson["pages"][i]["blocks"][j]["initialCode"]
+    block = lesson["pages"][i]["blocks"][j]
+    original = block["initialCode"]
+    public_cases = block["outputCheck"]["cases"]
+    if len(public_cases) != 3:
+        raise AssertionError("The authentic U6L7 public cases changed")
+    for number, case in enumerate(public_cases, 1):
+        if (not isinstance(case.get("standardInput"), str) or
+                not isinstance(case.get("outputs"), list) or
+                not case["outputs"] or
+                not all(isinstance(value, str) for value in case["outputs"]) or
+                type(case.get("exitCode", 0)) is not int):
+            raise AssertionError(f"Invalid original U6L7 public case {number}")
     signature = "Celda& Celda::operator=(const Celda& otra) {"
     opening = original.index(signature) + len(signature)
     closing = original.index("\n}\nbool Celda::poner(int valor)", opening) + 1
@@ -91,6 +103,37 @@ def main() -> None:
             print(f"{args.compiler}: native {name}: "
                   f"{'PASS' if accepted else 'REJECT'}", flush=True)
 
+            # Original public main and all three authored cases are QA-only;
+            # the learner still needs to pass just the first visible case.
+            # In-place copying produces the same values as a real independent
+            # copy, so stdout alone must remain insufficient for certification.
+            if name in qa.VARIANTS or name == "overwriting_destination":
+                public_binary = directory / (name + "-public" + exe)
+                built_public = qa.compile_source(
+                    args.compiler, source_path, public_binary, args.windows)
+                if built_public.returncode:
+                    raise AssertionError(
+                        (name, "the unchanged student-facing main cannot compile",
+                         built_public.stdout, built_public.stderr))
+                for number, case in enumerate(public_cases, 1):
+                    run_public = subprocess.run(
+                        [str(public_binary)], cwd=qa.ROOT,
+                        input=case["standardInput"], text=True,
+                        encoding="utf-8", errors="replace",
+                        capture_output=True, check=False, timeout=15)
+                    if (run_public.returncode != case.get("exitCode", 0)
+                            or run_public.stdout not in case["outputs"]
+                            or run_public.stderr):
+                        raise AssertionError(
+                            (name, number, "published stdout/exit changed",
+                             run_public.returncode,
+                             run_public.stdout[-500:],
+                             run_public.stderr[-500:]))
+                print(f"{args.compiler}: public {name}: "
+                      "three actual cases PASS; "
+                      f"private identity {'PASS' if accepted else 'REJECT'}",
+                      flush=True)
+
         positive = prefix + qa.VARIANTS["candidate_swap"] + suffix
         protected_rejections = {
             "changed_initializer": positive.replace(
@@ -138,9 +181,11 @@ def main() -> None:
                 )
             print(f"{args.compiler}: native {name}: PROTECTED", flush=True)
 
-    print("PASS U6L7 reusable lexical owner, independent C++ compiler probe, "
-          "four equivalent variants, five defective variants and "
-          "blocked private witness/source edits. Published lesson unchanged.")
+    print("PASS U6L7 reusable lexical owner and private C++ probe: "
+          "four equivalent variants, five defective variants, three "
+          "original public cases for both correct methods and the "
+          "in-place-copy counterexample, and blocked source/probe spoofs. "
+          "Student lesson and progress unchanged.")
 
 
 if __name__ == "__main__":

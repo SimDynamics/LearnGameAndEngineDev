@@ -44,7 +44,7 @@ int main(int argc,char** argv) try {
     const auto candidate=[&](std::string_view replacement) {
         return original.substr(0,body->begin)+std::string(replacement)+original.substr(body->end);
     };
-    const std::array<Version,7> versions{{
+    const std::array<Version,10> versions{{
         {"correct_move",R"cpp(
     if (!indice_valido(origen) || !indice_valido(destino) || origen == destino ||
         !elegir(origen)) return false;
@@ -58,6 +58,14 @@ int main(int argc,char** argv) try {
     auto& hacia = elegir(destino);
     hacia.swap(desde);
     desde.reset();
+    return true;
+)cpp",true},
+        {"correct_release_reset",R"cpp(
+    if (!indice_valido(origen) || !indice_valido(destino) || origen == destino)
+        return false;
+    auto& desde = elegir(origen);
+    if (!desde) return false;
+    elegir(destino).reset(desde.release());
     return true;
 )cpp",true},
         {"original_no_transfer",R"cpp(
@@ -99,6 +107,26 @@ int main(int argc,char** argv) try {
     desde.reset();
     *hacia=value;
     return true;
+)cpp",false},
+        {"correct_transfer_extra_stdout",R"cpp(
+    if (!indice_valido(origen) || !indice_valido(destino) || origen == destino ||
+        !elegir(origen)) return false;
+    elegir(destino) = std::move(elegir(origen));
+    std::fputs("unexpected output from transfer", stdout);
+    return true;
+)cpp",false},
+        {"equal_value_hidden_copy",R"cpp(
+    if (!indice_valido(origen) || !indice_valido(destino) || origen == destino ||
+        !elegir(origen)) return false;
+    auto& desde = elegir(origen);
+    auto& hacia = elegir(destino);
+    if (hacia && *desde == *hacia) {
+        hacia = std::make_unique<int>(*desde);
+        desde.reset();
+        return true;
+    }
+    hacia = std::move(desde);
+    return true;
 )cpp",false}
     }};
     std::filesystem::create_directories(argv[2]);
@@ -110,6 +138,16 @@ int main(int argc,char** argv) try {
         require(probe.has_value(),"Cannot generate an independent guarded probe");
         const auto path=std::filesystem::path(argv[2])/(std::string(version.name)+".cpp");
         write(path,*probe);
+        // The real student-facing main is another independent contract:
+        // valid implementations must pass *all* authored public cases, even
+        // though only the first is mandatory for learner progression.
+        // The hidden-copy counterexample must pass the first public case
+        // while failing the private ownership witness. These are temporary
+        // QA sources only; never publish them into a lesson.
+        if(version.accepts ||
+                std::string_view(version.name)=="equal_value_hidden_copy")
+            write(path.parent_path()/
+                (std::string(version.name)+"-public.cpp"),edited);
         std::cout<<version.name<<' '<<(version.accepts?"pass":"reject")<<'\n';
     }
     for(const auto& attacked:{
@@ -155,7 +193,7 @@ int main(int argc,char** argv) try {
     return false;
 )cpp")).has_value(),
         "Harmless source text mentioning a forbidden identifier was rejected");
-    std::cout<<"PASS seven real-lesson independent transfer probes generated; source tampering refused.\n";
+    std::cout<<"PASS ten real-lesson independent transfer probes generated; source tampering refused.\n";
     return 0;
 }catch(const std::exception& e){
     std::cerr<<"FAIL independent transfer probe generation: "<<e.what()<<'\n';

@@ -250,6 +250,17 @@ int main() {
         @CLASS@ d;
         if(!d.@PUT@(0,0) || !run(d,0,1,true))return 3;
     }
+    // Equal integer values do not imply equal object identities. A
+    // value-copy shortcut that happens only on equal owners must fail.
+    // Exercise both mutation-in-place and replacement by a fresh owner.
+    {
+        @CLASS@ d;
+        if(!d.@CHANGE@(1,4) || !run(d,0,1,true))return 9;
+    }
+    {
+        @CLASS@ d;
+        if(!d.@PUT@(0,7) || !run(d,0,1,true))return 10;
+    }
     {
         @CLASS@ d;
         if(!run(d,0,0,false) || !run(d,1,1,false) ||

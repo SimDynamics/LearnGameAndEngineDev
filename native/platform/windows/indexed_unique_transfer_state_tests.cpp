@@ -152,6 +152,62 @@ int indexed_unique_transfer_state_windows(const std::filesystem::path& content,
     request.indexed_unique_transfer_probe=actual.indexed_unique_transfer_probe;
     require(compiler_runtime_request_allowed(actual,request),
         "Current source failed the independent ownership prerequisite");
+    const auto owner_request_fingerprint=
+        cpp_indexed_unique_transfer_request_fingerprint(request);
+    require(!owner_request_fingerprint.empty(),
+        "The genuine owner-only runtime request has no private fingerprint");
+    // These checks operate on copies of one authenticated request. A mixed
+    // request is rejected before running either private driver and must not
+    // inherit or create a learner receipt. Test all thirteen other P3 goals,
+    // plus the separately authored local-int probe, rather than only a
+    // convenient example from the same unit.
+    const auto reject_competing_probe=[&](auto field,std::string_view name) {
+        auto mixed=request;
+        (mixed.*field).emplace();
+        require(cpp_indexed_unique_transfer_request_fingerprint(mixed).empty()&&
+                !compiler_runtime_request_allowed(actual,mixed),
+            std::string("U6L5 accepted a second semantic probe: ")+
+                std::string(name));
+    };
+    reject_competing_probe(&CppRunRequest::defaulted_move_policy_probe,"defaulted move");
+    reject_competing_probe(&CppRunRequest::independent_copy_assignment_probe,"independent copy");
+    reject_competing_probe(&CppRunRequest::move_assignment_invariant_probe,"move invariant");
+    reject_competing_probe(&CppRunRequest::array_owner_read_probe,"array owner/read");
+    reject_competing_probe(&CppRunRequest::array_copy_move_probe,"array copy/move");
+    reject_competing_probe(&CppRunRequest::array_return_take_probe,"array return/take");
+    reject_competing_probe(&CppRunRequest::polymorphic_destruction_probe,"virtual destruction");
+    reject_competing_probe(&CppRunRequest::virtual_lifetime_probe,"virtual lifetime");
+    reject_competing_probe(&CppRunRequest::derived_preparation_probe,"derived preparation");
+    reject_competing_probe(&CppRunRequest::abstract_interface_probe,"abstract interface");
+    reject_competing_probe(&CppRunRequest::interface_collection_probe,"interface collection");
+    reject_competing_probe(&CppRunRequest::polymorphic_clone_probe,"polymorphic clone");
+    reject_competing_probe(&CppRunRequest::dual_interface_probe,"dual interface");
+    reject_competing_probe(&CppRunRequest::local_int_check,"local int");
+    require(data==before_verification,
+        "Rejected competing P3 probe modified an earlier student receipt");
+    // Even a copied legitimate identity fingerprint cannot turn a malformed
+    // mixed request into progress. Reject it at the actual receipt boundary.
+    auto mixed_request=request;
+    mixed_request.defaulted_move_policy_probe.emplace();
+    auto borrowed_result=result;
+    borrowed_result.indexed_unique_transfer_probe_correct=true;
+    borrowed_result.indexed_unique_transfer_request_fingerprint=
+        owner_request_fingerprint;
+    require(!record_compiler_puzzle_case(data,revised,actual,mixed_request,
+                borrowed_result,"QA mixed-probe fingerprint replay")&&
+            data==before_verification,
+        "A mixed semantic request replayed another request's valid owner seal");
+    // The request fingerprint also binds the input and source revision.
+    auto different_revision=request;
+    ++different_revision.revision;
+    require(cpp_indexed_unique_transfer_request_fingerprint(different_revision)!=
+                owner_request_fingerprint,
+        "An independent owner witness is not tied to the source revision");
+    auto different_input=request;
+    different_input.stdin_utf8+="\n";
+    require(cpp_indexed_unique_transfer_request_fingerprint(different_input)!=
+                owner_request_fingerprint,
+        "An independent owner witness is not tied to the prepared input");
     require(!record_compiler_puzzle_case(data,revised,actual,request,result,"QA missing witness")&&
             data==before_verification,
         "A fresh correct stdout without private identity evidence changed progress");
