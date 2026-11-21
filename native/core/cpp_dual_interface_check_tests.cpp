@@ -45,9 +45,9 @@ int main(int argc,char** argv) try {
     {
         auto source=original;
         const std::string text="virtual int valor() const = 0;";
-        const auto at=source.find(text);
+        const auto at=source.find("\n    "+text);
         if(at==source.npos)throw std::runtime_error("Original value interface missing");
-        source.replace(at,text.size(),"virtual int valor() const;");
+        source.replace(at+5,text.size(),"virtual int valor() const;");
         reject_source("// "+text+"\n"+source,
                       "A commented pure virtual function replaced its interface");
     }
@@ -55,9 +55,9 @@ int main(int argc,char** argv) try {
         auto source=original;
         const std::string text=
             "class Muestra : public ConValor, public ConInforme {";
-        const auto at=source.find(text);
+        const auto at=source.find("\n"+text);
         if(at==source.npos)throw std::runtime_error("Original multiple base missing");
-        source.replace(at,text.size(),
+        source.replace(at+1,text.size(),
                        "class Muestra : private ConValor, public ConInforme {");
         reject_source("// "+text+"\n"+source,
                       "A comment impersonated public multiple inheritance");

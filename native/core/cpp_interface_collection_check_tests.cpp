@@ -56,9 +56,9 @@ int main(int argc,char** argv) try {
     {
         auto source=original;
         const std::string text="class MuestraSimple : public Muestra {";
-        const auto at=source.find(text);
+        const auto at=source.find("\n"+text);
         if(at==source.npos)throw std::runtime_error("Original public subtype missing");
-        source.replace(at,text.size(),"class MuestraSimple : private Muestra {");
+        source.replace(at+1,text.size(),"class MuestraSimple : private Muestra {");
         reject("// "+text+"\n"+source,
                "A comment impersonated the actual public inheritance");
     }
@@ -66,9 +66,9 @@ int main(int argc,char** argv) try {
         auto source=original;
         const std::string text=
             "using Muestras = std::vector<std::unique_ptr<Muestra>>;";
-        const auto at=source.find(text);
+        const auto at=source.find("\n"+text);
         if(at==source.npos)throw std::runtime_error("Original owner vector missing");
-        source.replace(at,text.size(),
+        source.replace(at+1,text.size(),
             "using Muestras = std::vector<std::unique_ptr<MuestraSimple>>;");
         reject("// "+text+"\n"+source,
                "A comment impersonated the actual polymorphic owner alias");
