@@ -7822,14 +7822,28 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         if block.get("reviewFeedback") != actual.get("reviewFeedback"):
             required_paths = ordinary_feedback_paths(block, actual)
             revised_fields = ordinary_editorial_fields(block, actual)
-            require(required_paths and "reviewFeedback" in revised_fields
-                    and len(proofs) == 1
-                    and proofs[0].get("reviewPaths") == list(required_paths),
-                    "A revised review hint requires one atomic prose revision and exact indexed provenance")
+            ordinary_review = (bool(required_paths)
+                and "reviewFeedback" in revised_fields and len(proofs) == 1
+                and proofs[0].get("reviewPaths") == list(required_paths))
+            # Preserve the already-published combined SOURCE-FORMAT + guide
+            # contract: code changes only in physical whitespace, guides
+            # retain their type and count, and the original complete source
+            # sits in its authenticated archive. This pre-existing operation
+            # predates reviewPaths and must not be mistaken for a guide-only
+            # ordinary editorial edge.
+            formatted_review = False
+            if (not ordinary_review and required_paths and identity in archived
+                    and len(proofs) == 1 and "reviewPaths" not in proofs[0]):
+                formatted_review = bool(require_source_format_with_editorial(block, actual))
+            require(ordinary_review or formatted_review,
+                    "A revised review hint needs authored prose or an authenticated source-format transition")
             # Every changed guide and paired prose field owns a fresh, exact
             # UTF-16 source descriptor. No unrelated span or option hint can
             # be recolored as collateral for a legitimate text correction.
-            changed_paths = set(ordinary_editorial_paths(block, actual))
+            changed_paths = (set(ordinary_editorial_paths(block, actual)) if ordinary_review
+                else set(required_paths)
+                | ({"/question"} if block.get("question") != actual.get("question") else set())
+                | ({"/explanation"} if block.get("explanation") != actual.get("explanation") else set()))
             marker_root = text_semantics.ROOT_FIELD
             old_markers = {item["path"]: item
                            for item in baseline.get(marker_root, {}).get("fields", [])
