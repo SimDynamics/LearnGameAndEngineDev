@@ -899,6 +899,37 @@ void capacity() {
                "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
             rules,false,"Complementary bitwise pairs fabricated independent named-rule evidence");
     }
+    // Bitwise OR against every set bit never depends on a named int,
+    // even when the result is cancelled back to zero around a literal
+    // quotient. Two such occurrences must not meet minUses=2.
+    for(const auto* neutral:{
+        "(capacidad | -1) + (capacidad | -1) + 2",
+        "(capacidad bitor (-1)) + ((-1) bitor capacidad) + 2",
+        "(capacidad | (~0)) + ((~0) | capacidad) + 2",
+        "(capacidad bitor (compl 0)) + (capacidad | -1) + 2"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(neutral)+"); }",
+            rules,false,"All-ones bitwise OR fabricated named-rule evidence");
+    }
+    // OR with a zero mask remains value-dependent and is not a neutral
+    // expression in source evidence (numeric probes remain independent).
+    for(const auto* productive:{
+        "(capacidad | 0) + (capacidad | 1)",
+        "(capacidad bitor 0) + (capacidad bitor 1)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(productive)+"); }",
+            rules,true,"A nonconstant bitwise OR was incorrectly discarded");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad | -1) + 1;
+        })cpp",rules,true,
+        "An all-ones OR cannot erase a separately valid named quotient");
+
     // A complement of a *different expression* does not generally
     // cancel this constant. Preserve its lexical evidence, leaving numeric
     // correctness to the independent compiled counterfactual.

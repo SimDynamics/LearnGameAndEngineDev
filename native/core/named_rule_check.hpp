@@ -547,6 +547,18 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
                 (literal_is(first,at,0)&&single(at+1,last))))return true;
             if(op(t[at],"%")&&single(first,at)&&
                literal_is(at+1,last,1))return true;
+            // OR with an all-bits-set integral mask is independent of the
+            // purpose-named value. Support signed -1 and the equivalent
+            // complement of zero, including alternate C++ operator tokens.
+            const auto all_bits_set=[&](std::size_t begin,std::size_t end) {
+                unwrap(begin,end);
+                return literal_is(begin,end,-1)||
+                    (begin<end&&op(t[begin],"~")&&
+                     literal_is(begin+1,end,0));
+            };
+            if(op(t[at],"|")&&
+               ((single(first,at)&&all_bits_set(at+1,last))||
+                (all_bits_set(first,at)&&single(at+1,last))))return true;
             // A bitwise complement pair is also constant-valued:
             // x & ~x == 0; x | ~x == x ^ ~x == x + ~x == -1.
             // Check exact operands, never substrings, side effects or
