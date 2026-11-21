@@ -1,5 +1,7 @@
 """Regresiones del auditor de TODAS las fuentes; este test no autoriza cambios."""
 import json
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 import tempfile
 import unittest
@@ -105,6 +107,40 @@ class AuditCodeReadabilityTest(unittest.TestCase):
         self.assertIn("bracket_argument_or_comment",
                       audit.manual_review_reasons("message([=[value]=])", "cmake"))
         self.assertIn("unsupported_language", audit.manual_review_reasons("print('x')", "other:python"))
+
+    def test_manual_only_findings_render_in_cli_without_fake_source_changes(self):
+        # A raw C++ string can need manual review even with just one line:
+        # there is NO proposed insertion boundary to print as [0].
+        with tempfile.TemporaryDirectory(prefix="lgaed-readability-qa-") as folder:
+            root = Path(folder)
+            lesson = (root / "app/src/main/assets/content/es/programming/"
+                      "cpp_fundamentals/unidad/lesson_raw.json")
+            lesson.parent.mkdir(parents=True)
+            source = 'int main(){ auto text = R"(literal\nsin cambios)"; return 0; }'
+            payload = {"id": "qa", "pages": [{"blocks": [
+                {"type": "code", "language": "cpp", "code": source},
+            ]}]}
+            lesson.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            previous = lesson.read_bytes()
+            raw = audit.audit(root / audit.CONTENT)
+            self.assertEqual(raw["counts"]["sources"], 1)
+            self.assertEqual(len(raw["findings"]), 1)
+            self.assertEqual(raw["findings"][0]["suggestions"], [])
+            self.assertEqual(raw["findings"][0]["manualReview"], ["raw_string_literal"])
+            report = root / "out/readability.json"
+            output = StringIO()
+            with redirect_stdout(output):
+                result = audit.main([
+                    "--root", str(root), "--limit", "3", "--output-json", str(report)])
+            self.assertEqual(result, 0)
+            self.assertIn("revision_manual:raw_string_literal", output.getvalue())
+            self.assertEqual(lesson.read_bytes(), previous)
+            self.assertEqual(json.loads(report.read_text(encoding="utf-8"))["findings"],
+                             raw["findings"])
+            with redirect_stdout(StringIO()):
+                self.assertEqual(audit.main([
+                    "--root", str(root), "--fail-on-findings"]), 1)
+            self.assertEqual(lesson.read_bytes(), previous)
 
     def test_unknown_language_is_counted_without_misclassifying_cpp_or_cmake(self):
         python_code = {"type": "code", "language": "python",

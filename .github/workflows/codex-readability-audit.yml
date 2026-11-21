@@ -1,0 +1,28 @@
+name: Codex read-only global code readability audit
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - scripts/curriculum/auditar_legibilidad_codigo.py
+      - scripts/curriculum/test_auditar_legibilidad_codigo.py
+      - .github/workflows/codex-readability-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-cli:
+    name: Verify manual-only findings and unchanged published sources
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Read exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run source audit regressions, without touching curriculum
+        run: python3 -m unittest discover -s scripts/curriculum -p test_auditar_legibilidad_codigo.py -v
+      - name: Inspect all authored locales and course source files
+        run: python3 scripts/curriculum/auditar_legibilidad_codigo.py --limit 30

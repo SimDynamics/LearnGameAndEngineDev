@@ -241,8 +241,16 @@ def main(argv: list[str] | None = None) -> int:
     print("Motivos:",json.dumps(result["reasons"],ensure_ascii=False,sort_keys=True))
     print("Revisión manual:",json.dumps(result["manualReviewReasons"],ensure_ascii=False,sort_keys=True))
     for issue in result["findings"][:max(0,args.limit)]:
+        # Not every finding has a suggested insertion point. Raw strings,
+        # continued macros and bracketed CMake syntax require manual review
+        # even when no physical blank line is recommended. Never index an
+        # absent suggestion or conceal a manual-only finding.
+        if issue["suggestions"]:
+            reason = issue["suggestions"][0]["reason"]
+        else:
+            reason = "revision_manual:" + ",".join(issue["manualReview"])
         print(f"{issue['lesson']} p{issue['page']} b{issue['block']} "
-              f"{issue['field']} {issue['suggestions'][0]['reason']}")
+              f"{issue['field']} {reason}")
     if args.output_json:
         args.output_json.parent.mkdir(parents=True,exist_ok=True)
         args.output_json.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
