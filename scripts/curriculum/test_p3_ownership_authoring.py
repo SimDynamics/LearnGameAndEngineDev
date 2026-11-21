@@ -9,6 +9,7 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 from pathlib import Path
+import re
 import unittest
 
 import stable_state_layout as layout
@@ -138,6 +139,62 @@ class P3OwnershipAuthoring(unittest.TestCase):
         target["initialCode"] += "\n// QA-only attempted source change\n"
         with self.assertRaises((ValueError, KeyError, TypeError)):
             layout.validate_transition(before, after)
+
+
+    def test_shared_windows_proof_is_registered_and_wired_for_all_owners(self):
+        """Keep the shared 14-owner native regression executable in Windows QA."""
+        cmake=(ROOT/"CMakeLists.txt").read_text(encoding="utf-8")
+        native=(ROOT/"native/platform/windows/"
+                "p3_ownership_authoring_state_tests.cpp").read_text(
+                    encoding="utf-8")
+        target="lgaed_p3_ownership_authoring_state_tests"
+        function="lgaed_add_p3_ownership_shared_state_target"
+        self.assertIn(f"function({function})",cmake)
+        self.assertEqual(cmake.count(f"{function}()"),3)
+        self.assertEqual(cmake.count(f"add_executable({target}"),1)
+        self.assertEqual(cmake.count(
+            "native/platform/windows/p3_ownership_authoring_state_tests.cpp"),1)
+        self.assertIn(
+            f"target_link_libraries({target}\n"
+            "        PRIVATE lgaed_platform_windows lgaed_host_options)",cmake)
+        self.assertEqual(
+            cmake.count("add_test(NAME native.p3_ownership_shared_state"),1)
+        self.assertIn(f"COMMAND {target}",cmake)
+        self.assertIn("PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE",cmake)
+
+        # Read actual mappings, rather than guessing names. Catch a missing
+        # runtime hook or a source owner that silently stops matching the
+        # editorial manifest even if its isolated C++ proof still passes.
+        plans=re.findall(
+            r'\{"(U\d+L\d+)","([^"]+)","(compiler[A-Za-z]+Checks)"\}',
+            native)
+        declarations=re.findall(
+            r'if\(field=="([^"]+)"\)return block\.([a-z_]+)\.has_value\(\);',
+            native)
+        entries=reference()
+        self.assertEqual(len(plans),len(EXPECTED))
+        self.assertEqual([(unit,field) for unit,_,field in plans],list(EXPECTED))
+        self.assertEqual(
+            [str(CONTENT.relative_to(ROOT)/relative) for _,relative,_ in plans],
+            [item["lesson"] for item in entries])
+        self.assertEqual(len(declarations),len(EXPECTED))
+        self.assertEqual(set(dict(declarations)),{field for _,field in EXPECTED})
+        paths={
+            "lesson":ROOT/"native/core/lesson.hpp",
+            "request":ROOT/"native/platform/windows/cpp_runner.hpp",
+            "loader":ROOT/"native/platform/windows/content_loader.cpp",
+            "runner":ROOT/"native/platform/windows/cpp_runner.cpp",
+            "completion":ROOT/"native/platform/windows/compiler_completion.cpp",
+        }
+        sources={key:path.read_text(encoding="utf-8")
+                 for key,path in paths.items()}
+        for field,member in declarations:
+            with self.subTest(field=field):
+                self.assertIn(" "+member+";",sources["lesson"])
+                self.assertIn(" "+member+";",sources["request"])
+                self.assertIn("owner->"+member+"=",sources["loader"])
+                self.assertIn("if(request."+member+")",sources["runner"])
+                self.assertIn("if(block."+member+")",sources["completion"])
 
 
 if __name__ == "__main__":
