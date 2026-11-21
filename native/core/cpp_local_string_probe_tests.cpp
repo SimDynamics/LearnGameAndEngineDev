@@ -154,6 +154,60 @@ void after_real_assignment_and_noexcept() {
     require(!cpp_local_string_override(source,{"codigo","B2",updated,{}}),
         "An after-assignment probe was attached without a corresponding assignment");
 }
+void member_assign_updates_are_detected_without_guesswork() {
+    const std::string delayed=R"CPP(#include <iostream>
+#include <string>
+int main() {
+    std::string edificio, codigo;
+    edificio.assign("Aula");
+    codigo.assign("04");
+    std::string etiqueta = edificio + "-" + codigo;
+    std::cout << etiqueta;
+}
+)CPP";
+    const auto building=cpp_local_string_override(delayed,
+        {"edificio","Sala Norte",initialized,{}});
+    const auto code=cpp_local_string_override(delayed,
+        {"codigo","003",initialized,{}});
+    require(building&&code&&
+            building->find("edificio.assign(\"Aula\");")<
+                building->find("edificio = std::string{")&&
+            building->find("edificio = std::string{")<
+                building->find("codigo.assign(\"04\");")&&
+            code->find("codigo.assign(\"04\");")<
+                code->find("codigo = std::string{")&&
+            code->find("codigo = std::string{")<
+                code->find("std::string etiqueta"),
+        "A delayed std::string::assign erased or misplaced a private variation");
+
+    const std::string revised=R"CPP(#include <iostream>
+#include <string>
+int main() {
+    std::string edificio{"Aula"};
+    std::string codigo{"04"};
+    std::string etiqueta = edificio + "-" + codigo;
+    codigo.assign("07");
+    etiqueta = edificio + "-" + codigo;
+    std::cout << etiqueta;
+}
+)CPP";
+    const auto updated_code=cpp_local_string_override(revised,
+        {"codigo","B2",updated,{}});
+    require(updated_code&&
+            updated_code->find("codigo.assign(\"07\");")<
+                updated_code->find("codigo = std::string{")&&
+            updated_code->find("codigo = std::string{")<
+                updated_code->rfind("etiqueta = edificio + \"-\" + codigo;"),
+        "A member assignment to codigo was not varied before recomputing etiqueta");
+    require(!cpp_local_string_override(
+        "#include <string>\nint main(){std::string codigo{\"04\"}; codigo.assigner(\"07\");}",
+        {"codigo","B2",updated,{}})&&
+        !cpp_local_string_override(
+        "#include <string>\nint main(){std::string codigo{\"04\"}; if(true){codigo.assign(\"07\");}}",
+        {"codigo","B2",updated,{}}),
+        "A similarly named or nested member call was incorrectly claimed as a root assignment");
+}
+
 void exact_text_bytes_and_type_checks() {
     const std::string data="003";
     const auto literal=lgaed::curriculum::cpp_local_string_detail::cpp_bytes_literal(data);
@@ -234,6 +288,7 @@ int main() {
         independent_source_variations();
         grouped_and_delayed_string_owners();
         after_real_assignment_and_noexcept();
+        member_assign_updates_are_detected_without_guesswork();
         exact_text_bytes_and_type_checks();
         unsafe_or_ambiguous_positions_reject();
         std::cout<<"PASS local string source probes: independent text values, "
