@@ -106,6 +106,10 @@ inline std::optional<StringDeclaration> declared_string(
             const auto& token=code[index].value;
             if(!parentheses&&!braces&&!brackets&&
                (token=="op:,"||token=="op:;"))break;
+            // A sibling initializer that reads this same string has already
+            // executed when an after-declaration probe is injected. Refuse
+            // that layout instead of hiding a real data dependency.
+            if(token==wanted)return {};
             if(token=="op:(")++parentheses;
             else if(token=="op:{")++braces;
             else if(token=="op:[")++brackets;
