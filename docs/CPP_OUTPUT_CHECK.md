@@ -653,6 +653,18 @@ explicaciones corresponden a los campos de origen. La regresión
 independiente de escritorio y las pruebas de StateStore no sustituyen
 la revisión visual de la app durante el estudio.
 
+La regresión `test_cpp_polymorphic_destruction_core.py` conserva las tres
+definiciones originales fuera de los cuerpos editables y compila el `main`
+auténtico para **los cinco casos públicos** de dos soluciones correctas y
+un contraejemplo: un destructor base que asigna cero al contador de bases
+vivas, en lugar de retirar únicamente el objeto destruido. Los cinco casos
+pueden tener la salida esperada porque cada uno crea un único propietario.
+La sonda privada comprueba dos derivados vivos y contadores previos no
+nulos, y debe rechazar la actualización incorrecta. Por ello, coincidencia
+de stdout y destrucción polimórfica completa son pruebas distintas. Los
+cuatro casos públicos posteriores al primero permanecen opcionales para
+el estudiante; esta comparación adicional es QA automática.
+
 
 
 ## Despacho virtual real durante construcción, uso y destrucción
