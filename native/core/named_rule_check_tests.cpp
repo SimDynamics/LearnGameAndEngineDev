@@ -1081,10 +1081,13 @@ void capacity() {
             return (piezas + 3) / 4 + neutralidad;
         })cpp",rules,false,
         "An affine-zero alias must not launder dead source uses");
+    // Nonzero affine dependence is necessary but not by itself proof of
+    // the TWO independently productive uses. Partial cancellation can
+    // still reduce a three-token spelling to one meaningful reference.
     for(const auto* productive:{
-        "(capacidad + capacidad - capacidad)",
-        "(2 * capacidad - capacidad)",
-        "(capacidad + 2 - capacidad * 2)"
+        "(capacidad + capacidad)",
+        "(2 * capacidad + capacidad)",
+        "(capacidad - 2 * capacidad)"
     }) {
         verify("int cajas_para(int piezas) { const int capacidad{4}; "
                "return (piezas + 3) / 4 + "+std::string(productive)+"; }",
