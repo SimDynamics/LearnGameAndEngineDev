@@ -3915,6 +3915,28 @@ y ejecución MSVC nativa. La revisión curricular y sus valores esperados
 pertenecen a Work.
 
 
+#### Incremento real exacto declarado por el autor
+
+La variación opcional `"afterUpdate": true` puede declarar también
+`"expectedIncrease": 3` para exigir **un aumento de exactamente tres
+unidades en la variable local**, no sólo una subida cualquiera. El testigo
+se toma antes y después de la primera actualización no trivial, usando
+`long long` para calcular la diferencia sin desbordar un `int`.
+
+Esta comprobación es independiente de la salida: `aforo += 5` seguido
+por `std::cout << aforo - 2` puede reproducir el resultado visible y
+la salida de todas las variaciones, pero se rechaza si la edición exigía
+`expectedIncrease: 3`. Se admiten expresiones equivalentes que producen
+realmente ese aumento, por ejemplo `aforo = aforo + 2 + 1`.
+El valor debe ser un entero positivo de 32 bits y exige `afterUpdate: true`;
+no puede declararse en una sustitución del valor inicial. Las salidas
+privadas siguen siendo expectativas independientes y obligatorias.
+
+Este contrato se opta **por sonda**, se incorpora a la huella de ejecución
+y al sello del comprobante, sin alterar los contratos históricos que omiten
+`expectedIncrease`. Work declara el incremento exacto cuando el ejercicio
+lo exige; la app no lo infiere de `stdout` ni modifica borradores.
+
 ### Mutación del aumento, además del valor inicial (U2L3)
 
 Una sonda puede incluir `"afterUpdate": true` para expresar una

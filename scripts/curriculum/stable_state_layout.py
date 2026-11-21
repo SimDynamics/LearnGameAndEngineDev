@@ -6612,7 +6612,7 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
         for probe in probes:
             require(type(probe) is dict and
                     {"variable", "replacement", "outputs"} <= set(probe) <=
-                    {"variable", "replacement", "outputs", "afterUpdate"},
+                    {"variable", "replacement", "outputs", "afterUpdate", "expectedIncrease"},
                     "Local-int variation requires variable, replacement and outputs")
             variable, replacement, outputs = (
                 probe["variable"], probe["replacement"], probe["outputs"])
@@ -6627,6 +6627,11 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
             require(type(after_update) is bool and
                     ("afterUpdate" not in probe or after_update is True),
                     "Local-int afterUpdate must be explicit boolean true")
+            if "expectedIncrease" in probe:
+                increase = probe["expectedIncrease"]
+                require(after_update and type(increase) is int and
+                        1 <= increase < 2 ** 31,
+                        "Local-int expectedIncrease requires positive int32 and afterUpdate")
             require((variable, replacement, after_update) not in known,
                     "A local-int variation cannot repeat a prior replacement")
             known.add((variable, replacement, after_update))

@@ -4692,7 +4692,9 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
                 (void)original.member(raw_probe,field);
             if(probe.HasKey(L"afterUpdate"))
                 (void)original.member(raw_probe,"afterUpdate");
-            allowed_keys(probe,{"variable","replacement","outputs","afterUpdate"});
+            if(probe.HasKey(L"expectedIncrease"))
+                (void)original.member(raw_probe,"expectedIncrease");
+            allowed_keys(probe,{"variable","replacement","outputs","afterUpdate","expectedIncrease"});
             const auto number=probe.GetNamedValue(L"replacement");
             require(number.ValueType()==JsonValueType::Number&&
                     std::isfinite(number.GetNumber())&&
@@ -4710,6 +4712,16 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
                         flag.GetBoolean(),
                     "afterUpdate must be the explicit true option.");
                 next.after_update=true;
+            }
+            if(probe.HasKey(L"expectedIncrease")) {
+                const auto delta=probe.GetNamedValue(L"expectedIncrease");
+                require(next.after_update&&delta.ValueType()==JsonValueType::Number&&
+                        std::isfinite(delta.GetNumber())&&
+                        std::trunc(delta.GetNumber())==delta.GetNumber()&&
+                        delta.GetNumber()>=1&&
+                        delta.GetNumber()<=std::numeric_limits<std::int32_t>::max(),
+                    "expectedIncrease requires a positive signed 32-bit integer and afterUpdate.");
+                next.expected_increase=static_cast<std::int32_t>(delta.GetNumber());
             }
             // A variant with the same permitted output as the published
             // unchanged program could never distinguish a hard-coded value.

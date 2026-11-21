@@ -1289,6 +1289,9 @@ std::string local_int_completion_seal(std::string_view key,
     for(const auto& item:spec.probes) {
         frame+=token(item.variable)+token(std::to_string(item.replacement));
         if(item.after_update)frame+=token("after-update-v1");
+        if(item.expected_increase)
+            frame+=token("exact-increase-v1")+
+                token(std::to_string(*item.expected_increase));
         for(const auto& output:item.expected_stdout)frame+=token(output);
     }
     return state::sha256(frame);

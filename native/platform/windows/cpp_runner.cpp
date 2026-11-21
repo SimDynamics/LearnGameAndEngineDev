@@ -430,6 +430,9 @@ std::string local_int_fingerprint(const CppRunRequest& request) {
         frame+=field(probe.variable)+field(std::to_string(probe.replacement))+
             field(state::sha256(*variant));
         if(probe.after_update)frame+=field("after-update-v1");
+        if(probe.expected_increase)
+            frame+=field("exact-increase-v1")+
+                field(std::to_string(*probe.expected_increase));
         for(const auto& expected:probe.expected_stdout)
             frame+=field(expected);
     }
