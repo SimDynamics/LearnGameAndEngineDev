@@ -3346,16 +3346,17 @@ void text_sequence_application_restoration() {
 bool u1l5_revised_compiler_present(const curriculum::Lesson& lesson) {
     const bool new_edition=curriculum::stable_block_position(lesson,"p1u1l5_un_salto_en_el_codigo").has_value();
     const auto editor=curriculum::stable_block_position(lesson,"p1u1l5_escribir_linea_intermedia");
-    require(new_edition==editor.has_value(),
-        "The revised U1L5 did not register its intermediate-line editor");
-    if(editor) {
-        const auto& block=lesson.pages[editor->page].blocks[editor->block];
-        require(editor->page==2&&block.type==BlockType::cpp_compiler&&block.output_check&&
-            block.output_check->cases.size()==1&&
-            block.output_check->cases.front().outputs==std::vector<std::string>{"Puesto\nMesa B\nFin"},
-            "The added U1L5 editor lost its own exact three-line outcome");
-    }
-    return new_edition;
+    // This fixture loads the active Windows edition. Historical versions with
+    // eight compilers are verified by archived retirement fixtures, not as a
+    // passing fallback if the newly published ninth activity disappears.
+    require(new_edition&&editor.has_value(),
+        "The active U1L5 must retain its ninth intermediate-line editor");
+    const auto& block=lesson.pages[editor->page].blocks[editor->block];
+    require(editor->page==2&&block.type==BlockType::cpp_compiler&&block.output_check&&
+        block.output_check->cases.size()==1&&
+        block.output_check->cases.front().outputs==std::vector<std::string>{"Puesto\nMesa B\nFin"},
+        "The ninth U1L5 editor lost its independently evaluated three-line outcome");
+    return true;
 }
 std::string u1l5_intermediate_line_solution(const curriculum::Lesson& lesson,
     const curriculum::Block& compiler) {
@@ -3455,7 +3456,7 @@ void pinned_main_u1l5_intermediate_editor_execution() {
     std::cout<<"PASS real pinned main U1L5 ninth editor: initial two-line mismatch, "
              <<"draft persistence, three-line execution, isolated achievement, reopen/Reset\n";
 }
-void real_retirement_pages_preserve_all_eight_useful_editors() {
+void real_retirement_pages_preserve_current_nine_editors_and_archives() {
     struct Plan {const char* file;std::size_t page;const char* instruction;const char* editor;};
     const std::array plans{
         Plan{"lesson_primer_programa_y_salida.json",4,"ejecucion_original_consigna","ejecucion_original_editor"},
@@ -3557,10 +3558,10 @@ void real_retirement_pages_preserve_all_eight_useful_editors() {
         require(block.output_check&&owners.insert(curriculum::exercise_key(final_lesson.lesson,block)).second,
             "An active U1L5 editor has no output goal or shares another editor's response");
     }
-    require(final_count==(new_edition?3u:2u)&&useful_editors==(new_edition?9u:8u),
-        "The three retirement plans or U1L5 new edition lost a useful editor");
+    require(new_edition&&final_count==3u&&useful_editors==9u,
+        "The active nine-editor U1 edition lost a required compiler or its historical owner");
     std::cout<<"PASS three historical U1 retirement plans: old bookmarks, archived and independent drafts, native/narration exclusion, "
-             <<useful_editors<<" useful editors including "<<(new_edition?1:0)<<" new edition editor\n";
+             <<useful_editors<<" active editors including the required ninth U1L5 editor\n";
 }
 // Source-bound U1 matching exercises are additional prerequisites before
 // navigating to the next C++ editor. This QA-only oracle checks the authored
@@ -3634,7 +3635,7 @@ LessonViewHooks u1_matching_qa_hooks() {
     };
     return hooks;
 }
-void integrated_u1_compilers_require_all_eight_real_executions() {
+void integrated_u1_compilers_require_all_nine_real_executions() {
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion";
     struct VerifiedSolution { std::string_view filename,editor,reference; };
     // Work may archive a displayed reference without changing the exercise.
@@ -3659,7 +3660,8 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
         {"lesson_resolver_probar_y_recuperar.json","block_0003_0002","block_0005_0002"},
         {"lesson_resolver_probar_y_recuperar.json","block_0005_0006","block_0005_0008"}
     }};
-    std::size_t completed=0,expected=8;
+    std::size_t completed=0;
+    constexpr std::size_t expected=9;
     for(const auto filename:{"lesson_primer_programa_y_salida.json","lesson_texto_secuencia_y_formato.json",
             "lesson_fuente_compilacion_y_diagnostico.json","lesson_resolver_probar_y_recuperar.json"}){
         Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
@@ -3701,7 +3703,6 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
         require(f.lesson.compiler_puzzles_required,"An integrated U1 lesson stopped requiring its useful compilers");
         const bool last_lesson=std::string_view(filename)=="lesson_resolver_probar_y_recuperar.json";
         const bool new_edition=last_lesson&&u1l5_revised_compiler_present(f.lesson);
-        if(new_edition)++expected;
         std::vector<curriculum::StatePosition> compilers;
         for(std::size_t p=0;p<f.lesson.pages.size();++p)for(std::size_t b=0;b<f.lesson.pages[p].blocks.size();++b)
             if(f.lesson.pages[p].blocks[b].type==BlockType::cpp_compiler)compilers.push_back({p,b});
@@ -5685,8 +5686,8 @@ int main(int argc,char* argv[]) {
         if(order_help_only){optional_separator_help_matches_screen_reader_and_grading();return 0;}
         if(main_u1_editor_only){pinned_main_u1l5_intermediate_editor_execution();return 0;}
         if(u1_editor_only){
-            real_retirement_pages_preserve_all_eight_useful_editors();
-            integrated_u1_compilers_require_all_eight_real_executions();
+            real_retirement_pages_preserve_current_nine_editors_and_archives();
+            integrated_u1_compilers_require_all_nine_real_executions();
             return 0;
         }
         if(inline_feedback_only){current_inline_feedback_uses_authored_controls_and_restores_each_attempt();return 0;}
@@ -5707,7 +5708,7 @@ int main(int argc,char* argv[]) {
         if(stderr_objective_only){runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_report();return 0;}
         if(dependent_puzzles_only){dependent_puzzle_types_hide_payload_and_preserve_their_historical_responses();dependent_puzzle_bookmarks_resolve_transitive_pending_sources();authored_dependent_puzzle_locations_protect_historical_bookmarks();return 0;}
         if(current_dependent_puzzles_only){current_authored_dependent_puzzles(argc==4?std::stoul(argv[2]):0,argc==4?std::stoul(argv[3]):1);return 0;}
-        if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();integrated_u1_compilers_require_all_eight_real_executions();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_first_case_unlocks_thirteen_optional_cases();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_report();compiler_puzzle_completion_and_navigation();return 0;}
+        if(compiler_puzzles_only){real_retirement_pages_preserve_current_nine_editors_and_archives();integrated_u1_compilers_require_all_nine_real_executions();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_first_case_unlocks_thirteen_optional_cases();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_report();compiler_puzzle_completion_and_navigation();return 0;}
         if(caret_only){simulated_exercise_code_cards(true);native_answer_end_viewport();return 0;}
         if(text_sequence_only){text_sequence_lesson_all_pages();return 0;}
         runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();
