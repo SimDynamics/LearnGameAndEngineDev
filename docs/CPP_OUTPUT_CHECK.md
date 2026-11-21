@@ -362,6 +362,15 @@ No acredita por sí sola la copia o movimiento de arrays de U6L11.
 Work incorpora la declaración raíz al JSON auténtico cuando corresponda,
 valida su transición y verifica el ejercicio en la aplicación.
 Las pruebas temporales de Codex no publican metadatos curriculares.
+La regresión `test_cpp_array_owner_read_core.py` compila el programa
+original para las dos soluciones válidas y para un contraejemplo de
+`leer` que escribe `-1` cuando rechaza un índice. Los tres programas
+pueden coincidir con **los tres casos públicos** porque el `main`
+prepara la variable de salida con ese mismo valor. El contraejemplo
+se rechaza únicamente al comprobar la referencia de salida con otros
+centinelas mediante la sonda privada segura. Los casos posteriores al
+primero siguen siendo opcionales para el alumno; esta batería es QA
+automática y no una exigencia de ejecución manual.
 
 
 ## Copia y movimiento independientes de un array propietario
