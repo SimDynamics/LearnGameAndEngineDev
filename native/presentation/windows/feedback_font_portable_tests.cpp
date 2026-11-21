@@ -247,6 +247,34 @@ void exercise(){
         verify(i+1,150);
     }
     unchanged();
+    // Hosted Win32 verifies the same production instruction that the
+    // full pinned-compiler '--order-help' test checks after localization.
+    // No historical answers, UI texts or stored profiles are written here.
+    const std::array<std::pair<std::string_view,std::string_view>,3> order_languages{{
+        {"es","Arrastra las líneas de código hasta dejarlas en el orden correcto."},
+        {"en","Drag the code lines into the correct order."},
+        {"fr","Faites glisser les lignes de code pour les mettre dans le bon ordre."}
+    }};
+    const auto check_order_help=[&](std::string_view expected) {
+        const auto help=control(f.view,id(4,37));
+        require(edit_text(help)==expected,
+            "The native code-order helper still uses a touch-only instruction");
+        const auto regions=lesson_reading_regions(f.view);
+        require(std::ranges::count_if(regions,[&](const auto& region) {
+            return region.target==help&&region.source_text==expected;
+        })==1,"The native lesson reader disagrees with the visible order instruction");
+    };
+    for(const auto& [locale,instruction]:order_languages) {
+        update_lesson_preferences(f.view,[locale](state::StateData& data) {
+            data.preferences["native_windows"]["ui_language"]=std::string(locale);
+        });
+        dispatch(f.host);
+        check_order_help(instruction);
+        f.reopen();
+        check_order_help(instruction);
+    }
+    std::cout<<"PASS real hosted Win32 desktop order help ES/EN/FR: "
+             <<"identical visible/reader instructions before and after reopen.\n";
     std::cout<<"PASS real LessonView feedback: fill_code, choice, prediction, "
         "order_code, inline_fill_code, correct/incorrect and 75/100/125/150% shared 18sp; "
         "reopen and narration preserved.\n";
