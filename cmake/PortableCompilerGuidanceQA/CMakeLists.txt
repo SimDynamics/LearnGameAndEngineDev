@@ -318,6 +318,17 @@ if(LGAED_HOSTED_FEEDBACK_FONT_QA)
         COMMAND lgaed_u2_semantic_portable_qa --current-u2l6-native-gates)
     set_tests_properties(native.u2l6_native_reader_gates PROPERTIES
         TIMEOUT 180 RUN_SERIAL TRUE)
+    # Original U1L2's five code lines and the optional blank on real Win32
+    # controls; this does not alter the pinned product toolchain or curriculum.
+    add_executable(lgaed_u1l2_order_whitespace_portable_qa
+        "${LGAED_ROOT}/native/presentation/windows/order_code_view_tests.cpp")
+    target_link_libraries(lgaed_u1l2_order_whitespace_portable_qa PRIVATE
+        lgaed_curricular_windows lgaed_guidance_qa_options)
+    target_link_options(lgaed_u1l2_order_whitespace_portable_qa PRIVATE /OPT:REF)
+    add_test(NAME native.u1l2_order_blank_portable
+        COMMAND lgaed_u1l2_order_whitespace_portable_qa --whitespace)
+    set_tests_properties(native.u1l2_order_blank_portable PROPERTIES
+        TIMEOUT 180 RUN_SERIAL TRUE)
     # Reuse the exact original nine-inline regression (including active U2L5)
     # with real production LessonView, CppFillView and StateStore. This
     # standalone hosted fixture does not run student code or synthesize audio;

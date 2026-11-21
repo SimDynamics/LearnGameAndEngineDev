@@ -1,5 +1,6 @@
 #include "presentation/windows/order_code_view.hpp"
 #include "core/compile_check_test_fixture.hpp"
+#include "core/order_source_text.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "platform/windows/content_loader.hpp"
@@ -12,6 +13,7 @@
 #include <winrt/Windows.Foundation.Collections.h>
 #include <ole2.h>
 #include <algorithm>
+#include <numeric>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -230,6 +232,93 @@ void optional_root_metadata_preserves_published_history(){
         catch(const std::exception&){rejected=true;}
         check(rejected,"An invalid root-only visual count bypassed loader validation");
     }
+}
+
+// Exercise the published U1L2 source with its optional blank on the
+// original Win32 order-card control, rather than only a synthetic two-line QA.
+void current_u1l2_order_ignores_untouched_blank(HWND host) {
+    using namespace lgaed;
+    using namespace presentation;
+    constexpr auto relative="app/src/main/assets/content/es/programming/cpp_fundamentals/"
+        "programas_y_ejecucion/lesson_primer_programa_y_salida.json";
+    const auto lesson=windows::load_lesson(std::filesystem::path(build::source_root)/relative,"es");
+    const auto at=curriculum::stable_block_position(lesson,"block_0003_0002");
+    check(at&&at->page==3&&at->block==2,
+        "Published U1L2 code-order identity was retired or moved unexpectedly");
+    const auto& owner=lesson.pages[at->page].blocks[at->block];
+    check(owner.type==curriculum::BlockType::order_code&&
+        owner.optional_order_separators==1&&owner.fragments.size()==5&&
+        owner.correct_order==std::vector<std::size_t>{1,4,0,2,3},
+        "Published U1L2 order or separator contract changed");
+    const auto initial_json=lesson.raw_json;
+    std::vector<std::size_t> initial(owner.fragments.size());
+    std::iota(initial.begin(),initial.end(),std::size_t{0});
+    int changes=0;
+    const auto dpi=static_cast<int>(GetDpiForWindow(host));
+    const auto px=[&](int value){return MulDiv(value,dpi,96);};
+    {
+        OrderCodeView view(host,owner.fragments,initial,
+            [&]{++changes;},owner.optional_order_separators);
+        MoveWindow(view.window(),0,0,px(700),
+            view.height_for_width(px(700)),TRUE);
+        pump();
+        const auto blank=GetDlgItem(view.window(),105);
+        check(blank&&edit_text(blank).empty()&&
+            view.reading_regions().size()==owner.fragments.size()&&
+            view.order()==initial,
+            "Published U1L2 blank changed the original scored answer or spoken lines");
+        auto physical=initial;
+        for(std::size_t target=0;target<owner.correct_order.size();++target) {
+            const auto identity=owner.correct_order[target];
+            const auto cursor=std::find(
+                physical.begin()+static_cast<std::ptrdiff_t>(target),
+                physical.end(),identity);
+            check(cursor!=physical.end(),"Missing authentic U1L2 card identity");
+            auto current=static_cast<std::size_t>(cursor-physical.begin());
+            const auto card=GetDlgItem(view.window(),100+static_cast<int>(identity));
+            check(card!=nullptr,"Missing original U1L2 card window");
+            while(current>target) {
+                SendMessageW(card,WM_SYSKEYDOWN,VK_UP,0);
+                pump();
+                std::swap(physical[current],physical[current-1]);
+                --current;
+            }
+        }
+        const auto script=view.reading_regions();
+        check(changes>0&&view.order()==owner.correct_order&&
+            script.size()==owner.fragments.size(),
+            "Ordering all five U1L2 code lines depends on moving its blank");
+        for(std::size_t i=0;i<script.size();++i)
+            check(script[i].second==owner.fragments[owner.correct_order[i]],
+                "U1L2 screen reader narrated a blank or reordered original code");
+        RECT blank_bounds{},last_bounds{};
+        GetWindowRect(blank,&blank_bounds);
+        GetWindowRect(GetDlgItem(view.window(),
+            100+static_cast<int>(owner.correct_order.back())),&last_bounds);
+        check(blank_bounds.top>=last_bounds.bottom,
+            "U1L2 optional card moved despite only moving real source cards");
+        const auto source=curriculum::ordered_source_text(owner.fragments,view.order());
+        check(source.starts_with("#include <iostream>\nint main() {\n")&&
+            source.find("    std::cout << \"Acceso autorizado\";")!=std::string::npos&&
+            source.ends_with("\n}")&&source.find("\n\n")==std::string::npos,
+            "U1L2 copying the corrected program injected a blank or altered source");
+        view.reset();
+        check(view.order()==initial&&edit_text(blank).empty(),
+            "Reset changed U1L2 source identities or its optional card");
+    }
+    {
+        OrderCodeView reopened(host,owner.fragments,owner.correct_order,
+            {},owner.optional_order_separators);
+        MoveWindow(reopened.window(),0,0,px(700),
+            reopened.height_for_width(px(700)),TRUE);
+        pump();
+        check(reopened.order()==owner.correct_order&&
+            reopened.reading_regions().size()==owner.fragments.size()&&
+            GetDlgItem(reopened.window(),105)!=nullptr,
+            "Reopening U1L2 lost the scored order or the optional card");
+    }
+    check(lesson.raw_json==initial_json,
+        "Native U1L2 ordering regression edited the published curriculum");
 }
 
 void source_bound_order_groups_preserve_history() {
@@ -730,6 +819,7 @@ int main(int argc,char** argv){using namespace lgaed::presentation;
     try{
         if(whitespace_only){
             optional_root_metadata_preserves_published_history();
+            current_u1l2_order_ignores_untouched_blank(host);
             source_bound_order_groups_preserve_history();
             generic_order_groups_accept_new_owner();
             optional_visual_chips_do_not_publish_answers(host);
