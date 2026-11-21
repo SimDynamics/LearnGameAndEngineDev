@@ -63,15 +63,15 @@ def main() -> int:
         directory = Path(folder)
         generated = subprocess.run([str(args.emitter.resolve()), str(directory)],
                                    capture_output=True, timeout=30, check=True)
-        if b"PASS generated 25" not in generated.stdout:
+        if b"PASS generated 28" not in generated.stdout:
             raise RuntimeError("Private source fixture emitter did not finish correctly")
         sources = sorted(directory.glob("*.cpp"))
-        if len(sources) != 25:
-            raise RuntimeError(f"Expected 25 generated C++ programs, got {len(sources)}")
+        if len(sources) != 28:
+            raise RuntimeError(f"Expected 28 generated C++ programs, got {len(sources)}")
         positives = sum(check_program(source, args.compiler) for source in sources)
-        if (positives, len(sources) - positives) != (22, 3):
+        if (positives, len(sources) - positives) != (25, 3):
             raise RuntimeError("Unexpected accepted/rejected C++ proof counts")
-        print(f"PASS {args.compiler} on {sys.platform}: 22 real positive "
+        print(f"PASS {args.compiler} on {sys.platform}: 25 real positive "
               "C++ source/variant executions, 3 hard-coded outputs rejected "
               "and one structurally unread etiqueta guarded by the emitter")
     return 0
