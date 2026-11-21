@@ -2363,13 +2363,13 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             # of a changed sentence or authorize an unmarked wording change.
             option_only = deepcopy(original)
             option_only["options"][index] = item["replacement"]
-            for field in ordinary_editorial_fields(option_only, active):
+            for path in ordinary_editorial_paths(option_only, active):
                 overlay = document.get(text_semantics.ROOT_FIELD) or {}
                 require(type(overlay) is dict and type(overlay.get("fields")) is list,
                         "A later choice-owner prose revision needs authored text semantics")
                 markers = [marker for marker in overlay["fields"]
                            if type(marker) is dict and marker.get("block") == identity
-                           and marker.get("path") == "/" + field]
+                           and marker.get("path") == path]
                 require(len(markers) == 1,
                         "A later choice-owner prose revision needs its own text descriptor")
             semantic_before = item["semanticBefore"]
@@ -7926,6 +7926,38 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
             ordinary_review = (bool(required_paths)
                 and "reviewFeedback" in revised_fields and len(proofs) == 1
                 and proofs[0].get("reviewPaths") == list(required_paths))
+            # A separately archived option correction may accompany authored
+            # question/explanation and indexed hints in one Git publication.
+            # Authenticate both complete intermediate blocks and the ordered
+            # proof edges, regardless of which edit the author made first.
+            # The selected option's semantic marker is checked independently
+            # by the exact choice archive above; all other markers stay locked.
+            choice = next((item for item in new_general_choices
+                           if item["id"] == identity), None)
+            composed_paths = ()
+            if not ordinary_review and choice is not None and len(proofs) == 2:
+                option_before = choice["block"]
+                option_after = deepcopy(option_before)
+                option_after["options"][choice["optionIndex"]] = choice["replacement"]
+                if option_before == block:
+                    prose_before, prose_after = option_after, actual
+                    first, second = (block, option_after), (option_after, actual)
+                    review_index = 1
+                else:
+                    prose_before, prose_after = block, option_before
+                    first, second = (block, option_before), (option_before, option_after)
+                    review_index = 0
+                paths = ordinary_editorial_paths(prose_before, prose_after)
+                if ("reviewFeedback" in ordinary_editorial_fields(prose_before, prose_after)
+                        and ordinary_feedback_paths(prose_before, prose_after) == required_paths
+                        and actual == option_after
+                        and proofs[0]["beforeSha256"] == fingerprint(first[0])
+                        and proofs[0]["afterSha256"] == fingerprint(first[1])
+                        and proofs[1]["beforeSha256"] == fingerprint(second[0])
+                        and proofs[1]["afterSha256"] == fingerprint(second[1])
+                        and proofs[review_index].get("reviewPaths") == list(required_paths)
+                        and "reviewPaths" not in proofs[1 - review_index]):
+                    composed_paths = paths
             # Preserve the already-published combined SOURCE-FORMAT + guide
             # contract: code changes only in physical whitespace, guides
             # retain their type and count, and the original complete source
@@ -7933,15 +7965,17 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
             # predates reviewPaths and must not be mistaken for a guide-only
             # ordinary editorial edge.
             formatted_review = False
-            if (not ordinary_review and required_paths and identity in archived
-                    and len(proofs) == 1 and "reviewPaths" not in proofs[0]):
+            if (not ordinary_review and not composed_paths and required_paths
+                    and identity in archived and len(proofs) == 1
+                    and "reviewPaths" not in proofs[0]):
                 formatted_review = bool(require_source_format_with_editorial(block, actual))
-            require(ordinary_review or formatted_review,
+            require(ordinary_review or composed_paths or formatted_review,
                     "A revised review hint needs authored prose or an authenticated source-format transition")
             # Every changed guide and paired prose field owns a fresh, exact
             # UTF-16 source descriptor. No unrelated span or option hint can
             # be recolored as collateral for a legitimate text correction.
             changed_paths = (set(ordinary_editorial_paths(block, actual)) if ordinary_review
+                else set(composed_paths) if composed_paths
                 else set(required_paths)
                 | ({"/question"} if block.get("question") != actual.get("question") else set())
                 | ({"/explanation"} if block.get("explanation") != actual.get("explanation") else set()))
@@ -7954,8 +7988,10 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                            if item.get("block") == identity}
             require(changed_paths <= new_markers.keys(),
                     "A revised guide or question lacks its authored text descriptor")
+            independently_revised = (set(changed_paths)
+                | ({f'/options/{choice["optionIndex"]}'} if composed_paths else set()))
             require(all(old_markers.get(path) == new_markers.get(path)
-                        for path in (old_markers.keys() | new_markers.keys()) - changed_paths),
+                        for path in (old_markers.keys() | new_markers.keys()) - independently_revised),
                     "A revised guide changed unrelated reading semantics")
         else:
             require(not any("reviewPaths" in proof for proof in proofs),
