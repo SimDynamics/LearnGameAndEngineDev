@@ -91,7 +91,7 @@ def main() -> int:
         # keeping the first-case rubric and the learner's saved source intact.
         rejected_starters = {
             "u2l5_division_variable": b"",
-            "u2l5_suma_agrupada": b"Parte: 5 m",
+            "u2l5_suma_agrupada": b"Parte: 4.5 m",
         }
         for name, owner, reference, visible, _ in contracts:
             starter = blocks[owner]["initialCode"]
