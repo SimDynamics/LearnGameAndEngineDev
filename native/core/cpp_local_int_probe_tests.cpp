@@ -106,6 +106,55 @@ int main() {
         "Probing one integer rewrote the independent companion variable");
 }
 
+void grouped_integer_declarations_keep_independent_data() {
+    const std::string declarations[]{
+        "int cajas{4}, sobres{9};",
+        "int cajas=4, sobres=9;",
+        "int cajas(4), sobres(9);",
+        "int cajas=std::max(2,4), sobres=(9);",
+        "signed cajas{4}, sobres=9;",
+        "signed int cajas{4}, sobres{9};",
+        "int signed cajas{4}, sobres{9};",
+        "int cajas=4, sobres=9, ultimo=0;"
+    };
+    for(const auto& declaration:declarations) {
+        const auto source="#include <iostream>\n#include <algorithm>\n"
+            "int main(){\n    "+declaration+
+            "\n    std::cout<<\"Cajas: \"<<cajas<<\"\\nSobres: \"<<sobres;\n}\n";
+        const auto boxes=cpp_local_int_override(source,{"cajas",13});
+        const auto envelopes=cpp_local_int_override(source,{"sobres",17});
+        require(boxes&&envelopes&&
+            boxes->find(declaration+"\n    cajas = 13;\n")!=std::string::npos&&
+            envelopes->find(declaration+"\n    sobres = 17;\n")!=std::string::npos&&
+            boxes->find("sobres = 17;")==std::string::npos&&
+            envelopes->find("cajas = 13;")==std::string::npos&&
+            source.find("cajas = 13;")==std::string::npos,
+            "A grouped int was mutated before the last declarator or changed its companion");
+    }
+    const auto delayed=std::string(
+        "int main(){int cajas, sobres; cajas=4; sobres=9; "
+        "std::cout<<cajas<<sobres;}");
+    const auto boxes=cpp_local_int_override(delayed,{"cajas",13});
+    const auto envelopes=cpp_local_int_override(delayed,{"sobres",17});
+    require(boxes&&envelopes&&
+        boxes->find("cajas=4;\n    cajas = 13;\n")!=std::string::npos&&
+        envelopes->find("sobres=9;\n    sobres = 17;\n")!=std::string::npos,
+        "Two default-initialized grouped ints lost their separate assignment locations");
+    for(const auto& invalid:{
+        "int cajas=4, sobres=cajas+5;",
+        "int cajas=4, sobres=9, derivado=cajas+1;",
+        "int cajas=4, *ptr=nullptr;",
+        "int cajas=4, &referencia=cajas;",
+        "int cajas=4, otros[2]{1,2};",
+        "int cajas=4, cajas=5;"
+    }) {
+        const auto src=std::string("int main(){")+invalid+
+            " std::cout<<cajas;}";
+        require(!cpp_local_int_override(src,{"cajas",13}),
+            "A dependent, pointer, array or duplicate sibling was credited as independent");
+    }
+}
+
 void separate_assignment_and_copy_before_update() {
     const auto separate = cpp_local_int_override(
         "int main() { int llaves; llaves = 7; std::cout << llaves; }",
@@ -164,11 +213,11 @@ void unsafe_ambiguous_and_other_scope_are_rejected() {
         "long int llaves=7;",
         "long signed int llaves=7;",
         "signed int *llaves=nullptr;",
-        "signed llaves{7}, extra{8};",
+        "signed llaves{7}, *extra=nullptr;",
         "auto llaves=7;",
         "int *llaves=nullptr;",
         "int llaves[1]{7};",
-        "int llaves{7}, extra{8};",
+        "int llaves{7}, extra[2]{8};",
         "int llaves=7; int llaves=8;",
         "if(true) { int llaves=7; }",
         "for(int llaves=0; llaves<1; ++llaves) {}",
@@ -286,6 +335,7 @@ int main() {
         equivalent_initializers_do_not_change_original_source();
         noexcept_main_preserves_local_dependency_checks();
         independently_probe_two_variables();
+        grouped_integer_declarations_keep_independent_data();
         separate_assignment_and_copy_before_update();
         comments_literals_and_similar_names_are_inert();
         unsafe_ambiguous_and_other_scope_are_rejected();
