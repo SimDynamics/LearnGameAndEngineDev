@@ -7821,11 +7821,27 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         proofs = appended.get(identity, [])
         if block.get("reviewFeedback") != actual.get("reviewFeedback"):
             required_paths = ordinary_feedback_paths(block, actual)
-            require(required_paths and "reviewFeedback" in
-                    ordinary_editorial_fields(block, actual)
+            revised_fields = ordinary_editorial_fields(block, actual)
+            require(required_paths and "reviewFeedback" in revised_fields
                     and len(proofs) == 1
                     and proofs[0].get("reviewPaths") == list(required_paths),
                     "A revised review hint requires one atomic prose revision and exact indexed provenance")
+            # Every changed guide and paired prose field owns a fresh, exact
+            # UTF-16 source descriptor. No unrelated span or option hint can
+            # be recolored as collateral for a legitimate text correction.
+            changed_paths = set(ordinary_editorial_paths(block, actual))
+            marker_root = text_semantics.ROOT_FIELD
+            old_markers = {item["path"]: item
+                           for item in baseline.get(marker_root, {}).get("fields", [])
+                           if item.get("block") == identity}
+            new_markers = {item["path"]: item
+                           for item in current.get(marker_root, {}).get("fields", [])
+                           if item.get("block") == identity}
+            require(changed_paths <= new_markers.keys(),
+                    "A revised guide or question lacks its authored text descriptor")
+            require(all(old_markers.get(path) == new_markers.get(path)
+                        for path in (old_markers.keys() | new_markers.keys()) - changed_paths),
+                    "A revised guide changed unrelated reading semantics")
         else:
             require(not any("reviewPaths" in proof for proof in proofs),
                     "An unchanged review hint cannot acquire invented editorial provenance")
