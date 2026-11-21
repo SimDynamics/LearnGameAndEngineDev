@@ -203,6 +203,7 @@ class LocalIntAuthoringTests(unittest.TestCase):
                       "outputs": [stdout, stdout + "\n"]}
             if after_update:
                 result["afterUpdate"] = True
+                result["expectedIncrease"] = 3
             return result
 
         cases = {

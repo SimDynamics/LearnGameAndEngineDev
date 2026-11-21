@@ -270,6 +270,82 @@ int main(){
                 !compiler_runtime_request_allowed(after,request),
                 "An uncomputed constant was eligible for local-int credit");
         }
+        if(std::string_view(item.filename)=="lesson_estado_asignacion_y_copia.json") {
+            // This is a stronger, optional authoring edge on the real two
+            // U2L3 editors; the shared export plan and original assets are
+            // deliberately unchanged. Loading both representations must
+            // retain its exact increase and derive a DIFFERENT private
+            // fingerprint, not borrow an earlier afterUpdate receipt.
+            auto exact=JsonObject::Parse(active.Stringify());
+            const auto owned=exact.GetNamedArray(L"compilerLocalIntChecks");
+            require(owned.Size()==2,"Current U2L3 lost one original editor");
+            for(unsigned index=0;index<2;++index) {
+                const auto proposals=owned.GetObjectAt(index).GetNamedArray(L"probes");
+                require(proposals.Size()==3,
+                    "U2L3 needs its original two probes and one increase witness");
+                proposals.GetObjectAt(2).Insert(
+                    L"expectedIncrease",JsonValue::CreateNumberValue(3));
+            }
+            const auto publication=winrt::to_string(exact.Stringify());
+            const auto full=parse_lesson_json(publication,"es");
+            const auto compact=parse_lesson_progress_metadata(publication,"es");
+            for(std::size_t index=0;index<item.owners.size();++index) {
+                const auto identity=item.owners[index];
+                const auto position=stable_block_position(full,identity);
+                const auto before_at=stable_block_position(loaded,identity);
+                const auto compact_at=stable_block_position(compact,identity);
+                require(position&&before_at&&compact_at,
+                    "The exact U2L3 authoring lost its original stable owner");
+                const auto& updated=full.pages.at(position->page).blocks.at(position->block);
+                const auto& previous=loaded.pages.at(before_at->page).blocks.at(before_at->block);
+                const auto& progress=compact.pages.at(compact_at->page).blocks.at(compact_at->block);
+                require(updated.local_int_check&&previous.local_int_check&&
+                    updated.local_int_check==progress.local_int_check&&
+                    updated.local_int_check->probes.size()==3&&
+                    updated.local_int_check->probes.back().after_update&&
+                    updated.local_int_check->probes.back().expected_increase==3&&
+                    !previous.local_int_check->probes.back().expected_increase,
+                    "A stronger U2L3 increase did not retain exact full/compact authoring");
+                CppRunRequest request;
+                request.request_id=61;
+                request.revision=9;
+                request.project_key="u2l3-exact-increase-source-only";
+                request.source_utf8=std::string(item.sources[index]);
+                request.local_int_check=updated.local_int_check;
+                const auto proof=cpp_local_int_request_fingerprint(request);
+                require(!proof.empty()&&compiler_runtime_request_allowed(updated,request),
+                    "A correct, unchanged U2L3 reference failed exact +3 authoring");
+                request.local_int_check=previous.local_int_check;
+                const auto legacy=cpp_local_int_request_fingerprint(request);
+                require(!legacy.empty()&&legacy!=proof,
+                    "A prior +positive receipt could be replayed for exact +3");
+            }
+            // JSON authoring is stricter than the C++ temporary fixture:
+            // reject a signed-zero, negative, floating, bool or out-of-int
+            // expected delta, and do not allow it without afterUpdate.
+            for(const auto invalid:{0.0,-3.0,3.5,2147483648.0}) {
+                auto changed=JsonObject::Parse(exact.Stringify());
+                changed.GetNamedArray(L"compilerLocalIntChecks").GetObjectAt(0)
+                    .GetNamedArray(L"probes").GetObjectAt(2).Insert(
+                        L"expectedIncrease",JsonValue::CreateNumberValue(invalid));
+                rejects(changed);
+            }
+            auto bool_value=JsonObject::Parse(exact.Stringify());
+            bool_value.GetNamedArray(L"compilerLocalIntChecks").GetObjectAt(0)
+                .GetNamedArray(L"probes").GetObjectAt(2).Insert(
+                    L"expectedIncrease",JsonValue::CreateBooleanValue(true));
+            rejects(bool_value);
+            auto without_moment=JsonObject::Parse(exact.Stringify());
+            without_moment.GetNamedArray(L"compilerLocalIntChecks").GetObjectAt(0)
+                .GetNamedArray(L"probes").GetObjectAt(2).Remove(L"afterUpdate");
+            rejects(without_moment);
+            const auto authored_at=publication.find("\"compilerLocalIntChecks\"");
+            require(authored_at!=publication.npos,"Cannot locate U2L3 exact root");
+            rejects_raw(publication.substr(0,authored_at)+overwrite_first(
+                publication.substr(authored_at),
+                "\"expectedIncrease\":3",
+                "\"expectedIncrease\":3,\"expectedIncrease\":3"));
+        }
     }
     std::cout<<"PASS six real U2 compiler owners: authentic root declarations "
         "for llaves/cajas/sobres/aforo/anterior, matching progress loader, "

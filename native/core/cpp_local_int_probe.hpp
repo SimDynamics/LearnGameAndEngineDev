@@ -712,7 +712,9 @@ inline std::optional<std::pair<std::size_t,std::size_t>> first_state_update(
 [[nodiscard]] inline std::optional<std::string> cpp_local_int_override(
         std::string_view source, const CppLocalIntProbe& probe) {
     if (!cpp_local_probe_identifier(probe.variable) ||
-        probe.variable == "main") return {};
+        probe.variable == "main" ||
+        (probe.expected_increase &&
+         (!probe.after_update || *probe.expected_increase <= 0))) return {};
     const auto code = cpp_local_int_probe_detail::lexical(source);
     if (!code) return {};
     const auto body = cpp_local_int_probe_detail::main_body(*code);
