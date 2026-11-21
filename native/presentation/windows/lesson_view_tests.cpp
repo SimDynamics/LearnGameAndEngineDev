@@ -5420,18 +5420,18 @@ void narration_checkpoints_do_not_reformat_or_reflow_the_page() {
 }
 
 void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() {
-    struct Plan { const char* filename; std::size_t page,block; std::vector<std::string> incorrect;
+    struct Plan { const char* filename; const char* owner; std::vector<std::string> incorrect;
         std::size_t ordinary_prefix,compiler_prefix=0; };
     const Plan plans[]{
-        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",7,6,{"int","longitud_metros","partes"},15,1},
-        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",3,3,{"double","int"},6},
-        {"objetos_y_estado/lesson_declarar_e_inicializar.json",2,4,{"12","3"},3},
-        {"objetos_y_estado/lesson_estado_asignacion_y_copia.json",5,4,{"+","-"},10},
-        {"objetos_y_estado/lesson_nombres_con_intencion.json",3,4,{"recibidos","sobres_recibidos"},5},
-        {"objetos_y_estado/lesson_conversiones_y_deduccion.json",3,5,{"int"},6},
-        {"objetos_y_estado/lesson_cadenas_y_texto.json",3,4,{"\"Sector\"","\"Este\""},6},
-        {"objetos_y_estado/lesson_caracteres_y_valores_logicos.json",2,3,{"'Y'","'Y'"},4},
-        {"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",1,8,{"<<","\"Carga\""},4},
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json","block_0007_0006",{"int","longitud_metros","partes"},15,1},
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json","block_0003_0003",{"double","int"},6},
+        {"objetos_y_estado/lesson_declarar_e_inicializar.json","block_0002_0004",{"12","3"},3},
+        {"objetos_y_estado/lesson_estado_asignacion_y_copia.json","block_0005_0004",{"+","-"},10},
+        {"objetos_y_estado/lesson_nombres_con_intencion.json","block_0003_0004",{"recibidos","sobres_recibidos"},5},
+        {"objetos_y_estado/lesson_conversiones_y_deduccion.json","block_0003_0005",{"int"},6},
+        {"objetos_y_estado/lesson_cadenas_y_texto.json","block_0003_0004",{"\"Sector\"","\"Este\""},6},
+        {"objetos_y_estado/lesson_caracteres_y_valores_logicos.json","block_0002_0003",{"'Y'","'Y'"},4},
+        {"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json","block_0004_0001",{"<<","\"Carga\""},4},
     };
     const auto ordinary=[](BlockType type){return type==BlockType::multiple_choice||type==BlockType::output_prediction||
         type==BlockType::fill_code||type==BlockType::order_code||type==BlockType::inline_fill_code||type==BlockType::drag_fill_code;};
@@ -5454,21 +5454,24 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
     for(const auto& plan:plans){
         const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/plan.filename;
         const auto hash=state::sha256(state::read_bytes(path));
+        const auto authored=windows::load_lesson(path);
+        const auto at=curriculum::stable_block_position(authored,plan.owner);
+        require(at.has_value(),"The registered inline owner was retired or moved out of the active edition");
         Fixture f([&](state::StateData& data,const curriculum::Lesson& lesson){
             using namespace winrt::Windows::Data::Json;
             state::prepare_lesson_state(data,lesson);const auto empty=data;
-            require(entry(empty,lesson,plan.page).page<plan.page,
+            require(entry(empty,lesson,at->page).page<at->page,
                 "The old address-only inline fixture unexpectedly bypassed its uncompleted prefix");
             std::vector<std::string> answers,compilers;
             // QA isolation only: evaluate the canonical ordinary prefix and
             // disclose the two model compiler receipts. The target and every
             // subsequent page stay untouched. Arrival is not listening/study.
-            for(std::size_t page=0;page<=plan.page;++page){
+            for(std::size_t page=0;page<=at->page;++page){
                 const auto decision=entry(data,lesson,page);
                 require(decision.page==page&&!decision.pending_math&&state::can_reach_page(data,lesson,page),
                     "The inline QA setup attempted to skip an unresolved activity or an unreached page");
                 state::save_current_page(data,lesson,page);
-                if(page==plan.page)break;
+                if(page==at->page)break;
                 for(const auto& block:lesson.pages[page].blocks){
                     if(block.type==BlockType::cpp_compiler){
                         require(block.output_check&&!block.output_check->cases.empty()&&!block.compile_check,
@@ -5519,8 +5522,8 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
             data.preferences["inline_feedback_qa"]["synthetic_compiler_prefix_only"]=compilers;
             data.preferences["inline_feedback_qa"]["unrelated"]=std::string(" \t preserve\r\n");
         },[&](const curriculum::Lesson&){return windows::load_lesson(path);},true);
-        const auto& block=f.lesson.pages.at(plan.page).blocks.at(plan.block);
-        require(block.type==BlockType::inline_fill_code&&!block.review_feedback.empty()&&!block.explanation.empty(),
+        const auto& block=f.lesson.pages.at(at->page).blocks.at(at->block);
+        require(block.stable_id==plan.owner&&block.type==BlockType::inline_fill_code&&!block.review_feedback.empty()&&!block.explanation.empty(),
             "A registered inline feedback location no longer identifies its authored contract");
         require(!state::get_response(f.initial_data,f.lesson,block)&&!IsWindowVisible(f.host)&&
             GetAncestor(GetForegroundWindow(),GA_ROOT)!=f.host,
@@ -5528,7 +5531,7 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
         require(plan.incorrect.size()==block.answers.size()&&!curriculum::evaluate_hole_answers(block,plan.incorrect).correct,
             "The focal incorrect answer must exercise the authored evaluator");
         const auto unchanged=f.saved().preferences.at("inline_feedback_qa");
-        const auto field=[&](std::size_t index){const auto value=GetDlgItem(f.control(plan.block,5),100+static_cast<int>(index));
+        const auto field=[&](std::size_t index){const auto value=GetDlgItem(f.control(at->block,5),100+static_cast<int>(index));
             require(value!=nullptr,"A registered inline hole is missing");return value;};
         const auto replace=[&](const std::vector<std::string>& values){
             for(std::size_t index=0;index<values.size();++index){const auto target=field(index);require(IsWindowEnabled(target),"An editable inline hole is locked");
@@ -5541,7 +5544,7 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
                 &&(IsWindowEnabled(field(index))!=FALSE)==enabled,"Reopening lost an inline answer or its completion lock");
         };
         const auto feedback_narration=[&](bool correct,std::string_view expected){
-            std::string script;for(const auto& region:lesson_reading_regions(f.view))if(region.target==f.control(plan.block,4))script+=region.source_text;
+            std::string script;for(const auto& region:lesson_reading_regions(f.view))if(region.target==f.control(at->block,4))script+=region.source_text;
             require(script==std::string(correct?"✓ Correcto\n\n":"✗ Incorrecto\n\n")+std::string(expected),
                 "The inline narration source omitted current feedback or added hidden solution text");
         };
@@ -5549,48 +5552,48 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
         // delimiters. RichEdit hides them for display; the narration assertion
         // above independently requires the complete original authored source.
         const auto visible=[](std::string value){std::erase(value,'`');return value;};
-        require(f.page()==plan.page&&f.text(plan.block,4).empty()&&!IsWindowEnabled(f.control(plan.block,3)),
+        require(f.page()==at->page&&f.text(at->block,4).empty()&&!IsWindowEnabled(f.control(at->block,3)),
             "An unanswered inline exercise displayed feedback or enabled an empty submission");
-        for(const auto& region:lesson_reading_regions(f.view))require(region.target!=f.control(plan.block,4),
+        for(const auto& region:lesson_reading_regions(f.view))require(region.target!=f.control(at->block,4),
             "An unanswered inline exercise exposed feedback to narration");
         verify_fields(std::vector<std::string>(block.answers.size()),true);
         replace(plan.incorrect);f.reopen();verify_fields(plan.incorrect,true);
         const auto draft=state::get_response(f.saved(),f.lesson,block);
-        require(draft&&!draft->correct&&!state::response_reviewed(*draft,block)&&f.text(plan.block,4).empty(),
+        require(draft&&!draft->correct&&!state::response_reviewed(*draft,block)&&f.text(at->block,4).empty(),
             "Reopening an unsubmitted inline draft invented an evaluated attempt");
-        f.click(plan.block,3);const auto wrong=f.text(plan.block,4);
+        f.click(at->block,3);const auto wrong=f.text(at->block,4);
         require(wrong=="✗ Incorrecto\n\n"+visible(block.review_feedback)
             &&wrong.find(visible(block.explanation))==std::string::npos,"An incorrect inline attempt lost its authored guide or exposed the solution");
         feedback_narration(false,block.review_feedback);const auto reviewed=state::get_response(f.saved(),f.lesson,block);
         require(reviewed&&!reviewed->correct&&state::response_reviewed(*reviewed,block),"The rejected inline attempt was not persisted as reviewed");
-        f.reopen();verify_fields(plan.incorrect,true);require(f.text(plan.block,4)==wrong,"Restoration changed the exact authored rejection feedback");
+        f.reopen();verify_fields(plan.incorrect,true);require(f.text(at->block,4)==wrong,"Restoration changed the exact authored rejection feedback");
         feedback_narration(false,block.review_feedback);
-        replace(block.answers);require(f.text(plan.block,4).empty(),"A corrected inline draft retained feedback for a different answer");
-        f.click(plan.block,3);const auto correct=f.text(plan.block,4);
+        replace(block.answers);require(f.text(at->block,4).empty(),"A corrected inline draft retained feedback for a different answer");
+        f.click(at->block,3);const auto correct=f.text(at->block,4);
         require(correct=="✓ Correcto\n\n"+visible(block.explanation),
             "The accepted inline answer lost its complete current explanation");
         feedback_narration(true,block.explanation);verify_fields(block.answers,false);
-        f.reopen();verify_fields(block.answers,false);require(f.text(plan.block,4)==correct,"Restoration changed current success feedback");
+        f.reopen();verify_fields(block.answers,false);require(f.text(at->block,4)==correct,"Restoration changed current success feedback");
         feedback_narration(true,block.explanation);
-        f.click(plan.block,12);verify_fields(std::vector<std::string>(block.answers.size()),true);
-        require(f.text(plan.block,4).empty(),"Explicit inline Reset retained the previous verdict");
+        f.click(at->block,12);verify_fields(std::vector<std::string>(block.answers.size()),true);
+        require(f.text(at->block,4).empty(),"Explicit inline Reset retained the previous verdict");
         for(std::size_t index=0;index<block.answer_alternatives.size();++index)for(const auto& option:block.answer_alternatives[index]){
             if(option==block.answers[index])continue;auto answer=block.answers;answer[index]=option;
             require(curriculum::evaluate_hole_answers(block,answer).correct,"A published inline alternative became invalid");
-            replace(answer);f.click(plan.block,3);verify_fields(answer,false);
-            require(f.text(plan.block,4)==correct,"An admitted inline alternative lost the same complete explanation");
-            f.reopen();verify_fields(answer,false);require(f.text(plan.block,4)==correct,"Reopening changed a valid alternative's completion");
-            f.click(plan.block,12);++alternatives;
+            replace(answer);f.click(at->block,3);verify_fields(answer,false);
+            require(f.text(at->block,4)==correct,"An admitted inline alternative lost the same complete explanation");
+            f.reopen();verify_fields(answer,false);require(f.text(at->block,4)==correct,"Reopening changed a valid alternative's completion");
+            f.click(at->block,12);++alternatives;
         }
         const auto final=f.saved();
         for(std::size_t page=0;page<f.lesson.pages.size();++page)for(const auto& current:f.lesson.pages[page].blocks){
-            if(page<plan.page&&ordinary(current.type)){
+            if(page<at->page&&ordinary(current.type)){
                 const auto key=state::response_storage_key(f.lesson,current);
                 require(state::string_value(final,"learning_progress",key)==state::string_value(f.initial_data,"learning_progress",key),
                     "Inline control QA changed an exact synthetic prerequisite response");
             }else if(ordinary(current.type)&& &current!=&block)require(!state::get_response(final,f.lesson,current),
                 "Inline control QA manufactured an answer outside its prefix and actual target");
-            if(current.type==BlockType::cpp_compiler)require(windows::compiler_puzzle_completed(final,f.lesson,current)==(page<plan.page),
+            if(current.type==BlockType::cpp_compiler)require(windows::compiler_puzzle_completed(final,f.lesson,current)==(page<at->page),
                 "Inline control QA changed an independent compiler gate or credited a later editor");
         }
         for(const auto& [key,value]:f.initial_data.preferences.at("native_windows"))if(key.starts_with("compiler-puzzle/v1/"))
@@ -5598,7 +5601,7 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
                 "Inline control QA rewrote one of its disclosed model compiler receipts");
         require(!IsWindowVisible(f.host)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=f.host&&final.preferences.at("inline_feedback_qa")==unchanged
             &&hash==state::sha256(state::read_bytes(path)),"Inline QA changed a curricular asset, unrelated state or the user's desktop");
-        std::cout<<"PASS actual inline feedback "<<plan.filename<<" p"<<plan.page+1<<" b"<<plan.block+1
+        std::cout<<"PASS actual inline feedback "<<plan.filename<<" p"<<at->page+1<<" b"<<at->block+1
             <<": draft/rejection/correction/success/Reset/reopen and exact feedback narration sources\n";
     }
     require(synthetic_ordinary==59&&synthetic_compilers==1,"The nine inline controls used another synthetic prerequisite scope");
