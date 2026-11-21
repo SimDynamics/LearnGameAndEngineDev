@@ -44,13 +44,20 @@ int main(int argc,char** argv) try {
     if(argc!=2)return 2;
     const std::filesystem::path directory=argv[1];
     std::filesystem::create_directories(directory);
-    const std::array<Scenario,12> examples{{
+    const std::array<Scenario,13> examples{{
         {"u2l1_llaves_7",
             R"CPP(#include <iostream>
 int main(){int llaves=3+4; std::cout<<"Llaves: "<<llaves;})CPP",
             "Llaves: 7",
             {{{"llaves",13,{}},{},{}}},
             {{"Llaves: 13", "", ""}},1},
+        {"u2l1_trailing_main",
+            R"CPP(#include <iostream>
+auto main() noexcept -> int {int llaves{7};
+std::cout<<"Llaves: "<<llaves;})CPP",
+            "Llaves: 7",
+            {{{"llaves",13,{}},{},{}}},
+            {{"Llaves: 13","",""}},1},
         {"u2l1_member_named_llaves",
             R"CPP(#include <iostream>
 struct Datos {int llaves{7};};
@@ -247,8 +254,8 @@ int main(){int aforo=5;int anterior=aforo;aforo=8;
 std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP";
     if(cpp_local_int_override(fixed_increment,{"aforo",4,{},true}))
         throw std::runtime_error("A constant replacement masqueraded as an increase");
-    if(emitted!=41)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 41 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
+    if(emitted!=43)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 43 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';
