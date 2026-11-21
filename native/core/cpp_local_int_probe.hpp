@@ -340,6 +340,93 @@ inline std::optional<std::size_t> first_assignment(
     }
     return {};
 }
+// A hidden after-update perturbation cannot certify an increase if the
+// student's statement did not change the preceding state at all. Recognize
+// only provable literal identities; more complex expressions still require
+// independent compiled output evidence rather than guessed arithmetic.
+inline bool int_probe_literal_is(std::string_view token,char wanted) {
+    if(!token.starts_with("number:")||(wanted!='0'&&wanted!='1'))return false;
+    auto text=token.substr(7);
+    while(!text.empty()&&(text.back()=='u'||text.back()=='U'||
+           text.back()=='l'||text.back()=='L'||text.back()=='z'||
+           text.back()=='Z'))text.remove_suffix(1);
+    if(text.starts_with("0x")||text.starts_with("0X")||
+       text.starts_with("0b")||text.starts_with("0B"))text.remove_prefix(2);
+    if(text.empty())return false;
+    bool one=false,has_digit=false;
+    for(char ch:text) {
+        if(ch=='\'')continue;
+        if(ch=='0')has_digit=true;
+        else if(ch=='1'&&wanted=='1'&&!one) {
+            has_digit=true;one=true;
+        }else return false;
+    }
+    return has_digit&&(wanted=='0'||one);
+}
+
+inline bool int_probe_trivial_noop(const Tokens& code,std::size_t statement,
+        std::size_t end,std::string_view variable) {
+    if(statement+2>=end)return false;
+    const auto op=std::string_view(code[statement+1].value);
+    const auto wanted="id:"+std::string(variable);
+    const auto unwrapped=[&](std::size_t a,std::size_t b) {
+        while(b>a+1&&code[a].value=="op:("&&
+              code[b-1].value=="op:)") {
+            std::size_t depth=0;
+            bool enclosing=true;
+            for(auto p=a;p<b;++p) {
+                if(code[p].value=="op:(")++depth;
+                else if(code[p].value=="op:)") {
+                    if(!depth){enclosing=false;break;}
+                    --depth;
+                    if(!depth&&p+1<b)enclosing=false;
+                }
+            }
+            if(!enclosing||depth)break;
+            ++a;--b;
+        }
+        return std::pair{a,b};
+    };
+    const auto is_self=[&](std::size_t first,std::size_t last) {
+        const auto [a,b]=unwrapped(first,last);
+        return b==a+1&&code[a].value==wanted&&
+               !qualified_member_name(code,a);
+    };
+    const auto is_number=[&](std::size_t first,std::size_t last,char digit) {
+        const auto [a,b]=unwrapped(first,last);
+        return b==a+1&&int_probe_literal_is(code[a].value,digit);
+    };
+    if(op=="op:+="||op=="op:-=")
+        return is_number(statement+2,end,'0');
+    if(op!="op:=")return false;
+    auto [first,last]=unwrapped(statement+2,end);
+    if(is_self(first,last))return true;
+    std::size_t at=last,depth=0;
+    for(auto p=first;p<last;++p) {
+        const auto value=std::string_view(code[p].value);
+        if(value=="op:(")++depth;
+        else if(value=="op:)") {
+            if(!depth)return false;
+            --depth;
+        }else if(!depth&&(value=="op:+"||value=="op:-"||
+                          value=="op:*"||value=="op:/")) {
+            if(at!=last)return false;
+            at=p;
+        }
+    }
+    if(at==last||at==first||at+1==last)return false;
+    const auto operation=std::string_view(code[at].value);
+    const bool left=is_self(first,at),right=is_self(at+1,last);
+    const bool zero_left=is_number(first,at,'0');
+    const bool zero_right=is_number(at+1,last,'0');
+    const bool one_left=is_number(first,at,'1');
+    const bool one_right=is_number(at+1,last,'1');
+    return (operation=="op:+"&&((left&&zero_right)||(zero_left&&right)))||
+           (operation=="op:-"&&left&&zero_right)||
+           (operation=="op:*"&&((left&&one_right)||(one_left&&right)))||
+           (operation=="op:/"&&left&&one_right);
+}
+
 // Locate an actual change to an initialized local int at the main-body
 // level, rather than rewriting a literal 3. Both "aforo += 3" and
 // "aforo = aforo + 3" are accepted, as well as equivalent +/- or increment
@@ -379,9 +466,17 @@ inline std::optional<std::size_t> first_state_update(
                         if(rhs!="op:("&&rhs!="op:)"&&rhs!=wanted)
                             has_operation=true;
                     }
-                    // aforo = aforo and aforo = (aforo) are no-ops, not
-                    // evidence of an actual state change.
-                    if(!reads_prior||!has_operation)return {};
+                    if(!reads_prior)return {};
+                    // Ignore pure self-copies and look for the next genuine
+                    // top-level update; a later real increase remains valid.
+                    if(!has_operation){i=*statement;continue;}
+                }
+                // A neutral operation can pass every stdout variation when
+                // the learner adds the missing quantity only at print time.
+                // Do not credit it as the required state change.
+                if(int_probe_trivial_noop(code,i,*statement,variable)) {
+                    i=*statement;
+                    continue;
                 }
                 return statement;
             }
