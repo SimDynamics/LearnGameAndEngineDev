@@ -455,10 +455,10 @@ inline bool int_probe_trivial_noop(const Tokens& code,std::size_t statement,
                 const auto digits=std::string_view(code[a].value).substr(7);
                 if(!digits.empty()&&(digits.size()==1||digits.front()!='0')) {
                     std::int32_t literal=0;
-                    const auto [last,err]=std::from_chars(
+                    const auto [parsed_end,err]=std::from_chars(
                         digits.data(),digits.data()+digits.size(),literal,10);
                     if(err==std::errc{}&&
-                       last==digits.data()+digits.size())return Known::zero;
+                       parsed_end==digits.data()+digits.size())return Known::zero;
                 }
             }
         }else if(operation=="op:*") {
