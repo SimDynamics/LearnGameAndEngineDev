@@ -87,6 +87,8 @@ def main():
         for label in descriptive_prefixes:
             allowed[label]=(qa.CONFIGURE["allocate_then_swap"],
                             qa.READ["bounds_first"])
+        allowed["namespaced_same_name"]=(qa.CONFIGURE["allocate_then_swap"],
+                                        qa.READ["bounds_first"])
         deficient={
             **{name:(body,qa.READ["bounds_first"])
                for name,body in qa.BAD_CONFIGURE.items()},
@@ -95,7 +97,7 @@ def main():
         }
         public_variants=("swap_and_bounds","new_and_range",
                          "comment_before_class","raw_literal_before_class",
-                         "reject_changes_output")
+                         "namespaced_same_name","reject_changes_output")
         public_runs=0
         for label,(configure,read) in [*allowed.items(),*deficient.items()]:
             candidate=qa.compose(original,configure,read)
@@ -107,6 +109,16 @@ def main():
                 source_original=root/(label+"-original.cpp")
                 source_original.write_bytes((prefix+original).encode("utf-8"))
                 candidate=prefix+candidate
+            if label=="namespaced_same_name":
+                # The real global Lote is unchanged. A same-named C++ type
+                # inside an unrelated namespace must not steal the private
+                # friend or change the array witness ownership.
+                extra=("\nnamespace LgaedForeign {\n"
+                       "class Lote { std::unique_ptr<int[]> datos_{}; "
+                       "int cantidad_ = 0; };\n}\n")
+                source_original=root/"namespaced-original.cpp"
+                source_original.write_bytes((original+extra).encode("utf-8"))
+                candidate+=extra
             candidate_file=root/(label+"-student.cpp")
             candidate_file.write_bytes(candidate.encode("utf-8"))
             private_file=root/(label+"-private.cpp")
@@ -223,7 +235,7 @@ def main():
             print(f"{options.compiler}: protected {label}: REJECT",flush=True)
 
     print("PASS U6L10 native source and semantic probe, including three "
-          "authentic public cases for four valid variants and the invalid "
+          "authentic public cases for five valid variants and the invalid "
           "output-overwrite counterexample. Public stdout does not replace "
           "the independent padded read and array-allocation witness.")
 
