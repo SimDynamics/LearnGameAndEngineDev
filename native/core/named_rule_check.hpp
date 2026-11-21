@@ -522,8 +522,91 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
         // &, |, ^ or +, regardless of the local agreement's value.
         return first<last&&op(t[first],"~")&&single(first+1,last);
     };
+    // A bounded affine proof catches *families* of algebraically constant
+    // decorations instead of matching individual spellings. Only literals,
+    // the same side-effect-free local int and +, -, * are evaluated. Calls,
+    // casts, other variables, shifts, divides and unknown expressions remain
+    // undecided, and runtime probes still verify independently.
+    struct Affine {
+        std::int64_t factor=0,offset=0;
+        bool observes_rule=false;
+    };
+    const auto affine=[&](auto&& self,std::size_t first,std::size_t last,
+                          unsigned depth)->std::optional<Affine> {
+        constexpr std::int64_t bound=1000000;
+        if(depth>48||first>=last||last-first>96)return {};
+        unwrap(first,last);
+        if(first>=last)return {};
+        if(first+1==last) {
+            if(id(t[first],name))return Affine{1,0,true};
+            if(const auto value=number(t,first,last))
+                return Affine{0,*value,false};
+            return {};
+        }
+        const auto split_at=[&](bool additive) {
+            std::size_t nested=0,split=last;
+            for(auto at=first;at<last;++at) {
+                if(op(t[at],"(")){++nested;continue;}
+                if(op(t[at],")")){
+                    if(!nested)return last;
+                    --nested;continue;
+                }
+                if(nested||at==first||at+1==last)continue;
+                const bool wanted=additive?
+                    op(t[at],"+")||op(t[at],"-"):op(t[at],"*");
+                if(!wanted)continue;
+                // A + or - after an operator is unary, not a binary split.
+                const auto& preceding=t[at-1];
+                if(!(preceding.starts_with("id:")||
+                     preceding.starts_with("number:")||
+                     op(preceding,")")||op(preceding,"]")))continue;
+                split=at; // Last top-level operator: left associativity.
+            }
+            return nested?last:split;
+        };
+        auto split=split_at(true);
+        if(split==last)split=split_at(false);
+        if(split==last) {
+            if(!op(t[first],"+")&&!op(t[first],"-"))return {};
+            auto inner=self(self,first+1,last,depth+1);
+            if(!inner)return {};
+            if(op(t[first],"-")){
+                inner->factor=-inner->factor;
+                inner->offset=-inner->offset;
+            }
+            return inner;
+        }
+        auto left=self(self,first,split,depth+1);
+        auto right=self(self,split+1,last,depth+1);
+        if(!left||!right)return {};
+        Affine result;
+        result.observes_rule=left->observes_rule||right->observes_rule;
+        if(op(t[split],"+")||op(t[split],"-")) {
+            const auto sign=op(t[split],"+")?1:-1;
+            result.factor=left->factor+sign*right->factor;
+            result.offset=left->offset+sign*right->offset;
+        }else if(op(t[split],"*")) {
+            // An expression nonlinear in the named variable is not affine.
+            if(left->factor&&right->factor)return {};
+            // Bound operands before multiplying to keep this portable on
+            // GCC, Clang and MSVC, without signed arithmetic overflow.
+            const auto within=[&](std::int64_t value) {
+                return value>=-bound&&value<=bound;
+            };
+            if(!within(left->factor)||!within(right->factor)||
+               !within(left->offset)||!within(right->offset))return {};
+            result.factor=left->factor*right->offset+
+                          right->factor*left->offset;
+            result.offset=left->offset*right->offset;
+        }else return {};
+        if(result.factor < -bound||result.factor > bound||
+           result.offset < -bound||result.offset > bound)return {};
+        return result;
+    };
     const auto neutral=[&](std::size_t first,std::size_t last) {
         unwrap(first,last);
+        if(const auto proof=affine(affine,first,last,0);
+           proof&&proof->observes_rule&&proof->factor==0)return true;
         std::size_t depth=0;
         for(auto at=first;at<last;++at) {
             if(op(t[at],"(")){++depth;continue;}

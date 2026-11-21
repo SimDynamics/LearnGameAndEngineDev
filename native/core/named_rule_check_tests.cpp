@@ -1057,6 +1057,47 @@ void capacity() {
         })cpp",rules,true,
         "A neutral logical operand must not erase separate capacity-derived arithmetic");
 
+    // Prove affine cancellation over the entire pure expression, not
+    // just pairwise adjacent names. No lexical appearance in a constant
+    // decoration should satisfy the two source-uses requirement.
+    for(const auto* neutral:{
+        "(capacidad + capacidad - 2 * capacidad)",
+        "(capacidad + 1 - capacidad - 1)",
+        "(capacidad * 3 - capacidad * 2 - capacidad)",
+        "(2 * (capacidad + 1) - 2 * capacidad - 2)",
+        "(-capacidad + capacidad)",
+        "(0b10 * capacidad - capacidad - capacidad)",
+        "(capacidad * (2-2) + capacidad * (3-3))",
+        "((capacidad + capacidad) - ((capacidad) * 2))"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
+            rules,false,"Affine cancellation forged two named-rule uses");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int neutralidad = capacidad + capacidad - 2 * capacidad;
+            return (piezas + 3) / 4 + neutralidad;
+        })cpp",rules,false,
+        "An affine-zero alias must not launder dead source uses");
+    for(const auto* productive:{
+        "(capacidad + capacidad - capacidad)",
+        "(2 * capacidad - capacidad)",
+        "(capacidad + 2 - capacidad * 2)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(productive)+"; }",
+            rules,true,"A genuinely dependent affine expression was erased");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (2 * capacidad - capacidad - capacidad);
+        })cpp",rules,true,
+        "Neutral affine decoration must not suppress a correct named quotient");
+
     // A complement of a *different expression* does not generally
     // cancel this constant. Preserve its lexical evidence, leaving numeric
     // correctness to the independent compiled counterfactual.
