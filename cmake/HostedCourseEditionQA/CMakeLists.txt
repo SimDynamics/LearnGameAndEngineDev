@@ -170,3 +170,19 @@ target_link_libraries(lgaed_compiler_first_case_view_tests
     PRIVATE lgaed_curricular_windows)
 add_test(NAME native.compiler_puzzles COMMAND lgaed_compiler_first_case_view_tests)
 set_tests_properties(native.compiler_puzzles PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+
+# The active U2 visual-semantic regressions use real Win32 RichEdit and the
+# production LessonView. This independent hosted profile does not replace the
+# exact pinned MSVC reader and narration suites.
+add_executable(lgaed_technical_context_view_tests
+    "${_lgaed_root}/native/presentation/windows/technical_context_view_tests.cpp")
+target_link_libraries(lgaed_technical_context_view_tests
+    PRIVATE lgaed_curricular_windows)
+target_compile_options(lgaed_technical_context_view_tests PRIVATE /bigobj)
+add_test(NAME native.current_u2_roles
+    COMMAND lgaed_technical_context_view_tests --current-u2-roles)
+add_test(NAME native.current_u2l5_gates
+    COMMAND lgaed_technical_context_view_tests --current-u2l5-native-gates)
+set_tests_properties(native.current_u2_roles native.current_u2l5_gates
+    PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+
