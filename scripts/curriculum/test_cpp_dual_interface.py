@@ -122,7 +122,7 @@ def main():
     if block["type"]!="cpp_compiler" or block["initialCode"]!=original:
         raise AssertionError("Original U10L1 C++ code differs from public editor")
     public_cases=block["outputCheck"]["cases"]
-    if len(public_cases)!=3 or public_cases[0]["standardInput"]!="7 3 -2\\n".replace("\\n","\n"):
+    if len(public_cases)!=3 or public_cases[0]["standardInput"]!="7 3 -2\n":
         raise AssertionError("Original U10L1 public cases changed")
     for number,case in enumerate(public_cases,1):
         if (not isinstance(case.get("standardInput"),str) or
