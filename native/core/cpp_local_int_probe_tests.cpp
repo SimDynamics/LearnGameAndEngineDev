@@ -618,6 +618,29 @@ void opaque_noop_requires_runtime_state_change() {
 }
 
 
+void private_delta_respects_signed_int_bounds() {
+    // The chosen learner update itself is valid. Only the *extra* private
+    // delta would overflow int. This must fail before += executes, rather
+    // than relying on undefined signed overflow and coincidental stdout.
+    const std::string hi=
+        "int main(){int aforo{2147483646};aforo+=1;return aforo==0;}";
+    const std::string lo=
+        "int main(){int aforo{-2147483646};aforo-=1;return aforo==0;}";
+    for(const auto& entry:std::array{
+            std::pair{hi,4},std::pair{lo,-4}}) {
+        const auto altered=cpp_local_int_override(
+            entry.first,{"aforo",entry.second,{},true});
+        require(altered && altered->find(
+            ") + ("+std::to_string(entry.second)+
+            "LL) > 2147483647LL")!=std::string::npos &&
+            altered->find("LL) < -2147483648LL) return 1;")!=
+                std::string::npos &&
+            altered->find("aforo += "+std::to_string(entry.second)+";")!=
+                std::string::npos,
+            "The private integer probe omitted its before-addition overflow barrier");
+    }
+}
+
 void crlf_after_update_preserves_source_and_comment() {
     // The Windows editor may hold CRLF. The private instrumented file may
     // use LF for new lines, but no byte of the learner's source is rewritten.
@@ -731,6 +754,7 @@ int main() {
         neutral_updates_cannot_fake_u2l3_increase();
         composed_neutral_updates_cannot_fake_u2l3_increase();
         opaque_noop_requires_runtime_state_change();
+        private_delta_respects_signed_int_bounds();
         crlf_after_update_preserves_source_and_comment();
         numeric_literal_identity_distinguishes_one_from_ten();
         std::cout << "PASS local int probes: equivalent initialization, independent "

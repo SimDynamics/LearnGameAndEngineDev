@@ -720,7 +720,18 @@ inline std::optional<std::pair<std::size_t,std::size_t>> first_state_update(
         variant += probe.variable;
         variant += ";\n    ";
         variant += source.substr(*update_begin,offset-*update_begin);
-        variant += "\n    ";
+        // The private delta is never allowed to overflow signed int.
+        // Check in long long BEFORE applying it, including INT32_MIN.
+        // An unsafe counterfactual is inconclusive, not learner success.
+        variant += "\n    if (static_cast<long long>(";
+        variant += probe.variable;
+        variant += ") + (";
+        variant += std::to_string(probe.replacement);
+        variant += "LL) > 2147483647LL || static_cast<long long>(";
+        variant += probe.variable;
+        variant += ") + (";
+        variant += std::to_string(probe.replacement);
+        variant += "LL) < -2147483648LL) return 1;\n    ";
         variant += probe.variable;
         variant += " += ";
         variant += std::to_string(probe.replacement);

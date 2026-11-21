@@ -328,8 +328,22 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo+3;})CPP";
     emit(directory,"u2l3_crlf_after_update",*windows_variant,
          "Antes: 5\nAhora: 12",true);
     ++emitted;
-    if(emitted!=46)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 46 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
+    // The student's own arithmetic is defined, but perturbing it in a
+    // private run would exceed int32 bounds. The independent variant must
+    // return a controlled failure before the injected compound assignment.
+    for(const auto& limit:std::array{
+            std::pair{"reject_private_positive_overflow",
+                "int main(){int aforo{2147483646};aforo+=1;return aforo==0;}",4},
+            std::pair{"reject_private_negative_underflow",
+                "int main(){int aforo{-2147483646};aforo-=1;return aforo==0;}",-4}}) {
+        const auto variant=cpp_local_int_override(
+            limit.second,{"aforo",limit.third,{},true});
+        if(!variant)throw std::runtime_error("Cannot instrument signed-int boundary");
+        emit(directory,limit.first,*variant,"",false,true);
+        ++emitted;
+    }
+    if(emitted!=48)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 48 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';
