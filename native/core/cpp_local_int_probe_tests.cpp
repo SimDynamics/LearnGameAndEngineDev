@@ -1,5 +1,6 @@
 #include "core/cpp_local_int_probe.hpp"
 
+#include <array>
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
