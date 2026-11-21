@@ -426,13 +426,85 @@ void verify_u2_text_semantic_ranges(View& fixture,HWND target,const curriculum::
         "The current U2 prose lost its independent code, data or citation roles");
 }
 
+// Formatting-only entry: exercise the real authored ordinary evaluators in
+// sequential page order. A bookmarked page without its earlier prerequisites
+// is clamped by LessonView and tests the WRONG source paragraph. The compiler
+// receipts are already prepared separately by View for this isolated QA;
+// neither those nor these responses constitute a student execution or lesson.
+void prepare_u2_visual_prefix(state::StateData& data,
+        const curriculum::Lesson& lesson,std::size_t destination){
+    using namespace winrt::Windows::Data::Json;
+    std::size_t ordinary=0;
+    for(std::size_t page=0;page<destination;++page){
+        check(state::can_reach_page(data,lesson,page),
+            "U2 color QA skipped an unvisited prerequisite page");
+        for(const auto& block:lesson.pages.at(page).blocks){
+            state::Response response;
+            curriculum::AnswerEvaluation verdict;
+            bool required=true;
+            if(block.type==curriculum::BlockType::multiple_choice){
+                check(block.correct_index&&*block.correct_index<block.options.size(),
+                    "U2 visual prerequisite has no authored correct option");
+                response.selected=static_cast<std::int64_t>(*block.correct_index);
+                response.answer=block.options[*block.correct_index];
+                verdict=curriculum::evaluate_choice(block,*block.correct_index);
+            }else if(block.type==curriculum::BlockType::order_code){
+                response.order.assign(block.correct_order.begin(),block.correct_order.end());
+                verdict=curriculum::evaluate_order(block,block.correct_order);
+            }else if(block.type==curriculum::BlockType::inline_fill_code||
+                     block.type==curriculum::BlockType::drag_fill_code){
+                JsonObject saved;JsonArray fields;
+                if(block.type==curriculum::BlockType::inline_fill_code){
+                    verdict=curriculum::evaluate_hole_answers(block,block.answers);
+                    for(const auto& answer:block.answers)
+                        fields.Append(JsonValue::CreateStringValue(winrt::to_hstring(answer)));
+                }else{
+                    verdict=curriculum::evaluate_drag_answers(block,block.correct_order);
+                    for(const auto value:block.correct_order)
+                        fields.Append(JsonValue::CreateNumberValue(static_cast<double>(value)));
+                }
+                saved.Insert(block.type==curriculum::BlockType::inline_fill_code?
+                    L"answers":L"slots",fields);
+                response.raw_json=winrt::to_string(saved.Stringify());
+            }else if(block.type==curriculum::BlockType::fill_code||
+                     block.type==curriculum::BlockType::output_prediction){
+                check(!block.answers.empty(),"U2 visual prerequisite lost its authored answer");
+                response.answer=block.answers.front();
+                verdict=curriculum::evaluate_text_answer(block,response.answer);
+            }else{
+                check(block.type!=curriculum::BlockType::math_puzzle,
+                    "U2 visual prefix acquired an unverified mathematical prerequisite");
+                required=false;
+            }
+            if(!required)continue;
+            check(verdict.correct&&!state::get_response(data,lesson,block),
+                "A U2 visual prerequisite was not independently evaluated");
+            response.correct=true;
+            state::mark_response_reviewed(response,block);
+            state::put_response(data,lesson,block,response);
+            ++ordinary;
+        }
+        (void)state::mark_page_reached(data,lesson,page);
+    }
+    check(state::can_reach_page(data,lesson,destination),
+        "U2 visual QA could not reach the requested active edition page");
+    state::save_current_page(data,lesson,destination);
+    check(state::current_page(data,lesson)==destination,
+        "U2 visual QA saved a stale bookmark before completing its prefix");
+    state::validate_lesson_state(data,lesson);
+    data.preferences["u2_semantic_view_qa"]["synthetic_ordinary_prefix"]=
+        static_cast<std::int64_t>(ordinary);
+}
 void current_u2_roles(){
     const auto relative="objetos_y_estado/lesson_estado_asignacion_y_copia.json";const auto lesson=load(relative);
     const auto source=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
     const auto hash=state::sha256(state::read_bytes(source));
     const auto block_at=[&](std::string_view id,std::size_t page){const auto at=curriculum::stable_block_position(lesson,id);
         check(at&&at->page==page,"A registered U2 stable identity moved to another page");return at->block;};
-    for(const auto page:{3u,5u,6u,8u}){View fixture(lesson,page,true);
+    for(const auto page:{3u,5u,6u,8u}){View fixture(lesson,page,true,
+            [&,page](state::StateData& data){prepare_u2_visual_prefix(data,lesson,page);});
+        check(lesson_page_state(fixture.view).index==page,
+            "U2 color QA opened a different curricular page");
         check(flush_lesson_view(fixture.view),"Cannot snapshot actual color QA");const auto initial=read_lesson_state(fixture.view);
         const auto verify=[&]{
             if(page==3){const auto index=block_at("block_0003_0001",page);const auto target=fixture.item(index,0);
@@ -518,7 +590,10 @@ void current_u2_roles(){
     }
     // Create the real current feedback through the existing UI, then inspect
     // its three complete instructions and their exact adjacent prose bounds.
-    const auto at=*curriculum::stable_block_position(lesson,"block_0005_0003");const auto& choice=lesson.pages[at.page].blocks[at.block];View fixture(lesson,at.page);
+    const auto at=*curriculum::stable_block_position(lesson,"block_0005_0003");const auto& choice=lesson.pages[at.page].blocks[at.block];View fixture(lesson,at.page,false,
+        [&](state::StateData& data){prepare_u2_visual_prefix(data,lesson,at.page);});
+    check(lesson_page_state(fixture.view).index==at.page,
+        "U2 feedback QA opened the wrong current page");
     check(flush_lesson_view(fixture.view),"Cannot snapshot the actual U2 state before answering");
     const auto initial=read_lesson_state(fixture.view);const auto key=curriculum::exercise_key(lesson,choice);
     SendMessageW(fixture.item(at.block,20),BM_CLICK,0,0);pump();check(edit_text(fixture.item(at.block,4)).empty(),"Selecting an option revealed feedback before checking");
