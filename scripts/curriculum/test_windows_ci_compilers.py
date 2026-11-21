@@ -101,6 +101,17 @@ class WindowsCompilerPolicy(unittest.TestCase):
             with self.subTest(source=source):
                 self.assertFalse(self._uses_non_windows_runner(source))
 
+    def test_unused_android_only_launcher_scripts_are_absent(self):
+        # These three standalone launchers had no Windows CMake, native,
+        # workflow, Gradle or documented call sites. The Git history retains
+        # their exact former sources; the independent Android app is untouched.
+        for relative in (
+                "scripts/build_debug_dual_clang.ps1",
+                "tools/build-clang23-android-local.ps1",
+                "tools/import-clang23-arm64.ps1"):
+            with self.subTest(file=relative):
+                self.assertFalse((ROOT / relative).exists())
+
     def test_active_workflows_do_not_invoke_gcc_or_desktop_clang(self):
         # Match executable/runner tokens, not words like the curricular
         # explanation of a compiler or the "Windows" product description.
