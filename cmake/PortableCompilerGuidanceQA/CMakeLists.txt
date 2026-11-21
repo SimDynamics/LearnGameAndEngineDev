@@ -213,6 +213,12 @@ if(LGAED_HOSTED_FEEDBACK_FONT_QA)
     add_library(lgaed_platform_windows ALIAS lgaed_guidance_platform)
     add_library(lgaed_host_options ALIAS lgaed_guidance_qa_options)
     include("${LGAED_ROOT}/cmake/CurricularWindows.cmake")
+    # The real LessonView is a large Windows translation unit. Hosted Debug
+    # MSVC otherwise exhausts COFF's classic section count (C1128).
+    # Keep this source-scoped; application build flags remain unchanged.
+    set_source_files_properties(
+        "${LGAED_ROOT}/native/presentation/windows/lesson_view.cpp"
+        PROPERTIES COMPILE_OPTIONS "/bigobj")
     add_executable(lgaed_feedback_font_portable_qa
         "${LGAED_ROOT}/native/presentation/windows/feedback_font_portable_tests.cpp")
     target_link_libraries(lgaed_feedback_font_portable_qa PRIVATE
