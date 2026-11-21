@@ -3882,6 +3882,10 @@ puede emplear `=`, `{}` o `()`, o una primera asignación inequívoca.
 También se admiten declaradores enteros agrupados de un mismo tipo, como
 `int cajas{4}, sobres{9};` o `int cajas, sobres;` con asignaciones separadas.
 La sonda se inserta **después del punto y coma completo**, no entre variables.
+El localizador compartido reconoce tanto `int main()` como la firma C++23
+`auto main() -> int`, incluidas cláusulas `noexcept` equilibradas; la misma
+compatibilidad se aplica a las sondas `std::string`. No admite firmas
+`main` con retorno distinto de `int`, ni definiciones duplicadas.
 Una primera asignación separada no puede leer el propio entero todavía
 sin inicializar: `int llaves; llaves = llaves + 7;` se rechaza antes de
 generar o ejecutar variantes. En cambio, `int llaves; llaves = 3 + 4;`
