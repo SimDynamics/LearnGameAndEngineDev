@@ -9,6 +9,7 @@ on:
       - scripts/curriculum/test_cpp_*py
       - docs/examples/p3_ownership_authoring.json
       - native/core/cpp_*check*.hpp
+      - native/core/cpp_class_structure_check_tests.cpp
       - native/core/cpp_indexed_unique_transfer_probe.hpp
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/**/lesson_*.json
   workflow_dispatch:
@@ -33,6 +34,15 @@ jobs:
         with:
           python-version: '3.12'
       - uses: ilammy/msvc-dev-cmd@v1
+      - name: Verify per-instance fields and scoped declarations with native MSVC
+        if: matrix.group == 'U10'
+        shell: pwsh
+        run: |
+          $binary = Join-Path $env:RUNNER_TEMP 'p3-class-structure.exe'
+          & cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native/core/cpp_class_structure_check_tests.cpp "/Fe:$binary"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $binary
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Compile and execute original P3 private probes under native MSVC
         shell: pwsh
         run: |

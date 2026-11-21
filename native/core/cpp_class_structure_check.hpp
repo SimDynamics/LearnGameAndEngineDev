@@ -199,6 +199,22 @@ inline bool direct_contains(const Tokens& code,Scope scope,
     return false;
 }
 
+// A static or thread-local member may be referenced through an object, but
+// does not belong to that individual object's lifetime. These source-policy
+// checks require real per-instance RAII fields, not shared storage. Stop at
+// the previous declaration, access label or member-function body boundary.
+inline bool non_instance_storage_modifier(const Tokens& code,
+        std::size_t type_at,std::size_t owner_opening) {
+    for(auto i=type_at;i>owner_opening+1;) {
+        const auto& token=code[--i];
+        if(token=="op:;"||token=="op:{"||token=="op:}"||
+           token=="op::")break;
+        if(token=="id:static"||token=="id:thread_local")
+            return true;
+    }
+    return false;
+}
+
 // Require exactly one real direct data member of the selected owner. A
 // same-spelled method return type, nested local variable or unrelated class
 // cannot authenticate a published RAII field. Accept default, copy and brace
@@ -214,7 +230,8 @@ inline bool direct_field(const Tokens& code,Scope scope,
            std::equal(type_and_name.begin(),type_and_name.end(),
                       code.begin()+static_cast<std::ptrdiff_t>(i))&&
            (code[end]=="op:;"||code[end]=="op:="||
-            code[end]=="op:{"))++count;
+            code[end]=="op:{")&&
+           !non_instance_storage_modifier(code,i,scope.opening))++count;
         if(open_brace(code[i]))++depth;
         else if(close_brace(code[i])) {
             if(!depth)return false;
@@ -225,7 +242,9 @@ inline bool direct_field(const Tokens& code,Scope scope,
 }
 
 // Count each declared int field once at the direct class level. A comment,
-// initializer expression or local variable cannot impersonate an owner field.
+// initializer expression, local variable, static field or zero-argument member
+// function cannot impersonate an instance field. Parentheses after the name
+// declare a function, not a valid non-static data member initializer.
 inline bool direct_int_fields(const Tokens& code,Scope scope,
         std::initializer_list<std::string_view> names) {
     if(names.size()==0)return false;
@@ -236,7 +255,8 @@ inline bool direct_int_fields(const Tokens& code,Scope scope,
             if(depth==1&&i+2<scope.closing&&
                code[i]=="id:int"&&code[i+1]=="id:"+std::string(name)&&
                (code[i+2]=="op:="||code[i+2]=="op:;"||
-                code[i+2]=="op:{"||code[i+2]=="op:("))
+                code[i+2]=="op:{")&&
+               !non_instance_storage_modifier(code,i,scope.opening))
                 ++matches;
             if(open_brace(code[i]))++depth;
             else if(close_brace(code[i])) {

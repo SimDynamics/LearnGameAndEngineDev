@@ -65,6 +65,48 @@ class Owner {};
         !cs::defined_class(*inert_literal,"FakeOwner"),
         "Preprocessor-like words inside a raw string were treated as directives");
 
+    // A data member must be an individual object's field. It is not enough
+    // that a method or an inline static field has the required type and name.
+    const auto instance=cs::lexical(R"source(
+class Owner {
+    std::unique_ptr<int[]> items_{};
+    int count_ = 0;
+};
+)source");
+    const auto owner=instance?cs::defined_class(*instance,"Owner"):std::nullopt;
+    require(instance&&owner&&
+        cs::direct_field(*instance,*owner,{
+            "id:std","op:::","id:unique_ptr","op:<","id:int",
+            "op:[","op:]","op:>","id:items_"})&&
+        cs::direct_int_fields(*instance,*owner,{"count_"}),
+        "The genuine array owner/count instance fields were rejected");
+
+    const auto method=cs::lexical(R"source(
+class Owner {
+    int count_() const noexcept { return 0; }
+};
+)source");
+    const auto method_owner=method?cs::defined_class(*method,"Owner"):
+        std::nullopt;
+    require(method&&method_owner&&
+        !cs::direct_int_fields(*method,*method_owner,{"count_"}),
+        "A zero-argument member function impersonated an int data field");
+
+    const auto shared=cs::lexical(R"source(
+class Owner {
+    inline static std::unique_ptr<int[]> items_{};
+    static inline int count_ = 0;
+};
+)source");
+    const auto shared_owner=shared?cs::defined_class(*shared,"Owner"):
+        std::nullopt;
+    require(shared&&shared_owner&&
+        !cs::direct_field(*shared,*shared_owner,{
+            "id:std","op:::","id:unique_ptr","op:<","id:int",
+            "op:[","op:]","op:>","id:items_"})&&
+        !cs::direct_int_fields(*shared,*shared_owner,{"count_"}),
+        "Class-wide static storage impersonated per-object ownership");
+
     std::cout<<"PASS scoped C++ authoring: literal includes and inert notes "
                 "accepted; preprocessor-generated or disabled owners rejected\n";
     return 0;
