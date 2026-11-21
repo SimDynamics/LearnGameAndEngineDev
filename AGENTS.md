@@ -24,7 +24,7 @@ El documento maestro vigente para Windows, indicado expresamente por el usuario,
 - Work produce y revisa únicamente español. Las traducciones existentes se conservan; su actualización corresponde al usuario.
 - El contenido sigue en `app/src/main/assets/content/` hasta que Codex integre una ubicación común compatible y Work compruebe su conservación. No mantener dos copias activas del currículo.
 - Conservar el desarrollo de Programación 1 y su proyecto de referencia, incluida la enseñanza externa existente. Su pase de legibilidad y las correcciones editoriales posteriores siguen desde el punto indicado en `PENDIENTES_WORK.md`; no reconstruirlo por usar una nota antigua ni confundir una referencia terminada con el dominio del estudiante. Programación 2 tiene avance posterior que también se conserva. No ampliar rutas para evitar los pendientes reales.
-- Conservar los compiladores, modelos, audios, pruebas, preferencias y evidencias originales. No borrar cachés ni importar datos reales del estudiante para probar.
+- Conservar herramientas activas, modelos, audios, preferencias, progreso y evidencias originales. Retirar del proyecto Windows las dependencias y automatizaciones propias sin uso conforme al apartado de compiladores del maestro. Identificar los usuarios de cada instalación compartida antes de retirarla. Las pruebas usan datos QA aislados.
 
 ## Proyectos finales y planificación vigente
 
@@ -54,8 +54,10 @@ El usuario retiró expresamente CppProyect como meta del curso 3: había utiliza
 
 ## Herramientas y plataformas independientes
 
+- MSVC x64 con C++23 es el compilador de referencia de la aplicación y sus ejercicios nativos. Probar con las herramientas de la función modificada y reutilizar los resultados vigentes. Codex debe retirar las matrices GCC/Clang en Linux o Ubuntu que dupliquen la cobertura Windows, tras trasladar a MSVC los escenarios útiles que solo existan en ellas.
+- Clang del WASI SDK y Wasmtime siguen vinculados a los tres ejercicios de aserciones de Programación 2. Migrar su comprobación a MSVC y verificar assert, NDEBUG y reparación antes de retirar esas dependencias. Registrar cualquier necesidad técnica activa que impida el traslado.
 - Windows debe usar las mejores versiones estables compatibles con sus propios requisitos. No limitar su JDK, bibliotecas ni capacidades por las dependencias de Android 14.
-- Android debe funcionar principalmente en Android 14 (API 34), incluido Honor y LDPlayer. Verificar la versión real del dispositivo; no deducirla del nombre del emulador. Conservar la versión mínima admitida salvo necesidad expresamente justificada; actualizar el objetivo no obliga a elevar ese mínimo.
+- LearnGameAndEngineDev tiene Windows como única plataforma. El proyecto Android independiente conserva sus propias instrucciones y archivos. Retirar de la automatización de este repositorio los trabajos exclusivos de Android y web.
 - Investigar versiones estables y compatibilidad en documentación oficial antes de actualizar. Conservar una versión anterior sólo por una incompatibilidad concreta, no por un pin histórico. Windows declara sus herramientas en `toolchains/windows.versions.json` y sus bibliotecas JVM en `native/narration/worker/dependencies.lock.json`.
 - Preferir las herramientas Android y la descarga del JDK completo desde Android Studio. Reutilizar ese JDK para Windows cuando sea compatible y contenga JNI para Windows (`jni.h`, `jni_md.h` y `jvm.dll`); no instalar otro JDK por WinGet para suplir la misma necesidad. Un componente del SDK/NDK Android no sustituye una dependencia Windows.
 - Compartir instalaciones compatibles sin forzar una unificación entre proyectos. Revisar los requisitos de los proyectos vecinos antes de retirar herramientas; no modificar instalaciones compartidas mientras otro proceso las use. No borrar modelos, grabaciones, cachés, configuraciones personales ni progreso para limpiar una instalación.
