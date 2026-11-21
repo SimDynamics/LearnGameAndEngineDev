@@ -36,14 +36,38 @@ inline bool close_brace(std::string_view token) {
     return token=="op:}"||token=="op:%>";
 }
 
-// Bind a genuine class/struct definition and (when declared) direct public
-// inheritance. Reject ambiguous duplicate definitions and malformed scopes.
+// A named curriculum class must be defined at translation-unit scope.
+// Track actual brace tokens, never braces in comments, strings or raw
+// literals. Nested declarations belong to different scopes even when they
+// have the same identifier as the original global class.
+inline std::optional<std::vector<std::size_t>> brace_depths(const Tokens& code) {
+    std::vector<std::size_t> result;
+    result.reserve(code.size());
+    std::size_t depth=0;
+    for(const auto& token:code) {
+        result.push_back(depth);
+        if(open_brace(token))++depth;
+        else if(close_brace(token)) {
+            if(!depth)return {};
+            --depth;
+        }
+    }
+    if(depth)return {};
+    return result;
+}
+
+// Bind a genuine translation-unit class/struct definition and (when
+// declared) direct public inheritance. Reject ambiguous duplicate global
+// definitions, malformed scopes and nested lookalikes.
 inline std::optional<Scope> defined_class(const Tokens& code,
         std::string_view name,std::string_view public_base={}) {
     std::optional<Scope> found;
     const auto self="id:"+std::string(name);
+    const auto depths=brace_depths(code);
+    if(!depths)return {};
     for(std::size_t i=0;i+2<code.size();++i) {
-        if((code[i]!="id:class"&&code[i]!="id:struct")||
+        if((*depths)[i]!=0||
+           (code[i]!="id:class"&&code[i]!="id:struct")||
             code[i+1]!=self)continue;
         auto at=i+2;
         if(at<code.size()&&code[at]=="id:final")++at;
@@ -80,8 +104,11 @@ inline std::optional<Scope> defined_public_bases(
     if(bases.size()<2)return {};
     std::optional<Scope> found;
     const auto self="id:"+std::string(name);
+    const auto depths=brace_depths(code);
+    if(!depths)return {};
     for(std::size_t i=0;i+3<code.size();++i) {
-        if((code[i]!="id:class"&&code[i]!="id:struct")||
+        if((*depths)[i]!=0||
+           (code[i]!="id:class"&&code[i]!="id:struct")||
            code[i+1]!=self)continue;
         auto at=i+2;
         if(at<code.size()&&code[at]=="id:final")++at;

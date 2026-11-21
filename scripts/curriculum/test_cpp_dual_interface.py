@@ -134,6 +134,7 @@ def main():
         "correct_direct":(VALUE,WRITE,True),
         "correct_method_and_put":(ALT_VALUE,ALT_WRITE,True),
         "documented_dual_contract":(VALUE,WRITE,True),
+        "unrelated_namespaced_class":(VALUE,WRITE,True),
         **{name:(a,b,False) for name,(a,b) in BAD.items()},
     }
     with tempfile.TemporaryDirectory(prefix="lgaed-u10l1-dual-") as d:
@@ -147,12 +148,19 @@ def main():
         # shortcut. All three must pass the original public stdout, while
         # only the two valid ones pass the separately compiled private check.
         public_variants={"correct_direct","correct_method_and_put",
-                         "documented_dual_contract","report_stdout_instead"}
+                         "documented_dual_contract","unrelated_namespaced_class",
+                         "report_stdout_instead"}
         public_runs=0
         for name,(value,report,should_pass) in candidates.items():
             candidate=folder/(name+".cpp")
             source_for_case=original_path
             edited=compose(original,(value,report))
+            if name=="unrelated_namespaced_class":
+                extra=("\nnamespace LgaedOther { "
+                       "class Muestra : public ConValor, public ConInforme {}; }\n")
+                source_for_case=folder/"nested-class-original.cpp"
+                source_for_case.write_bytes((original+extra).encode("utf-8"))
+                edited+=extra
             if name=="documented_dual_contract":
                 note=("// class Muestra : public ConValor, public ConInforme {\n"
                       "// virtual int valor() const = 0;\n")
@@ -244,7 +252,7 @@ def main():
             if result.returncode==0:
                 raise AssertionError((name,"Protected source mutation accepted"))
             print(f"{args.compiler}: {name}: REJECT",flush=True)
-    print(f"PASS U10L1 two-base contract: three valid, "
+    print(f"PASS U10L1 two-base contract: four valid, "
           f"{len(BAD)} semantic negatives and {len(attacks)} source attacks; "
           f"three authentic stdout cases also pass for a defective "
           f"std::cout-only reporter rejected by the private stream probe.")

@@ -70,6 +70,39 @@ int main(int argc,char** argv) try {
         source.replace(at,text.size(),"long codigo_; // int codigo_;");
         reject_source(source,"A comment impersonated a direct int member");
     }
+    // Only a translation-unit class can satisfy the two-base authoring
+    // contract. Token-matched types in a function or another class have a
+    // different owner, even when they list the two public bases verbatim.
+    {
+        const auto require_nested_rejected=[&](std::string_view sample,
+                                                std::string_view reason) {
+            const auto lexical=lgaed::curriculum::cpp_class_structure::lexical(
+                sample);
+            if(!lexical||lgaed::curriculum::cpp_class_structure::
+                    defined_public_bases(*lexical,"Muestra",
+                                         {"ConValor","ConInforme"}))
+                throw std::runtime_error(std::string(reason));
+        };
+        require_nested_rejected(
+            "void local() { class Muestra : public ConValor, "
+            "public ConInforme {}; }",
+            "Function-local dual inheritance impersonated the global Muestra");
+        require_nested_rejected(
+            "class Holder { class Muestra : public ConValor, "
+            "public ConInforme {}; };",
+            "Nested dual inheritance impersonated the global Muestra");
+        require_nested_rejected(
+            "namespace Other { class Muestra : public ConValor, "
+            "public ConInforme {}; }",
+            "Namespaced dual inheritance impersonated the global Muestra");
+        auto permitted=policy;
+        permitted.original_source=original+
+            "\nnamespace LgaedOther { class Muestra : public ConValor, "
+            "public ConInforme {}; }\n";
+        if(!lgaed::curriculum::cpp_dual_interface_detail::valid(permitted))
+            throw std::runtime_error(
+                "An unrelated namespaced Muestra blocked the true dual owner");
+    }
     if(!lgaed::curriculum::cpp_dual_interface_matches(policy,candidate))
         throw std::runtime_error(
             "Protected dual-interface declarations, supplied data, "

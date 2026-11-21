@@ -96,6 +96,33 @@ int main(int argc,char** argv) try {
         duplicated+="\n"+alias+"\n";
         reject(duplicated,"Two global aliases were accepted as one owner");
     }
+    // A class nested inside another class, function or namespace cannot
+    // impersonate the global polymorphic base declared by the curriculum.
+    // These are deliberately non-compilable metadata attacks: do not run
+    // them as student C++ or modify any published source file.
+    {
+        const std::string header="class Muestra {";
+        const auto start=original.find(header);
+        const auto end=start==std::string::npos?std::string::npos:
+            original.find("\n};",start);
+        if(end==std::string::npos)
+            throw std::runtime_error("Cannot isolate original Muestra definition");
+        const auto declaration=original.substr(start,end+3-start);
+        auto forged=original;
+        forged.replace(start,declaration.size(),"class LgaedDecoy {};");
+        reject(forged+"\nvoid lgaed_local() {\n"+declaration+"\n}\n",
+               "A function-local class impersonated the global Muestra interface");
+        reject(forged+"\nstruct LgaedHolder {\n"+declaration+"\n};\n",
+               "A nested member class impersonated the global Muestra interface");
+        reject(forged+"\nnamespace LgaedOther {\n"+declaration+"\n}\n",
+               "A namespace-local class impersonated the global Muestra interface");
+        auto permitted=policy;
+        permitted.original_source=original+
+            "\nnamespace LgaedOther { class Muestra {}; }\n";
+        if(!lgaed::curriculum::cpp_interface_collection_detail::valid(permitted))
+            throw std::runtime_error(
+                "An unrelated nested type rejected the valid global Muestra");
+    }
     if(!lgaed::curriculum::cpp_interface_collection_matches(policy,candidate))
         throw std::runtime_error(
             "Edited source modified an immutable declaration, factory, "
