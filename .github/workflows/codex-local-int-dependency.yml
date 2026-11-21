@@ -7,6 +7,8 @@ on:
       - .github/workflows/codex-local-int-dependency.yml
       - native/core/cpp_local_int_probe.hpp
       - native/core/cpp_local_int_probe_tests.cpp
+      - native/core/cpp_local_string_probe.hpp
+      - native/core/cpp_local_string_probe_tests.cpp
       - native/core/cpp_local_int_live_fixtures.cpp
       - native/core/cpp_expression_repair.hpp
       - native/core/code_format_compat.hpp
@@ -55,6 +57,13 @@ jobs:
           "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
             native/core/cpp_local_int_probe_tests.cpp -o "$RUNNER_TEMP/lgaed_local_int_probe_tests"
           "$RUNNER_TEMP/lgaed_local_int_probe_tests"
+      - name: Verify portable local-string source perturbations
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/cpp_local_string_probe_tests.cpp -o "$RUNNER_TEMP/lgaed_local_string_probe_tests"
+          "$RUNNER_TEMP/lgaed_local_string_probe_tests"
       - name: Compile variant emitter and execute every original and mutated C++ case
         env:
           CXX: ${{ matrix.compiler }}
@@ -83,6 +92,14 @@ jobs:
           $unit = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_probe_tests.exe'
           $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_probe_tests.obj'
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /utf-8 /I native native\core\cpp_local_int_probe_tests.cpp "/Fe:$unit" "/Fo:$obj"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $unit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify local-string variations with hosted MSVC
+        run: |
+          $unit = Join-Path $env:RUNNER_TEMP 'lgaed_local_string_probe_tests.exe'
+          $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_string_probe_tests.obj'
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /utf-8 /I native native\core\cpp_local_string_probe_tests.cpp "/Fe:$unit" "/Fo:$obj"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & $unit
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
