@@ -15,6 +15,13 @@ on:
       - native/platform/windows/catalog_resource_version.hpp
       - native/platform/windows/catalog_resource_version_tests.cpp
       - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_current_combined_format_guidance.py
+      - scripts/curriculum/code_format_compat.py
+      - scripts/curriculum/text_semantics.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/errores_y_construccion_gradual/lesson_validar_antes_y_elegir_reporte.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_nombrar_alternativas_con_enum_class.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_consultas_const_y_objetos_constantes.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/aleatoriedad_y_reproducibilidad/lesson_combinar_ensayos_generados_y_casos_elegidos.json
   workflow_dispatch:
 
 permissions:
@@ -117,3 +124,5 @@ jobs:
           python-version: '3.12'
       - name: Exercise the actual edition validator and untouched historical fixtures
         run: python -B -m unittest discover -s scripts/curriculum -p test_course_edition.py -v
+      - name: Confirm four real source and guidance reviews with stable ownership
+        run: python -B -m unittest discover -s scripts/curriculum -p test_current_combined_format_guidance.py -v
