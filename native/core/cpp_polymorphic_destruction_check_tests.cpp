@@ -56,6 +56,52 @@ int main(int argc, char** argv) try {
     bad_authoring.base_alive="autor_solo_en_comentario";
     if(cpp_polymorphic_destruction_detail::valid(bad_authoring))
         throw std::runtime_error("A comment impersonated a Ciclo counter");
+    // Authoring metadata is synthetic here: these deliberately malformed
+    // originals are never compiled or saved as student submissions. A
+    // namespaced decoy may not replace the real global curricular owner.
+    const auto forged_original=[&](std::string source,std::string_view reason) {
+        auto forged=spec;
+        forged.editable.original_source=std::move(source);
+        if(cpp_polymorphic_destruction_detail::valid(forged))
+            throw std::runtime_error(std::string(reason));
+    };
+    const auto changed_once=[&](std::string source,
+            std::string_view before,std::string_view after) {
+        const auto position=source.find(before);
+        if(position==std::string::npos)
+            throw std::runtime_error("Original U8L5 declaration disappeared");
+        source.replace(position,before.size(),after);
+        return source;
+    };
+    {
+        auto changed=changed_once(original,"struct Ciclo {","struct CicloObsoleto {");
+        changed+=
+            "\nnamespace LgaedAnother { struct Ciclo {\n"
+            "int bases_vivas=0, derivadas_vivas=0, fichas_vivas=0;\n"
+            "int bases_destruidas=0, derivadas_destruidas=0, fichas_destruidas=0;\n"
+            "}; }\n";
+        forged_original(changed,"Namespaced Ciclo impersonated six global counters");
+    }
+    {
+        auto changed=changed_once(original,"class Ficha {","class FichaObsoleta {");
+        changed+="\nnamespace LgaedAnother { class Ficha {}; }\n";
+        forged_original(changed,"Namespaced Ficha impersonated global RAII owner");
+    }
+    {
+        auto changed=changed_once(original,
+            "class MedidaIdentificada : public Medida {",
+            "class MedidaIdentificada : private Medida {");
+        changed+="\nnamespace LgaedAnother { "
+                 "class MedidaIdentificada : public Medida {}; }\n";
+        forged_original(changed,"Namespaced type impersonated public derivation");
+    }
+    {
+        auto changed=changed_once(original,"std::unique_ptr<Ficha> ficha_;",
+                                  "std::unique_ptr<Ficha> otro_propietario_;");
+        changed+="\nnamespace LgaedAnother { "
+                 "class Otro { std::unique_ptr<Ficha> ficha_; }; }\n";
+        forged_original(changed,"A foreign class impersonated the derived owner member");
+    }
     if (!cpp_polymorphic_destruction_matches(spec, candidate))
         throw std::runtime_error(
             "The submitted source changed protected class, main, "

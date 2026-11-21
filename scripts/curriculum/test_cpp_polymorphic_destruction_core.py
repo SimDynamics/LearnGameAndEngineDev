@@ -77,6 +77,9 @@ def main() -> None:
         "commented_cycle_declaration": (
             fixture.GOOD_BASE, fixture.GOOD_DERIVED,
             fixture.GOOD_FACTORY, True),
+        "independent_namespaced_types": (
+            fixture.GOOD_BASE, fixture.GOOD_DERIVED,
+            fixture.GOOD_FACTORY, True),
         **{
             name: (body, fixture.GOOD_DERIVED, fixture.GOOD_FACTORY, False)
             for name, body in fixture.BAD_BASE.items()
@@ -102,7 +105,8 @@ def main() -> None:
         # The separately compiled driver must reject it with two live owners.
         public_variants={
             "direct_derived_factory","independent_move_factory",
-            "commented_cycle_declaration","base_resets_all_live_objects"
+            "commented_cycle_declaration","independent_namespaced_types",
+            "base_resets_all_live_objects"
         }
         public_runs=0
         for name, (base, derived, factory, expected) in cases.items():
@@ -115,6 +119,17 @@ def main() -> None:
                 source_for_case=folder / "commented-original.cpp"
                 source_for_case.write_bytes((note+original).encode("utf-8"))
                 candidate=note+candidate
+            if name=="independent_namespaced_types":
+                # Unrelated namespaced classes must not shadow or replace
+                # the genuine global Ciclo and Ficha used by the original.
+                extra=("\nnamespace LgaedOther {\n"
+                       "struct Ciclo { int unrelated=0; };\n"
+                       "class Ficha {};\n"
+                       "class MedidaIdentificada {};\n"
+                       "}\n")
+                source_for_case=folder/"namespaced-original.cpp"
+                source_for_case.write_bytes((original+extra).encode("utf-8"))
+                candidate+=extra
             code.write_bytes(candidate.encode("utf-8"))
             private=folder / (name + ".private.cpp")
             generated=run([str(tool), str(source_for_case), str(code), str(private)])
@@ -188,7 +203,7 @@ def main() -> None:
                 raise AssertionError((name, "protected student source was altered"))
             print(f"{arguments.compiler}: {name}: REJECT", flush=True)
     print("PASS original U8L5 source and three-body private probe: "
-          "three valid implementations and the false-positive destructor "
+          "four valid implementations and the false-positive destructor "
           "matched all five authentic public cases, but only the valid "
           "implementations satisfied the private lifetime checks. "
           "No history or curriculum files modified.")
