@@ -199,4 +199,20 @@ add_test(NAME native.current_u2_local_int_state
 set_tests_properties(native.current_u2_local_int_state
     PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
 
+# Test the nine current inline-answer Win32 controls through the original
+# production LessonView translation unit (no copied mock implementation).
+# The fixture's prior completions are modelled, NOT student executions or
+# proof of narration playback. This is hosted UI/StateStore QA only.
+add_executable(lgaed_inline_feedback_view_tests
+    "${_lgaed_root}/native/presentation/windows/lesson_view_tests.cpp")
+target_compile_definitions(lgaed_inline_feedback_view_tests
+    PRIVATE LGAED_INLINE_FEEDBACK_ONLY=1)
+target_link_libraries(lgaed_inline_feedback_view_tests
+    PRIVATE lgaed_curricular_windows)
+target_compile_options(lgaed_inline_feedback_view_tests PRIVATE /bigobj)
+add_test(NAME native.current_inline_feedback
+    COMMAND lgaed_inline_feedback_view_tests --inline-feedback)
+set_tests_properties(native.current_inline_feedback
+    PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+
 
