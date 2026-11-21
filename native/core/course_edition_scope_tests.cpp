@@ -3,7 +3,7 @@
 // mixes different *new* epochs remains forbidden, preserving all stored data.
 // This exercises the production Catalog and StateData on hosted Windows.
 #include "core/catalog.hpp"
-#include "platform/windows/state_store.hpp"
+#include "core/lesson_state.hpp"
 
 #include <iostream>
 #include <stdexcept>
