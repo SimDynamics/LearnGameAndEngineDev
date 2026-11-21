@@ -185,6 +185,27 @@ def main()->None:
     parser.add_argument("--windows",action="store_true")
     args=parser.parse_args()
     original=original_editor()
+    # Bind QA to the historical editor and its authored output oracles.
+    document=json.loads(LESSON.read_text(encoding="utf-8"))
+    locations=[(page,index) for page,item in enumerate(
+        document["stateLayout"]["current"])
+        for index,identity in enumerate(item["blocks"]) if identity==OWNER]
+    if len(locations)!=1:
+        raise AssertionError("U8L9 public editor owner is missing or repeated")
+    page,index=locations[0]
+    editor=document["pages"][page]["blocks"][index]
+    if editor["type"]!="cpp_compiler" or editor["initialCode"]!=original:
+        raise AssertionError("U8L9 original editor source changed between readers")
+    public_cases=editor["outputCheck"]["cases"]
+    if len(public_cases)!=5:
+        raise AssertionError("U8L9 published public case count changed")
+    for number,case in enumerate(public_cases,1):
+        if (not isinstance(case.get("standardInput"),str) or
+            not isinstance(case.get("outputs"),list) or
+            not case["outputs"] or
+            not all(isinstance(value,str) for value in case["outputs"]) or
+            type(case.get("exitCode",0)) is not int):
+            raise AssertionError(f"Invalid U8L9 original public case {number}")
     solutions={
         "valid_push":(ADD,REPORT,True),
         "valid_emplace":(ALT_ADD,ALT_REPORT,True),
@@ -196,10 +217,15 @@ def main()->None:
         generator=folder/("generator"+suffix)
         ensure_compiled(args.compiler,GENERATOR,generator,args.windows,True)
         source=folder/"published.cpp"
-        source.write_text(original,encoding="utf-8")
+        source.write_bytes(original.encode("utf-8"))
+        # Only the two published subclasses appear in all five stdout cases.
+        # A hardcoded dynamic_cast chain can match each of them while failing
+        # to consume a third valid Muestra interface implementation.
+        public_variants={"valid_push","valid_emplace","known_types_only"}
+        public_runs=0
         for name,(add,report,expected) in solutions.items():
             edited=folder/(name+".cpp")
-            edited.write_text(compose(original,add,report),encoding="utf-8")
+            edited.write_bytes(compose(original,add,report).encode("utf-8"))
             witness=folder/(name+".private.cpp")
             created=run([str(generator),str(source),str(edited),str(witness)])
             if created.returncode or not witness.is_file():
@@ -216,6 +242,31 @@ def main()->None:
                                       finished.stdout,finished.stderr))
             print(f"{args.compiler}: {name}: "
                   f"{'PASS' if passed else 'REJECT'}",flush=True)
+            # The later four published cases remain optional for the learner.
+            # Run all five here as isolated QA, never as completion receipts.
+            if name in public_variants:
+                public_binary=folder/(name+"-public"+suffix)
+                ensure_compiled(args.compiler,edited,public_binary,args.windows)
+                for number,case in enumerate(public_cases,1):
+                    observed=subprocess.run(
+                        [str(public_binary)],cwd=ROOT,
+                        input=case["standardInput"],text=True,
+                        encoding="utf-8",errors="replace",
+                        capture_output=True,check=False,timeout=15)
+                    if (observed.returncode!=case.get("exitCode",0) or
+                        observed.stdout not in case["outputs"] or
+                        observed.stderr):
+                        raise AssertionError(
+                            (name,number,"Original U8L9 public output changed",
+                             observed.returncode,observed.stdout[-500:],
+                             observed.stderr[-500:]))
+                    public_runs+=1
+                print(f"{args.compiler}: public {name}: "
+                      f"{len(public_cases)} authored cases PASS; "
+                      f"private ownership/interface {'PASS' if passed else 'REJECT'}",
+                      flush=True)
+        if public_runs!=len(public_variants)*len(public_cases):
+            raise AssertionError("U8L9 public/private QA omitted a variant")
 
         valid=compose(original,ADD,REPORT)
         attacks={
@@ -255,7 +306,10 @@ def main()->None:
                 raise AssertionError((name,"Immutable source accepted mutation"))
             print(f"{args.compiler}: {name}: REJECT",flush=True)
     print(f"PASS U8L9 independent ownership/interface proof: "
-          f"two valid, {len(BAD)} defective and {len(attacks)} tampered sources")
+          f"two valid, {len(BAD)} defective and {len(attacks)} tampered sources; "
+          f"all five original public cases match even for the "
+          f"known-types-only counterexample, which the private third-type "
+          f"and owner-identity probe rejects.")
 
 
 if __name__=="__main__":
