@@ -4090,9 +4090,11 @@ CTest nativo incorpora por separado:
 
 - `native.local_int_state`: ambos cargadores de lecciones, los editores
   originales de U2, comprobantes independientes y su integridad.
-  Guarda el estado en un **subperfil QA Win32 exclusivo**, lo reabre
-  desde disco y contrasta el recibo, la acreditación y la conservación
-  del progreso de otro curso. No ejecuta el programa del estudiante.
+  Guarda estados reales en **subperfiles QA Win32 exclusivos** y los reabre
+  desde disco: verifica el recibo y el progreso de U2L1 y, por separado,
+  los dos borradores, las acreditaciones y las referencias de U2L5.
+  También conserva el progreso de otro curso y preferencias ajenas.
+  No ejecuta el programa del estudiante.
 - `native.local_string_state`: dos propietarios U2L7, compilaciones y
   ejecuciones MSVC reales, rechazo de salidas fijas, recibos por editor,
   guardado y reapertura del StateStore en un perfil QA único.
