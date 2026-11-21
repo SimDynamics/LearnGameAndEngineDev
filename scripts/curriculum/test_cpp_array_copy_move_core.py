@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 
@@ -19,7 +20,18 @@ def main() -> None:
     parser.add_argument("--compiler",required=True)
     parser.add_argument("--windows",action="store_true")
     options=parser.parse_args()
-    original=qa.original_block()["initialCode"]
+    original_block=qa.original_block()
+    original=original_block["initialCode"]
+    public_cases=original_block["outputCheck"]["cases"]
+    if len(public_cases)!=3:
+        raise AssertionError("U6L11 published public cases changed")
+    for number,case in enumerate(public_cases,1):
+        if (not isinstance(case.get("standardInput"),str) or
+            not isinstance(case.get("outputs"),list) or
+            not case["outputs"] or
+            not all(isinstance(item,str) for item in case["outputs"]) or
+            type(case.get("exitCode",0)) is not int):
+            raise AssertionError(f"Invalid original U6L11 public case {number}")
     with tempfile.TemporaryDirectory(prefix="lgaed-u6l11-native-") as dirname:
         directory=Path(dirname)
         exe=".exe" if options.windows else ""
@@ -57,6 +69,14 @@ def main() -> None:
             **{name:(qa.COPY["candidate_swap"],bad)
                for name,bad in qa.BAD_MOVE.items()},
         }
+        # These two legitimate solutions and three defective variants can
+        # all reproduce the original stdout. Identity, strong exception
+        # safety and returned references require the separate private driver.
+        public_variants={
+            "swap_and_move","ctor_and_swap","reuses_equal_size_array",
+            "swallows_bad_alloc","returns_move_source"
+        }
+        public_runs=0
         for name,(copy,move) in [*allowed.items(),*faulty.items()]:
             candidate=directory/(name+"-student.cpp")
             candidate.write_bytes(qa.compose(original,copy,move).encode("utf-8"))
@@ -81,6 +101,39 @@ def main() -> None:
                                       observed.stderr))
             print(f"{options.compiler}: native {name}: "
                   f"{'PASS' if valid else 'REJECT'}",flush=True)
+
+            # Run the unchanged student-facing main in disposable QA, not
+            # only the injected harness. Later cases remain optional for
+            # the learner; passing any stdout is never proof of ownership.
+            if name in public_variants:
+                public_binary=directory/(name+"-public"+exe)
+                public_build=qa.compile_cpp(
+                    options.compiler,candidate,public_binary,options.windows)
+                if public_build.returncode:
+                    raise AssertionError(
+                        (name,"original U6L11 main cannot compile",
+                         public_build.stdout,public_build.stderr))
+                for number,case in enumerate(public_cases,1):
+                    observed_public=subprocess.run(
+                        [str(public_binary)],cwd=qa.ROOT,
+                        input=case["standardInput"],text=True,
+                        encoding="utf-8",errors="replace",
+                        capture_output=True,check=False,timeout=15)
+                    if (observed_public.returncode!=case.get("exitCode",0) or
+                        observed_public.stdout not in case["outputs"] or
+                        observed_public.stderr):
+                        raise AssertionError(
+                            (name,number,"authored U6L11 output differs",
+                             observed_public.returncode,
+                             observed_public.stdout[-500:],
+                             observed_public.stderr[-500:]))
+                    public_runs+=1
+                print(f"{options.compiler}: public {name}: "
+                      f"{len(public_cases)} authentic cases PASS; "
+                      f"private semantics {'PASS' if valid else 'REJECT'}",
+                      flush=True)
+        if public_runs!=len(public_cases)*len(public_variants):
+            raise AssertionError("U6L11 public comparison lost a variant")
 
         correct=qa.compose(original,qa.COPY["candidate_swap"],
                            qa.MOVE["move_and_exchange"])
@@ -148,9 +201,11 @@ def main() -> None:
                 raise AssertionError((name,"untrusted source modification accepted",
                                       result.stdout,result.stderr))
             print(f"{options.compiler}: protected {name}: REJECT",flush=True)
-    print("PASS U6L11: three valid authoring variants, thirteen faulty copies "
-          "and moves rejected; eleven protected edits rejected, private "
-          "identity and cleanup checks compiled and executed.")
+    print("PASS U6L11 native authoring: valid and faulty copy/move bodies, "
+          "protected original source, independent identity/cleanup proof; "
+          "two correct and three defective implementations were compared "
+          "against all three genuine public cases without granting stdout "
+          "alone semantic credit.")
 
 
 if __name__=="__main__":
