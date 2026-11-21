@@ -129,7 +129,11 @@ rechazos de copia al compilar. La política forma parte de la comprobación
 interna del primer caso, sin pedir casos manuales adicionales. La
 regresión `native.u6l6_defaulted_move_policy_state` verifica el estado
 y los recibos, y `test_cpp_defaulted_move_policy.py` ejecuta
-las variantes C++ con compiladores reales.
+las variantes C++ con compiladores reales. La misma QA conserva el
+`main` original de ambas soluciones correctas y contrasta automáticamente
+sus tres casos públicos, sin convertir los dos casos posteriores en
+obligatorios para el estudiante ni acreditar el contrato de propiedad por
+una coincidencia de stdout.
 
 ## Referencia conjunta de autoría de la ficha 14
 
