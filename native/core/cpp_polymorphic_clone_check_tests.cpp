@@ -104,11 +104,12 @@ void check_original_virtual_declarations(
             throw std::runtime_error(
                 "A namespaced base concealed the valid global clone interface");
         auto missing=policy;
-        const auto at=missing.original_source.find("class Muestra {");
-        if(at==std::string::npos)
+        const auto class_position=missing.original_source.find("class Muestra {");
+        if(class_position==std::string::npos)
             throw std::runtime_error("Original global polymorphic base vanished");
-        missing.original_source.replace(at,std::string("class Muestra {").size(),
-                                        "class LgaedWrongOwner {");
+        missing.original_source.replace(
+            class_position,std::string("class Muestra {").size(),
+            "class LgaedWrongOwner {");
         missing.original_source+=unrelated;
         if(guard::valid(missing))
             throw std::runtime_error(
