@@ -238,6 +238,15 @@ int main() {
         "int main(){int llaves; llaves=llaves+7; std::cout<<llaves;}",
         {"llaves",13,{}}))
         throw std::runtime_error("A self-read before int initialization received a probe");
+    // The public U2L3 answer can look correct even when the student
+    // replaces aforo with a fixed 8 instead of increasing its prior value.
+    // Inserting a +4 AFTER this reset would incorrectly produce the expected
+    // private 12, so no after-update source must be generated at all.
+    constexpr std::string_view fixed_increment=R"CPP(#include <iostream>
+int main(){int aforo=5;int anterior=aforo;aforo=8;
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP";
+    if(cpp_local_int_override(fixed_increment,{"aforo",4,{},true}))
+        throw std::runtime_error("A constant replacement masqueraded as an increase");
     if(emitted!=41)throw std::runtime_error("Unexpected live fixture count");
     std::cout<<"PASS generated 41 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
