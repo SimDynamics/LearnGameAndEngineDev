@@ -547,6 +547,14 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
                 (literal_is(first,at,0)&&single(at+1,last))))return true;
             if(op(t[at],"%")&&single(first,at)&&
                literal_is(at+1,last,1))return true;
+            // Comparing a pure local int with itself is constant-valued:
+            // ==, <= and >= always produce true; !=, < and > are false.
+            // Only fold a complete self-comparison. A comparison against
+            // another expression may still depend on the reviewed agreement.
+            if((op(t[at],"==")||op(t[at],"!=")||
+                op(t[at],"<")||op(t[at],">")||
+                op(t[at],"<=")||op(t[at],">="))&&
+               single(first,at)&&single(at+1,last))return true;
             // OR with an all-bits-set integral mask is independent of the
             // purpose-named value. Support signed -1 and the equivalent
             // complement of zero, including alternate C++ operator tokens.

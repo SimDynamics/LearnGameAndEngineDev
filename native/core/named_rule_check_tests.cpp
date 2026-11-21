@@ -930,6 +930,47 @@ void capacity() {
         })cpp",rules,true,
         "An all-ones OR cannot erase a separately valid named quotient");
 
+    // Reflective comparisons of a side-effect-free named int have a
+    // fixed boolean result. They cannot provide two productive uses, even
+    // when the comparison is balanced to zero by an integer literal.
+    for(const auto* neutral:{
+        "(capacidad == capacidad) - 1",
+        "((capacidad) == ((capacidad))) - 1",
+        "(capacidad != capacidad)",
+        "(capacidad not_eq capacidad)",
+        "(capacidad < capacidad)",
+        "(capacidad > capacidad)",
+        "(capacidad <= capacidad) - 1",
+        "(capacidad >= capacidad) - 1"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(neutral)+"); }",
+            rules,false,"Self-comparison cannot manufacture named-rule evidence");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int decoracion = (capacidad == capacidad) - 1;
+            return (piezas + 3) / 4 + decoracion;
+        })cpp",rules,false,
+        "A constant self-comparison cannot become productive through an alias");
+    for(const auto* productive:{
+        "(capacidad == 4) + (capacidad != 5)",
+        "(capacidad >= 2) + (capacidad <= 6)",
+        "(capacidad < (capacidad + 1))"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(productive)+"); }",
+            rules,true,"A comparison against another value was wrongly neutralized");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad == capacidad) - 1;
+        })cpp",rules,true,
+        "A reflective comparison must not erase a genuine named quotient");
+
     // A complement of a *different expression* does not generally
     // cancel this constant. Preserve its lexical evidence, leaving numeric
     // correctness to the independent compiled counterfactual.
