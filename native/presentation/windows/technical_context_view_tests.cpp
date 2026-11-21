@@ -526,7 +526,11 @@ void prepare_u2_visual_prefix(state::StateData& data,
             state::put_response(data,lesson,block,response);
             ++ordinary;
         }
-        (void)state::mark_page_reached(data,lesson,page);
+        // The actual destination's compiler remains pending: its page can
+        // be OPEN without being marked completely reached for the NEXT page.
+        // Otherwise the QA seed itself would manufacture forward reachability.
+        if(!keep_last_compiler_pending||page+1<destination)
+            (void)state::mark_page_reached(data,lesson,page);
     }
     const auto bookmark=keep_last_compiler_pending?destination-1:destination;
     check(bookmark<lesson.pages.size()&&state::can_reach_page(data,lesson,bookmark),
