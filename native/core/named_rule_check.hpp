@@ -522,8 +522,24 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
             if(op(t[at],"(")){++depth;continue;}
             if(op(t[at],")")){if(depth)--depth;continue;}
             if(depth)continue;
-            if((op(t[at],"-")||op(t[at],"/")||op(t[at],"%"))&&
+            if((op(t[at],"-")||op(t[at],"/")||op(t[at],"%")||
+                op(t[at],"^"))&&
                 single(first,at)&&single(at+1,last))return true;
+            // Proven zero-valued bitwise and remainder expressions do not
+            // use the agreement as a numeric input. C++ evaluates both
+            // operands of &, but the local const has no side effects.
+            // Only fold a complete, bounded, pure literal opposite operand:
+            // "x & 0", "0 & x" and "x % 1". Do not classify x & 1,
+            // x % 2, x ^ y, or x | 0 as neutral; those may depend on x.
+            const auto literal_is=[&](std::size_t begin,std::size_t end,int wanted) {
+                const auto result=arithmetic_constant(t,begin,end);
+                return result&&*result==wanted;
+            };
+            if(op(t[at],"&")&&
+               ((single(first,at)&&literal_is(at+1,last,0))||
+                (literal_is(first,at,0)&&single(at+1,last))))return true;
+            if(op(t[at],"%")&&single(first,at)&&
+               literal_is(at+1,last,1))return true;
             // The two lexical references also cancel as x+(-x) or (-x)+x.
             if(op(t[at],"+")&&
                 ((single(first,at)&&negated(at+1,last))||

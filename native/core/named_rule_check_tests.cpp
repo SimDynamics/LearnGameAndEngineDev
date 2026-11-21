@@ -843,6 +843,43 @@ void capacity() {
                "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
             rules,false,"Parenthesized self-cancellation is not a productive constant use");
     }
+    // Bitwise operations and remainder can be algebraically dead even
+    // though they contain the purpose-named constant. The old token count
+    // credited two such uses while the returned quotient stayed hardcoded.
+    for(const auto* neutral:{
+        "(capacidad & 0) + (capacidad & 0)",
+        "(0 & capacidad) + (0 & capacidad)",
+        "(capacidad bitand 0) + (0 bitand capacidad)",
+        "(capacidad % 1) + (capacidad % (1))",
+        "(capacidad ^ capacidad)",
+        "(capacidad xor capacidad)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(neutral)+"); }",
+            rules,false,"Bitwise/modulo neutral terms fabricated named-rule uses");
+    }
+    // These nonneutral uses still matter and remain eligible for the
+    // independent numeric source and counterfactual probes. In particular,
+    // x & 1 and x % 2 can change when x changes; x | 0 preserves x.
+    for(const auto* productive:{
+        "(capacidad & 1) + (capacidad % 2)",
+        "(capacidad | 0) + (capacidad & 1)",
+        "(capacidad ^ 1) + (capacidad % 2)",
+        "(capacidad bitand 1) + (capacidad bitor 0)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(productive)+"); }",
+            rules,true,"Real bitwise dependence was misclassified as always neutral");
+    }
+    // A neutral term cannot invalidate separately genuine uses of both the
+    // divisor and the capacity-derived adjustment.
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad ^ capacidad) + (0 & capacidad);
+        })cpp",rules,true,"Decorative bitwise neutral terms hid a correct named rule");
+
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
