@@ -61,13 +61,22 @@ class CurrentCombinedFormatGuidanceTest(unittest.TestCase):
             proposal, identity, guidance_path, old_spans)
         return original, proposal, old, newer, published_bytes, path
 
+    @staticmethod
+    def published_family(relative, before):
+        base = ROOT / "app/src/main/assets/content"
+        return {
+            locale: json.loads((base / locale / "programming/cpp_fundamentals"
+                                / relative).read_bytes())
+            for locale in before["stateLayout"]["family"]
+        }
+
     def test_active_guidance_and_spacing_share_one_authenticated_transition(self):
         for relative, identity, source_field, guidance_path in SCENARIOS:
             with self.subTest(lesson=relative, block=identity):
                 before, proposed, old, newer, bytes_before, path = self.proposal(
                     relative, identity, source_field, guidance_path)
                 self.assertTrue(layout.require_source_format_with_editorial(old, newer))
-                reviewed = layout.prepare_v2(proposed, "es", {"es": before}, before)
+                reviewed = layout.prepare_v2(proposed, "es", self.published_family(relative, before), before)
                 layout.validate_transition(before, reviewed)
                 self.assertEqual(layout.validate(before), layout.validate(reviewed))
                 for field in ("origin", "current", "family", "additions"):
@@ -99,14 +108,21 @@ class CurrentCombinedFormatGuidanceTest(unittest.TestCase):
                 unmarked = deepcopy(proposed)
                 unmarked["textSemantics"] = deepcopy(before["textSemantics"])
                 with self.assertRaises(layout.LayoutError):
-                    layout.prepare_v2(unmarked, "es", {"es": before}, before)
+                    layout.prepare_v2(unmarked, "es", self.published_family(relative, before), before)
                 forged = deepcopy(proposed)
                 owner = layout._blocks(forged)[identity]
-                self.assertIn("std::cout", owner[source_field])
-                owner[source_field] = owner[source_field].replace(
-                    "std::cout", "std::cerr", 1)
+                # The U10L4 starter has no output statement yet. Change the
+                # defective comparison token instead, never invent stdout.
+                if source_field == "initialCode":
+                    self.assertIn("dato>minimo", owner[source_field])
+                    owner[source_field] = owner[source_field].replace(
+                        "dato>minimo", "dato>=minimo", 1)
+                else:
+                    self.assertIn("std::cout", owner[source_field])
+                    owner[source_field] = owner[source_field].replace(
+                        "std::cout", "std::cerr", 1)
                 with self.assertRaises(layout.LayoutError):
-                    layout.prepare_v2(forged, "es", {"es": before}, before)
+                    layout.prepare_v2(forged, "es", self.published_family(relative, before), before)
                 self.assertEqual(path.read_bytes(), bytes_before)
 
 
