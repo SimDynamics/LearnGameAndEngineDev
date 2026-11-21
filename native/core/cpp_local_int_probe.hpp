@@ -175,16 +175,26 @@ inline std::optional<Declaration> local_declaration(
     const auto wanted = "id:" + std::string(variable);
     for (auto i = opening + 1; i < closing; ++i) {
         const auto& t = code[i].value;
+        // signed, signed int and int signed all declare the C++ type int.
+        // Match the start of a complete root-level declaration only. This
+        // avoids mistaking the 'int' in 'signed int name' for a second owner.
         if (braces == 1 && !parentheses && !brackets &&
-            t == "id:int" && i + 2 < closing && code[i + 1].value == wanted) {
-            if (i == 0 || !boundary(code[i - 1].value) || result)
-                return {};
-            const auto& start = code[i + 2].value;
-            if (start != "op:=" && start != "op:{" &&
-                start != "op:(" && start != "op:;") return {};
-            const auto end = statement_end(code, i + 2, closing);
-            if (!end) return {};
-            result = Declaration{*end, start != "op:;"};
+            i > 0 && boundary(code[i - 1].value) &&
+            (t == "id:int" || t == "id:signed")) {
+            auto name = i + 1;
+            if (name < closing &&
+                ((t == "id:signed" && code[name].value == "id:int") ||
+                 (t == "id:int" && code[name].value == "id:signed")))
+                ++name;
+            if (name + 1 < closing && code[name].value == wanted) {
+                if (result) return {};
+                const auto& start = code[name + 1].value;
+                if (start != "op:=" && start != "op:{" &&
+                    start != "op:(" && start != "op:;") return {};
+                const auto end = statement_end(code, name + 1, closing);
+                if (!end) return {};
+                result = Declaration{*end, start != "op:;"};
+            }
         }
         if (t == "op:{") ++braces;
         else if (t == "op:}") {
