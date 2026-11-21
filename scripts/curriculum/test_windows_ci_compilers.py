@@ -248,6 +248,28 @@ class WindowsCompilerPolicy(unittest.TestCase):
                     validated += 1
         self.assertGreaterEqual(validated, 40, "Lost real native MSVC coverage")
 
+    def test_u2_local_variable_probes_use_only_windows_msvc(self):
+        # Preserve the 55 integer and 30 string source executions while
+        # retiring inactive GCC/Clang branches and Linux binary formats.
+        for name in ("test_local_int_live_compilation.py",
+                     "test_local_string_live_compilation.py"):
+            with self.subTest(script=name):
+                source = (ROOT / "scripts/curriculum" / name).read_text(
+                    encoding="utf-8")
+                self.assertIn(
+                    "from windows_cpp_ci import msvc_cpp23_command", source)
+                self.assertIn('choices=("MSVC",)', source)
+                self.assertIn("return msvc_cpp23_command(binary, source)", source)
+                self.assertNotIn('"g++"', source)
+                self.assertNotIn('"clang++"', source)
+                self.assertNotIn('".bin"', source)
+        workflow = (WORKFLOWS / "codex-local-int-dependency.yml").read_text(
+            encoding="utf-8")
+        for script in ("test_local_int_live_compilation.py",
+                       "test_local_string_live_compilation.py"):
+            self.assertIn(script + " --emitter", workflow)
+        self.assertGreaterEqual(workflow.count("--compiler MSVC"), 2)
+
     def test_real_rename_runtime_uses_msvc_not_unneeded_compilers(self):
         source = (ROOT / "scripts/curriculum/test_identifier_rename_execution.py").read_text(
             encoding="utf-8")
