@@ -99,6 +99,56 @@ void test_course_scope() {
         {{},{historic_unit,edition_unit},{}});
     verify_explicit_mixed_scope(data,
         {{},{},{historic_lesson,edition_lesson}});
+    // A single current lesson can be selected without repeating the unit.
+    // Its new-edition receipt is independent of the original course's
+    // completion flag. A broader *explicitly mixed* request is different.
+    {
+        const curriculum::CatalogScope sparse{
+            {std::string(course)},{},{edition_lesson}};
+        const auto unchanged=data;
+        auto selected=data;
+        require(curriculum::catalog_progress(selected,sparse).total==1&&
+                curriculum::catalog_progress(selected,sparse).completed==1,
+            "A sparse new-edition scope did not find its one selected lesson");
+        require(curriculum::reset_catalog_progress(selected,sparse)==1&&
+                !state::find(selected,"learning_progress",
+                    "lesson_"+edition_lesson+"_completed")&&
+                state::find(selected,"learning_progress",
+                    "course_"+std::string(course)+"_completed")&&
+                state::find(selected,"learning_progress",
+                    "lesson_"+historic_lesson+"_completed")&&
+                state::integer_value(selected,"native_windows",
+                    "scroll/"+historic_lesson+"/p0")==17&&
+                state::integer_value(selected,"native_windows",
+                    "scroll/"+other_lesson+"/p0")==19,
+            "A sparse new-edition reset erased historical completion or foreign scroll");
+        for(const auto& domain:{"cpp_lesson_drafts","narration_settings"})
+            require(selected.preferences.at(domain)==unchanged.preferences.at(domain),
+                "A sparse new-edition reset changed drafts or global narration");
+        const auto once=selected;
+        require(curriculum::reset_catalog_progress(selected,sparse)==0&&
+                selected==once&&data==unchanged,
+            "Repeating a sparse new-edition reset changed retained state");
+    }
+    {
+        const curriculum::CatalogScope mixed{
+            {std::string(course)},{},{historic_lesson,edition_lesson}};
+        auto selected=data;
+        require(curriculum::reset_catalog_progress(selected,mixed)==4&&
+                !state::find(selected,"learning_progress",
+                    "course_"+std::string(course)+"_completed")&&
+                !state::find(selected,"learning_progress",
+                    "lesson_"+historic_lesson+"_completed")&&
+                !state::find(selected,"learning_progress",
+                    "lesson_"+edition_lesson+"_completed")&&
+                !state::find(selected,"native_windows",
+                    "scroll/"+historic_lesson+"/p0")&&
+                state::find(selected,"learning_progress",
+                    "lesson_"+other_lesson+"_completed")&&
+                data.preferences.at("learning_progress").contains(
+                    "course_"+std::string(course)+"_completed"),
+            "An explicitly mixed sparse course reset incorrectly retained old completion");
+    }
     // Selecting the new unit but a historic lesson of a DIFFERENT parent
     // must still fail atomically.
     verify_rejected_scope_unchanged(data,
