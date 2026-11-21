@@ -186,3 +186,17 @@ add_test(NAME native.current_u2l5_gates
 set_tests_properties(native.current_u2_roles native.current_u2l5_gates
     PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
 
+# Run the existing production StateStore/local-int integration against the
+# six current U2 editors using only in-memory authoring proposals. This tests
+# real Windows full/progress loaders, sealed receipts and reopen; it neither
+# changes the curriculum nor pretends to compile the learner's program.
+add_executable(lgaed_local_int_state_tests
+    "${_lgaed_root}/native/platform/windows/local_int_state_tests.cpp")
+target_link_libraries(lgaed_local_int_state_tests
+    PRIVATE lgaed_platform_windows)
+add_test(NAME native.current_u2_local_int_state
+    COMMAND lgaed_local_int_state_tests)
+set_tests_properties(native.current_u2_local_int_state
+    PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+
+
