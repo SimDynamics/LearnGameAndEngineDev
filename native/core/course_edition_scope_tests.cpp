@@ -34,9 +34,25 @@ void verify_explicit_mixed_scope(state::StateData& data,
     require(state::find(selected,"learning_progress",
         "lesson_qa_other_course__unit__primero_completed"),
         "An explicit mixed reset erased another course's completion");
-    for(const auto& domain:{"cpp_lesson_drafts","narration_settings","native_windows"})
+    for(const auto& domain:{"cpp_lesson_drafts","narration_settings"})
         require(selected.preferences.at(domain)==original.preferences.at(domain),
-            "An explicit mixed reset changed historical drafts, audio or native preferences");
+            "An explicit mixed reset changed source drafts or global audio preferences");
+    // Selected reader scroll offsets ARE progress and must be removed. A
+    // position from another course is not selected and must survive.
+    const std::string historic="qa_course__original__primero";
+    const auto scroll="scroll/"+historic+"/p0";
+    const bool selected_historic=
+        std::ranges::find(scope.lessons,historic)!=scope.lessons.end();
+    const auto actual_scroll=state::find(selected,"native_windows",scroll);
+    const auto original_scroll=state::find(original,"native_windows",scroll);
+    require(original_scroll&&(selected_historic?!actual_scroll:
+            actual_scroll&&*actual_scroll==*original_scroll),
+        "Explicit course reset did not match the selected lesson's scroll ownership");
+    const std::string foreign="scroll/qa_other_course__unit__primero/p0";
+    const auto other=state::find(selected,"native_windows",foreign);
+    const auto other_before=state::find(original,"native_windows",foreign);
+    require(other&&other_before&&*other==*other_before,
+        "A mixed scoped reset changed an unrelated course's scroll position");
     require(data==original,
         "A test-owned explicit mixed scope changed the source student state");
 }
@@ -71,6 +87,7 @@ void test_course_scope() {
         std::string("new source retained");
     data.preferences["narration_settings"]["voice"]=std::string("ef_dora");
     data.preferences["native_windows"]["scroll/"+historic_lesson+"/p0"]=std::int64_t{17};
+    data.preferences["native_windows"]["scroll/"+other_lesson+"/p0"]=std::int64_t{19};
 
     // Explicitly selecting both generations IS authorized: do not prevent
     // a user-requested reset of the old and new course in one operation.
