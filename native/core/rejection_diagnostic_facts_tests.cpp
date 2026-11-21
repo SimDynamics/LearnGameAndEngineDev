@@ -536,6 +536,49 @@ void rejected_semantics() {
             boxes(invalid,"Revise"),RejectionOperation::boxes,box_facts).correct,
             "Wrong boxes bounds or an ambiguous comma were falsely accepted");
     }
+    // A valid inclusive range cannot exclude one of its own integers.
+    // Outside-range rejections remain valid facts and are not contradictions.
+    for(const auto phrase:{
+        "0..9; no se permite 9",
+        "0..9; no se admite el valor 0",
+        "0..9; no se aceptan los valores 9",
+        "0..9; el valor 9 está prohibido",
+        "0..9; 9 no está permitido",
+        "0..9; 0 no es válido"
+    }) {
+        require(!evaluate_rejection_diagnostics(
+            balances(phrase,"Revise"),RejectionOperation::balance,
+            balance_facts).correct,
+            "A balance range excluded a permitted integer but was accepted");
+    }
+    for(const auto phrase:{
+        "0..20; no se admite 20",
+        "0..20; 0 está prohibido",
+        "0..20; no se permite el valor 4"
+    }) {
+        require(!evaluate_rejection_diagnostics(
+            boxes(phrase,"Revise"),RejectionOperation::boxes,
+            box_facts).correct,
+            "A boxes range excluded an included integer but was accepted");
+    }
+    for(const auto valid:{
+        "0..9; no se permite 21",
+        "0..9; 21 no está permitido",
+        "0..9; no se admiten valores inferiores a 0",
+        "0..9; no se admiten valores superiores a 9"
+    }) {
+        require(evaluate_rejection_diagnostics(
+            balances(valid,"Compruebe"),RejectionOperation::balance,
+            balance_facts).correct,
+            "A valid exclusion of out-of-domain values was wrongly rejected");
+    }
+    // The first number belongs to the range, not to a subsequent refusal
+    // with a separately identified object in the same clause.
+    require(evaluate_rejection_diagnostics(
+        balances("0..9, no se permite 21","Revise"),
+        RejectionOperation::balance,balance_facts).correct,
+        "The next explicitly denied 21 was attributed to the range endpoint 9");
+
     // An unrelated test example after a sentence boundary is not another
     // claim about the admitted interval.
     for(const auto message:{

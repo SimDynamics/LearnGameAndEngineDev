@@ -207,6 +207,75 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
         return false;
     };
     if(contradicts_allowed_domain())return false;
+    // A permitted inclusive domain cannot simultaneously exclude one of
+    // its own values. Look for an explicit prohibition attached to a
+    // *specific* integer, not any generic "no" elsewhere in the message.
+    // For example "no se admite 9" contradicts 0..9, while "no se
+    // admite 21" is consistent. Nearby observed field values, lower-bound
+    // statements and prohibitions in another clause remain independent.
+    const auto denies_allowed_value=[&]() {
+        const auto negated=[](std::string_view word) {
+            return one_of(word,{"no","nunca","jamas"});
+        };
+        const auto allowed=[](std::string_view word) {
+            return one_of(word,{"permitido","permitida","permitidos","permitidas",
+                "admitido","admitida","admitidos","admitidas",
+                "valido","valida","validos","validas",
+                "permite","permiten","admite","admiten","acepta","aceptan"});
+        };
+        const auto forbidden=[](std::string_view word) {
+            return one_of(word,{"prohibido","prohibida","prohibidos","prohibidas",
+                "invalido","invalida","invalidos","invalidas",
+                "excluido","excluida","excluidos","excluidas"});
+        };
+        const auto label=[](std::string_view word) {
+            return one_of(word,{"valor","valores","dato","datos","numero",
+                "numeros","el","la","los","las"});
+        };
+        for(std::size_t at=0;at<words.size();++at) {
+            if(!words[at].number||*words[at].number<lower_bound||
+               *words[at].number>upper)continue;
+            // Prefix: "no se permite el valor 9", "prohibidos los
+            // valores 0", "no permitido 9".
+            auto first=at;
+            while(first>0&&label(words[first-1].text))--first;
+            if(first&&forbidden(words[first-1].text))return true;
+            if(first>=2&&negated(words[first-2].text)&&
+               allowed(words[first-1].text))return true;
+            if(first>=3&&negated(words[first-3].text)&&
+               words[first-2].text=="se"&&allowed(words[first-1].text))
+                return true;
+            // Suffix: "9 no está permitido" or "9 es prohibido".
+            // If another number follows the predicate, it may be the
+            // actual object ("9, no se permite 21"), so do not attach
+            // that denial to the earlier 9.
+            auto next=at+1;
+            bool denial=false;
+            if(next<words.size()&&
+               !clause_boundary(source,words[at],words[next])) {
+                if(forbidden(words[next].text))denial=true;
+                if(one_of(words[next].text,{"es","esta","son","estan"})&&
+                   next+1<words.size()&&forbidden(words[next+1].text))
+                    denial=true;
+                if(negated(words[next].text)) {
+                    ++next;
+                    if(next<words.size()&&one_of(words[next].text,
+                        {"se","es","esta","son","estan"}))++next;
+                    if(next<words.size()&&allowed(words[next].text))
+                        denial=true;
+                }
+            }
+            if(!denial)continue;
+            bool another_value=false;
+            for(auto later=next+1;later<words.size()&&later<=next+3;++later) {
+                if(clause_boundary(source,words[later-1],words[later]))break;
+                if(words[later].number){another_value=true;break;}
+            }
+            if(!another_value)return true;
+        }
+        return false;
+    };
+    if(denies_allowed_value())return false;
     // Range words may precede or follow the numeric interval. For example,
     // both "rango permitido de 0 a 20" and "0 a 20 es el rango permitido"
     // communicate the same bound. A standalone pair of numbers is not enough.
