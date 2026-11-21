@@ -64,6 +64,21 @@ class WindowsCompilerPolicy(unittest.TestCase):
             with self.subTest(workflow=path.name):
                 self.assertNotRegex(path.read_text(encoding="utf-8"), unused)
 
+    def test_historical_state_import_runs_python_before_pinned_msvc_preflight(self):
+        workflow = (WORKFLOWS / "windows-state-import.yml").read_text(encoding="utf-8")
+        python = workflow.index("Select the declared Python version")
+        exact_stderr = workflow.index("Test exact stderr authoring")
+        assertions = workflow.index("Verify U3L9 assertion declarations")
+        case_history = workflow.index("Verify authenticated case revisions")
+        pinned = workflow.index("Fail early if hosted Windows lacks the exact declared MSVC")
+        native = workflow.index("Verify MSVC and execute history")
+        self.assertLess(python, exact_stderr)
+        self.assertLess(exact_stderr, assertions)
+        self.assertLess(assertions, case_history)
+        self.assertLess(case_history, pinned)
+        self.assertLess(pinned, native)
+        self.assertIn("-Suite StateImport -MsvcPreflightOnly", workflow)
+
     def test_native_pins_and_removed_wasi_dependencies(self):
         manifest = json.loads((ROOT / "toolchains/windows.versions.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["cpp"]["standard"], 23)

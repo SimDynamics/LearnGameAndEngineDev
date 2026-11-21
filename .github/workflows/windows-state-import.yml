@@ -36,8 +36,6 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Fail early if hosted Windows lacks the exact declared MSVC
-        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite StateImport -MsvcPreflightOnly
       - name: Select the declared Python version
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
@@ -58,6 +56,8 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_compiler_case_order.py -v
       - name: Verify authenticated case revisions and preserved AssetCheck programs
         run: python -B -m unittest discover -s scripts/curriculum -p test_compiler_case_revision.py -v
+      - name: Fail early if hosted Windows lacks the exact declared MSVC
+        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite StateImport -MsvcPreflightOnly
       - name: Verify MSVC and execute history, case-revision and exact stderr contracts
         run: .\scripts\windows\Test-StateImportCI.ps1
       - name: Preserve configure and test results
