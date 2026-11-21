@@ -253,6 +253,19 @@ std::size_t catalog_restore_entry_index(const CatalogPage& page,
     return saved_index<0?0:
         std::min(static_cast<std::size_t>(saved_index),total_count-1);
 }
+bool catalog_scroll_anchor_changed(const CatalogPage& page,
+        std::string_view saved_top_id, std::int64_t saved_top_index,
+        std::size_t restored_top_index, std::size_t total_count) {
+    // Without an identity this is a historical positional bookmark and its
+    // stored partial-pixel scroll remains compatible with the older behavior.
+    if(saved_top_id.empty())return false;
+    // Retirement or replacement at the SAME index is still a relocation:
+    // restoring the old absolute pixel coordinate would display another row.
+    return restored_top_index>=page.entries.size() ||
+        page.entries[restored_top_index].id!=saved_top_id ||
+        restored_top_index!=catalog_restore_entry_index(
+            page,{},saved_top_index,total_count);
+}
 bool catalog_lesson_completed(const state::StateData& data, std::string_view id) {
     const auto value = state::find(data,"learning_progress","lesson_" + std::string(id) + "_completed");
     const auto completed = value ? std::get_if<bool>(value) : nullptr; return completed && *completed;

@@ -59,6 +59,13 @@ void validate_catalog_location(const CatalogLocation&);
 [[nodiscard]] std::string catalog_saved_entry_id(const CatalogPage&, std::int64_t index);
 [[nodiscard]] std::size_t catalog_restore_entry_index(const CatalogPage&,
     std::string_view saved_id, std::int64_t saved_index, std::size_t total_count);
+// A saved pixel offset is usable only while the same top row still owns
+// the recorded ordinal. A retired row is not the same row merely because
+// its replacement happens to occupy index zero. Legacy index-only profiles
+// have no saved row identity and retain their original pixel behavior.
+[[nodiscard]] bool catalog_scroll_anchor_changed(const CatalogPage&,
+    std::string_view saved_top_id, std::int64_t saved_top_index,
+    std::size_t restored_top_index, std::size_t total_count);
 [[nodiscard]] bool catalog_lesson_completed(const state::StateData&, std::string_view lesson_id);
 [[nodiscard]] bool catalog_lesson_started(const state::StateData&, std::string_view lesson_id);
 [[nodiscard]] CatalogProgress catalog_progress(const state::StateData&,const CatalogScope&);
