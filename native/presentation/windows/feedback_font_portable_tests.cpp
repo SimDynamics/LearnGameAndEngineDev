@@ -151,8 +151,11 @@ void exercise(){
         const auto length=static_cast<LONG>(wide(source).size());
         const auto size_first=point_height(feedback,0);
         const auto size_last=point_height(feedback,length-1);
-        const auto feedback_scale=scale(feedback),prose_scale=scale(prose);
-        require(size_first==base&&size_last==base&&
+        // The view may replace prose HWNDs during a scale change. Requery
+        // the CURRENT curricular control instead of reading a stale handle.
+        const auto current_prose=control(f.view,id(0,0));
+        const auto feedback_scale=scale(feedback),prose_scale=scale(current_prose);
+        require(size_first==base&&size_last==base&&point_height(current_prose,0)==base&&
             feedback_scale==expected_scale&&prose_scale==expected_scale,
             "Font parity changed: block="+std::to_string(block)+
             ", requested="+std::to_string(expected_scale)+
