@@ -10,8 +10,9 @@ on:
       - scripts/curriculum/test_cpp_array_copy_move_authoring.py
       - scripts/curriculum/stable_state_layout.py
       - native/core/cpp_array_copy_move_check.hpp
-      - native/core/cpp_private_probe_neutral.hpp
+      - native/core/cpp_class_structure_check.hpp
       - native/core/cpp_array_copy_move_check_tests.cpp
+      - native/core/cpp_private_probe_neutral.hpp
       - app/src/main/assets/content/es/programming/cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/lesson_copiar_y_mover_arrays_sin_desajustar_la_cantidad.json
   workflow_dispatch:
 
@@ -35,5 +36,8 @@ jobs:
         shell: cmd
         run: |
           python -B scripts\curriculum\test_cpp_array_copy_move.py --compiler cl --windows
+          if errorlevel 1 exit /b 1
           python -B scripts\curriculum\test_cpp_array_copy_move_core.py --compiler cl --windows
+          if errorlevel 1 exit /b 1
           python -B -m unittest discover -s scripts\curriculum -p test_cpp_array_copy_move_authoring.py -v
+          if errorlevel 1 exit /b 1

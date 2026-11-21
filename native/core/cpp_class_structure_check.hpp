@@ -199,6 +199,31 @@ inline bool direct_contains(const Tokens& code,Scope scope,
     return false;
 }
 
+// Require exactly one real direct data member of the selected owner. A
+// same-spelled method return type, nested local variable or unrelated class
+// cannot authenticate a published RAII field. Accept default, copy and brace
+// initialization without relying on the author's formatting.
+inline bool direct_field(const Tokens& code,Scope scope,
+        std::initializer_list<std::string> type_and_name) {
+    if(type_and_name.size()<2||scope.opening>=scope.closing||
+       scope.closing>code.size())return false;
+    std::size_t count=0,depth=1;
+    for(auto i=scope.opening+1;i<scope.closing;++i) {
+        const auto end=i+type_and_name.size();
+        if(depth==1&&end<scope.closing&&
+           std::equal(type_and_name.begin(),type_and_name.end(),
+                      code.begin()+static_cast<std::ptrdiff_t>(i))&&
+           (code[end]=="op:;"||code[end]=="op:="||
+            code[end]=="op:{"))++count;
+        if(open_brace(code[i]))++depth;
+        else if(close_brace(code[i])) {
+            if(!depth)return false;
+            --depth;
+        }
+    }
+    return count==1;
+}
+
 // Count each declared int field once at the direct class level. A comment,
 // initializer expression or local variable cannot impersonate an owner field.
 inline bool direct_int_fields(const Tokens& code,Scope scope,
