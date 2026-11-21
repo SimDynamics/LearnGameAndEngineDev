@@ -322,6 +322,52 @@ void catalog_pending(const Fixture& fixture, const state::StateData& data) {
         "Una unidad antigua aún se puede abrir desde el catálogo activo.");
 }
 
+void unavailable_legacy_single_lesson_scope_is_rejected(
+        const Fixture& fixture,const state::StateData& historic) {
+    // Legacy course indices may legitimately announce an uninstalled lesson.
+    // The entry must remain visible in the unit list, yet MUST NOT become an
+    // actionable single-lesson reset scope. Production editions have an even
+    // stricter rule and reject missing resources at index loading time.
+    const auto unit_file=fixture.path("otherLesson").parent_path() /
+        "unit_independiente.json";
+    RestoreFile restore(unit_file);
+    auto document=object(bytes(unit_file));
+    auto rows=document.GetNamedArray(L"lessons");
+    const std::string advertised="qa_other__independiente__anunciada";
+    JsonObject extra;
+    extra.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(advertised)));
+    extra.Insert(L"title",JsonValue::CreateStringValue(L"Lección anunciada sin archivo QA"));
+    extra.Insert(L"number",JsonValue::CreateNumberValue(2));
+    rows.Append(extra);document.Insert(L"lessons",rows);
+    write(unit_file,stringify(document));
+    const curriculum::CatalogLocation unit{"es","programming","qa_other","qa_other__independiente"};
+    const auto index=windows::load_catalog(fixture.content,unit);
+    require(index.entries.size()==2 && index.entries.front().available &&
+            !index.entries.back().available &&
+            index.entries.back().id==advertised,
+        "The legacy unit did not preserve its installed and announced rows");
+    // Existing unit-level accounting and list order must remain compatible.
+    const auto members=windows::catalog_scope(fixture.content,unit);
+    require(members.lessons==std::vector<std::string>{
+                std::string(other_id),advertised},
+        "The announcement unexpectedly disappeared from indexed unit membership");
+    auto live=unit;live.lesson=other_id;
+    require(windows::catalog_scope(fixture.content,live).lessons==
+                std::vector<std::string>{std::string(other_id)},
+        "The installed historical lesson lost its legitimate scoped membership");
+    auto missing=unit;missing.lesson=advertised;
+    require(!windows::active_catalog_lesson(fixture.content,unit,advertised),
+        "An announced lesson without an asset became an active lesson");
+    rejects([&]{(void)windows::catalog_scope(fixture.content,missing);},
+        "An announced unavailable lesson became an actionable reset scope");
+    const auto progress=windows::catalog_entry_progress(
+        fixture.content,unit,index.entries.back(),historic);
+    require(progress.completed==0&&progress.total==0,
+        "An announced lesson invented progress despite having no asset");
+    require(!windows::next_catalog_lesson(fixture.content,live,false,false),
+        "Continue navigated into an unavailable announced lesson");
+}
+
 std::string xml_escape(std::string_view value) {
     std::string result;
     for (char character : value) switch (character) {
@@ -832,6 +878,7 @@ void run(const fs::path& fixture_source) {
         && metadata.state_layout.lineage == current.state_layout.lineage,
         "El catálogo y el lector interpretan ediciones diferentes.");
     pending(historic, current); catalog_pending(fixture, historic);
+    unavailable_legacy_single_lesson_scope_is_rejected(fixture,historic);
     state::validate_lesson_state(historic, current);
     require(profile.load() == historic, "La comprobación de compatibilidad mutó el perfil.");
     const auto new_key = curriculum::draft_key("programming", current, current.pages[1].blocks[0]);
