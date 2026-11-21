@@ -343,8 +343,28 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo+3;})CPP";
         emit(directory,limit.first,*variant,"",false,true);
         ++emitted;
     }
-    if(emitted!=48)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 48 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
+    // Source text can document the internal probe name without declaring it.
+    // Exercise the exact guarded code with a comment and two literal forms.
+    const std::string harmless_marker =
+        "#include <iostream>\n"
+        "int main(){int aforo{5};int anterior=aforo;\n"
+        "// lgaed_local_int_before_6cb8e71d is an explanatory comment\n"
+        "const char* nota=\"lgaed_local_int_before_6cb8e71d\";\n"
+        "const char* crudo=R\"raw(lgaed_local_int_before_6cb8e71d)raw\";\n"
+        "(void)nota;(void)crudo;\n"
+        "aforo+=3;\n"
+        "std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo;}\n";
+    const auto harmless_variant=cpp_local_int_override(
+        harmless_marker,{"aforo",4,{},true});
+    if(!harmless_variant || harmless_variant->find(
+        "lgaed_local_int_before_6cb8e71d is an explanatory comment")==
+        std::string::npos)
+        throw std::runtime_error("A nonidentifier caused a private probe collision");
+    emit(directory,"u2l3_inert_marker_text",*harmless_variant,
+         "Antes: 5\nAhora: 12",true);
+    ++emitted;
+    if(emitted!=49)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 49 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';

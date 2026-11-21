@@ -619,6 +619,31 @@ void opaque_noop_requires_runtime_state_change() {
 }
 
 
+void private_marker_in_comments_and_strings_is_not_an_identifier() {
+    const std::string identifier="lgaed_local_int_before_6cb8e71d";
+    const std::string source=
+        "#include <iostream>\n"
+        "int main(){int aforo{5};int anterior=aforo;\n"
+        "// lgaed_local_int_before_6cb8e71d no es una variable\n"
+        "const char* nota=\"lgaed_local_int_before_6cb8e71d\";\n"
+        "const char* crudo=R\"note(lgaed_local_int_before_6cb8e71d)note\";\n"
+        "(void)nota;(void)crudo;\n"
+        "aforo+=3;\n"
+        "std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo;}\n";
+    const auto original=source;
+    const auto variant=cpp_local_int_override(source,{"aforo",4,{},true});
+    require(variant&&source==original&&
+        variant->find("// "+identifier+" no es una variable")!=std::string::npos&&
+        variant->find("const char* nota=\""+identifier+"\";")!=std::string::npos&&
+        variant->find("R\"note("+identifier+")note\"")!=std::string::npos&&
+        variant->find("const int "+identifier+" = aforo;")!=std::string::npos,
+        "A harmless comment or literal mentioning the probe caused a false collision");
+    const auto actual_name=source.substr(0,source.find("aforo+=3;"))+
+        "int "+identifier+"=1;\n"+source.substr(source.find("aforo+=3;"));
+    require(!cpp_local_int_override(actual_name,{"aforo",4,{},true}),
+        "A real local identifier collision was mistaken for inert text");
+}
+
 void private_delta_respects_signed_int_bounds() {
     // The chosen learner update itself is valid. Only the *extra* private
     // delta would overflow int. This must fail before += executes, rather
@@ -755,6 +780,7 @@ int main() {
         neutral_updates_cannot_fake_u2l3_increase();
         composed_neutral_updates_cannot_fake_u2l3_increase();
         opaque_noop_requires_runtime_state_change();
+        private_marker_in_comments_and_strings_is_not_an_identifier();
         private_delta_respects_signed_int_bounds();
         crlf_after_update_preserves_source_and_comment();
         numeric_literal_identity_distinguishes_one_from_ten();

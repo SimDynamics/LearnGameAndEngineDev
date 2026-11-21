@@ -709,8 +709,13 @@ inline std::optional<std::pair<std::size_t,std::size_t>> first_state_update(
         // must therefore observe a strictly larger int across the actual
         // selected statement; this code is never a learner draft or receipt.
         constexpr std::string_view saved = "lgaed_local_int_before_6cb8e71d";
-        if(source.find(saved) != source.npos || !update_begin ||
-           *update_begin >= offset)return {};
+        // A comment, ordinary string or raw literal may describe this
+        // private identifier without declaring it. Reject only a lexical
+        // C++ identifier collision; never search arbitrary source bytes.
+        const auto reserved = "id:" + std::string(saved);
+        if(std::ranges::any_of(*code,[&](const auto& token){
+            return token.value==reserved;
+        }) || !update_begin || *update_begin >= offset)return {};
         std::string variant;
         variant.reserve(source.size() + probe.variable.size()*3 + 250);
         variant += source.substr(0,*update_begin);
