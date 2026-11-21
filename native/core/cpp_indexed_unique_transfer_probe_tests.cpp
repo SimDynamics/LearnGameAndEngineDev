@@ -138,6 +138,11 @@ int main(int argc,char** argv) try {
         require(probe.has_value(),"Cannot generate an independent guarded probe");
         const auto path=std::filesystem::path(argv[2])/(std::string(version.name)+".cpp");
         write(path,*probe);
+        // Keep a real uninstrumented copy of this *incorrect* candidate in
+        // disposable QA. It must pass the first public stdout case yet fail
+        // the independent ownership witness above. Never publish to lessons.
+        if(std::string_view(version.name)=="equal_value_hidden_copy")
+            write(path.parent_path()/"equal_value_hidden_copy-public.cpp",edited);
         std::cout<<version.name<<' '<<(version.accepts?"pass":"reject")<<'\n';
     }
     for(const auto& attacked:{
