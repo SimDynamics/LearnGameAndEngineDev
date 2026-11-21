@@ -122,7 +122,9 @@ inline std::optional<std::pair<std::size_t, std::size_t>> main_body(
         const Tokens& code) {
     std::optional<std::pair<std::size_t, std::size_t>> result;
     for (std::size_t i = 0; i + 3 < code.size(); ++i) {
-        if (code[i].value != "id:int" || code[i + 1].value != "id:main" ||
+        const bool trailing=code[i].value=="id:auto";
+        if ((!trailing&&code[i].value!="id:int") ||
+            code[i + 1].value != "id:main" ||
             code[i + 2].value != "op:(") continue;
         std::size_t parentheses = 1;
         auto at = i + 3;
@@ -145,6 +147,15 @@ inline std::optional<std::pair<std::size_t, std::size_t>> main_body(
                 }
                 if (depth) continue;
             }
+        }
+        // C++ permits a trailing return spelling for main:
+        // auto main() -> int { ... }. Preserve the same root-body and
+        // balanced-noexcept protections as an ordinary int main().
+        // Never interpret an arbitrary trailing type as a valid main.
+        if(trailing) {
+            if(at+1>=code.size()||code[at].value!="op:->"||
+               code[at+1].value!="id:int")continue;
+            at+=2;
         }
         if (at >= code.size() || code[at].value != "op:{")
             continue;
