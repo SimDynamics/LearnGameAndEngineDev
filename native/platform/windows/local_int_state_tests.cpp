@@ -44,10 +44,20 @@ state::StateData reopen_isolated_int_qa_state(
             !environment.options.qa_instance->empty(),
         "Local-int persistence would target a personal profile");
     initialize_profile_directories(environment.paths);
-    state::StateStore store(environment.paths.root);
-    (void)store.load();
-    store.save(saved);
-    return store.load();
+    {
+        state::StateStore writer(environment.paths.root);
+        require(writer.empty(),
+            "A supposedly fresh local-int QA profile already has progress");
+        (void)writer.load();
+        writer.save(saved);
+    }
+    // Close the writer before constructing a second StateStore. A reload
+    // through the same object also reads bytes but would not verify that
+    // a new owner discovers a durable, committed state from disk.
+    state::StateStore reopened(environment.paths.root);
+    require(!reopened.empty(),
+        "A completed local-int QA save did not publish an active state file");
+    return reopened.load();
 }
 
 const Block& owner(const Lesson& lesson) {
