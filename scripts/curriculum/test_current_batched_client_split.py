@@ -4,7 +4,10 @@ Only in-memory authoring; never rewrites Work JSON, student drafts or progress.
 """
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
+import subprocess
+import tempfile
 import unittest
 
 import stable_state_layout as layout
@@ -106,6 +109,60 @@ class CurrentBatchSplit(unittest.TestCase):
                           if f["block"] != OWNER])
         self.assertFalse(any(f["block"] == OWNER
                              for f in after["textSemantics"]["fields"]))
+        self.assertEqual(self.path.read_bytes(), self.bytes)
+
+    def test_actual_reference_programs_compile_and_run_each_input(self):
+        """Run the original Work-authored reference, not an invented answer.
+
+        Compile its unchanged header and source with both the original client
+        and the new single-input client. All builds and executions are isolated
+        and no student's source, compiler profile or historical asset is used.
+        """
+        reference = layout._blocks(self.before)["capacidad_veinte_referencia_codigo"]
+        self.assertEqual(reference["type"], "code")
+        actual_reference = reference["code"]
+        self.assertIn("int sobres_necesarios(int tarjetas)", actual_reference)
+        self.assertIn("tarjetas / 20", actual_reference)
+        self.assertIn("tarjetas % 20", actual_reference)
+        old_files = {file["path"]: file["initialCode"]
+                     for file in self.owner["projectFiles"]}
+        self.assertEqual(set(old_files), {"sobres.h", "sobres.cpp", "main.cpp"})
+        # Use the current published function body as source of truth. Its
+        # original batch output defines the independent case expectations.
+        expected_original = self.owner["outputCheck"]["cases"][0]["outputs"]
+        expected_individual = self.case_list()
+        with tempfile.TemporaryDirectory(prefix="lgaed-u6l19-session-") as folder:
+            directory = Path(folder)
+            (directory / "sobres.h").write_text(old_files["sobres.h"], encoding="utf-8")
+            (directory / "sobres.cpp").write_text(actual_reference, encoding="utf-8")
+            for label, client, cases in (
+                ("batched", old_files["main.cpp"],
+                 [{"standardInput": "", "outputs": expected_original, "exitCode": 0}]),
+                ("individual", CLIENT, expected_individual),
+            ):
+                (directory / "main.cpp").write_text(client, encoding="utf-8")
+                exe = directory / (label + (".exe" if os.name == "nt" else ".bin"))
+                if os.name == "nt":
+                    command = ["cl", "/nologo", "/std:c++latest", "/EHsc",
+                               "/utf-8", "main.cpp", "sobres.cpp", "/Fe:" + str(exe)]
+                else:
+                    command = ["g++", "-std=c++23", "-Wall", "-Wextra",
+                               "-pedantic", "main.cpp", "sobres.cpp", "-o", str(exe)]
+                compiled = subprocess.run(command, cwd=directory,
+                                          capture_output=True, timeout=90, check=False)
+                self.assertEqual(compiled.returncode, 0,
+                    f"Real {label} C++ compilation failed: "
+                    + compiled.stdout.decode(errors="replace")[-2500:]
+                    + compiled.stderr.decode(errors="replace")[-2500:])
+                for index, case in enumerate(cases):
+                    with self.subTest(client=label, case=index + 1):
+                        observed = subprocess.run(
+                            [str(exe)], input=case["standardInput"].encode("utf-8"),
+                            cwd=directory, capture_output=True, timeout=20, check=False)
+                        output = observed.stdout.replace(b"\r\n", b"\n").decode("utf-8")
+                        self.assertEqual(observed.returncode, case["exitCode"])
+                        self.assertEqual(observed.stderr, b"")
+                        self.assertIn(output, case["outputs"])
         self.assertEqual(self.path.read_bytes(), self.bytes)
 
     def test_unverified_cases_and_source_changes_are_not_allowed(self):
