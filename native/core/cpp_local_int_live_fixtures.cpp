@@ -44,13 +44,21 @@ int main(int argc,char** argv) try {
     if(argc!=2)return 2;
     const std::filesystem::path directory=argv[1];
     std::filesystem::create_directories(directory);
-    const std::array<Scenario,11> examples{{
+    const std::array<Scenario,12> examples{{
         {"u2l1_llaves_7",
             R"CPP(#include <iostream>
 int main(){int llaves=3+4; std::cout<<"Llaves: "<<llaves;})CPP",
             "Llaves: 7",
             {{{"llaves",13,{}},{},{}}},
             {{"Llaves: 13", "", ""}},1},
+        {"u2l1_member_named_llaves",
+            R"CPP(#include <iostream>
+struct Datos {int llaves{7};};
+int main(){Datos datos;int llaves;int origen=datos.llaves;
+llaves=origen;std::cout<<"Llaves: "<<llaves;})CPP",
+            "Llaves: 7",
+            {{{"llaves",13,{}},{},{}}},
+            {{"Llaves: 13","",""}},1},
         {"u2l1_llaves_11",
             R"CPP(#include <iostream>
 int main(){int llaves(11); std::cout<<"Llaves: "<<llaves;})CPP",
@@ -230,8 +238,8 @@ int main() {
         "int main(){int llaves; llaves=llaves+7; std::cout<<llaves;}",
         {"llaves",13,{}}))
         throw std::runtime_error("A self-read before int initialization received a probe");
-    if(emitted!=39)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 39 isolated C++ executions for U2 integer owners, grouped declarations and six adversaries\n";
+    if(emitted!=41)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 41 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';
