@@ -637,7 +637,7 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
             check(!block.answers.empty(),"A current preceding prediction lacks its authored answer");
             f.answer(block.answers.front(),index);
         }else if(block.type==curriculum::BlockType::multiple_choice){
-            check(block.correct_index,"A current preceding choice lacks its expected answer");
+            check(block.correct_index.has_value(),"A current preceding choice lacks its expected answer");
             SendMessageW(child(f.view,1020+static_cast<int>(index)*100+
                 static_cast<int>(*block.correct_index)*2),BM_CLICK,0,0);
             SendMessageW(child(f.view,1003+static_cast<int>(index)*100),BM_CLICK,0,0);
