@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
 project(LGAEDPortableCompilerGuidanceQA LANGUAGES CXX)
 
+option(LGAED_HOSTED_FEEDBACK_FONT_QA
+    "Run the real native LessonView font-parity checks in disposable hosted Windows" OFF)
+
 if(NOT WIN32 OR NOT MSVC)
     message(FATAL_ERROR "The actual state-store and WinRT loader QA requires Windows MSVC.")
 endif()
@@ -193,3 +196,30 @@ add_test(NAME native.reading_gate_u2l5_bookmarks
 set_tests_properties(native.reading_gate_u2l5_bookmarks PROPERTIES
     TIMEOUT 180 RUN_SERIAL TRUE)
 
+
+# Optional authentic Win32 UI regression. Hosted MSVC is allowed here ONLY
+# for this isolated source/UI check; it is not the pinned production toolchain.
+# The complete application's CMake graph and dependencies remain unchanged.
+if(LGAED_HOSTED_FEEDBACK_FONT_QA)
+    target_sources(lgaed_guidance_platform PRIVATE
+        "${LGAED_ROOT}/native/platform/windows/narration_preferences.cpp"
+        "${LGAED_ROOT}/native/platform/windows/catalog_loader.cpp"
+        "${LGAED_ROOT}/native/platform/windows/audio_generation.cpp"
+        "${LGAED_ROOT}/native/platform/windows/narration_worker.cpp"
+        "${LGAED_ROOT}/native/platform/windows/narration_cpu_policy.cpp"
+        "${LGAED_ROOT}/native/platform/windows/narration_player.cpp"
+        "${LGAED_ROOT}/native/platform/windows/system_speech.cpp"
+        "${LGAED_ROOT}/native/platform/windows/system_speech_process.cpp")
+    add_library(lgaed_platform_windows ALIAS lgaed_guidance_platform)
+    add_library(lgaed_host_options ALIAS lgaed_guidance_qa_options)
+    include("${LGAED_ROOT}/cmake/CurricularWindows.cmake")
+    add_executable(lgaed_feedback_font_portable_qa
+        "${LGAED_ROOT}/native/presentation/windows/feedback_font_portable_tests.cpp")
+    target_link_libraries(lgaed_feedback_font_portable_qa PRIVATE
+        lgaed_curricular_windows lgaed_guidance_qa_options)
+    target_link_options(lgaed_feedback_font_portable_qa PRIVATE /OPT:REF)
+    add_test(NAME native.feedback_font_portable
+        COMMAND lgaed_feedback_font_portable_qa)
+    set_tests_properties(native.feedback_font_portable PROPERTIES
+        TIMEOUT 120 RUN_SERIAL TRUE)
+endif()

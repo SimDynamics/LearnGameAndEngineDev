@@ -45,6 +45,7 @@ on:
       - native/core/narration_state.cpp
       - native/core/narration_state.hpp
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_enteros_y_aproximaciones.json
+      - native/presentation/windows/feedback_font_portable_tests.cpp
       - native/presentation/windows/lesson_view_tests.cpp
       - native/presentation/windows/lesson_reader_tests.cpp
       - native/presentation/windows/text_semantic_projection.hpp
@@ -168,6 +169,35 @@ jobs:
           native\platform\windows\compiler_guidance_state_tests.cpp
           /Fo:"%RUNNER_TEMP%\compiler_guidance_state_tests.obj"
 
+
+  native-feedback-font:
+    name: Execute actual Win32 feedback font parity at 75–150% (hosted MSVC)
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - name: Read exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Activate Visual C++ in disposable runner
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure standalone production LessonView, no toolchain override
+        shell: pwsh
+        run: >
+          cmake -S cmake/PortableCompilerGuidanceQA
+          -B "$env:RUNNER_TEMP/feedback-font-qa" -G Ninja
+          -DLGAED_HOSTED_FEEDBACK_FONT_QA=ON
+      - name: Compile actual LessonView and isolated real-control test
+        shell: pwsh
+        run: >
+          cmake --build "$env:RUNNER_TEMP/feedback-font-qa"
+          --target lgaed_feedback_font_portable_qa --parallel 2
+      - name: Run real native feedback controls without speech
+        shell: pwsh
+        run: >
+          ctest --test-dir "$env:RUNNER_TEMP/feedback-font-qa"
+          --output-on-failure --no-tests=error
+          -R "^native\\.feedback_font_portable$"
 
   native-guidance-reopen:
     name: Real Windows compiler guide, StateStore and U12 reader fixtures (MSVC)
