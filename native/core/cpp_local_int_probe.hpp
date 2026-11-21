@@ -278,11 +278,16 @@ inline std::optional<std::size_t> first_assignment(
                 !boundary(code[i - 1].value)) return {};
             const auto end=statement_end(code,i+2,closing);
             if(!end)return {};
-            // An uninitialized int cannot be read to establish its own
-            // first value. An after-statement probe would run too late to
-            // detect this undefined read and might credit a lucky stdout.
-            for(auto j=i+2;j<*end;++j)
-                if(code[j].value==wanted)return {};
+            // An uninitialized local cannot establish its first value
+            // by reading itself. But a member or qualified name with the
+            // same spelling (data.llaves, ptr->llaves, config::llaves) is
+            // a different object and must not be rejected as that read.
+            for(auto j=i+2;j<*end;++j) {
+                if(code[j].value!=wanted)continue;
+                const auto previous=j>i+2?code[j-1].value:std::string{};
+                if(previous!="op:."&&previous!="op:->"&&previous!="op:::")
+                    return {};
+            }
             return end;
         }
         if (t == "op:{") ++braces;
