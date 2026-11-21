@@ -457,6 +457,62 @@ void numeric_domain_boundaries() {
         "Correctly reported extreme charges and refunds were rejected");
 }
 
+void diagnostic_numbers_must_be_complete_integers() {
+    constexpr RejectionFacts boxes_expected[]{{1,-1},{3,21}};
+    constexpr RejectionFacts balance_expected[]{{2,10,0},{3,0,-1}};
+    const auto box=[&](std::string_view request,std::string_view pieces) {
+        return "Cajas, petición "+std::string(request)+", piezas="+
+            std::string(pieces)+": rango permitido 0..20. Revise la cantidad.\n"+
+            "Cajas, petición 3, piezas=21: rango permitido 0..20. Revise la cantidad.\n";
+    };
+    const auto balance=[&](std::string_view request,std::string_view charges,
+                           std::string_view returns) {
+        return "Saldo, petición "+std::string(request)+", cobros="+
+            std::string(charges)+", devoluciones="+std::string(returns)+
+            ": intervalo permitido 0..9. Revise los datos.\n"+
+            "Saldo, petición 3, cobros=0, devoluciones=-1: "
+            "intervalo permitido 0..9. Revise los datos.\n";
+    };
+    require(evaluate_rejection_diagnostics(box("1","-1"),
+        RejectionOperation::boxes,boxes_expected).correct&&
+        evaluate_rejection_diagnostics(balance("2","10","0"),
+        RejectionOperation::balance,balance_expected).correct,
+        "Valid complete integer evidence no longer passes");
+    for(const auto malformed:{"1x","1e0","1.5","1_0","1-0","1,5","1..2"}) {
+        require(!evaluate_rejection_diagnostics(box(malformed,"-1"),
+            RejectionOperation::boxes,boxes_expected).correct,
+            "A numeric prefix falsely named the observed request");
+        require(!evaluate_rejection_diagnostics(balance(malformed,"10","0"),
+            RejectionOperation::balance,balance_expected).correct,
+            "A malformed balance-request number was accepted");
+    }
+    for(const auto malformed:{"-1x","-1kg","-1e0","-1.0","-1_0",
+                              "-1-0","-1,5","-1..2"}) {
+        require(!evaluate_rejection_diagnostics(box("1",malformed),
+            RejectionOperation::boxes,boxes_expected).correct,
+            "A malformed pieces value was treated as the expected integer");
+    }
+    for(const auto malformed:{"10x","10kg","10e0","10.0","10_0",
+                              "10-0","10,5","10..11"}) {
+        require(!evaluate_rejection_diagnostics(balance("2",malformed,"0"),
+            RejectionOperation::balance,balance_expected).correct,
+            "A malformed charges value was treated as a valid field fact");
+    }
+    for(const auto malformed:{"0x","0e0","0.0","0_0","0-0","0,5","0..1"}) {
+        require(!evaluate_rejection_diagnostics(balance("2","10",malformed),
+            RejectionOperation::balance,balance_expected).correct,
+            "A malformed refunds value was treated as zero");
+    }
+    // Normal separators and closed intervals still communicate whole facts.
+    require(evaluate_rejection_diagnostics(
+        "Cajas, petición 1, piezas=-1: rango permitido [0,20]. "
+        "Verifique la cantidad.\n"
+        "Cajas, petición 3, piezas=21: rango permitido 0-20. "
+        "Revise la cantidad.\n",
+        RejectionOperation::boxes,boxes_expected).correct,
+        "A full integer or a legitimate interval separator was lost");
+}
+
 void corrective_actions_require_real_verbs_not_shared_stems() {
     constexpr RejectionFacts box_facts[]{{1,-1},{3,21}};
     constexpr RejectionFacts balance_facts[]{{2,10,0},{3,0,-1}};
@@ -730,6 +786,7 @@ int main() {
         unsupported_claims_keep_their_predicate_and_polarity();
         source_edits_stay_inside_assigned_diagnostic();
         numeric_domain_boundaries();
+        diagnostic_numbers_must_be_complete_integers();
         corrective_actions_require_real_verbs_not_shared_stems();
         rejected_semantics();
         std::cout<<"PASS U3L6 semantic diagnostics: closed intervals, spaced dashes, "

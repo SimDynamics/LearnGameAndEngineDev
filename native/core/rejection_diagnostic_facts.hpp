@@ -88,6 +88,23 @@ inline std::vector<Word> words(std::string_view source) {
                   ((folded[i]=='-'||folded[i]=='+')&&i+1<folded.size()&&digit(folded[i+1]))) {
             if(folded[i]=='+'||folded[i]=='-')++i;
             while(i<folded.size()&&digit(folded[i]))++i;
+            // A reported integer must be one complete lexical value.
+            // Otherwise "21x", "21e2", "21_foo" and "21.5" would
+            // incorrectly count as the integer 21 followed by prose.
+            // Keep 0..9 and 0-9 as separate legitimate interval tokens.
+            const auto suffix_is_number=[&]() {
+                if(i>=folded.size())return false;
+                if(letter(folded[i])||folded[i]=='_')return true;
+                return folded[i]=='.'&&i+1<folded.size()&&
+                    digit(folded[i+1]);
+            };
+            if(suffix_is_number()) {
+                while(i<folded.size()&&
+                    (letter(folded[i])||digit(folded[i])||
+                     folded[i]=='_'||folded[i]=='.'))++i;
+                result.push_back({"invalid-number",{},beginning,i});
+                continue;
+            }
             int value=0;auto number=std::string_view(folded).substr(beginning,i-beginning);
             if(number.starts_with('+'))number.remove_prefix(1);
             const auto parsed=std::from_chars(number.data(),number.data()+number.size(),value);
@@ -119,7 +136,9 @@ inline bool clause_boundary(std::string_view folded,const Word& left,
     }
     return false;
 }
-inline bool labelled(const std::vector<Word>& words,std::initializer_list<std::string_view> names,int expected) {
+inline bool labelled(std::string_view source,const std::vector<Word>& words,
+        std::initializer_list<std::string_view> names,int expected) {
+    const auto folded=fold_spanish(source);
     bool found=false;
     for(std::size_t i=0;i<words.size();++i)if(one_of(words[i].text,names)) {
         // Allow "petición número 2", "cobros: 10" and "piezas recibidas -1".
@@ -128,6 +147,19 @@ inline bool labelled(const std::vector<Word>& words,std::initializer_list<std::s
         // happens to match. An unnumbered prose reference is not a value.
         for(std::size_t j=i+1;j<words.size()&&j<=i+3;++j) {
             if(words[j].number){
+                // A fact has exactly one integer. A decimal comma or a
+                // directly attached range/arithmetic operator cannot turn
+                // "peticion 1,5", "piezas=-1-0" or "piezas=21..22"
+                // into the requested integer prefix. Separate prose,
+                // including "peticion 1, piezas=-1", remains valid.
+                const auto end=words[j].end;
+                if(end<folded.size()) {
+                    const auto next=folded[end];
+                    const auto following=end+1<folded.size()?folded[end+1]:'\0';
+                    if((next=='.'&&(following=='.'||digit(following)))||
+                       ((next==','||next=='-'||next=='+')&&
+                        digit(following)))return false;
+                }
                 if(*words[j].number!=expected)return false;
                 found=true;
                 break;
@@ -911,14 +943,14 @@ inline RejectionReview examine(std::string_view line,RejectionOperation kind,con
         ?std::initializer_list<std::string_view>{"caja","cajas"}
         :std::initializer_list<std::string_view>{"saldo"}))
         return {false,"Falta identificar la operación."};
-    if(!labelled(tokens,{"peticion","solicitud","pedido","consulta","caso","entrada","operacion"},fact.request))
+    if(!labelled(line,tokens,{"peticion","solicitud","pedido","consulta","caso","entrada","operacion"},fact.request))
         return {false,"No se identifica correctamente el número de petición."};
     if(kind==RejectionOperation::boxes) {
-        if(!labelled(tokens,{"piezas","pieza","cantidad"},fact.first))
+        if(!labelled(line,tokens,{"piezas","pieza","cantidad"},fact.first))
             return {false,"Las piezas rechazadas no están asociadas a su valor."};
     }else {
-        if(!labelled(tokens,{"cobros","cobro"},fact.first)||
-           !labelled(tokens,{"devoluciones","devolucion"},fact.second))
+        if(!labelled(line,tokens,{"cobros","cobro"},fact.first)||
+           !labelled(line,tokens,{"devoluciones","devolucion"},fact.second))
             return {false,"Cobros y devoluciones no conservan sus propios valores."};
         if(!validity_claims_match(line,tokens,fact))
             return {false,"La validez atribuida a cobros o devoluciones contradice sus valores."};
