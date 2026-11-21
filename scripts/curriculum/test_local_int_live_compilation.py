@@ -84,6 +84,44 @@ def main() -> int:
                         for variable, replacement, stdout in checks]
             if declared != expected:
                 raise RuntimeError(f"Private U2L5 probe declarations changed: {owner}")
+        # The two published U2L5 starters are real incomplete student
+        # programs, not reference solutions. Build and run each unchanged
+        # source on this compiler and compare to its own initial observation.
+        # This checks the missing division and the incorrect grouping, while
+        # keeping the first-case rubric and the learner's saved source intact.
+        rejected_starters = {
+            "u2l5_division_variable": b"",
+            "u2l5_suma_agrupada": b"Parte: 5 m",
+        }
+        for name, owner, reference, visible, _ in contracts:
+            starter = blocks[owner]["initialCode"]
+            if not starter or starter == blocks[reference]["code"]:
+                raise RuntimeError(f"U2L5 no longer has an incomplete starter: {owner}")
+            initial_source = output / (name + "_initial.cpp")
+            initial_source.write_text(starter, encoding="utf-8")
+            initial_binary = initial_source.with_suffix(
+                ".exe" if sys.platform == "win32" else ".bin")
+            initial_build = subprocess.run(
+                build_command(args.compiler, initial_source, initial_binary),
+                cwd=output, capture_output=True, timeout=90, check=False)
+            if initial_build.returncode:
+                raise RuntimeError(
+                    f"{args.compiler} cannot compile current U2L5 starter {owner}:\n"
+                    + initial_build.stdout.decode(errors="replace")[-4000:]
+                    + initial_build.stderr.decode(errors="replace")[-4000:])
+            initial_run = subprocess.run(
+                [str(initial_binary)], cwd=output,
+                capture_output=True, timeout=20, check=False)
+            actual = initial_run.stdout.replace(b"\r\n", b"\n")
+            required = visible.encode("utf-8")
+            if (initial_run.returncode != 0 or initial_run.stderr or
+                    actual != rejected_starters[name] or
+                    actual in (required, required + b"\n")):
+                raise RuntimeError(
+                    f"Current U2L5 starter gave wrong initial observation or "
+                    f"earned its required output: {owner}, actual={actual!r}, "
+                    f"exit={initial_run.returncode}, stderr={initial_run.stderr!r}")
+
         accepted = rejected = 0
         for source in sources:
             evidence = source.with_suffix(".expected").read_bytes()
@@ -120,7 +158,8 @@ def main() -> int:
             raise RuntimeError(f"Incorrect execution counts: {(accepted, rejected)}")
         print(f"PASS {args.compiler} on {sys.platform}: {accepted} positive "
               f"original/probe executions, {rejected} actual hard-coded-copy "
-              "counterexamples rejected; 30 real C++ compile-and-run cases.")
+              "counterexamples rejected; 2 actual incomplete U2L5 starters " 
+              "observed; 32 real C++ compile-and-run cases.")
     return 0
 
 
