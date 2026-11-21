@@ -134,6 +134,19 @@ int main() {
         "#include <string>\nint main(){std::string a{\"A\"}, a{\"B\"};}",
         {"a","003",initialized,{}}),
         "Duplicate declarations were attached to one authenticated owner");
+    require(!cpp_local_string_override(
+        "#include <string>\nint main(){"
+        "std::string edificio{\"Aula\"}, codigo{edificio + \"-04\"};"
+        "std::cout<<edificio<<codigo;}",
+        {"edificio","Sala Norte",initialized,{}}),
+        "A sibling initialized from the probed string would hide its real dependency");
+    require(!cpp_local_string_override(
+        "#include <string>\nint main(){"
+        "std::string edificio{\"Aula\"}, codigo{\"04\"}, "
+        "etiqueta{edificio + \"-\" + codigo};"
+        "std::cout<<etiqueta;}",
+        {"codigo","003",initialized,{}}),
+        "A later grouped initializer hid a string dependency");
 }
 
 void after_real_assignment_and_noexcept() {
