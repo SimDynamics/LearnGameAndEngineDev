@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/cpp_member_body_check.hpp"
-#include "core/cpp_expression_repair.hpp"
+#include "core/cpp_class_definition_instrumentation.hpp"
 #include "core/code_format_compat.hpp"
 
 #include <algorithm>
@@ -35,40 +35,6 @@ inline bool name(std::string_view text) {
     const auto next=[&](unsigned char c){return start(c)||(c>='0'&&c<='9');};
     return start(static_cast<unsigned char>(text.front())) &&
         std::ranges::all_of(text.substr(1),next);
-}
-// Locate the actual class token, not a matching phrase inside a comment or
-// literal before the declaration. Keep strict source offsets and require a
-// complete class definition with its own terminator; never insert a private
-// friend into unrelated source or a forward declaration.
-inline std::optional<std::size_t> class_body_insertion(
-        std::string_view source,std::string_view class_name) {
-    auto scan=cpp_expression_repair_detail::tokens(source);
-    if(!scan)return {};
-    std::erase_if(*scan,[](const auto& token) {
-        return token.value.starts_with("comment:");
-    });
-    const std::string wanted="id:"+std::string(class_name);
-    std::optional<std::size_t> insertion;
-    for(std::size_t i=0;i+2<scan->size();++i) {
-        if(((*scan)[i].value!="id:class" && (*scan)[i].value!="id:struct") ||
-           (*scan)[i+1].value!=wanted)continue;
-        auto brace=i+2;
-        if(brace<scan->size() && (*scan)[brace].value=="id:final")++brace;
-        if(brace>=scan->size() ||
-           ((*scan)[brace].value!="op:{" && (*scan)[brace].value!="op:<%"))
-            continue; // Forward declaration or a different C++ construct.
-        const auto closing=cpp_member_body_detail::closing_brace(
-            source,(*scan)[brace].begin);
-        if(!closing)return {};
-        const auto after_closing=*closing+
-            (source[*closing]=='%'?2u:1u);
-        const auto next=std::ranges::find_if(*scan,[&](const auto& token) {
-            return token.begin>=after_closing;
-        });
-        if(next==scan->end()||next->value!="op:;"||insertion)return {};
-        insertion=(*scan)[brace].end;
-    }
-    return insertion;
 }
 inline void replace(std::string& source,std::string_view field,std::string_view value) {
     for(std::size_t at=0;(at=source.find(field,at))!=source.npos;) {
@@ -145,7 +111,7 @@ inline std::optional<std::string> cpp_indexed_unique_transfer_probe_source(
     // Attach only a friend witness to the original class, not another owner,
     // another implementation or a replacement public API. The student source
     // was authenticated before this strictly private instrumentation.
-    const auto insertion=detail::class_body_insertion(candidate,spec.class_name);
+    const auto insertion=cpp_class_definition_instrumentation::body_insertion(candidate,spec.class_name);
     if(!insertion)return {};
     std::string instrumented(candidate);
     instrumented.insert(*insertion,"\n    friend struct lgaed_transfer_qa::Access;\n");

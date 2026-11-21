@@ -3,6 +3,7 @@
 #include "core/code_format_compat.hpp"
 #include "core/cpp_private_probe_neutral.hpp"
 #include "core/cpp_member_body_check.hpp"
+#include "core/cpp_class_definition_instrumentation.hpp"
 
 #include <algorithm>
 #include <array>
@@ -167,13 +168,14 @@ inline bool cpp_array_owner_read_matches(const CppArrayOwnerReadPolicy& spec,
 inline std::optional<std::string> cpp_array_owner_read_private_driver(
         const CppArrayOwnerReadPolicy& spec,std::string_view candidate) {
     if(!cpp_array_owner_read_matches(spec,candidate))return {};
-    const auto class_open="class "+spec.class_name+" {\n";
+    // Locate the actual class definition, not the same words in a comment,
+    // raw string or a forward declaration. Authored source remains unchanged.
+    const auto insertion=cpp_class_definition_instrumentation::body_insertion(
+        candidate,spec.class_name);
+    if(!insertion)return {};
     auto source=std::string(candidate);
-    const auto at=source.find(class_open);
-    if(at==source.npos||source.find(class_open,at+class_open.size())!=source.npos)
-        return {};
-    source.insert(at+class_open.size(),
-        "    friend struct lgaed_array_qa::Access;\n");
+    source.insert(*insertion,
+        "\n    friend struct lgaed_array_qa::Access;\n");
     static constexpr std::string_view prelude=R"lgaed(#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
