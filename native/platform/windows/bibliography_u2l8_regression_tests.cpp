@@ -33,9 +33,23 @@ int main(int argc,char** argv) {
             const auto before=std::string("Una explicación (Autor, 2024, ")+
                 std::string(tail)+").";
             const auto after=std::string("Una explicación (Autor, 2024).");
-            if(!lgaed::windows::bibliography::only_parenthetical_locator_removal(before,after)||
-               lgaed::windows::bibliography::only_parenthetical_locator_removal(after,before))
+            const auto forward=lgaed::windows::bibliography::only_parenthetical_locator_removal(before,after);
+            const auto reverse=lgaed::windows::bibliography::only_parenthetical_locator_removal(after,before);
+            if(!forward||reverse) {
+                auto ascii=before;
+                auto replace_range=[&](std::string_view needle){
+                    for(std::size_t pos=0;(pos=ascii.find(needle,pos))!=std::string::npos;){
+                        ascii.replace(pos,needle.size(),"-");
+                        ++pos;
+                    }
+                };
+                replace_range("–");replace_range("—");
+                const auto ascii_forward=lgaed::windows::bibliography::only_parenthetical_locator_removal(ascii,after);
+                std::cerr<<"Bibliography range debug: singular/original="<<before
+                    <<" original="<<forward<<" reverse="<<reverse
+                    <<" ascii="<<ascii_forward<<" asciiBefore="<<ascii<<"\n";
                 throw std::runtime_error("Valid bibliography range failed or allowed reversal: "+std::string(tail));
+            }
         }
         for(const auto tail:std::array<std::string_view,3>{{
                 "párrs. 1–tres","párrs. uno–3","párrs. 1–3 y texto libre"}}){
