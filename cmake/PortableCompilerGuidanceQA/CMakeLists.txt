@@ -189,6 +189,19 @@ set_tests_properties(native.compiler_guidance_state
     native.u8l10_polymorphic_clone_state
     native.u10l1_dual_interface_state PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
 
+# Three original U3L9 assertion activities, run in the SAME bounded Win32
+# child process worker used by the actual app. Unlike the lightweight Python
+# MSVC baseline, this test checks the authentic request and grading path.
+add_executable(lgaed_native_assertion_runner_tests
+    "${LGAED_ROOT}/native/platform/windows/native_assertion_runner_tests.cpp")
+target_link_libraries(lgaed_native_assertion_runner_tests PRIVATE
+    lgaed_guidance_platform lgaed_guidance_qa_options)
+target_link_options(lgaed_native_assertion_runner_tests PRIVATE /OPT:REF)
+add_test(NAME native.u3l9_assertion_contracts
+    COMMAND lgaed_native_assertion_runner_tests)
+set_tests_properties(native.u3l9_assertion_contracts PROPERTIES
+    TIMEOUT 180 RUN_SERIAL TRUE)
+
 # Read-only authoring reference for Work: validate each proposed property
 # with the actual WinRT full and compact loaders without writing lesson JSON.
 add_executable(lgaed_p3_authoring_state_tests
