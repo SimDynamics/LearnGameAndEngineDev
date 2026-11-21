@@ -94,7 +94,13 @@ por contaminar stdout y otra por copiar un entero cuando los valores de ambos
 propietarios coinciden) con GCC, Clang
 y MSVC disponible en CI. El comprobador privado exige stdout vacío y que stderr sea exactamente
 el marcador final emitido tras todas las verificaciones; una coincidencia
-parcial del marcador no demuestra éxito. Estas pruebas **no publican** el campo en el JSON.
+parcial del marcador no demuestra éxito. El ejecutor de QA compila además cada una de las tres soluciones correctas
+con el `main` original y las contrasta con **todos** los casos públicos
+publicados, incluidos los dos que permanecen opcionales para el alumno.
+También comprueba que la implementación incorrecta que copia un entero
+cuando ambos valores coinciden supera el primer caso de stdout y, pese
+a ello, es rechazada por la sonda privada de identidad. La QA no exige
+realizar manualmente los casos opcionales. Estas pruebas **no publican** el campo en el JSON.
 
 ## Política de movimiento generada: U6L6
 
