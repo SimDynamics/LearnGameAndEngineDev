@@ -1739,11 +1739,19 @@ declarados; no demuestran equivalencia semántica para todas las entradas
 posibles. El inicial sin ampliar sigue sin acreditar el objetivo aunque
 termine con `Fallos=0`, y cambiar sólo una etiqueta tampoco crea una prueba nueva.
 
+Además del resultado global y el mensaje, la instrumentación observa el
+**valor bool que devuelve cada comparación**. En la ejecución original todos
+deben ser verdaderos; al introducir un defecto, únicamente la comparación
+correspondiente a ese caso debe ser falsa. Un retorno fijo 1 o una línea
+«Fallos=1» fabricada no acredita el contraste si la función de comparación
+continúa devolviendo verdadero. El lector conserva intactos los mensajes
+públicos, incluso si la comparación escribió su diagnóstico a stderr.
+
 Esta acreditación usa
-`open-cmake-battery-independent-mutations-v4`. Los recibos v1, v2 y v3 conservan
-su identidad y alcance anteriores; no acreditan automáticamente la nueva
-mutación del destino. V3 mantiene su alcance de asociación entre números y
-llamadas, sin atribuirle esa comprobación adicional. Los borradores y los archivos
+`open-cmake-battery-independent-mutations-v5`. Los recibos v1 a v4 conservan
+su identidad y alcance anteriores, pero no acreditan el nuevo testigo de
+comparación individual. V4 conserva las tres mutaciones por caso y sus números,
+sin atribuirle una observación del retorno bool. Los borradores y los archivos
 del estudiante no se renumeran ni se reescriben al incorporar el objetivo.
 
 ### Entrada y acciones de ejecución

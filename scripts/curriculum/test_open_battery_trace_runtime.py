@@ -31,7 +31,8 @@ bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {
 }
 )cpp";
 int main(int argc,char** argv) {
-    if(argc==4&&std::string_view(argv[1])=="decode") {
+    if(argc==4&&(std::string_view(argv[1])=="decode"||
+                  std::string_view(argv[1])=="decode-results")) {
         std::ifstream input(argv[2],std::ios::binary);
         if(!input)return 2;
         const std::string raw{std::istreambuf_iterator<char>{input},{}};
@@ -44,7 +45,10 @@ int main(int argc,char** argv) {
         for(std::size_t index=0;index<trace->calls.size();++index) {
             const auto& call=trace->calls[index];
             std::cout<<trace->case_numbers[index]<<','<<call.value<<','<<call.lower
-                     <<','<<call.upper<<','<<call.initial<<'\n';
+                     <<','<<call.upper<<','<<call.initial;
+            if(std::string_view(argv[1])=="decode-results")
+                std::cout<<','<<int(trace->comparison_results[index]);
+            std::cout<<'\n';
         }
         return 0;
     }
@@ -229,6 +233,15 @@ class OpenBatteryTraceRuntimeTest(unittest.TestCase):
                                                       for line in text.splitlines()]
         return comparisons, visible.read_bytes()
 
+    def decode_results(self, raw: bytes) -> tuple[list[tuple[int, ...]] | None, bytes]:
+        trace, visible = self.root / "trace-results.bin", self.root / "student-results.bin"
+        trace.write_bytes(raw)
+        result = self.run_tool([str(self.generator), "decode-results", str(trace), str(visible)])
+        text = result.stdout.decode("ascii").strip()
+        results = None if text == "INVALID" else [tuple(map(int, line.split(",")))
+                                                  for line in text.splitlines()]
+        return results, visible.read_bytes()
+
     def check_preserved(self, mode: str) -> None:
         original = self.execute("plain", mode)
         wrapped = self.execute("baseline", mode)
@@ -241,6 +254,23 @@ class OpenBatteryTraceRuntimeTest(unittest.TestCase):
 
     def test_default_reporting_and_computed_loop_numbers_are_unchanged(self):
         self.check_preserved("default")
+
+    def test_real_comparison_boolean_proofs_are_bound_to_each_call(self):
+        original=self.execute("plain", "prefix")
+        baseline=self.execute("baseline", "prefix")
+        decisions, visible=self.decode_results(baseline.stderr)
+        self.assertEqual(baseline.returncode, 0)
+        self.assertEqual(decisions, [(11,2,3,7,77,1),(37,3,3,7,59,1)])
+        self.assertEqual(visible, original.stderr)
+        for variant, failed in (("old", 0), ("acceptance", 1),
+                                ("destination", 1)):
+            with self.subTest(variant=variant):
+                response=self.execute(variant, "prefix")
+                outcomes, original_text=self.decode_results(response.stderr)
+                self.assertEqual(response.returncode, 1)
+                self.assertEqual([item[-1] for item in outcomes],
+                                 [0 if index==failed else 1 for index in range(2)])
+                self.assertEqual(original_text.count(b"FALLO"),1)
 
     def test_reformatted_library_preserves_real_runtime_calls_and_stderr(self):
         normal = self.execute("baseline", "prefix")
@@ -329,7 +359,8 @@ class OpenBatteryTraceRuntimeTest(unittest.TestCase):
     def test_crlf_and_no_final_newline_preserve_every_student_byte(self):
         raw = (b"Aviso: LGAED_OPEN_BATTERY_BEGIN:37\r\n"
                b"LGAED_OPEN_BATTERY_CALL:3,3,7,59\r\n"
-               b"OK\r\nLGAED_OPEN_BATTERY_END:37\r\nFin sin salto")
+               b"OK\r\nLGAED_OPEN_BATTERY_RESULT:1\r\n"
+               b"LGAED_OPEN_BATTERY_END:37\r\nFin sin salto")
         comparisons, visible = self.decode(raw)
         self.assertEqual(comparisons, [(37, 3, 3, 7, 59)])
         self.assertEqual(visible, b"Aviso: OK\r\nFin sin salto")
