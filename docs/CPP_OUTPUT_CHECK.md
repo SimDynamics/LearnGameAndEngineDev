@@ -726,6 +726,17 @@ declaración y comprobará su presentación cuando corresponda. Las
 sondas de C++ y las pruebas aisladas de conservación no sustituyen la
 validación integral nativa de la app Windows.
 
+La regresión `test_cpp_virtual_lifetime_dispatch_core.py` coteja el
+`main` auténtico con sus **cinco casos públicos** para dos soluciones
+equivalentes y un contraejemplo: `registrar` selecciona la implementación
+base según el texto «ConstruirBase» o «DestruirBase», en lugar de respetar
+el despacho virtual de C++. Este atajo reproduce los cinco casos originales
+porque allí los rótulos coinciden con las fases del ciclo de vida. La
+sonda privada lo rechaza al realizar llamadas ordinarias sobre un objeto
+derivado vivo con esos mismos rótulos. Los cuatro casos públicos posteriores
+siguen siendo opcionales para el alumno; las ejecuciones adicionales
+son únicamente de QA.
+
 ## Preparar un objeto derivado y conservar el anterior ante una excepción
 
 Programación 3, U8L7, dispone de una prueba independiente de construcción
