@@ -35,6 +35,44 @@ int main(int argc,char** argv) try {
         "destino","fuente","datos","salida",
         "Cantidad:",":","Numero:",";Codigo:"
     };
+    // Synthetic authoring attacks only. These altered originals are never
+    // compiled or published; a comment must not authenticate a missing
+    // original virtual contract, public base or vector owner.
+    const auto reject=[&](std::string source,std::string_view reason) {
+        auto changed=policy;
+        changed.original_source=std::move(source);
+        if(lgaed::curriculum::cpp_interface_collection_detail::valid(changed))
+            throw std::runtime_error(std::string(reason));
+    };
+    {
+        auto source=original;
+        const std::string text="virtual ~Muestra() = default;";
+        const auto at=source.find(text);
+        if(at==source.npos)throw std::runtime_error("Original virtual destructor missing");
+        source.replace(at,text.size(),"~Muestra() = default;");
+        reject("// "+text+"\n"+source,
+               "A commented virtual destructor authenticated the interface");
+    }
+    {
+        auto source=original;
+        const std::string text="class MuestraSimple : public Muestra {";
+        const auto at=source.find(text);
+        if(at==source.npos)throw std::runtime_error("Original public subtype missing");
+        source.replace(at,text.size(),"class MuestraSimple : private Muestra {");
+        reject("// "+text+"\n"+source,
+               "A comment impersonated the actual public inheritance");
+    }
+    {
+        auto source=original;
+        const std::string text=
+            "using Muestras = std::vector<std::unique_ptr<Muestra>>;";
+        const auto at=source.find(text);
+        if(at==source.npos)throw std::runtime_error("Original owner vector missing");
+        source.replace(at,text.size(),
+            "using Muestras = std::vector<std::unique_ptr<MuestraSimple>>;");
+        reject("// "+text+"\n"+source,
+               "A comment impersonated the actual polymorphic owner alias");
+    }
     if(!lgaed::curriculum::cpp_interface_collection_matches(policy,candidate))
         throw std::runtime_error(
             "Edited source modified an immutable declaration, factory, "

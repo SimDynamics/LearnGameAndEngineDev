@@ -9,6 +9,7 @@ on:
       - scripts/curriculum/test_cpp_interface_collection_authoring.py
       - scripts/curriculum/stable_state_layout.py
       - native/core/cpp_interface_collection_check.hpp
+      - native/core/cpp_class_structure_check.hpp
       - native/core/cpp_interface_collection_check_tests.cpp
       - native/core/cpp_multi_body_check.hpp
       - native/core/cpp_member_body_check.hpp
@@ -36,4 +37,6 @@ jobs:
         shell: cmd
         run: |
           python -B scripts\curriculum\test_cpp_interface_collection.py --compiler cl --windows
+          if errorlevel 1 exit /b 1
           python -B -m unittest discover -s scripts\curriculum -p test_cpp_interface_collection_authoring.py -v
+          if errorlevel 1 exit /b 1
