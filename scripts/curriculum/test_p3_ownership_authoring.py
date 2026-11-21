@@ -175,7 +175,7 @@ class P3OwnershipAuthoring(unittest.TestCase):
         self.assertEqual(len(plans),len(EXPECTED))
         self.assertEqual([(unit,field) for unit,_,field in plans],list(EXPECTED))
         self.assertEqual(
-            [str(CONTENT.relative_to(ROOT)/relative) for _,relative,_ in plans],
+            [(CONTENT.relative_to(ROOT)/relative).as_posix() for _,relative,_ in plans],
             [item["lesson"] for item in entries])
         self.assertEqual(len(declarations),len(EXPECTED))
         self.assertEqual(set(dict(declarations)),{field for _,field in EXPECTED})
