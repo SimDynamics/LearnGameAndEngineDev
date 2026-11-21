@@ -37,7 +37,15 @@ permissions:
 
 jobs:
   validate-programming-courses:
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
+    env:
+      PYTHONPATH: scripts/curriculum
+      # Git for Windows cannot inspect historical lesson blobs with paths
+      # longer than MAX_PATH unless long paths are enabled in its own child
+      # process configuration. Never change the runner/global Git settings.
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     timeout-minutes: 25
     steps:
       - name: Obtener publicación y mapas históricos auténticos
@@ -45,57 +53,63 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Select Python and native MSVC tools on Windows
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Enable MSVC C++23 without changing the product-pinned toolchain
+        uses: ilammy/msvc-dev-cmd@v1
       - name: Comprobar reglas estructurales y revisiones editoriales de cursos presentes y futuros
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_programming_multicourse_validation
+          python -B -m unittest -v test_programming_multicourse_validation
       - name: Conservar regresiones previas del mapa de estado
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_stable_state_layout
+          python -B -m unittest -v test_stable_state_layout
       - name: Probar formato físico C++ y CMake sin alterar el progreso histórico
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_code_format_compat
+          python -B -m unittest -v test_code_format_compat
       - name: Verificar revisión genérica de opciones y conservación de respuestas
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_general_choice_editorial
+          python -B -m unittest -v test_general_choice_editorial
       - name: Comprobar la precisión general de la consigna matemática AssetCheck sin cambiar respuestas
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_p2_math_prompt_general_revision
+          python -B -m unittest -v test_p2_math_prompt_general_revision
       - name: Acreditar dos revisiones ordinarias de preguntas U12 con marcado explícito
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_published_u12_question_editorials
+          python -B -m unittest -v test_published_u12_question_editorials
       - name: Compilar dos ejemplos de una lección real y conservar su origen publicado
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_real_code_format_pilot
+          python -B -m unittest -v test_real_code_format_pilot
       - name: Acreditar el esquema declarativo U3 sin modificar ejercicios ni progreso
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_p2_u3_workflow_declaration
+          python -B -m unittest -v test_p2_u3_workflow_declaration
       - name: Comprobar declaraciones semánticas U3L6 sin modificar fuentes históricas
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_u3_rejection_runtime_contract
+          python -B -m unittest -v test_u3_rejection_runtime_contract
       - name: Comprobar declaraciones de informes U3L8 sin alterar los editores
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_u3_observation_runtime_contract
+          python -B -m unittest -v test_u3_observation_runtime_contract
       - name: Verificar las tres declaraciones WASI U3L9 sin alterar sus fuentes
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_u3_assertion_runtime_contract
+          python -B -m unittest -v test_u3_assertion_runtime_contract
       - name: Verificar las cuatro declaraciones de constantes nombradas conservando los contratos históricos
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_named_rule_checks
+          python -B -m unittest -v test_named_rule_checks
       - name: Probar separadores visuales opcionales sin modificar 14 puzles históricos
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_order_visual_separators
+          python -B -m unittest -v test_order_visual_separators
       - name: Diagnosticar huellas históricas de idioma sin corregirlas automáticamente
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_locale_origin_diagnostic
+          python -B -m unittest -v test_locale_origin_diagnostic
       - name: Validar específicamente Programación 2 desde su publicación Git
         run: |
-          python3 scripts/curriculum/validar_json_programacion.py --course programming_practice_tools --base-ref HEAD --list-files
+          python -B scripts/curriculum/validar_json_programacion.py --course programming_practice_tools --base-ref HEAD --list-files
       - name: Validar específicamente Programación 1 sin relajar contratos anteriores
         run: |
-          python3 scripts/curriculum/validar_json_programacion.py --course cpp_fundamentals --base-ref HEAD
+          python -B scripts/curriculum/validar_json_programacion.py --course cpp_fundamentals --base-ref HEAD
       - name: Validar todos los cursos presentes sin depender de su activación en el catálogo
         run: |
-          python3 scripts/curriculum/validar_json_programacion.py --base-ref HEAD --list-files
+          python -B scripts/curriculum/validar_json_programacion.py --base-ref HEAD --list-files
 
   diagnose-every-lesson:
     name: Diagnosticar todos los mapas visibles (no aprueba la publicación)

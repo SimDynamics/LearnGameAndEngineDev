@@ -346,6 +346,9 @@ class SourceFormatTest(unittest.TestCase):
             '/* __LINE__ does not expand here */ int main() {}',
             '// __builtin_source_location() is documentation\nint main() {}',
             'const char* diagnostic = "__builtin_source_location()";\nint main() {}',
+            '#include <source_location>\nint main(){return 0;}',
+            '#include "__LINE__.h" // source_location\nint main(){return 0;}',
+            '%:include <source_location>\nint main(){return 0;}',
         ]
         for before in allowed:
             with self.subTest(allowed=before):
@@ -360,6 +363,7 @@ class SourceFormatTest(unittest.TestCase):
             'auto current = __builtin_source_location();',
             '#define CURRENT __LINE__\nint main() {}',
             '#define CAPTURE_LOCATION __builtin_source_location()\nint main() {}',
+            '#include <source_location>\nauto current = std::source_location::current();',
         ]
         for before in blocked:
             with self.subTest(blocked=before), self.assertRaises(fmt.SourceFormatError):

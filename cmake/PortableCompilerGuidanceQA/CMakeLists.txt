@@ -16,8 +16,25 @@ set(LGAED_CPP_STANDARD 23)
 set(LGAED_CPP_STANDARD_OPTION "/std:c++latest")
 set(LGAED_DEFAULT_PROFILE "Codex")
 set(LGAED_DEP_ROOT "")
-set(LGAED_EDUCATIONAL_VC_ROOT "")
-set(LGAED_EDUCATIONAL_SDK_ROOT "")
+# Hosted Win32 execution needs the *disposable runner's* compiler and
+# SDK paths, not the separately pinned MSVC 14.51/SDK 28000 installation.
+# These values are confined to this standalone QA build; the root product
+# manifest and toolchain checks remain unchanged.
+if("$ENV{VCToolsInstallDir}" STREQUAL "" OR
+   "$ENV{WindowsSdkDir}" STREQUAL "" OR
+   "$ENV{WindowsSDKVersion}" STREQUAL "")
+    message(FATAL_ERROR "Hosted Win32 source QA needs activated MSVC/SDK tools.")
+endif()
+file(TO_CMAKE_PATH "$ENV{VCToolsInstallDir}" LGAED_EDUCATIONAL_VC_ROOT)
+file(TO_CMAKE_PATH "$ENV{WindowsSdkDir}" LGAED_EDUCATIONAL_SDK_ROOT)
+string(REGEX MATCH "[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+"
+    LGAED_HOSTED_WINDOWS_SDK_VERSION "$ENV{WindowsSDKVersion}")
+if(NOT LGAED_HOSTED_WINDOWS_SDK_VERSION)
+    message(FATAL_ERROR "Cannot resolve the hosted Windows SDK version.")
+endif()
+# The production config template deliberately pins SDK 28000. Substitute
+# ONLY its generated copy for this independently labeled hosted QA.
+# The original template remains immutable.
 # The root application config embeds CMAKE_SOURCE_DIR as its lesson-data
 # locator. In this standalone subproject CMAKE_SOURCE_DIR points at the QA
 # script directory, so substitute only that placeholder with the actual
@@ -25,6 +42,8 @@ set(LGAED_EDUCATIONAL_SDK_ROOT "")
 file(READ "${LGAED_ROOT}/cmake/native_build_config.hpp.in" _lgaed_original_config)
 string(REPLACE "@CMAKE_SOURCE_DIR@" "@LGAED_ROOT@"
     _lgaed_qa_config "${_lgaed_original_config}")
+string(REPLACE "10.0.28000.0" "${LGAED_HOSTED_WINDOWS_SDK_VERSION}"
+    _lgaed_qa_config "${_lgaed_qa_config}")
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/native_build_config_qa.hpp.in"
     "${_lgaed_qa_config}")
 configure_file("${CMAKE_CURRENT_BINARY_DIR}/native_build_config_qa.hpp.in"
@@ -99,6 +118,16 @@ target_link_libraries(lgaed_compiler_guidance_portable_qa PRIVATE
     lgaed_guidance_platform lgaed_guidance_qa_options)
 target_link_options(lgaed_compiler_guidance_portable_qa PRIVATE /OPT:REF)
 enable_testing()
+# Run the production source probe's own adversarial regressions in the same
+# hosted MSVC CTest job that checks sealed progress and native StateStore.
+add_executable(lgaed_local_int_probe_source_qa
+    "${LGAED_ROOT}/native/core/cpp_local_int_probe_tests.cpp")
+target_link_libraries(lgaed_local_int_probe_source_qa PRIVATE
+    lgaed_guidance_qa_options)
+add_test(NAME native.local_int_probe_neutral_state
+    COMMAND lgaed_local_int_probe_source_qa)
+set_tests_properties(native.local_int_probe_neutral_state
+    PROPERTIES TIMEOUT 60)
 add_test(NAME native.compiler_guidance_state
     COMMAND lgaed_compiler_guidance_portable_qa)
 add_test(NAME native.compiler_review_guidance_priority
@@ -172,6 +201,26 @@ add_test(NAME native.p3_fourteen_ownership_authoring
 set_tests_properties(native.p3_fourteen_ownership_authoring PROPERTIES
     TIMEOUT 180 RUN_SERIAL TRUE)
 
+# Verify explicitly selected historical/new resets remain valid, while
+# malformed new-generation and cross-parent scopes reject before mutation.
+add_executable(lgaed_course_edition_scope_qa
+    "${LGAED_ROOT}/native/core/course_edition_scope_tests.cpp")
+target_link_libraries(lgaed_course_edition_scope_qa PRIVATE
+    lgaed_guidance_platform lgaed_guidance_qa_options)
+target_link_options(lgaed_course_edition_scope_qa PRIVATE /OPT:REF)
+add_test(NAME native.course_edition_reset_scope
+    COMMAND lgaed_course_edition_scope_qa)
+set_tests_properties(native.course_edition_reset_scope PROPERTIES
+    TIMEOUT 120 RUN_SERIAL TRUE)
+
+# Host the original UTF-8 MSVC compiler runner in a private console.
+# The test executable finds this companion beside itself, not in a personal
+# installation. It is only built for the hosted U2L7 end-to-end regression.
+add_executable(lgaed_cpp_tool_host
+    "${LGAED_ROOT}/native/platform/windows/cpp_tool_host.cpp")
+target_link_libraries(lgaed_cpp_tool_host PRIVATE
+    lgaed_guidance_qa_options user32)
+
 # Local-int contracts use the real WinRT loader and StateStore codec without
 # running student binaries or changing the pinned Windows toolchain.
 add_executable(lgaed_local_int_state_tests
@@ -183,6 +232,21 @@ add_test(NAME native.compiler_local_int_state
     COMMAND lgaed_local_int_state_tests)
 set_tests_properties(native.compiler_local_int_state PROPERTIES
     TIMEOUT 180 RUN_SERIAL TRUE)
+
+# Execute the actual U2L7 local-string lesson and private probes with hosted
+# MSVC; preserve its own isolated QA profile and independent StateStore reopen.
+# This is NOT a production-pinned Windows application acceptance test.
+add_executable(lgaed_local_string_state_tests
+    "${LGAED_ROOT}/native/platform/windows/local_string_state_tests.cpp")
+target_link_libraries(lgaed_local_string_state_tests PRIVATE
+    lgaed_guidance_platform lgaed_guidance_qa_options)
+target_link_options(lgaed_local_string_state_tests PRIVATE /OPT:REF)
+add_dependencies(lgaed_local_string_state_tests lgaed_cpp_tool_host)
+add_test(NAME native.compiler_local_string_state
+    COMMAND lgaed_local_string_state_tests)
+set_tests_properties(native.compiler_local_string_state PROPERTIES
+    TIMEOUT 360 RUN_SERIAL TRUE)
+
 # Independent current-U2L5 reader gate and bookmark regressions on hosted
 # Windows. This uses the real published loader and narration-state codec.
 # It does not synthesize PCM or claim installed-application playback.
@@ -241,4 +305,44 @@ if(LGAED_HOSTED_FEEDBACK_FONT_QA)
         COMMAND lgaed_u2_semantic_portable_qa --current-u2-roles)
     set_tests_properties(native.u2_semantic_view_portable PROPERTIES
         TIMEOUT 180 RUN_SERIAL TRUE)
+    # Exercise the two current U2L5 REQUIRED compiler gates with production
+    # LessonView and StateStore, without pretending model receipts are runs
+    # or generating TTS audio on hosted Windows.
+    add_test(NAME native.u2l5_native_reader_gates
+        COMMAND lgaed_u2_semantic_portable_qa --current-u2l5-native-gates)
+    set_tests_properties(native.u2l5_native_reader_gates PROPERTIES
+        TIMEOUT 180 RUN_SERIAL TRUE)
+    # U2L6 native reader regression: two source-owned independent compiler
+    # gates, restored drafts, attempted manual advance and exact references.
+    add_test(NAME native.u2l6_native_reader_gates
+        COMMAND lgaed_u2_semantic_portable_qa --current-u2l6-native-gates)
+    set_tests_properties(native.u2l6_native_reader_gates PROPERTIES
+        TIMEOUT 180 RUN_SERIAL TRUE)
+    # Original U1L2's five code lines and the optional blank on real Win32
+    # controls; this does not alter the pinned product toolchain or curriculum.
+    add_executable(lgaed_u1l2_order_whitespace_portable_qa
+        "${LGAED_ROOT}/native/presentation/windows/order_code_view_tests.cpp")
+    target_link_libraries(lgaed_u1l2_order_whitespace_portable_qa PRIVATE
+        lgaed_curricular_windows lgaed_guidance_qa_options)
+    target_link_options(lgaed_u1l2_order_whitespace_portable_qa PRIVATE /OPT:REF)
+    add_test(NAME native.u1l2_order_blank_portable
+        COMMAND lgaed_u1l2_order_whitespace_portable_qa --whitespace)
+    set_tests_properties(native.u1l2_order_blank_portable PROPERTIES
+        TIMEOUT 180 RUN_SERIAL TRUE)
+    # Reuse the exact original nine-inline regression (including active U2L5)
+    # with real production LessonView, CppFillView and StateStore. This
+    # standalone hosted fixture does not run student code or synthesize audio;
+    # its compiler prerequisite receipts are explicitly synthetic QA data.
+    add_executable(lgaed_inline_feedback_portable_qa
+        "${LGAED_ROOT}/native/presentation/windows/lesson_view_tests.cpp")
+    target_compile_definitions(lgaed_inline_feedback_portable_qa PRIVATE
+        LGAED_INLINE_FEEDBACK_ONLY)
+    target_compile_options(lgaed_inline_feedback_portable_qa PRIVATE /bigobj)
+    target_link_libraries(lgaed_inline_feedback_portable_qa PRIVATE
+        lgaed_curricular_windows lgaed_guidance_qa_options)
+    target_link_options(lgaed_inline_feedback_portable_qa PRIVATE /OPT:REF)
+    add_test(NAME native.inline_feedback_u2l5_portable
+        COMMAND lgaed_inline_feedback_portable_qa --inline-feedback)
+    set_tests_properties(native.inline_feedback_u2l5_portable PROPERTIES
+        TIMEOUT 300 RUN_SERIAL TRUE)
 endif()

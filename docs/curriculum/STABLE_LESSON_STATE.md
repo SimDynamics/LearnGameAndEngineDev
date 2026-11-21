@@ -313,8 +313,12 @@ introducir una pregunta ausente, sustituir una propiedad anterior inválida
 ni vaciar o retirar una explicación ya publicada.
 
 Opciones, índice correcto, programas, fragmentos, respuestas, reglas de
-comparación, guías, tipo, identidad y cualquier campo no revisado conservan
-igualdad completa. Sólo puede añadirse la propiedad opcional
+comparación, tipo, identidad y cualquier campo no revisado conservan
+igualdad completa. Una revisión ordinaria también puede cambiar pistas
+`reviewFeedback` ya existentes, pero **sólo junto con una pregunta o
+explicación auténticamente revisada**, nunca como modificación aislada.
+Cada guía conserva su tipo; las opciones y su orden no se alteran.
+Sólo puede añadirse la propiedad opcional
 `/explanation` anteriormente ausente; no se autorizan otros campos
 nuevos o retirados ni cambios de evaluación. El historial de origen
 y las direcciones de respuesta permanecen intactos.
@@ -346,9 +350,51 @@ editorial completa. `spans: []` declara explícitamente prosa; la ausencia de
 descriptor no cumple esta vía general. Work indica los rangos UTF-16 mediante
 los helpers de autoría existentes. Si un campo ya tenía segmentos, el helper
 rechaza borrarlos todos silenciosamente. Los descriptores de opciones, guías y
-otros campos no revisados permanecen exactos, al igual que los idiomas ajenos.
+otros campos **no revisados** permanecen exactos, al igual que los idiomas ajenos.
 La preparación existente mediante `prepare_v2` continúa admitida cuando Work
 entrega los textos, sus descriptores y la publicación anterior correspondientes.
+
+#### Pistas `reviewFeedback` junto con una pregunta o explicación
+
+Para actividades ordinarias con guía de texto simple, Work añade al
+mismo objeto de revisión la entrada:
+
+```python
+"reviewFeedback": {"text": "Revisa el dato que aparece primero.", "spans": []}
+```
+
+En `multiple_choice`, `reviewFeedback` es una lista vinculada a
+`options`: Work declara **sólo los índices que cambian**, por ejemplo:
+
+```python
+"reviewFeedback": {
+    "0": {"text": "Comprueba la primera alternativa.", "spans": []},
+    "2": {"text": "Distingue la tercera alternativa.", "spans": []},
+}
+```
+
+Esos fragmentos acompañan una entrada `question` o `explanation`
+revisada en la misma operación. Se conservan el índice correcto, la
+cantidad y el orden de opciones, el texto de los demás incisos, las
+respuestas anteriores y el identificador estable. El helper archiva
+`reviewPaths` en la arista editorial con el orden numérico de las pistas
+afectadas, y crea un descriptor `textSemantics` por cada texto
+modificado. Una guía sin la correspondiente modificación de prosa, una
+ruta repetida o inexistente, un marcador ausente y cambios de
+respuesta se rechazan. Para una guía escalar, la ruta es
+`/reviewFeedback`; para una alternativa, `/reviewFeedback/0`, etc.
+
+Esta operación es diferente de una **revisión de formato físico de
+código con guía de revisión** ya publicada: esa transición sigue
+requiriendo un archivo `sourceFormatRevisions` que conserve todos
+los tokens y el contrato anterior. No necesita una pregunta
+modificada ni autoriza usar la vía de formato para alterar el
+contenido de una respuesta. La revisión semántica y la conservación
+se comprueban en
+`test_review_feedback_prose_revision.py` y en la prueba nativa
+`native.course_edition` con un fixture de guía propia. Las pruebas
+en Linux verifican el contrato Python, pero no acreditan la carga
+nativa en Windows.
 
 El comando `revise-ordinary-editorial` recibe el archivo de campos mediante
 `--editorial-fields`, además de la identidad, fuente publicada y destino nuevo

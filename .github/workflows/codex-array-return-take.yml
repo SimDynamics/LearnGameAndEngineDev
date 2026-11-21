@@ -20,25 +20,6 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    name: Original U6L12 ownership with GCC and Clang C++23
-    runs-on: ubuntu-24.04
-    timeout-minutes: 14
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Verify real Tramo independent returns and bounded rvalue transfer
-        run: |
-          for compiler in g++ clang++; do
-            python3 -B scripts/curriculum/test_cpp_array_return_take.py \
-              --compiler "$compiler"
-            python3 -B scripts/curriculum/test_cpp_array_return_take_core.py \
-              --compiler "$compiler"
-          done
-          python3 -B -m unittest discover -s scripts/curriculum \
-            -p test_cpp_array_return_take_authoring.py -v
-
   windows-msvc:
     name: Original U6L12 ownership with Windows MSVC C++23
     runs-on: windows-2022

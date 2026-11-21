@@ -457,6 +457,127 @@ void numeric_domain_boundaries() {
         "Correctly reported extreme charges and refunds were rejected");
 }
 
+void diagnostic_numbers_must_be_complete_integers() {
+    constexpr RejectionFacts boxes_expected[]{{1,-1},{3,21}};
+    constexpr RejectionFacts balance_expected[]{{2,10,0},{3,0,-1}};
+    const auto box=[&](std::string_view request,std::string_view pieces) {
+        return "Cajas, petición "+std::string(request)+", piezas="+
+            std::string(pieces)+": rango permitido 0..20. Revise la cantidad.\n"+
+            "Cajas, petición 3, piezas=21: rango permitido 0..20. Revise la cantidad.\n";
+    };
+    const auto balance=[&](std::string_view request,std::string_view charges,
+                           std::string_view returns) {
+        return "Saldo, petición "+std::string(request)+", cobros="+
+            std::string(charges)+", devoluciones="+std::string(returns)+
+            ": intervalo permitido 0..9. Revise los datos.\n"+
+            "Saldo, petición 3, cobros=0, devoluciones=-1: "
+            "intervalo permitido 0..9. Revise los datos.\n";
+    };
+    require(evaluate_rejection_diagnostics(box("1","-1"),
+        RejectionOperation::boxes,boxes_expected).correct&&
+        evaluate_rejection_diagnostics(balance("2","10","0"),
+        RejectionOperation::balance,balance_expected).correct,
+        "Valid complete integer evidence no longer passes");
+    for(const auto malformed:{"1x","1e0","1.5","1_0","1-0","1,5","1..2"}) {
+        require(!evaluate_rejection_diagnostics(box(malformed,"-1"),
+            RejectionOperation::boxes,boxes_expected).correct,
+            "A numeric prefix falsely named the observed request");
+        require(!evaluate_rejection_diagnostics(balance(malformed,"10","0"),
+            RejectionOperation::balance,balance_expected).correct,
+            "A malformed balance-request number was accepted");
+    }
+    for(const auto malformed:{"-1x","-1kg","-1e0","-1.0","-1_0",
+                              "-1-0","-1,5","-1..2"}) {
+        require(!evaluate_rejection_diagnostics(box("1",malformed),
+            RejectionOperation::boxes,boxes_expected).correct,
+            "A malformed pieces value was treated as the expected integer");
+    }
+    for(const auto malformed:{"10x","10kg","10e0","10.0","10_0",
+                              "10-0","10,5","10..11"}) {
+        require(!evaluate_rejection_diagnostics(balance("2",malformed,"0"),
+            RejectionOperation::balance,balance_expected).correct,
+            "A malformed charges value was treated as a valid field fact");
+    }
+    for(const auto malformed:{"0x","0e0","0.0","0_0","0-0","0,5","0..1"}) {
+        require(!evaluate_rejection_diagnostics(balance("2","10",malformed),
+            RejectionOperation::balance,balance_expected).correct,
+            "A malformed refunds value was treated as zero");
+    }
+    // Normal separators and closed intervals still communicate whole facts.
+    require(evaluate_rejection_diagnostics(
+        "Cajas, petición 1, piezas=-1: rango permitido [0,20]. "
+        "Verifique la cantidad.\n"
+        "Cajas, petición 3, piezas=21: rango permitido 0-20. "
+        "Revise la cantidad.\n",
+        RejectionOperation::boxes,boxes_expected).correct,
+        "A full integer or a legitimate interval separator was lost");
+}
+
+void corrective_actions_require_real_verbs_not_shared_stems() {
+    constexpr RejectionFacts box_facts[]{{1,-1},{3,21}};
+    constexpr RejectionFacts balance_facts[]{{2,10,0},{3,0,-1}};
+    const auto message=[](RejectionOperation operation,int request,int first,
+            int second,std::string_view wording) {
+        std::string line=operation==RejectionOperation::boxes?"Cajas":"Saldo";
+        line+=", petición "+std::to_string(request);
+        if(operation==RejectionOperation::boxes)
+            line+=", piezas="+std::to_string(first)+
+                ": rango permitido 0..20. ";
+        else line+=", cobros="+std::to_string(first)+
+                ", devoluciones="+std::to_string(second)+
+                ": intervalo permitido 0..9. ";
+        return line+std::string(wording)+"\n";
+    };
+    for(const auto operation:{RejectionOperation::boxes,RejectionOperation::balance}) {
+        const auto facts=operation==RejectionOperation::boxes?
+            std::span<const RejectionFacts>(box_facts):
+            std::span<const RejectionFacts>(balance_facts);
+        const auto verify=[&](std::string_view wording,bool expected) {
+            const auto first=message(operation,facts[0].request,
+                facts[0].first,facts[0].second,wording);
+            const auto second=message(operation,facts[1].request,
+                facts[1].first,facts[1].second,wording);
+            const auto result=evaluate_rejection_diagnostics(first+second,operation,facts);
+            require(result.correct==expected,
+                "An unrelated shared-stem word was credited as corrective advice: "+
+                std::string(wording)+" / "+result.reason);
+        };
+        for(const auto wording:{
+            "El revisionismo no es una acción.",
+            "El revisor figura en el historial.",
+            "El verificador está instalado.",
+            "La verificabilidad del cálculo es buena.",
+            "El comprobador terminó.",
+            "El informe es comprobatorio.",
+            "El corrector es otro programa.",
+            "El rectificador ya existe.",
+            "El modificador es una opción.",
+            "El ajustador está disponible.",
+            "El dato es revisable."
+        })verify(wording,false);
+        for(const auto wording:{
+            "Revise los datos.",
+            "Verifique la cantidad.",
+            "Compruebe la petición.",
+            "Es necesario verificar el dato.",
+            "Se requiere revisar el valor.",
+            "Revíselo.",
+            "Compruébelos.",
+            "Corrija la petición.",
+            "Rectifique la cantidad.",
+            "Modifique los datos.",
+            "Ajuste la entrada.",
+            "La revisión es necesaria.",
+            "La verificación resulta obligatoria."
+        })verify(wording,true);
+        for(const auto wording:{
+            "La revisión no es necesaria.",
+            "No es necesaria la revisión.",
+            "La verificación ya fue realizada."
+        })verify(wording,false);
+    }
+}
+
 void rejected_semantics() {
     constexpr RejectionFacts box_facts[]{{1,-1},{3,21}};
     constexpr RejectionFacts balance_facts[]{{2,10,0},{3,0,-1}};
@@ -471,6 +592,49 @@ void rejected_semantics() {
             boxes(invalid,"Revise"),RejectionOperation::boxes,box_facts).correct,
             "Wrong boxes bounds or an ambiguous comma were falsely accepted");
     }
+    // A valid inclusive range cannot exclude one of its own integers.
+    // Outside-range rejections remain valid facts and are not contradictions.
+    for(const auto phrase:{
+        "0..9; no se permite 9",
+        "0..9; no se admite el valor 0",
+        "0..9; no se aceptan los valores 9",
+        "0..9; el valor 9 está prohibido",
+        "0..9; 9 no está permitido",
+        "0..9; 0 no es válido"
+    }) {
+        require(!evaluate_rejection_diagnostics(
+            balances(phrase,"Revise"),RejectionOperation::balance,
+            balance_facts).correct,
+            "A balance range excluded a permitted integer but was accepted");
+    }
+    for(const auto phrase:{
+        "0..20; no se admite 20",
+        "0..20; 0 está prohibido",
+        "0..20; no se permite el valor 4"
+    }) {
+        require(!evaluate_rejection_diagnostics(
+            boxes(phrase,"Revise"),RejectionOperation::boxes,
+            box_facts).correct,
+            "A boxes range excluded an included integer but was accepted");
+    }
+    for(const auto valid:{
+        "0..9; no se permite 21",
+        "0..9; 21 no está permitido",
+        "0..9; no se admiten valores inferiores a 0",
+        "0..9; no se admiten valores superiores a 9"
+    }) {
+        require(evaluate_rejection_diagnostics(
+            balances(valid,"Compruebe"),RejectionOperation::balance,
+            balance_facts).correct,
+            "A valid exclusion of out-of-domain values was wrongly rejected");
+    }
+    // The first number belongs to the range, not to a subsequent refusal
+    // with a separately identified object in the same clause.
+    require(evaluate_rejection_diagnostics(
+        balances("0..9, no se permite 21","Revise"),
+        RejectionOperation::balance,balance_facts).correct,
+        "The next explicitly denied 21 was attributed to the range endpoint 9");
+
     // An unrelated test example after a sentence boundary is not another
     // claim about the admitted interval.
     for(const auto message:{
@@ -622,6 +786,8 @@ int main() {
         unsupported_claims_keep_their_predicate_and_polarity();
         source_edits_stay_inside_assigned_diagnostic();
         numeric_domain_boundaries();
+        diagnostic_numbers_must_be_complete_integers();
+        corrective_actions_require_real_verbs_not_shared_stems();
         rejected_semantics();
         std::cout<<"PASS U3L6 semantic diagnostics: closed intervals, spaced dashes, "
             "three valid review actions, field identities, scoped validity and action claims, negative cases\n";

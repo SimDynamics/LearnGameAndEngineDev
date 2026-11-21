@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerLocalIntChecks", "compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerLocalIntChecks", "compilerLocalStringChecks", "compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -2552,11 +2552,23 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     chains = {}
     for ordinal, proof in enumerate(editorial):
         fields = {"id", "beforeSha256", "afterSha256"}
-        require(type(proof) is dict and fields <= set(proof) <= fields | {"returnTo", "bibliography"}
+        require(type(proof) is dict and fields <= set(proof) <= fields | {"returnTo", "bibliography", "reviewPaths"}
                 and not {"returnTo", "bibliography"} <= set(proof),
                 "Malformed editorial proof")
         identity = _identity(proof["id"])
         require(identity in storage, "Unknown editorial identity")
+        if "reviewPaths" in proof:
+            paths = proof["reviewPaths"]
+            require(type(paths) is list and bool(paths)
+                    and all(type(path) is str and
+                            (path == "/reviewFeedback" or
+                             re.fullmatch(r"/reviewFeedback/(0|[1-9][0-9]*)", path))
+                            for path in paths)
+                    and len(paths) == len(set(paths))
+                    and paths == sorted(paths, key=lambda path:
+                                        (-1 if path == "/reviewFeedback" else
+                                         int(path.rsplit("/", 1)[1]))),
+                    "An editorial guidance proof needs unique ordered review paths")
         before, after = _digest(proof["beforeSha256"]), _digest(proof["afterSha256"])
         require(before != after, "An editorial proof must describe a real revision")
         if identity in chains:
@@ -2680,6 +2692,9 @@ def _validate_bibliography_semantics(descriptor, identity: str, block: dict) -> 
 def _editorial_proof(document: dict, previous: dict, locale: str, identity: str,
                      before: dict, after: dict, *, archive_bibliography: bool = True) -> dict:
     proof = {"id": identity, "beforeSha256": fingerprint(before), "afterSha256": fingerprint(after)}
+    if ordinary := ordinary_editorial_fields(before, after):
+        if "reviewFeedback" in ordinary:
+            proof["reviewPaths"] = list(ordinary_feedback_paths(before, after))
     if archive_bibliography and bibliography_revision.is_bibliography_only_revision(before, after):
         proof["bibliography"] = {
             "historySha256": fingerprint({"lessonId": document["id"], "locale": locale,
@@ -6548,7 +6563,7 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
     owners, seen = _blocks(document), set()
     forbidden = {
         "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks",
-        "compilerOpenBatteryChecks", "compilerReductionChecks",
+        "compilerLocalStringChecks", "compilerOpenBatteryChecks", "compilerReductionChecks",
         "compilerCmakeGraphChecks", "compilerIndexedUniqueTransferChecks",
         "compilerDefaultedMovePolicyChecks",
         "compilerIndependentCopyAssignmentChecks",
@@ -6597,7 +6612,7 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
         for probe in probes:
             require(type(probe) is dict and
                     {"variable", "replacement", "outputs"} <= set(probe) <=
-                    {"variable", "replacement", "outputs", "afterUpdate"},
+                    {"variable", "replacement", "outputs", "afterUpdate", "expectedIncrease"},
                     "Local-int variation requires variable, replacement and outputs")
             variable, replacement, outputs = (
                 probe["variable"], probe["replacement"], probe["outputs"])
@@ -6612,6 +6627,11 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
             require(type(after_update) is bool and
                     ("afterUpdate" not in probe or after_update is True),
                     "Local-int afterUpdate must be explicit boolean true")
+            if "expectedIncrease" in probe:
+                increase = probe["expectedIncrease"]
+                require(after_update and type(increase) is int and
+                        1 <= increase < 2 ** 31,
+                        "Local-int expectedIncrease requires positive int32 and afterUpdate")
             require((variable, replacement, after_update) not in known,
                     "A local-int variation cannot repeat a prior replacement")
             known.add((variable, replacement, after_update))
@@ -6623,6 +6643,96 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
                             for visible in case["outputs"]} for o in outputs) and
                     len({o.replace("\r\n", "\n") for o in outputs}) == len(outputs),
                     "Hidden outputs must be distinct, bounded and differ from visible output")
+
+
+def _validate_compiler_local_string_checks(document: dict) -> None:
+    """Verify independently authored string mutations without changing old response IDs."""
+    if "compilerLocalStringChecks" not in document:
+        return
+    layout = document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version") == 2 and
+            layout.get("locale") == "es",
+            "Local string checks require an existing Spanish v2 lesson")
+    checks = document["compilerLocalStringChecks"]
+    require(type(checks) is list and 1 <= len(checks) <= 32,
+            "Local string checks require 1..32 distinct source owners")
+    owners, seen = _blocks(document), set()
+    forbidden = {
+        "compilerLocalIntChecks", "compilerWorkflowChecks",
+        "compilerRuntimeChecks", "compilerNamedRuleChecks",
+        "compilerOpenBatteryChecks", "compilerReductionChecks",
+        "compilerCmakeGraphChecks", "compilerIndexedUniqueTransferChecks",
+        "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks",
+        "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks",
+        "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks",
+        "compilerPolymorphicDestructionChecks",
+        "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks",
+        "compilerAbstractInterfaceChecks", "compilerInterfaceCollectionChecks",
+        "compilerPolymorphicCloneChecks", "compilerDualInterfaceChecks",
+    }
+    moments = {"afterInitialization", "afterFirstAssignment", "beforeOutput"}
+    for check in checks:
+        require(type(check) is dict and set(check) == {"activity", "probes"},
+                "A local string owner requires exactly activity and probes")
+        identity = _identity(check["activity"])
+        require(identity not in seen, "A local string owner cannot be repeated")
+        seen.add(identity)
+        owner = owners.get(identity)
+        require(type(owner) is dict and owner.get("type") == "cpp_compiler" and
+                owner.get("language", "cpp") == "cpp" and
+                type(owner.get("outputCheck")) is dict and
+                type(owner["outputCheck"].get("cases")) is list and
+                len(owner["outputCheck"]["cases"]) == 1 and
+                type(owner.get("initialCode")) is str and bool(owner["initialCode"]) and
+                not ({"compileCheck", "cmake", "projectFiles", "sourceFiles"} & set(owner)),
+                "A string dependency needs an original one-case single-file C++ editor")
+        case = owner["outputCheck"]["cases"][0]
+        require(type(case) is dict and
+                case.get("standardInput") == owner.get("standardInput", "") and
+                case.get("exitCode", 0) == 0 and type(case.get("exitCode", 0)) is int and
+                "target" not in case and
+                not ({"standardError", "standardErrorExact"} & set(case)) and
+                type(case.get("outputs")) is list and
+                bool(case["outputs"]),
+                "A local string probe must retain its original normal output contract")
+        for key in forbidden:
+            related = document.get(key, [])
+            if type(related) is list:
+                require(not any(type(item) is dict and
+                                item.get("activity") == identity for item in related),
+                        "A local string source owner cannot share another runtime goal")
+        probes = check["probes"]
+        require(type(probes) is list and 1 <= len(probes) <= 12,
+                "A local string source owner needs 1..12 hidden variations")
+        unique = set()
+        for probe in probes:
+            require(type(probe) is dict and set(probe) ==
+                    {"variable", "replacement", "moment", "outputs"},
+                    "A string variation needs variable, replacement, moment and outputs")
+            variable, replacement = probe["variable"], probe["replacement"]
+            moment, outputs = probe["moment"], probe["outputs"]
+            require(type(variable) is str and re.fullmatch(
+                r"[A-Za-z_][A-Za-z_0-9]{0,127}", variable) is not None and
+                variable != "main" and not variable.startswith("__") and
+                not (variable.startswith("_") and len(variable) > 1 and variable[1].isupper()),
+                "Invalid local string identifier")
+            require(type(replacement) is str and replacement and "\x00" not in replacement and
+                    len(replacement.encode("utf-8")) <= 128,
+                    "A local string replacement must be a bounded nonempty UTF-8 value")
+            require(type(moment) is str and moment in moments,
+                    "A local string probe has an unsupported mutation moment")
+            require((variable, moment) not in unique,
+                    "A local string variable has a repeated mutation phase")
+            unique.add((variable, moment))
+            require(type(outputs) is list and 1 <= len(outputs) <= 4 and
+                    all(type(text) is str and text and "\x00" not in text and
+                        len(text.encode("utf-8")) <= 4096 for text in outputs),
+                    "A local string variation needs 1..4 bounded exact outputs")
+            observed = [text.replace("\r\n", "\n") for text in outputs]
+            previous = {text.replace("\r\n", "\n") for text in case["outputs"]}
+            require(len(set(observed)) == len(observed) and
+                    not (set(observed) & previous),
+                    "A hidden local string output must differ from the visible case")
 
 
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
@@ -6637,6 +6747,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_runtime_checks(document)
     _validate_compiler_named_rule_checks(document)
     _validate_compiler_local_int_checks(document)
+    _validate_compiler_local_string_checks(document)
     _validate_compiler_indexed_unique_transfer_checks(document)
     _validate_compiler_defaulted_move_policy_checks(document)
     _validate_compiler_independent_copy_assignment_checks(document)
@@ -6806,13 +6917,30 @@ def revise_math_prompt_editorial(document: dict, identity: str, prompt: str, *,
     return result
 
 
-def ordinary_editorial_fields(before: dict, after: dict) -> tuple[str, ...]:
-    """Recognize a complete prose-only revision; never authorize it by a hash alone.
+def ordinary_feedback_paths(before: dict, after: dict) -> tuple[str, ...]:
+    """Changed guidance paths, with each multiple-choice hint tied to its option."""
+    old, new = before.get("reviewFeedback"), after.get("reviewFeedback")
+    if old == new:
+        return ()
+    if type(old) is str and type(new) is str and old.strip() and new.strip():
+        return ("/reviewFeedback",)
+    if (before.get("type") == "multiple_choice"
+            and type(old) is list and type(new) is list
+            and type(before.get("options")) is list
+            and len(old) == len(new) == len(before["options"]) > 0
+            and all(type(item) is str and bool(item.strip()) for item in old + new)):
+        return tuple(f"/reviewFeedback/{index}" for index, (left, right)
+                     in enumerate(zip(old, new)) if left != right)
+    return ()
 
-    This is a predicate for the ordinary editorial guard, not a dispatch test:
-    callers must still send mixed wording/contract changes to that guard so
-    they are rejected. Provenance, authored semantics and identity are checked
-    by the full document/transition validators.
+
+def ordinary_editorial_fields(before: dict, after: dict) -> tuple[str, ...]:
+    """Recognize one complete prose-only revision with an intact answer contract.
+
+    Guidance may change atomically WITH a question or explanation. A guide-only
+    edit, addition/deletion of an option hint, or rewritten answer is not an
+    ordinary editorial correction. The ordered editorial proof separately
+    authenticates exactly which review hints changed.
     """
     if (type(before) is not dict or type(after) is not dict
             or type(before.get("type")) is not str
@@ -6826,25 +6954,33 @@ def ordinary_editorial_fields(before: dict, after: dict) -> tuple[str, ...]:
         updated = after.get(field)
         if type(updated) is not str or not updated.strip():
             return ()
-        # A previously absent optional explanation is new prose, not a
-        # change to an exercise contract. Still require an authenticated
-        # editorial edge and an explicit exact-source semantic descriptor.
-        # Do not extend this to absent questions or malformed old values.
         if field == "explanation" and field not in before:
             continue
         original = before.get(field)
         if type(original) is not str or not original.strip():
             return ()
+    changed_review = before.get("reviewFeedback") != after.get("reviewFeedback")
+    if changed_review:
+        if not ordinary_feedback_paths(before, after):
+            return ()
+        fields += ("reviewFeedback",)
     expected = {**before, **{field: after[field] for field in fields}}
     if after != expected:
         return ()
-    # Python equates True with 1. Keep the existing typed JSON contract too,
-    # after comparing the complete payload rather than its state-only digest.
     try:
         return fields if fingerprint(after) == fingerprint(expected) else ()
     except (ValueError, TypeError, UnicodeError):
         return ()
 
+
+def ordinary_editorial_paths(before: dict, after: dict) -> tuple[str, ...]:
+    """Exact UTF-16 semantic pointer for every field edited by one safe revision."""
+    fields = ordinary_editorial_fields(before, after)
+    if not fields:
+        return ()
+    paths = tuple("/" + field for field in fields if field != "reviewFeedback")
+    return paths + (ordinary_feedback_paths(before, after)
+                    if "reviewFeedback" in fields else ())
 
 def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
                                           expected: dict | None,
@@ -6865,8 +7001,8 @@ def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
             choice = choice_revisions[identity]
             predecessor = deepcopy(block)
             predecessor["options"][choice["optionIndex"]] = choice["replacement"]
-        allowed.update((identity, "/" + field)
-                       for field in ordinary_editorial_fields(predecessor, after.get(identity)))
+        allowed.update((identity, path)
+                       for path in ordinary_editorial_paths(predecessor, after.get(identity)))
     if not allowed:
         return expected
     overlay = current.get(text_semantics.ROOT_FIELD)
@@ -6899,7 +7035,7 @@ def _compose_ordinary_editorial_semantics(previous: dict, current: dict,
 
 
 def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dict:
-    """Author a question rewrite and/or optional explanation on a v2 owner.
+    """Author question/explanation prose and optionally revise their review hints.
 
     An absent optional explanation may be introduced; an absent question,
     empty old wording, answer change or implicit default is never authorized.
@@ -6916,32 +7052,59 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
     original = _blocks(document).get(identity)
     require(type(original) is dict and original.get("type") in ORDINARY_EDITORIAL_TYPES,
             "Ordinary editorial revisions belong to existing graded prose owners")
-    require(type(edits) is dict and set(edits) <= {"question", "explanation", "returnTo"},
-            "Author only question/explanation prose fields and an optional explicit return")
+    require(type(edits) is dict and set(edits) <=
+            {"question", "explanation", "reviewFeedback", "returnTo"},
+            "Author only question/explanation, their hints and an optional return")
     return_to = edits.get("returnTo")
     requested = {field: spec for field, spec in edits.items() if field != "returnTo"}
-    require(bool(requested) and len(requested) <= 2,
-            "Author one or two question/explanation prose fields")
+    require(bool(requested) and
+            ({"question", "explanation"} & set(requested)),
+            "Review hints may only change with an authored question or explanation")
     require(return_to is None or (type(return_to) is int and return_to >= 0),
             "An editorial return must name an explicit nonnegative revision")
+    paths = {}
     for field, spec in requested.items():
+        if field != "reviewFeedback":
+            paths["/" + field] = spec
+            continue
+        prior = original.get("reviewFeedback")
+        if type(prior) is str:
+            paths["/reviewFeedback"] = spec
+        else:
+            require(original.get("type") == "multiple_choice" and
+                    type(prior) is list and type(original.get("options")) is list and
+                    len(prior) == len(original["options"]) > 0 and
+                    type(spec) is dict and bool(spec) and
+                    all(type(text) is str and bool(text.strip()) for text in prior),
+                    "Indexed guides require an existing hint for each choice")
+            for index, value in spec.items():
+                require(type(index) is str and re.fullmatch(r"0|[1-9][0-9]*", index)
+                        and int(index) < len(prior),
+                        "Guide indices must match existing option positions")
+                paths["/reviewFeedback/" + index] = value
+    for path, spec in paths.items():
         require(type(spec) is dict and set(spec) == {"text", "spans"},
-                "Every revised field needs exact text and authored semantic spans")
-        old, updated = original.get(field), spec["text"]
-        authored_optional = field == "explanation" and field not in original
-        require((authored_optional or (type(old) is str and bool(old.strip())))
+                "Each revised text needs its exact text and authored semantic spans")
+        if path.startswith("/reviewFeedback/"):
+            old = original["reviewFeedback"][int(path.rsplit("/", 1)[1])]
+        else:
+            old = original.get(path[1:])
+        updated = spec["text"]
+        optional = path == "/explanation" and "explanation" not in original
+        require((optional or (type(old) is str and bool(old.strip())))
                 and type(updated) is str and bool(updated.strip()) and updated != old,
-                "An editorial revision needs nonblank wording or a newly authored optional explanation")
+                "Every revised hint or explanation must contain new, nonblank wording")
         require(type(spec["spans"]) is list,
-                "Author an explicit semantic span list, including [] for unmarked prose")
-
+                "Author explicit semantic spans, including [] for unmarked prose")
     result = deepcopy(document)
     revised = _blocks(result)[identity]
     overlay = result.setdefault(text_semantics.ROOT_FIELD, {"version": 1, "fields": []})
     existing = overlay["fields"]
-    for field, spec in requested.items():
-        revised[field] = spec["text"]
-        path = "/" + field
+    for path, spec in paths.items():
+        if path.startswith("/reviewFeedback/"):
+            revised["reviewFeedback"][int(path.rsplit("/", 1)[1])] = spec["text"]
+        else:
+            revised[path[1:]] = spec["text"]
         matches = [i for i, item in enumerate(existing)
                    if item.get("block") == identity and item.get("path") == path]
         require(len(matches) <= 1, "An authored semantic path cannot be duplicated")
@@ -6954,10 +7117,14 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
             existing[matches[0]] = marker
         else:
             existing.append(marker)
+    require(bool(ordinary_editorial_fields(original, revised)),
+            "A revised hint must not change any other exercise field")
     text_semantics.validate(result)
     proof = {"id": identity,
              "beforeSha256": fingerprint(original),
              "afterSha256": fingerprint(revised)}
+    if changed_paths := ordinary_feedback_paths(original, revised):
+        proof["reviewPaths"] = list(changed_paths)
     history = document["stateLayout"]["editorial"]
     same_owner = [edge for edge in history if edge["id"] == identity]
     previous_nodes = ([same_owner[0]["beforeSha256"]]
@@ -6978,7 +7145,6 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
     result["stateLayout"]["editorial"].append(proof)
     validate_transition(document, result)
     return result
-
 
 def revise_choice_editorial(document: dict, identity: str,
                             option_index: int, replacement: str, *,
@@ -7355,6 +7521,11 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
              current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
              baseline["compilerLocalIntChecks"]),
             "Published local-int checks cannot be removed, reordered or rewritten")
+    require(not baseline.get("compilerLocalStringChecks") or
+            (type(current.get("compilerLocalStringChecks")) is list and
+             current["compilerLocalStringChecks"][:len(baseline["compilerLocalStringChecks"])] ==
+             baseline["compilerLocalStringChecks"]),
+            "Published local-string checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerOpenBatteryChecks") or
             (type(current.get("compilerOpenBatteryChecks")) is list and
              current["compilerOpenBatteryChecks"][:len(baseline["compilerOpenBatteryChecks"])] ==
@@ -7749,6 +7920,46 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     "Mathematical payloads must preserve their historical JSON key order and values")
         old_hash, new_hash = fingerprint(block), fingerprint(actual)
         proofs = appended.get(identity, [])
+        if block.get("reviewFeedback") != actual.get("reviewFeedback"):
+            required_paths = ordinary_feedback_paths(block, actual)
+            revised_fields = ordinary_editorial_fields(block, actual)
+            ordinary_review = (bool(required_paths)
+                and "reviewFeedback" in revised_fields and len(proofs) == 1
+                and proofs[0].get("reviewPaths") == list(required_paths))
+            # Preserve the already-published combined SOURCE-FORMAT + guide
+            # contract: code changes only in physical whitespace, guides
+            # retain their type and count, and the original complete source
+            # sits in its authenticated archive. This pre-existing operation
+            # predates reviewPaths and must not be mistaken for a guide-only
+            # ordinary editorial edge.
+            formatted_review = False
+            if (not ordinary_review and required_paths and identity in archived
+                    and len(proofs) == 1 and "reviewPaths" not in proofs[0]):
+                formatted_review = bool(require_source_format_with_editorial(block, actual))
+            require(ordinary_review or formatted_review,
+                    "A revised review hint needs authored prose or an authenticated source-format transition")
+            # Every changed guide and paired prose field owns a fresh, exact
+            # UTF-16 source descriptor. No unrelated span or option hint can
+            # be recolored as collateral for a legitimate text correction.
+            changed_paths = (set(ordinary_editorial_paths(block, actual)) if ordinary_review
+                else set(required_paths)
+                | ({"/question"} if block.get("question") != actual.get("question") else set())
+                | ({"/explanation"} if block.get("explanation") != actual.get("explanation") else set()))
+            marker_root = text_semantics.ROOT_FIELD
+            old_markers = {item["path"]: item
+                           for item in baseline.get(marker_root, {}).get("fields", [])
+                           if item.get("block") == identity}
+            new_markers = {item["path"]: item
+                           for item in current.get(marker_root, {}).get("fields", [])
+                           if item.get("block") == identity}
+            require(changed_paths <= new_markers.keys(),
+                    "A revised guide or question lacks its authored text descriptor")
+            require(all(old_markers.get(path) == new_markers.get(path)
+                        for path in (old_markers.keys() | new_markers.keys()) - changed_paths),
+                    "A revised guide changed unrelated reading semantics")
+        else:
+            require(not any("reviewPaths" in proof for proof in proofs),
+                    "An unchanged review hint cannot acquire invented editorial provenance")
         if old_hash != new_hash or proofs:
             require(proofs and proofs[0]["beforeSha256"] == old_hash
                     and proofs[-1]["afterSha256"] == new_hash,
@@ -7857,6 +8068,11 @@ def validate_transition(previous: dict, current: dict) -> None:
              current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
              baseline["compilerLocalIntChecks"]),
             "Published local-int checks cannot be removed, reordered or rewritten")
+    require(not baseline.get("compilerLocalStringChecks") or
+            (type(current.get("compilerLocalStringChecks")) is list and
+             current["compilerLocalStringChecks"][:len(baseline["compilerLocalStringChecks"])] ==
+             baseline["compilerLocalStringChecks"]),
+            "Published local-string checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerOpenBatteryChecks") or
             (type(current.get("compilerOpenBatteryChecks")) is list and
              current["compilerOpenBatteryChecks"][:len(baseline["compilerOpenBatteryChecks"])] ==

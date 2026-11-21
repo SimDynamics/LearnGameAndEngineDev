@@ -23,6 +23,7 @@
 #include "core/cpp_polymorphic_clone_check.hpp"
 #include "core/cpp_dual_interface_check.hpp"
 #include "core/cpp_local_int_probe.hpp"
+#include "core/cpp_local_string_probe.hpp"
 
 #include <array>
 #include <chrono>
@@ -143,6 +144,7 @@ struct CppRunRequest {
     std::optional<curriculum::CppDualInterfacePolicy> dual_interface_probe;
     std::optional<curriculum::OpenBatteryProbeSpec> open_battery_probe;
     std::optional<curriculum::CppLocalIntCheck> local_int_check;
+    std::optional<curriculum::CppLocalStringCheck> local_string_check;
     std::optional<curriculum::AssertionMode> assertion_mode;
     // Ordinary CMake builds and private probes do not need to parse the
     // entire generated target graph. Enable only for structure-aware checks.
@@ -164,6 +166,10 @@ struct CppRunRequest {
     std::string cmake_initial_observation_prerequisite;
 };
 struct CppLocalIntEvidence {
+    std::string instrumented_source_sha256;
+    CppPhaseResult compilation, execution;
+};
+struct CppLocalStringEvidence {
     std::string instrumented_source_sha256;
     CppPhaseResult compilation, execution;
 };
@@ -343,6 +349,8 @@ struct CppRunResult {
     std::optional<CppNamedRuleProbe> named_rule_probe;
     std::vector<CppLocalIntEvidence> local_int_evidence;
     std::string local_int_request_fingerprint;
+    std::vector<CppLocalStringEvidence> local_string_evidence;
+    std::string local_string_request_fingerprint;
     std::optional<CppIndexedUniqueTransferEvidence> indexed_unique_transfer_evidence;
     std::optional<CppDefaultedMovePolicyEvidence> defaulted_move_policy_evidence;
     std::optional<CppIndependentCopyAssignmentEvidence> independent_copy_assignment_evidence;
@@ -396,6 +404,8 @@ struct CppProjectAvailability {
 // revision and generated CMake configuration, never an old File API reply.
 // It does not by itself grant a saved curriculum achievement.
 [[nodiscard]] std::string cpp_local_int_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_local_string_request_fingerprint(
     const CppRunRequest& request);
 [[nodiscard]] CppCmakeGraphVerdict evaluate_cmake_graph(
     const CppRunRequest&, const CppRunResult&, const CppCmakeGraphRequirement&);

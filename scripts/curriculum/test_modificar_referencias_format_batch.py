@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -74,12 +75,12 @@ class ReferenceHistoryFormat(unittest.TestCase):
                     source=Path(folder)/f"{index}-{version}.cpp"
                     binary=Path(folder)/f"{index}-{version}"
                     source.write_text(runnable(block),encoding="utf-8")
-                    compiled=subprocess.run(["c++","-std=c++23","-O0","-o",str(binary),str(source)],
+                    compiled=subprocess.run(msvc_cpp23_command(binary, source),
                                             capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,compiled.returncode,identity+compiled.stderr)
                     runs=[]
                     for stdin in inputs:
-                        run=subprocess.run([str(binary)],input=stdin,capture_output=True,text=True,timeout=15)
+                        run=subprocess.run([str(windows_executable(binary))],input=stdin,capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,run.returncode,identity)
                         self.assertEqual("",run.stderr,identity)
                         runs.append((run.returncode,run.stdout,run.stderr))

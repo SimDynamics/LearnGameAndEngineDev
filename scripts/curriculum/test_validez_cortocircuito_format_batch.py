@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -70,13 +71,12 @@ class ValidezCortocircuitoFormatoReal(unittest.TestCase):
                     binary = Path(directory) / f"{index}-{label}"
                     source.write_text(code, encoding="utf-8")
                     built = subprocess.run(
-                        ["c++", "-std=c++23", "-O0", "-o", str(binary), str(source)],
+                        msvc_cpp23_command(binary, source),
                         capture_output=True, text=True, timeout=90)
                     self.assertEqual(0, built.returncode, f"{identity}: {built.stderr}")
                     runs = []
                     for stdin in inputs:
-                        result = subprocess.run(
-                            [str(binary)], input=stdin,
+                        result = subprocess.run([str(windows_executable(binary))], input=stdin,
                             capture_output=True, text=True, timeout=15)
                         self.assertEqual(0, result.returncode, identity)
                         self.assertEqual("", result.stderr, identity)

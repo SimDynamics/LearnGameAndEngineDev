@@ -1056,7 +1056,15 @@ class GeneralChoiceCompositionTests(unittest.TestCase):
             else:
                 before["type"] = invalid["type"] = "paragraph"
             with self.subTest(mutation=mutation):
-                self.assertEqual((), layout.ordinary_editorial_fields(before, invalid))
+                if mutation == "feedback":
+                    # A review hint may now change WITH an authentic question.
+                    # Its complete editorial proof, indexed text descriptors
+                    # and unchanged answer are checked by transition tests.
+                    self.assertEqual(
+                        ("question", "reviewFeedback"),
+                        layout.ordinary_editorial_fields(before, invalid))
+                else:
+                    self.assertEqual((), layout.ordinary_editorial_fields(before, invalid))
 
 
 class GeneralQuestionEditorialTests(unittest.TestCase):

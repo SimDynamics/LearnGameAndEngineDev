@@ -299,6 +299,30 @@ inline std::optional<std::vector<unsigned char>> cmake_command_gaps(
 // substrings of comments, ordinary string literals or raw strings. A macro
 // directive containing one of these names stays conservatively protected:
 // preprocessing can move the point where its replacement is expanded.
+// Literal header names in #include are filenames, not evaluated macros.
+// The entire directive is already one immutable source-format token.
+// Unknown/macro includes still retain the conservative position guard.
+inline bool cpp_literal_include(std::string_view token) {
+    if(!token.starts_with("directive:"))return false;
+    token.remove_prefix(10);
+    if(token.starts_with('#'))token.remove_prefix(1);
+    else if(token.starts_with("%:"))token.remove_prefix(2);
+    else return false;
+    while(!token.empty()&&space(token.front()))token.remove_prefix(1);
+    if(!token.starts_with("include"))return false;
+    token.remove_prefix(7);
+    if(!token.empty()&&identifier_part(
+        static_cast<unsigned char>(token.front())))return false;
+    while(!token.empty()&&space(token.front()))token.remove_prefix(1);
+    if(token.empty()||(token.front()!='<'&&token.front()!='"'))return false;
+    const auto close=token.find(token.front()=='<'?'>':'"',1);
+    if(close==token.npos||close==1)return false;
+    const auto trailing=cpp_tokens(token.substr(close+1));
+    return trailing&&std::ranges::all_of(*trailing,[](const std::string& part){
+        return part.starts_with("comment:");
+    });
+}
+
 inline bool cpp_position_sensitive_tokens(const std::vector<std::string>& tokens) {
     constexpr std::string_view names[]{
         "__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN",
@@ -313,7 +337,7 @@ inline bool cpp_position_sensitive_tokens(const std::vector<std::string>& tokens
             const auto name=std::string_view(token).substr(3);
             if(std::ranges::any_of(names,[&](std::string_view item){return name==item;}))
                 return true;
-        }else if(token.starts_with("directive:")) {
+        }else if(token.starts_with("directive:")&&!cpp_literal_include(token)) {
             if(std::ranges::any_of(names,[&](std::string_view item){
                     return token.find(item)!=std::string::npos;}))
                 return true;

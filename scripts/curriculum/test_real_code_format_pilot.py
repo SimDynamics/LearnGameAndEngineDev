@@ -123,10 +123,15 @@ def pilot() -> tuple[dict, dict]:
 
 def run_cpp(source: str, directory: Path, name: str) -> str:
     src = directory / f"{name}.cpp"
-    artifact = directory / name
+    artifact = directory / (name + ".exe")
     src.write_text(source, encoding="utf-8")
-    compile_run = subprocess.run(["c++", "-std=c++23", "-O0", "-o", str(artifact), str(src)],
-                                 capture_output=True, text=True, timeout=90, check=False)
+    # Windows is the only supported runtime: build with the same MSVC family
+    # as the student's program, keeping compiler objects in disposable QA.
+    compile_run = subprocess.run(
+        ["cl", "/nologo", "/std:c++latest", "/EHsc", "/W4",
+         "/permissive-", "/Zc:__cplusplus", "/utf-8",
+         str(src), "/Fe:" + str(artifact)],
+        cwd=directory, capture_output=True, text=True, timeout=90, check=False)
     if compile_run.returncode:
         raise AssertionError(f"C++ compilation failed: {compile_run.stderr}")
     execution = subprocess.run([str(artifact)], capture_output=True, text=True,

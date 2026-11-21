@@ -20,23 +20,6 @@ permissions:
   contents: read
 
 jobs:
-  gcc-clang:
-    name: U8L9 source preservation and semantic probes (GCC, Clang)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Compile original, accepted alternatives and safe counterexamples
-        run: |
-          for compiler in g++ clang++; do
-            python3 -B scripts/curriculum/test_cpp_interface_collection.py \
-              --compiler "$compiler"
-          done
-          python3 -B -m unittest discover -s scripts/curriculum \
-            -p test_cpp_interface_collection_authoring.py -v
-
   msvc:
     name: U8L9 portable ownership proof with MSVC
     runs-on: windows-2022

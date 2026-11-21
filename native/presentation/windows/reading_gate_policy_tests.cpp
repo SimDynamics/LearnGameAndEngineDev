@@ -20,8 +20,43 @@ std::vector<LessonReadingRegion> current_page() {
     // the flag: the mandatory policy must also hold for the old missing flag.
     lesson.compiler_puzzles_required=false;
     const auto& page=lesson.pages.at(6);
-    require(page.blocks.at(2).stable_id=="block_0006_0002"&&page.blocks.at(6).stable_id=="block_0006_0006",
-        "The two current compiler objective owners changed");
+    const auto& first=page.blocks.at(2);
+    const auto& second=page.blocks.at(6);
+    // Work publishes independently on main; the user imports it into Codex.
+    // Both real editions must retain two separate executable objectives.
+    const bool revised=second.stable_id=="p1u2l6_reparar_conversion";
+    const bool historical=second.stable_id=="block_0006_0006";
+    require(first.stable_id=="block_0006_0002"&&(revised||historical),
+        "Unexpected current U2L6 compiler identities");
+    require(first.output_check&&second.output_check&&
+        first.output_check->cases.size()==1&&second.output_check->cases.size()==1&&
+        std::ranges::find(first.output_check->cases[0].outputs,
+            "Entero: 7\nDecimal: 7.5")!=first.output_check->cases[0].outputs.end(),
+        "First U2L6 output objective changed");
+    const auto& second_outputs=second.output_check->cases[0].outputs;
+    require(std::ranges::find(second_outputs,
+        revised?"Entero: 4\nDecimal: 4.25":"Entero: 7\nDecimal: 7")!=second_outputs.end(),
+        "Second U2L6 output objective changed");
+    require(std::ranges::any_of(lesson.activity_after,[&](const auto& edge){
+        return edge.activity==second.stable_id&&edge.prerequisites.size()==1&&
+            edge.prerequisites.front()==first.stable_id;
+    }),"The second U2L6 editor lost its dependency on the first");
+    if(revised) {
+        const auto& history=lesson.state_layout.retirement_history;
+        const auto old=std::ranges::find_if(history,[](const auto& edition){
+            return edition.current.size()>6&&edition.pages.size()>6&&
+                edition.current[6].blocks.size()>6&&
+                edition.current[6].blocks[6]=="block_0006_0006";
+        });
+        require(old!=history.end()&&old->pages[6].blocks.size()>6&&
+            old->pages[6].blocks[6].stable_id=="block_0006_0006"&&
+            old->pages[6].blocks[6].output_check&&
+            !old->pages[6].blocks[6].output_check->cases.empty()&&
+            std::ranges::find(old->pages[6].blocks[6].output_check->cases[0].outputs,
+                "Entero: 7\nDecimal: 7")!=
+                old->pages[6].blocks[6].output_check->cases[0].outputs.end(),
+            "The retired U2L6 editor's historical contract is missing");
+    }
     require(page.blocks.at(3).text.starts_with("Con quince y dos,"),"The originally over-read passage changed");
     require(reading_gate::compiler_objective(page.blocks.at(2))&&reading_gate::compiler_objective(page.blocks.at(6)),
         "An authored output objective incorrectly depends on the lesson navigation flag");
@@ -51,7 +86,10 @@ void current_objectives() {
     regions[2].solved=true;
     require(reading_gate::prefix_admitted(regions,3,0),"Verified first objective did not release its following explanation");
     require(reading_gate::compiler_rewind_target(regions,6,true)==6,"The second objective inherited completion of the first");
-    require(!reading_gate::prefix_admitted(regions,regions.size(),0),"End-of-page admission bypassed the second compiler");
+    require(!reading_gate::prefix_admitted(regions,regions.size(),0),
+        "End-of-page admission bypassed the second compiler");
+    require(!reading_gate::prefix_admitted(regions,regions.size(),0,{},true),
+        "Manual navigation bypassed an unresolved second compiler");
     regions[6].solved=true;
     require(reading_gate::prefix_admitted(regions,regions.size(),0),"Both actual verified objectives failed to release the page");
     require(!reading_gate::compiler_rewind_target(regions,6,true),"A fully verified page was rewound");
@@ -61,6 +99,42 @@ void current_objectives() {
     optional.type=curriculum::BlockType::paragraph;
     require(!reading_gate::compiler_objective(optional),"Ordinary prose became a compiler objective");
 }
+void current_u2l6_reopened_pause() {
+    auto regions=current_page();
+    require(regions.size()==7&&regions[2].required_compiler&&regions[6].required_compiler&&
+        !regions[2].solved&&!regions[6].solved,
+        "The active U2L6 lesson lost an independent compiler gate");
+    regions[2].solved=true;
+    require(reading_gate::compiler_rewind_target(regions,6,true)==6,
+        "Completing U2L6's first editor credited its second");
+    const auto late=narration::Position{static_cast<std::int64_t>(regions.size()),650,0,false,
+        narration::HeardPrefix{"qa-u2l6-late",650000,1000000}};
+    const auto rewind=narration::seek(late,6,0);
+    require(rewind.segment==6&&rewind.milliseconds==0&&
+        rewind.heard_through==0&&!rewind.heard_prefix,
+        "Rewinding retained a later speech certificate");
+    const auto& identity=regions[6].key;
+    const auto owner=identity.substr(identity.find_last_of('/')+1);
+    const std::string key="qa/u2l6/read",reader="qa-u2l6";
+    auto history=narration::begin({},key,reader,rewind,owner,"page_0006");
+    history=narration::checkpoint(std::move(history),key,reader,rewind);
+    state::StateData progress;
+    narration::write_history(progress,history);
+    const auto persisted=state::decode(state::encode(progress));
+    const auto restored=narration::restore(narration::read_history(persisted),key,regions.size());
+    require(restored&&*restored==rewind&&
+        !reading_gate::prefix_admitted(regions,regions.size(),restored->heard_through,{},true)&&
+        reading_gate::compiler_rewind_target(regions,6,true)==6,
+        "A restored U2L6 bookmark credited an unfinished second editor");
+    regions[6].solved=true;
+    require(reading_gate::prefix_admitted(regions,regions.size(),restored->heard_through),
+        "Two separately completed editors did not release the page");
+    regions[2].solved=false;
+    require(reading_gate::compiler_rewind_target(regions,6,true)==2&&
+        !reading_gate::prefix_admitted(regions,regions.size(),restored->heard_through,{},true),
+        "A completed later editor credited the unfinished first");
+}
+
 void grouped_feedback() {
     auto regions=current_page();
     // Several spoken segments from one editor remain a single block gate.
@@ -381,8 +455,8 @@ void cadenas_three_puzzle_flow(){
 }
 int main() {
     try {
-        current_objectives();grouped_feedback();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();cadenas_three_puzzle_flow();current_u2l5_reader_pauses_and_gates();
-        std::cout<<"PASS current U2L6 objectives, actual U2L7 three-puzzle prompt/feedback gates, ordinary/mixed groups, late/finished bookmarks, local feedback permission and asynchronous same-script invalidation; pure gates only\n";
+        current_objectives();current_u2l6_reopened_pause();grouped_feedback();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();cadenas_three_puzzle_flow();current_u2l5_reader_pauses_and_gates();
+        std::cout<<"PASS current U2L6 objectives and restored pauses, actual U2L7 three-puzzle prompt/feedback gates, ordinary/mixed groups, late/finished bookmarks, local feedback permission and asynchronous same-script invalidation; pure gates only\n";
         return 0;
     } catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
 }

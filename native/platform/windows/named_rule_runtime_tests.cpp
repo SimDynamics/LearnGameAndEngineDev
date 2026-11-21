@@ -1618,8 +1618,9 @@ int main() {
 }
 int main(int argc,char** argv) {
     try {
-        require(argc==2,"Expected the existing published U3 lesson path");
-        const auto lesson=load_lesson(std::filesystem::path(argv[1]),"es");
+        const bool focused=argc==3&&std::string_view(argv[1])=="--single-file";
+        require(argc==2||focused,"Expected the published U3 lesson path or --single-file");
+        const auto lesson=load_lesson(std::filesystem::path(argv[focused?2:1]),"es");
         require(lesson.id=="programming_practice_tools__comprobaciones_repetibles__nombrar_reglas_y_separar_acuerdos",
             "The named-rules source test loaded another lesson");
         authored_root_roundtrip(lesson);
@@ -1632,6 +1633,13 @@ int main(int argc,char** argv) {
         initialize_profile_directories(environment.paths);
         actual_named_rule_msvc(lesson,
             environment.paths.projects/L"U3 named rules real MSVC");
+        if(focused) {
+            // The existing full QA entrypoint remains unchanged. This hosted
+            // focus checks actual source, private probes, variations and sealed
+            // first-case progress without the unrelated CMake battery.
+            std::cout<<"PASS real U3 named-rule single-file MSVC and native sealed receipts\n";
+            return 0;
+        }
         real_independent_cmake_probe(lesson,
             // Keep CMakeScratch/TryCompile and MSVC object paths below the
             // verified Windows CMAKE_OBJECT_PATH_MAX limit on hosted runners.

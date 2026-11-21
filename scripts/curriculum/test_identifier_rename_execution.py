@@ -84,9 +84,9 @@ class FrequencyRenameRuntime(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         # Do not silently pass CI because the C++ toolchain is unavailable.
-        cls.compiler = shutil.which("g++") or shutil.which("clang++")
+        cls.compiler = shutil.which("cl.exe") or shutil.which("cl")
         if cls.compiler is None:
-            raise RuntimeError("The real frequency regression requires a C++23 compiler")
+            raise RuntimeError("The real frequency regression requires Windows MSVC C++23")
         cls.lesson_bytes = PATH.read_bytes()
         cls.lesson = json.loads(cls.lesson_bytes)
         if cls.lesson["id"] != LESSON_ID:
@@ -98,9 +98,10 @@ class FrequencyRenameRuntime(unittest.TestCase):
         executable = folder / (label + ".exe")
         program.write_text(source, encoding="utf-8")
         completed = subprocess.run(
-            [self.compiler, "-std=c++23", "-O0", "-Wall", "-Wextra",
-             "-o", str(executable), str(program)],
-            capture_output=True, text=True, timeout=75, check=False)
+            [self.compiler, "/nologo", "/std:c++latest", "/EHsc",
+             "/W4", "/permissive-", "/Zc:__cplusplus", "/utf-8",
+             "/Fe:" + str(executable), str(program)],
+            cwd=folder, capture_output=True, text=True, timeout=75, check=False)
         self.assertEqual(
             completed.returncode, 0,
             f"Compilation of {label} failed:\n{completed.stdout}\n{completed.stderr}")
@@ -160,9 +161,11 @@ class FrequencyRenameRuntime(unittest.TestCase):
                 other.write_text(
                     project["projectFiles"][0]["initialCode"], encoding="utf-8")
                 built = subprocess.run(
-                    [self.compiler, "-std=c++23", "-O0", "-Wall", "-Wextra",
-                     str(main), str(other), "-o", str(binary)],
-                    capture_output=True, text=True, timeout=75, check=False)
+                    [self.compiler, "/nologo", "/std:c++latest", "/EHsc",
+                     "/W4", "/permissive-", "/Zc:__cplusplus", "/utf-8",
+                     str(main), str(other), "/Fe:" + str(binary)],
+                    cwd=directory, capture_output=True, text=True,
+                    timeout=75, check=False)
                 self.assertEqual(
                     built.returncode, 0,
                     f"Cross-file {version} C++ link failed:\n{built.stderr}")

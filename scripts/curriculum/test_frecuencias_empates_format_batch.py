@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -59,12 +60,12 @@ class FrequencyFormatBatch(unittest.TestCase):
                     source=Path(folder)/f"{i}-{tag}.cpp"
                     exe=Path(folder)/f"{i}-{tag}"
                     source.write_text(block[slot(block)],encoding="utf-8")
-                    built=subprocess.run(["c++","-std=c++23","-O0","-o",str(exe),str(source)],
+                    built=subprocess.run(msvc_cpp23_command(exe, source),
                                          capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,built.returncode,ident+built.stderr)
                     outputs=[]
                     for data in inputs:
-                        run=subprocess.run([str(exe)],input=data,capture_output=True,text=True,timeout=15)
+                        run=subprocess.run([str(windows_executable(exe))],input=data,capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,run.returncode,ident)
                         self.assertEqual("",run.stderr,ident)
                         outputs.append((run.returncode,run.stdout,run.stderr))

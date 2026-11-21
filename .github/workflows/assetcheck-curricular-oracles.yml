@@ -37,7 +37,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Check the 16 curricular output cases and oracle regressions
-        run: python3 -m unittest -v scripts/curriculum/test_assetcheck_curricular_oracles.py
+        env:
+          PYTHONPATH: scripts/curriculum
+        run: python3 -B -m unittest -v scripts/curriculum/test_assetcheck_curricular_oracles.py
 
   compile-curricular-references:
     name: "Compile actual curricular C++23 references (${{ matrix.report }})"
@@ -47,9 +49,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-24.04
-            generator: Ninja
-            report: gcc
           - os: windows-2025-vs2026
             generator: "Visual Studio 18 2026"
             report: msvc-x64

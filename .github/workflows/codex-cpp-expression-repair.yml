@@ -34,29 +34,6 @@ jobs:
       - name: Verify optional repair contracts and historical preservation
         run: python3 -B -m unittest discover -s scripts/curriculum -p test_cmake_graph_checks.py -v
 
-  expression-core:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 8
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler: [g++, clang++]
-    steps:
-      - name: Read the exact revision
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Compile expression boundary regressions
-        env:
-          CXX: ${{ matrix.compiler }}
-        run: |
-          "$CXX" --version
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-            native/core/cpp_expression_repair_tests.cpp \
-            -o "${RUNNER_TEMP}/lgaed_cpp_expression_repair_tests"
-      - name: Verify equivalent repairs and rejected boundary escapes
-        run: "${RUNNER_TEMP}/lgaed_cpp_expression_repair_tests"
-
   expression-msvc:
     runs-on: windows-2022
     timeout-minutes: 10

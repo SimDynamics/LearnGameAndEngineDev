@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -79,12 +80,12 @@ class VerifiedConversionFormatBatch(unittest.TestCase):
                     source=Path(folder)/f"{index}-{version}.cpp"
                     exe=Path(folder)/f"{index}-{version}"
                     source.write_text(block[slot(block)],encoding="utf-8")
-                    built=subprocess.run(["c++","-std=c++23","-O0",str(source),"-o",str(exe)],
+                    built=subprocess.run(msvc_cpp23_command(exe, source),
                                          capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,built.returncode,ident+built.stderr)
                     runs=[]
                     for inp in inputs:
-                        run=subprocess.run([str(exe)],input=inp,capture_output=True,
+                        run=subprocess.run([str(windows_executable(exe))],input=inp,capture_output=True,
                                            text=True,timeout=15)
                         self.assertEqual(0,run.returncode,ident+run.stderr)
                         self.assertEqual("",run.stderr,ident)

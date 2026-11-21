@@ -32,10 +32,11 @@ void write(const std::filesystem::path& path,std::string_view bytes) {
 }
 
 void emit(const std::filesystem::path& directory,std::string_view name,
-        std::string_view source,std::string_view expected,bool must_match) {
+        std::string_view source,std::string_view expected,bool must_match,
+        bool expect_guard_failure=false) {
     const auto prefix=directory/std::string(name);
     write(prefix.string()+".cpp",source);
-    std::string verdict=must_match?"A\n":"R\n";
+    std::string verdict=expect_guard_failure?"K\n":must_match?"A\n":"R\n";
     verdict+=expected;
     write(prefix.string()+".expected",verdict);
 }
@@ -44,13 +45,28 @@ int main(int argc,char** argv) try {
     if(argc!=2)return 2;
     const std::filesystem::path directory=argv[1];
     std::filesystem::create_directories(directory);
-    const std::array<Scenario,8> examples{{
+    const std::array<Scenario,13> examples{{
         {"u2l1_llaves_7",
             R"CPP(#include <iostream>
 int main(){int llaves=3+4; std::cout<<"Llaves: "<<llaves;})CPP",
             "Llaves: 7",
             {{{"llaves",13,{}},{},{}}},
             {{"Llaves: 13", "", ""}},1},
+        {"u2l1_trailing_main",
+            R"CPP(#include <iostream>
+auto main() noexcept -> int {int llaves{7};
+std::cout<<"Llaves: "<<llaves;})CPP",
+            "Llaves: 7",
+            {{{"llaves",13,{}},{},{}}},
+            {{"Llaves: 13","",""}},1},
+        {"u2l1_member_named_llaves",
+            R"CPP(#include <iostream>
+struct Datos {int llaves{7};};
+int main(){Datos datos;int llaves;int origen=datos.llaves;
+llaves=origen;std::cout<<"Llaves: "<<llaves;})CPP",
+            "Llaves: 7",
+            {{{"llaves",13,{}},{},{}}},
+            {{"Llaves: 13","",""}},1},
         {"u2l1_llaves_11",
             R"CPP(#include <iostream>
 int main(){int llaves(11); std::cout<<"Llaves: "<<llaves;})CPP",
@@ -71,6 +87,27 @@ std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;})CPP",
             "Cajas: 0\nSobres: 2",
             {{{"cajas",6,{}},{"sobres",17,{}},{}}},
             {{"Cajas: 6\nSobres: 2","Cajas: 0\nSobres: 17",""}},2},
+        {"u2l2_grouped_int_braces",
+            R"CPP(#include <iostream>
+int main(){int cajas{4}, sobres{9};
+std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;})CPP",
+            "Cajas: 4\nSobres: 9",
+            {{{"cajas",13,{}},{"sobres",17,{}},{}}},
+            {{"Cajas: 13\nSobres: 9","Cajas: 4\nSobres: 17",""}},2},
+        {"u2l2_grouped_assignments",
+            R"CPP(#include <iostream>
+int main(){int cajas, sobres; cajas=4; sobres=9;
+std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;})CPP",
+            "Cajas: 4\nSobres: 9",
+            {{{"cajas",13,{}},{"sobres",17,{}},{}}},
+            {{"Cajas: 13\nSobres: 9","Cajas: 4\nSobres: 17",""}},2},
+        {"u2l2_signed_type_spellings",
+            R"CPP(#include <iostream>
+int main(){int signed cajas{4}; signed sobres=9;
+std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;})CPP",
+            "Cajas: 4\nSobres: 9",
+            {{{"cajas",13,{}},{"sobres",17,{}},{}}},
+            {{"Cajas: 13\nSobres: 9","Cajas: 4\nSobres: 17",""}},2},
         {"u2l3_copy_before",
             R"CPP(#include <iostream>
 int main(){int aforo{5}; int anterior=aforo; aforo+=3;
@@ -196,8 +233,195 @@ int main() {
     if(!missing_addend)throw std::runtime_error("Cannot probe hard-coded U2L5 addend");
     emit(directory,"reject_u2l5_fixed_addend",*missing_addend,"Parte: 3.75 m",false);
     ++emitted;
-    if(emitted!=30)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 30 isolated C++ executions for eight U2 owners and six adversaries\n";
+    // Varying cajas after a multi-declarator statement would be too late
+    // to observe a sibling initialized from cajas. Reject this structurally.
+    if(cpp_local_int_override(
+        "int main(){int cajas=4, sobres=cajas+5; std::cout<<cajas<<sobres;}",
+        {"cajas",13,{}}))
+        throw std::runtime_error("A grouped dependent int could receive false credit");
+    // A source-only guard: compiling and running an uninitialized read would
+    // itself have undefined behavior, so it must be rejected BEFORE emitting
+    // a variant or counting a compiler execution.
+    if(cpp_local_int_override(
+        "int main(){int llaves; llaves=llaves+7; std::cout<<llaves;}",
+        {"llaves",13,{}}))
+        throw std::runtime_error("A self-read before int initialization received a probe");
+    // The public U2L3 answer can look correct even when the student
+    // replaces aforo with a fixed 8 instead of increasing its prior value.
+    // Inserting a +4 AFTER this reset would incorrectly produce the expected
+    // private 12, so no after-update source must be generated at all.
+    constexpr std::string_view fixed_increment=R"CPP(#include <iostream>
+int main(){int aforo=5;int anterior=aforo;aforo=8;
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP";
+    if(cpp_local_int_override(fixed_increment,{"aforo",4,{},true}))
+        throw std::runtime_error("A constant replacement masqueraded as an increase");
+    // A deliberately deceptive U2L3 source passes all three existing stdout
+    // variations by adding the missing 3 only in its output expression.
+    // Its alleged update is an identity, so reject it before compiling.
+    constexpr std::string_view neutral_update=R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo=aforo+0;
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo+3;})CPP";
+    if(cpp_local_int_override(neutral_update,{"aforo",4,{},true}))
+        throw std::runtime_error(
+            "A neutral U2L3 update passed every private output variation");
+    // Compound cancellation is another false increase: the visible report
+    // can be reproduced by computing +3 only at print time, and a naive
+    // hidden +4 would still appear to establish the required dependency.
+    for(const auto* neutral:{
+        "aforo=aforo+2-2;",
+        "aforo=aforo-2+2;",
+        "aforo+=(2+3-5);",
+        "aforo=aforo+(+6)-6;",
+        "aforo=aforo*(2-1);",
+        "aforo+=(4/2-2);",
+        "aforo=aforo/(9/3-2);"
+    }) {
+        const auto source=std::string(
+            "#include <iostream>\nint main(){int aforo{5};int anterior=aforo;")
+            +neutral+
+            "std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo+3;}";
+        if(cpp_local_int_override(source,{"aforo",4,{},true}))
+            throw std::runtime_error(
+                "A compound neutral operation was credited as U2L3 increase");
+    }
+    // A multiplier such as 10 (decimal), 010 (octal), 0x10 (hex) or
+    // 0b10 (binary) is not the identity multiplier one. A lexical
+    // shortcut must not reject a valid after-update variation.
+    for(const auto* multiplier:{"10","010","0x10","0b10","0B10"}) {
+        const auto src=std::string(
+            "int main(){int aforo{5};aforo=aforo*")+
+            multiplier+";std::cout<<aforo;}";
+        if(!cpp_local_int_override(src,{"aforo",4,{},true}))
+            throw std::runtime_error(
+                "A non-unit multiplier was incorrectly rejected as a no-op");
+    }
+
+    // Opaque unchanged state used to pass both the original output and all
+    // counterfactual outputs. The private run now rejects it by exit status.
+    for(const auto* noop:{"aforo=aforo^0;","aforo=aforo|0;"}) {
+        const auto original=std::string(
+            "#include <iostream>\nint main(){int aforo{5};"
+            "int anterior=aforo;")+noop+
+            "std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo+3;}";
+        const auto variant=cpp_local_int_override(original,
+            {"aforo",4,{},true});
+        if(!variant)throw std::runtime_error("Cannot instrument opaque no-op");
+        emit(directory,std::string("reject_opaque_noop_")+std::to_string(emitted),
+             *variant,"",false,true);
+        ++emitted;
+    }
+
+    // Exercise an unchanged Windows CRLF source under a private state probe.
+    // The learner's bytes stay untouched, including the trailing // comment.
+    const std::string windows_source =
+        "#include <iostream>\r\n"
+        "int main() {\r\n"
+        "    int aforo{5};\r\n"
+        "    int anterior=aforo;\r\n"
+        "    aforo+=3; // comentario del estado\r\n"
+        "    std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo;\r\n"
+        "}\r\n";
+    const auto windows_variant=cpp_local_int_override(
+        windows_source,{"aforo",4,{},true});
+    if(!windows_variant||windows_variant->find("comentario del estado\r\n")==std::string::npos)
+        throw std::runtime_error("Cannot preserve or instrument Windows CRLF");
+    emit(directory,"u2l3_crlf_after_update",*windows_variant,
+         "Antes: 5\nAhora: 12",true);
+    ++emitted;
+    // The student's own arithmetic is defined, but perturbing it in a
+    // private run would exceed int32 bounds. The independent variant must
+    // return a controlled failure before the injected compound assignment.
+    struct IntLimitCase { const char* first; const char* second; int third; };
+    for(const auto& limit:std::array<IntLimitCase,2>{{
+            {"reject_private_positive_overflow",
+                "int main(){int aforo{2147483646};aforo+=1;return aforo==0;}",4},
+            {"reject_private_negative_underflow",
+                "int main(){int aforo{-2147483646};aforo-=1;return aforo==0;}",-4}}}) {
+        const auto variant=cpp_local_int_override(
+            limit.second,{"aforo",limit.third,{},true});
+        if(!variant)throw std::runtime_error("Cannot instrument signed-int boundary");
+        emit(directory,limit.first,*variant,"",false,true);
+        ++emitted;
+    }
+    // Source text can document the internal probe name without declaring it.
+    // Exercise the exact guarded code with a comment and two literal forms.
+    const std::string harmless_marker =
+        "#include <iostream>\n"
+        "int main(){int aforo{5};int anterior=aforo;\n"
+        "// lgaed_local_int_before_6cb8e71d is an explanatory comment\n"
+        "const char* nota=\"lgaed_local_int_before_6cb8e71d\";\n"
+        "const char* crudo=R\"raw(lgaed_local_int_before_6cb8e71d)raw\";\n"
+        "(void)nota;(void)crudo;\n"
+        "aforo+=3;\n"
+        "std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo;}\n";
+    const auto harmless_variant=cpp_local_int_override(
+        harmless_marker,{"aforo",4,{},true});
+    if(!harmless_variant || harmless_variant->find(
+        "lgaed_local_int_before_6cb8e71d is an explanatory comment")==
+        std::string::npos)
+        throw std::runtime_error("A nonidentifier caused a private probe collision");
+    emit(directory,"u2l3_inert_marker_text",*harmless_variant,
+         "Antes: 5\nAhora: 12",true);
+    ++emitted;
+    // Both programs below reproduce the authored visible U2L3 output.
+    // A fixed arithmetic adjustment at print time also passes all older
+    // afterUpdate stdout perturbations, but cannot pass the *state* witness.
+    const CppLocalIntProbe exact_delta{"aforo",4,{},true,3};
+    for(const auto& entry:std::array{
+        std::pair{"u2l3_exact_increase_plus_equal",
+            R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo+=3;
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP"},
+        std::pair{"u2l3_exact_increase_equivalent",
+            R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo=aforo+2+1;
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP"}
+    }) {
+        const auto variant=cpp_local_int_override(entry.second,exact_delta);
+        if(!variant)throw std::runtime_error("Cannot instrument a genuine exact +3");
+        emit(directory,entry.first,*variant,"Antes: 5\nAhora: 12",true);
+        ++emitted;
+    }
+    constexpr std::string_view compensated=R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo+=5;
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<(aforo-2);})CPP";
+    const auto rejected_compensation=cpp_local_int_override(compensated,exact_delta);
+    if(!rejected_compensation)
+        throw std::runtime_error("Cannot expose the wrong-but-compensated increment");
+    emit(directory,"reject_u2l3_compensated_plus_five",*rejected_compensation,
+         "",false,true);
+    ++emitted;
+    // Two valid spellings of the exact +3 use consecutive state changes.
+    // The hidden +4 must follow the whole sequence and preserve the copy.
+    for(const auto& candidate:std::array{
+        std::pair{"u2l3_exact_split_additions",
+            R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo+=1;aforo+=2;
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP"},
+        std::pair{"u2l3_exact_split_assignments",
+            R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo=aforo+1; /* conservar */
+aforo=aforo+2;std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP"}
+    }) {
+        const auto variant=cpp_local_int_override(candidate.second,exact_delta);
+        if(!variant)throw std::runtime_error(
+            "Cannot verify consecutive equivalent +3 updates");
+        emit(directory,candidate.first,*variant,"Antes: 5\nAhora: 12",true);
+        ++emitted;
+    }
+    // A consecutive +1 and +4 also reproduces the visible/perturbed
+    // outputs if the learner subtracts two when printing. It is not +3.
+    constexpr std::string_view split_compensation=R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo+=1;aforo+=4;
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<(aforo-2);})CPP";
+    const auto split_wrong=cpp_local_int_override(split_compensation,exact_delta);
+    if(!split_wrong)throw std::runtime_error(
+        "Cannot expose a compensated two-statement +5");
+    emit(directory,"reject_u2l3_split_compensated_plus_five",*split_wrong,
+         "",false,true);
+    ++emitted;
+    if(emitted!=55)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 55 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';

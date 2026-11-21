@@ -130,7 +130,7 @@ struct Fixture {
             require(originals.contains(file), "El manifiesto señala un recurso ausente.");
             paths.emplace(name, file);
         }
-        require(originals.size() == 11, "El fixture tiene un alcance distinto del esperado.");
+        require(originals.size() == 14, "El fixture tiene un alcance distinto del esperado.");
     }
     fs::path path(std::string_view key) const { return root / relative_path(paths.at(std::string(key))); }
     void old_catalog() { write(path("course"), bytes(path("legacyCourse"))); }
@@ -320,6 +320,52 @@ void catalog_pending(const Fixture& fixture, const state::StateData& data) {
         "La continuación no sigue el índice de la edición activa.");
     rejects([&] { (void)windows::load_catalog(fixture.content, {"es", "programming", "qa_edition", "qa_edition__original"}); },
         "Una unidad antigua aún se puede abrir desde el catálogo activo.");
+}
+
+void unavailable_legacy_single_lesson_scope_is_rejected(
+        const Fixture& fixture,const state::StateData& historic) {
+    // Legacy course indices may legitimately announce an uninstalled lesson.
+    // The entry must remain visible in the unit list, yet MUST NOT become an
+    // actionable single-lesson reset scope. Production editions have an even
+    // stricter rule and reject missing resources at index loading time.
+    const auto unit_file=fixture.path("otherLesson").parent_path() /
+        "unit_independiente.json";
+    RestoreFile restore(unit_file);
+    auto document=object(bytes(unit_file));
+    auto rows=document.GetNamedArray(L"lessons");
+    const std::string advertised="qa_other__independiente__anunciada";
+    JsonObject extra;
+    extra.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(advertised)));
+    extra.Insert(L"title",JsonValue::CreateStringValue(L"Lección anunciada sin archivo QA"));
+    extra.Insert(L"number",JsonValue::CreateNumberValue(2));
+    rows.Append(extra);document.Insert(L"lessons",rows);
+    write(unit_file,stringify(document));
+    const curriculum::CatalogLocation unit{"es","programming","qa_other","qa_other__independiente"};
+    const auto index=windows::load_catalog(fixture.content,unit);
+    require(index.entries.size()==2 && index.entries.front().available &&
+            !index.entries.back().available &&
+            index.entries.back().id==advertised,
+        "The legacy unit did not preserve its installed and announced rows");
+    // Existing unit-level accounting and list order must remain compatible.
+    const auto members=windows::catalog_scope(fixture.content,unit);
+    require(members.lessons==std::vector<std::string>{
+                std::string(other_id),advertised},
+        "The announcement unexpectedly disappeared from indexed unit membership");
+    auto live=unit;live.lesson=other_id;
+    require(windows::catalog_scope(fixture.content,live).lessons==
+                std::vector<std::string>{std::string(other_id)},
+        "The installed historical lesson lost its legitimate scoped membership");
+    auto missing=unit;missing.lesson=advertised;
+    require(!windows::active_catalog_lesson(fixture.content,unit,advertised),
+        "An announced lesson without an asset became an active lesson");
+    rejects([&]{(void)windows::catalog_scope(fixture.content,missing);},
+        "An announced unavailable lesson became an actionable reset scope");
+    const auto progress=windows::catalog_entry_progress(
+        fixture.content,unit,index.entries.back(),historic);
+    require(progress.completed==0&&progress.total==0,
+        "An announced lesson invented progress despite having no asset");
+    require(!windows::next_catalog_lesson(fixture.content,live,false,false),
+        "Continue navigated into an unavailable announced lesson");
 }
 
 std::string xml_escape(std::string_view value) {
@@ -753,9 +799,82 @@ void negative_contracts(const Fixture& fixture, const curriculum::Lesson& curren
     fixture.preserved();
 }
 
+
+void reviewed_guidance_loader(const Fixture& fixture) {
+    const auto path=fixture.path("reviewedGuides");
+    const auto source=bytes(path);
+    const auto loaded=windows::load_lesson(path);
+    require(loaded.id=="qa_guidance__edition_es_1__inicio__guia_autorizada"
+            && loaded.state_layout.version==2&&loaded.pages.size()==1
+            && loaded.pages[0].blocks.size()==2,
+        "The native loader rejected an independently authored guidance edition");
+    const auto& choice=loaded.pages[0].blocks[0];
+    const auto& fill=loaded.pages[0].blocks[1];
+    require(choice.stable_id=="block_0000_0000"
+            && choice.correct_index&&*choice.correct_index==1
+            && choice.options.size()==2&&choice.options[0]=="Tres"
+            && choice.review_feedback_options.size()==2
+            && choice.review_feedback_options[0]=="La primera respuesta no conserva el total."
+            && choice.review_feedback_options[1]=="Revisa el valor cuatro."
+            && fill.stable_id=="block_0000_0001"
+            && fill.review_feedback=="El hueco debe conservar cuatro sin comillas."
+            && fill.answers.size()==1&&fill.answers[0]=="4",
+        "Review hints changed the original correct option or response contract");
+    RestoreFile restore(path);
+    {
+        auto forged=object(source);
+        auto layout=forged.GetNamedObject(L"stateLayout");
+        auto edges=layout.GetNamedArray(L"editorial");
+        auto edge=edges.GetObjectAt(0);
+        require(edge.HasKey(L"reviewPaths"),
+            "The authored edition lost its indexed guidance provenance");
+        // The Python transition validator rejects a missing reviewPaths.
+        // Windows can independently reject an ill-typed declaration without
+        // pretending to recover a full predecessor from a hash alone.
+        edge.Insert(L"reviewPaths",JsonValue::CreateStringValue(L"/reviewFeedback/0"));
+        write(path,stringify(forged));
+        rejects([&]{(void)windows::load_lesson(path);},
+            "The Windows loader accepted a malformed guidance proof type");
+    }
+    write(path,source);
+    {
+        auto forged=object(source);
+        auto layout=forged.GetNamedObject(L"stateLayout");
+        auto edges=layout.GetNamedArray(L"editorial");
+        auto edge=edges.GetObjectAt(0);
+        JsonArray wrong;wrong.Append(JsonValue::CreateStringValue(L"/reviewFeedback/3"));
+        edge.Insert(L"reviewPaths",wrong);
+        write(path,stringify(forged));
+        rejects([&]{(void)windows::load_lesson(path);},
+            "The Windows loader accepted a guidance index absent from its options");
+    }
+    write(path,source);
+    {
+        auto forged=object(source);
+        auto fields=forged.GetNamedObject(L"textSemantics").GetNamedArray(L"fields");
+        for(unsigned index=0;index<fields.Size();++index) {
+            const auto item=fields.GetObjectAt(index);
+            if(winrt::to_string(item.GetNamedString(L"block"))=="block_0000_0000"
+                    &&winrt::to_string(item.GetNamedString(L"path"))=="/reviewFeedback/0") {
+                fields.RemoveAt(index);
+                break;
+            }
+        }
+        write(path,stringify(forged));
+        rejects([&]{(void)windows::load_lesson(path);},
+            "The Windows loader accepted a revised hint without its reading descriptor");
+    }
+    write(path,source);
+    require(windows::load_lesson(path).pages[0].blocks[0].correct_index==choice.correct_index,
+        "A rejected guidance revision altered the original valid lesson");
+    std::cout<<"PASS native authored reviewFeedback: scalar/choice hints, untouched answers, "
+                "rejected index/proof/semantic omissions; QA files restored\n";
+}
+
 void run(const fs::path& fixture_source) {
     Profile profile(L"native");
     Fixture fixture(profile, fixture_source);
+    reviewed_guidance_loader(fixture);
     // The real Windows environment can supply an extended \\?\C:\... QA
     // root. Verify the whole physical ancestor chain without mistaking the
     // drive root-name for an unavailable directory before loading JSON.
@@ -832,6 +951,7 @@ void run(const fs::path& fixture_source) {
         && metadata.state_layout.lineage == current.state_layout.lineage,
         "El catálogo y el lector interpretan ediciones diferentes.");
     pending(historic, current); catalog_pending(fixture, historic);
+    unavailable_legacy_single_lesson_scope_is_rejected(fixture,historic);
     state::validate_lesson_state(historic, current);
     require(profile.load() == historic, "La comprobación de compatibilidad mutó el perfil.");
     const auto new_key = curriculum::draft_key("programming", current, current.pages[1].blocks[0]);
@@ -932,6 +1052,81 @@ void run(const fs::path& fixture_source) {
         require(progress.completed == 1 && progress.total == 3, "El catálogo no refleja únicamente el quiz nuevo evaluado.");
     }
     after = profile.load(); preserved_values(expected_after_interaction, after);
+    // A real Windows course index supplies an exact CURRENT-edition scope.
+    // Reset only this isolated QA state after the student has answered the
+    // newly authored quiz and saved a new compiler draft. A reset is never
+    // inferred from publication, import or simply opening the updated lesson.
+    {
+        const auto scope = windows::catalog_scope(fixture.content, course_location());
+        require(scope.courses == std::vector<std::string>{"qa_edition"} &&
+                scope.units == std::vector<std::string>{std::string(new_unit)} &&
+                scope.lessons == std::vector<std::string>{
+                    std::string(new_id), std::string(next_id)},
+            "The native course index would reset historical or foreign lessons");
+        const auto old_draft = state::get_draft(after, old_key, "");
+        const auto current_draft = state::get_draft(after, new_key, "");
+        require(current_draft.has_saved && !current_draft.source.empty() &&
+                state::get_response(after, current, current.pages[0].blocks[0]),
+            "The isolated current-edition reset has no saved answer and draft to protect");
+        auto restarted = after;
+        require(curriculum::reset_catalog_progress(restarted, scope) > 0,
+            "The explicit current-edition reset did not clear any current progress");
+        require(state::current_page(restarted, current) == 0 &&
+                !state::get_response(restarted, current, current.pages[0].blocks[0]) &&
+                !windows::compiler_puzzle_completed(
+                    restarted, current, current.pages[1].blocks[0]) &&
+                !reference_available(restarted, current, 2),
+            "Resetting the current course left an answered new page or reference");
+        for (const auto key : {"course_qa_edition_completed",
+                               "unit_qa_edition__original_completed",
+                               "lesson_qa_edition__original__primera_completed",
+                               "lesson_qa_other__independiente__primera_completed"})
+            require(state::find(restarted, "learning_progress", key) &&
+                    state::find(after, "learning_progress", key) &&
+                    *state::find(restarted, "learning_progress", key) ==
+                    *state::find(after, "learning_progress", key),
+                "Resetting the current course erased historical or other-course achievements");
+        for (const auto domain : {"cpp_lesson_drafts", "qa_unrelated",
+                                  "attempt_reserve_seconds_test"})
+            require(restarted.preferences.at(domain) == after.preferences.at(domain),
+                "Resetting current progress changed saved drafts or unrelated preferences");
+        const auto recovered_old_draft = state::get_draft(restarted, old_key, "");
+        const auto recovered_new_draft = state::get_draft(restarted, new_key, "");
+        require(recovered_old_draft.source == old_draft.source &&
+                recovered_old_draft.input == old_draft.input &&
+                recovered_old_draft.has_saved == old_draft.has_saved &&
+                recovered_new_draft.source == current_draft.source &&
+                recovered_new_draft.input == current_draft.input &&
+                recovered_new_draft.selection_start == current_draft.selection_start &&
+                recovered_new_draft.selection_end == current_draft.selection_end &&
+                recovered_new_draft.has_saved == current_draft.has_saved &&
+                narration::read_history(restarted) == narration::read_history(after),
+            "The limited current-edition reset changed historical/current drafts or audio history");
+        catalog_pending(fixture, restarted);
+        const auto once = restarted;
+        require(curriculum::reset_catalog_progress(restarted, scope) == 0 &&
+                restarted == once,
+            "The explicit limited edition reset was not idempotent");
+        profile.save(restarted);
+        {
+            View reopened(profile, current);
+            require(lesson_page_state(reopened.view).index == 0 &&
+                    !lesson_page_state(reopened.view).can_next &&
+                    !navigate_lesson_view(reopened.view, 1),
+                "The actual Windows lesson resumed at an answered page after scoped reset");
+            const auto saved = reopened.saved();
+            require(!state::get_response(saved, current, current.pages[0].blocks[0]) &&
+                    !reference_available(saved, current, 2) &&
+                    state::get_draft(saved, new_key, "").source == current_draft.source &&
+                    state::get_draft(saved, old_key, "").source == old_draft.source,
+                "Reopening after reset inherited a retired answer or lost a saved compiler draft");
+        }
+        // Restore this *test-owned* snapshot for the independent import and
+        // negative-contract tests below. Never reset real profiles.
+        profile.save(after);
+        require(profile.load() == after,
+            "Isolated current-edition reset/regression did not restore its QA snapshot");
+    }
     require(bytes(revision_file) == revision_bytes && old_history.load(revision.id).files == revision.files
         && old_history.summaries().size() == 1 && new_history.summaries().empty(),
         "Cambió el historial antiguo o apareció bajo el nuevo proyecto.");

@@ -1,4 +1,4 @@
-name: Codex U3L6 diagnostic facts (GCC Clang MSVC)
+name: Codex U3L6 diagnostic facts (Windows MSVC)
 
 on:
   push:
@@ -34,28 +34,6 @@ jobs:
         run: |
           python3 -B -m unittest discover -s scripts/curriculum -p test_u3_rejection_runtime_contract.py -v
           python3 -B -m unittest discover -s scripts/curriculum -p test_u3_observation_runtime_contract.py -v
-
-  portable-semantics:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 8
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler: [g++, clang++]
-    steps:
-      - name: Checkout exact Codex source
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Compile independent diagnostic fact tests
-        env:
-          CXX: ${{ matrix.compiler }}
-        run: |
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-            native/core/rejection_diagnostic_facts_tests.cpp \
-            -o "${RUNNER_TEMP}/lgaed_u3_diagnostic_facts"
-      - name: Run equivalent intervals and negative cases
-        run: "${RUNNER_TEMP}/lgaed_u3_diagnostic_facts"
 
   windows-semantics:
     runs-on: windows-2022

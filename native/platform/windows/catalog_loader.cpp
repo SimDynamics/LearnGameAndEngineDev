@@ -288,7 +288,12 @@ curriculum::CatalogScope catalog_scope(const std::filesystem::path& root,const c
     if (!location.course.empty()) result.courses.push_back(location.course);
     if (!location.unit.empty()) result.units.push_back(location.unit);
     if (!location.lesson.empty()) {
-        require(std::ranges::any_of(page.entries,[&](const auto& entry) { return entry.id == location.lesson; }),"la lección no pertenece al índice publicado.");
+        // An announced legacy lesson can be listed without its material.
+        // Keep that row in the unit catalog, but never authorize a targeted
+        // progress/reset scope for a lesson the learner cannot open.
+        require(std::ranges::any_of(page.entries,[&](const auto& entry) {
+            return entry.id == location.lesson && entry.available;
+        }),"la lección no está publicada con un recurso disponible.");
         result.lessons.push_back(location.lesson); return result;
     }
     for (const auto& entry : page.entries) {

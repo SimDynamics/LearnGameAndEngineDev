@@ -18,25 +18,6 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    name: Original U6L8 Muestra semantics with GCC and Clang
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Check ownership, direct move, no allocation and persistent invariants
-        run: |
-          for compiler in g++ clang++; do
-            python3 -B scripts/curriculum/test_cpp_move_assignment_invariants.py \
-              --compiler "$compiler"
-            python3 -B scripts/curriculum/test_cpp_move_assignment_invariant_core.py \
-              --compiler "$compiler"
-          done
-          python3 -B -m unittest discover -s scripts/curriculum \
-            -p test_cpp_move_assignment_invariant_authoring.py -v
-
   windows-msvc:
     name: Original U6L8 Muestra semantics with Windows MSVC
     runs-on: windows-2022

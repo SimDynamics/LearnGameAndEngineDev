@@ -662,9 +662,17 @@ class OrdinaryExplanationRevisionTest(unittest.TestCase):
         changed = deepcopy(after)
         layout._blocks(changed)[identity]["reviewFeedback"][0] += " Otra guía QA."
         refresh_field(changed, identity, "/reviewFeedback/0")
-        repoint_last_edge(changed, identity)
-        layout.validate_transition(before, changed)
-        self.assertFalse(preserved(name, before, changed))
+        changed["stateLayout"]["editorial"].append({
+            "id": identity,
+            "beforeSha256": layout.fingerprint(layout._blocks(after)[identity]),
+            "afterSha256": layout.fingerprint(layout._blocks(changed)[identity])})
+        with self.assertRaises(ValueError):
+            layout.validate_transition(after, changed)
+        self.assertFalse(contract.preserves_ordinary_explanation_revision(
+            PREFIX + fixtures.CASES[name]["lesson"],
+            *fixtures.CASES[name]["historical"],
+            layout._blocks(after)[identity], layout._blocks(changed)[identity],
+            previous_document=after, current_document=changed))
 
     def test_ownership_comes_from_historical_address_not_visible_position_or_block_id(self):
         name = "case_sensitive_label"
@@ -1115,8 +1123,8 @@ class OrdinaryExplanationMainTest(unittest.TestCase):
                 elif field == "answers": block[field] = ["incorrecto"]
                 elif field == "correctIndex": block[field] = 0
                 elif field == "reviewFeedback":
+                    # Deliberately omit the new exact hint descriptor and proof.
                     block[field][0] += " Guía no autorizada."
-                    refresh_field(after, identity, "/reviewFeedback/0")
                 else: block[field] = "otro_propietario"
                 repoint_last_edge(after, identity)
             with self.subTest(target=target, field=field):

@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -65,12 +66,12 @@ class ReportsTransferFormat(unittest.TestCase):
                     source=Path(directory)/f"{i}-{tag}.cpp"
                     executable=Path(directory)/f"{i}-{tag}"
                     source.write_text(runnable(block),encoding="utf-8")
-                    build=subprocess.run(["c++","-std=c++23","-O0","-o",str(executable),str(source)],
+                    build=subprocess.run(msvc_cpp23_command(executable, source),
                                          capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,build.returncode,ident+build.stderr)
                     runs=[]
                     for stdin in inputs:
-                        r=subprocess.run([str(executable)],input=stdin,capture_output=True,text=True,timeout=15)
+                        r=subprocess.run([str(windows_executable(executable))],input=stdin,capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,r.returncode,ident)
                         self.assertEqual("",r.stderr,ident)
                         runs.append((r.returncode,r.stdout,r.stderr))

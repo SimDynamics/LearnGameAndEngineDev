@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -67,12 +68,12 @@ class SeleccionarDuranteFormato(unittest.TestCase):
                     src=Path(folder)/f"{index}-{label}.cpp"
                     exe=Path(folder)/f"{index}-{label}"
                     src.write_text(runnable(bl),encoding="utf-8")
-                    build=subprocess.run(["c++","-std=c++23","-O0","-o",str(exe),str(src)],
+                    build=subprocess.run(msvc_cpp23_command(exe, src),
                                          capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,build.returncode,ident+build.stderr)
                     results=[]
                     for stdin in inputs:
-                        result=subprocess.run([str(exe)],input=stdin,capture_output=True,text=True,timeout=15)
+                        result=subprocess.run([str(windows_executable(exe))],input=stdin,capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,result.returncode,ident)
                         self.assertEqual("",result.stderr,ident)
                         results.append((result.returncode,result.stdout,result.stderr))

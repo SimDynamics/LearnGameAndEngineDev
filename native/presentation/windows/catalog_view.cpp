@@ -269,8 +269,8 @@ struct CatalogView {
             catalog_saved_entry_id(page,static_cast<std::int64_t>(selected))!=selection_id;
         const auto restored_top=removed_selection?std::size_t{0}:
             catalog_restore_entry_index(page,top_id,top,count);
-        const bool relocated_top=removed_selection||(!top_id.empty()&&
-            restored_top!=catalog_restore_entry_index(page,{},top,count));
+        const bool relocated_top=removed_selection||
+            catalog_scroll_anchor_changed(page,top_id,top,restored_top,count);
         if (count) SendMessageW(list,LB_SETCURSEL,static_cast<WPARAM>(selected),0);
         if (count) SendMessageW(list,LB_SETTOPINDEX,static_cast<WPARAM>(restored_top),0);
         const auto locale = location.locale == "en" ? 1 : location.locale == "fr" ? 2 : 0;

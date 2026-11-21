@@ -515,21 +515,202 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
         unwrap(first,last);
         return first<last&&op(t[first],"-")&&single(first+1,last);
     };
+    const auto complemented=[&](std::size_t first,std::size_t last) {
+        unwrap(first,last);
+        // C++23 signed integral complement is the exact all-bits inverse.
+        // A pure local int and its complement yield a constant under
+        // &, |, ^ or +, regardless of the local agreement's value.
+        return first<last&&op(t[first],"~")&&single(first+1,last);
+    };
+    // A bounded affine proof catches *families* of algebraically constant
+    // decorations instead of matching individual spellings. Only literals,
+    // the same side-effect-free local int and +, -, * are evaluated. Calls,
+    // casts, other variables, shifts, divides and unknown expressions remain
+    // undecided, and runtime probes still verify independently.
+    struct Affine {
+        std::int64_t factor=0,offset=0;
+        bool observes_rule=false;
+    };
+    const auto affine=[&](auto&& self,std::size_t first,std::size_t last,
+                          unsigned depth)->std::optional<Affine> {
+        constexpr std::int64_t bound=1000000;
+        if(depth>48||first>=last||last-first>96)return {};
+        unwrap(first,last);
+        if(first>=last)return {};
+        if(first+1==last) {
+            if(id(t[first],name))return Affine{1,0,true};
+            if(const auto value=number(t,first,last))
+                return Affine{0,*value,false};
+            return {};
+        }
+        const auto split_at=[&](bool additive) {
+            std::size_t nested=0,split=last;
+            for(auto at=first;at<last;++at) {
+                if(op(t[at],"(")){++nested;continue;}
+                if(op(t[at],")")){
+                    if(!nested)return last;
+                    --nested;continue;
+                }
+                if(nested||at==first||at+1==last)continue;
+                const bool wanted=additive?
+                    op(t[at],"+")||op(t[at],"-"):op(t[at],"*");
+                if(!wanted)continue;
+                // A + or - after an operator is unary, not a binary split.
+                const auto& preceding=t[at-1];
+                if(!(preceding.starts_with("id:")||
+                     preceding.starts_with("number:")||
+                     op(preceding,")")||op(preceding,"]")))continue;
+                split=at; // Last top-level operator: left associativity.
+            }
+            return nested?last:split;
+        };
+        auto split=split_at(true);
+        if(split==last)split=split_at(false);
+        if(split==last) {
+            if(!op(t[first],"+")&&!op(t[first],"-"))return {};
+            auto inner=self(self,first+1,last,depth+1);
+            if(!inner)return {};
+            if(op(t[first],"-")){
+                inner->factor=-inner->factor;
+                inner->offset=-inner->offset;
+            }
+            return inner;
+        }
+        auto left=self(self,first,split,depth+1);
+        auto right=self(self,split+1,last,depth+1);
+        if(!left||!right)return {};
+        Affine result;
+        result.observes_rule=left->observes_rule||right->observes_rule;
+        if(op(t[split],"+")||op(t[split],"-")) {
+            const auto sign=op(t[split],"+")?1:-1;
+            result.factor=left->factor+sign*right->factor;
+            result.offset=left->offset+sign*right->offset;
+        }else if(op(t[split],"*")) {
+            // An expression nonlinear in the named variable is not affine.
+            if(left->factor&&right->factor)return {};
+            // Bound operands before multiplying to keep this portable on
+            // GCC, Clang and MSVC, without signed arithmetic overflow.
+            const auto within=[&](std::int64_t value) {
+                return value>=-bound&&value<=bound;
+            };
+            if(!within(left->factor)||!within(right->factor)||
+               !within(left->offset)||!within(right->offset))return {};
+            result.factor=left->factor*right->offset+
+                          right->factor*left->offset;
+            result.offset=left->offset*right->offset;
+        }else return {};
+        if(result.factor < -bound||result.factor > bound||
+           result.offset < -bound||result.offset > bound)return {};
+        return result;
+    };
     const auto neutral=[&](std::size_t first,std::size_t last) {
         unwrap(first,last);
+        if(const auto proof=affine(affine,first,last,0);
+           proof&&proof->observes_rule&&proof->factor==0)return true;
         std::size_t depth=0;
         for(auto at=first;at<last;++at) {
             if(op(t[at],"(")){++depth;continue;}
             if(op(t[at],")")){if(depth)--depth;continue;}
             if(depth)continue;
-            if((op(t[at],"-")||op(t[at],"/")||op(t[at],"%"))&&
+            if((op(t[at],"-")||op(t[at],"/")||op(t[at],"%")||
+                op(t[at],"^"))&&
                 single(first,at)&&single(at+1,last))return true;
+            // Proven zero-valued bitwise and remainder expressions do not
+            // use the agreement as a numeric input. C++ evaluates both
+            // operands of &, but the local const has no side effects.
+            // Only fold a complete, bounded, pure literal opposite operand:
+            // "x & 0", "0 & x" and "x % 1". Do not classify x & 1,
+            // x % 2, x ^ y, or x | 0 as neutral; those may depend on x.
+            const auto literal_is=[&](std::size_t begin,std::size_t end,int wanted) {
+                const auto result=arithmetic_constant(t,begin,end);
+                return result&&*result==wanted;
+            };
+            if(op(t[at],"&")&&
+               ((single(first,at)&&literal_is(at+1,last,0))||
+                (literal_is(first,at,0)&&single(at+1,last))))return true;
+            if(op(t[at],"%")&&single(first,at)&&
+               literal_is(at+1,last,1))return true;
+            // Comparing a pure local int with itself is constant-valued:
+            // ==, <= and >= always produce true; !=, < and > are false.
+            // Only fold a complete self-comparison. A comparison against
+            // another expression may still depend on the reviewed agreement.
+            if((op(t[at],"==")||op(t[at],"!=")||
+                op(t[at],"<")||op(t[at],">")||
+                op(t[at],"<=")||op(t[at],">="))&&
+               single(first,at)&&single(at+1,last))return true;
+            // OR with an all-bits-set integral mask is independent of the
+            // purpose-named value. Support signed -1 and the equivalent
+            // complement of zero, including alternate C++ operator tokens.
+            const auto all_bits_set=[&](std::size_t begin,std::size_t end) {
+                unwrap(begin,end);
+                return literal_is(begin,end,-1)||
+                    (begin<end&&op(t[begin],"~")&&
+                     literal_is(begin+1,end,0));
+            };
+            if(op(t[at],"|")&&
+               ((single(first,at)&&all_bits_set(at+1,last))||
+                (all_bits_set(first,at)&&single(at+1,last))))return true;
+            // A bitwise complement pair is also constant-valued:
+            // x & ~x == 0; x | ~x == x ^ ~x == x + ~x == -1.
+            // Check exact operands, never substrings, side effects or
+            // more complicated expressions such as x & ~(x + 1).
+            if((op(t[at],"&")||op(t[at],"|")||
+                op(t[at],"^")||op(t[at],"+"))&&
+               ((single(first,at)&&complemented(at+1,last))||
+                (complemented(first,at)&&single(at+1,last))))return true;
             // The two lexical references also cancel as x+(-x) or (-x)+x.
             if(op(t[at],"+")&&
                 ((single(first,at)&&negated(at+1,last))||
                  (negated(first,at)&&single(at+1,last))))return true;
         }
         return false;
+    };
+    // && and || combine complete boolean operands. A reflexive condition
+    // remains constant even when the whole logical expression also depends
+    // on input, e.g. (capacity == capacity && pieces > 0).
+    // Suppress only references in that exact constant operand.
+    const auto neutral_logical_operand=[&](std::size_t first,std::size_t last) {
+        std::size_t begin=first,depth=0;
+        bool has_separator=false;
+        for(auto at=first;at<last;++at) {
+            if(op(t[at],"(")){++depth;continue;}
+            if(op(t[at],")")){
+                if(!depth)return false;
+                --depth;continue;
+            }
+            if(depth||(!op(t[at],"&&")&&!op(t[at],"||")))continue;
+            has_separator=true;
+            if(i>=begin&&i<at)return neutral(begin,at);
+            begin=at+1;
+        }
+        return has_separator&&!depth&&i>=begin&&i<last&&
+            neutral(begin,last);
+    };
+    // A condition that is provably independent of the named int cannot
+    // contribute evidence merely because its ternary chooses between two
+    // different values. Check the COMPLETE top-level condition, not an
+    // arbitrary comparison buried in a larger data-dependent condition.
+    // This also covers unparenthesized return and assignment expressions.
+    const auto constant_ternary_condition=[&](std::size_t first,
+            std::size_t last) {
+        std::size_t question=last,colon=last,depth=0;
+        for(auto at=first;at<last;++at) {
+            if(op(t[at],"(")){++depth;continue;}
+            if(op(t[at],")")){
+                if(!depth)return false;
+                --depth;continue;
+            }
+            if(depth)continue;
+            if(op(t[at],"?")) {
+                if(question!=last)return false;
+                question=at;
+            }else if(op(t[at],":")) {
+                if(colon!=last)return false;
+                colon=at;
+            }
+        }
+        return !depth&&question<colon&&colon<last&&i<question&&
+            neutral(first,question);
     };
     // A complete parenthesized subexpression can occur anywhere in a
     // return, initializer or alias. Only tokens already in that exact
@@ -541,7 +722,10 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
     }
     for(const auto open:enclosing) {
         const auto close=closing(t,open,"(",")");
-        if(close&&*close>i&&neutral(open+1,*close))return true;
+        if(close&&*close>i&&
+           (neutral(open+1,*close)||
+            neutral_logical_operand(open+1,*close)||
+            constant_ternary_condition(open+1,*close)))return true;
     }
     // Also handle a complete unparenthesized return/assignment such as
     // return cupo - (cupo); without interpreting a larger C++ expression.
@@ -552,7 +736,8 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
         --first;
     auto last=i+1;
     while(last<t.size()&&!op(t[last],";")&&!op(t[last],"}"))++last;
-    return neutral(first,last);
+    return constant_ternary_condition(first,last)||
+        neutral_logical_operand(first,last)||neutral(first,last);
 }
 // In the built-in comma operator, every left operand is evaluated and
 // discarded. A plain named integer or side-effect-free arithmetic on that

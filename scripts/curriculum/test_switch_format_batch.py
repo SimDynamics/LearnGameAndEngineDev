@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -71,12 +72,12 @@ class SwitchHistoryFormatBatch(unittest.TestCase):
                     path=Path(directory)/f"{i}-{tag}.cpp"
                     exe=Path(directory)/f"{i}-{tag}"
                     path.write_text(source(bl),encoding="utf-8")
-                    built=subprocess.run(["c++","-std=c++23","-O0","-o",str(exe),str(path)],
+                    built=subprocess.run(msvc_cpp23_command(exe, path),
                                          capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,built.returncode,identity+built.stderr)
                     runs=[]
                     for inp in inputs:
-                        p0=subprocess.run([str(exe)],input=inp,
+                        p0=subprocess.run([str(windows_executable(exe))],input=inp,
                                           capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,p0.returncode,identity)
                         self.assertEqual("",p0.stderr,identity)

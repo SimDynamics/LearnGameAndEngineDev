@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -82,7 +83,6 @@ class OrderOfOperationsFormatBatch(unittest.TestCase):
         self.assertTrue(all("\n" not in fragment and "\r" not in fragment for fragment in order["fragments"]))
         self.assertEqual(1,len(self.meta["orderRefinements"]))
 
-    @unittest.skipUnless(shutil.which("c++"),"No C++ compiler in this environment")
     def test_cpp23_source_equivalence_and_sequencing(self):
         cases={
             (1,1): [("",{"3:12","3:21"})], # + does not require one operand order
@@ -104,12 +104,12 @@ class OrderOfOperationsFormatBatch(unittest.TestCase):
                     source=Path(folder)/f"{p}-{b}-{tag}.cpp"
                     binary=Path(folder)/f"{p}-{b}-{tag}"
                     source.write_text(version[slot],encoding="utf-8")
-                    proc=subprocess.run(["c++","-std=c++23","-O0",str(source),"-o",str(binary)],
+                    proc=subprocess.run(msvc_cpp23_command(binary, source),
                                         capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,proc.returncode,identity+proc.stderr)
                     results=[]
                     for inp,accepted in checks:
-                        run=subprocess.run([str(binary)],input=inp,capture_output=True,text=True,timeout=15)
+                        run=subprocess.run([str(windows_executable(binary))],input=inp,capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,run.returncode,identity+run.stderr)
                         self.assertEqual("",run.stderr,identity)
                         self.assertIn(run.stdout.rstrip("\n"),accepted,identity)

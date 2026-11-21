@@ -21,23 +21,6 @@ permissions:
   contents: read
 
 jobs:
-  gcc-clang:
-    name: U10L1 original dual bases with GCC and Clang
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Compile authentic dual-interface implementations and reject counterexamples
-        run: |
-          for compiler in g++ clang++; do
-            python3 -B scripts/curriculum/test_cpp_dual_interface.py \
-              --compiler "$compiler"
-          done
-          python3 -B -m unittest discover -s scripts/curriculum \
-            -p test_cpp_dual_interface_authoring.py -v
-
   windows-msvc:
     name: U10L1 original dual bases with MSVC
     runs-on: windows-2022

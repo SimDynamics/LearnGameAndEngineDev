@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -60,12 +61,12 @@ class RechargeFormatBatch(unittest.TestCase):
                     src=Path(folder)/f"{index}-{label}.cpp"
                     exe=Path(folder)/f"{index}-{label}"
                     src.write_text(block[slot(block)],encoding="utf-8")
-                    compile=subprocess.run(["c++","-std=c++23","-O0","-o",str(exe),str(src)],
+                    compile=subprocess.run(msvc_cpp23_command(exe, src),
                                            capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,compile.returncode,identity+compile.stderr)
                     runs=[]
                     for inp in inputs:
-                        run=subprocess.run([str(exe)],input=inp,capture_output=True,text=True,timeout=15)
+                        run=subprocess.run([str(windows_executable(exe))],input=inp,capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,run.returncode,identity)
                         self.assertEqual("",run.stderr,identity)
                         runs.append((run.returncode,run.stdout,run.stderr))

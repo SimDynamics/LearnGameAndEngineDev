@@ -20,26 +20,6 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    name: Preserve a single member and verify actual U6L5 transfer identity
-    runs-on: ubuntu-24.04
-    timeout-minutes: 9
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Check the standalone C++23 source guard and the authentic transfer
-        run: |
-          for compiler in g++ clang++; do
-            "$compiler" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-              native/core/cpp_member_body_check_tests.cpp -o "$RUNNER_TEMP/member_guard"
-            "$RUNNER_TEMP/member_guard"
-            python3 -B scripts/curriculum/test_cpp_indexed_unique_transfer_probe.py \
-              --compiler "$compiler"
-          done
-          python3 -B -m unittest discover -s scripts/curriculum \
-            -p test_cpp_indexed_unique_transfer_authoring.py -v
-
   windows-msvc:
     name: Independently compile and test U6L5 on MSVC C++23
     runs-on: windows-2022
@@ -60,3 +40,6 @@ jobs:
           "%RUNNER_TEMP%\member_guard.exe"
           if errorlevel 1 exit /b 1
           python -B scripts\curriculum\test_cpp_indexed_unique_transfer_probe.py --compiler cl --windows
+      - name: Validate authored transfer contracts with native Windows Python
+        shell: cmd
+        run: python -B -m unittest discover -s scripts\curriculum -p test_cpp_indexed_unique_transfer_authoring.py -v

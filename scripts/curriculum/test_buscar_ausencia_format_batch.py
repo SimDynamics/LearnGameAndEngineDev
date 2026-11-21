@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -71,12 +72,12 @@ class FindAbsentFormatBatch(unittest.TestCase):
                     source=Path(folder)/f"{index}-{version}.cpp"
                     exe=Path(folder)/f"{index}-{version}"
                     source.write_text(runnable(block),encoding="utf-8")
-                    build=subprocess.run(["c++","-std=c++23","-O0","-o",str(exe),str(source)],
+                    build=subprocess.run(msvc_cpp23_command(exe, source),
                                          capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,build.returncode,identity+build.stderr)
                     runs=[]
                     for stdin in inputs:
-                        result=subprocess.run([str(exe)],input=stdin,capture_output=True,
+                        result=subprocess.run([str(windows_executable(exe))],input=stdin,capture_output=True,
                                               text=True,timeout=15)
                         self.assertEqual(0,result.returncode,identity)
                         self.assertEqual("",result.stderr,identity)

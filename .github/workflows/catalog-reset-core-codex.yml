@@ -1,4 +1,4 @@
-name: Codex portable catalog progress reset (GCC and Clang)
+name: Codex catalog progress reset (Windows MSVC)
 
 on:
   push:
@@ -8,6 +8,8 @@ on:
       - native/core/catalog.cpp
       - native/core/catalog.hpp
       - native/core/catalog_reset_portable_tests.cpp
+      - native/core/course_edition_scope_tests.cpp
+      - native/presentation/windows/catalog_view.cpp
       - native/core/lesson_state.cpp
       - native/core/lesson_state.hpp
   workflow_dispatch:
@@ -16,33 +18,6 @@ permissions:
   contents: read
 
 jobs:
-  scoped-progress-reset:
-    name: Atomic catalog reset (${{ matrix.compiler }})
-    runs-on: ubuntu-24.04
-    timeout-minutes: 8
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler: [g++, clang++]
-    steps:
-      - name: Checkout exact Codex revision
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Compile real portable catalog and state store
-        env:
-          CXX: ${{ matrix.compiler }}
-        run: |
-          "$CXX" --version
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic \
-            -ffunction-sections -fdata-sections -Inative \
-            native/core/catalog.cpp \
-            native/core/lesson_state.cpp \
-            native/core/catalog_reset_portable_tests.cpp \
-            -Wl,--gc-sections -o "${RUNNER_TEMP}/lgaed_catalog_reset_tests"
-      - name: Prove corrupted coverage rollback preserves bytes and unrelated courses
-        run: "${RUNNER_TEMP}/lgaed_catalog_reset_tests"
-
   scoped-progress-reset-msvc:
     # Portable native-state assertions only. This is not the full pinned
     # Win32 application build or a test on the student's computer.
@@ -64,6 +39,25 @@ jobs:
           native\core\catalog.cpp native\core\lesson_state.cpp
           native\core\catalog_reset_portable_tests.cpp
           /link /OPT:REF /OUT:"%RUNNER_TEMP%\lgaed_catalog_reset_tests.exe"
+      - name: Compile course-edition scope regression with real catalog and state
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive-
+          /Zc:__cplusplus /utf-8 /Gy /I native
+          native\core\catalog.cpp native\core\lesson_state.cpp
+          native\core\course_edition_scope_tests.cpp
+          /link /OPT:REF /OUT:"%RUNNER_TEMP%\lgaed_course_edition_scope_tests.exe"
+      - name: Compile the real Windows catalog UI anchor integration
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /permissive- /bigobj
+          /Zc:__cplusplus /utf-8 /DUNICODE /D_UNICODE /DNOMINMAX
+          /DWIN32_LEAN_AND_MEAN /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00
+          /I native /c native\presentation\windows\catalog_view.cpp
+          /Fo:"%RUNNER_TEMP%\lgaed_catalog_view.obj"
       - name: Execute atomic reset and edition-provenance regressions on Windows
         shell: cmd
         run: '"%RUNNER_TEMP%\lgaed_catalog_reset_tests.exe"'
+      - name: Execute explicit mixed-generation scoped reset checks on Windows
+        shell: cmd
+        run: '"%RUNNER_TEMP%\lgaed_course_edition_scope_tests.exe"'

@@ -198,9 +198,18 @@ struct Fixture {
         initialize_profile_directories(environment.paths);
         // Fixed-coordinate regressions describe the verified published UI.
         // Integrated-asset cases below supply their current model explicitly.
+#ifdef LGAED_INLINE_FEEDBACK_ONLY
+        // Hosted test loads the ACTUAL active edition; the archived fixture is
+        // only present in the full historical Windows build.
+        require(static_cast<bool>(load_model),
+            "Inline-feedback QA needs an actual published lesson loader");
+        lesson=load_model({});
+        supplied_model=true;
+#else
         lesson = test::load_pre_retirement_lesson("lesson_primer_programa_y_salida.json");
         supplied_model = true;
         if (load_model) { lesson = load_model(lesson); supplied_model = true; }
+#endif
         state::StateStore seed_store(environment.paths.root); initial_data=seed_store.load();
         // Spanish expectations below are explicit test choices, independent of
         // the PC language. Individual language cases override this preference.
@@ -5730,6 +5739,28 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
     std::cout<<"PASS nine registered inline controls and "<<alternatives<<" additional authored alternatives; no synthesis or human listening claimed\n";
 }
 
+#ifdef LGAED_INLINE_FEEDBACK_ONLY
+int main(int argc,char* argv[]) {
+    if(argc!=2||std::string_view(argv[1])!="--inline-feedback")return 2;
+    std::cout<<std::unitbuf;std::cerr<<std::unitbuf;
+    const auto ole=OleInitialize(nullptr);
+    if(FAILED(ole))return 2;
+    struct OleScope{~OleScope(){OleUninitialize();}} apartment;
+    INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};
+    if(!InitCommonControlsEx(&common))return 2;
+    WNDCLASSW host{};host.lpfnWndProc=host_proc;
+    host.hInstance=GetModuleHandleW(nullptr);
+    host.lpszClassName=L"LgaedLessonViewTests";
+    if(!RegisterClassW(&host))return 2;
+    try {
+        current_inline_feedback_uses_authored_controls_and_restores_each_attempt();
+        return 0;
+    }catch(const std::exception& error){
+        std::cerr<<"FAIL real active inline-feedback QA: "<<error.what()<<'\n';
+        return 1;
+    }
+}
+#else
 int main(int argc,char* argv[]) {
 #ifdef LGAED_INLINE_FEEDBACK_ONLY
     if(argc!=2||std::string_view(argv[1])!="--inline-feedback")return 2;
@@ -6489,3 +6520,4 @@ int main(int argc,char* argv[]) {
         std::cerr << "FAIL Native lesson UI integration: " << error.what() << '\n'; return 1;
     }
 }
+#endif // LGAED_INLINE_FEEDBACK_ONLY

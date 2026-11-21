@@ -3321,7 +3321,84 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         require(revisions.Size()<=100000,"Too many editorial proofs");
         for (const auto& value : revisions) {
             const auto change = value.GetObject();
-            allowed_keys(change, {"id", "beforeSha256", "afterSha256", "returnTo", "bibliography"});
+            allowed_keys(change, {"id", "beforeSha256", "afterSha256", "returnTo",
+                                  "bibliography", "reviewPaths"});
+            if(change.HasKey(L"reviewPaths")) {
+                // A feedback review names its exact existing option or its
+                // scalar guide, never a new response or an inferred sibling.
+                // The Python authoring/transition validator also proves that
+                // this change accompanied genuine question/explanation prose.
+                require(!change.HasKey(L"bibliography"),
+                    "An ordinary feedback revision cannot borrow a bibliography archive");
+                const auto listed=array(change,"reviewPaths");
+                require(listed.Size()>0&&listed.Size()<=128,
+                    "Reviewed guidance needs a bounded nonempty path list");
+                std::vector<std::string> paths;
+                paths.reserve(listed.Size());
+                for(const auto& value:listed) {
+                    require(value.ValueType()==JsonValueType::String,
+                        "Reviewed guidance path must be a string");
+                    const auto path=utf8(value.GetString());
+                    if(path!="/reviewFeedback") {
+                        constexpr std::string_view prefix="/reviewFeedback/";
+                        require(path.starts_with(prefix),
+                            "Reviewed guidance path must identify the original option index");
+                        const auto digits=std::string_view(path).substr(prefix.size());
+                        require(!digits.empty()&&digits.size()<=8&&
+                            (digits=="0"||digits.front()!='0')&&
+                            std::ranges::all_of(digits,[](unsigned char c){return c>='0'&&c<='9';}),
+                            "Reviewed guidance index is not a canonical option position");
+                    }
+                    require(std::ranges::find(paths,path)==paths.end(),
+                        "Repeated authored guidance path");
+                    if(!paths.empty()) {
+                        const auto preceding=std::string_view(paths.back());
+                        // Canonical numeric ordering, not lexicographic: /2
+                        // precedes /10; scalar /reviewFeedback is a singleton.
+                        require(path!="/reviewFeedback"&&preceding!="/reviewFeedback",
+                            "A scalar guide cannot be combined with indexed guides");
+                        const auto earlier=preceding.substr(std::string_view("/reviewFeedback/").size());
+                        const auto current=std::string_view(path).substr(std::string_view("/reviewFeedback/").size());
+                        require(earlier.size()<current.size()||
+                                (earlier.size()==current.size()&&earlier<current),
+                            "Reviewed option guidance paths must be strictly ordered");
+                    }
+                    paths.push_back(path);
+                }
+                require(root.HasKey(L"textSemantics"),
+                    "Reviewed guidance needs authenticated reading descriptors");
+                const auto descriptors=array(root.GetNamedObject(L"textSemantics"),"fields");
+                const auto& identity=text(change,"id");
+                collect_actual();
+                const auto actual=return_actual_blocks.find(identity);
+                require(actual!=return_actual_blocks.end(),
+                    "Reviewed guidance lost its existing block owner");
+                const auto& owner=actual->second;
+                require(owner.HasKey(L"reviewFeedback"),
+                    "Reviewed guidance cannot add an unowned guide field");
+                const auto feedback=owner.GetNamedValue(L"reviewFeedback");
+                for(const auto& path:paths) {
+                    const bool scalar=path=="/reviewFeedback";
+                    require(feedback.ValueType()==(scalar?JsonValueType::String:JsonValueType::Array),
+                        "A revised hint must preserve the original guidance structure");
+                    if(!scalar) {
+                        const auto digits=std::string_view(path).substr(std::string_view("/reviewFeedback/").size());
+                        std::size_t index=0;
+                        for(const auto digit:digits)index=index*10+static_cast<std::size_t>(digit-'0');
+                        require(index<feedback.GetArray().Size(),
+                            "A revised hint refers to a nonexistent option");
+                    }
+                    bool described=false;
+                    for(const auto& value:descriptors) {
+                        if(value.ValueType()!=JsonValueType::Object)continue;
+                        const auto entry=value.GetObject();
+                        described=described||(text(entry,"block")==identity&&
+                            text(entry,"path")==path);
+                    }
+                    require(described,
+                        "Each revised hint requires a matching authored text descriptor");
+                }
+            }
             for(const auto field:{L"id",L"beforeSha256",L"afterSha256"})require(change.HasKey(field),"Incomplete editorial record");
             const auto id = text(change, "id"), before = text(change, "beforeSha256"), after = text(change, "afterSha256");
             require(result.signatures.contains(id) && valid_hash(before) && valid_hash(after) && before != after, "Invalid editorial record");
@@ -4579,6 +4656,7 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
             "Local int checks require one ordinary matching runtime sample.");
         for(const auto* conflicting:{
                 "compilerWorkflowChecks","compilerRuntimeChecks",
+                "compilerLocalStringChecks",
                 "compilerNamedRuleChecks","compilerOpenBatteryChecks",
                 "compilerReductionChecks","compilerCmakeGraphChecks",
                 "compilerIndexedUniqueTransferChecks",
@@ -4614,7 +4692,9 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
                 (void)original.member(raw_probe,field);
             if(probe.HasKey(L"afterUpdate"))
                 (void)original.member(raw_probe,"afterUpdate");
-            allowed_keys(probe,{"variable","replacement","outputs","afterUpdate"});
+            if(probe.HasKey(L"expectedIncrease"))
+                (void)original.member(raw_probe,"expectedIncrease");
+            allowed_keys(probe,{"variable","replacement","outputs","afterUpdate","expectedIncrease"});
             const auto number=probe.GetNamedValue(L"replacement");
             require(number.ValueType()==JsonValueType::Number&&
                     std::isfinite(number.GetNumber())&&
@@ -4633,6 +4713,16 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
                     "afterUpdate must be the explicit true option.");
                 next.after_update=true;
             }
+            if(probe.HasKey(L"expectedIncrease")) {
+                const auto delta=probe.GetNamedValue(L"expectedIncrease");
+                require(next.after_update&&delta.ValueType()==JsonValueType::Number&&
+                        std::isfinite(delta.GetNumber())&&
+                        std::trunc(delta.GetNumber())==delta.GetNumber()&&
+                        delta.GetNumber()>=1&&
+                        delta.GetNumber()<=std::numeric_limits<std::int32_t>::max(),
+                    "expectedIncrease requires a positive signed 32-bit integer and afterUpdate.");
+                next.expected_increase=static_cast<std::int32_t>(delta.GetNumber());
+            }
             // A variant with the same permitted output as the published
             // unchanged program could never distinguish a hard-coded value.
             for(const auto& expected:next.expected_stdout)
@@ -4645,6 +4735,119 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
         require(cpp_local_int_check_valid(spec),
             "Invalid or duplicated independent int variation.");
         owner->local_int_check=std::move(spec);
+    }
+}
+
+// An additional, independently verified std::string dependency, authored
+// once at the lesson root. The visible output, original code and state layout
+// are unchanged. Both normal and progress-only loaders parse this contract.
+void read_compiler_local_string_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerLocalStringChecks"))return;
+    const auto entries=array(root,"compilerLocalStringChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Local string checks require original Spanish v2 compiler owners.");
+    const OriginalJson original(lesson.raw_json);
+    const auto raw_entries=original.elements(
+        original.member(original.root(),"compilerLocalStringChecks"));
+    require(raw_entries.size()==entries.Size(),
+        "Original local string owner count differs from the parsed declaration.");
+    std::set<std::string> seen;
+    std::size_t owner_index=0;
+    for(const auto& value:entries) {
+        const auto item=value.GetObject();
+        const auto raw_item=raw_entries.at(owner_index++);
+        (void)original.member(raw_item,"activity");
+        (void)original.member(raw_item,"probes");
+        allowed_keys(item,{"activity","probes"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&seen.insert(identity).second,
+            "Duplicate or invalid local string owner.");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate local string block identity.");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&owner->output_check->cases.size()==1&&
+                !owner->compile_check&&!owner->cmake&&!owner->local_int_check&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->initial_code.empty()&&
+                !owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&
+                !owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&
+                !owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&
+                !owner->polymorphic_destruction_probe&&!owner->virtual_lifetime_probe&&
+                !owner->derived_preparation_probe&&!owner->abstract_interface_probe&&
+                !owner->interface_collection_probe&&!owner->polymorphic_clone_probe&&
+                !owner->dual_interface_probe&&
+                !owner->open_battery_probe&&!owner->reduction_probe&&
+                !owner->boolean_battery_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "Local string check requires one standalone unchanged output editor.");
+        const auto& first=owner->output_check->cases.front();
+        require(first.standard_input==owner->standard_input.value_or("")&&
+                first.exit_code==0&&!first.executable&&
+                first.standard_error==StandardErrorExpectation::ignored&&
+                !first.standard_error_exact,
+            "Local string checks need one original normal-exit output case.");
+        for(const auto* conflicting:{
+                "compilerLocalIntChecks","compilerWorkflowChecks",
+                "compilerRuntimeChecks","compilerNamedRuleChecks",
+                "compilerOpenBatteryChecks","compilerReductionChecks",
+                "compilerCmakeGraphChecks","compilerIndexedUniqueTransferChecks",
+                "compilerDefaultedMovePolicyChecks","compilerIndependentCopyAssignmentChecks",
+                "compilerMoveAssignmentInvariantChecks","compilerArrayOwnerReadChecks",
+                "compilerArrayCopyMoveChecks","compilerArrayReturnTakeChecks",
+                "compilerPolymorphicDestructionChecks","compilerVirtualLifetimeDispatchChecks",
+                "compilerDerivedPreparationChecks","compilerAbstractInterfaceChecks",
+                "compilerInterfaceCollectionChecks","compilerPolymorphicCloneChecks",
+                "compilerDualInterfaceChecks"}) {
+            if(!root.HasKey(winrt::to_hstring(conflicting)))continue;
+            for(const auto& other:array(root,conflicting))
+                require(text(other.GetObject(),"activity")!=identity,
+                    "An independent local-string owner cannot share another runtime check.");
+        }
+        const auto probes=array(item,"probes");
+        require(probes.Size()>0&&probes.Size()<=12,
+            "Local string checks require 1..12 independently authored changes.");
+        const auto raw_probes=original.elements(original.member(raw_item,"probes"));
+        require(raw_probes.size()==probes.Size(),
+            "Original string probe count does not match its parsed declaration.");
+        CppLocalStringCheck spec;
+        std::size_t probe_index=0;
+        for(const auto& entry:probes) {
+            const auto probe=entry.GetObject();
+            const auto raw_probe=raw_probes.at(probe_index++);
+            for(const auto field:{"variable","replacement","moment","outputs"})
+                (void)original.member(raw_probe,field);
+            allowed_keys(probe,{"variable","replacement","moment","outputs"},true);
+            CppLocalStringProbe next;
+            next.variable=text(probe,"variable");
+            next.replacement=text(probe,"replacement");
+            next.expected_stdout=strings(array(probe,"outputs"),true);
+            const auto moment=text(probe,"moment");
+            if(moment=="afterInitialization")
+                next.moment=CppLocalStringMoment::after_initialization;
+            else if(moment=="afterFirstAssignment")
+                next.moment=CppLocalStringMoment::after_first_assignment;
+            else if(moment=="beforeOutput")
+                next.moment=CppLocalStringMoment::before_output;
+            else require(false,"Unknown string-variable perturbation moment.");
+            for(const auto& expected:next.expected_stdout)
+                require(!std::ranges::any_of(first.outputs,[&](const auto& visible) {
+                    return cpp_local_int_canonical_stdout(expected)==
+                           cpp_local_int_canonical_stdout(visible);
+                }),"A local string variation must distinguish the visible output.");
+            spec.probes.push_back(std::move(next));
+        }
+        require(cpp_local_string_check_valid(spec),
+            "Invalid, duplicate or incomplete private string variation.");
+        owner->local_string_check=std::move(spec);
     }
 }
 
@@ -7174,6 +7377,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_order_visual_separators(root,lesson);
         read_compiler_workflow_checks(root,lesson);
         read_compiler_local_int_checks(root,lesson);
+        read_compiler_local_string_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_indexed_unique_transfer_checks(root,lesson);
@@ -7315,6 +7519,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_order_visual_separators(root,lesson);
         read_compiler_workflow_checks(root,lesson);
         read_compiler_local_int_checks(root,lesson);
+        read_compiler_local_string_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_indexed_unique_transfer_checks(root,lesson);

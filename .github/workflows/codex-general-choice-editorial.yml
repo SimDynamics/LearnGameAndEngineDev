@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/codex-general-choice-editorial.yml
       - scripts/curriculum/test_general_choice_revision_live.py
+      - scripts/curriculum/test_review_feedback_prose_revision.py
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/validar_json_programacion.py
       - scripts/curriculum/text_semantics.py
@@ -30,3 +31,8 @@ jobs:
           python3 -B -m unittest discover
           -s scripts/curriculum
           -p test_general_choice_revision_live.py -v
+      - name: Check atomic question, explanation and indexed hint revisions
+        run: >-
+          python3 -B -m unittest discover
+          -s scripts/curriculum
+          -p test_review_feedback_prose_revision.py -v

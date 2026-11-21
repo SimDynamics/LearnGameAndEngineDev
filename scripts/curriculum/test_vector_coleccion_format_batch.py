@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -75,12 +76,12 @@ class VectorCollectionFormatBatch(unittest.TestCase):
                     src=Path(folder)/f"{idx}-{label}.cpp"
                     exe=Path(folder)/f"{idx}-{label}"
                     src.write_text(source(block),encoding="utf-8")
-                    compiled=subprocess.run(["c++","-std=c++23","-O0","-o",str(exe),str(src)],
+                    compiled=subprocess.run(msvc_cpp23_command(exe, src),
                                             capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,compiled.returncode,identity+compiled.stderr)
                     runs=[]
                     for stdin in inputs:
-                        result=subprocess.run([str(exe)],input=stdin,capture_output=True,text=True,timeout=15)
+                        result=subprocess.run([str(windows_executable(exe))],input=stdin,capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,result.returncode,identity)
                         self.assertEqual("",result.stderr,identity)
                         runs.append((result.returncode,result.stdout,result.stderr))

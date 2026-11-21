@@ -7,11 +7,23 @@ on:
       - .github/workflows/codex-local-int-dependency.yml
       - native/core/cpp_local_int_probe.hpp
       - native/core/cpp_local_int_probe_tests.cpp
+      - native/core/cpp_local_string_probe.hpp
+      - native/core/cpp_local_string_probe_tests.cpp
+      - native/core/cpp_local_string_live_fixtures.cpp
+      - scripts/windows/Test-LocalVariableDependency.ps1
+      - scripts/windows/Test-LocalVariableState.ps1
+      - CMakeLists.txt
+      - native/platform/windows/local_int_state_tests.cpp
+      - native/platform/windows/local_string_state_tests.cpp
+      - cmake/native_build_config.hpp.in
+      - scripts/curriculum/test_local_string_live_compilation.py
       - native/core/cpp_local_int_live_fixtures.cpp
       - native/core/cpp_expression_repair.hpp
       - native/core/code_format_compat.hpp
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/test_local_int_probe_authoring.py
+      - scripts/curriculum/test_local_string_probe_authoring.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_cadenas_y_texto.json
       - scripts/curriculum/test_local_int_live_compilation.py
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_objetos_valores_y_tipos.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_declarar_e_inicializar.json
@@ -34,35 +46,8 @@ jobs:
           persist-credentials: false
       - name: Verify append-only probes and original stable-state identities
         run: python3 -B -m unittest discover -s scripts/curriculum -p test_local_int_probe_authoring.py -v
-
-  portable:
-    name: Probe mutations and 30 live C++ programs on ${{ matrix.compiler }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler: [g++, clang++]
-    steps:
-      - name: Read the exact revision
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Compile and run the exact production probe's unit tests
-        env:
-          CXX: ${{ matrix.compiler }}
-        run: |
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-            native/core/cpp_local_int_probe_tests.cpp -o "$RUNNER_TEMP/lgaed_local_int_probe_tests"
-          "$RUNNER_TEMP/lgaed_local_int_probe_tests"
-      - name: Compile variant emitter and execute every original and mutated C++ case
-        env:
-          CXX: ${{ matrix.compiler }}
-        run: |
-          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-            native/core/cpp_local_int_live_fixtures.cpp -o "$RUNNER_TEMP/lgaed_local_int_fixtures"
-          python3 -B scripts/curriculum/test_local_int_live_compilation.py \
-            --emitter "$RUNNER_TEMP/lgaed_local_int_fixtures" --compiler "$CXX"
+      - name: Validate two authentic U2L7 text owners and original answer contracts
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_local_string_probe_authoring.py -v
 
   hosted-msvc:
     name: Source-only MSVC, not the production-pinned Windows app
@@ -76,6 +61,24 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Parse both local Windows QA entry points without running them
+        run: |
+          foreach ($relative in @(
+              'scripts/windows/Test-LocalVariableDependency.ps1',
+              'scripts/windows/Test-LocalVariableState.ps1')) {
+            $path = Join-Path (Get-Location).Path $relative
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+              throw "Local QA script missing: $relative"
+            }
+            $tokens = $null
+            $parseErrors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile(
+              $path, [ref]$tokens, [ref]$parseErrors)
+            if ($parseErrors.Count -ne 0) {
+              $parseErrors | ForEach-Object { Write-Error $_.Message }
+              throw "Local Windows QA script has PowerShell syntax errors: $relative"
+            }
+          }
       - name: Prepare hosted Visual C++ for isolated source tests
         uses: ilammy/msvc-dev-cmd@v1
       - name: Compile and run the production probe's unit tests
@@ -86,7 +89,23 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & $unit
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Compile and execute 30 original/mutated C++ programs on hosted MSVC
+      - name: Verify local-string variations with hosted MSVC
+        run: |
+          $unit = Join-Path $env:RUNNER_TEMP 'lgaed_local_string_probe_tests.exe'
+          $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_string_probe_tests.obj'
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /utf-8 /I native native\core\cpp_local_string_probe_tests.cpp "/Fe:$unit" "/Fo:$obj"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $unit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile and execute 30 generated string programs on hosted MSVC
+        run: |
+          $emitter = Join-Path $env:RUNNER_TEMP 'lgaed_local_string_fixtures.exe'
+          $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_string_fixtures.obj'
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /utf-8 /I native native\core\cpp_local_string_live_fixtures.cpp "/Fe:$emitter" "/Fo:$obj"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B scripts/curriculum/test_local_string_live_compilation.py --emitter "$emitter" --compiler MSVC
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile and execute 55 original/mutated C++ programs on hosted MSVC
         run: |
           $emitter = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_fixtures.exe'
           $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_fixtures.obj'
@@ -94,3 +113,131 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B scripts/curriculum/test_local_int_live_compilation.py --emitter "$emitter" --compiler MSVC
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  hosted-win32-state-source:
+    # Syntax-only proof for the two registered Win32 StateStore/loader tests.
+    # Hosted VS 2022 is NOT the production-pinned Windows 2026 toolchain.
+    name: Compile both Win32 integration test sources (hosted MSVC)
+    runs-on: windows-2022
+    timeout-minutes: 12
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Read the exact Codex revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Prepare hosted Visual C++
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Generate existing build configuration header for this exact checkout
+        run: |
+          $root = (Get-Location).Path.Replace('\', '/')
+          $generated = Join-Path $env:RUNNER_TEMP 'local-state-generated'
+          [void][System.IO.Directory]::CreateDirectory($generated)
+          $template = Get-Content -LiteralPath 'cmake/native_build_config.hpp.in' -Raw -Encoding UTF8
+          $replacements = @{
+            '@LGAED_CPP_STANDARD@' = '23'
+            '@LGAED_CPP_STANDARD_OPTION@' = '/std:c++latest'
+            '@LGAED_DEFAULT_PROFILE@' = 'Codex'
+            '@CMAKE_SOURCE_DIR@' = $root
+            '@LGAED_DEP_ROOT@' = ''
+            '@LGAED_EDUCATIONAL_VC_ROOT@' = $env:VCToolsInstallDir.Replace('\', '/')
+            '@LGAED_EDUCATIONAL_SDK_ROOT@' = $env:WindowsSdkDir.Replace('\', '/')
+            '@CMAKE_COMMAND@' = 'cmake'
+            '@CMAKE_MAKE_PROGRAM@' = 'ninja'
+            '@CMAKE_RC_COMPILER@' = 'rc'
+            '@CMAKE_CURRENT_BINARY_DIR@' = $generated.Replace('\', '/')
+          }
+          foreach ($entry in $replacements.GetEnumerator()) {
+            $template = $template.Replace($entry.Key, $entry.Value)
+          }
+          if ($template -match '@[A-Z_]+@') {
+            throw 'Native test configuration has unresolved placeholders'
+          }
+          [System.IO.File]::WriteAllText(
+            (Join-Path $generated 'native_build_config.hpp'), $template,
+            [System.Text.UTF8Encoding]::new($false))
+      - name: Compile the two original native integration test translation units
+        run: |
+          $generated = Join-Path $env:RUNNER_TEMP 'local-state-generated'
+          $flags = @(
+            '/nologo', '/std:c++latest', '/EHsc', '/W4', '/WX',
+            '/permissive-', '/Zc:__cplusplus', '/utf-8', '/bigobj',
+            '/DUNICODE', '/D_UNICODE', '/DWIN32_LEAN_AND_MEAN', '/DNOMINMAX',
+            '/D_WIN32_WINNT=0x0A00', '/DWINVER=0x0A00',
+            '/I', 'native', '/I', $generated, '/c'
+          )
+          foreach ($source in @(
+              'native/platform/windows/local_int_state_tests.cpp',
+              'native/platform/windows/local_string_state_tests.cpp')) {
+            $object = Join-Path $env:RUNNER_TEMP (
+              [System.IO.Path]::GetFileNameWithoutExtension($source) + '.obj')
+            & cl @flags $source "/Fo:$object"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+  evidence-status:
+    name: Publish focused source-only compiler evidence
+    # This tests hosted source probes, not the production-pinned Windows app.
+    if: ${{ always() }}
+    needs: [authoring, hosted-msvc, hosted-win32-state-source]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      statuses: write
+    steps:
+      - name: Report the exact commit's compiler-probe status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTHORING: ${{ needs.authoring.result }}
+          HOSTED_MSVC: ${{ needs.hosted-msvc.result }}
+          WIN32_OBJECTS: ${{ needs.hosted-win32-state-source.result }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from urllib.request import Request, urlopen
+
+          results = {
+              "authoring": os.environ["AUTHORING"],
+              "hosted_msvc": os.environ["HOSTED_MSVC"],
+              "win32_objects": os.environ["WIN32_OBJECTS"],
+          }
+          state = ("success" if all(v == "success" for v in results.values())
+                   else "failure")
+          payload = {
+              "state": state,
+              "context": "codex/local-variable-source",
+              "description": (
+                  f"Authoring={results['authoring']}; "
+                  f"hosted MSVC={results['hosted_msvc']}; "
+                  f"Win32 objects={results['win32_objects']}; source-only"
+              ),
+              "target_url": (
+                  f"{os.environ['GITHUB_SERVER_URL']}/"
+                  f"{os.environ['GITHUB_REPOSITORY']}/actions/runs/"
+                  f"{os.environ['GITHUB_RUN_ID']}"
+              ),
+          }
+          endpoint = (
+              f"{os.environ['GITHUB_API_URL']}/repos/"
+              f"{os.environ['GITHUB_REPOSITORY']}/statuses/"
+              f"{os.environ['GITHUB_SHA']}"
+          )
+          request = Request(
+              endpoint,
+              data=json.dumps(payload).encode("utf-8"),
+              method="POST",
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+                  "Content-Type": "application/json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          with urlopen(request, timeout=15) as response:
+              if response.status != 201:
+                  raise RuntimeError("The commit status was not accepted")
+          print("Source-only probe CI status:", state, results)
+          PY

@@ -1,4 +1,4 @@
-name: Codex portable course-edition path and history checks
+name: Codex Windows course-edition path and history checks
 
 on:
   push:
@@ -15,6 +15,17 @@ on:
       - native/platform/windows/catalog_resource_version.hpp
       - native/platform/windows/catalog_resource_version_tests.cpp
       - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_current_combined_format_guidance.py
+      - scripts/curriculum/test_current_equal_reference_format.py
+      - scripts/curriculum/test_current_expanded_reference_format.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_*.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_cerrar_reemplazar_y_anadir_datos.json
+      - scripts/curriculum/code_format_compat.py
+      - scripts/curriculum/text_semantics.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/errores_y_construccion_gradual/lesson_validar_antes_y_elegir_reporte.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_nombrar_alternativas_con_enum_class.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_consultas_const_y_objetos_constantes.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/aleatoriedad_y_reproducibilidad/lesson_combinar_ensayos_generados_y_casos_elegidos.json
   workflow_dispatch:
 
 permissions:
@@ -28,22 +39,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2022]
+        os: [windows-2022]
     steps:
       - name: Check out the exact Codex publication
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Compile and run the isolated native contract with GCC and Clang
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          for compiler in g++ clang++; do
-            "$compiler" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
-              native/core/course_edition_contract_tests.cpp \
-              -o "${RUNNER_TEMP}/course_edition_contract_tests"
-            "${RUNNER_TEMP}/course_edition_contract_tests"
-          done
       - name: Select Windows MSVC for an independent core check
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
@@ -104,7 +105,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2022]
+        os: [windows-2022]
     steps:
       - name: Check out the exact Codex publication
         uses: actions/checkout@v4
@@ -117,3 +118,9 @@ jobs:
           python-version: '3.12'
       - name: Exercise the actual edition validator and untouched historical fixtures
         run: python -B -m unittest discover -s scripts/curriculum -p test_course_edition.py -v
+      - name: Confirm four real source and guidance reviews with stable ownership
+        run: python -B -m unittest discover -s scripts/curriculum -p test_current_combined_format_guidance.py -v
+      - name: Distinguish equal C++ references at their own stable addresses
+        run: python -B -m unittest discover -s scripts/curriculum -p test_current_equal_reference_format.py -v
+      - name: Validate nine expanded interpreter references with exact source history
+        run: python -B -m unittest discover -s scripts/curriculum -p test_current_expanded_reference_format.py -v

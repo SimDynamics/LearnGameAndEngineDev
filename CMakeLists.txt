@@ -178,6 +178,32 @@ function(lgaed_add_compiler_guidance_state_target)
         PRIVATE lgaed_platform_windows lgaed_host_options)
 endfunction()
 
+# Execute the actual Windows loader, compiler-completion and StateStore
+# contracts for U2 variables in isolated QA profiles. The source-only
+# GCC/Clang/hosted-MSVC probes cannot replace these native integration tests.
+function(lgaed_add_local_variable_state_tests)
+    if(TARGET lgaed_local_int_state_tests)
+        return()
+    endif()
+    add_executable(lgaed_local_int_state_tests
+        native/platform/windows/local_int_state_tests.cpp)
+    target_link_libraries(lgaed_local_int_state_tests
+        PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.local_int_state COMMAND lgaed_local_int_state_tests)
+    set_tests_properties(native.local_int_state PROPERTIES
+        TIMEOUT 180 RUN_SERIAL TRUE)
+
+    add_executable(lgaed_local_string_state_tests
+        native/platform/windows/local_string_state_tests.cpp)
+    target_link_libraries(lgaed_local_string_state_tests
+        PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.local_string_state COMMAND lgaed_local_string_state_tests)
+    set_tests_properties(native.local_string_state PROPERTIES
+        TIMEOUT 360 RUN_SERIAL TRUE)
+    add_custom_target(lgaed_local_variable_state_qa_targets
+        DEPENDS lgaed_local_int_state_tests lgaed_local_string_state_tests)
+endfunction()
+
 # Shared native integration probe for all fourteen P3 source owners. Unlike
 # independent C++ fixtures, this opens every opt-in through both Windows
 # lesson loaders, then verifies cross-lesson receipts and saved drafts in one
@@ -261,6 +287,7 @@ if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
         # full/progress loaders and immutable historical owners.
         lgaed_add_p3_ownership_shared_state_target()
         lgaed_add_compiler_guidance_state_target()
+        lgaed_add_local_variable_state_tests()
         add_test(NAME native.math_matching_text_live
             COMMAND lgaed_compiler_guidance_state_tests --math-matching-text-live)
         add_test(NAME native.general_choice_live
@@ -1295,6 +1322,7 @@ if(BUILD_TESTING)
     add_test(NAME native.compiler_feedback_source COMMAND lgaed_compiler_feedback_source_tests)
     lgaed_add_p3_ownership_shared_state_target()
     lgaed_add_compiler_guidance_state_target()
+    lgaed_add_local_variable_state_tests()
     add_test(NAME native.compiler_guidance_state COMMAND lgaed_compiler_guidance_state_tests)
     set_tests_properties(native.compiler_guidance_state PROPERTIES TIMEOUT 30)
     add_test(NAME native.compiler_review_guidance_priority COMMAND lgaed_compiler_guidance_state_tests --review-priority)

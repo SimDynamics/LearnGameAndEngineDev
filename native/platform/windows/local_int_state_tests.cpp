@@ -4,9 +4,11 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/cpp_runner.hpp"
+#include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "native_build_config.hpp"
 
+#include <windows.h>
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 
@@ -27,6 +29,37 @@ using namespace winrt::Windows::Data::Json;
 void require(bool condition,std::string_view reason) {
     if(!condition)throw std::runtime_error(std::string(reason));
 }
+
+// A real on-disk round trip, always under a unique QA instance of Codex.
+// Do not open, migrate or rewrite either personal Work/Codex profile.
+state::StateData reopen_isolated_int_qa_state(
+        const state::StateData& saved,std::wstring_view scenario) {
+    require(!scenario.empty(),"A local-int test needs a named QA instance");
+    const auto label=L"local-int-"+std::wstring(scenario)+
+        L"-"+std::to_wstring(GetCurrentProcessId())+
+        L"-"+std::to_wstring(GetTickCount64());
+    const auto options=LaunchOptions{ProfileId::Codex,label,false};
+    const auto environment=resolve_windows_environment(options);
+    require(environment.options.qa_instance.has_value()&&
+            !environment.options.qa_instance->empty(),
+        "Local-int persistence would target a personal profile");
+    initialize_profile_directories(environment.paths);
+    {
+        state::StateStore writer(environment.paths.root);
+        require(writer.empty(),
+            "A supposedly fresh local-int QA profile already has progress");
+        (void)writer.load();
+        writer.save(saved);
+    }
+    // Close the writer before constructing a second StateStore. A reload
+    // through the same object also reads bytes but would not verify that
+    // a new owner discovers a durable, committed state from disk.
+    state::StateStore reopened(environment.paths.root);
+    require(!reopened.empty(),
+        "A completed local-int QA save did not publish an active state file");
+    return reopened.load();
+}
+
 const Block& owner(const Lesson& lesson) {
     const auto position=stable_block_position(lesson,"block_0004_0002");
     require(position.has_value(),"Published U2L1 compiler owner was not found");
@@ -93,7 +126,7 @@ std::string saved_local_receipt(const state::StateData& data) {
 }
 // Test the six real, still-unmodified U2 lesson editors, not synthetic IDs.
 // Authoring packets exist only in memory: Work retains control of lesson JSON.
-void validate_other_u2_editors() {
+void validate_other_u2_editors(bool export_plan=false) {
     struct LessonCase {
         const char* filename;
         const char* declaration;
@@ -168,6 +201,28 @@ int main(){
             }
         }
     }};
+    if(export_plan){
+        // The same in-memory opt-in proposal used by the WinRT state tests
+        // can be exercised with REAL hosted MSVC. Print no student data and
+        // never change a published lesson or its historical identities.
+        JsonArray examples;
+        for(const auto& item:cases){
+            JsonObject entry;
+            entry.Insert(L"filename",JsonValue::CreateStringValue(winrt::to_hstring(item.filename)));
+            entry.Insert(L"checks",JsonValue::Parse(winrt::to_hstring(std::string(item.declaration))));
+            JsonArray answers;
+            for(std::size_t i=0;i<item.owners.size();++i){
+                JsonObject owner;
+                owner.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(item.owners[i])));
+                owner.Insert(L"source",JsonValue::CreateStringValue(winrt::to_hstring(item.sources[i])));
+                answers.Append(owner);
+            }
+            entry.Insert(L"answers",answers);
+            examples.Append(entry);
+        }
+        std::cout<<winrt::to_string(examples.Stringify())<<'\n';
+        return;
+    }
     const auto root=std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado";
     for(const auto& item:cases) {
@@ -214,6 +269,82 @@ int main(){
             require(cpp_local_int_request_fingerprint(request).empty()&&
                 !compiler_runtime_request_allowed(after,request),
                 "An uncomputed constant was eligible for local-int credit");
+        }
+        if(std::string_view(item.filename)=="lesson_estado_asignacion_y_copia.json") {
+            // This is a stronger, optional authoring edge on the real two
+            // U2L3 editors; the shared export plan and original assets are
+            // deliberately unchanged. Loading both representations must
+            // retain its exact increase and derive a DIFFERENT private
+            // fingerprint, not borrow an earlier afterUpdate receipt.
+            auto exact=JsonObject::Parse(active.Stringify());
+            const auto owned=exact.GetNamedArray(L"compilerLocalIntChecks");
+            require(owned.Size()==2,"Current U2L3 lost one original editor");
+            for(unsigned index=0;index<2;++index) {
+                const auto proposals=owned.GetObjectAt(index).GetNamedArray(L"probes");
+                require(proposals.Size()==3,
+                    "U2L3 needs its original two probes and one increase witness");
+                proposals.GetObjectAt(2).Insert(
+                    L"expectedIncrease",JsonValue::CreateNumberValue(3));
+            }
+            const auto publication=winrt::to_string(exact.Stringify());
+            const auto full=parse_lesson_json(publication,"es");
+            const auto compact=parse_lesson_progress_metadata(publication,"es");
+            for(std::size_t index=0;index<item.owners.size();++index) {
+                const auto identity=item.owners[index];
+                const auto position=stable_block_position(full,identity);
+                const auto before_at=stable_block_position(loaded,identity);
+                const auto compact_at=stable_block_position(compact,identity);
+                require(position&&before_at&&compact_at,
+                    "The exact U2L3 authoring lost its original stable owner");
+                const auto& updated=full.pages.at(position->page).blocks.at(position->block);
+                const auto& previous=loaded.pages.at(before_at->page).blocks.at(before_at->block);
+                const auto& progress=compact.pages.at(compact_at->page).blocks.at(compact_at->block);
+                require(updated.local_int_check&&previous.local_int_check&&
+                    updated.local_int_check==progress.local_int_check&&
+                    updated.local_int_check->probes.size()==3&&
+                    updated.local_int_check->probes.back().after_update&&
+                    updated.local_int_check->probes.back().expected_increase==3&&
+                    !previous.local_int_check->probes.back().expected_increase,
+                    "A stronger U2L3 increase did not retain exact full/compact authoring");
+                CppRunRequest request;
+                request.request_id=61;
+                request.revision=9;
+                request.project_key="u2l3-exact-increase-source-only";
+                request.source_utf8=std::string(item.sources[index]);
+                request.local_int_check=updated.local_int_check;
+                const auto proof=cpp_local_int_request_fingerprint(request);
+                require(!proof.empty()&&compiler_runtime_request_allowed(updated,request),
+                    "A correct, unchanged U2L3 reference failed exact +3 authoring");
+                request.local_int_check=previous.local_int_check;
+                const auto legacy=cpp_local_int_request_fingerprint(request);
+                require(!legacy.empty()&&legacy!=proof,
+                    "A prior +positive receipt could be replayed for exact +3");
+            }
+            // JSON authoring is stricter than the C++ temporary fixture:
+            // reject a signed-zero, negative, floating, bool or out-of-int
+            // expected delta, and do not allow it without afterUpdate.
+            for(const auto invalid:{0.0,-3.0,3.5,2147483648.0}) {
+                auto changed=JsonObject::Parse(exact.Stringify());
+                changed.GetNamedArray(L"compilerLocalIntChecks").GetObjectAt(0)
+                    .GetNamedArray(L"probes").GetObjectAt(2).Insert(
+                        L"expectedIncrease",JsonValue::CreateNumberValue(invalid));
+                rejects(changed);
+            }
+            auto bool_value=JsonObject::Parse(exact.Stringify());
+            bool_value.GetNamedArray(L"compilerLocalIntChecks").GetObjectAt(0)
+                .GetNamedArray(L"probes").GetObjectAt(2).Insert(
+                    L"expectedIncrease",JsonValue::CreateBooleanValue(true));
+            rejects(bool_value);
+            auto without_moment=JsonObject::Parse(exact.Stringify());
+            without_moment.GetNamedArray(L"compilerLocalIntChecks").GetObjectAt(0)
+                .GetNamedArray(L"probes").GetObjectAt(2).Remove(L"afterUpdate");
+            rejects(without_moment);
+            const auto authored_at=publication.find("\"compilerLocalIntChecks\"");
+            require(authored_at!=publication.npos,"Cannot locate U2L3 exact root");
+            rejects_raw(publication.substr(0,authored_at)+overwrite_first(
+                publication.substr(authored_at),
+                "\"expectedIncrease\":3",
+                "\"expectedIncrease\":3,\"expectedIncrease\":3"));
         }
     }
     std::cout<<"PASS six real U2 compiler owners: authentic root declarations "
@@ -391,6 +522,20 @@ void validate_current_u2l5_editor_state() {
         visible(restored,true)&&visible(restored,false),
         "Reopening authentic encoded U2L5 receipts lost progress or reader gates");
 
+    const auto disk_reopened=reopen_isolated_int_qa_state(restored,L"u2l5");
+    state::validate_lesson_state(disk_reopened,lesson);
+    verify_drafts(disk_reopened);
+    require(disk_reopened==restored&&
+        compiler_puzzle_completed(disk_reopened,lesson,first)&&
+        compiler_puzzle_completed(disk_reopened,lesson,second)&&
+        visible(disk_reopened,true)&&visible(disk_reopened,false)&&
+        disk_reopened.preferences.at("learning_progress").at("other_course_unchanged")==
+            state::Value{std::int64_t{42}}&&
+        disk_reopened.preferences.at("native_windows").at("unrelated_reader_setting")==
+            state::Value{std::string("keep")},
+        "A real disk reopen merged U2L5 drafts, discarded an editor receipt "
+        "or modified another course or reader setting");
+
     auto reset=restored;
     reset_compiler_puzzle(reset,lesson,second);
     require(compiler_puzzle_completed(reset,lesson,first)&&
@@ -404,7 +549,7 @@ void validate_current_u2l5_editor_state() {
         "Resetting both editors left a visible protected reference");
     std::cout<<"PASS published U2L5 WinRT StateStore: two independent real "
         "objectives, preserved three-editor archive, source-pinned fingerprints, "
-        "separate saved drafts, synthetic receipts, reopen, reference gates "
+        "separate saved drafts, synthetic receipts, real QA-disk reopen, reference gates "
         "and isolated resets; no student execution or audio asserted.\n";
 }
 
@@ -541,8 +686,18 @@ void run() {
             "The original program, cases, feedback or first-case seal was rewritten");
     const auto decoded=state::decode(state::encode(learner));
     require(compiler_puzzle_completed(decoded,current,block),
-        "Real encoded StateStore lost the independent proof on reopen");
-    auto corrupted=decoded;
+        "An encoded state round trip lost the independent local-int proof");
+
+    // An in-memory codec round trip is not a disk reopen.
+    const auto disk_reopened=reopen_isolated_int_qa_state(decoded,L"u2l1");
+    require(disk_reopened==decoded&&
+        compiler_puzzle_completed(disk_reopened,current,block)&&
+        saved_local_receipt(disk_reopened)==saved_local_receipt(decoded)&&
+        disk_reopened.preferences.at("learning_progress")==
+            before.preferences.at("learning_progress"),
+        "The isolated on-disk StateStore lost the local-int proof, "
+        "historical receipt or unrelated course progress");
+    auto corrupted=disk_reopened;
     for(auto& [key,value]:corrupted.preferences["native_windows"])
         if(key.ends_with("/local-int/v1"))value=std::string("forged");
     bool rejected=false;
@@ -610,12 +765,16 @@ void run() {
             !compiler_runtime_request_allowed(owner(declared),missing),
         "Missing required local variable passed the private source mutation");
     std::cout<<"PASS Windows local-int contract: two load paths, existing U2L1 owner, "
-        "uncredited old stdout, separate same-source receipt, StateStore reopen, "
+        "uncredited old stdout, separate same-source receipt, real isolated StateStore reopen, "
         "tampering rejection and absent-variable rejection; no student execution claimed.\n";
 }
 }
-int main()try {
+int main(int argc,char** argv)try {
     winrt::init_apartment();
+    if(argc==2&&std::string_view(argv[1])=="--export-six-u2-qa"){
+        validate_other_u2_editors(true);return 0;
+    }
+    require(argc==1,"Unknown local-int QA command");
     run();
     return 0;
 }catch(const winrt::hresult_error& e){

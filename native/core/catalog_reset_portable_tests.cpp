@@ -212,13 +212,22 @@ void catalog_entry_identity_survives_reordering_and_retirement() {
     std::swap(page.entries[0],page.entries[2]);
     check(catalog_position_key(page)==edition_key &&
           catalog_restore_entry_index(page,selected,2,3)==0 &&
-          catalog_restore_entry_index(page,top,1,3)==1,
+          catalog_restore_entry_index(page,top,1,3)==1 &&
+          !catalog_scroll_anchor_changed(page,top,1,1,3),
         "Reordering one edition selected a different unit from its old ordinal");
     std::swap(page.entries[1],page.entries[2]);
     check(catalog_restore_entry_index(page,top,1,3)==2 &&
           catalog_restore_entry_index(page,selected,2,3)==0 &&
-          catalog_restore_entry_index(page,{},1,3)==1,
+          catalog_restore_entry_index(page,{},1,3)==1 &&
+          catalog_scroll_anchor_changed(page,top,1,2,3),
         "The first visible unit or restored scroll anchor did not follow its identity");
+    // A removed top row may be replaced at the SAME zero-based index.
+    // Ordinal equality must not authorize its stale absolute pixel offset.
+    check(catalog_restore_entry_index(page,prefix+"retirada",0,3)==0 &&
+          catalog_scroll_anchor_changed(page,prefix+"retirada",0,0,3) &&
+          catalog_scroll_anchor_changed(page,prefix+"otra_edicion",0,0,3) &&
+          !catalog_scroll_anchor_changed(page,{},0,0,3),
+        "A retired top-row identity wrongly reused an unrelated row's saved pixels");
     check(catalog_restore_entry_index(page,prefix+"retirada",2,3)==0,
         "A retired unit inherited the former slot's unrelated unit");
     check(catalog_restore_entry_index(page,prefix+"otra_edicion",2,3)==0,

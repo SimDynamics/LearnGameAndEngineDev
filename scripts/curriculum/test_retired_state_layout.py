@@ -195,7 +195,39 @@ class RetiredStateLayoutTest(unittest.TestCase):
                 self.assertEqual(historical, {key: captured[key] for key in historical})
                 proposal = deepcopy(published)
                 proposal["stateLayout"]["retirementHistory"][-1] = captured
-                layout.validate_transition(previous, proposal)
+                # The pinned first retirement predates authenticated guide
+                # revisions. Its order refinement introduced a reviewFeedback
+                # field while changing fragments and explaining their order.
+                # The immutable historical asset remains valid and its exact
+                # retirement snapshot matches our rehearsal above; replaying
+                # those distinct old publications as one NEW authoring action
+                # must be rejected by the stricter current transition guard.
+                original_blocks = layout._all_blocks(previous)
+                revised_blocks = layout._all_blocks(proposal)
+                legacy_guides = [
+                    identity for identity, old in original_blocks.items()
+                    if old.get("type") == "order_code"
+                    and "reviewFeedback" not in old
+                    and isinstance(revised_blocks.get(identity), dict)
+                    and isinstance(revised_blocks[identity].get("reviewFeedback"), str)
+                ]
+                if legacy_guides:
+                    refinements = {
+                        item["id"]: item["block"]
+                        for item in proposal["stateLayout"].get("orderRefinements", [])
+                    }
+                    for identity in legacy_guides:
+                        self.assertIn(identity, refinements)
+                        self.assertEqual(refinements[identity], original_blocks[identity])
+                        self.assertTrue(any(
+                            proof["id"] == identity
+                            and "reviewPaths" not in proof
+                            for proof in proposal["stateLayout"]["editorial"]))
+                    with self.assertRaisesRegex(layout.LayoutError,
+                                                "A revised review hint needs authored prose"):
+                        layout.validate_transition(previous, proposal)
+                else:
+                    layout.validate_transition(previous, proposal)
             check_published_stage(before, intermediate)
             check_published_stage(intermediate, after)
             self.assertEqual(original, after)
@@ -280,7 +312,7 @@ class RetiredStateLayoutTest(unittest.TestCase):
             if count:
                 self.assertTrue(current["compilerPuzzlesRequired"])
             useful_compilers += count
-        self.assertEqual(8, useful_compilers)
+        self.assertEqual(9, useful_compilers)
 
     def test_three_real_retirements_preserve_every_contract_and_historical_slot(self):
         useful_compilers = 0
@@ -322,7 +354,7 @@ class RetiredStateLayoutTest(unittest.TestCase):
                               for path in (CONTENT / "es" / UNIT).glob("lesson_*.json")
                               if path.name not in {plan[0] for plan in PLANS}
                               for page in layout.load(path)["pages"] for block in page["blocks"])
-        self.assertEqual(8, useful_compilers + other_compilers)
+        self.assertEqual(9, useful_compilers + other_compilers)
 
     def test_archives_are_append_only_and_cannot_be_rewritten_or_resurrected(self):
         filename, identities = PLANS[0]

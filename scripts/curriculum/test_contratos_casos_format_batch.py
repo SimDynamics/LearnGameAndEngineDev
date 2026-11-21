@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -72,12 +73,12 @@ class ContractCasesFormatBatch(unittest.TestCase):
                     source=Path(folder)/f"{i}-{label}.cpp"
                     exe=Path(folder)/f"{i}-{label}"
                     source.write_text(block[source_slot(block)],encoding="utf-8")
-                    built=subprocess.run(["c++","-std=c++23","-O0",str(source),"-o",str(exe)],
+                    built=subprocess.run(msvc_cpp23_command(exe, source),
                                          capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,built.returncode,identity+built.stderr)
                     results=[]
                     for data in inputs:
-                        execution=subprocess.run([str(exe)],input=data,capture_output=True,
+                        execution=subprocess.run([str(windows_executable(exe))],input=data,capture_output=True,
                                                  text=True,timeout=15)
                         self.assertEqual(0,execution.returncode,identity+execution.stderr)
                         self.assertEqual("",execution.stderr,identity)

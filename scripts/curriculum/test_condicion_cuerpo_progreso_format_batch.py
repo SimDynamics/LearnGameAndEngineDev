@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -73,12 +74,12 @@ class WhileConditionFormatBatch(unittest.TestCase):
                     path = Path(temp) / f"{index}-{variant}.cpp"
                     exe = Path(temp) / f"{index}-{variant}"
                     path.write_text(ready_source(block), encoding="utf-8")
-                    built = subprocess.run(["c++","-std=c++23","-O0","-o",str(exe),str(path)],
+                    built = subprocess.run(msvc_cpp23_command(exe, path),
                                            capture_output=True,text=True,timeout=90)
                     self.assertEqual(built.returncode, 0, identity + built.stderr)
                     executions=[]
                     for stdin in inputs:
-                        result = subprocess.run([str(exe)], input=stdin,
+                        result = subprocess.run([str(windows_executable(exe))], input=stdin,
                             capture_output=True,text=True,timeout=15)
                         self.assertEqual(result.returncode, 0, identity)
                         self.assertEqual(result.stderr, "", identity)

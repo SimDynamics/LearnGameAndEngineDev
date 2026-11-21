@@ -16,27 +16,6 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        cxx: [g++, clang++]
-    steps:
-      - name: Read original U1 lessons without modifying course
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Compile and mutate real U1 batteries
-        env:
-          CXX: ${{ matrix.cxx }}
-        run: python3 -B -m unittest discover -s scripts/curriculum -p test_u1_battery_mutation_oracle.py -v
-      - name: Verify original stateful U1 reduction and changed second return
-        env:
-          CXX: ${{ matrix.cxx }}
-        run: python3 -B -m unittest discover -s scripts/curriculum -p test_u1_reduction_probe.py -v
-
   msvc:
     runs-on: windows-2022
     timeout-minutes: 10

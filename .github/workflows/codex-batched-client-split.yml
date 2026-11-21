@@ -1,0 +1,47 @@
+name: Codex one-input session authoring from a real published C++ batch
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-batched-client-split.yml
+      - .github/workflows/**
+      - scripts/curriculum/test_windows_ci_compilers.py
+      - scripts/curriculum/windows_cpp_ci.py
+      - scripts/curriculum/test_windows_cpp_ci.py
+      - scripts/curriculum/test_current_batched_client_split.py
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/code_format_compat.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  authentic-case-split:
+    name: Check eight standalone cases with the archived original
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022]
+    steps:
+      - name: Checkout exact Codex publication
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select supported Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate MSVC for a real reference compilation on Windows
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Guard the Windows-only compiler selection in all active workflows
+        run: |
+          python -B -m unittest discover -s scripts/curriculum -p test_windows_ci_compilers.py -v
+          python -B -m unittest discover -s scripts/curriculum -p test_windows_cpp_ci.py -v
+      - name: Validate current U6L19 client authoring and historical receipts
+        run: python -B -m unittest discover -s scripts/curriculum -p test_current_batched_client_split.py -v

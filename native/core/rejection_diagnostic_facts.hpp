@@ -88,6 +88,23 @@ inline std::vector<Word> words(std::string_view source) {
                   ((folded[i]=='-'||folded[i]=='+')&&i+1<folded.size()&&digit(folded[i+1]))) {
             if(folded[i]=='+'||folded[i]=='-')++i;
             while(i<folded.size()&&digit(folded[i]))++i;
+            // A reported integer must be one complete lexical value.
+            // Otherwise "21x", "21e2", "21_foo" and "21.5" would
+            // incorrectly count as the integer 21 followed by prose.
+            // Keep 0..9 and 0-9 as separate legitimate interval tokens.
+            const auto suffix_is_number=[&]() {
+                if(i>=folded.size())return false;
+                if(letter(folded[i])||folded[i]=='_')return true;
+                return folded[i]=='.'&&i+1<folded.size()&&
+                    digit(folded[i+1]);
+            };
+            if(suffix_is_number()) {
+                while(i<folded.size()&&
+                    (letter(folded[i])||digit(folded[i])||
+                     folded[i]=='_'||folded[i]=='.'))++i;
+                result.push_back({"invalid-number",{},beginning,i});
+                continue;
+            }
             int value=0;auto number=std::string_view(folded).substr(beginning,i-beginning);
             if(number.starts_with('+'))number.remove_prefix(1);
             const auto parsed=std::from_chars(number.data(),number.data()+number.size(),value);
@@ -119,7 +136,9 @@ inline bool clause_boundary(std::string_view folded,const Word& left,
     }
     return false;
 }
-inline bool labelled(const std::vector<Word>& words,std::initializer_list<std::string_view> names,int expected) {
+inline bool labelled(std::string_view source,const std::vector<Word>& words,
+        std::initializer_list<std::string_view> names,int expected) {
+    const auto folded=fold_spanish(source);
     bool found=false;
     for(std::size_t i=0;i<words.size();++i)if(one_of(words[i].text,names)) {
         // Allow "petición número 2", "cobros: 10" and "piezas recibidas -1".
@@ -128,6 +147,19 @@ inline bool labelled(const std::vector<Word>& words,std::initializer_list<std::s
         // happens to match. An unnumbered prose reference is not a value.
         for(std::size_t j=i+1;j<words.size()&&j<=i+3;++j) {
             if(words[j].number){
+                // A fact has exactly one integer. A decimal comma or a
+                // directly attached range/arithmetic operator cannot turn
+                // "peticion 1,5", "piezas=-1-0" or "piezas=21..22"
+                // into the requested integer prefix. Separate prose,
+                // including "peticion 1, piezas=-1", remains valid.
+                const auto end=words[j].end;
+                if(end<folded.size()) {
+                    const auto next=folded[end];
+                    const auto following=end+1<folded.size()?folded[end+1]:'\0';
+                    if((next=='.'&&(following=='.'||digit(following)))||
+                       ((next==','||next=='-'||next=='+')&&
+                        digit(following)))return false;
+                }
                 if(*words[j].number!=expected)return false;
                 found=true;
                 break;
@@ -207,6 +239,81 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
         return false;
     };
     if(contradicts_allowed_domain())return false;
+    // A permitted inclusive domain cannot simultaneously exclude one of
+    // its own values. Look for an explicit prohibition attached to a
+    // *specific* integer, not any generic "no" elsewhere in the message.
+    // For example "no se admite 9" contradicts 0..9, while "no se
+    // admite 21" is consistent. Nearby observed field values, lower-bound
+    // statements and prohibitions in another clause remain independent.
+    const auto denies_allowed_value=[&]() {
+        const auto negated=[](std::string_view word) {
+            return one_of(word,{"no","nunca","jamas"});
+        };
+        const auto allowed=[](std::string_view word) {
+            return one_of(word,{"permitido","permitida","permitidos","permitidas",
+                "admitido","admitida","admitidos","admitidas",
+                "valido","valida","validos","validas",
+                "permite","permiten","admite","admiten","acepta","aceptan"});
+        };
+        const auto forbidden=[](std::string_view word) {
+            return one_of(word,{"prohibido","prohibida","prohibidos","prohibidas",
+                "invalido","invalida","invalidos","invalidas",
+                "excluido","excluida","excluidos","excluidas"});
+        };
+        const auto label=[](std::string_view word) {
+            return one_of(word,{"valor","valores","dato","datos","numero",
+                "numeros","el","la","los","las"});
+        };
+        for(std::size_t at=0;at<words.size();++at) {
+            if(!words[at].number||*words[at].number<lower_bound||
+               *words[at].number>upper)continue;
+            // Prefix: "no se permite el valor 9", "prohibidos los
+            // valores 0", "no permitido 9".
+            auto first=at;
+            while(first>0&&label(words[first-1].text))--first;
+            if(first&&forbidden(words[first-1].text))return true;
+            if(first>=2&&negated(words[first-2].text)&&
+               allowed(words[first-1].text))return true;
+            if(first>=3&&negated(words[first-3].text)&&
+               words[first-2].text=="se"&&allowed(words[first-1].text))
+                return true;
+            // Suffix: "9 no está permitido" or "9 es prohibido".
+            // If another number follows the predicate, it may be the
+            // actual object ("9, no se permite 21"), so do not attach
+            // that denial to the earlier 9.
+            auto next=at+1;
+            bool denial=false;
+            if(next<words.size()&&
+               !clause_boundary(source,words[at],words[next])&&
+               source.substr(words[at].end,
+                   words[next].start-words[at].end).find(':')==
+                       std::string::npos) {
+                if(forbidden(words[next].text))denial=true;
+                // A bare numeric subject is singular. "devoluciones=0:
+                // son inválidos los cobros" concerns cobros, not the
+                // preceding zero; the colon also ends that field's clause.
+                if(one_of(words[next].text,{"es","esta"})&&
+                   next+1<words.size()&&forbidden(words[next+1].text))
+                    denial=true;
+                if(negated(words[next].text)) {
+                    ++next;
+                    if(next<words.size()&&one_of(words[next].text,
+                        {"se","es","esta","son","estan"}))++next;
+                    if(next<words.size()&&allowed(words[next].text))
+                        denial=true;
+                }
+            }
+            if(!denial)continue;
+            bool another_value=false;
+            for(auto later=next+1;later<words.size()&&later<=next+3;++later) {
+                if(clause_boundary(source,words[later-1],words[later]))break;
+                if(words[later].number){another_value=true;break;}
+            }
+            if(!another_value)return true;
+        }
+        return false;
+    };
+    if(denies_allowed_value())return false;
     // Range words may precede or follow the numeric interval. For example,
     // both "rango permitido de 0 a 20" and "0 a 20 es el rango permitido"
     // communicate the same bound. A standalone pair of numbers is not enough.
@@ -356,21 +463,51 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
     }
     return found_allowed_interval||(lower_found&&upper_found);
 }
+// Only real infinitives/imperatives and their direct-object pronouns request
+// corrective action. A shared root alone also matches nouns ("revisor"),
+// adjectives ("verificable") and abstract terms ("revisionismo") which are
+// NOT instructions to repair the learner's rejected input. Keep nominal
+// "revisión necesaria" requests separate in actionable().
+inline bool corrective_instruction_verb(std::string_view word) {
+    constexpr std::string_view forms[]{
+        "revisar","revisa","revise","revisen","revisad","revisemos",
+        "verificar","verifica","verifique","verifiquen","verificad","verifiquemos",
+        "comprobar","comprueba","compruebe","comprueben","comprobad","comprobemos",
+        "corregir","corrige","corrija","corrijan","corregid","corrijamos",
+        "rectificar","rectifica","rectifique","rectifiquen","rectificad","rectifiquemos",
+        "modificar","modifica","modifique","modifiquen","modificad","modifiquemos",
+        "ajustar","ajusta","ajuste","ajusten","ajustad","ajustemos"
+    };
+    for(const auto form:forms) {
+        if(!word.starts_with(form))continue;
+        const auto rest=word.substr(form.size());
+        if(rest.empty()||one_of(rest,{"lo","la","los","las"}))return true;
+    }
+    return false;
+}
 inline bool actionable(const std::vector<Word>& words) {
     for(std::size_t i=0;i<words.size();++i){
-        bool action=false;
-        for(const auto stem:
-            {"revis","verific","verifiqu","comprueb","comprob","correg","corrij","rectific","modific","ajust"})
-            if(words[i].text.starts_with(stem)){action=true;break;}
-        if(!action)continue;
+        const bool nominal_request=one_of(words[i].text,
+            {"revision","verificacion","comprobacion",
+             "rectificacion","modificacion"});
+        if(!nominal_request&&!corrective_instruction_verb(words[i].text))
+            continue;
         // An affirmative nominal request ("verificacion necesaria") also
         // directs the reader to review rejected data. It is not the same as
         // reporting a completed verification or saying it is unnecessary.
-        if(one_of(words[i].text,{"revision","verificacion","comprobacion",
-                "rectificacion","modificacion"})) {
-            const bool necessary=i+1<words.size()&&one_of(words[i+1].text,
-                {"necesaria","necesario","obligatoria","obligatorio",
-                 "requerida","requerido"});
+        if(nominal_request) {
+            const auto requirement=[](std::string_view word) {
+                return one_of(word,{"necesaria","necesario","obligatoria",
+                    "obligatorio","requerida","requerido"});
+            };
+            // Both "revisión necesaria" and "la revisión es necesaria"
+            // are ordinary affirmative requests; a negated predicate
+            // remains rejected by the existing clause-scoped denial gate.
+            const bool necessary=(i+1<words.size()&&
+                requirement(words[i+1].text))||
+                (i+2<words.size()&&
+                 one_of(words[i+1].text,{"es","esta","resulta"})&&
+                 requirement(words[i+2].text));
             // "Se requiere una revision" and "es necesaria una revision"
             // are instructions too. Do not require the adjective to follow
             // its noun, but do require a nearby affirmative modal expression.
@@ -806,14 +943,14 @@ inline RejectionReview examine(std::string_view line,RejectionOperation kind,con
         ?std::initializer_list<std::string_view>{"caja","cajas"}
         :std::initializer_list<std::string_view>{"saldo"}))
         return {false,"Falta identificar la operación."};
-    if(!labelled(tokens,{"peticion","solicitud","pedido","consulta","caso","entrada","operacion"},fact.request))
+    if(!labelled(line,tokens,{"peticion","solicitud","pedido","consulta","caso","entrada","operacion"},fact.request))
         return {false,"No se identifica correctamente el número de petición."};
     if(kind==RejectionOperation::boxes) {
-        if(!labelled(tokens,{"piezas","pieza","cantidad"},fact.first))
+        if(!labelled(line,tokens,{"piezas","pieza","cantidad"},fact.first))
             return {false,"Las piezas rechazadas no están asociadas a su valor."};
     }else {
-        if(!labelled(tokens,{"cobros","cobro"},fact.first)||
-           !labelled(tokens,{"devoluciones","devolucion"},fact.second))
+        if(!labelled(line,tokens,{"cobros","cobro"},fact.first)||
+           !labelled(line,tokens,{"devoluciones","devolucion"},fact.second))
             return {false,"Cobros y devoluciones no conservan sus propios valores."};
         if(!validity_claims_match(line,tokens,fact))
             return {false,"La validez atribuida a cobros o devoluciones contradice sus valores."};

@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -96,7 +97,6 @@ class FunctionsFromContractFormatBatch(unittest.TestCase):
             self.assertIn("Entrada «"+case["standardInput"]+"» → salida:",descriptions)
             self.assertIn(case["outputs"][0],descriptions)
 
-    @unittest.skipUnless(shutil.which("c++"),"C++ compiler not available")
     def test_cpp23_reference_and_all_input_variants(self):
         cases={
             (4,2): [("", "Niveles: 0 4 6\nAl limite: 1")],
@@ -117,12 +117,12 @@ class FunctionsFromContractFormatBatch(unittest.TestCase):
                     src=Path(folder)/f"{p}-{b}-{tag}.cpp"
                     executable=Path(folder)/f"{p}-{b}-{tag}"
                     src.write_text(version[slot],encoding="utf-8")
-                    proc=subprocess.run(["c++","-std=c++23","-O0",str(src),"-o",str(executable)],
+                    proc=subprocess.run(msvc_cpp23_command(executable, src),
                                         capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,proc.returncode,ident+proc.stderr)
                     runs=[]
                     for inp,expected in checks:
-                        run=subprocess.run([str(executable)],input=inp,capture_output=True,text=True,timeout=15)
+                        run=subprocess.run([str(windows_executable(executable))],input=inp,capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,run.returncode,ident+run.stderr)
                         self.assertEqual("",run.stderr,ident)
                         self.assertEqual(expected,run.stdout.rstrip("\n"),ident)

@@ -23,34 +23,31 @@ permissions:
 
 jobs:
   lexical-rename-proof:
-    name: Declared source identifiers, immutable answers and hostile changes
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    name: Declared identifier renames and real MSVC compilation on Windows
+    runs-on: windows-2022
+    timeout-minutes: 18
     steps:
       - name: Read exact Codex checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Compile the real C++ lexical validator without WinRT
-        run: >-
-          g++ -std=c++23 -O0 -Wall -Wextra -pedantic
-          -finput-charset=UTF-8 -fexec-charset=UTF-8 -I native
-          native/core/identifier_rename_compat_tests.cpp
-          -o /tmp/lgaed-identifier-rename-native
+      - name: Use supported Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate MSVC x64 without modifying the pinned app toolchain
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile the C++23 native lexical validator with MSVC
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\identifier_rename_compat_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed-identifier-rename-native.exe"
+          if errorlevel 1 exit /b 1
       - name: Exercise the native identifier-rename contract
-        run: /tmp/lgaed-identifier-rename-native
+        shell: cmd
+        run: '"%RUNNER_TEMP%\lgaed-identifier-rename-native.exe"'
       - name: Execute independent C++ identifier rename guard
-        run: >-
-          python3 -B -m unittest discover
-          -s scripts/curriculum
-          -p test_identifier_rename_compat.py -v
+        run: python -B -m unittest discover -s scripts/curriculum -p test_identifier_rename_compat.py -v
       - name: Validate read-only historical rename previews on published format
-        run: >-
-          python3 -B -m unittest discover
-          -s scripts/curriculum
-          -p test_identifier_rename_archive_preview.py -v
-      - name: Compile and run published frequency programs before and after renaming
-        run: >-
-          python3 -B -m unittest discover
-          -s scripts/curriculum
-          -p test_identifier_rename_execution.py -v
+        run: python -B -m unittest discover -s scripts/curriculum -p test_identifier_rename_archive_preview.py -v
+      - name: Compile and run actual frequency programs before and after renaming
+        run: python -B -m unittest discover -s scripts/curriculum -p test_identifier_rename_execution.py -v

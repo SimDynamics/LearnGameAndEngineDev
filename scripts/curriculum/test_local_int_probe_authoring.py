@@ -130,6 +130,32 @@ class LocalIntAuthoringTests(unittest.TestCase):
                     state.validate_transition(expanded, altered)
 
 
+    def test_exact_increase_is_opt_in_and_bounds_checked(self):
+        document = fixture()
+        probe = document["compilerLocalIntChecks"][0]["probes"][0]
+        probe["afterUpdate"] = True
+        probe["expectedIncrease"] = 3
+        self.valid(document)
+        for bad in (0, -3, 2 ** 31, 3.0, "3", True, False, None):
+            wrong = deepcopy(document)
+            wrong["compilerLocalIntChecks"][0]["probes"][0]["expectedIncrease"] = bad
+            with self.subTest(expectedIncrease=bad):
+                self.rejected(wrong)
+        wrong = deepcopy(document)
+        wrong["compilerLocalIntChecks"][0]["probes"][0].pop("afterUpdate")
+        self.rejected(wrong)
+        wrong = deepcopy(document)
+        wrong["compilerLocalIntChecks"][0]["probes"][0]["afterUpdate"] = False
+        self.rejected(wrong)
+        wrong = deepcopy(document)
+        wrong["compilerLocalIntChecks"][0]["probes"][0]["expectedincrease"] = 3
+        self.rejected(wrong)
+        # An older afterUpdate contract remains valid without the stronger
+        # witness; the new field cannot retroactively rewrite stored goals.
+        previous = deepcopy(document)
+        previous["compilerLocalIntChecks"][0]["probes"][0].pop("expectedIncrease")
+        self.valid(previous)
+
     def test_original_and_changed_increase_are_independent_contracts(self):
         document = fixture()
         document["compilerLocalIntChecks"][0]["probes"].append({
@@ -177,6 +203,7 @@ class LocalIntAuthoringTests(unittest.TestCase):
                       "outputs": [stdout, stdout + "\n"]}
             if after_update:
                 result["afterUpdate"] = True
+                result["expectedIncrease"] = 3
             return result
 
         cases = {

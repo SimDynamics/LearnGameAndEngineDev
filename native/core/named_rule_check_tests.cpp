@@ -843,6 +843,285 @@ void capacity() {
                "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
             rules,false,"Parenthesized self-cancellation is not a productive constant use");
     }
+    // Bitwise operations and remainder can be algebraically dead even
+    // though they contain the purpose-named constant. The old token count
+    // credited two such uses while the returned quotient stayed hardcoded.
+    for(const auto* neutral:{
+        "(capacidad & 0) + (capacidad & 0)",
+        "(0 & capacidad) + (0 & capacidad)",
+        "(capacidad bitand 0) + (0 bitand capacidad)",
+        "(capacidad % 1) + (capacidad % (1))",
+        "(capacidad ^ capacidad)",
+        "(capacidad xor capacidad)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(neutral)+"); }",
+            rules,false,"Bitwise/modulo neutral terms fabricated named-rule uses");
+    }
+    // These nonneutral uses still matter and remain eligible for the
+    // independent numeric source and counterfactual probes. In particular,
+    // x & 1 and x % 2 can change when x changes; x | 0 preserves x.
+    for(const auto* productive:{
+        "(capacidad & 1) + (capacidad % 2)",
+        "(capacidad | 0) + (capacidad & 1)",
+        "(capacidad ^ 1) + (capacidad % 2)",
+        "(capacidad bitand 1) + (capacidad bitor 0)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(productive)+"); }",
+            rules,true,"Real bitwise dependence was misclassified as always neutral");
+    }
+    // A neutral term cannot invalidate separately genuine uses of both the
+    // divisor and the capacity-derived adjustment.
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad ^ capacidad) + (0 & capacidad);
+        })cpp",rules,true,"Decorative bitwise neutral terms hid a correct named rule");
+
+    // C++23 two's-complement laws make these pure results independent
+    // of the student's named int. A fake rule cannot hide a hardcoded
+    // quotient by adding zero or -1 and compensate on the next token.
+    for(const auto* neutral:{
+        "(capacidad & ~capacidad)",
+        "((~capacidad) & (capacidad))",
+        "(capacidad bitand compl capacidad)",
+        "((capacidad) & (~(capacidad)))",
+        "((capacidad | ~capacidad) + 1)",
+        "((~capacidad bitor capacidad) + 1)",
+        "((capacidad ^ (~capacidad)) + 1)",
+        "((capacidad xor compl capacidad) + 1)",
+        "((capacidad + ~capacidad) + 1)",
+        "((~capacidad + capacidad) + 1)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
+            rules,false,"Complementary bitwise pairs fabricated independent named-rule evidence");
+    }
+    // Bitwise OR against every set bit never depends on a named int,
+    // even when the result is cancelled back to zero around a literal
+    // quotient. Two such occurrences must not meet minUses=2.
+    for(const auto* neutral:{
+        "(capacidad | -1) + (capacidad | -1) + 2",
+        "(capacidad bitor (-1)) + ((-1) bitor capacidad) + 2",
+        "(capacidad | (~0)) + ((~0) | capacidad) + 2",
+        "(capacidad bitor (compl 0)) + (capacidad | -1) + 2"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(neutral)+"); }",
+            rules,false,"All-ones bitwise OR fabricated named-rule evidence");
+    }
+    // OR with a zero mask remains value-dependent and is not a neutral
+    // expression in source evidence (numeric probes remain independent).
+    for(const auto* productive:{
+        "(capacidad | 0) + (capacidad | 1)",
+        "(capacidad bitor 0) + (capacidad bitor 1)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(productive)+"); }",
+            rules,true,"A nonconstant bitwise OR was incorrectly discarded");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad | -1) + 1;
+        })cpp",rules,true,
+        "An all-ones OR cannot erase a separately valid named quotient");
+
+    // Reflective comparisons of a side-effect-free named int have a
+    // fixed boolean result. They cannot provide two productive uses, even
+    // when the comparison is balanced to zero by an integer literal.
+    for(const auto* neutral:{
+        "(capacidad == capacidad) - 1",
+        "((capacidad) == ((capacidad))) - 1",
+        "(capacidad != capacidad)",
+        "(capacidad not_eq capacidad)",
+        "(capacidad < capacidad)",
+        "(capacidad > capacidad)",
+        "(capacidad <= capacidad) - 1",
+        "(capacidad >= capacidad) - 1"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(neutral)+"); }",
+            rules,false,"Self-comparison cannot manufacture named-rule evidence");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int decoracion = (capacidad == capacidad) - 1;
+            return (piezas + 3) / 4 + decoracion;
+        })cpp",rules,false,
+        "A constant self-comparison cannot become productive through an alias");
+    for(const auto* productive:{
+        "(capacidad == 4) + (capacidad != 5)",
+        "(capacidad >= 2) + (capacidad <= 6)",
+        "(capacidad < (capacidad + 1))"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(productive)+"); }",
+            rules,true,"A comparison against another value was wrongly neutralized");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad == capacidad) - 1;
+        })cpp",rules,true,
+        "A reflective comparison must not erase a genuine named quotient");
+
+    // A pure self-comparison in the condition of ?: is a constant
+    // decision, even when the two branches have different literal values.
+    // The same check applies to unparenthesized assignment and return.
+    for(const auto* neutral:{
+        "(capacidad == capacidad ? 1 : 0) - 1",
+        "(capacidad not_eq capacidad ? 1 : 0)",
+        "(capacidad < capacidad ? 1 : 0)",
+        "(capacidad >= capacidad ? 1 : 0) - 1",
+        "((capacidad) == ((capacidad)) ? 1 : 0) - 1",
+        "(capacidad - capacidad ? 1 : 0)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
+            rules,false,"Constant ternary condition fabricated a named dependency");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int bandera = capacidad == capacidad ? 1 : 0;
+            return (piezas + 3) / 4 + bandera - 1;
+        })cpp",rules,false,
+        "An unparenthesized assignment laundered a constant decision via an alias");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return capacidad == capacidad ? (piezas + 3) / 4 : 0;
+        })cpp",rules,false,
+        "An unparenthesized return must not credit a constant condition");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad == capacidad ? 1 : 0) - 1;
+        })cpp",rules,true,
+        "A constant ternary condition erased a genuine separately named calculation");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad == 4 ? 1 : 0) +
+                   (capacidad != 5 ? 1 : 0) - 2;
+        })cpp",rules,true,
+        "Data-dependent ternary conditions cannot be discarded as constants");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   ((capacidad == capacidad && piezas > 0) ? 1 : 0);
+        })cpp",rules,false,
+        "A reflexive subcondition still lacks value dependence inside a larger input test");
+
+    // Even a larger && / || clause can contain a provably constant
+    // comparison. These two references must remain inert while separately
+    // meaningful comparisons retain their normal source evidence.
+    for(const auto* neutral:{
+        "((capacidad == capacidad && piezas > 0) ? 1 : 0)",
+        "((capacidad != capacidad || piezas > 0) ? 1 : 0)",
+        "((capacidad < capacidad || piezas > 0) ? 1 : 0)",
+        "((capacidad >= capacidad && piezas > 0) ? 1 : 0)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
+            rules,false,"A constant logical operand fabricated purpose-rule uses");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad == capacidad && capacidad > 2);
+        })cpp",rules,false,
+        "One genuine predicate must not inherit two inert self-comparison uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad > 2 && capacidad < piezas);
+        })cpp",rules,true,
+        "Distinct meaningful comparisons are not neutral logical operands");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad == capacidad && piezas > 0);
+        })cpp",rules,true,
+        "A neutral logical operand must not erase separate capacity-derived arithmetic");
+
+    // Prove affine cancellation over the entire pure expression, not
+    // just pairwise adjacent names. No lexical appearance in a constant
+    // decoration should satisfy the two source-uses requirement.
+    for(const auto* neutral:{
+        "(capacidad + capacidad - 2 * capacidad)",
+        "(capacidad + 1 - capacidad - 1)",
+        "(capacidad * 3 - capacidad * 2 - capacidad)",
+        "(2 * (capacidad + 1) - 2 * capacidad - 2)",
+        "(-capacidad + capacidad)",
+        "(0b10 * capacidad - capacidad - capacidad)",
+        "(capacidad * (2-2) + capacidad * (3-3))",
+        "((capacidad + capacidad) - ((capacidad) * 2))"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
+            rules,false,"Affine cancellation forged two named-rule uses");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int neutralidad = capacidad + capacidad - 2 * capacidad;
+            return (piezas + 3) / 4 + neutralidad;
+        })cpp",rules,false,
+        "An affine-zero alias must not launder dead source uses");
+    // Nonzero affine dependence is necessary but not by itself proof of
+    // the TWO independently productive uses. Partial cancellation can
+    // still reduce a three-token spelling to one meaningful reference.
+    for(const auto* productive:{
+        "(capacidad + capacidad)",
+        "(2 * capacidad + capacidad)",
+        "(capacidad - 2 * capacidad)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(productive)+"; }",
+            rules,true,"A genuinely dependent affine expression was erased");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (2 * capacidad - capacidad - capacidad);
+        })cpp",rules,true,
+        "Neutral affine decoration must not suppress a correct named quotient");
+
+    // A complement of a *different expression* does not generally
+    // cancel this constant. Preserve its lexical evidence, leaving numeric
+    // correctness to the independent compiled counterfactual.
+    for(const auto* productive:{
+        "capacidad & ~(capacidad + 1)",
+        "capacidad | ~(capacidad + 1)",
+        "capacidad ^ ~(capacidad + 1)",
+        "capacidad - ~capacidad"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + ("+std::string(productive)+"); }",
+            rules,true,"An actually dependent complement expression was falsely neutralized");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad & ~capacidad);
+        })cpp",rules,true,
+        "A neutral complement term erased a separate valid divisor and adjustment");
+
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};

@@ -3871,11 +3871,31 @@ española v2 sin modificar los editores ya publicados. Ejemplo:
 
 El modelo admite entre una y ocho variaciones por editor, y hasta cuatro
 salidas exactas por variación. Cada salida alternativa debe distinguirse
-de las publicadas para el primer caso obligatorio. Un nombre identifica
+de las publicadas para el primer caso obligatorio. Los nombres de
+variables en las sondas deben ser identificadores léxicos C++ reales:
+`9llaves`, `llaves-extra`, `true` o `nullptr` se rechazan antes de
+preparar las variantes, y se conservan los identificadores no ASCII ya
+admitidos por el analizador de fuentes, como `número`. No basta con
+que una cadena de autoría no sea una palabra reservada. Un nombre identifica
 un `int` local declarado directamente dentro de `main`; la inicialización
 puede emplear `=`, `{}` o `()`, o una primera asignación inequívoca.
-Se rechazan otros tipos, posiciones ambiguas y preprocesadores que impidan
-una inserción segura. No se cambian literales, comentarios ni otros nombres.
+También se admiten declaradores enteros agrupados de un mismo tipo, como
+`int cajas{4}, sobres{9};` o `int cajas, sobres;` con asignaciones separadas.
+La sonda se inserta **después del punto y coma completo**, no entre variables.
+El localizador compartido reconoce tanto `int main()` como la firma C++23
+`auto main() -> int`, incluidas cláusulas `noexcept` equilibradas; la misma
+compatibilidad se aplica a las sondas `std::string`. No admite firmas
+`main` con retorno distinto de `int`, ni definiciones duplicadas.
+Una primera asignación separada no puede leer el propio entero todavía
+sin inicializar: `int llaves; llaves = llaves + 7;` se rechaza antes de
+generar o ejecutar variantes. En cambio, `int llaves; llaves = 3 + 4;`
+mantiene el comportamiento válido y comprobable.
+Si otro declarador usa el entero que se pretende variar (por ejemplo,
+`int cajas=4, sobres=cajas+5;`), se rechaza: mutarlo después ocultaría
+esa dependencia y podría acreditar un resultado falso. También se rechazan
+punteros, referencias, arrays, duplicados, otros tipos, posiciones ambiguas
+y preprocesadores que impidan una inserción segura. No se cambian
+literales, comentarios ni otros nombres.
 
 Después de la ejecución pública, el mismo trabajador Windows compila y
 ejecuta cada variante en un entorno privado. La compilación y la salida
@@ -3895,6 +3915,34 @@ y ejecución MSVC nativa. La revisión curricular y sus valores esperados
 pertenecen a Work.
 
 
+#### Incremento real exacto declarado por el autor
+
+La variación opcional `"afterUpdate": true` puede declarar también
+`"expectedIncrease": 3` para exigir **un aumento de exactamente tres
+unidades en la variable local**, no sólo una subida cualquiera. El testigo
+se toma antes y después de la primera actualización no trivial, usando
+`long long` para calcular la diferencia sin desbordar un `int`.
+
+Esta comprobación es independiente de la salida: `aforo += 5` seguido
+por `std::cout << aforo - 2` puede reproducir el resultado visible y
+la salida de todas las variaciones, pero se rechaza si la edición exigía
+`expectedIncrease: 3`. Se admiten expresiones equivalentes que producen
+realmente ese aumento, por ejemplo `aforo = aforo + 2 + 1` o dos
+actualizaciones consecutivas `aforo += 1; aforo += 2;`. Para esta
+modalidad, la sonda observa el aumento conjunto de las actualizaciones
+contiguas de la misma variable, sin insertar ninguna variación privada
+entre ellas. Una copia, una impresión u otra instrucción intermedia
+cierra la secuencia: no se atribuye retroactivamente un cambio posterior
+a los datos que ya se utilizaron.
+El valor debe ser un entero positivo de 32 bits y exige `afterUpdate: true`;
+no puede declararse en una sustitución del valor inicial. Las salidas
+privadas siguen siendo expectativas independientes y obligatorias.
+
+Este contrato se opta **por sonda**, se incorpora a la huella de ejecución
+y al sello del comprobante, sin alterar los contratos históricos que omiten
+`expectedIncrease`. Work declara el incremento exacto cuando el ejercicio
+lo exige; la app no lo infiere de `stdout` ni modifica borradores.
+
 ### Mutación del aumento, además del valor inicial (U2L3)
 
 Una sonda puede incluir `"afterUpdate": true` para expresar una
@@ -3905,6 +3953,28 @@ Se reconocen actualizaciones directas como `aforo += 3`,
 `aforo = aforo + 3`, `aforo = 3 + aforo`, incremento o resta
 equivalente. El código se conserva; se inserta únicamente
 `aforo += replacement;` después de esa instrucción.
+Una asignación directa con `=` solo cuenta como posible actualización
+cuando lee el **valor previo de esa misma variable local**; no se
+acreditan reinicios fijos (`aforo = 8;`), copias idénticas
+(`aforo = aforo;`) ni lecturas de un campo de otro objeto
+(`aforo = datos.aforo;`). Un resultado visible correcto seguido
+de una suma privada tampoco demuestra un aumento original.
+El detector también descarta operaciones aritméticas demostrablemente
+neutras como `aforo = aforo + 0`, `aforo += 0`,
+`aforo = 0 + aforo` y `aforo = aforo * 1`. Si existe un aumento
+posterior inequívoco, la sonda se coloca después de ese aumento, no
+después del cálculo neutro. Se preservan expresiones con un cambio real,
+como `aforo = aforo + 0 + 3`. Los literales de identidad
+solo se reconocen si realmente representan cero o uno en su base:
+`01`, `0x01` y `0b01` equivalen a uno, pero `10`, `010`,
+`0x10` y `0b10` no. Una multiplicación por diez debe poder
+someterse a la variación real, no descartarse como si fuese neutra.
+Esta barrera es estructural y conservadora: no sustituye la
+compilación real de las variantes ni pretende demostrar el
+resultado de expresiones C++ arbitrarias.
+
+Las demás sondas independientes y sus salidas siguen siendo obligatorias
+para acreditar la dependencia del valor inicial y de la copia.
 
 Por ejemplo, U2L3 debe exigir a la vez una variación del inicio y otra
 del aumento de `aforo`, además de contrastar la salida procedente
@@ -3919,3 +3989,169 @@ El campo es opcional; su ausencia preserva el comprobante y las
 expectativas históricas de las sondas anteriores. Su presencia
 requiere el booleano JSON `true` y se vincula a la huella de
 la ejecución y al comprobante semántico separado.
+
+
+### Sondas de dependencia de cadenas (U2L7)
+
+Work puede añadir `compilerLocalStringChecks` en la raíz de una
+lección española con `stateLayout` v2. La declaración pertenece a los
+**identificadores estables de los editores existentes**, no a sus posiciones
+visuales. Ejemplo de estructura, para añadir mediante la autoría curricular:
+
+```json
+"compilerLocalStringChecks": [{
+  "activity": "block_0006_0002",
+  "probes": [
+    {
+      "variable": "edificio",
+      "replacement": "Sala Norte",
+      "moment": "afterInitialization",
+      "outputs": ["Sala Norte-04", "Sala Norte-04\n"]
+    },
+    {
+      "variable": "codigo",
+      "replacement": "003",
+      "moment": "afterInitialization",
+      "outputs": ["Aula-003", "Aula-003\n"]
+    },
+    {
+      "variable": "etiqueta",
+      "replacement": "ETIQUETA CONTROL",
+      "moment": "beforeOutput",
+      "outputs": ["ETIQUETA CONTROL", "ETIQUETA CONTROL\n"]
+    }
+  ]
+}]
+```
+
+`afterInitialization` inserta la nueva asignación inmediatamente
+después de la definición de esa variable `std::string` local de
+`main`. `afterFirstAssignment` la inserta después de su primera
+asignación posterior a la definición, por ejemplo `codigo = "07";`.
+`beforeOutput` inserta un valor de control inmediatamente antes de la
+primera salida de `std::cout` que **lee realmente** esa variable. No
+basta que el texto coincida con un literal o que se imprima la
+concatenación de las variables originales omitiendo `etiqueta`.
+
+Además de declaraciones individuales, la sonda admite declaraciones
+completas de varias cadenas con el mismo tipo explícito, como
+`std::string edificio{"Aula"}, codigo{"04"};`. La variación se inserta
+**después del punto y coma de toda la declaración**, nunca entre
+declaradores. También admite `std::string edificio, codigo;` seguido de
+asignaciones mediante `=`, `+=` o `codigo.assign(...)`: para
+`afterInitialization`, sustituye el valor **después de la primera asignación
+completa**, de modo que la instrucción original no borre la variación antes
+del cálculo. Lo mismo se aplica a `afterFirstAssignment` cuando la actualización
+usa `assign(...)`. Estas formas equivalentes
+siguen exigiendo compilaciones y salidas independientes correctas.
+Las declaraciones ambiguas que mezclen punteros o propietarios de otro
+tipo se rechazan. También se rechaza una declaración agrupada cuyo
+inicializador hermano lea la variable intervenida, porque una variación
+posterior al punto y coma ocultaría la dependencia real.
+`auto` conserva su validación conservadora de una variable por declaración.
+
+La definición y la instrucción de destino deben ser inequívocas en el
+ámbito directo de `main`. Los nombres de las sondas `std::string`
+siguen las mismas reglas léxicas C++ y conservan los identificadores
+Unicode que el editor ya admite. Una macro, un ámbito ambiguo, un nombre
+ausente, una lectura que nunca sucede o una variante que no compila
+impiden acreditar la capacidad; no producen una aprobación falsa. Las
+cadenas se inyectan mediante escapes octales de bytes UTF-8, conservando
+el cero inicial y los caracteres originales sin sustituir el
+programa guardado. Se autorizan entre una y doce variaciones por
+editor, un par `variable`/`moment` por variación y entre una y
+cuatro salidas exactas distintas que no coincidan con la salida
+visible, admitiendo el salto final opcional. Las nuevas declaraciones
+son acumulativas y no pueden reescribir las ya publicadas.
+
+El trabajador Windows ejecuta la muestra visible y después compila y
+ejecuta independientemente cada variante con MSVC, sin requerir al alumno
+acciones adicionales. Todas las variantes deben producir sus resultados
+propios. Una fuente que muestre un literal fijo puede superar la
+muestra pública, pero no acredita el requisito. El nuevo comprobante
+`local-string/v1` está ligado al propietario, programa y declaración.
+Los recibos de salida anteriores se conservan, pero no generan ese
+comprobante por sí solos; la reapertura verifica su integridad antes de
+acreditar el progreso. Ningún otro curso, borrador o salida se modifica.
+
+Las pruebas de autoría del contrato están en
+`test_local_string_probe_authoring.py`; las variantes reales compiladas
+con GCC, Clang y MSVC en
+`test_local_string_live_compilation.py`; y la integración de los dos
+editores originales U2L7, sus ejecuciones privadas y recibos Win32 en
+`local_string_state_tests.cpp`. Los tests de GCC y Clang acreditan la
+portabilidad de la sonda, no el funcionamiento del motor Windows. La
+validación visual habitual y la autoría definitiva de las salidas del
+currículo corresponden al usuario y a Work respectivamente.
+
+### Comprobación local de sondas de variables con MSVC
+
+La batería enfocada de dependencia de enteros y cadenas puede ejecutarse
+desde el checkout nativo autorizado, en la rama `Codex`, mediante:
+
+```powershell
+& '.\scripts\windows\Test-LocalVariableDependency.ps1' -Preset windows-x64-debug
+```
+
+El script comprueba el checkout y la rama antes de compilar, resuelve el
+toolset MSVC y el Windows SDK fijados en el proyecto, y ejecuta las pruebas
+unitarias de `cpp_local_int_probe` y `cpp_local_string_probe`.
+A continuación genera y compila con MSVC los **43 casos de enteros** y
+**30 casos de cadenas**, contrastando las salidas y los rechazos reales
+con los dos validadores Python existentes. Los dos códigos iniciales de
+U2L5 también se compilan y se comprueba que no acrediten sus objetivos.
+
+Solo se crean binarios y objetos QA en
+`out/build/<preset>/local-variable-qa/` y registros en
+`out/build/<preset>/logs/local-variable-qa.*.log`.
+No se modifica ningún archivo curricular, borrador, perfil ni estado
+del estudiante. Se trabaja en un proceso oculto, sin instalar herramientas
+ni iniciar GitHub Actions. Esta comprobación de fuentes aisladas
+**no sustituye** las pruebas de integración Win32 del motor,
+la ejecución de la aplicación ni la revisión visual y auditiva humana.
+
+### Integración real de variables locales en Win32
+
+Las pruebas de compilación aislada anteriores no verifican la carga del
+JSON, los recibos de progreso ni la persistencia de la aplicación. El
+CTest nativo incorpora por separado:
+
+- `native.local_int_state`: ambos cargadores de lecciones, los editores
+  originales de U2, comprobantes independientes y su integridad.
+  Guarda estados reales en **subperfiles QA Win32 exclusivos** y los reabre
+  desde disco: verifica el recibo y el progreso de U2L1 y, por separado,
+  los dos borradores, las acreditaciones y las referencias de U2L5.
+  También conserva el progreso de otro curso y preferencias ajenas.
+  No ejecuta el programa del estudiante.
+- `native.local_string_state`: dos propietarios U2L7, compilaciones y
+  ejecuciones MSVC reales, rechazo de salidas fijas, recibos por editor,
+  guardado y reapertura del StateStore en un perfil QA único.
+
+Para construir únicamente estos dos ejecutables y ejecutar exactamente
+ambas pruebas en el checkout Windows autorizado de `Codex`:
+
+```powershell
+& '.\scripts\windows\Test-LocalVariableState.ps1' -Preset windows-x64-debug
+```
+
+El comprobador valida el nombre del checkout, la rama activa y el toolchain
+Windows fijado; registra la salida en
+`out/build/<preset>/logs/local-variable-state.*.log`. No compila ni
+inicia la aplicación completa, no modifica lecciones ni usa el perfil
+del alumno. La prueba de U2L7 usa un perfil de QA propio y aislado.
+
+Esta batería CTest es una **prueba de integración nativa**, distinta
+de las pruebas de código fuente con GCC, Clang o MSVC hospedado.
+Hasta obtener una ejecución y sus registros en el Windows autorizado,
+su presencia en CMake no se considera evidencia de éxito.
+
+Para detectar fallos de integración antes de esa ejecución local, el
+banco independiente `cmake/PortableCompilerGuidanceQA` incluye también
+`native.compiler_local_int_state` y `native.compiler_local_string_state`.
+El segundo compila y ejecuta las variantes U2L7 mediante MSVC y el
+`lgaed_cpp_tool_host` reales en un **runner Windows hospedado desechable**.
+Este banco genera una cabecera QA con las rutas del compilador y del SDK
+de ese runner; no cambia el manifiesto ni el toolchain fijados para
+la aplicación. El flujo de GitHub comunica por separado el estado
+`codex/local-variable-hosted-ctest`, sin equiparar esa evidencia con
+una instalación o ejecución en el Windows personal del estudiante.

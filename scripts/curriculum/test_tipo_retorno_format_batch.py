@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -56,7 +57,6 @@ class ReturnTypeFormatBatch(unittest.TestCase):
                 self.assertIn("Entrada: `"+case["standardInput"]+"`",descriptions)
                 self.assertIn("`"+case["outputs"][0].split("\n")[0]+"`",descriptions)
 
-    @unittest.skipUnless(shutil.which("c++"),"C++ compiler unavailable")
     def test_cxx23_runs_before_and_after_equal(self):
         with tempfile.TemporaryDirectory(prefix="u6l12-returns-") as folder:
             for p,page in enumerate(self.doc["pages"]):
@@ -73,12 +73,12 @@ class ReturnTypeFormatBatch(unittest.TestCase):
                         source=Path(folder)/f"{p}-{b}-{label}.cpp"
                         exe=Path(folder)/f"{p}-{b}-{label}"
                         source.write_text(item[key],encoding="utf-8")
-                        compile_result=subprocess.run(["c++","-std=c++23","-O0",str(source),"-o",str(exe)],
+                        compile_result=subprocess.run(msvc_cpp23_command(exe, source),
                                                       capture_output=True,text=True,timeout=90)
                         self.assertEqual(0,compile_result.returncode,identity+compile_result.stderr)
                         runs=[]
                         for data in inputs:
-                            run=subprocess.run([str(exe)],input=data,capture_output=True,text=True,timeout=15)
+                            run=subprocess.run([str(windows_executable(exe))],input=data,capture_output=True,text=True,timeout=15)
                             runs.append((run.returncode,run.stdout,run.stderr))
                         variants.append(runs)
                     self.assertEqual(variants[0],variants[1],identity)
