@@ -2796,10 +2796,9 @@ struct LessonView {
             PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;
             paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;
             SendMessageW(target,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
-            if(block(index).type==BlockType::fill_code&&!native_math_text_mapping(target,text).has_value()){
-                CHARFORMAT2W size{};size.cbSize=sizeof(size);size.dwMask=CFM_SIZE;size.yHeight=16*15;
-                SendMessageW(target,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&size));
-            }
+            // All exercise feedback uses the same 18sp body size as curricular
+            // prose. Do not shrink fill_code feedback to the answer editor's
+            // smaller input font; source and narration text remain untouched.
             if(formatted.starts_with("✓ ")||formatted.starts_with("✗ ")){
                 // Bind the verdict glyph and its literal space to a font
                 // that supplies both, without substituting source characters.

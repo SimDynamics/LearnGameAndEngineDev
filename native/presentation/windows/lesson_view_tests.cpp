@@ -1715,6 +1715,100 @@ void initial_readonly_source_layout(){
     require(offset.y>0,"Long readonly fullscreen no longer scrolls its actual source");longer.escape();
     std::cout<<"PASS production readonly source first-open caption and DPI-aware native bars: fit, genuine horizontal/vertical overflow, resize, wrap and fullscreen\n";
 }
+
+void exercise_feedback_matches_curricular_body_font() {
+    // Exercise real Win32 feedback controls, not a recreated RichEdit sample.
+    // The four ordinary puzzle types use the same 18sp baseline as prose,
+    // including incorrect feedback, live zoom and reopened saved verdicts.
+    Fixture fixture({},[](const curriculum::Lesson&){
+        return windows::parse_lesson_json(R"json({
+            "id":"cpp_fundamentals__qa__feedback_font_parity",
+            "title":"Tipografía común de retroalimentación",
+            "pages":[{"blocks":[
+                {"type":"paragraph","text":"Texto curricular: misma letra que la retroalimentación."},
+                {"type":"fill_code","question":"Completa el valor.","code":"int unidades = [];",
+                 "answers":["7"],"explanation":"Siete es el valor esperado.",
+                 "reviewFeedback":"Revisa el valor de unidades."},
+                {"type":"multiple_choice","question":"Elige la respuesta.","options":["No","Sí"],
+                 "correctIndex":1,"explanation":"La segunda opción es correcta.",
+                 "reviewFeedback":"La primera opción no cumple la condición."},
+                {"type":"output_prediction","question":"Predice la salida.",
+                 "code":"std::cout << 7;","answers":["7"],
+                 "explanation":"La salida contiene el número siete."},
+                {"type":"order_code","question":"Ordena el programa.",
+                 "fragments":["return 0;","int main() {","}"],
+                 "correctOrder":[1,0,2],
+                 "explanation":"La función comienza antes del retorno."}
+            ]}]
+        })json");
+    });
+    const auto prose=fixture.control(0,0);
+    const auto body_size=character_format(prose).yHeight;
+    require(body_size==rich_text_height(),
+        "The ordinary lesson prose lost its published 18sp baseline");
+    const auto verify=[&](std::size_t puzzle,int scale) {
+        const auto target=fixture.control(puzzle,4);
+        const auto source=fixture.text(puzzle,4);
+        require(!source.empty(),"A checked native puzzle has no visible feedback");
+        const auto first=character_format(target);
+        const auto final=character_format(target,static_cast<LONG>(wide(source).size()-1));
+        require((first.dwMask&CFM_SIZE)&&(final.dwMask&CFM_SIZE)&&
+            first.yHeight==body_size&&final.yHeight==body_size&&
+            rich_edit_scale(prose)==scale&&rich_edit_scale(target)==scale,
+            "Puzzle feedback font differs from curricular 18sp body/zoom: block="+
+                std::to_string(puzzle)+", scale="+std::to_string(scale)+
+                ", first="+std::to_string(first.yHeight)+
+                ", last="+std::to_string(final.yHeight));
+    };
+    // Real incorrect attempts must not shrink the feedback or manufacture an
+    // answer. The independent correct attempts replace both reviews normally.
+    fixture.replace(1,2,"9");
+    fixture.click(1,3);
+    require(fixture.text(1,4).starts_with("✗ Incorrecto"),
+        "The real fill-code wrong attempt was not reviewed");
+    verify(1,100);
+    fixture.click(2,20);
+    fixture.click(2,3);
+    require(fixture.text(2,4).starts_with("✗ Incorrecto"),
+        "The real choice wrong attempt was not reviewed");
+    verify(2,100);
+    for(const auto puzzle:{1u,2u,3u,4u})fixture.solve(puzzle);
+    std::array<std::string,4> saved_feedback{};
+    for(std::size_t i=0;i<saved_feedback.size();++i){
+        saved_feedback[i]=fixture.text(i+1,4);
+        verify(i+1,100);
+    }
+    const auto spoken_before=reading_script(fixture.view);
+    // The course preference updates the RichEdit zoom, not base character
+    // formatting. No font change may overwrite the authored feedback text.
+    for(const int scale:{75,100,125,150}) {
+        update_lesson_preferences(fixture.view,[scale](state::StateData& value){
+            value.preferences["lesson_text_size_settings"]["global_scale"]=
+                static_cast<std::int64_t>(scale);
+        });
+        for(std::size_t i=0;i<saved_feedback.size();++i){
+            require(fixture.text(i+1,4)==saved_feedback[i],
+                "Changing curricular zoom altered an authored puzzle verdict");
+            verify(i+1,scale);
+        }
+        require(reading_script(fixture.view)==spoken_before,
+            "Changing curricular zoom modified feedback narration sources");
+    }
+    const auto saved=fixture.saved();
+    fixture.reopen();
+    for(std::size_t i=0;i<saved_feedback.size();++i){
+        require(fixture.text(i+1,4)==saved_feedback[i],
+            "Reopening a solved puzzle lost its original feedback");
+        verify(i+1,150);
+    }
+    require(reading_script(fixture.view)==spoken_before&&
+        read_lesson_state(fixture.view)==saved,
+        "Reopening changed the spoken feedback or saved puzzle responses");
+    std::cout<<"PASS native feedback font parity: fill, choice, prediction and "
+        "ordering use curricular 18sp body at 75/100/125/150 percent; "
+        "incorrect/correct verdicts, reopen and narration unchanged\n";
+}
+
 void mathematical_feedback_paragraph_spacing() {
     windows::NarrationWorker backend(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
     for(const auto locale:{"es","en","fr"}) {
@@ -5672,9 +5766,10 @@ int main(int argc,char* argv[]) {
     const bool inline_feedback_only=argc==2&&std::string_view(argv[1])=="--inline-feedback";
     const bool lesson_menu_only=argc==2&&std::string_view(argv[1])=="--lesson-menu";
     const bool order_help_only=argc==2&&std::string_view(argv[1])=="--order-help";
+    const bool feedback_font_only=argc==2&&std::string_view(argv[1])=="--feedback-font";
     const bool u1_editor_only=argc==2&&std::string_view(argv[1])=="--u1-compiler-edition";
     const bool main_u1_editor_only=argc==2&&std::string_view(argv[1])=="--u1-main-compiler-edition";
-    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only&&!order_help_only&&!u1_editor_only&&!main_u1_editor_only)return 2;
+    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_composed_feedback_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only&&!order_help_only&&!feedback_font_only&&!u1_editor_only&&!main_u1_editor_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -5684,6 +5779,7 @@ int main(int argc,char* argv[]) {
     try {
         if(lesson_menu_only){lesson_menu_retains_import_pages_and_settings_with_hooks();return 0;}
         if(order_help_only){optional_separator_help_matches_screen_reader_and_grading();return 0;}
+        if(feedback_font_only){exercise_feedback_matches_curricular_body_font();return 0;}
         if(main_u1_editor_only){pinned_main_u1l5_intermediate_editor_execution();return 0;}
         if(u1_editor_only){
             real_retirement_pages_preserve_current_nine_editors_and_archives();
@@ -5738,6 +5834,7 @@ int main(int argc,char* argv[]) {
         laboratory_interface_parity();
         back_navigation_tests();
         mathematical_feedback_paragraph_spacing();
+        exercise_feedback_matches_curricular_body_font();
         Fixture view;
         require(view.page() == 0 && !lesson_page_state(view.view).can_next, "A fresh profile bypassed initial page exercises");
         view.close();

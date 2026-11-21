@@ -45,6 +45,7 @@ on:
       - native/core/narration_state.cpp
       - native/core/narration_state.hpp
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_enteros_y_aproximaciones.json
+      - native/presentation/windows/lesson_view_tests.cpp
       - native/presentation/windows/lesson_reader_tests.cpp
       - native/presentation/windows/text_semantic_projection.hpp
       - native/core/text_semantics.hpp
@@ -148,6 +149,15 @@ jobs:
           if errorlevel 1 exit /b 1
           cl /nologo /std:c++latest /EHsc /W4 /permissive- /bigobj /Zc:__cplusplus /utf-8 /I native /I "%RUNNER_TEMP%\guidance-generated" /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c native\presentation\windows\lesson_reader_tests.cpp /Fo:"%RUNNER_TEMP%\u2_semantic_reader.obj"
           if errorlevel 1 exit /b 1
+      - name: Compile real feedback-font UI regressions with hosted MSVC
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /permissive- /bigobj
+          /Zc:__cplusplus /utf-8 /I native /I "%RUNNER_TEMP%\guidance-generated"
+          /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX
+          /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /c
+          native\presentation\windows\lesson_view_tests.cpp
+          /Fo:"%RUNNER_TEMP%\lesson_view_feedback_font_tests.obj"
       - name: Compile authentic guidance, archival and receipt regressions
         shell: cmd
         run: >
