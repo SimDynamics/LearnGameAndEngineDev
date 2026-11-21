@@ -618,7 +618,9 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
     }
     for(const auto open:enclosing) {
         const auto close=closing(t,open,"(",")");
-        if(close&&*close>i&&neutral(open+1,*close))return true;
+        if(close&&*close>i&&
+           (neutral(open+1,*close)||
+            constant_ternary_condition(open+1,*close)))return true;
     }
     // Also handle a complete unparenthesized return/assignment such as
     // return cupo - (cupo); without interpreting a larger C++ expression.
@@ -837,7 +839,6 @@ inline bool productive(const Tokens& t,std::size_t i,
                 }
             }
         }
-        if(constant_ternary_condition(open+1,*close))return true;
         // Equal, integral constant results cannot convey a named rule,
         // whatever the condition does. In "capacidad > 0 ? 0 : 0" the
         // constant appears in a condition but neither outcome depends on it.
