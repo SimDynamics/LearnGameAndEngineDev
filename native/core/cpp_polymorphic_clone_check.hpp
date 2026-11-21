@@ -145,6 +145,12 @@ inline bool valid(const CppPolymorphicClonePolicy& policy) {
         if(!identifier(name))return false;
     namespace abstract=cpp_abstract_interface_detail;
     const auto& src=policy.original_source;
+    const auto scanned=cpp_class_structure::lexical(src);
+    if(!scanned||
+       !cpp_class_structure::defined_class(*scanned,policy.base_class)||
+       !cpp_class_structure::defined_class(*scanned,policy.simple_class,policy.base_class)||
+       !cpp_class_structure::defined_class(*scanned,policy.identified_class,policy.base_class))
+        return false;
     const auto getter="int "+policy.number_method+"() const noexcept override";
     const auto changer="void "+policy.change_method+"(int valor) noexcept override";
     const auto writer="void "+policy.write_method+
