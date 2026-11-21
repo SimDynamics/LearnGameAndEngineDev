@@ -167,9 +167,16 @@ def manual_review_reasons(source: str, language: str) -> list[str]:
 
 
 def audit(content_root: Path) -> dict:
-    """Inspecciona todos los idiomas/cursos, no solo los ejemplos reportados."""
+    """Inspecciona todos los idiomas/cursos, sin omitir archivos defectuosos.
+
+    No es el validador curricular: registra problemas de lectura/estructura,
+    conserva fuentes de páginas legibles y continúa con los demás archivos.
+    """
     content_root = Path(content_root)
-    rows, counts, languages, reasons, manual = [], Counter(), Counter(), Counter(), Counter()
+    rows, issues = [], []
+    counts, languages, reasons, manual = Counter(), Counter(), Counter(), Counter()
+    counts["lessonFiles"] = 0
+    counts["invalidLessonFiles"] = 0
     for file in sorted(content_root.glob("**/lesson_*.json")):
         relative = file.relative_to(content_root)
         if len(relative.parts) < 4:
@@ -177,51 +184,93 @@ def audit(content_root: Path) -> dict:
         locale, area = relative.parts[:2]
         if locale not in ("es", "en", "fr"):
             continue
-        doc = json.loads(file.read_text(encoding="utf-8-sig"))
-        if not isinstance(doc, dict) or not isinstance(doc.get("pages"), list):
-            continue
-        counts["lessons"] += 1
-        counts[f"lessons.{locale}.{area}"] += 1
-        state = doc.get("stateLayout", {})
-        current = state.get("current", []) if isinstance(state, dict) else []
-        for pi, page in enumerate(doc["pages"]):
-            for bi, block in enumerate(page.get("blocks", [])):
-                if not isinstance(block, dict):
-                    continue
-                stable = (current[pi].get("blocks", [])[bi]
-                          if pi < len(current) and bi < len(current[pi].get("blocks", [])) else None)
-                for field, source, kind in source_blocks(block):
-                    counts["sources"] += 1
-                    counts[f"sources.{locale}.{area}"] += 1
-                    language = code_language(field, block)
-                    languages[language] += 1
-                    manual_flags = manual_review_reasons(source, language)
-                    for flag in manual_flags:
-                        manual[flag] += 1
-                    observations = suggestions(source, language)
-                    if not observations and not manual_flags:
+        counts["lessonFiles"] += 1
+        problems = []
+        try:
+            doc = json.loads(file.read_text(encoding="utf-8-sig"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            problems.append(f"JSON no disponible o inválido: {type(error).__name__}: {error}")
+            doc = None
+        if doc is not None:
+            if not isinstance(doc, dict):
+                problems.append("raíz JSON debe ser un objeto")
+            elif not isinstance(doc.get("pages"), list) or not doc["pages"]:
+                problems.append("pages debe ser una lista no vacía")
+            else:
+                counts["lessons"] += 1
+                counts[f"lessons.{locale}.{area}"] += 1
+                state = doc.get("stateLayout", {})
+                if not isinstance(state, dict):
+                    problems.append("stateLayout debe ser un objeto")
+                    state = {}
+                current = state.get("current", [])
+                if not isinstance(current, list):
+                    problems.append("stateLayout.current debe ser una lista")
+                    current = []
+                for pi, page in enumerate(doc["pages"]):
+                    if not isinstance(page, dict):
+                        problems.append(f"página {pi+1} debe ser un objeto")
                         continue
-                    for item in observations:
-                        reasons[item["reason"]] += 1
-                    if observations:
-                        counts["sourcesWithSuggestions"] += 1
-                    if manual_flags:
-                        counts["sourcesRequiringManualReview"] += 1
-                    rows.append({"lesson":relative.as_posix(), "locale":locale,
-                                 "course": relative.parts[2] if len(relative.parts) > 2 else area,
-                                 "page":pi+1, "block":bi+1,
-                                 "owner": stable, "type":block.get("type"),
-                                 "field":field, "mode":kind,
-                                 "protectedByStateLayout":bool(stable),
-                                 "sha256":sha256(source.encode("utf-8")).hexdigest(),
-                                 "language":language, "manualReview":manual_flags,
-                                 "suggestions":observations})
+                    blocks = page.get("blocks")
+                    if not isinstance(blocks, list) or not blocks:
+                        problems.append(f"página {pi+1}: blocks debe ser una lista no vacía")
+                        continue
+                    identities = []
+                    if pi < len(current):
+                        entry = current[pi]
+                        if not isinstance(entry, dict):
+                            problems.append(f"stateLayout.current página {pi+1} debe ser un objeto")
+                        elif not isinstance(entry.get("blocks"), list):
+                            problems.append(f"stateLayout.current página {pi+1}: blocks debe ser una lista")
+                        else:
+                            identities = entry["blocks"]
+                    for bi, block in enumerate(blocks):
+                        if not isinstance(block, dict):
+                            problems.append(f"página {pi+1}, bloque {bi+1} debe ser un objeto")
+                            continue
+                        stable = None
+                        if bi < len(identities):
+                            candidate = identities[bi]
+                            if isinstance(candidate, str) and candidate:
+                                stable = candidate
+                            else:
+                                problems.append(f"stateLayout.current p{pi+1} b{bi+1}: identidad inválida")
+                        for field, source, kind in source_blocks(block):
+                            counts["sources"] += 1
+                            counts[f"sources.{locale}.{area}"] += 1
+                            language = code_language(field, block)
+                            languages[language] += 1
+                            manual_flags = manual_review_reasons(source, language)
+                            for flag in manual_flags:
+                                manual[flag] += 1
+                            observations = suggestions(source, language)
+                            if not observations and not manual_flags:
+                                continue
+                            for item in observations:
+                                reasons[item["reason"]] += 1
+                            if observations:
+                                counts["sourcesWithSuggestions"] += 1
+                            if manual_flags:
+                                counts["sourcesRequiringManualReview"] += 1
+                            rows.append({"lesson":relative.as_posix(), "locale":locale,
+                                         "course":relative.parts[2],
+                                         "page":pi+1, "block":bi+1,
+                                         "owner":stable, "type":block.get("type"),
+                                         "field":field, "mode":kind,
+                                         "protectedByStateLayout":bool(stable),
+                                         "sha256":sha256(source.encode("utf-8")).hexdigest(),
+                                         "language":language, "manualReview":manual_flags,
+                                         "suggestions":observations})
+        if problems:
+            counts["invalidLessonFiles"] += 1
+            issues.extend({"lesson":relative.as_posix(), "message":detail}
+                          for detail in problems)
     return {"scope":"ALL_LOCALES_ALL_LESSONS_READ_ONLY",
             "changesMade":False,"stateTransitionsVerified":False,
             "counts":dict(sorted(counts.items())),
             "languages":dict(languages),"reasons":dict(reasons),
             "manualReviewReasons":dict(manual),
-            "findings":rows}
+            "issues":issues,"findings":rows}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -240,6 +289,10 @@ def main(argv: list[str] | None = None) -> int:
           if k.startswith("lessons.")},ensure_ascii=False,sort_keys=True))
     print("Motivos:",json.dumps(result["reasons"],ensure_ascii=False,sort_keys=True))
     print("Revisión manual:",json.dumps(result["manualReviewReasons"],ensure_ascii=False,sort_keys=True))
+    print(f"Archivos inválidos: {result['counts']['invalidLessonFiles']}; "
+          f"incidencias: {len(result['issues'])}")
+    for issue in result["issues"][:max(0,args.limit)]:
+        print(f"ERROR {issue['lesson']}: {issue['message']}")
     for issue in result["findings"][:max(0,args.limit)]:
         # Not every finding has a suggested insertion point. Raw strings,
         # continued macros and bracketed CMake syntax require manual review
@@ -254,7 +307,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.output_json:
         args.output_json.parent.mkdir(parents=True,exist_ok=True)
         args.output_json.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    return 1 if args.fail_on_findings and result["findings"] else 0
+    return 1 if result["issues"] or (args.fail_on_findings and result["findings"]) else 0
 
 
 if __name__ == "__main__":

@@ -142,6 +142,72 @@ class AuditCodeReadabilityTest(unittest.TestCase):
                     "--root", str(root), "--fail-on-findings"]), 1)
             self.assertEqual(lesson.read_bytes(), previous)
 
+    def test_bad_json_and_damaged_structure_do_not_hide_other_lessons(self):
+        with tempfile.TemporaryDirectory(prefix="lgaed-damaged-readability-") as folder:
+            root = Path(folder)
+            directory = root / audit.CONTENT / "es/programming/cpp_fundamentals/unidad"
+            directory.mkdir(parents=True)
+            def write(name, value):
+                path = directory / name
+                path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+                return path
+            malformed = directory / "lesson_01_malformed.json"
+            malformed.write_text('{"pages": [', encoding="utf-8")
+            invalid_encoding = directory / "lesson_02_encoding.json"
+            invalid_encoding.write_bytes(b"\xff\xfe\xff")
+            write("lesson_03_root.json", ["not a lesson"])
+            write("lesson_04_pages.json", {"pages": {"not": "a list"}})
+            write("lesson_05_blocks.json", {"pages": [
+                None, {"blocks": [None, {"type": "code", "code": FICHAS}]},
+                {"blocks": "not a list"}]})
+            write("lesson_06_state.json", {
+                "pages": [{"blocks": [{"type": "code", "code": FICHAS}]}],
+                "stateLayout": {"current": [{"blocks": "not a list"}]}})
+            good = write("lesson_99_valid.json", {
+                "id": "valid", "pages": [
+                    {"blocks": [{"type": "code", "code": FICHAS}]}]})
+            snapshots = {p.name: p.read_bytes() for p in directory.iterdir()}
+            result = audit.audit(root / audit.CONTENT)
+            self.assertEqual(result["counts"]["lessonFiles"], 7)
+            self.assertEqual(result["counts"]["invalidLessonFiles"], 6)
+            self.assertEqual(result["counts"]["lessons"], 3)
+            self.assertEqual(result["counts"]["sources"], 3)
+            self.assertEqual(result["counts"]["sourcesWithSuggestions"], 3)
+            self.assertEqual(result["counts"]["lessons.es.programming"], 3)
+            self.assertTrue(any(row["lesson"].endswith(good.name)
+                                for row in result["findings"]))
+            for invalid in (malformed.name, invalid_encoding.name,
+                            "lesson_03_root.json", "lesson_04_pages.json",
+                            "lesson_05_blocks.json", "lesson_06_state.json"):
+                self.assertTrue(any(issue["lesson"].endswith(invalid)
+                                    for issue in result["issues"]), invalid)
+            output = StringIO()
+            report = root / "out/legibilidad.json"
+            with redirect_stdout(output):
+                code = audit.main(["--root", str(root),
+                                   "--output-json", str(report), "--limit", "40"])
+            self.assertEqual(code, 1, "Malformed lessons must fail an ordinary audit")
+            self.assertIn("Archivos inválidos: 6", output.getvalue())
+            self.assertIn("ERROR", output.getvalue())
+            self.assertEqual(json.loads(report.read_text(encoding="utf-8")),
+                             result)
+            self.assertEqual(snapshots,
+                             {p.name: p.read_bytes() for p in directory.iterdir()})
+
+    def test_invalid_file_alone_returns_failure_without_findings(self):
+        with tempfile.TemporaryDirectory(prefix="lgaed-invalid-only-") as folder:
+            root = Path(folder)
+            path = (root / audit.CONTENT /
+                    "fr/math_physics/curso/unidad/lesson_broken.json")
+            path.parent.mkdir(parents=True)
+            path.write_text("null", encoding="utf-8")
+            result = audit.audit(root / audit.CONTENT)
+            self.assertEqual(result["findings"], [])
+            self.assertEqual(result["counts"]["invalidLessonFiles"], 1)
+            with redirect_stdout(StringIO()):
+                self.assertEqual(audit.main(["--root", str(root)]), 1)
+            self.assertEqual(path.read_text(encoding="utf-8"), "null")
+
     def test_unknown_language_is_counted_without_misclassifying_cpp_or_cmake(self):
         python_code = {"type": "code", "language": "python",
                        "code": "def f():\\n    if x:\\n        return 0\\n"}
