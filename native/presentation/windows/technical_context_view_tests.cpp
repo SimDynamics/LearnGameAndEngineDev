@@ -12,6 +12,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "native_build_config.hpp"
 #include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <commctrl.h>
 #include <ole2.h>
 #include <richedit.h>
