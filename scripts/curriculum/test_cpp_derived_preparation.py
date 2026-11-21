@@ -89,7 +89,7 @@ BAD={
         (void)candidate;
         return;
     }
-    auto candidate=
+    std::unique_ptr<Medida> candidate=
         std::make_unique<MedidaIdentificada>(numero,codigo,modo,balance);
     destino.swap(candidate);
 """,
