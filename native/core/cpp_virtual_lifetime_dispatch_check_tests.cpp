@@ -36,6 +36,34 @@ int main(int argc,char** argv) try {
         "Medida","MedidaIdentificada","registrar","escribir",
         "etapa","salida","salida"
     };
+    // The protected original cannot borrow a virtual method or inheritance
+    // from a comment, even when the editable function signatures stay intact.
+    const auto reject_original=[&](std::string modified,std::string_view why) {
+        auto falsified=spec;
+        falsified.editable.original_source=std::move(modified);
+        if(lgaed::curriculum::cpp_virtual_lifetime_detail::valid(falsified))
+            throw std::runtime_error(std::string(why));
+    };
+    {
+        auto changed=original;
+        const auto declaration="virtual void escribir(std::ostream& salida) const";
+        const auto at=changed.find(declaration);
+        if(at==changed.npos)throw std::runtime_error("Original virtual method missing");
+        changed.replace(at,std::string_view(declaration).size(),
+                        "void escribir(std::ostream& salida) const");
+        reject_original("// "+std::string(declaration)+"\n"+changed,
+                        "Comment faked a base virtual method");
+    }
+    {
+        auto changed=original;
+        const auto declaration="class MedidaIdentificada : public Medida {";
+        const auto at=changed.find(declaration);
+        if(at==changed.npos)throw std::runtime_error("Original derived class missing");
+        changed.replace(at,std::string_view(declaration).size(),
+                        "class MedidaIdentificada {");
+        reject_original("// "+std::string(declaration)+"\n"+changed,
+                        "Comment faked public inheritance");
+    }
     if(!lgaed::curriculum::cpp_virtual_lifetime_dispatch_matches(spec,candidate))
         throw std::runtime_error(
             "Altered original class, signatures, main or unapproved function bodies");

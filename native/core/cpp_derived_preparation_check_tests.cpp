@@ -39,6 +39,33 @@ int main(int argc,char** argv) try {
         "recursos_completados","bases_destruidas","derivadas_destruidas",
         "recursos_destruidos"
     };
+    // A missing direct Balance counter must not be supplied by prose, and
+    // a comment cannot turn a non-derived class into a public subtype.
+    const auto reject_original=[&](std::string modified,std::string_view why) {
+        auto falsified=policy;
+        falsified.editable.original_source=std::move(modified);
+        if(lgaed::curriculum::cpp_derived_preparation_detail::valid(falsified))
+            throw std::runtime_error(std::string(why));
+    };
+    {
+        auto changed=original;
+        const auto declaration="int recursos_vivos = 0;";
+        const auto at=changed.find(declaration);
+        if(at==changed.npos)throw std::runtime_error("Original Balance field missing");
+        changed.replace(at,std::string_view(declaration).size(),
+                        "int otros_recursos = 0; // int recursos_vivos = 0;");
+        reject_original(changed,"A comment impersonated a direct Balance field");
+    }
+    {
+        auto changed=original;
+        const auto declaration="class MedidaIdentificada : public Medida {";
+        const auto at=changed.find(declaration);
+        if(at==changed.npos)throw std::runtime_error("Original public subtype missing");
+        changed.replace(at,std::string_view(declaration).size(),
+                        "class MedidaIdentificada {");
+        reject_original("// "+std::string(declaration)+"\n"+changed,
+                        "A comment impersonated derived inheritance");
+    }
     if(!lgaed::curriculum::cpp_derived_preparation_matches(policy,candidate))
         throw std::runtime_error(
             "Student edited protected declarations, constructors, other bodies or main");
