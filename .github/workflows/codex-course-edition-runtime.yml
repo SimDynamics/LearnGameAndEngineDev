@@ -1,0 +1,68 @@
+name: Codex isolated Win32 course-edition runtime QA
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-course-edition-runtime.yml
+      - cmake/HostedCourseEditionQA/**
+      - cmake/CurricularWindows.cmake
+      - cmake/native_build_config.hpp.in
+      - native/platform/windows/course_edition_tests.cpp
+      - scripts/curriculum/course_edition_fixture_source.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run-real-course-edition:
+    name: Run real Win32 LessonView and StateStore with isolated edition data
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 45
+    steps:
+      - name: Read the exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select Python for original edition fixtures
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate hosted MSVC without modifying the product pin
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Identify the separate hosted build tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Write-Host 'Hosted QA only; the product MSVC and SDK pins are untouched.'
+          Get-Command cl, cmake, ninja | Select-Object Name, Source | Format-Table | Out-Host
+          cmake --version
+          ninja --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Configure and link original Windows curricular reader
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          cmake -S cmake/HostedCourseEditionQA -B $build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build $build --target lgaed_course_edition_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Execute edition replacement, native quiz, scoped reset and reopen
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native\.course_edition$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'course-edition-runtime.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve native test and compile evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-win32-course-edition-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/lgaed-course-edition-qa/course-edition-runtime.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/Testing/Temporary/*.log
+            ${{ runner.temp }}/lgaed-course-edition-qa/CMakeFiles/CMakeConfigureLog.yaml
