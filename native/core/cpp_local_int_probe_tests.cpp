@@ -504,6 +504,47 @@ void neutral_updates_cannot_fake_u2l3_increase() {
         "A genuine update with a redundant zero was rejected");
 }
 
+void numeric_literal_identity_distinguishes_one_from_ten() {
+    using lgaed::curriculum::cpp_local_int_probe_detail::int_probe_literal_is;
+    for(const auto* literal:{
+        "number:1", "number:01", "number:0001",
+        "number:0x01", "number:0X1", "number:0b001",
+        "number:0B001", "number:0x0'1UL"}) {
+        require(int_probe_literal_is(literal,'1'),
+            "An integer literal equal to one was not recognized");
+    }
+    for(const auto* literal:{
+        "number:10", "number:010", "number:0x10", "number:0X10",
+        "number:0b10", "number:0B10", "number:0x100",
+        "number:1'0", "number:0x1'0UL"}) {
+        require(!int_probe_literal_is(literal,'1'),
+            "A non-unit multiplier was incorrectly classified as one");
+    }
+    for(const auto* statement:{
+        "aforo=aforo*10;", "aforo=aforo*010;", "aforo=aforo*0x10;",
+        "aforo=aforo*0b10;", "aforo=aforo*0B10;"}) {
+        const auto source=std::string(
+            "#include <iostream>\nint main(){int aforo{5};")
+            +statement+"std::cout<<aforo;}";
+        const auto variant=cpp_local_int_override(
+            source,{"aforo",4,{},true});
+        require(variant&&
+            variant->find(std::string(statement)+"\n    aforo += 4;\n")!=
+                std::string::npos,
+            "A genuine multiplication update was mistaken for a neutral assignment");
+    }
+    for(const auto* statement:{
+        "aforo=aforo*1;", "aforo=aforo*01;",
+        "aforo=aforo*0x01;", "aforo=aforo*0b01;",
+        "aforo=aforo*0B01;", "aforo=aforo*0x0'1UL;"}) {
+        const auto source=std::string(
+            "#include <iostream>\nint main(){int aforo{5};")
+            +statement+"std::cout<<aforo;}";
+        require(!cpp_local_int_override(source,{"aforo",4,{},true}),
+            "A multiplication by literal one was credited as an increase");
+    }
+}
+
 void expected_outputs_are_independent_and_reversible() {
     using lgaed::curriculum::CppLocalIntCheck;
     using lgaed::curriculum::cpp_local_int_check_valid;
@@ -547,6 +588,7 @@ int main() {
         expected_outputs_are_independent_and_reversible();
         changed_increase_is_observed_at_the_actual_update();
         neutral_updates_cannot_fake_u2l3_increase();
+        numeric_literal_identity_distinguishes_one_from_ten();
         std::cout << "PASS local int probes: equivalent initialization, independent "
                      "variables, copy state, safe token positions.\n";
         return 0;
