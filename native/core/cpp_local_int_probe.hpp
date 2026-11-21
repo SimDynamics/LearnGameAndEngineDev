@@ -107,7 +107,23 @@ inline std::optional<std::pair<std::size_t, std::size_t>> main_body(
             if (code[at].value == "op:(") ++parentheses;
             else if (code[at].value == "op:)") --parentheses;
         }
-        if (parentheses || at >= code.size() || code[at].value != "op:{")
+        if (parentheses) continue;
+        // An ordinary int main() may have a non-throwing exception
+        // specification. It does not change the location or ownership of
+        // the function body. Skip the complete, balanced noexcept clause,
+        // but never treat its nested parentheses or braces as the body.
+        if (at < code.size() && code[at].value == "id:noexcept") {
+            ++at;
+            if (at < code.size() && code[at].value == "op:(") {
+                std::size_t depth = 1;
+                for (++at; at < code.size() && depth; ++at) {
+                    if (code[at].value == "op:(") ++depth;
+                    else if (code[at].value == "op:)") --depth;
+                }
+                if (depth) continue;
+            }
+        }
+        if (at >= code.size() || code[at].value != "op:{")
             continue;
         const auto opening = at;
         std::size_t braces = 1;

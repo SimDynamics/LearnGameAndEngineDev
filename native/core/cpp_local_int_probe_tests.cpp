@@ -37,6 +37,51 @@ void equivalent_initializers_do_not_change_original_source() {
     }
 }
 
+void noexcept_main_preserves_local_dependency_checks() {
+    // All of these are valid C++23 main declarations. A semantic probe must
+    // not mistake their noexcept clauses for an absent function body.
+    const char* suffixes[]{
+        "noexcept",
+        "noexcept(true)",
+        "noexcept(false)",
+        "noexcept(noexcept(7))"
+    };
+    for (const auto* suffix : suffixes) {
+        const auto source = std::string("#include <iostream>\nint main() ") +
+            suffix + " {\n    int llaves{7};\n"
+            "    std::cout << \"Llaves: \" << llaves;\n}\n";
+        const auto variation = cpp_local_int_override(source, {"llaves", 13});
+        require(variation &&
+            variation->find("int llaves{7};\n    llaves = 13;\n") != std::string::npos &&
+            variation->find(std::string("int main() ") + suffix + " {") != std::string::npos &&
+            variation->find("std::cout << \"Llaves: \" << llaves;") != std::string::npos &&
+            source.find("llaves = 13;") == std::string::npos,
+            "A valid noexcept main lost its local-int dependency probe");
+    }
+    const auto updated = cpp_local_int_override(
+        "int main() noexcept(noexcept(7)) {int aforo{5}; aforo+=3;"
+        "int anterior=aforo; std::cout<<anterior<<aforo;}",
+        {"aforo", 4, {}, true});
+    require(updated &&
+        updated->find("aforo+=3;\n    aforo += 4;\n") != std::string::npos &&
+        updated->find("int anterior=aforo;") > updated->find("aforo += 4;"),
+        "A noexcept main lost the private probe after its first state update");
+    require(!cpp_local_int_override(
+        "int helper() noexcept {int llaves{7}; return llaves;}"
+        "int main() noexcept {return helper();}",
+        {"llaves", 13}),
+        "The noexcept clause made a local from another function mutable");
+    require(!cpp_local_int_override(
+        "int main() noexcept {int llaves{7};}"
+        "int main() {int llaves{8};}",
+        {"llaves", 13}),
+        "An ambiguous duplicate main passed with a noexcept clause");
+    require(!cpp_local_int_override(
+        "int main() noexcept( {int llaves{7}; std::cout<<llaves;}",
+        {"llaves", 13}),
+        "An incomplete noexcept clause was mistaken for a main function body");
+}
+
 void independently_probe_two_variables() {
     const std::string source = R"(#include <iostream>
 int main() {
@@ -226,6 +271,7 @@ void expected_outputs_are_independent_and_reversible() {
 int main() {
     try {
         equivalent_initializers_do_not_change_original_source();
+        noexcept_main_preserves_local_dependency_checks();
         independently_probe_two_variables();
         separate_assignment_and_copy_before_update();
         comments_literals_and_similar_names_are_inert();
