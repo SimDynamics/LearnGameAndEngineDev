@@ -410,8 +410,14 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
                 self.assertEqual(layout.validate(self.original), layout.validate(final))
 
                 old, new = self.block, layout._blocks(final)[OWNER]
+                # Authenticated wording changes the live option bytes, so
+                # its raw state fingerprint must change. Only the option
+                # restored through the signed archive retains the prior
+                # response contract, including the originally correct index.
+                archived_choice = final["stateLayout"]["choiceRevisions"][-1]
+                restored = layout._general_choice_projection(archived_choice, new)
                 self.assertEqual(layout.state_fingerprint(old),
-                                 layout.state_fingerprint(new))
+                                 layout.state_fingerprint(restored))
                 self.assertEqual(old["correctIndex"], new["correctIndex"])
                 self.assertEqual(old["options"][1:], new["options"][1:])
                 self.assertEqual(new["reviewFeedback"][0], hint)
