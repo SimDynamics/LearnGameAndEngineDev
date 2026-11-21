@@ -85,6 +85,37 @@ void noexcept_main_preserves_local_dependency_checks() {
         "An incomplete noexcept clause was mistaken for a main function body");
 }
 
+void trailing_return_main_supports_equivalent_int_entrypoints() {
+    const char* suffixes[]{"", " noexcept", " noexcept(true)",
+                           " noexcept(noexcept(7))"};
+    for(const auto* suffix:suffixes) {
+        const auto source=std::string("#include <iostream>\n"
+            "auto main()")+suffix+" -> int {\n"
+            "int llaves{7};std::cout<<\"Llaves: \"<<llaves;\n}\n";
+        const auto varied=cpp_local_int_override(source,{"llaves",13});
+        require(varied&&
+            varied->find("int llaves{7};\n    llaves = 13;\n")!=std::string::npos&&
+            varied->find("std::cout<<\"Llaves: \"<<llaves;")!=std::string::npos,
+            "Valid auto main()->int was not recognized as the unique owner");
+    }
+    const auto update=cpp_local_int_override(
+        "auto main() noexcept -> int {int aforo{5};aforo+=3;"
+        "std::cout<<aforo;}",{"aforo",4,{},true});
+    require(update&&
+        update->find("aforo+=3;\n    aforo += 4;\n")!=std::string::npos,
+        "Trailing return main lost the independent after-update probe");
+    for(const auto* invalid:{
+        "auto main()->long {int llaves{7};std::cout<<llaves;}",
+        "auto main()->void {int llaves{7};std::cout<<llaves;}",
+        "int main()->int {int llaves{7};std::cout<<llaves;}",
+        "auto helper()->int {int llaves{7};std::cout<<llaves;}",
+        "auto main()->int {int llaves{7};}"
+        "int main() {int llaves{8};}"}) {
+        require(!cpp_local_int_override(invalid,{"llaves",13}),
+            "An invalid, helper-only or ambiguous trailing return main passed");
+    }
+}
+
 void independently_probe_two_variables() {
     const std::string source = R"(#include <iostream>
 int main() {
@@ -464,6 +495,7 @@ int main() {
     try {
         equivalent_initializers_do_not_change_original_source();
         noexcept_main_preserves_local_dependency_checks();
+        trailing_return_main_supports_equivalent_int_entrypoints();
         independently_probe_two_variables();
         grouped_integer_declarations_keep_independent_data();
         separate_assignment_and_copy_before_update();
