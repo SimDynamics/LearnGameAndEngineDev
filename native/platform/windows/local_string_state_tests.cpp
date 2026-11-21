@@ -326,7 +326,11 @@ int main() {
     catch(const std::exception&){rejected_corrupt=true;}
     require(rejected_corrupt,
         "Tampering with a saved private string receipt was silently accepted");
-    require(store.load()==reopened,
+    // A corrupted in-memory receipt must not alter the durable QA state.
+    // Open it through another owner to avoid relying on the previous
+    // StateStore instance's cached hash or loaded flag.
+    state::StateStore unchanged_store(environment.paths.root);
+    require(unchanged_store.load()==reopened,
         "Rejected corruption changed the stored original QA profile");
     auto invalid=JsonObject::Parse(winrt::to_hstring(generated));
     auto probe=invalid.GetNamedArray(L"compilerLocalStringChecks").GetObjectAt(0)
