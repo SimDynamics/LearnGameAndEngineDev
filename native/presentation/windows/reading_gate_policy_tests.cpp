@@ -183,6 +183,135 @@ void ordinary_and_mixed_requirements() {
         !reading_gate::prefix_admitted(planned,7,8,priority,true,projection),
         "A late asynchronous plan reinstated solved metadata for an ordinary puzzle");
 }
+
+void current_u2l5_reader_pauses_and_gates(){
+    using namespace curriculum;
+    // Authored owners are real. These are policy-level spoken regions,
+    // not generated speech or claims of Win32 playback.
+    const auto lesson=windows::load_lesson(std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+        "objetos_y_estado/lesson_enteros_y_aproximaciones.json");
+    const auto first=stable_block_position(lesson,"block_0006_0002");
+    const auto second=stable_block_position(lesson,"p1u2l5_reparar_agrupacion");
+    const auto original=stable_block_position(lesson,"block_0007_0001");
+    const auto repaired=stable_block_position(lesson,"p1u2l5_referencia_agrupacion");
+    require(first&&second&&original&&repaired&&first->page==6&&first->block==2&&
+        second->page==7&&second->block==9&&original->page==7&&repaired->page==8,
+        "Current U2L5 editors or their protected reference owners moved");
+    require(reading_gate::compiler_objective(lesson.pages[6].blocks[2])&&
+        reading_gate::compiler_objective(lesson.pages[7].blocks[9]),
+        "The two active compiler objectives lost mandatory narration gates");
+    const auto region=[&](std::size_t page,std::size_t block,std::size_t part,bool solved) {
+        const auto& owner=lesson.pages[page].blocks[block];
+        LessonReadingRegion result;
+        result.key=lesson.id+"/"+lesson.pages[page].stable_id+"/"+owner.stable_id+
+            "/policy-"+std::to_string(part);
+        result.block_index=block;
+        result.source_text=!owner.text.empty()?owner.text:
+            !owner.question.empty()?owner.question:owner.stable_id;
+        result.required_compiler=reading_gate::compiler_objective(owner);
+        result.is_exercise=result.required_compiler||
+            owner.type==BlockType::multiple_choice||
+            owner.type==BlockType::output_prediction||
+            owner.type==BlockType::inline_fill_code;
+        result.solved=!result.is_exercise||solved;
+        return result;
+    };
+    std::vector<LessonReadingRegion> first_page{
+        region(6,0,0,true),region(6,1,0,true),region(6,2,0,false),
+        region(6,2,1,false),region(6,3,0,true),region(6,4,0,false)};
+    require(reading_gate::prefix_admitted(first_page,3,0)&&
+        reading_gate::compiler_rewind_target(first_page,4,false)==2&&
+        !reading_gate::prefix_admitted(first_page,4,0,{},true),
+        "A split first-editor prompt allowed manual seeking into protected prose");
+    const auto blocked=reading_gate::prefix_blocker(first_page,4,0);
+    require(blocked&&blocked->index==2&&blocked->block==first->block&&
+        blocked->reason==reading_gate::BlockerReason::answer,
+        "An unverified first editor was not identified as the reader barrier");
+
+    first_page[2].solved=first_page[3].solved=true;
+    auto feedback=region(6,2,2,true);
+    feedback.feedback=feedback.correct=true;feedback.required_compiler=false;
+    feedback.source_text="Comprobación correcta.";
+    first_page.insert(first_page.begin()+4,feedback);
+    const auto pending_feedback=reading_gate::prefix_blocker(first_page,5,0);
+    require(pending_feedback&&pending_feedback->index==4&&
+        pending_feedback->reason==reading_gate::BlockerReason::correct_feedback,
+        "Correct first-editor feedback was treated as already heard");
+    const auto late=narration::Position{5,460,0,false,
+        narration::HeardPrefix{std::string(64,'a'),460000,1000000}};
+    const auto rewound=narration::seek(late,4,0);
+    require(rewound.segment==4&&rewound.milliseconds==0&&
+        rewound.heard_through==0&&!rewound.heard_prefix&&
+        !reading_gate::prefix_admitted(first_page,5,rewound.heard_through),
+        "Seeking backwards forged an audio-hearing certificate");
+    const std::string key="qa/u2l5/reader-six",reader="qa-u2l5";
+    auto history=narration::begin({},key,reader,rewound,
+        "block_0006_0002",lesson.pages[6].stable_id);
+    history=narration::checkpoint(std::move(history),key,reader,rewound);
+    state::StateData progress;
+    narration::write_history(progress,history);
+    const auto saved=state::decode(state::encode(progress));
+    const auto restored=narration::restore(narration::read_history(saved),key,first_page.size());
+    require(restored&&*restored==rewound&&
+        !reading_gate::prefix_admitted(first_page,5,restored->heard_through),
+        "Reopening a pause skipped the first editor's unheard explanation");
+    const auto heard=narration::Position{4,0,5,false};
+    history=narration::checkpoint(std::move(history),key,reader,heard);
+    narration::write_history(progress,history);
+    require(reading_gate::prefix_admitted(first_page,5,heard.heard_through)&&
+        !reading_gate::prefix_admitted(first_page,first_page.size(),heard.heard_through),
+        "Hearing one explanation bypassed the still-unanswered following choice");
+    first_page.back().solved=true;
+    require(reading_gate::prefix_admitted(first_page,first_page.size(),heard.heard_through),
+        "The completed first editor and choice failed to release the page");
+
+    std::vector<LessonReadingRegion> next_page;
+    for(std::size_t index=0;index<=second->block;++index)
+        next_page.push_back(region(7,index,0,index!=second->block));
+    require(next_page.back().required_compiler&&
+        reading_gate::compiler_rewind_target(next_page,next_page.size()-1,true)==second->block&&
+        !reading_gate::prefix_admitted(next_page,next_page.size(),0,{},true),
+        "First-editor success or a finished bookmark skipped the second editor");
+    std::vector<Part> planned;for(const auto& item:next_page)planned.push_back({item});
+    planned.back().region.solved=true;
+    require(reading_gate::reconcile(planned,next_page,projection)&&
+        !planned.back().region.solved&&
+        reading_gate::compiler_rewind_target(planned,next_page.size()-1,true,projection)==second->block,
+        "A late narration plan restored stale second-editor completion");
+    auto altered=next_page;altered[1].source_text+=" Nueva lectura.";
+    require(!reading_gate::reconcile(planned,altered,projection)&&
+        !planned.back().region.solved,
+        "Changed speech entered a metadata-only plan reconciliation");
+
+    next_page.back().solved=true;
+    auto next_feedback=region(7,second->block,1,true);
+    next_feedback.feedback=next_feedback.correct=true;
+    next_feedback.required_compiler=false;
+    next_feedback.source_text="Segunda comprobación correcta.";
+    next_page.push_back(next_feedback);
+    require(!reading_gate::prefix_admitted(next_page,next_page.size(),0)&&
+        reading_gate::prefix_blocker(next_page,next_page.size(),0)->reason==
+            reading_gate::BlockerReason::correct_feedback,
+        "Second-editor success skipped its separately unheard feedback");
+    history=narration::begin(std::move(history),"qa/u2l5/reader-seven",reader,
+        {static_cast<std::int64_t>(next_page.size()-1),0,0,false},
+        "p1u2l5_reparar_agrupacion",lesson.pages[7].stable_id);
+    narration::write_history(progress,history);
+    const auto reopened=state::decode(state::encode(progress));
+    const auto bookmarks=narration::read_history(reopened);
+    const auto six=narration::restore(bookmarks,key,first_page.size());
+    const auto seven=narration::restore(bookmarks,"qa/u2l5/reader-seven",next_page.size());
+    require(six&&seven&&six->heard_through==5&&seven->heard_through==0&&
+        !reading_gate::prefix_admitted(next_page,next_page.size(),seven->heard_through)&&
+        reading_gate::prefix_admitted(next_page,next_page.size(),
+            static_cast<std::int64_t>(next_page.size())),
+        "Reopening one page overwrote another bookmark or pretended to hear feedback");
+    std::cout<<"PASS current U2L5 reader policy: split prompts, feedback waits, "
+        "state-coded pauses, second-editor gate and late-plan reconciliation; "
+        "no audio synthesis or UI execution claimed\n";
+}
+
 void cadenas_three_puzzle_flow(){
     using namespace curriculum;
     const auto path=std::filesystem::path(build::source_root)/
@@ -252,7 +381,7 @@ void cadenas_three_puzzle_flow(){
 }
 int main() {
     try {
-        current_objectives();grouped_feedback();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();cadenas_three_puzzle_flow();
+        current_objectives();grouped_feedback();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();cadenas_three_puzzle_flow();current_u2l5_reader_pauses_and_gates();
         std::cout<<"PASS current U2L6 objectives, actual U2L7 three-puzzle prompt/feedback gates, ordinary/mixed groups, late/finished bookmarks, local feedback permission and asynchronous same-script invalidation; pure gates only\n";
         return 0;
     } catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }

@@ -180,3 +180,16 @@ add_test(NAME native.compiler_local_int_state
     COMMAND lgaed_local_int_state_tests)
 set_tests_properties(native.compiler_local_int_state PROPERTIES
     TIMEOUT 180 RUN_SERIAL TRUE)
+# Independent current-U2L5 reader gate and bookmark regressions on hosted
+# Windows. This uses the real published loader and narration-state codec.
+# It does not synthesize PCM or claim installed-application playback.
+add_executable(lgaed_reading_gate_portable_qa
+    "${LGAED_ROOT}/native/presentation/windows/reading_gate_policy_tests.cpp")
+target_link_libraries(lgaed_reading_gate_portable_qa PRIVATE
+    lgaed_guidance_platform lgaed_guidance_qa_options)
+target_link_options(lgaed_reading_gate_portable_qa PRIVATE /OPT:REF)
+add_test(NAME native.reading_gate_u2l5_bookmarks
+    COMMAND lgaed_reading_gate_portable_qa)
+set_tests_properties(native.reading_gate_u2l5_bookmarks PROPERTIES
+    TIMEOUT 180 RUN_SERIAL TRUE)
+
