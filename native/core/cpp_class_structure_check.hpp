@@ -220,11 +220,12 @@ inline bool direct_contains(const Tokens& code,Scope scope,
 // does not belong to that individual object's lifetime. These source-policy
 // checks require real per-instance RAII fields, not shared storage. Stop at
 // the previous declaration, access label or member-function body boundary.
+// C++ digraph braces (<% and %>) are the same boundaries as { and }.
 inline bool non_instance_storage_modifier(const Tokens& code,
         std::size_t type_at,std::size_t owner_opening) {
     for(auto i=type_at;i>owner_opening+1;) {
         const auto& token=code[--i];
-        if(token=="op:;"||token=="op:{"||token=="op:}"||
+        if(token=="op:;"||open_brace(token)||close_brace(token)||
            token=="op::")break;
         if(token=="id:static"||token=="id:thread_local")
             return true;

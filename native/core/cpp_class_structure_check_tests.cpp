@@ -130,6 +130,42 @@ class Owner {
         !cs::direct_int_fields(*method,*method_owner,{"count_"}),
         "A zero-argument member function impersonated an int data field");
 
+    // A previous static member function may use C++ digraph braces. Those
+    // braces end its declaration even without a trailing semicolon: the
+    // next field belongs to each instance, not to the static method.
+    const auto digraph=cs::lexical(R"source(
+#include <memory>
+class Owner {
+    static void helper() <% %>
+    std::unique_ptr<int[]> items_{};
+    int count_ = 0;
+};
+)source");
+    const auto digraph_owner=digraph?
+        cs::defined_class(*digraph,"Owner"):std::nullopt;
+    require(digraph&&digraph_owner&&
+        cs::direct_field(*digraph,*digraph_owner,{
+            "id:std","op:::","id:unique_ptr","op:<","id:int",
+            "op:[","op:]","op:>","id:items_"})&&
+        cs::direct_int_fields(*digraph,*digraph_owner,{"count_"}),
+        "An unrelated static digraph method hid real per-instance fields");
+
+    // The same boundary cannot make a genuinely static field look owned.
+    const auto digraph_shared=cs::lexical(R"source(
+#include <memory>
+class Owner {
+    static void helper() <% %>
+    static std::unique_ptr<int[]> items_;
+};
+)source");
+    const auto digraph_shared_owner=digraph_shared?
+        cs::defined_class(*digraph_shared,"Owner"):std::nullopt;
+    require(digraph_shared&&digraph_shared_owner&&
+        !cs::direct_field(*digraph_shared,*digraph_shared_owner,{
+            "id:std","op:::","id:unique_ptr","op:<","id:int",
+            "op:[","op:]","op:>","id:items_"}),
+        "An actual static field passed after a digraph-delimited method");
+
     const auto shared=cs::lexical(R"source(
 class Owner {
     inline static std::unique_ptr<int[]> items_{};
