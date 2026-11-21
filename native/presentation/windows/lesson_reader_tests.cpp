@@ -601,6 +601,26 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
     check(lesson_page_state(f.view).index==first.page&&
         !windows::compiler_puzzle_completed(read_lesson_state(f.view),lesson,first_goal),
         "The current first compiler already had a private execution receipt");
+    const auto prefix_before=read_lesson_state(f.view);
+    const auto prefix_preserved=[&]{
+        const auto saved=read_lesson_state(f.view);
+        std::size_t compared=0;
+        for(std::size_t page=0;page<first.page;++page)
+            for(const auto& block:lesson.pages[page].blocks){
+                const auto earlier=state::get_response(prefix_before,lesson,block);
+                if(!earlier)continue;
+                const auto now=state::get_response(saved,lesson,block);
+                check(now&&now->correct==earlier->correct&&
+                    now->answer==earlier->answer&&now->raw_json==earlier->raw_json&&
+                    now->selected==earlier->selected&&now->order==earlier->order&&
+                    now->reviewed_answer_identity==earlier->reviewed_answer_identity,
+                    "Compiler attempts changed an independently evaluated U2L5 prefix answer");
+                ++compared;
+            }
+        check(compared==prior_ordinary&&
+            saved.preferences.at("u2l5_reader_qa")==prefix_before.preferences.at("u2l5_reader_qa"),
+            "U2L5 compiler runs overwrote the isolated QA prefix or its audit marker");
+    };
     const auto no_later_regions=[&](std::size_t boundary,std::size_t page){
         check(lesson_page_state(f.view).index==page,"The compiler gate changed its owning page");
         const auto regions=lesson_reading_regions(f.view);
@@ -799,6 +819,7 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
         edit_text(child(f.view,1010+static_cast<int>(first.block)*100))==first_goal.initial_code&&
         state::sha256(state::read_bytes(path))==asset_hash,
         "First-editor Reset did not restore the current pending goal or modified the actual asset");
+    prefix_preserved();
     std::cout<<"PASS current U2L5: two active required editors, separate pages and stable IDs; real initial/fixed/accepted executions, private local-int probes, reader gate, pause/reopen/PCM, independent drafts and Reset\n";
 }
 void integrated_u1_reader_flow(const std::shared_ptr<windows::NarrationWorker>& backend){
