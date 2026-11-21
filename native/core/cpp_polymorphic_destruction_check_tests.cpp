@@ -74,7 +74,7 @@ int main(int argc, char** argv) try {
         return source;
     };
     {
-        auto changed=changed_once(original,"struct Ciclo {","struct CicloObsoleto {");
+        auto changed=changed_once(original,"\nstruct Ciclo {","\nstruct CicloObsoleto {");
         changed+=
             "\nnamespace LgaedAnother { struct Ciclo {\n"
             "int bases_vivas=0, derivadas_vivas=0, fichas_vivas=0;\n"
@@ -83,14 +83,14 @@ int main(int argc, char** argv) try {
         forged_original(changed,"Namespaced Ciclo impersonated six global counters");
     }
     {
-        auto changed=changed_once(original,"class Ficha {","class FichaObsoleta {");
+        auto changed=changed_once(original,"\nclass Ficha {","\nclass FichaObsoleta {");
         changed+="\nnamespace LgaedAnother { class Ficha {}; }\n";
         forged_original(changed,"Namespaced Ficha impersonated global RAII owner");
     }
     {
         auto changed=changed_once(original,
-            "class MedidaIdentificada : public Medida {",
-            "class MedidaIdentificada : private Medida {");
+            "\nclass MedidaIdentificada : public Medida {",
+            "\nclass MedidaIdentificada : private Medida {");
         changed+="\nnamespace LgaedAnother { "
                  "class MedidaIdentificada : public Medida {}; }\n";
         forged_original(changed,"Namespaced type impersonated public derivation");
