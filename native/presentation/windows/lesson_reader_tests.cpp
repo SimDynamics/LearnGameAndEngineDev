@@ -547,7 +547,7 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
         archived->compiler_puzzles_required&&!archived->raw_json.empty()&&
         !archived->sha256.empty(),
         "The previous three-editor U2L5 publication lost its authenticated reading archive");
-    struct HistoricalCompiler{std::size_t page,block;std::string_view identity,stdout;};
+    struct HistoricalCompiler{std::size_t page,block;std::string_view identity,expected_output;};
     const std::array<HistoricalCompiler,3> historical_compilers{{
         {6,2,"block_0006_0002","Parte: 4.5 m"},
         {6,6,"block_0006_0006","Parte: 4 m"},
@@ -558,7 +558,7 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
         check(original.type==curriculum::BlockType::cpp_compiler&&
             original.stable_id==expected.identity&&original.output_check&&
             original.output_check->cases.size()==1&&
-            original.output_check->cases.front().outputs.front()==expected.stdout,
+            original.output_check->cases.front().outputs.front()==expected.expected_output,
             "An archived U2L5 editor lost its independent original stdout objective");
     }
     const auto preserved_edge=[&](std::string_view target,std::string_view prerequisite){
@@ -1732,7 +1732,7 @@ void current_inline_feedback_reader(const std::shared_ptr<windows::NarrationWork
         check(!IsWindowVisible(f.host)&&read_lesson_state(f.view).preferences.at("inline_audio_qa")==unrelated
             &&state::sha256(state::read_bytes(asset))==asset_hash,
             "Current inline narration changed its source asset, unrelated preferences or the desktop");
-        std::cout<<"PASS current inline reader "<<number+1<<" "<<test.file<<" p"<<test.page+1<<" b"<<test.block+1
+        std::cout<<"PASS current inline reader "<<number+1<<" "<<test.file<<" p"<<position.page+1<<" b"<<position.block+1
             <<": current complete retry/success, real Kokoro PCM/timings/playback/masks, unreviewed privacy, released exact silent reopen, retry stop/full-success continuation and unchanged recordings/assets; isolated copied block, no full curricular navigation or human listening claimed\n";
     }
 }
