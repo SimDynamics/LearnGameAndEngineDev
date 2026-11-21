@@ -3916,6 +3916,14 @@ Se reconocen actualizaciones directas como `aforo += 3`,
 `aforo = aforo + 3`, `aforo = 3 + aforo`, incremento o resta
 equivalente. El código se conserva; se inserta únicamente
 `aforo += replacement;` después de esa instrucción.
+Una asignación directa con `=` solo cuenta como posible actualización
+cuando lee el **valor previo de esa misma variable local**; no se
+acreditan reinicios fijos (`aforo = 8;`), copias idénticas
+(`aforo = aforo;`) ni lecturas de un campo de otro objeto
+(`aforo = datos.aforo;`). Un resultado visible correcto seguido
+de una suma privada tampoco demuestra un aumento original.
+Las demás sondas independientes y sus salidas siguen siendo obligatorias
+para acreditar la dependencia del valor inicial y de la copia.
 
 Por ejemplo, U2L3 debe exigir a la vez una variación del inicio y otra
 del aumento de `aforo`, además de contrastar la salida procedente
