@@ -51,6 +51,5 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake --build "$build" --target lgaed_native_assertion_runner_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          ctest --test-dir "$build" -R '^native\.u3l9_assertion_contracts
- --output-on-failure
+          ctest --test-dir "$build" -R "^native[.]u3l9_assertion_contracts$" --output-on-failure
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
