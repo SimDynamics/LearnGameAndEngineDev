@@ -734,17 +734,24 @@ void current_u2l6_native_reader_gates() {
                 relation.prerequisites.front()==first.stable_id;
         }),"The two U2L6 editors lost their independent source-owned goals");
 
-    const auto reference=[&](std::string_view activity)->std::optional<curriculum::StatePosition>{
+    const auto reference=[&](std::string_view activity,
+                             std::string_view expected_id)->std::optional<curriculum::StatePosition>{
+        // U2L6's new second editor retains the old reference for historical
+        // study but adds a NEW repaired program. Do not mistake the former
+        // for proof that the latter becomes visible after the current goal.
         for(const auto& relation:lesson.reference_after)if(relation.activity==activity)
             for(const auto& identity:relation.blocks){
+                if(identity!=expected_id)continue;
                 const auto at=curriculum::stable_block_position(lesson,identity);
                 if(at&&lesson.pages[at->page].blocks[at->block].type==
                        curriculum::BlockType::code)return at;
             }
         return {};
     };
-    const auto first_reference=reference(first.stable_id);
-    const auto second_reference=reference(second.stable_id);
+    const auto first_reference=reference(first.stable_id,"block_0007_0001");
+    const auto second_reference=reference(second.stable_id,
+        second.stable_id=="p1u2l6_reparar_conversion"?
+            "p1u2l6_referencia_reparada":"block_0008_0003");
     check(first_reference&&second_reference&&
         first_reference->page>first_at->page&&
         second_reference->page>=first_reference->page,
