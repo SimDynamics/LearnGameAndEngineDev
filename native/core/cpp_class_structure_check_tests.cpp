@@ -1,0 +1,74 @@
+// Focused lexical policy regressions for P3 authoring contracts.
+// Only the immutable original lesson may declare the class/alias structure.
+// No program submitted by a learner is executed by this test.
+#include "core/cpp_class_structure_check.hpp"
+
+#include <array>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+
+namespace {
+void require(bool condition,std::string_view message) {
+    if(!condition)throw std::runtime_error(std::string(message));
+}
+} // namespace
+
+int main() try {
+    namespace cs=lgaed::curriculum::cpp_class_structure;
+    const auto original=cs::lexical(R"source(
+#include <memory>
+%:include <vector>
+// #if 0
+/* #define Owner NotTheOwner */
+class Owner {
+public:
+    virtual ~Owner() = default;
+};
+namespace Unrelated { class Owner {}; }
+using Owners = std::vector<std::unique_ptr<Owner>>;
+)source");
+    require(original.has_value(),
+        "A valid literal include or an inert comment blocked class authoring");
+    require(cs::defined_class(*original,"Owner").has_value(),
+        "The real global Owner was hidden by a namespaced namesake");
+    require(cs::global_alias(*original,"Owners",{
+        "id:using","id:Owners","op:=","id:std","op:::",
+        "id:vector","op:<","id:std","op:::",
+        "id:unique_ptr","op:<","id:Owner","op:>>","op:;"}),
+        "The original global polymorphic alias was lost");
+
+    constexpr std::array<std::string_view,8> ambiguous{{
+        "#if 0\nclass Owner {};\n#endif\n",
+        "#ifdef OWNER_PRESENT\nclass Owner {};\n#endif\n",
+        "#ifndef OWNER_PRESENT\nclass Owner {};\n#endif\n",
+        "#define Owner Other\nclass Owner {};\n",
+        "#undef Owner\nclass Owner {};\n",
+        "#include OWNER_HEADER\nclass Owner {};\n",
+        "#line 22\nclass Owner {};\n",
+        "%:if 0\nclass Owner {};\n%:endif\n"
+    }};
+    for(const auto source:ambiguous) {
+        require(!cs::lexical(source),
+            "A conditional or macro directive authenticated an unknown class");
+    }
+    const auto inert_literal=cs::lexical(R"source(
+const char* note=R"doc(#if 0
+class FakeOwner {};
+#endif
+)doc";
+class Owner {};
+)source");
+    require(inert_literal.has_value()&&
+        cs::defined_class(*inert_literal,"Owner").has_value()&&
+        !cs::defined_class(*inert_literal,"FakeOwner"),
+        "Preprocessor-like words inside a raw string were treated as directives");
+
+    std::cout<<"PASS scoped C++ authoring: literal includes and inert notes "
+                "accepted; preprocessor-generated or disabled owners rejected\n";
+    return 0;
+}catch(const std::exception& error) {
+    std::cerr<<"FAIL lexical class authoring: "<<error.what()<<'\n';
+    return 1;
+}

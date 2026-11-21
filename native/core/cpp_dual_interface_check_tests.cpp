@@ -103,6 +103,24 @@ int main(int argc,char** argv) try {
             throw std::runtime_error(
                 "An unrelated namespaced Muestra blocked the true dual owner");
     }
+    // A class in #if 0 does not exist for compiled C++. It cannot satisfy
+    // the protected public dual-interface contract even when its text
+    // precisely matches the published ConValor class.
+    {
+        auto disabled=policy;
+        const auto start=disabled.original_source.find("\nclass ConValor {");
+        const auto ending=start==std::string::npos?std::string::npos:
+            disabled.original_source.find("\n};",start);
+        if(start==std::string::npos||ending==std::string::npos)
+            throw std::runtime_error("Authentic ConValor class missing");
+        const auto prior=disabled.original_source.substr(
+            start+1,ending+3-start-1);
+        disabled.original_source.erase(start+1,ending+3-start-1);
+        disabled.original_source+="\n#if 0\n"+prior+"\n#endif\n";
+        if(lgaed::curriculum::cpp_dual_interface_detail::valid(disabled))
+            throw std::runtime_error(
+                "A disabled ConValor definition authenticated the dual interface");
+    }
     if(!lgaed::curriculum::cpp_dual_interface_matches(policy,candidate))
         throw std::runtime_error(
             "Protected dual-interface declarations, supplied data, "

@@ -25,8 +25,19 @@ inline std::optional<Tokens> lexical(std::string_view source) {
         return {};
     Tokens result;
     result.reserve(scanned->size());
-    for(const auto& token:*scanned)
-        if(!token.starts_with("comment:"))result.push_back(token);
+    for(const auto& token:*scanned) {
+        if(token.starts_with("comment:"))continue;
+        if(token.starts_with("directive:")) {
+            // Preprocessing can remove a definition entirely, replace an
+            // owner identifier or generate one. Tokens alone cannot prove
+            // which class/alias will exist after arbitrary #if/#define.
+            // The current authored single-file lessons use only literal
+            // includes, which introduce no local declaration tokens.
+            if(!code_format::cpp_literal_include(token))return {};
+            continue;
+        }
+        result.push_back(token);
+    }
     return result;
 }
 inline bool open_brace(std::string_view token) {

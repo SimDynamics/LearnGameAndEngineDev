@@ -123,6 +123,29 @@ int main(int argc,char** argv) try {
             throw std::runtime_error(
                 "An unrelated nested type rejected the valid global Muestra");
     }
+    // The compiled program has no usable global polymorphic owner when
+    // its only correct alias is disabled by preprocessing. The old lexical
+    // search counted tokens beneath #if 0 as if they were compiled.
+    {
+        const std::string alias=
+            "using Muestras = std::vector<std::unique_ptr<Muestra>>;";
+        auto forged=policy;
+        const auto position=forged.original_source.find("\n"+alias);
+        if(position==std::string::npos)
+            throw std::runtime_error("Authentic global Muestras alias missing");
+        forged.original_source.erase(position+1,alias.size());
+        forged.original_source+="\n#if 0\n"+alias+"\n#endif\n";
+        if(lgaed::curriculum::cpp_interface_collection_detail::valid(forged))
+            throw std::runtime_error(
+                "An alias in a disabled preprocessor branch authenticated an owner");
+        auto documented=policy;
+        documented.original_source=
+            "// #if 0\n// #define Muestras Fake\n"+
+            documented.original_source;
+        if(!lgaed::curriculum::cpp_interface_collection_detail::valid(documented))
+            throw std::runtime_error(
+                "Inert preprocessing words in a comment rejected a real owner");
+    }
     if(!lgaed::curriculum::cpp_interface_collection_matches(policy,candidate))
         throw std::runtime_error(
             "Edited source modified an immutable declaration, factory, "
