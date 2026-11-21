@@ -18,15 +18,23 @@ permissions:
 jobs:
   authoring-matching-text:
     name: Actual published matching IDs, immutable answers and UTF-16 marks
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 10
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     steps:
       - name: Checkout exact Codex publication
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Select Python for native Windows QA
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Run authored matching text compatibility and negative contracts
         run: >-
-          python3 -B -m unittest discover
+          python -B -m unittest discover
           -s scripts/curriculum
           -p test_math_matching_text_compat.py -v

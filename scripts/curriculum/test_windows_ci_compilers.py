@@ -18,7 +18,16 @@ class WindowsCompilerPolicy(unittest.TestCase):
     def test_migrated_curriculum_audits_are_native_windows_python(self):
         for name in (
                 "programming-multicourse-contract.yml",
-                "codex-readability-audit.yml"):
+                "codex-readability-audit.yml",
+                "p2-u2-client-runtime.yml",
+                "codex-u3-diagnostic-facts.yml",
+                "simulation-core-codex.yml",
+                "codex-cpp-expression-repair.yml",
+                "codex-assetcheck-u4l7-format.yml",
+                "codex-general-choice-editorial.yml",
+                "codex-math-matching-text.yml",
+                "codex-open-battery-contract.yml",
+                "codex-p3-ownership-authoring.yml"):
             with self.subTest(workflow=name):
                 source = (WORKFLOWS / name).read_text(encoding="utf-8")
                 self.assertNotIn("ubuntu-", source)

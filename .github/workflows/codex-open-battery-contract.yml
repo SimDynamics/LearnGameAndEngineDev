@@ -23,15 +23,23 @@ permissions:
 
 jobs:
   contracts:
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 6
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Select Python for native Windows QA
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Verify root-only authoring and full historical preservation
-        run: python3 -B -m unittest discover -s scripts/curriculum -p test_open_battery_contract.py -v
+        run: python -B -m unittest discover -s scripts/curriculum -p test_open_battery_contract.py -v
       - name: Verify stateful reduction authoring and historical preservation
-        run: python3 -B -m unittest discover -s scripts/curriculum -p test_reduction_contract.py -v
+        run: python -B -m unittest discover -s scripts/curriculum -p test_reduction_contract.py -v
       - name: Verify integer CMake batteries and earlier client declarations
-        run: python3 -B -m unittest discover -s scripts/curriculum -p test_integer_battery_contract.py -v
+        run: python -B -m unittest discover -s scripts/curriculum -p test_integer_battery_contract.py -v

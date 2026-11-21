@@ -16,12 +16,21 @@ permissions:
 jobs:
   exact-original-client:
     name: Preserve U2L3 original editor and reject fake EOF contracts
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 6
+    env:
+      PYTHONPATH: scripts/curriculum
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     steps:
       - name: Read published curriculum, without modifying Work's lesson
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Select Python for native Windows QA
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Verify immutable U2 client and exact-runtime declaration
-        run: PYTHONPATH=scripts/curriculum python3 -m unittest -v test_p2_u2_client_runtime
+        run: python -B -m unittest -v test_p2_u2_client_runtime

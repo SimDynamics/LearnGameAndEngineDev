@@ -19,20 +19,28 @@ permissions:
 jobs:
   real-editorial-choice:
     name: Exact owner, preserved history and rejected false revisions (Python)
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 15
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     steps:
       - name: Read exact Codex publication
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Select Python for native Windows QA
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Test real course against shared authoring and curricular validators
         run: >-
-          python3 -B -m unittest discover
+          python -B -m unittest discover
           -s scripts/curriculum
           -p test_general_choice_revision_live.py -v
       - name: Check atomic question, explanation and indexed hint revisions
         run: >-
-          python3 -B -m unittest discover
+          python -B -m unittest discover
           -s scripts/curriculum
           -p test_review_feedback_prose_revision.py -v

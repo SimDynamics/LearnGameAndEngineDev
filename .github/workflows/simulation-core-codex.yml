@@ -23,15 +23,23 @@ permissions:
 jobs:
   authoring-contracts:
     name: Authoring and parser contracts (Python)
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 7
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     steps:
       - name: Read exact Codex revision
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Select Python for native Windows QA
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Validate source, scenarios and input contracts
-        run: python3 -B -m unittest discover -s scripts/curriculum -p test_simulation.py -v
+        run: python -B -m unittest discover -s scripts/curriculum -p test_simulation.py -v
 
   portable-model-msvc:
     # These portable C++ assertions run on Windows, but do NOT replace
