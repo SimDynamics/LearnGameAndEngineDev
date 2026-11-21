@@ -237,4 +237,15 @@ add_test(NAME native.u6l19_case_split_state
        "${_u6l19_dir}/isolated-profile")
 set_tests_properties(native.u6l19_case_split_state PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
 
+# U3 diagnostics and reports: compile and execute the original MSVC runner
+# with source-authenticated, in-memory root objectives. This is the full,
+# unchanged Windows production worker, not a modeled compiler receipt.
+add_executable(lgaed_u3_runtime_semantics_tests
+    "${_lgaed_root}/native/platform/windows/u3_runtime_semantics_tests.cpp")
+target_link_libraries(lgaed_u3_runtime_semantics_tests PRIVATE lgaed_platform_windows)
+add_test(NAME native.u3_runtime_semantics
+    COMMAND lgaed_u3_runtime_semantics_tests)
+set_tests_properties(native.u3_runtime_semantics
+    PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
+
 
