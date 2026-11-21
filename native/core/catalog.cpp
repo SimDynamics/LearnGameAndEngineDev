@@ -380,19 +380,26 @@ std::size_t reset_catalog_progress(state::StateData& data,const CatalogScope& sc
                 }
         }
     }
-    // If every indexed unit of a selected course belongs to a new edition,
-    // the old course_<id>_completed flag is a retired-edition receipt. The
-    // new progress is computed from the new lesson IDs, not from that flag.
-    // A mixed/legacy course reset still removes its original course receipt.
+    // The old course_<id>_completed flag belongs to the retired edition.
+    // Preserve it for an edition-only reset even when the caller lists just
+    // course + lesson, omitting the intermediate unit. A mixed/historical
+    // scope, or a request for only the course, still clears that old receipt.
     std::set<std::string> preserved_legacy_course_completion;
     for(const auto& course:scope.courses) {
         const auto prefix=course+"__";
-        bool selected_units=false, edition_only=true;
+        bool selected_descendants=false, edition_only=true;
         for(const auto& unit:scope.units) if(unit.starts_with(prefix)) {
-            selected_units=true;
+            selected_descendants=true;
             if(!edition_unit_of_course(unit,course))edition_only=false;
         }
-        if(selected_units&&edition_only)
+        for(const auto& lesson:scope.lessons) if(lesson.starts_with(prefix)) {
+            selected_descendants=true;
+            const auto boundary=lesson.rfind("__");
+            if(boundary==std::string::npos||
+               !edition_unit_of_course(std::string_view(lesson).substr(0,boundary),course))
+                edition_only=false;
+        }
+        if(selected_descendants&&edition_only)
             preserved_legacy_course_completion.insert("course_"+course+"_completed");
     }
     std::size_t erased = 0;
