@@ -531,6 +531,51 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
         second_goal.output_check&&lesson.compiler_puzzles_required&&
         !first_source.empty()&&!second_source.empty(),
         "The current U2L5 regression no longer owns two required executable objectives");
+    // The previous U2L5 publication genuinely had THREE independent editors.
+    // Preserve its protected reading/layout snapshot separately from today's
+    // two-editor chain; never replace that archive with the current page or
+    // count archived code as an active student requirement.
+    const auto archived=std::ranges::find_if(lesson.state_layout.retirement_history,
+        [](const auto& old){
+            return old.current.size()>7&&old.pages.size()==old.current.size()&&
+                old.current[6].blocks.size()>6&&old.current[7].blocks.size()>9&&
+                old.current[6].blocks[2]=="block_0006_0002"&&
+                old.current[6].blocks[6]=="block_0006_0006"&&
+                old.current[7].blocks[9]=="block_0007_0009";
+        });
+    check(archived!=lesson.state_layout.retirement_history.end()&&
+        archived->compiler_puzzles_required&&!archived->raw_json.empty()&&
+        !archived->sha256.empty(),
+        "The previous three-editor U2L5 publication lost its authenticated reading archive");
+    struct HistoricalCompiler{std::size_t page,block;std::string_view identity,stdout;};
+    const std::array<HistoricalCompiler,3> historical_compilers{{
+        {6,2,"block_0006_0002","Parte: 4.5 m"},
+        {6,6,"block_0006_0006","Parte: 4 m"},
+        {7,9,"block_0007_0009","Parte: 4 m"}
+    }};
+    for(const auto& expected:historical_compilers){
+        const auto& original=archived->pages[expected.page].blocks.at(expected.block);
+        check(original.type==curriculum::BlockType::cpp_compiler&&
+            original.stable_id==expected.identity&&original.output_check&&
+            original.output_check->cases.size()==1&&
+            original.output_check->cases.front().outputs.front()==expected.stdout,
+            "An archived U2L5 editor lost its independent original stdout objective");
+    }
+    const auto preserved_edge=[&](std::string_view target,std::string_view prerequisite){
+        return std::ranges::any_of(archived->activity_after,[&](const auto& relation){
+            return relation.activity==target&&relation.prerequisites.size()==1&&
+                relation.prerequisites.front()==prerequisite;
+        });
+    };
+    check(preserved_edge("block_0006_0006","block_0006_0002")&&
+        preserved_edge("block_0007_0009","block_0006_0006")&&
+        std::ranges::none_of(lesson.pages,[&](const auto& current){
+            return std::ranges::any_of(current.blocks,[](const auto& block){
+                return block.type==curriculum::BlockType::cpp_compiler&&
+                    (block.stable_id=="block_0006_0006"||
+                     block.stable_id=="block_0007_0009");
+            });
+        }),"The historic U2L5 compiler dependencies leaked into the active edition");
     // A fresh QA bookmark at page six is not enough for forward navigation:
     // the current lesson requires the first six pages and their ordinary
     // activities. Start on page zero, evaluate the authored answers and record
