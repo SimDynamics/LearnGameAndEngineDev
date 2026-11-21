@@ -971,6 +971,57 @@ void capacity() {
         })cpp",rules,true,
         "A reflective comparison must not erase a genuine named quotient");
 
+    // A pure self-comparison in the condition of ?: is a constant
+    // decision, even when the two branches have different literal values.
+    // The same check applies to unparenthesized assignment and return.
+    for(const auto* neutral:{
+        "(capacidad == capacidad ? 1 : 0) - 1",
+        "(capacidad not_eq capacidad ? 1 : 0)",
+        "(capacidad < capacidad ? 1 : 0)",
+        "(capacidad >= capacidad ? 1 : 0) - 1",
+        "((capacidad) == ((capacidad)) ? 1 : 0) - 1",
+        "(capacidad - capacidad ? 1 : 0)"
+    }) {
+        verify("int cajas_para(int piezas) { const int capacidad{4}; "
+               "return (piezas + 3) / 4 + "+std::string(neutral)+"; }",
+            rules,false,"Constant ternary condition fabricated a named dependency");
+    }
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int bandera = capacidad == capacidad ? 1 : 0;
+            return (piezas + 3) / 4 + bandera - 1;
+        })cpp",rules,false,
+        "An unparenthesized assignment laundered a constant decision via an alias");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return capacidad == capacidad ? (piezas + 3) / 4 : 0;
+        })cpp",rules,false,
+        "An unparenthesized return must not credit a constant condition");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad == capacidad ? 1 : 0) - 1;
+        })cpp",rules,true,
+        "A constant ternary condition erased a genuine separately named calculation");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad == 4 ? 1 : 0) +
+                   (capacidad != 5 ? 1 : 0) - 2;
+        })cpp",rules,true,
+        "Data-dependent ternary conditions cannot be discarded as constants");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   ((capacidad == capacidad && piezas > 0) ? 1 : 0);
+        })cpp",rules,true,
+        "A self-comparison within a larger input-dependent test is not a full constant condition");
+
     // A complement of a *different expression* does not generally
     // cancel this constant. Preserve its lexical evidence, leaving numeric
     // correctness to the independent compiled counterfactual.

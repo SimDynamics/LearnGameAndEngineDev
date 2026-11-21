@@ -582,6 +582,32 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
         }
         return false;
     };
+    // A condition that is provably independent of the named int cannot
+    // contribute evidence merely because its ternary chooses between two
+    // different values. Check the COMPLETE top-level condition, not an
+    // arbitrary comparison buried in a larger data-dependent condition.
+    // This also covers unparenthesized return and assignment expressions.
+    const auto constant_ternary_condition=[&](std::size_t first,
+            std::size_t last) {
+        std::size_t question=last,colon=last,depth=0;
+        for(auto at=first;at<last;++at) {
+            if(op(t[at],"(")){++depth;continue;}
+            if(op(t[at],")")){
+                if(!depth)return false;
+                --depth;continue;
+            }
+            if(depth)continue;
+            if(op(t[at],"?")) {
+                if(question!=last)return false;
+                question=at;
+            }else if(op(t[at],":")) {
+                if(colon!=last)return false;
+                colon=at;
+            }
+        }
+        return !depth&&question<colon&&colon<last&&i<question&&
+            neutral(first,question);
+    };
     // A complete parenthesized subexpression can occur anywhere in a
     // return, initializer or alias. Only tokens already in that exact
     // expression are suppressed, never all other uses of the constant.
@@ -603,7 +629,7 @@ inline bool neutral_named_expression_use(const Tokens& t,std::size_t i,
         --first;
     auto last=i+1;
     while(last<t.size()&&!op(t[last],";")&&!op(t[last],"}"))++last;
-    return neutral(first,last);
+    return constant_ternary_condition(first,last)||neutral(first,last);
 }
 // In the built-in comma operator, every left operand is evaluated and
 // discarded. A plain named integer or side-effect-free arithmetic on that
@@ -765,6 +791,7 @@ inline bool productive(const Tokens& t,std::size_t i,
                 if(!op(t[at],"||"))or_only=false;
             }
         }
+        if(constant_ternary_condition(open+1,*close))return true;
         if(!ambiguous&&!logical_operators.empty()&&(and_only||or_only)) {
             const auto literal_operand=[&](std::size_t first,std::size_t last,
                     bool desired) {
