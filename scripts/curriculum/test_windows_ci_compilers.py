@@ -53,6 +53,23 @@ class WindowsCompilerPolicy(unittest.TestCase):
         for name in ("android-code-format-compat.yml", "build-clang23-android.yml"):
             self.assertFalse((WORKFLOWS / name).exists(), name)
 
+    def test_all_workflow_runners_and_python_commands_remain_windows_only(self):
+        # A new workflow or matrix entry cannot silently restore Linux jobs
+        # after the C++23/MSVC migration, even if a known filename changes.
+        workflows = sorted((*WORKFLOWS.glob("*.yml"), *WORKFLOWS.glob("*.yaml")))
+        self.assertTrue(workflows)
+        linux_runner = re.compile(
+            r"(?im)^\s*(?:runs-on:|[-]\s*os:|os:)\s*(?:ubuntu|linux|macos)\b")
+        linux_matrix = re.compile(
+            r"(?im)^\s*-\s*(?:ubuntu|linux|macos)(?:[-\s]|$)")
+        for path in workflows:
+            with self.subTest(workflow=path.name):
+                source = path.read_text(encoding="utf-8")
+                self.assertNotRegex(source, linux_runner)
+                self.assertNotRegex(source, linux_matrix)
+                self.assertNotIn("ubuntu-", source.lower())
+                self.assertNotRegex(source, r"(?i)\bpython3(?:[.]exe)?\b")
+
     def test_active_workflows_do_not_invoke_gcc_or_desktop_clang(self):
         # Match executable/runner tokens, not words like the curricular
         # explanation of a compiler or the "Windows" product description.

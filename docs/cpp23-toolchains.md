@@ -1,5 +1,7 @@
 # Compilador C++23 para Android: configuración predeterminada y alternativa
 
+> **Archivo histórico de la aplicación Android.** Este documento describe el antiguo APK, sus herramientas Clang y WASI, y sus comandos Gradle. No describe la configuración de LearnGameAndEngineDev para Windows ni es una instrucción para instalar compiladores en el proyecto actual. La cadena vigente de Windows es MSVC x64 con C++23, según [WINDOWS_NATIVE.md](WINDOWS_NATIVE.md) y `toolchains/windows.versions.json`. Los procedimientos siguientes se conservan solo como referencia histórica.
+
 Este proyecto compila C++23 localmente en Android ARM64 y ejecuta los binarios WebAssembly mediante WASI.
 
 ## Configuración predeterminada
