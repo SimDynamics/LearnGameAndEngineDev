@@ -310,8 +310,26 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo+3;})CPP";
              *variant,"",false,true);
         ++emitted;
     }
-    if(emitted!=45)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 45 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
+
+    // Exercise an unchanged Windows CRLF source under a private state probe.
+    // The learner's bytes stay untouched, including the trailing // comment.
+    const std::string windows_source =
+        "#include <iostream>\r\n"
+        "int main() {\r\n"
+        "    int aforo{5};\r\n"
+        "    int anterior=aforo;\r\n"
+        "    aforo+=3; // comentario del estado\r\n"
+        "    std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo;\r\n"
+        "}\r\n";
+    const auto windows_variant=cpp_local_int_override(
+        windows_source,{"aforo",4,{},true});
+    if(!windows_variant||windows_variant->find("comentario del estado\r\n")==std::string::npos)
+        throw std::runtime_error("Cannot preserve or instrument Windows CRLF");
+    emit(directory,"u2l3_crlf_after_update",*windows_variant,
+         "Antes: 5\nAhora: 12",true);
+    ++emitted;
+    if(emitted!=46)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 46 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';

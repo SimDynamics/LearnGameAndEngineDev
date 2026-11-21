@@ -34,10 +34,10 @@ def main() -> int:
         output = Path(tmp)
         emitted = subprocess.run([str(args.emitter.resolve()), str(output)],
                                  capture_output=True, timeout=30, check=True)
-        if b"PASS generated 45" not in emitted.stdout:
+        if b"PASS generated 46" not in emitted.stdout:
             raise RuntimeError("The real source-mutation fixture did not finish")
         sources = sorted(output.glob("*.cpp"))
-        if len(sources) != 45:
+        if len(sources) != 46:
             raise RuntimeError(f"Expected exactly 43 source programs, got {len(sources)}")
         # Verify that the emitted U2L5 originals remain the EXACT currently
         # authored code references, not a convenient rewritten illustration.
@@ -162,12 +162,12 @@ def main() -> int:
                 accepted += 1
             else:
                 rejected += 1
-        if (accepted, rejected, guarded) != (37, 6, 2):
+        if (accepted, rejected, guarded) != (38, 6, 2):
             raise RuntimeError(f"Incorrect execution counts: {(accepted, rejected, guarded)}")
         print(f"PASS {args.compiler} on {sys.platform}: {accepted} positive "
               f"original/probe executions, {rejected} actual hard-coded-copy "
               "counterexamples rejected, 2 opaque no-ops blocked; 2 actual incomplete U2L5 starters " 
-              "observed; 47 real C++ compile-and-run cases.")
+              "observed; 48 real C++ compile-and-run cases.")
     return 0
 
 

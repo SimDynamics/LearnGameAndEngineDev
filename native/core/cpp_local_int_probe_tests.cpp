@@ -617,6 +617,34 @@ void opaque_noop_requires_runtime_state_change() {
         "A learner declaration shadowed a private snapshot");
 }
 
+
+void crlf_after_update_preserves_source_and_comment() {
+    // The Windows editor may hold CRLF. The private instrumented file may
+    // use LF for new lines, but no byte of the learner's source is rewritten.
+    const std::string input =
+        "#include <iostream>\r\n"
+        "int main() {\r\n"
+        "    int aforo{5};\r\n"
+        "    int anterior=aforo;\r\n"
+        "    aforo+=3; // comentario de la actualización\r\n"
+        "    std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo;\r\n"
+        "}\r\n";
+    const auto original=input;
+    const auto varied=cpp_local_int_override(input,{"aforo",4,{},true});
+    require(varied.has_value()&&input==original,
+        "A private Windows CRLF probe changed the student's source");
+    constexpr std::string_view snapshot="lgaed_local_int_before_6cb8e71d";
+    require(varied->find("const int "+std::string(snapshot)+" = aforo;")!=
+                std::string::npos &&
+            varied->find("aforo+=3;\n    aforo += 4;\n")!=std::string::npos &&
+            varied->find("// comentario de la actualización\r\n")!=
+                std::string::npos &&
+            varied->find("std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo;")!=
+                std::string::npos &&
+            varied->find("\r\n")!=std::string::npos,
+        "A Windows CRLF or an original comment was lost during isolated probing");
+}
+
 void numeric_literal_identity_distinguishes_one_from_ten() {
     using lgaed::curriculum::cpp_local_int_probe_detail::int_probe_literal_is;
     for(const auto* literal:{
@@ -703,6 +731,7 @@ int main() {
         neutral_updates_cannot_fake_u2l3_increase();
         composed_neutral_updates_cannot_fake_u2l3_increase();
         opaque_noop_requires_runtime_state_change();
+        crlf_after_update_preserves_source_and_comment();
         numeric_literal_identity_distinguishes_one_from_ten();
         std::cout << "PASS local int probes: equivalent initialization, independent "
                      "variables, copy state, safe token positions.\n";
