@@ -34,10 +34,10 @@ def main() -> int:
         output = Path(tmp)
         emitted = subprocess.run([str(args.emitter.resolve()), str(output)],
                                  capture_output=True, timeout=30, check=True)
-        if b"PASS generated 43" not in emitted.stdout:
+        if b"PASS generated 45" not in emitted.stdout:
             raise RuntimeError("The real source-mutation fixture did not finish")
         sources = sorted(output.glob("*.cpp"))
-        if len(sources) != 43:
+        if len(sources) != 45:
             raise RuntimeError(f"Expected exactly 43 source programs, got {len(sources)}")
         # Verify that the emitted U2L5 originals remain the EXACT currently
         # authored code references, not a convenient rewritten illustration.
@@ -122,11 +122,11 @@ def main() -> int:
                     f"earned its required output: {owner}, actual={actual!r}, "
                     f"exit={initial_run.returncode}, stderr={initial_run.stderr!r}")
 
-        accepted = rejected = 0
+        accepted = rejected = guarded = 0
         for source in sources:
             evidence = source.with_suffix(".expected").read_bytes()
             kind, separator, expected = evidence.partition(b"\n")
-            if not separator or kind not in {b"A", b"R"}:
+            if not separator or kind not in {b"A", b"R", b"K"}:
                 raise RuntimeError(f"Missing or invalid expected stdout: {source.name}")
             binary = source.with_suffix(".exe" if sys.platform == "win32" else ".bin")
             command = build_command(args.compiler, source, binary)
@@ -139,6 +139,14 @@ def main() -> int:
                     + compile_run.stderr.decode(errors="replace")[-4000:])
             observed = subprocess.run([str(binary)], cwd=output,
                                       capture_output=True, timeout=20, check=False)
+            if kind == b"K":
+                if observed.returncode != 1 or observed.stderr or observed.stdout:
+                    raise RuntimeError(
+                        f"Opaque no-op {source.name} escaped the private guard: "
+                        f"exit={observed.returncode}, stdout={observed.stdout!r}, "
+                        f"stderr={observed.stderr!r}")
+                guarded += 1
+                continue
             if observed.returncode or observed.stderr:
                 raise RuntimeError(
                     f"Student program {source.name} terminated abnormally: "
@@ -154,12 +162,12 @@ def main() -> int:
                 accepted += 1
             else:
                 rejected += 1
-        if (accepted, rejected) != (37, 6):
-            raise RuntimeError(f"Incorrect execution counts: {(accepted, rejected)}")
+        if (accepted, rejected, guarded) != (37, 6, 2):
+            raise RuntimeError(f"Incorrect execution counts: {(accepted, rejected, guarded)}")
         print(f"PASS {args.compiler} on {sys.platform}: {accepted} positive "
               f"original/probe executions, {rejected} actual hard-coded-copy "
-              "counterexamples rejected; 2 actual incomplete U2L5 starters " 
-              "observed; 45 real C++ compile-and-run cases.")
+              "counterexamples rejected, 2 opaque no-ops blocked; 2 actual incomplete U2L5 starters " 
+              "observed; 47 real C++ compile-and-run cases.")
     return 0
 
 

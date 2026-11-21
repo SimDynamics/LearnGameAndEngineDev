@@ -587,6 +587,36 @@ void composed_neutral_updates_cannot_fake_u2l3_increase() {
     }
 }
 
+void opaque_noop_requires_runtime_state_change() {
+    const std::string start=
+        "#include <iostream>\nint main(){int aforo{5};int anterior=aforo;";
+    const std::string output=
+        "std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo+3;}";
+    constexpr std::string_view marker="lgaed_local_int_before_6cb8e71d";
+    for(const auto* statement:{
+        "aforo=aforo^0;", "aforo=aforo|0;", "aforo=aforo<<0;",
+        "aforo=aforo&(-1);", "aforo=aforo+(7%7);"
+    }) {
+        const auto altered=cpp_local_int_override(start+statement+output,
+            {"aforo",4,{},true});
+        require(altered&&altered->find("const int "+std::string(marker)+
+            " = aforo;")!=std::string::npos&&
+            altered->find(std::string(statement)+"\n    aforo += 4;\n")!=
+                std::string::npos&&
+            altered->find(" - (4LL) <= static_cast<long long>("+
+                std::string(marker))!=std::string::npos,
+            "Opaque unchanged state lost its runtime guard");
+    }
+    const auto genuine=cpp_local_int_override(
+        start+"aforo=(aforo|0)+3;"+output,{"aforo",4,{},true});
+    require(genuine&&genuine->find("aforo=(aforo|0)+3;\n    aforo += 4;\n")!=
+        std::string::npos,"A genuine arithmetic increase was rejected");
+    require(!cpp_local_int_override(
+        start+"int lgaed_local_int_before_6cb8e71d=9;aforo+=3;"+output,
+        {"aforo",4,{},true}),
+        "A learner declaration shadowed a private snapshot");
+}
+
 void numeric_literal_identity_distinguishes_one_from_ten() {
     using lgaed::curriculum::cpp_local_int_probe_detail::int_probe_literal_is;
     for(const auto* literal:{
@@ -672,6 +702,7 @@ int main() {
         changed_increase_is_observed_at_the_actual_update();
         neutral_updates_cannot_fake_u2l3_increase();
         composed_neutral_updates_cannot_fake_u2l3_increase();
+        opaque_noop_requires_runtime_state_change();
         numeric_literal_identity_distinguishes_one_from_ten();
         std::cout << "PASS local int probes: equivalent initialization, independent "
                      "variables, copy state, safe token positions.\n";

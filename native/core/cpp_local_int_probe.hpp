@@ -606,7 +606,7 @@ inline bool int_probe_trivial_noop(const Tokens& code,std::size_t statement,
 // syntax. A single extra addition is made AFTER the complete statement:
 // a copy taken before it must stay independent; a copy made afterwards
 // must see the modified state. Nested or expression-only writes fail closed.
-inline std::optional<std::size_t> first_state_update(
+inline std::optional<std::pair<std::size_t,std::size_t>> first_state_update(
         const Tokens& code,std::size_t after,std::size_t closing,
         std::string_view variable) {
     const auto wanted="id:"+std::string(variable);
@@ -651,7 +651,7 @@ inline std::optional<std::size_t> first_state_update(
                     i=*statement;
                     continue;
                 }
-                return statement;
+                return std::pair{i,*statement};
             }
         }
         if(t=="op:{")++braces;
@@ -693,19 +693,53 @@ inline std::optional<std::size_t> first_state_update(
         if (!assignment) return {};
         end = *assignment;
     }
-    if(probe.after_update) {
-        const auto updated=cpp_local_int_probe_detail::first_state_update(
-            *code,end+1,body->second,probe.variable);
-        if(!updated)return {};
-        end=*updated;
+    std::optional<std::size_t> update_begin;
+    if (probe.after_update) {
+        const auto updated = cpp_local_int_probe_detail::first_state_update(
+            *code, end + 1, body->second, probe.variable);
+        if (!updated) return {};
+        update_begin = (*code)[updated->first].begin;
+        end = updated->second;
     }
     const auto offset = (*code)[end].end;
+    if(probe.after_update) {
+        // An output perturbation alone does not prove a real increase.
+        // A learner may leave the int unchanged with XOR 0, OR 0, or a
+        // helper, and compensate at print time. The private executable
+        // must therefore observe a strictly larger int across the actual
+        // selected statement; this code is never a learner draft or receipt.
+        constexpr std::string_view saved = "lgaed_local_int_before_6cb8e71d";
+        if(source.find(saved) != source.npos || !update_begin ||
+           *update_begin >= offset)return {};
+        std::string variant;
+        variant.reserve(source.size() + probe.variable.size()*3 + 250);
+        variant += source.substr(0,*update_begin);
+        variant += "\n    const int ";
+        variant += saved;
+        variant += " = ";
+        variant += probe.variable;
+        variant += ";\n    ";
+        variant += source.substr(*update_begin,offset-*update_begin);
+        variant += "\n    ";
+        variant += probe.variable;
+        variant += " += ";
+        variant += std::to_string(probe.replacement);
+        variant += ";\n    if (static_cast<long long>(";
+        variant += probe.variable;
+        variant += ") - (";
+        variant += std::to_string(probe.replacement);
+        variant += "LL) <= static_cast<long long>(";
+        variant += saved;
+        variant += ")) return 1;\n";
+        variant += source.substr(offset);
+        return variant;
+    }
     std::string variant;
     variant.reserve(source.size() + probe.variable.size() + 32);
     variant += source.substr(0, offset);
     variant += "\n    ";
     variant += probe.variable;
-    variant += probe.after_update?" += ":" = ";
+    variant += " = ";
     variant += std::to_string(probe.replacement);
     variant += ";\n";
     variant += source.substr(offset);

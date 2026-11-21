@@ -32,10 +32,11 @@ void write(const std::filesystem::path& path,std::string_view bytes) {
 }
 
 void emit(const std::filesystem::path& directory,std::string_view name,
-        std::string_view source,std::string_view expected,bool must_match) {
+        std::string_view source,std::string_view expected,bool must_match,
+        bool expect_guard_failure=false) {
     const auto prefix=directory/std::string(name);
     write(prefix.string()+".cpp",source);
-    std::string verdict=must_match?"A\n":"R\n";
+    std::string verdict=expect_guard_failure?"K\n":must_match?"A\n":"R\n";
     verdict+=expected;
     write(prefix.string()+".expected",verdict);
 }
@@ -294,8 +295,23 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo+3;})CPP";
             throw std::runtime_error(
                 "A non-unit multiplier was incorrectly rejected as a no-op");
     }
-    if(emitted!=43)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 43 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
+
+    // Opaque unchanged state used to pass both the original output and all
+    // counterfactual outputs. The private run now rejects it by exit status.
+    for(const auto* noop:{"aforo=aforo^0;","aforo=aforo|0;"}) {
+        const auto original=std::string(
+            "#include <iostream>\nint main(){int aforo{5};"
+            "int anterior=aforo;")+noop+
+            "std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo+3;}";
+        const auto variant=cpp_local_int_override(original,
+            {"aforo",4,{},true});
+        if(!variant)throw std::runtime_error("Cannot instrument opaque no-op");
+        emit(directory,std::string("reject_opaque_noop_")+std::to_string(emitted),
+             *variant,"",false,true);
+        ++emitted;
+    }
+    if(emitted!=45)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 45 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';
