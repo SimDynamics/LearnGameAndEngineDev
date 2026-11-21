@@ -69,7 +69,15 @@ int main() {
                 result.target_type=="EXECUTABLE"&&
                 result.artifact.extension()==L".exe"&&
                 std::filesystem::is_regular_file(result.artifact),
-                "Windows child process did not complete its real MSVC compilation and execution");
+                std::string("Windows child process did not complete its real MSVC compilation and execution: ")+
+                "error="+result.error_utf8+
+                " compile_status="+std::to_string(static_cast<int>(result.compilation.status))+
+                " compile_exit="+std::to_string(result.compilation.exit_code.value_or(999999u))+
+                " compile_stdout="+result.compilation.stdout_bytes+
+                " compile_stderr="+result.compilation.stderr_bytes+
+                " run_status="+std::to_string(static_cast<int>(result.execution.status))+
+                " run_exit="+std::to_string(result.execution.exit_code.value_or(999999u))+
+                " target="+result.target_type);
             const auto evidence=capture_cpp_execution(req,result);
             const auto verdict=evaluate_cpp_output_check(*block.output_check,evidence,req.revision);
             require(verdict.verdict==OutputVerdict::correct,
