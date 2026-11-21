@@ -147,6 +147,21 @@ int main() {
         "std::cout<<etiqueta;}",
         {"codigo","003",initialized,{}}),
         "A later grouped initializer hid a string dependency");
+    const std::string dependent=
+        "#include <string>\nint main(){"
+        "std::string edificio{\"Aula\"}, etiqueta{edificio + \"-04\"};"
+        "std::cout<<etiqueta;}";
+    const auto changed_label=cpp_local_string_override(dependent,
+        {"etiqueta","CONTROL",initialized,{}});
+    require(!cpp_local_string_override(dependent,
+                {"edificio","Sala Norte",initialized,{}})&&
+            changed_label&&
+            changed_label->find(
+                "std::string edificio{\"Aula\"}, etiqueta{edificio + \"-04\"};\n"
+                "    etiqueta = std::string{")!=std::string::npos&&
+            changed_label->find("std::cout<<etiqueta;")!=std::string::npos,
+        "A later grouped string must remain independently variable without "
+        "allowing a probe to miss its source dependency");
 }
 
 void after_real_assignment_and_noexcept() {
