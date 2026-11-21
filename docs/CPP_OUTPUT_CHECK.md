@@ -150,6 +150,21 @@ y las incorrectas antes de retirar la ficha. Las regresiones de Python,
 las sondas privadas o un éxito de stdout por separado **no** acreditan
 la aceptación visual y auditiva de la aplicación instalada.
 
+La prueba compartida `native.p3_ownership_shared_state` ejecuta el
+controlador WinRT de los 14 propietarios en un solo perfil QA aislado:
+comprueba ambos cargadores (completo y de progreso), recibos históricos,
+borradores, declaraciones de origen y ausencia de promoción automática
+de aciertos antiguos. Está registrada en CMake para los perfiles
+`LGAED_STATE_IMPORT_QA_ONLY`, `LGAED_READER_BUILD_QA_ONLY` y la
+compilación Windows normal con `BUILD_TESTING`. Se ejecuta desde el
+árbol compilado con
+`ctest -R "^native[.]p3_ownership_shared_state$" --output-on-failure`.
+`test_p3_ownership_authoring.py` verifica también su registro y la
+conexión de los 14 campos al motor; CI lanza esa comprobación si cambian
+las declaraciones, CMake o las piezas nativas que las consumen.
+Que CI valide el registro no significa que haya ejecutado la prueba WinRT:
+ésta requiere una compilación nativa Windows.
+
 ## Asignación por copia independiente en una clase
 
 La raíz de una lección española existente con mapa de estado v2 puede declarar
