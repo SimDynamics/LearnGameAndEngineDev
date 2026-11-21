@@ -57,9 +57,12 @@ int main(int argc,char** argv) try {
     {
         auto changed=original;
         const auto declaration="class MedidaIdentificada : public Medida {";
-        const auto at=changed.find(declaration);
+        // The documented variant deliberately has the *same text* in a
+        // preceding comment. Edit only the actual line-leading definition,
+        // otherwise this negative QA accidentally leaves the real base intact.
+        const auto at=changed.find("\n"+std::string(declaration));
         if(at==changed.npos)throw std::runtime_error("Original derived class missing");
-        changed.replace(at,std::string_view(declaration).size(),
+        changed.replace(at+1,std::string_view(declaration).size(),
                         "class MedidaIdentificada {");
         const auto documented="// "+std::string(declaration)+"\n"+changed;
         const auto lexed=lgaed::curriculum::cpp_class_structure::lexical(documented);
