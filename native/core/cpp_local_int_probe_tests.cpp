@@ -681,6 +681,42 @@ void private_marker_in_comments_and_strings_is_not_an_identifier() {
         "A real local identifier collision was mistaken for inert text");
 }
 
+void exact_authored_increase_cannot_be_hidden_in_stdout() {
+    using lgaed::curriculum::CppLocalIntCheck;
+    using lgaed::curriculum::cpp_local_int_check_valid;
+    const CppLocalIntProbe exact{"aforo",4,{"Antes: 5\\nAhora: 12"},true,3};
+    require(cpp_local_int_check_valid({{exact}}),
+        "An independently authored positive int increase was rejected");
+    const auto valid = cpp_local_int_override(
+        "#include <iostream>\\nint main(){int aforo{5};int anterior=aforo;"
+        "aforo+=3;std::cout<<anterior<<aforo;}",exact);
+    require(valid && valid->find(
+        " - static_cast<long long>(lgaed_local_int_before_6cb8e71d) "
+        "!= 3LL) return 1;")!=std::string::npos,
+        "The exact original increase was not verified before the private delta");
+    const auto equivalent = cpp_local_int_override(
+        "int main(){int aforo{5};aforo=aforo+2+1;std::cout<<aforo;}",exact);
+    require(equivalent && equivalent->find("aforo=aforo+2+1;")!=
+        std::string::npos,"A different valid spelling of +3 lost its private proof");
+    const auto legacy = cpp_local_int_override(
+        "int main(){int aforo{5};aforo+=3;std::cout<<aforo;}",
+        {"aforo",4,{},true});
+    require(legacy && legacy->find("!= 3LL) return 1;")==std::string::npos,
+        "The new stronger opt-in altered an older published afterUpdate probe");
+
+    auto forged = exact;
+    forged.after_update=false;
+    require(!cpp_local_int_check_valid({{forged}}),
+        "An expectedIncrease was applied to an initializer replacement");
+    forged=exact;
+    forged.expected_increase=0;
+    require(!cpp_local_int_check_valid({{forged}}),
+        "An expectedIncrease of zero claimed to prove a positive increase");
+    forged.expected_increase=-3;
+    require(!cpp_local_int_check_valid({{forged}}),
+        "A negative expectedIncrease was allowed as a required increase");
+}
+
 void private_delta_respects_signed_int_bounds() {
     // The chosen learner update itself is valid. Only the *extra* private
     // delta would overflow int. This must fail before += executes, rather
@@ -819,6 +855,7 @@ int main() {
         opaque_noop_requires_runtime_state_change();
         private_marker_in_comments_and_strings_is_not_an_identifier();
         private_recompile_cannot_consume_build_markers_or_exit_early();
+        exact_authored_increase_cannot_be_hidden_in_stdout();
         private_delta_respects_signed_int_bounds();
         crlf_after_update_preserves_source_and_comment();
         numeric_literal_identity_distinguishes_one_from_ten();

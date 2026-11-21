@@ -28,6 +28,10 @@ struct CppLocalIntProbe {
     // This witnesses a changed increase without rewriting the student's
     // original initializer, addition expression or saved source.
     bool after_update = false;
+    // Optional authored, exact state increase across the selected statement.
+    // This is independent of the replacement delta and visible stdout.
+    // An absent value preserves the previously published afterUpdate contract.
+    std::optional<std::int32_t> expected_increase;
     bool operator==(const CppLocalIntProbe&) const = default;
 };
 
@@ -70,7 +74,9 @@ inline bool cpp_local_int_check_valid(const CppLocalIntCheck& check) {
         const auto& probe=check.probes[index];
         if(!cpp_local_probe_identifier(probe.variable)||
            probe.variable=="main"||probe.expected_stdout.empty()||
-           probe.expected_stdout.size()>4)return false;
+           probe.expected_stdout.size()>4||
+           (probe.expected_increase &&
+            (!probe.after_update || *probe.expected_increase <= 0)))return false;
         std::set<std::string> distinct;
         for(const auto& output:probe.expected_stdout)
             if(output.empty()||output.size()>4096||
@@ -753,6 +759,19 @@ inline std::optional<std::pair<std::size_t,std::size_t>> first_state_update(
         variant += probe.variable;
         variant += ";\n    ";
         variant += source.substr(*update_begin,offset-*update_begin);
+        if(probe.expected_increase) {
+            // Evaluate the original, untouched state update BEFORE the hidden
+            // counterfactual. A wrong +5 masked by -2 at print time satisfies
+            // all output perturbations, but does not satisfy an authored +3.
+            // Widen both operands so their difference cannot overflow int.
+            variant += "\n    if (static_cast<long long>(";
+            variant += probe.variable;
+            variant += ") - static_cast<long long>(";
+            variant += saved;
+            variant += ") != ";
+            variant += std::to_string(*probe.expected_increase);
+            variant += "LL) return 1;\n    ";
+        }
         // The private delta is never allowed to overflow signed int.
         // Check in long long BEFORE applying it, including INT32_MIN.
         // An unsafe counterfactual is inconclusive, not learner success.

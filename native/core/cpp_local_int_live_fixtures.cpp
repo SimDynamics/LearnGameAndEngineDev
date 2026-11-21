@@ -363,8 +363,36 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo+3;})CPP";
     emit(directory,"u2l3_inert_marker_text",*harmless_variant,
          "Antes: 5\nAhora: 12",true);
     ++emitted;
-    if(emitted!=49)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 49 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
+    // Both programs below reproduce the authored visible U2L3 output.
+    // A fixed arithmetic adjustment at print time also passes all older
+    // afterUpdate stdout perturbations, but cannot pass the *state* witness.
+    constexpr CppLocalIntProbe exact_delta{"aforo",4,{},true,3};
+    for(const auto& entry:std::array{
+        std::pair{"u2l3_exact_increase_plus_equal",
+            R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo+=3;
+std::cout<<"Antes: "<<anterior<<"\\nAhora: "<<aforo;})CPP"},
+        std::pair{"u2l3_exact_increase_equivalent",
+            R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo=aforo+2+1;
+std::cout<<"Antes: "<<anterior<<"\\nAhora: "<<aforo;})CPP"}
+    }) {
+        const auto variant=cpp_local_int_override(entry.second,exact_delta);
+        if(!variant)throw std::runtime_error("Cannot instrument a genuine exact +3");
+        emit(directory,entry.first,*variant,"Antes: 5\\nAhora: 12",true);
+        ++emitted;
+    }
+    constexpr std::string_view compensated=R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo+=5;
+std::cout<<"Antes: "<<anterior<<"\\nAhora: "<<(aforo-2);})CPP";
+    const auto rejected_compensation=cpp_local_int_override(compensated,exact_delta);
+    if(!rejected_compensation)
+        throw std::runtime_error("Cannot expose the wrong-but-compensated increment");
+    emit(directory,"reject_u2l3_compensated_plus_five",*rejected_compensation,
+         "",false,true);
+    ++emitted;
+    if(emitted!=52)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 52 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';
