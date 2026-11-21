@@ -340,6 +340,23 @@ inline std::optional<std::size_t> first_state_update(
             if(postfix||prefix) {
                 const auto statement=statement_end(code,i+2,closing);
                 if(!statement)return {};
+                if(postfix&&code[i+1].value=="op:=") {
+                    // A plain replacement (aforo = 8) is not an increase:
+                    // the after-update variation would still produce the
+                    // expected stdout without proving use of the prior state.
+                    // Require an unqualified read of this same local int.
+                    bool reads_prior=false,has_operation=false;
+                    for(auto j=i+2;j<*statement;++j) {
+                        const auto& rhs=code[j].value;
+                        if(rhs==wanted&&!qualified_member_name(code,j))
+                            reads_prior=true;
+                        if(rhs!="op:("&&rhs!="op:)"&&rhs!=wanted)
+                            has_operation=true;
+                    }
+                    // aforo = aforo and aforo = (aforo) are no-ops, not
+                    // evidence of an actual state change.
+                    if(!reads_prior||!has_operation)return {};
+                }
                 return statement;
             }
         }
