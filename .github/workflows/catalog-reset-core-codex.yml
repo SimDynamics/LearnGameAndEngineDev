@@ -9,6 +9,7 @@ on:
       - native/core/catalog.hpp
       - native/core/catalog_reset_portable_tests.cpp
       - native/core/course_edition_scope_tests.cpp
+      - native/presentation/windows/catalog_view.cpp
       - native/core/lesson_state.cpp
       - native/core/lesson_state.hpp
   workflow_dispatch:
@@ -81,6 +82,14 @@ jobs:
           native\core\catalog.cpp native\core\lesson_state.cpp
           native\core\course_edition_scope_tests.cpp
           /link /OPT:REF /OUT:"%RUNNER_TEMP%\lgaed_course_edition_scope_tests.exe"
+      - name: Compile the real Windows catalog UI anchor integration
+        shell: cmd
+        run: >
+          cl /nologo /std:c++latest /EHsc /W4 /permissive- /bigobj
+          /Zc:__cplusplus /utf-8 /DUNICODE /D_UNICODE /DNOMINMAX
+          /DWIN32_LEAN_AND_MEAN /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00
+          /I native /c native\presentation\windows\catalog_view.cpp
+          /Fo:"%RUNNER_TEMP%\lgaed_catalog_view.obj"
       - name: Execute atomic reset and edition-provenance regressions on Windows
         shell: cmd
         run: '"%RUNNER_TEMP%\lgaed_catalog_reset_tests.exe"'
