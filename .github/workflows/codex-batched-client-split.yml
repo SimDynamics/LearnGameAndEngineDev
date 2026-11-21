@@ -21,12 +21,8 @@ permissions:
 jobs:
   authentic-case-split:
     name: Check eight standalone cases with the archived original
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-2022
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-2022]
     steps:
       - name: Checkout exact Codex publication
         uses: actions/checkout@v4
@@ -37,11 +33,13 @@ jobs:
         with:
           python-version: '3.12'
       - name: Activate MSVC for a real reference compilation on Windows
-        if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
-      - name: Guard the Windows-only compiler selection in all active workflows
+      - name: Guard Windows-only compiler selection and reject either test failure
+        shell: pwsh
         run: |
           python -B -m unittest discover -s scripts/curriculum -p test_windows_ci_compilers.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B -m unittest discover -s scripts/curriculum -p test_windows_cpp_ci.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Validate current U6L19 client authoring and historical receipts
         run: python -B -m unittest discover -s scripts/curriculum -p test_current_batched_client_split.py -v

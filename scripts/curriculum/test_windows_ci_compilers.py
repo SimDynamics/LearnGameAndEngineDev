@@ -43,11 +43,35 @@ class WindowsCompilerPolicy(unittest.TestCase):
 
     def test_order_equivalence_uses_windows_python_without_bash(self):
         source = (WORKFLOWS / "codex-order-equivalence-authoring.yml").read_text(encoding="utf-8")
-        self.assertIn("os: [windows-2022]", source)
+        self.assertIn("runs-on: windows-2022", source)
+        self.assertNotIn("matrix.os", source)
         self.assertIn("actions/setup-python@v5", source)
         self.assertIn("shell: pwsh", source)
         self.assertNotIn("shell: bash", source)
         self.assertIn("python -B", source)
+
+    def test_single_windows_runner_jobs_do_not_need_a_matrix(self):
+        # Preserve all native and Python checks while avoiding redundant
+        # one-entry OS matrices and accidentally skipped Windows steps.
+        for name in (
+                "codex-batched-client-split.yml",
+                "codex-order-equivalence-authoring.yml",
+                "codex-course-edition-portable.yml",
+                "codex-compiler-case-evaluator.yml"):
+            with self.subTest(workflow=name):
+                source = (WORKFLOWS / name).read_text(encoding="utf-8")
+                self.assertIn("runs-on: windows-2022", source)
+                self.assertNotIn("matrix.os", source)
+                self.assertNotIn("os: [windows-2022]", source)
+                self.assertNotIn("if: runner.os == 'Windows'", source)
+        guarded = (WORKFLOWS / "codex-batched-client-split.yml").read_text(
+            encoding="utf-8")
+        first = guarded.index("test_windows_ci_compilers.py -v")
+        second = guarded.index("test_windows_cpp_ci.py -v", first)
+        self.assertIn("if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }",
+                      guarded[first:second])
+        self.assertIn("if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }",
+                      guarded[second:])
 
     def test_no_obsolete_android_build_workflows(self):
         for name in ("android-code-format-compat.yml", "build-clang23-android.yml"):
