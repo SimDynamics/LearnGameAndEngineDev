@@ -828,10 +828,13 @@ void reviewed_guidance_loader(const Fixture& fixture) {
         auto edge=edges.GetObjectAt(0);
         require(edge.HasKey(L"reviewPaths"),
             "The authored edition lost its indexed guidance provenance");
-        edge.Remove(L"reviewPaths");
+        // The Python transition validator rejects a missing reviewPaths.
+        // Windows can independently reject an ill-typed declaration without
+        // pretending to recover a full predecessor from a hash alone.
+        edge.Insert(L"reviewPaths",JsonValue::CreateStringValue(L"/reviewFeedback/0"));
         write(path,stringify(forged));
         rejects([&]{(void)windows::load_lesson(path);},
-            "The Windows loader accepted a revision with missing guidance provenance");
+            "The Windows loader accepted a malformed guidance proof type");
     }
     write(path,source);
     {
