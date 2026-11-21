@@ -356,8 +356,13 @@ inline bool int_probe_literal_is(std::string_view token,char wanted) {
     bool one=false,has_digit=false;
     for(char ch:text) {
         if(ch=='\'')continue;
-        if(ch=='0')has_digit=true;
-        else if(ch=='1'&&wanted=='1'&&!one) {
+        if(ch=='0') {
+            // The only digit 1 of an integer equal to one must be the
+            // least-significant digit. For example, 01 is one, but 10,
+            // 0x10 and 0b10 are not.
+            if(one)return false;
+            has_digit=true;
+        }else if(ch=='1'&&wanted=='1'&&!one) {
             has_digit=true;one=true;
         }else return false;
     }
