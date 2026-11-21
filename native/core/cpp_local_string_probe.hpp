@@ -74,25 +74,74 @@ inline std::optional<std::size_t> string_type_end(
        code[i+1].value=="op:::"&&code[i+2].value=="id:string")return i+3;
     return {};
 }
-inline std::optional<std::size_t> root_declaration_end(
+struct StringDeclaration {
+    std::size_t end=0;
+    bool initialized=false;
+};
+
+// Lex complete declarations of a single explicit string type. The source
+// remains untouched: assignments are inserted after the terminating semicolon.
+// Commas within balanced initializers are NOT declaration separators.
+inline std::optional<StringDeclaration> declared_string(
+        const Tokens& code,std::size_t at,std::size_t close,
+        std::string_view variable,bool multiple) {
+    std::optional<bool> initialized;
+    const std::string wanted="id:"+std::string(variable);
+    for(;;) {
+        if(at+1>=close||!code[at].value.starts_with("id:")||
+           !cpp_expression_repair_detail::identifier(
+               std::string_view(code[at].value).substr(3)))return {};
+        const bool owns=code[at].value==wanted;
+        const auto first=code[at+1].value;
+        if(first!="op:="&&first!="op:{"&&first!="op:("&&
+           first!="op:,"&&first!="op:;")return {};
+        if(!multiple&&(first=="op:,"||first=="op:;"))return {};
+        if(owns) {
+            if(initialized)return {};
+            initialized=first!="op:,"&&first!="op:;";
+        }
+        std::size_t parentheses=0,braces=0,brackets=0;
+        std::size_t index=at+1;
+        for(;index<close;++index) {
+            const auto& token=code[index].value;
+            if(!parentheses&&!braces&&!brackets&&
+               (token=="op:,"||token=="op:;"))break;
+            if(token=="op:(")++parentheses;
+            else if(token=="op:{")++braces;
+            else if(token=="op:[")++brackets;
+            else if(token=="op:)") {
+                if(!parentheses)return {};
+                --parentheses;
+            }else if(token=="op:}") {
+                if(!braces)return {};
+                --braces;
+            }else if(token=="op:]") {
+                if(!brackets)return {};
+                --brackets;
+            }
+        }
+        if(index>=close||parentheses||braces||brackets)return {};
+        if(code[index].value=="op:;")
+            return initialized?std::optional<StringDeclaration>{
+                StringDeclaration{index,*initialized}}:std::nullopt;
+        if(!multiple)return {}; // auto: don't infer a mixed C++ deduction.
+        at=index+1;
+    }
+}
+inline std::optional<StringDeclaration> root_declaration_end(
         const Tokens& code,std::size_t opening,std::size_t closing,
         std::string_view variable) {
-    const std::string wanted="id:"+std::string(variable);
-    std::optional<std::size_t> result;
+    std::optional<StringDeclaration> result;
     std::size_t braces=1,parentheses=0,brackets=0;
     for(std::size_t i=opening+1;i<closing;++i) {
         const auto& value=code[i].value;
         if(braces==1&&!parentheses&&!brackets&&root_start(code,i)) {
-            const auto after_type=string_type_end(code,i,closing);
-            if(after_type&&*after_type+1<closing&&
-               code[*after_type].value==wanted) {
-                const auto initial=code[*after_type+1].value;
-                if(initial!="op:="&&initial!="op:{"&&
-                   initial!="op:("&&initial!="op:;")return {};
-                const auto end=cpp_local_int_probe_detail::statement_end(
-                    code,*after_type+1,closing);
-                if(!end||result)return {};
-                result=*end;
+            if(const auto end=string_type_end(code,i,closing)) {
+                if(const auto found=declared_string(
+                        code,*end,closing,variable,value!="id:auto")) {
+                    if(result)return {};
+                    result=*found;
+                }
             }
         }
         if(value=="op:{")++braces;
@@ -212,16 +261,25 @@ inline std::string cpp_bytes_literal(std::string_view value) {
     const auto declaration=cpp_local_string_detail::root_declaration_end(
         *code,body->first,body->second,probe.variable);
     if(!declaration)return {};
-    auto location=(*code)[*declaration].end;
+    auto location=(*code)[declaration->end].end;
     bool before=false;
+    // An uninitialized local string may receive its first actual value in
+    // a separate assignment. Vary that value after the assignment, rather
+    // than injecting an earlier temporary that is immediately overwritten.
+    if(!declaration->initialized&&
+       probe.moment==CppLocalStringMoment::after_initialization) {
+        const auto initial=cpp_local_string_detail::root_reassignment_end(
+            *code,declaration->end+1,body->second,probe.variable);
+        if(initial)location=(*code)[*initial].end;
+    }
     if(probe.moment==CppLocalStringMoment::after_first_assignment) {
         const auto assignment=cpp_local_string_detail::root_reassignment_end(
-            *code,*declaration+1,body->second,probe.variable);
+            *code,declaration->end+1,body->second,probe.variable);
         if(!assignment)return {};
         location=(*code)[*assignment].end;
     }else if(probe.moment==CppLocalStringMoment::before_output) {
         const auto output=cpp_local_string_detail::first_output_start(
-            *code,*declaration+1,body->second,probe.variable);
+            *code,declaration->end+1,body->second,probe.variable);
         if(!output)return {};
         location=(*code)[*output].begin;
         before=true;

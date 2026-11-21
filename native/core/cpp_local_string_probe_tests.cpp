@@ -71,6 +71,71 @@ void independent_source_variations() {
             source.find("Sala Norte")==source.npos&&source.find("003")==source.npos,
         "A private probe altered the student's source");
 }
+void grouped_and_delayed_string_owners() {
+    const std::string grouped=R"CPP(#include <iostream>
+#include <string>
+int main() {
+    std::string edificio{"Aula"}, codigo{"04"};
+    std::string etiqueta{edificio + "-" + codigo};
+    std::cout << etiqueta;
+}
+)CPP";
+    const auto building=cpp_local_string_override(grouped,
+        {"edificio","Sala Norte",initialized,{}});
+    const auto code=cpp_local_string_override(grouped,
+        {"codigo","003",initialized,{}});
+    const auto label=cpp_local_string_override(grouped,
+        {"etiqueta","CONTROL",printing,{}});
+    require(building&&code&&label,
+        "A valid grouped std::string declaration lost its independent owners");
+    const auto declaration="std::string edificio{\"Aula\"}, codigo{\"04\"};";
+    require(building->find(declaration)!=building->npos&&
+            code->find(declaration)!=code->npos&&
+            building->find("edificio = std::string{")>building->find(declaration)&&
+            code->find("codigo = std::string{")>code->find(declaration)&&
+            building->find("edificio = std::string{")<
+                building->find("std::string etiqueta")&&
+            code->find("codigo = std::string{")<
+                code->find("std::string etiqueta")&&
+            label->find("etiqueta = std::string{")<
+                label->find("std::cout << etiqueta"),
+        "Grouping changed the original statement or moved a private variation");
+
+    const std::string delayed=R"CPP(#include <iostream>
+#include <string>
+int main() {
+    std::string edificio, codigo;
+    edificio = "Aula";
+    codigo = "04";
+    std::string etiqueta = edificio + "-" + codigo;
+    std::cout << etiqueta;
+}
+)CPP";
+    const auto building_later=cpp_local_string_override(delayed,
+        {"edificio","Sala Norte",initialized,{}});
+    const auto code_later=cpp_local_string_override(delayed,
+        {"codigo","003",initialized,{}});
+    require(building_later&&code_later,
+        "A default-constructed string assigned later was not recognized");
+    require(building_later->find("edificio = \"Aula\";")<
+            building_later->find("edificio = std::string{")&&
+            building_later->find("edificio = std::string{")<
+                building_later->find("codigo = \"04\";")&&
+            code_later->find("codigo = \"04\";")<
+                code_later->find("codigo = std::string{")&&
+            code_later->find("codigo = std::string{")<
+                code_later->find("std::string etiqueta"),
+        "A delayed initializer overwrote the supposedly varied value");
+    require(!cpp_local_string_override(
+        "#include <string>\nint main(){std::string a{\"A\"}, *codigo=nullptr;}",
+        {"a","003",initialized,{}}),
+        "A pointer declarator contaminated the lexical string owner");
+    require(!cpp_local_string_override(
+        "#include <string>\nint main(){std::string a{\"A\"}, a{\"B\"};}",
+        {"a","003",initialized,{}}),
+        "Duplicate declarations were attached to one authenticated owner");
+}
+
 void after_real_assignment_and_noexcept() {
     const auto new_code=cpp_local_string_override(revision,
         {"codigo","B2",updated,{}});
@@ -123,7 +188,7 @@ void unsafe_or_ambiguous_positions_reject() {
     for(const auto invalid:{
         "const std::string etiqueta{\"Aula-04\"};",
         "std::string *etiqueta = nullptr;",
-        "std::string etiqueta{\"A\"}, alternativa{\"B\"};",
+        "std::string etiqueta{\"A\"}, *alternativa=nullptr;",
         "std::string etiqueta{\"A\"}; std::string etiqueta{\"B\"};",
         "if(true) {std::string etiqueta{\"Aula-04\"};}",
         "for(int n=0;n<1;++n){std::string etiqueta{\"Aula-04\"};}",
@@ -167,6 +232,7 @@ void unsafe_or_ambiguous_positions_reject() {
 int main() {
     try {
         independent_source_variations();
+        grouped_and_delayed_string_owners();
         after_real_assignment_and_noexcept();
         exact_text_bytes_and_type_checks();
         unsafe_or_ambiguous_positions_reject();
