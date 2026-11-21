@@ -8,6 +8,7 @@ on:
       - scripts/curriculum/validar_json_programacion.py
       - scripts/curriculum/validate_programming_practice_tools.py
       - scripts/curriculum/test_programming_multicourse_validation.py
+      - scripts/curriculum/test_windows_ci_compilers.py
       - scripts/curriculum/test_stable_state_layout.py
       - scripts/curriculum/test_order_visual_separators.py
       - scripts/curriculum/stable_state_layout.py
@@ -62,6 +63,8 @@ jobs:
       - name: Comprobar reglas estructurales y revisiones editoriales de cursos presentes y futuros
         run: |
           python -B -m unittest -v test_programming_multicourse_validation
+      - name: Verificar que las auditorías migradas usan Windows y Python nativo
+        run: python -B -m unittest -v test_windows_ci_compilers
       - name: Conservar regresiones previas del mapa de estado
         run: |
           python -B -m unittest -v test_stable_state_layout
@@ -113,19 +116,28 @@ jobs:
 
   diagnose-every-lesson:
     name: Diagnosticar todos los mapas visibles (no aprueba la publicación)
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 12
+    env:
+      PYTHONPATH: scripts/curriculum
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     steps:
       - name: Obtener el código sin modificar la publicación
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Select Python for Windows curricular audits
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Probar fallas en dos cursos y protección del contenido
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_diagnosticar_estado_multicurso
+          python -B -m unittest -v test_diagnosticar_estado_multicurso
       - name: Examinar todos los JSON de Programación 1 y 2, sin omitir errores
         run: |
-          python3 scripts/curriculum/diagnosticar_estado_multicurso.py --course all --output-json out/qa/multicourse-state-diagnostic.json
+          python -B scripts/curriculum/diagnosticar_estado_multicurso.py --course all --output-json out/qa/multicourse-state-diagnostic.json
       - name: Conservar evidencia del diagnóstico real aunque el contrato falle
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -137,19 +149,28 @@ jobs:
 
   audit-visible-structure:
     name: Auditar bloques e índices reales de ambos cursos (solo estructura)
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 12
+    env:
+      PYTHONPATH: scripts/curriculum
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     steps:
       - name: Obtener lecciones y validadores sin modificar archivos
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Select Python for Windows curricular audits
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Probar el alcance limitado y la detección de respuestas inválidas
         run: |
-          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_auditar_estructura_multicurso
+          python -B -m unittest -v test_auditar_estructura_multicurso
       - name: Comprobar bloques e índices de 190 lecciones reales
         run: |
-          python3 scripts/curriculum/auditar_estructura_multicurso.py --course all --output-json out/qa/multicourse-structure-only.json
+          python -B scripts/curriculum/auditar_estructura_multicurso.py --course all --output-json out/qa/multicourse-structure-only.json
       - name: Conservar resultado visible aunque la auditoría falle
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

@@ -15,6 +15,18 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 
 
 class WindowsCompilerPolicy(unittest.TestCase):
+    def test_migrated_curriculum_audits_are_native_windows_python(self):
+        for name in (
+                "programming-multicourse-contract.yml",
+                "codex-readability-audit.yml"):
+            with self.subTest(workflow=name):
+                source = (WORKFLOWS / name).read_text(encoding="utf-8")
+                self.assertNotIn("ubuntu-", source)
+                self.assertNotIn("python3 ", source)
+                self.assertIn("actions/setup-python@v5", source)
+                self.assertIn("runs-on: windows-2022", source)
+                self.assertIn("python -B", source)
+
     def test_no_obsolete_android_build_workflows(self):
         for name in ("android-code-format-compat.yml", "build-clang23-android.yml"):
             self.assertFalse((WORKFLOWS / name).exists(), name)
