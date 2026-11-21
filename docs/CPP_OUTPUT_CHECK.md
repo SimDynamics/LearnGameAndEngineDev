@@ -4089,8 +4089,10 @@ JSON, los recibos de progreso ni la persistencia de la aplicación. El
 CTest nativo incorpora por separado:
 
 - `native.local_int_state`: ambos cargadores de lecciones, los editores
-  originales de U2, comprobantes independientes, integridad y reapertura
-  de estado sin ejecutar el programa personal del estudiante.
+  originales de U2, comprobantes independientes y su integridad.
+  Guarda el estado en un **subperfil QA Win32 exclusivo**, lo reabre
+  desde disco y contrasta el recibo, la acreditación y la conservación
+  del progreso de otro curso. No ejecuta el programa del estudiante.
 - `native.local_string_state`: dos propietarios U2L7, compilaciones y
   ejecuciones MSVC reales, rechazo de salidas fijas, recibos por editor,
   guardado y reapertura del StateStore en un perfil QA único.
