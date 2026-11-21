@@ -156,6 +156,47 @@ void run() {
                 cpp_local_string_request_fingerprint(second_new),
         "The distinct editor/source/check bindings were lost");
 
+    // Valid alternative C++ spelling, preserved as the same original editor
+    // identity. This QA never rewrites the curriculum or learner's draft.
+    auto grouped=original_reference;
+    replace_once(grouped,
+        "    std::string edificio{\"Aula\"};\n    std::string codigo{\"04\"};",
+        "    std::string edificio{\"Aula\"}, codigo{\"04\"};");
+    auto delayed=original_reference;
+    replace_once(delayed,
+        "    std::string edificio{\"Aula\"};\n    std::string codigo{\"04\"};",
+        "    std::string edificio, codigo;\n    edificio = \"Aula\";\n    codigo = \"04\";");
+    const auto test_equivalent=[&](std::string_view description,
+                                   const std::string& candidate,
+                                   std::uint64_t number) {
+        auto request=request_for(reviewed,first,candidate,projects,number);
+        require(compiler_runtime_request_allowed(owner(reviewed,first),request)&&
+                !cpp_local_string_request_fingerprint(request).empty(),
+            "An equivalent original-owner string program failed the source gate");
+        const auto real=run_cpp(request);
+        require(real.error_utf8.empty()&&real.compilation.succeeded()&&
+                real.execution.succeeded(),
+            "Hosted MSVC did not compile and execute an equivalent U2L7 source");
+        const auto proof=capture_cpp_execution(request,real);
+        require(proof.local_string_check_correct&&proof.standard_output=="Aula-04"&&
+                real.local_string_evidence.size()==3,
+            "The equivalent U2L7 source lost an independent text dependency");
+        state::StateData isolated;
+        state::prepare_lesson_state(isolated,reviewed);
+        require(record_compiler_puzzle_case(isolated,reviewed,owner(reviewed,first),
+                request,proof,"equivalent C++ form")&&
+                compiler_puzzle_completed(isolated,reviewed,owner(reviewed,first))&&
+                count_receipts(isolated)==1,
+            "The equivalent source was not credited to its original editor");
+        const auto reopened=state::decode(state::encode(isolated));
+        require(compiler_puzzle_completed(reopened,reviewed,owner(reviewed,first))&&
+                count_receipts(reopened)==1,
+            "The authenticated alternative-source receipt did not survive reopening");
+        std::cout<<"PASS equivalent C++ string owner "<<description<<"\n";
+    };
+    test_equivalent("grouped declaration",grouped,51);
+    test_equivalent("default construction and later assignments",delayed,52);
+
     auto missing=first_new;
     missing.source_utf8="#include <iostream>\nint main(){std::cout<<\"Aula-04\";}";
     require(cpp_local_string_request_fingerprint(missing).empty()&&
@@ -284,7 +325,7 @@ int main() {
     visible_outputs.Append(JsonValue::CreateStringValue(L"Aula-04"));
     probe.Insert(L"outputs",visible_outputs);
     rejects_document(winrt::to_string(invalid.Stringify()));
-    std::cout<<"PASS Win32 real U2L7: two original owners, five private MSVC "
+    std::cout<<"PASS Win32 real U2L7: two original owners, eleven private MSVC "
         "compilations and executions, wrong source/constant rejected, "
         "historical stdout preserved, two sealed StateStore receipts.\n";
 }
