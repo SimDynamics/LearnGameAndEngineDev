@@ -172,7 +172,7 @@ jobs:
 
 
   native-feedback-font:
-    name: Execute actual Win32 feedback font parity at 75–150% (hosted MSVC)
+    name: Execute real Win32 feedback and U2 semantic colors (hosted MSVC)
     runs-on: windows-2022
     timeout-minutes: 20
     steps:
@@ -192,13 +192,13 @@ jobs:
         shell: pwsh
         run: >
           cmake --build "$env:RUNNER_TEMP/feedback-font-qa"
-          --target lgaed_feedback_font_portable_qa --parallel 2
-      - name: Run real native feedback controls without speech
+          --target lgaed_feedback_font_portable_qa lgaed_u2_semantic_portable_qa --parallel 2
+      - name: Run real feedback controls and current U2L3 colors without speech
         shell: pwsh
         run: >
           ctest --test-dir "$env:RUNNER_TEMP/feedback-font-qa"
-          --output-on-failure --no-tests=error
-          -R feedback_font_portable
+          --output-on-failure --no-tests=error -j 1
+          -R "(feedback_font_portable|u2_semantic_view_portable)"
 
   native-guidance-reopen:
     name: Real Windows compiler guide, StateStore and U12 reader fixtures (MSVC)

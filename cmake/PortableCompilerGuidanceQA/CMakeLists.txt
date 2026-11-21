@@ -228,4 +228,17 @@ if(LGAED_HOSTED_FEEDBACK_FONT_QA)
         COMMAND lgaed_feedback_font_portable_qa)
     set_tests_properties(native.feedback_font_portable PROPERTIES
         TIMEOUT 120 RUN_SERIAL TRUE)
+    # Real authored U2L3 semantics: verify ranges, visual colors, existing
+    # feedback and isolated StateStore reopen using original Win32 controls.
+    # This excludes PCM/audio acceptance and does not relax pinned app tools.
+    add_executable(lgaed_u2_semantic_portable_qa
+        "${LGAED_ROOT}/native/presentation/windows/technical_context_view_tests.cpp")
+    target_link_libraries(lgaed_u2_semantic_portable_qa PRIVATE
+        lgaed_curricular_windows lgaed_guidance_qa_options)
+    target_compile_options(lgaed_u2_semantic_portable_qa PRIVATE /bigobj)
+    target_link_options(lgaed_u2_semantic_portable_qa PRIVATE /OPT:REF)
+    add_test(NAME native.u2_semantic_view_portable
+        COMMAND lgaed_u2_semantic_portable_qa --current-u2-roles)
+    set_tests_properties(native.u2_semantic_view_portable PROPERTIES
+        TIMEOUT 180 RUN_SERIAL TRUE)
 endif()

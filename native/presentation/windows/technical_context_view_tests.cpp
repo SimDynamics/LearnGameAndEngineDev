@@ -841,6 +841,9 @@ int main(int argc,char** argv){const auto ole=OleInitialize(nullptr);if(FAILED(o
         else if(argc==4&&std::string_view(argv[1])=="--duplication-revision")exact_editorial_view(argv[2],argv[3],true);
         else if(argc==4&&std::string_view(argv[1])=="--remainder-revision")exact_editorial_view(argv[2],argv[3],false);
         else if(argc==4&&std::string_view(argv[1])=="--literal-spacing-revision")literal_spacing_editorial_view(argv[2],argv[3]);
+        // Exercise the unmodified U2L3 Win32 semantic and state regression
+        // independently of audio resources and pinned application toolchains.
+        else if(argc==2&&std::string_view(argv[1])=="--current-u2-roles")current_u2_roles();
         else if(argc==2&&std::string_view(argv[1])=="--console-string-references")current_console_string_references();
         else if(argc==2&&std::string_view(argv[1])=="--preview-naming")preview(2,true);
         else if(argc==3&&std::string_view(argv[1])=="--preview"){
