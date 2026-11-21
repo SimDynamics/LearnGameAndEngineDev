@@ -141,12 +141,22 @@ void test_course_scope() {
     // Existing legacy-only course resets still work. No new edition in their
     // requested scope may silently keep a legacy completion flag.
     const curriculum::CatalogScope old{{std::string(course)},{historic_unit},{historic_lesson}};
-    require(curriculum::reset_catalog_progress(data,old)==2&&
+    // Two completion receipts AND the lesson's selected scroll marker are
+    // cleared. Neither general preferences nor an unrelated course's scroll
+    // may be counted as selected historical progress.
+    require(curriculum::reset_catalog_progress(data,old)==3&&
             !state::find(data,"learning_progress","lesson_"+historic_lesson+"_completed")&&
-            !state::find(data,"learning_progress","course_"+std::string(course)+"_completed"),
-        "A legacy-only scoped reset was broken by edition-aware scope selection");
-    require(data.preferences.at("cpp_lesson_drafts")==snapshot.preferences.at("cpp_lesson_drafts"),
-        "Reset unexpectedly deleted a saved source from either generation");
+            !state::find(data,"learning_progress","course_"+std::string(course)+"_completed")&&
+            !state::find(data,"native_windows","scroll/"+historic_lesson+"/p0")&&
+            state::integer_value(data,"native_windows",
+                "scroll/"+other_lesson+"/p0")==19,
+        "A legacy-only scoped reset lost its selected receipts or changed unrelated scroll");
+    for(const auto& domain:{"cpp_lesson_drafts","narration_settings"})
+        require(data.preferences.at(domain)==snapshot.preferences.at(domain),
+            "Reset unexpectedly deleted a draft or changed global audio preferences");
+    const auto completed=data;
+    require(curriculum::reset_catalog_progress(data,old)==0&&data==completed,
+        "Repeating the explicitly scoped historic reset changed preserved data");
 }
 }
 int main() {
