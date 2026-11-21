@@ -44,7 +44,7 @@ int main(int argc,char** argv) try {
     if(argc!=2)return 2;
     const std::filesystem::path directory=argv[1];
     std::filesystem::create_directories(directory);
-    const std::array<Scenario,8> examples{{
+    const std::array<Scenario,9> examples{{
         {"u2l1_llaves_7",
             R"CPP(#include <iostream>
 int main(){int llaves=3+4; std::cout<<"Llaves: "<<llaves;})CPP",
@@ -71,6 +71,13 @@ std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;})CPP",
             "Cajas: 0\nSobres: 2",
             {{{"cajas",6,{}},{"sobres",17,{}},{}}},
             {{"Cajas: 6\nSobres: 2","Cajas: 0\nSobres: 17",""}},2},
+        {"u2l2_signed_type_spellings",
+            R"CPP(#include <iostream>
+int main(){int signed cajas{4}; signed sobres=9;
+std::cout<<"Cajas: "<<cajas<<"\nSobres: "<<sobres;})CPP",
+            "Cajas: 4\nSobres: 9",
+            {{{"cajas",13,{}},{"sobres",17,{}},{}}},
+            {{"Cajas: 13\nSobres: 9","Cajas: 4\nSobres: 17",""}},2},
         {"u2l3_copy_before",
             R"CPP(#include <iostream>
 int main(){int aforo{5}; int anterior=aforo; aforo+=3;
@@ -196,8 +203,8 @@ int main() {
     if(!missing_addend)throw std::runtime_error("Cannot probe hard-coded U2L5 addend");
     emit(directory,"reject_u2l5_fixed_addend",*missing_addend,"Parte: 3.75 m",false);
     ++emitted;
-    if(emitted!=30)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 30 isolated C++ executions for eight U2 owners and six adversaries\n";
+    if(emitted!=33)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 33 isolated C++ executions for eight U2 owners, one signed-type spelling and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';
