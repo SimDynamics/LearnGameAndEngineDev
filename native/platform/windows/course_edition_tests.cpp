@@ -130,7 +130,7 @@ struct Fixture {
             require(originals.contains(file), "El manifiesto señala un recurso ausente.");
             paths.emplace(name, file);
         }
-        require(originals.size() == 11, "El fixture tiene un alcance distinto del esperado.");
+        require(originals.size() == 12, "El fixture tiene un alcance distinto del esperado.");
     }
     fs::path path(std::string_view key) const { return root / relative_path(paths.at(std::string(key))); }
     void old_catalog() { write(path("course"), bytes(path("legacyCourse"))); }
@@ -799,9 +799,79 @@ void negative_contracts(const Fixture& fixture, const curriculum::Lesson& curren
     fixture.preserved();
 }
 
+
+void reviewed_guidance_loader(const Fixture& fixture) {
+    const auto path=fixture.path("reviewedGuides");
+    const auto source=bytes(path);
+    const auto loaded=windows::load_lesson(path);
+    require(loaded.id=="qa_edition__edition_es_1__inicio__guia_autorizada"
+            && loaded.state_layout.version==2&&loaded.pages.size()==1
+            && loaded.pages[0].blocks.size()==2,
+        "The native loader rejected an independently authored guidance edition");
+    const auto& choice=loaded.pages[0].blocks[0];
+    const auto& fill=loaded.pages[0].blocks[1];
+    require(choice.stable_id=="block_0000_0000"
+            && choice.correct_index&&*choice.correct_index==1
+            && choice.options.size()==2&&choice.options[0]=="Tres"
+            && choice.review_feedback_options.size()==2
+            && choice.review_feedback_options[0]=="La primera respuesta no conserva el total."
+            && choice.review_feedback_options[1]=="Revisa el valor cuatro."
+            && fill.stable_id=="block_0000_0001"
+            && fill.review_feedback=="El hueco debe conservar cuatro sin comillas."
+            && fill.answers.size()==1&&fill.answers[0]=="4",
+        "Review hints changed the original correct option or response contract");
+    RestoreFile restore(path);
+    {
+        auto forged=object(source);
+        auto layout=forged.GetNamedObject(L"stateLayout");
+        auto edges=layout.GetNamedArray(L"editorial");
+        auto edge=edges.GetObjectAt(0);
+        require(edge.HasKey(L"reviewPaths"),
+            "The authored edition lost its indexed guidance provenance");
+        edge.Remove(L"reviewPaths");
+        write(path,stringify(forged));
+        rejects([&]{(void)windows::load_lesson(path);},
+            "The Windows loader accepted a revision with missing guidance provenance");
+    }
+    write(path,source);
+    {
+        auto forged=object(source);
+        auto layout=forged.GetNamedObject(L"stateLayout");
+        auto edges=layout.GetNamedArray(L"editorial");
+        auto edge=edges.GetObjectAt(0);
+        JsonArray wrong;wrong.Append(JsonValue::CreateStringValue(L"/reviewFeedback/3"));
+        edge.Insert(L"reviewPaths",wrong);
+        write(path,stringify(forged));
+        rejects([&]{(void)windows::load_lesson(path);},
+            "The Windows loader accepted a guidance index absent from its options");
+    }
+    write(path,source);
+    {
+        auto forged=object(source);
+        auto fields=forged.GetNamedObject(L"textSemantics").GetNamedArray(L"fields");
+        for(unsigned index=0;index<fields.Size();++index) {
+            const auto item=fields.GetObjectAt(index);
+            if(winrt::to_string(item.GetNamedString(L"block"))=="block_0000_0000"
+                    &&winrt::to_string(item.GetNamedString(L"path"))=="/reviewFeedback/0") {
+                fields.RemoveAt(index);
+                break;
+            }
+        }
+        write(path,stringify(forged));
+        rejects([&]{(void)windows::load_lesson(path);},
+            "The Windows loader accepted a revised hint without its reading descriptor");
+    }
+    write(path,source);
+    require(windows::load_lesson(path).pages[0].blocks[0].correct_index==choice.correct_index,
+        "A rejected guidance revision altered the original valid lesson");
+    std::cout<<"PASS native authored reviewFeedback: scalar/choice hints, untouched answers, "
+                "rejected index/proof/semantic omissions; QA files restored\n";
+}
+
 void run(const fs::path& fixture_source) {
     Profile profile(L"native");
     Fixture fixture(profile, fixture_source);
+    reviewed_guidance_loader(fixture);
     // The real Windows environment can supply an extended \\?\C:\... QA
     // root. Verify the whole physical ancestor chain without mistaking the
     // drive root-name for an unavailable directory before loading JSON.

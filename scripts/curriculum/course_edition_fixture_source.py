@@ -86,8 +86,42 @@ def documents() -> tuple[dict[str, object], dict[str, str]]:
         "id": OTHER_LESSON, "title": "Curso ajeno QA",
         "pages": [{"blocks": [{"type": "paragraph", "text": "Contenido ajeno conservado."}]}],
     }
+    # Publish an isolated two-owner example through the SAME authoring
+    # operation available to Work. The Windows loader must accept typed
+    # reviewPaths without changing response ownership or option indices.
+    guidance_base = {
+        "id": "qa_edition__edition_es_1__inicio__guia_autorizada",
+        "title": "Guía curricular QA",
+        "pages": [{"blocks": [
+            {"type": "multiple_choice", "question": "Elige un resultado.",
+             "options": ["Tres", "Cuatro"], "correctIndex": 1,
+             "explanation": "El resultado correcto es cuatro.",
+             "reviewFeedback": ["Revisa el valor tres.", "Revisa el valor cuatro."]},
+            {"type": "fill_code", "question": "Completa la cantidad.",
+             "language": "cpp", "code": "int n = [];",
+             "answers": ["4"], "explanation": "El hueco expresa el valor.",
+             "reviewFeedback": "Revisa el literal inicial."},
+        ]}],
+    }
+    guidance = stable_state_layout.prepare_v2(
+        guidance_base, "es", {"es": guidance_base})
+    guidance = stable_state_layout.revise_ordinary_editorial(
+        guidance, "block_0000_0000", {
+            "question": {"text": "Elige el resultado de dos más dos.", "spans": []},
+            "reviewFeedback": {
+                "0": {"text": "La primera respuesta no conserva el total.", "spans": []},
+            },
+        })
+    guidance = stable_state_layout.revise_ordinary_editorial(
+        guidance, "block_0000_0001", {
+            "explanation": {"text": "Escribe el número entero cuatro.", "spans": []},
+            "reviewFeedback": {
+                "text": "El hueco debe conservar cuatro sin comillas.", "spans": [],
+            },
+        })
     paths = {
         "course": "content/es/programming/qa_edition/course_qa_edition.json",
+        "reviewedGuides": "content/es/programming/qa_edition/edition_es_1__inicio/lesson_guia_autorizada.json",
         "legacyCourse": "legacy-course.json",
         "legacyUnit": "content/es/programming/qa_edition/original/unit_original.json",
         "legacyLesson": "content/es/programming/qa_edition/original/lesson_primera.json",
@@ -124,6 +158,7 @@ def documents() -> tuple[dict[str, object], dict[str, str]]:
         },
         paths["legacyLesson"]: old,
         paths["lesson"]: current,
+        paths["reviewedGuides"]: guidance,
         paths["nextLesson"]: following,
         "content/es/programming/qa_other/course_qa_other.json": {
             "id": "qa_other", "title": "Curso ajeno QA",
