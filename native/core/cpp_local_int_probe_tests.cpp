@@ -67,7 +67,7 @@ void noexcept_main_preserves_local_dependency_checks() {
         "int anterior=aforo; std::cout<<anterior<<aforo;}",
         {"aforo", 4, {}, true});
     require(updated &&
-        updated->find("aforo+=3;\n    aforo += 4;\n") != std::string::npos &&
+        updated->find("aforo+=3;\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n") != std::string::npos &&
         updated->find("int anterior=aforo;") > updated->find("aforo += 4;"),
         "A noexcept main lost the private probe after its first state update");
     require(!cpp_local_int_override(
@@ -103,7 +103,7 @@ void trailing_return_main_supports_equivalent_int_entrypoints() {
         "auto main() noexcept -> int {int aforo{5};aforo+=3;"
         "std::cout<<aforo;}",{"aforo",4,{},true});
     require(update&&
-        update->find("aforo+=3;\n    aforo += 4;\n")!=std::string::npos,
+        update->find("aforo+=3;\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n")!=std::string::npos,
         "Trailing return main lost the independent after-update probe");
     for(const auto* invalid:{
         "auto main()->long {int llaves{7};std::cout<<llaves;}",
@@ -444,7 +444,7 @@ void changed_increase_is_observed_at_the_actual_update() {
         "std::cout<<aforo;}",
         {"aforo",4,{},true});
     require(dependent_member&&dependent_member->find(
-            "aforo=aforo+datos.aforo;\n    aforo += 4;\n")!=std::string::npos,
+            "aforo=aforo+datos.aforo;\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n")!=std::string::npos,
         "A genuine update using the local and a differently owned field was rejected");
     for(const auto& original:{
             "int main(){int aforo{5}; std::cout<<aforo;}",
@@ -493,7 +493,7 @@ void neutral_updates_cannot_fake_u2l3_increase() {
         prefix+"aforo=aforo+0;aforo+=3;std::cout<<aforo;}",
         {"aforo",4,{},true});
     require(later&&
-        later->find("aforo+=3;\n    aforo += 4;\n")!=std::string::npos&&
+        later->find("aforo+=3;\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n")!=std::string::npos&&
         later->find("aforo=aforo+0;")<
             later->find("aforo += 4;"),
         "A harmless earlier neutral expression obscured the later real increase");
@@ -501,7 +501,7 @@ void neutral_updates_cannot_fake_u2l3_increase() {
         prefix+"aforo=aforo+0+3;std::cout<<aforo;}",
         {"aforo",4,{},true});
     require(combined&&
-        combined->find("aforo=aforo+0+3;\n    aforo += 4;\n")!=std::string::npos,
+        combined->find("aforo=aforo+0+3;\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n")!=std::string::npos,
         "A genuine update with a redundant zero was rejected");
 }
 
@@ -554,21 +554,21 @@ void composed_neutral_updates_cannot_fake_u2l3_increase() {
         start+"aforo=(aforo+0)+0;aforo=aforo+(3+0);"+output,
         {"aforo",4,{},true});
     require(later&&
-        later->find("aforo=aforo+(3+0);\n    aforo += 4;\n")!=
+        later->find("aforo=aforo+(3+0);\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n")!=
             std::string::npos,
         "A neutral prefix prevented the later genuine increase from being probed");
     const auto genuine=cpp_local_int_override(
         start+"aforo=aforo+0+3;"+output,
         {"aforo",4,{},true});
     require(genuine&&
-        genuine->find("aforo=aforo+0+3;\n    aforo += 4;\n")!=
+        genuine->find("aforo=aforo+0+3;\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n")!=
             std::string::npos,
         "An expression with a real nonzero term was incorrectly ignored");
     const auto nonzero=cpp_local_int_override(
         start+"aforo=aforo+(2-3);"+output,
         {"aforo",4,{},true});
     require(nonzero&&
-        nonzero->find("aforo=aforo+(2-3);\n    aforo += 4;\n")!=
+        nonzero->find("aforo=aforo+(2-3);\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n")!=
             std::string::npos,
         "A subtraction of different integer literals was mistaken for no-op");
     for(const auto* genuine_additive:{
@@ -582,7 +582,7 @@ void composed_neutral_updates_cannot_fake_u2l3_increase() {
         const auto source=start+std::string(genuine_additive)+output;
         const auto variant=cpp_local_int_override(source,{"aforo",4,{},true});
         require(variant&&
-            variant->find(std::string(genuine_additive)+"\n    aforo += 4;\n")!=
+            variant->find(std::string(genuine_additive)+"\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n")!=
                 std::string::npos,
             "A nonzero additive change was confused with exact cancellation");
     }
@@ -602,7 +602,7 @@ void opaque_noop_requires_runtime_state_change() {
             {"aforo",4,{},true});
         require(altered&&altered->find("const int "+std::string(marker)+
             " = aforo;")!=std::string::npos&&
-            altered->find(std::string(statement)+"\n    aforo += 4;\n")!=
+            altered->find(std::string(statement)+"\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n")!=
                 std::string::npos&&
             altered->find(" - (4LL) <= static_cast<long long>("+
                 std::string(marker))!=std::string::npos,
@@ -610,7 +610,7 @@ void opaque_noop_requires_runtime_state_change() {
     }
     const auto genuine=cpp_local_int_override(
         start+"aforo=(aforo|0)+3;"+output,{"aforo",4,{},true});
-    require(genuine&&genuine->find("aforo=(aforo|0)+3;\n    aforo += 4;\n")!=
+    require(genuine&&genuine->find("aforo=(aforo|0)+3;\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n")!=
         std::string::npos,"A genuine arithmetic increase was rejected");
     require(!cpp_local_int_override(
         start+"int lgaed_local_int_before_6cb8e71d=9;aforo+=3;"+output,
@@ -660,7 +660,7 @@ void crlf_after_update_preserves_source_and_comment() {
     constexpr std::string_view snapshot="lgaed_local_int_before_6cb8e71d";
     require(varied->find("const int "+std::string(snapshot)+" = aforo;")!=
                 std::string::npos &&
-            varied->find("aforo+=3;\n    aforo += 4;\n")!=std::string::npos &&
+            varied->find("aforo+=3;\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n")!=std::string::npos &&
             varied->find("// comentario de la actualización\r\n")!=
                 std::string::npos &&
             varied->find("std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo;")!=
@@ -694,7 +694,7 @@ void numeric_literal_identity_distinguishes_one_from_ten() {
         const auto variant=cpp_local_int_override(
             source,{"aforo",4,{},true});
         require(variant&&
-            variant->find(std::string(statement)+"\n    aforo += 4;\n")!=
+            variant->find(std::string(statement)+"\n    if (static_cast<long long>(aforo) + (4LL) > 2147483647LL || static_cast<long long>(aforo) + (4LL) < -2147483648LL) return 1;\n    aforo += 4;\n")!=
                 std::string::npos,
             "A genuine multiplication update was mistaken for a neutral assignment");
     }
