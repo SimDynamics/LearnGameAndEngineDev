@@ -1,6 +1,7 @@
-// Regression for edition-scoped course progress: a mixed historical/new
-// selection is not a publishable course index, and must NEVER erase answers.
-// This uses the production catalog and StateData implementations on Windows.
+// Regression for explicit selection of BOTH historic and new course content.
+// Such a scope is intentional and may reset both generations. A scope that
+// mixes different *new* epochs remains forbidden, preserving all stored data.
+// This exercises the production Catalog and StateData on hosted Windows.
 #include "core/catalog.hpp"
 #include "platform/windows/state_store.hpp"
 
@@ -21,15 +22,33 @@ template<class Action> void rejected(Action&& action,std::string_view reason) {
     try { action(); } catch(const std::invalid_argument&) { did_reject=true; }
     require(did_reject,reason);
 }
-void verify_scope_rejected_unchanged(state::StateData& data,
+void verify_explicit_mixed_scope(state::StateData& data,
+                                 const curriculum::CatalogScope& scope) {
+    const auto original=data;
+    auto selected=data;
+    const auto summary=curriculum::catalog_progress(selected,scope);
+    require(summary.total==scope.lessons.size(),
+        "An explicitly selected mixed course miscounted its exact lessons");
+    require(curriculum::reset_catalog_progress(selected,scope)>0,
+        "An explicit legacy/new scope did not reset its selected receipts");
+    require(state::find(selected,"learning_progress",
+        "lesson_qa_other_course__unit__primero_completed"),
+        "An explicit mixed reset erased another course's completion");
+    for(const auto& domain:{"cpp_lesson_drafts","narration_settings","native_windows"})
+        require(selected.preferences.at(domain)==original.preferences.at(domain),
+            "An explicit mixed reset changed historical drafts, audio or native preferences");
+    require(data==original,
+        "A test-owned explicit mixed scope changed the source student state");
+}
+void verify_rejected_scope_unchanged(state::StateData& data,
                                      const curriculum::CatalogScope& scope) {
     const auto original=data;
     rejected([&]{ (void)curriculum::reset_catalog_progress(data,scope); },
-        "A mixed historical/new course reset was admitted");
-    require(data==original,"Rejecting a mixed scope changed a student's stored data");
+        "An invalid cross-epoch or cross-parent course scope was admitted");
     rejected([&]{ (void)curriculum::catalog_progress(data,scope); },
-        "An invalid mixed course was still counted as published progress");
-    require(data==original,"A read-only course summary mutated stored data");
+        "An invalid course scope counted stale progress");
+    require(data==original,
+        "A rejected course scope changed the student's historical bytes");
 }
 void test_course_scope() {
     constexpr std::string_view course="qa_course";
@@ -53,26 +72,27 @@ void test_course_scope() {
     data.preferences["narration_settings"]["voice"]=std::string("ef_dora");
     data.preferences["native_windows"]["scroll/"+historic_lesson+"/p0"]=std::int64_t{17};
 
-    // A course-level scope from one published index cannot contain both
-    // historical and edition resources, even with valid parent-child names.
-    verify_scope_rejected_unchanged(data,
-        {{std::string(course)},{historic_unit,edition_unit},{historic_lesson,edition_lesson}});
-
-    // Do not trust missing parent arrays: the exact same course distinction
-    // holds when the caller passes only unit or only lesson identities.
-    verify_scope_rejected_unchanged(data,
+    // Explicitly selecting both generations IS authorized: do not prevent
+    // a user-requested reset of the old and new course in one operation.
+    verify_explicit_mixed_scope(data,
+        {{std::string(course)},{historic_unit,edition_unit},
+            {historic_lesson,edition_lesson}});
+    // Even without parent lists the selected unit/lesson owners are exact.
+    verify_explicit_mixed_scope(data,
         {{},{historic_unit,edition_unit},{}});
-    verify_scope_rejected_unchanged(data,
+    verify_explicit_mixed_scope(data,
         {{},{},{historic_lesson,edition_lesson}});
-    verify_scope_rejected_unchanged(data,
-        {{std::string(course)},{edition_unit},{historic_lesson,edition_lesson}});
+    // Selecting the new unit but a historic lesson of a DIFFERENT parent
+    // must still fail atomically.
+    verify_rejected_scope_unchanged(data,
+        {{std::string(course)},{edition_unit},
+            {historic_lesson,edition_lesson}});
 
-    // Two new generations or locales are also forbidden; no historical
-    // entry can disguise a cross-epoch set.
+    // Two NEW generations or locales of the SAME course remain forbidden.
     const std::string later="qa_course__edition_es_2__inicio";
-    verify_scope_rejected_unchanged(data,
+    verify_rejected_scope_unchanged(data,
         {{std::string(course)},{edition_unit,later},{}});
-    verify_scope_rejected_unchanged(data,
+    verify_rejected_scope_unchanged(data,
         {{std::string(course)},{edition_unit,"qa_course__edition_fr_1__debut"},{}});
 
     // Other courses may legitimately use different editions in the same
@@ -107,7 +127,7 @@ void test_course_scope() {
     require(curriculum::reset_catalog_progress(data,old)==2&&
             !state::find(data,"learning_progress","lesson_"+historic_lesson+"_completed")&&
             !state::find(data,"learning_progress","course_"+std::string(course)+"_completed"),
-        "A legacy-only scoped reset was broken by the edition guard");
+        "A legacy-only scoped reset was broken by edition-aware scope selection");
     require(data.preferences.at("cpp_lesson_drafts")==snapshot.preferences.at("cpp_lesson_drafts"),
         "Reset unexpectedly deleted a saved source from either generation");
 }
@@ -115,9 +135,9 @@ void test_course_scope() {
 int main() {
     try {
         test_course_scope();
-        std::cout<<"PASS Windows course edition scope: mixed legacy/new identities are "
-            "rejected atomically; isolated editions and historical-only resets "
-            "retain unrelated completions, drafts and narration.\n";
+        std::cout<<"PASS Windows course edition scope: explicitly mixed "
+            "historical/new reset remains authorized, invalid new epochs "
+            "reject atomically, drafts and other courses remain untouched.\n";
         return 0;
     }catch(const std::exception& error) {
         std::cerr<<"FAIL course edition reset scope: "<<error.what()<<'\n';

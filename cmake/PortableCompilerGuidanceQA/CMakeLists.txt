@@ -172,8 +172,8 @@ add_test(NAME native.p3_fourteen_ownership_authoring
 set_tests_properties(native.p3_fourteen_ownership_authoring PROPERTIES
     TIMEOUT 180 RUN_SERIAL TRUE)
 
-# Reject accidental mixed-generation course scopes before mutating ANY
-# stored state; this runs the actual production Catalog implementation.
+# Verify explicitly selected historical/new resets remain valid, while
+# malformed new-generation and cross-parent scopes reject before mutation.
 add_executable(lgaed_course_edition_scope_qa
     "${LGAED_ROOT}/native/core/course_edition_scope_tests.cpp")
 target_link_libraries(lgaed_course_edition_scope_qa PRIVATE

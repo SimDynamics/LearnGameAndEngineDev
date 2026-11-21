@@ -97,21 +97,6 @@ void validate_reset_scope(const CatalogScope& scope) {
             throw std::invalid_argument(
                 "Una lección de edición no pertenece a la unidad seleccionada.");
     }
-    // The active index must never mix retired course units/lessons with a
-    // new edition of that SAME course. An explicit reset spanning both would
-    // erase historical progress, defeating the edition's separate IDs.
-    // This applies even to a lessons-only scope without a course parent.
-    for(const auto& [course,epoch]:selected_epochs) {
-        (void)epoch;
-        const auto prefix=std::string(course)+"__";
-        const auto is_legacy_child=[&](const std::string& id) {
-            return id.starts_with(prefix)&&!uses_course_edition_namespace(id);
-        };
-        if(std::ranges::any_of(scope.units,is_legacy_child)||
-           std::ranges::any_of(scope.lessons,is_legacy_child))
-            throw std::invalid_argument(
-                "Un reinicio no puede combinar recursos históricos y una edición nueva del mismo curso.");
-    }
     const auto belongs_to = [](std::string_view id,
                                const std::vector<std::string>& parents) {
         return std::ranges::any_of(parents, [&](const std::string& parent) {
