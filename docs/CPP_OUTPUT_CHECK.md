@@ -280,6 +280,16 @@ extiende por sí sola a arrays, copias o jerarquías. Work debe añadir
 la declaración al JSON original de la lección y verificar su integración;
 los archivos de prueba con metadatos temporales no publican dicha autoría.
 
+La regresión `test_cpp_move_assignment_invariant_core.py` compila el
+`main` original y contrasta sus tres casos públicos para las dos
+implementaciones válidas y para un contraejemplo cuyo operador omite
+reiniciar la etiqueta del parámetro de origen. Ese contraejemplo puede
+producir las mismas salidas porque `main` destruye la intermedia
+inmediatamente; únicamente la sonda privada directa revela el
+incumplimiento del invariante. Las dos entradas posteriores del editor
+siguen siendo opcionales para el estudiante: esta batería adicional
+pertenece solo a QA.
+
 
 ## Arrays propietarios y lectura con límites
 
