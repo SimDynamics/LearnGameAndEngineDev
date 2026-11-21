@@ -973,13 +973,13 @@ void retirement_contract_tests(const Lesson& first) {
     for (const auto& page : final.pages) for (const auto& block : page.blocks) if (block.type == BlockType::cpp_compiler) ++useful;
     const bool revised=stable_block_position(final,"p1u1l5_un_salto_en_el_codigo").has_value();
     const bool added_editor=stable_block_position(final,"p1u1l5_escribir_linea_intermedia").has_value();
-    check(revised==added_editor,
-        "The U1L5 new edition omitted or orphaned its intermediate-line compiler");
-    check(useful == (revised?9u:8u),
-        "U1 retirement lost a historical editor or the newly authored intermediate-line practice");
+    // This test loads the LIVE current lesson. The archived eight-editor edition
+    // has its own independent fixtures; losing both new IDs must not turn the
+    // current nine-editor check into a passing historical regression.
+    check(revised&&added_editor&&useful==9,
+        "The current U1 edition must retain all nine independent compiler editors");
     std::cout << "Retired U1 compiler contracts, original slots and active bookmarks: "
-              << useful << " useful editors including "<<(revised?1:0)
-              <<" edition addition(s): PASS\n";
+              << useful << " useful editors including the required ninth edition editor: PASS\n";
 }
 void integrated_retirement_contract_tests() {
     using namespace winrt::Windows::Data::Json;
@@ -1144,7 +1144,8 @@ void integrated_retirement_contract_tests() {
     check(last.compiler_puzzles_required,"The U1L5 useful compiler objectives stopped being mandatory");
     const bool revised=stable_block_position(last,"p1u1l5_un_salto_en_el_codigo").has_value();
     const auto added=stable_block_position(last,"p1u1l5_escribir_linea_intermedia");
-    check(revised==added.has_value(),"A revised U1L5 omitted its new editor or an older edition falsely acquired it");
+    check(revised&&added.has_value(),
+        "The active U1L5 lost the ninth editor or its newly authored activity");
     std::size_t final_editors=0;
     for(const auto& page:last.pages)for(const auto& block:page.blocks)if(block.type==BlockType::cpp_compiler){
         ++final_editors;++useful;
@@ -1155,19 +1156,17 @@ void integrated_retirement_contract_tests() {
     }
     check(active_response_keys.size()==useful&&active_draft_keys.size()==useful,
         "Useful U1 editors do not have independently addressable achievements and drafts");
-    check(final_editors==(revised?3u:2u)&&useful==(revised?9u:8u),
-        "Current U1 lost historical useful editors or added an unaccounted compiler");
-    if(added){
-        const auto& block=last.pages[added->page].blocks[added->block];
-        check(added->page==2&&block.type==BlockType::cpp_compiler&&
-            block.initial_code.find("std::cout << \"Puesto\\n\";")!=std::string::npos&&
-            block.initial_code.find("std::cout << \"Fin\";")!=std::string::npos&&
-            block.output_check&&block.output_check->cases.size()==1&&
-            block.output_check->cases.front().outputs==std::vector<std::string>{"Puesto\nMesa B\nFin"},
-            "The new intermediate-line objective no longer checks the three independently ordered lines");
-    }
+    check(final_editors==3u&&useful==9u,
+        "Current U1 lost one of nine independently owned required compiler editors");
+    const auto& block=last.pages[added->page].blocks[added->block];
+    check(added->page==2&&block.type==BlockType::cpp_compiler&&
+        block.initial_code.find("std::cout << \"Puesto\\n\";")!=std::string::npos&&
+        block.initial_code.find("std::cout << \"Fin\";")!=std::string::npos&&
+        block.output_check&&block.output_check->cases.size()==1&&
+        block.output_check->cases.front().outputs==std::vector<std::string>{"Puesto\nMesa B\nFin"},
+        "The ninth intermediate-line objective no longer checks the three independently ordered lines");
     std::cout<<"Integrated U1 assets: exact historical retirements, original slots and "
-             <<useful<<" distinct mandatory compiler objectives (including "<<(revised?1:0)
+             <<useful<<" distinct mandatory compiler objectives (including one required"
              <<" authored addition), no repeated retirement: PASS\n";
 }
 void rejection_semantic_contract_tests() {
@@ -1799,7 +1798,8 @@ int main(int argc,char** argv) {
         if(argc==2&&std::string_view(argv[1])=="--u1-editor-contracts"){
             // Run the published U1 identity and draft contracts without the
             // unrelated historical/editorial fixtures used by the full suite.
-            // Codex still has eight until the new Work U1L5 is synchronized.
+            // Historical retirement fixtures remain separate; the active U1 has
+            // nine editors, enforced by the current-asset checks above.
             const auto first=lgaed::test::load_pre_retirement_lesson(
                 "lesson_primer_programa_y_salida.json");
             retirement_contract_tests(first);
