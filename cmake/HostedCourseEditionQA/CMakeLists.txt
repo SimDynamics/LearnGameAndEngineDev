@@ -21,8 +21,22 @@ set(LGAED_DEFAULT_PROFILE "Codex")
 set(LGAED_DEP_ROOT "${CMAKE_BINARY_DIR}/dependencies")
 set(LGAED_EDUCATIONAL_VC_ROOT "$ENV{VCToolsInstallDir}")
 set(LGAED_EDUCATIONAL_SDK_ROOT "$ENV{WindowsSdkDir}")
+# The isolated hosted runner may have an SDK version different from the
+# product's pinned Windows SDK. Use its activated SDK only for student-code
+# execution in this QA target; never rewrite the production template or pin.
+file(TO_CMAKE_PATH "$ENV{WindowsSdkDir}" _lgaed_qa_sdk_root)
+set(_lgaed_qa_sdk "$ENV{WindowsSDKVersion}")
+string(REGEX REPLACE "[/\\\\]+$" "" _lgaed_qa_sdk "${_lgaed_qa_sdk}")
+if(NOT _lgaed_qa_sdk MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$" OR
+   NOT IS_DIRECTORY "${_lgaed_qa_sdk_root}/Include/${_lgaed_qa_sdk}/ucrt" OR
+   NOT IS_DIRECTORY "${_lgaed_qa_sdk_root}/Lib/${_lgaed_qa_sdk}/um/x64")
+    message(FATAL_ERROR "Hosted SDK is not a complete Windows x64 SDK: '${_lgaed_qa_sdk}'")
+endif()
+message(STATUS "Isolated hosted QA SDK: ${_lgaed_qa_sdk} (product pin unchanged)")
 file(READ "${_lgaed_root}/cmake/native_build_config.hpp.in" _header)
 string(REPLACE "@CMAKE_SOURCE_DIR@" "${_lgaed_root}" _header "${_header}")
+string(REPLACE "educational_sdk_version[] = L\"10.0.28000.0\""
+    "educational_sdk_version[] = L\"${_lgaed_qa_sdk}\"" _header "${_header}")
 string(CONFIGURE "${_header}" _header @ONLY)
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated")
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/generated/native_build_config.hpp" "${_header}")
@@ -146,3 +160,13 @@ add_test(NAME native.simulation_empty_text_lesson
 set_tests_properties(native.simulation_model PROPERTIES TIMEOUT 40)
 set_tests_properties(native.simulation_empty_text_controls
     native.simulation_empty_text_lesson PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+
+# Actual Windows student C++ compilation through the production LessonView.
+# The first of thirteen declared cases is required; the other twelve are
+# independently executable, never mandatory for progress.
+add_executable(lgaed_compiler_first_case_view_tests
+    "${_lgaed_root}/native/presentation/windows/compiler_first_case_view_tests.cpp")
+target_link_libraries(lgaed_compiler_first_case_view_tests
+    PRIVATE lgaed_curricular_windows)
+add_test(NAME native.compiler_puzzles COMMAND lgaed_compiler_first_case_view_tests)
+set_tests_properties(native.compiler_puzzles PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
