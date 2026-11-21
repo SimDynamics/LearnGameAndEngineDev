@@ -29,17 +29,25 @@ concurrency:
 jobs:
   check-contracts:
     name: Verify 4 exercises against independent output oracles
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 5
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     steps:
       - name: Read the actual Codex curriculum sources
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Set up Python 3.12 for Windows contract checks
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Check the 16 curricular output cases and oracle regressions
         env:
           PYTHONPATH: scripts/curriculum
-        run: python3 -B -m unittest -v scripts/curriculum/test_assetcheck_curricular_oracles.py
+        run: python -B -m unittest -v scripts/curriculum/test_assetcheck_curricular_oracles.py
 
   compile-curricular-references:
     name: "Compile actual curricular C++23 references (${{ matrix.report }})"

@@ -280,17 +280,22 @@ jobs:
     name: Report hosted CTest integration of local-variable StateStore
     if: ${{ always() }}
     needs: [native-guidance-reopen]
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 2
     permissions:
       statuses: write
     steps:
+      - name: Select Python for Windows native status report
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Record hosted integration result against this exact Codex SHA
+        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOSTED_CTEST: ${{ needs.native-guidance-reopen.result }}
         run: |
-          python3 - <<'PY'
+          @'
           import json
           import os
           from urllib.request import Request, urlopen
@@ -323,4 +328,4 @@ jobs:
               if response.status != 201:
                   raise RuntimeError("GitHub did not record the hosted CTest result")
           print("Hosted Win32 StateStore CTest:", result)
-          PY
+          '@ | python -B -

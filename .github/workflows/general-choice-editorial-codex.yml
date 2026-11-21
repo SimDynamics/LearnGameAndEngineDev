@@ -51,28 +51,34 @@ concurrency:
 
 jobs:
   general-choice-authoring:
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 6
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     steps:
       - name: Fetch Codex source and authenticated predecessor
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Set up Python 3.12 for Windows contract checks
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Verify original/editorial authoring and protected math contracts
+        shell: pwsh
         run: |
-          python3 -m py_compile scripts/curriculum/stable_state_layout.py \
-            scripts/curriculum/test_general_choice_editorial.py \
-            scripts/curriculum/test_published_u12_question_editorials.py \
-            scripts/curriculum/editorial_fixture_history.py \
-            scripts/curriculum/math_prompt_fixture_source.py \
-            scripts/curriculum/test_math_prompt_revision.py
-          python3 -B -m unittest discover \
-            -s scripts/curriculum -p test_general_choice_editorial.py -v
-          python3 -B -m unittest discover \
-            -s scripts/curriculum -p test_published_u12_question_editorials.py -v
-          python3 -B -m unittest discover \
-            -s scripts/curriculum -p test_math_prompt_revision.py -v
+          python -B -m py_compile scripts/curriculum/stable_state_layout.py scripts/curriculum/test_general_choice_editorial.py scripts/curriculum/test_published_u12_question_editorials.py scripts/curriculum/editorial_fixture_history.py scripts/curriculum/math_prompt_fixture_source.py scripts/curriculum/test_math_prompt_revision.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B -m unittest discover -s scripts/curriculum -p test_general_choice_editorial.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B -m unittest discover -s scripts/curriculum -p test_published_u12_question_editorials.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B -m unittest discover -s scripts/curriculum -p test_math_prompt_revision.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
   math-prompt-windows:
     name: Preserve math prompt state through real worker and Windows reader
     runs-on: windows-2025-vs2026

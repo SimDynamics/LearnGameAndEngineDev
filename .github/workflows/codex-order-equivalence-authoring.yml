@@ -29,8 +29,14 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Select Python for Windows native authoring
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Check unchanged U12 order identity and review metadata
-        shell: bash
+        shell: pwsh
         run: |
           python -B -m unittest discover -s scripts/curriculum -p test_order_equivalence_authoring.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B -m unittest discover -s scripts/curriculum -p test_order_line_refinement.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
