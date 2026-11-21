@@ -3919,3 +3919,78 @@ El campo es opcional; su ausencia preserva el comprobante y las
 expectativas históricas de las sondas anteriores. Su presencia
 requiere el booleano JSON `true` y se vincula a la huella de
 la ejecución y al comprobante semántico separado.
+
+
+### Sondas de dependencia de cadenas (U2L7)
+
+Work puede añadir `compilerLocalStringChecks` en la raíz de una
+lección española con `stateLayout` v2. La declaración pertenece a los
+**identificadores estables de los editores existentes**, no a sus posiciones
+visuales. Ejemplo de estructura, para añadir mediante la autoría curricular:
+
+```json
+"compilerLocalStringChecks": [{
+  "activity": "block_0006_0002",
+  "probes": [
+    {
+      "variable": "edificio",
+      "replacement": "Sala Norte",
+      "moment": "afterInitialization",
+      "outputs": ["Sala Norte-04", "Sala Norte-04\n"]
+    },
+    {
+      "variable": "codigo",
+      "replacement": "003",
+      "moment": "afterInitialization",
+      "outputs": ["Aula-003", "Aula-003\n"]
+    },
+    {
+      "variable": "etiqueta",
+      "replacement": "ETIQUETA CONTROL",
+      "moment": "beforeOutput",
+      "outputs": ["ETIQUETA CONTROL", "ETIQUETA CONTROL\n"]
+    }
+  ]
+}]
+```
+
+`afterInitialization` inserta la nueva asignación inmediatamente
+después de la definición de esa variable `std::string` local de
+`main`. `afterFirstAssignment` la inserta después de su primera
+asignación posterior a la definición, por ejemplo `codigo = "07";`.
+`beforeOutput` inserta un valor de control inmediatamente antes de la
+primera salida de `std::cout` que **lee realmente** esa variable. No
+basta que el texto coincida con un literal o que se imprima la
+concatenación de las variables originales omitiendo `etiqueta`.
+
+La definición y la instrucción de destino deben ser inequívocas en el
+ámbito directo de `main`. Una macro, un ámbito ambiguo, un nombre
+ausente, una lectura que nunca sucede o una variante que no compila
+impiden acreditar la capacidad; no producen una aprobación falsa. Las
+cadenas se inyectan mediante escapes octales de bytes UTF-8, conservando
+el cero inicial y los caracteres originales sin sustituir el
+programa guardado. Se autorizan entre una y doce variaciones por
+editor, un par `variable`/`moment` por variación y entre una y
+cuatro salidas exactas distintas que no coincidan con la salida
+visible, admitiendo el salto final opcional. Las nuevas declaraciones
+son acumulativas y no pueden reescribir las ya publicadas.
+
+El trabajador Windows ejecuta la muestra visible y después compila y
+ejecuta independientemente cada variante con MSVC, sin requerir al alumno
+acciones adicionales. Todas las variantes deben producir sus resultados
+propios. Una fuente que muestre un literal fijo puede superar la
+muestra pública, pero no acredita el requisito. El nuevo comprobante
+`local-string/v1` está ligado al propietario, programa y declaración.
+Los recibos de salida anteriores se conservan, pero no generan ese
+comprobante por sí solos; la reapertura verifica su integridad antes de
+acreditar el progreso. Ningún otro curso, borrador o salida se modifica.
+
+Las pruebas de autoría del contrato están en
+`test_local_string_probe_authoring.py`; las variantes reales compiladas
+con GCC, Clang y MSVC en
+`test_local_string_live_compilation.py`; y la integración de los dos
+editores originales U2L7, sus ejecuciones privadas y recibos Win32 en
+`local_string_state_tests.cpp`. Los tests de GCC y Clang acreditan la
+portabilidad de la sonda, no el funcionamiento del motor Windows. La
+validación visual habitual y la autoría definitiva de las salidas del
+currículo corresponden al usuario y a Work respectivamente.
