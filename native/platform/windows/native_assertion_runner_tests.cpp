@@ -151,9 +151,9 @@ int main() {
         require(!compiler_runtime_request_allowed(repair,copied),
             "Removing assert bypassed the authenticated source boundary");
         copied=active_request;
-        copied.backend=CppRunRequest::Backend::wasi;
+        copied.backend=static_cast<CppRunRequest::Backend>(1);
         require(!compiler_runtime_request_allowed(active,copied),
-            "A WASI runner could still be substituted for native MSVC evidence");
+            "An unsupported backend could still be substituted for native MSVC evidence");
         std::cout<<"PASS native U3L9 original abort, NDEBUG, repaired probes, stale protection and hostile counterexamples\n";
         return 0;
     }catch(const std::exception& e){

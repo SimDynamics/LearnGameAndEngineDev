@@ -49,12 +49,15 @@ falla con un diagnóstico, en lugar de cambiar silenciosamente de herramientas.
 
 **Política de compiladores para el producto Windows:** MSVC es el compilador
 principal para la aplicación, los editores y las comprobaciones nativas C++.
-No se exige GCC ni un segundo Clang de escritorio, y Codex no repite las
-regresiones de C++ en Linux solo para contrastar compiladores. Para ejecutar
-programas de estudiantes de forma aislada, se conserva WASI SDK con su propio
-Clang orientado a WebAssembly y Wasmtime como ejecutor **local en Windows**;
-esto no representa una versión web de la aplicación. Las pruebas de autoría
-Python, los contratos históricos y las pruebas de MSVC continúan vigentes.
+No se exige GCC, Clang de escritorio, WASI SDK ni Wasmtime. Codex no
+repite regresiones de C++ en Linux para contrastar compiladores. Los programas
+de estudiantes se compilan con MSVC C++23 y se ejecutan como procesos hijos
+nativos limitados por Job Objects, temporizadores y cuotas de salida; esto
+limita recursos pero no constituye un aislamiento de seguridad equivalente
+al sandbox de WebAssembly. Las tres aserciones de Programación 2 U3L9 se
+acreditan por diagnósticos auténticos del CRT de MSVC y sondas de ejecución
+independientes. Las pruebas de autoría Python, los contratos históricos y
+las pruebas de MSVC continúan vigentes.
 La selección exacta de MSVC/SDK del manifiesto principal no se flexibiliza
 porque un runner de GitHub disponga de otra versión.
 

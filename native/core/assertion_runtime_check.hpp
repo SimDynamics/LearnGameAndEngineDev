@@ -60,22 +60,6 @@ inline constexpr std::array<std::string_view,2> repaired_assertion_inputs{{
     "-2 21 8 9"
 }};
 
-inline bool assertion_runtime_trap(std::string_view stdout_bytes,
-        std::string_view stderr_bytes) {
-    if(!stdout_bytes.empty())return false;
-    constexpr std::string_view public_diagnostic=
-        "Cajas: peticion 1, piezas=-1. Se admite un entero de 0 a 20. Revise la cantidad.\n";
-    // The exact crash code is not portable. Validate diagnostic, expression,
-    // original function and matching Wasmtime trap rather than 'exit != 0'.
-    return stderr_bytes.starts_with(public_diagnostic)&&
-        stderr_bytes.find("Assertion failed: cajas * piezas_por_caja >= piezas (")!=stderr_bytes.npos&&
-        stderr_bytes.find("main.cpp: cajas_para: 7)")!=stderr_bytes.npos&&
-        stderr_bytes.find("program.wasm")!=stderr_bytes.npos&&
-        stderr_bytes.find("program.wasm!__assert_fail")!=stderr_bytes.npos&&
-        stderr_bytes.find("program.wasm!cajas_para")!=stderr_bytes.npos&&
-        stderr_bytes.find("wasm trap: wasm `unreachable` instruction executed")!=stderr_bytes.npos;
-}
-
 // Windows CRT may translate every LF to CRLF in redirected console streams.
 // This is only used by the three reviewed U3L9 assertion exercises.
 inline bool assertion_native_lines(std::string_view expected,std::string_view actual) {

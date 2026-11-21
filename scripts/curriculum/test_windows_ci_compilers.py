@@ -1,8 +1,7 @@
-"""Mantiene solamente la cadena nativa Windows y la ejecución WASI requerida.
+"""Verifica la cadena MSVC C++23 sin compiladores adicionales.
 
-Una prueba editorial de Python puede ejecutarse sin compilador. Las pruebas
-C++ del motor usan MSVC en Windows; Clang se usa exclusivamente dentro del
-WASI SDK para compilar WebAssembly ejecutado localmente por Wasmtime.
+Los tres ejercicios U3L9 conservan sus identidades históricas, pero el
+ejecutor y los recibos deben ser nativos Windows.
 """
 from __future__ import annotations
 
@@ -31,16 +30,24 @@ class WindowsCompilerPolicy(unittest.TestCase):
             with self.subTest(workflow=path.name):
                 self.assertNotRegex(path.read_text(encoding="utf-8"), unused)
 
-    def test_native_pins_and_separate_wasi_runner_remain(self):
+    def test_native_pins_and_removed_wasi_dependencies(self):
         manifest = json.loads((ROOT / "toolchains/windows.versions.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["cpp"]["standard"], 23)
         self.assertTrue(manifest["visualStudio"]["msvcToolset"])
         self.assertTrue(manifest["visualStudio"]["windowsSdk"])
         presets = json.loads((ROOT / "CMakePresets.json").read_text(encoding="utf-8"))
         self.assertIn("windows-x64-debug", {p["name"] for p in presets["configurePresets"]})
-        wasi = (WORKFLOWS / "windows-wasi-execution.yml").read_text(encoding="utf-8")
-        self.assertIn("Install-WasiTools.ps1", wasi)
-        self.assertIn("Test-NativeCurricularCI.ps1", wasi)
+        self.assertFalse((WORKFLOWS / "windows-wasi-execution.yml").exists())
+        self.assertFalse((ROOT / "scripts/windows/Install-WasiTools.ps1").exists())
+        runner = (ROOT / "native/platform/windows/cpp_runner.cpp").read_text(encoding="utf-8")
+        self.assertNotIn("run_wasi_single", runner)
+        self.assertNotIn("Backend::wasi", runner)
+        source = (ROOT / "native/core/assertion_runtime_check.hpp").read_text(encoding="utf-8")
+        self.assertIn("assertion_native_abort", source)
+        self.assertNotIn("assertion_runtime_trap", source)
+        qa = (WORKFLOWS / "codex-native-assertion-migration.yml").read_text(encoding="utf-8")
+        self.assertIn("lgaed_native_assertion_runner_tests", qa)
+        self.assertIn("test_native_assertions_msvc.py", qa)
 
     def test_windows_source_execution_probes_do_not_use_gcc(self):
         for relative in (

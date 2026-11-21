@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'WasiRunner', 'NarrationWorker', 'U12Reader',
+    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'NarrationWorker', 'U12Reader',
         'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader')]
     [string] $Suite = 'StateImport',
     [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
@@ -28,8 +28,8 @@ if ($CompilerHistoryGroup -ne 'All' -and $Suite -ne 'CompilerHistoricalReader') 
 if ($EditorialGroup -ne 'All' -and $Suite -ne 'U11EditorialReader') {
     throw 'An editorial selection requires the U11EditorialReader suite.'
 }
-if ($MsvcPreflightOnly -and $Suite -notin @('WasiRunner', 'StateImport', 'ReaderBuild')) {
-    throw 'The early MSVC preflight is available only for hosted WASI, StateImport and ReaderBuild suites.'
+if ($MsvcPreflightOnly -and $Suite -notin @('StateImport', 'ReaderBuild')) {
+    throw 'The early MSVC preflight is available only for hosted StateImport and ReaderBuild suites.'
 }
 
 $qaRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -147,15 +147,6 @@ $qaSuiteConfig = switch ($Suite) {
             Targets = @('lgaed_editorial_matching_view_tests')
             Results = 'math-editorial'
             Tests = @('native.assetcheck_prompt_editorial')
-        }
-    }
-    'WasiRunner' {
-        @{
-            Directory = 'wasi-runner-ci'
-            CMakeOption = 'LGAED_WASI_RUNNER_QA_ONLY'
-            Targets = @('lgaed_cpp_runner_tests')
-            Results = 'wasi-runner'
-            Tests = @('native.wasi_runner', 'native.open_battery_runner')
         }
     }
     'NarrationWorker' {
@@ -418,11 +409,6 @@ foreach ($qaPath in @($qaRoot, $qaBuild, $qaVcVars, $qaCMake, $qaCTest, $qaPytho
 }
 # The disposable runner owns its own isolated dependencies; a CI test
 # must never require or create the user's E:\ project dependency directory.
-$qaWasiDependencyOption = ''
-if ($Suite -eq 'WasiRunner') {
-    $qaWasiRoot = (Join-Path $env:RUNNER_TEMP 'lgaed-wasi-deps').Replace('\', '/')
-    $qaWasiDependencyOption = "`"-DLGAED_DEP_ROOT=$qaWasiRoot`""
-}
 # CMake checks the actual Python/Git versions against the same manifest and
 # retains the normal compiler, SDK, dependency and exact C++23 checks.
 $qaCommands = @(
@@ -430,7 +416,7 @@ $qaCommands = @(
     'chcp 65001 >nul',
     "call `"$qaVcVars`" x64 $qaSdkVersion -vcvars_ver=$($qaManifest.visualStudio.msvcToolset)",
     'if errorlevel 1 exit /b %errorlevel%',
-    "`"$qaCMake`" -S `"$qaRoot`" -B `"$qaBuild`" -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/WindowsToolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DLGAED_DEFAULT_PROFILE=Codex -D$($qaSuiteConfig.CMakeOption)=ON `"-DPython3_EXECUTABLE=$qaPython`" `"-DGIT_EXECUTABLE=$qaGit`" $qaRuntimeOptions $qaWasiDependencyOption",
+    "`"$qaCMake`" -S `"$qaRoot`" -B `"$qaBuild`" -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/WindowsToolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DLGAED_DEFAULT_PROFILE=Codex -D$($qaSuiteConfig.CMakeOption)=ON `"-DPython3_EXECUTABLE=$qaPython`" `"-DGIT_EXECUTABLE=$qaGit`" $qaRuntimeOptions",
     'if errorlevel 1 exit /b %errorlevel%'
 )
 if ($Suite -eq 'ReaderBuild') {

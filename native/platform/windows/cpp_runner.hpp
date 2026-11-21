@@ -111,9 +111,9 @@ struct CppRunRequest {
     std::string project_key;
     enum class Action {compile_run,configure,build,execute};
     Action action=Action::compile_run;
-    // WASI compiles a portable module, then executes it with a trusted host
-    // runtime. Native MSVC remains required for diagnostics and CMake.
-    enum class Backend {native_msvc,wasi};
+    // C++ runs under Windows/MSVC. Retain an explicit backend field for
+    // source-bound proof contracts; no alternate compiler is supported.
+    enum class Backend {native_msvc};
     Backend backend=Backend::native_msvc;
     std::filesystem::path projects_directory;
     std::chrono::milliseconds compile_timeout{60000};
