@@ -165,6 +165,20 @@ void source_declaration_regression(
         missing_global.original_source.replace(
             name,std::string("class Muestra {").size(),"class LgaedWrongOwner {");
         missing_global.original_source+=extra;
+        const auto scan=lgaed::curriculum::cpp_class_structure::lexical(
+            missing_global.original_source);
+        if(!scan)throw std::runtime_error("Cannot tokenize missing global Muestra fixture");
+        const auto owner=lgaed::curriculum::cpp_class_structure::defined_class(
+            *scan,"Muestra");
+        if(owner) {
+            std::string witnessed;
+            for(std::size_t i=0;i+1<scan->size();++i)
+                if((*scan)[i]=="id:class"&&(*scan)[i+1]=="id:Muestra")
+                    witnessed+="class Muestra at token "+std::to_string(i)+
+                        " (open="+std::to_string(owner->opening)+"); ";
+            throw std::runtime_error(
+                "A namespaced class was falsely global: "+witnessed);
+        }
         if(check::valid(missing_global))
             throw std::runtime_error(
                 "Namespaced class authenticated a missing global Muestra owner");
