@@ -276,7 +276,14 @@ inline std::optional<std::size_t> first_assignment(
             if (braces != 1 || parentheses || brackets ||
                 i + 1 >= closing || code[i + 1].value != "op:=" ||
                 !boundary(code[i - 1].value)) return {};
-            return statement_end(code, i + 2, closing);
+            const auto end=statement_end(code,i+2,closing);
+            if(!end)return {};
+            // An uninitialized int cannot be read to establish its own
+            // first value. An after-statement probe would run too late to
+            // detect this undefined read and might credit a lucky stdout.
+            for(auto j=i+2;j<*end;++j)
+                if(code[j].value==wanted)return {};
+            return end;
         }
         if (t == "op:{") ++braces;
         else if (t == "op:}") {
