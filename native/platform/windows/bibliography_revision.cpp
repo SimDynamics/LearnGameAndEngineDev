@@ -63,7 +63,15 @@ bool locators(Text text){
     static const std::wstring value=number+L"(?:"+space+LR"(*[-–—])"+space+L"*"+number+L")?";
     static const std::wstring locator=label+space+L"+"+value;
     static const std::wregex pattern(locator+L"(?:(?:"+space+L"*,"+space+L"*|"+space+L"+(?:y|e|and|et|&)"+space+L"+)"+locator+L")*");
-    const auto normalized=lower(trim(text));return std::regex_match(normalized,pattern);
+    auto normalized=lower(trim(text));
+    // MSVC's wide ECMAScript character-class matching does not consistently
+    // recognize U+2013/U+2014 as a range separator on hosted Windows. This
+    // projection is ONLY for parsing numeric bibliography locator tails.
+    // The complete original explanation and its authored SHA remain intact
+    // for the protected before/after comparisons.
+    for(auto& character:normalized)
+        if(character==L'\u2013'||character==L'\u2014')character=L'-';
+    return std::regex_match(normalized,pattern);
 }
 struct Component{std::wstring separator,head,tail;};
 std::optional<std::vector<Component>> components(Text text){

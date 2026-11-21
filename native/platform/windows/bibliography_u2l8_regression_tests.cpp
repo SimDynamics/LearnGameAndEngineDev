@@ -12,6 +12,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 int main(int argc,char** argv) {
     try {
@@ -22,6 +23,28 @@ int main(int argc,char** argv) {
         const std::string bytes{std::istreambuf_iterator<char>(input),std::istreambuf_iterator<char>()};
         winrt::init_apartment();
         using namespace winrt::Windows::Data::Json;
+        // The production parser must distinguish numeric ranges from altered
+        // meanings; ASCII, en dash and em dash spell the same locator interval.
+        for(const auto tail:std::array<std::string_view,7>{{
+                "sección 5.13.3","párr. 1–3","párrs. 1–3",
+                "párrs. 1—3","párrs. 1-3",
+                "sección 5.13.3, párrs. 1–3 y tabla 9",
+                "sección 5.13.3, párr. 4 y tabla 10"}}){
+            const auto before=std::string("Una explicación (Autor, 2024, ")+
+                std::string(tail)+").";
+            const auto after=std::string("Una explicación (Autor, 2024).");
+            if(!lgaed::windows::bibliography::only_parenthetical_locator_removal(before,after)||
+               lgaed::windows::bibliography::only_parenthetical_locator_removal(after,before))
+                throw std::runtime_error("Valid bibliography range failed or allowed reversal: "+std::string(tail));
+        }
+        for(const auto tail:std::array<std::string_view,3>{{
+                "párrs. 1–tres","párrs. uno–3","párrs. 1–3 y texto libre"}}){
+            const auto before=std::string("Una explicación (Autor, 2024, ")+
+                std::string(tail)+").";
+            if(lgaed::windows::bibliography::only_parenthetical_locator_removal(
+                before,"Una explicación (Autor, 2024)."))
+                throw std::runtime_error("Invalid locator text was silently admitted: "+std::string(tail));
+        }
         const auto root=JsonObject::Parse(winrt::to_hstring(bytes));
         const auto edges=root.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
         std::size_t checked=0;
@@ -35,48 +58,9 @@ int main(int argc,char** argv) {
             const auto after=winrt::to_string(
                 archive.GetNamedObject(L"currentBlock").GetNamedString(L"explanation"));
             const bool approved=lgaed::windows::bibliography::only_parenthetical_locator_removal(before,after);
-            if(!approved) {
-                const auto probe=[&](std::string_view name,const std::string& old_text,
-                                     const std::string& new_text) {
-                    std::cerr<<"Bibliography subcase "<<name<<" valid="
-                        <<lgaed::windows::bibliography::only_parenthetical_locator_removal(old_text,new_text)
-                        <<"\n";
-                };
-                const auto old_citation=before.rfind("(Köppe");
-                const auto new_citation=after.rfind("(Köppe");
-                if(old_citation!=std::string::npos&&new_citation!=std::string::npos) {
-                    probe("just-citation","Una explicación "+before.substr(old_citation),
-                          "Una explicación "+after.substr(new_citation));
-                    const auto short_guide=std::string("Una explicación (Autor, 2024).");
-                    for(const auto& [name,suffix]:std::array<std::pair<const char*,const char*>,6>{{
-                        {"simple-section","sección 5.13.3"},
-                        {"singular-range","párr. 1–3"},
-                        {"plural-simple","párrs. 1"},
-                        {"plural-range","párrs. 1–3"},
-                        {"plural-ascii-range","párrs. 1-3"},
-                        {"full-range","sección 5.13.3, párrs. 1–3 y tabla 9"}
-                    }}) {
-                        probe(name,"Una explicación (Autor, 2024, "+std::string(suffix)+").",
-                            short_guide);
-                    }
-                    const auto old_paragraph=before.rfind("\n\n");
-                    const auto new_paragraph=after.rfind("\n\n");
-                    if(old_paragraph!=std::string::npos&&new_paragraph!=std::string::npos)
-                        probe("last-paragraph",before.substr(old_paragraph+2),
-                              after.substr(new_paragraph+2));
-                    auto old_first=before,new_first=after;
-                    const auto old_earlier=old_first.find("(Stroustrup, 2024)");
-                    const auto new_earlier=new_first.find("(Stroustrup, 2024)");
-                    if(old_earlier!=std::string::npos&&new_earlier!=std::string::npos) {
-                        old_first.replace(old_earlier,24,"[primera cita]");
-                        new_first.replace(new_earlier,24,"[primera cita]");
-                        probe("first-citation-masked",old_first,new_first);
-                    }
-                }
-                std::cerr<<"Rejected bibliographic source: owner="<<owner
-                    <<" ordinal="<<index<<" before="<<before<<" after="<<after<<"\n";
-                throw std::runtime_error("Published optional-locator removal was rejected");
-            }
+            if(!approved)
+                throw std::runtime_error("Published locator-only revision rejected: owner="+
+                    owner+" ordinal="+std::to_string(index));
             if(lgaed::windows::bibliography::only_parenthetical_locator_removal(after,before)||
                lgaed::windows::bibliography::only_parenthetical_locator_removal(before,before))
                 throw std::runtime_error("Bibliographic removal admitted an expansion or unchanged text");
