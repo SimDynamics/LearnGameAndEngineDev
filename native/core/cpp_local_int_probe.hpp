@@ -472,7 +472,7 @@ inline bool int_probe_trivial_noop(const Tokens& code,std::size_t statement,
         return Known::unknown;
     };
     const auto value=known(known,statement+2,end,0);
-    if(op=="op:"?value==Known::local:value==Known::zero)return true;
+    if(op=="op:="?value==Known::local:value==Known::zero)return true;
     // The identity classifier above handles explicit zero/one operands.
     // Detect composed additive cancellation as a separate, bounded proof:
     // aforo=aforo+2-2 or aforo+=(3+4-7) must not masquerade as an increase.
