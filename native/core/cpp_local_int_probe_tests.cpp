@@ -504,6 +504,51 @@ void neutral_updates_cannot_fake_u2l3_increase() {
         "A genuine update with a redundant zero was rejected");
 }
 
+void composed_neutral_updates_cannot_fake_u2l3_increase() {
+    // The unchanged learner program can print the expected "Ahora: 8"
+    // using aforo+3, without ever increasing the stored aforo. In that
+    // situation a hidden +4 after a compound no-op would also produce the
+    // expected variant and falsely certify an actual state update.
+    const std::string start=
+        "#include <iostream>\nint main(){int aforo{5};"
+        "int anterior=aforo;";
+    const std::string output=
+        "std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo+3;}";
+    for(const auto* neutral:{
+        "aforo=aforo+0+0;",
+        "aforo=(aforo+0)+0;",
+        "aforo=0+(aforo+0);",
+        "aforo=(aforo*1)/1;",
+        "aforo=aforo+(0+0);",
+        "aforo=aforo+(0*1);",
+        "aforo=0*aforo+aforo;",
+        "aforo=aforo*(1+0);",
+        "aforo+=(0+0);",
+        "aforo-=(1-1);",
+        "aforo+=(+0);"
+    }) {
+        require(!cpp_local_int_override(start+neutral+output,
+            {"aforo",4,{},true}),
+            "A composed neutral operation falsely counted as increasing aforo");
+    }
+    // Skipping the harmless first statement must still find a genuine
+    // later increment, regardless of whitespace or grouping.
+    const auto later=cpp_local_int_override(
+        start+"aforo=(aforo+0)+0;aforo=aforo+(3+0);"+output,
+        {"aforo",4,{},true});
+    require(later&&
+        later->find("aforo=aforo+(3+0);\n    aforo += 4;\n")!=
+            std::string::npos,
+        "A neutral prefix prevented the later genuine increase from being probed");
+    const auto genuine=cpp_local_int_override(
+        start+"aforo=aforo+0+3;"+output,
+        {"aforo",4,{},true});
+    require(genuine&&
+        genuine->find("aforo=aforo+0+3;\n    aforo += 4;\n")!=
+            std::string::npos,
+        "An expression with a real nonzero term was incorrectly ignored");
+}
+
 void numeric_literal_identity_distinguishes_one_from_ten() {
     using lgaed::curriculum::cpp_local_int_probe_detail::int_probe_literal_is;
     for(const auto* literal:{
@@ -588,6 +633,7 @@ int main() {
         expected_outputs_are_independent_and_reversible();
         changed_increase_is_observed_at_the_actual_update();
         neutral_updates_cannot_fake_u2l3_increase();
+        composed_neutral_updates_cannot_fake_u2l3_increase();
         numeric_literal_identity_distinguishes_one_from_ten();
         std::cout << "PASS local int probes: equivalent initialization, independent "
                      "variables, copy state, safe token positions.\n";

@@ -118,6 +118,16 @@ target_link_libraries(lgaed_compiler_guidance_portable_qa PRIVATE
     lgaed_guidance_platform lgaed_guidance_qa_options)
 target_link_options(lgaed_compiler_guidance_portable_qa PRIVATE /OPT:REF)
 enable_testing()
+# Run the production source probe's own adversarial regressions in the same
+# hosted MSVC CTest job that checks sealed progress and native StateStore.
+add_executable(lgaed_local_int_probe_source_qa
+    "${LGAED_ROOT}/native/core/cpp_local_int_probe_tests.cpp")
+target_link_libraries(lgaed_local_int_probe_source_qa PRIVATE
+    lgaed_guidance_qa_options)
+add_test(NAME native.local_int_probe_neutral_state
+    COMMAND lgaed_local_int_probe_source_qa)
+set_tests_properties(native.local_int_probe_neutral_state
+    PROPERTIES TIMEOUT 60)
 add_test(NAME native.compiler_guidance_state
     COMMAND lgaed_compiler_guidance_portable_qa)
 add_test(NAME native.compiler_review_guidance_priority

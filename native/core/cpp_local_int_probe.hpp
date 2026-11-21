@@ -369,14 +369,21 @@ inline bool int_probe_literal_is(std::string_view token,char wanted) {
     return has_digit&&(wanted=='0'||one);
 }
 
+// Recognize only provably neutral integer expressions: a local variable,
+// literal 0/1, parentheses and operations which preserve that value. Parse
+// complete additive/multiplicative groups with their actual C++ precedence,
+// rather than checking only one operator. No calls, casts, assignments, side
+// effects or unknown variables are inferred as identities. This prevents a
+// syntactically longer no-op from passing an after-update counterfactual.
 inline bool int_probe_trivial_noop(const Tokens& code,std::size_t statement,
         std::size_t end,std::string_view variable) {
     if(statement+2>=end)return false;
     const auto op=std::string_view(code[statement+1].value);
-    const auto wanted="id:"+std::string(variable);
+    if(op!="op:="&&op!="op:+="&&op!="op:-=")return false;
+    const std::string wanted="id:"+std::string(variable);
+    enum class Known { unknown, zero, one, local };
     const auto unwrapped=[&](std::size_t a,std::size_t b) {
-        while(b>a+1&&code[a].value=="op:("&&
-              code[b-1].value=="op:)") {
+        while(b>a+1&&code[a].value=="op:("&&code[b-1].value=="op:)") {
             std::size_t depth=0;
             bool enclosing=true;
             for(auto p=a;p<b;++p) {
@@ -392,44 +399,63 @@ inline bool int_probe_trivial_noop(const Tokens& code,std::size_t statement,
         }
         return std::pair{a,b};
     };
-    const auto is_self=[&](std::size_t first,std::size_t last) {
+    const auto known=[&](auto&& self,std::size_t first,
+                         std::size_t last,unsigned depth)->Known {
+        if(depth>64||first>=last)return Known::unknown;
         const auto [a,b]=unwrapped(first,last);
-        return b==a+1&&code[a].value==wanted&&
-               !qualified_member_name(code,a);
-    };
-    const auto is_number=[&](std::size_t first,std::size_t last,char digit) {
-        const auto [a,b]=unwrapped(first,last);
-        return b==a+1&&int_probe_literal_is(code[a].value,digit);
-    };
-    if(op=="op:+="||op=="op:-=")
-        return is_number(statement+2,end,'0');
-    if(op!="op:=")return false;
-    auto [first,last]=unwrapped(statement+2,end);
-    if(is_self(first,last))return true;
-    std::size_t at=last,depth=0;
-    for(auto p=first;p<last;++p) {
-        const auto value=std::string_view(code[p].value);
-        if(value=="op:(")++depth;
-        else if(value=="op:)") {
-            if(!depth)return false;
-            --depth;
-        }else if(!depth&&(value=="op:+"||value=="op:-"||
-                          value=="op:*"||value=="op:/")) {
-            if(at!=last)return false;
-            at=p;
+        if(a>=b)return Known::unknown;
+        if(b==a+1) {
+            if(code[a].value==wanted&&
+               !qualified_member_name(code,a))return Known::local;
+            if(int_probe_literal_is(code[a].value,'0'))return Known::zero;
+            if(int_probe_literal_is(code[a].value,'1'))return Known::one;
+            return Known::unknown;
         }
-    }
-    if(at==last||at==first||at+1==last)return false;
-    const auto operation=std::string_view(code[at].value);
-    const bool left=is_self(first,at),right=is_self(at+1,last);
-    const bool zero_left=is_number(first,at,'0');
-    const bool zero_right=is_number(at+1,last,'0');
-    const bool one_left=is_number(first,at,'1');
-    const bool one_right=is_number(at+1,last,'1');
-    return (operation=="op:+"&&((left&&zero_right)||(zero_left&&right)))||
-           (operation=="op:-"&&left&&zero_right)||
-           (operation=="op:*"&&((left&&one_right)||(one_left&&right)))||
-           (operation=="op:/"&&left&&one_right);
+        // Unary signs are permitted only where they cannot introduce an
+        // unproved value (a negated zero stays zero).
+        if(code[a].value=="op:+"||code[a].value=="op:-") {
+            const auto inner=self(self,a+1,b,depth+1);
+            return code[a].value=="op:+"||inner==Known::zero?
+                inner:Known::unknown;
+        }
+        const auto rightmost=[&](bool additive) {
+            std::size_t at=b,nesting=0;
+            for(auto i=a;i<b;++i) {
+                const auto token=std::string_view(code[i].value);
+                if(token=="op:(")++nesting;
+                else if(token=="op:)") {
+                    if(!nesting)return b;
+                    --nesting;
+                }else if(!nesting&&i>a&&i+1<b&&
+                        (additive?(token=="op:+"||token=="op:-"):
+                                  (token=="op:*"||token=="op:/")))at=i;
+            }
+            return nesting?b:at;
+        };
+        auto at=rightmost(true);
+        if(at==b)at=rightmost(false);
+        if(at==b)return Known::unknown;
+        const auto left=self(self,a,at,depth+1);
+        const auto right=self(self,at+1,b,depth+1);
+        const auto operation=std::string_view(code[at].value);
+        if(operation=="op:+") {
+            if(left==Known::zero)return right;
+            if(right==Known::zero)return left;
+        }else if(operation=="op:-") {
+            if(right==Known::zero)return left;
+            if(left==Known::one&&right==Known::one)return Known::zero;
+        }else if(operation=="op:*") {
+            if(left==Known::one)return right;
+            if(right==Known::one)return left;
+            if((left==Known::zero&&right!=Known::unknown)||
+               (right==Known::zero&&left!=Known::unknown))return Known::zero;
+        }else if(operation=="op:/"&&right==Known::one) {
+            return left;
+        }
+        return Known::unknown;
+    };
+    const auto value=known(known,statement+2,end,0);
+    return op=="op:="?value==Known::local:value==Known::zero;
 }
 
 // Locate an actual change to an initialized local int at the main-body
