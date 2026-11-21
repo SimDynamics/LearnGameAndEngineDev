@@ -78,7 +78,7 @@ void after_real_assignment_and_noexcept() {
             new_code->find("codigo = \"07\";")<
                 new_code->find("codigo = std::string{")&&
             new_code->find("codigo = std::string{")<
-                new_code->find("etiqueta = edificio + \"-\" + codigo;"),
+                new_code->rfind("etiqueta = edificio + \"-\" + codigo;"),
         "The second assignment probe did not follow the actual new code");
     for(const auto suffix:{"noexcept","noexcept(true)","noexcept(noexcept(4))"}) {
         const std::string src=std::string("#include <string>\nint main() ")+suffix+
