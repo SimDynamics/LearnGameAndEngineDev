@@ -78,6 +78,8 @@ def main():
                                fixture.ALT_CREATE,fixture.ALT_PRESENT,True),
         "correct_inert_qa_words":(inert_simple,fixture.IDENTIFIED_WRITE,
                                   fixture.CREATE,fixture.PRESENT,True),
+        "unrelated_namespaced_base":(fixture.SIMPLE_WRITE,fixture.IDENTIFIED_WRITE,
+                                    fixture.CREATE,fixture.PRESENT,True),
         **{name:(*bodies,False) for name,bodies in fixture.BAD.items()},
     }
     with tempfile.TemporaryDirectory(prefix="lgaed-u8l8-private-") as work:
@@ -91,16 +93,23 @@ def main():
         # identical stdout for every authored case, but is not polymorphic
         # for a third valid implementation. The private driver must reject it.
         public_variants={
-            "correct_direct","correct_local_owner","presenter_known_types_only"
+            "correct_direct","correct_local_owner","unrelated_namespaced_base",
+            "presenter_known_types_only"
         }
         public_runs=0
         for name,record in solutions.items():
             *bodies,expected=record
             candidate=folder/(name+".cpp")
-            candidate.write_bytes(
-                fixture.compose(original,tuple(bodies)).encode("utf-8"))
+            source_for_case=published
+            code=fixture.compose(original,tuple(bodies))
+            if name=="unrelated_namespaced_base":
+                note="namespace LgaedOther { class Muestra {}; }\n"
+                source_for_case=folder/"namespaced-original.cpp"
+                source_for_case.write_bytes((note+original).encode("utf-8"))
+                code=note+code
+            candidate.write_bytes(code.encode("utf-8"))
             private=folder/(name+".private.cpp")
-            generated=run([str(generator),str(published),str(candidate),str(private)])
+            generated=run([str(generator),str(source_for_case),str(candidate),str(private)])
             if name=="presenter_writes_to_stdout":
                 # A diagnostic printed to stdout used to fail only after
                 # executing the independent witness. The private-source gate
@@ -217,7 +226,7 @@ def main():
             if observed.returncode==0:
                 raise AssertionError((name,"Protected original source was editable"))
             print(f"{arguments.compiler}: {name}: REJECT",flush=True)
-    print("PASS U8L8 real source-bound polymorphism: three correct solutions, "
+    print("PASS U8L8 real source-bound polymorphism: four correct solutions, "
           "fifteen semantic defects and protected source-probe attacks; "
           "all five authentic public cases match even for the known-types-only "
           "counterexample, which the private third-type probe rejects.")

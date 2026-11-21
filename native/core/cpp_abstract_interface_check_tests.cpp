@@ -141,6 +141,34 @@ void source_declaration_regression(
             "int codigo_aux() const noexcept { return codigo_; } "
             "// int codigo() const noexcept",
             "A commented code getter impersonated the real identified getter");
+    // The base-class declaration belongs to the global lesson type.
+    // A class with the same name in a namespace must neither replace nor
+    // make the real global class ambiguous.
+    {
+        const auto extra=std::string(
+            "namespace LgaedOther { class Muestra { "
+            "virtual ~Muestra() = default; }; }\n");
+        const auto only_nested=check::direct_class_declaration(
+            extra,"Muestra","virtual ~Muestra() = default;");
+        if(only_nested)
+            throw std::runtime_error(
+                "Namespaced Muestra impersonated the required global interface");
+        auto documented=original;
+        documented.original_source=extra+original.original_source;
+        if(!check::valid(documented))
+            throw std::runtime_error(
+                "Unrelated namespaced Muestra displaced the real base class");
+        auto missing_global=original;
+        const auto name=missing_global.original_source.find("class Muestra {");
+        if(name==std::string::npos)
+            throw std::runtime_error("Missing original global Muestra declaration");
+        missing_global.original_source.replace(
+            name,std::string("class Muestra {").size(),"class LgaedWrongOwner {");
+        missing_global.original_source+=extra;
+        if(check::valid(missing_global))
+            throw std::runtime_error(
+                "Namespaced class authenticated a missing global Muestra owner");
+    }
 }
 
 } // namespace
