@@ -210,7 +210,7 @@ def main()->None:
         "valid_push":(ADD,REPORT,True),
         "valid_emplace":(ALT_ADD,ALT_REPORT,True),
         "documented_interface":(ADD,REPORT,True),
-        "unrelated_local_alias":(ADD,REPORT,True),
+        "unrelated_namespace_alias":(ADD,REPORT,True),
         **{name:(a,b,False) for name,(a,b) in BAD.items()}
     }
     with tempfile.TemporaryDirectory(prefix="lgaed-u8l9-owners-") as d:
@@ -224,7 +224,7 @@ def main()->None:
         # A hardcoded dynamic_cast chain can match each of them while failing
         # to consume a third valid Muestra interface implementation.
         public_variants={"valid_push","valid_emplace",
-                         "documented_interface","unrelated_local_alias",
+                         "documented_interface","unrelated_namespace_alias",
                          "known_types_only"}
         public_runs=0
         for name,(add,report,expected) in solutions.items():
@@ -238,12 +238,13 @@ def main()->None:
                 source_for_case=folder/"documented-original.cpp"
                 source_for_case.write_bytes((note+original).encode("utf-8"))
                 candidate=note+candidate
-            if name=="unrelated_local_alias":
-                # A real, top-level alias remains the owned contract even
-                # when a separate function declares a shadowing local alias.
-                extra=("\nvoid lgaed_alias_example() {\n"
+            if name=="unrelated_namespace_alias":
+                # A real global alias remains the owner contract when an
+                # unrelated namespace has a different alias with that name.
+                # Avoid a deliberately shadowing local declaration: MSVC
+                # warns C4459 under the /W4 /WX contract for this QA.
+                extra=("\nnamespace lgaed_alias_example {\n"
                        "  using Muestras = std::vector<std::unique_ptr<MuestraSimple>>;\n"
-                       "  (void)sizeof(Muestras);\n"
                        "}\n")
                 source_for_case=folder/"alias-original.cpp"
                 source_for_case.write_bytes((original+extra).encode("utf-8"))
