@@ -3968,9 +3968,11 @@ completas de varias cadenas con el mismo tipo explícito, como
 `std::string edificio{"Aula"}, codigo{"04"};`. La variación se inserta
 **después del punto y coma de toda la declaración**, nunca entre
 declaradores. También admite `std::string edificio, codigo;` seguido de
-asignaciones directas: para `afterInitialization`, sustituye el valor
-**después de la primera asignación completa**, de modo que la instrucción
-original no borre la variación antes del cálculo. Estas formas equivalentes
+asignaciones mediante `=`, `+=` o `codigo.assign(...)`: para
+`afterInitialization`, sustituye el valor **después de la primera asignación
+completa**, de modo que la instrucción original no borre la variación antes
+del cálculo. Lo mismo se aplica a `afterFirstAssignment` cuando la actualización
+usa `assign(...)`. Estas formas equivalentes
 siguen exigiendo compilaciones y salidas independientes correctas.
 Las declaraciones ambiguas que mezclen punteros o propietarios de otro
 tipo se rechazan; `auto` conserva su validación conservadora de una
