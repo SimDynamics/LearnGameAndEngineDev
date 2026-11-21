@@ -105,6 +105,11 @@ int main(int argc,char** argv)try {
         require(accepted==variation.valid,
             std::string("Incorrect structural verdict: ")+std::string(variation.name));
         if(!accepted)continue;
+        // The real student-facing main must keep passing every published
+        // output case. Export only source-validated variants into disposable
+        // QA, without changing any lesson asset or historical receipt.
+        write(std::filesystem::path(argv[2])/
+            (std::string(variation.name)+"-public.cpp"),candidate);
         constexpr std::array<std::pair<CppDefaultedMoveProbe,std::string_view>,3> modes{{
             {CppDefaultedMoveProbe::success,"runtime"},
             {CppDefaultedMoveProbe::rejected_copy_constructor,"copy-ctor"},
