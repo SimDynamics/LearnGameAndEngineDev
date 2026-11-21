@@ -464,6 +464,28 @@ class DeclaredIdentifierRenames(unittest.TestCase):
             with self.subTest(forged=forged):
                 self.assertFalse(renaming.same_json_value_and_types(same, forged))
 
+    def test_signed_zero_and_nonfinite_json_numbers_cannot_alias(self):
+        # Python's -0.0 == 0.0 is not proof of an unchanged JSON number:
+        # native output checks may care about a signed-zero value.
+        original = {"nested": [{"value": -0.0}, 0.0, -3.5]}
+        self.assertTrue(renaming.same_json_value_and_types(
+            original, deepcopy(original)))
+        for index, swapped in ((0, 0.0), (1, -0.0)):
+            forged = deepcopy(original)
+            if index == 0:
+                forged["nested"][0]["value"] = swapped
+            else:
+                forged["nested"][1] = swapped
+            with self.subTest(position=index):
+                self.assertEqual(original, forged,
+                                 "The case must demonstrate ordinary numeric equality")
+                self.assertFalse(renaming.same_json_value_and_types(original, forged))
+                self.assertFalse(renaming.same_json_value_and_types(forged, original))
+        for invalid in (float("nan"), float("inf"), -float("inf")):
+            with self.subTest(non_json_number=repr(invalid)):
+                self.assertFalse(renaming.same_json_value_and_types(
+                    {"number": invalid}, {"number": invalid}))
+
     def test_real_frequency_lesson_covers_examples_editors_and_predictions(self):
         # Author proposals only in memory, from the real immutable published
         # owners in P1 U5L13. Work alone can edit this curricular JSON.
