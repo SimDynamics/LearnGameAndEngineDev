@@ -82,6 +82,17 @@ BAD={
     (void)discarded;
     destino=std::make_unique<MedidaIdentificada>(numero,codigo,modo,balance);
 """,
+    "discards_completed_candidate_for_empty_destination":r"""
+    if (!destino) {
+        auto candidate=
+            std::make_unique<MedidaIdentificada>(numero,codigo,modo,balance);
+        (void)candidate;
+        return;
+    }
+    auto candidate=
+        std::make_unique<MedidaIdentificada>(numero,codigo,modo,balance);
+    destino.swap(candidate);
+""",
     "report_success_by_leaving_previous_owner":r"""
     (void)destino;
     auto candidate=std::make_unique<MedidaIdentificada>(numero,codigo,modo,balance);
