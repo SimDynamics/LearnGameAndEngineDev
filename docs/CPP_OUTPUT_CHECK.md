@@ -4081,3 +4081,34 @@ del estudiante. Se trabaja en un proceso oculto, sin instalar herramientas
 ni iniciar GitHub Actions. Esta comprobación de fuentes aisladas
 **no sustituye** las pruebas de integración Win32 del motor,
 la ejecución de la aplicación ni la revisión visual y auditiva humana.
+
+### Integración real de variables locales en Win32
+
+Las pruebas de compilación aislada anteriores no verifican la carga del
+JSON, los recibos de progreso ni la persistencia de la aplicación. El
+CTest nativo incorpora por separado:
+
+- `native.local_int_state`: ambos cargadores de lecciones, los editores
+  originales de U2, comprobantes independientes, integridad y reapertura
+  de estado sin ejecutar el programa personal del estudiante.
+- `native.local_string_state`: dos propietarios U2L7, compilaciones y
+  ejecuciones MSVC reales, rechazo de salidas fijas, recibos por editor,
+  guardado y reapertura del StateStore en un perfil QA único.
+
+Para construir únicamente estos dos ejecutables y ejecutar exactamente
+ambas pruebas en el checkout Windows autorizado de `Codex`:
+
+```powershell
+& '.\scripts\windows\Test-LocalVariableState.ps1' -Preset windows-x64-debug
+```
+
+El comprobador valida el nombre del checkout, la rama activa y el toolchain
+Windows fijado; registra la salida en
+`out/build/<preset>/logs/local-variable-state.*.log`. No compila ni
+inicia la aplicación completa, no modifica lecciones ni usa el perfil
+del alumno. La prueba de U2L7 usa un perfil de QA propio y aislado.
+
+Esta batería CTest es una **prueba de integración nativa**, distinta
+de las pruebas de código fuente con GCC, Clang o MSVC hospedado.
+Hasta obtener una ejecución y sus registros en el Windows autorizado,
+su presencia en CMake no se considera evidencia de éxito.
