@@ -255,6 +255,10 @@ bool matches_runtime_capture(const CppRunRequest& captured,const curriculum::Fre
              (!execution.local_int_request_fingerprint.empty()&&
               execution.local_int_request_fingerprint==
                   cpp_local_int_request_fingerprint(captured)))
+        &&(!captured.local_string_check||
+             (!execution.local_string_request_fingerprint.empty()&&
+              execution.local_string_request_fingerprint==
+                  cpp_local_string_request_fingerprint(captured)))
         &&(!captured.cmake_graph_check||
             (!execution.cmake_graph_request_fingerprint.empty()&&
              execution.cmake_graph_request_fingerprint==
@@ -515,6 +519,19 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
     if(request.local_int_check!=block.local_int_check)return false;
+    if(request.local_string_check!=block.local_string_check)return false;
+    if(block.local_string_check) {
+        if(block.local_int_check||
+           !curriculum::cpp_local_string_check_valid(*block.local_string_check)||
+           cpp_local_string_request_fingerprint(request).empty()||
+           !block.output_check||block.compile_check||block.cmake||
+           request.cmake||request.diagnostic||!block.project_files.empty()||
+           !request.project_files.empty()||!block.source_files.empty()||
+           !request.source_files.empty()||
+           request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||
+           request.stdin_utf8!=block.standard_input.value_or(""))return false;
+    }
     if(block.local_int_check) {
         if(!curriculum::cpp_local_int_check_valid(*block.local_int_check)||
            cpp_local_int_request_fingerprint(request).empty()||
@@ -1276,6 +1293,17 @@ std::string local_int_completion_seal(std::string_view key,
     }
     return state::sha256(frame);
 }
+std::string local_string_completion_seal(std::string_view key,
+        std::string_view program,const curriculum::CppLocalStringCheck& spec) {
+    auto frame=std::string("compiler-local-string-complete-v1/")+
+        token(key)+token(program);
+    for(const auto& item:spec.probes) {
+        frame+=token(item.variable)+token(item.replacement)+
+            token(std::to_string(static_cast<int>(item.moment)));
+        for(const auto& output:item.expected_stdout)frame+=token(output);
+    }
+    return state::sha256(frame);
+}
 std::string indexed_transfer_completion_seal(std::string_view key,
         std::string_view program,const curriculum::CppIndexedUniqueTransferProbe& spec) {
     return state::sha256(std::string("compiler-indexed-unique-owner-v1/")+
@@ -1293,6 +1321,9 @@ static bool stdout_or_diagnostic_completed(const state::StateData& data,const cu
     if(block.local_int_check&&
        state::string_value(data,"native_windows",key+"local-int/v1")!=
            local_int_completion_seal(key,captured,*block.local_int_check))return false;
+    if(block.local_string_check&&
+       state::string_value(data,"native_windows",key+"local-string/v1")!=
+           local_string_completion_seal(key,captured,*block.local_string_check))return false;
     if(block.indexed_unique_transfer_probe&&
        state::string_value(data,"native_windows",key+"indexed-unique-transfer/v1")!=
            indexed_transfer_completion_seal(key,captured,
@@ -1518,6 +1549,20 @@ void validate_compiler_puzzle_state(const state::StateData& data,const curriculu
                    state::string_value(data,"native_windows",key+"completed")))
                 throw std::runtime_error(
                     "Invalid independent local-int execution receipt; historical state was preserved.");
+        }
+    }
+    if(block.local_string_check) {
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",key+"local-string/v1")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=local_string_completion_seal(key,program,*block.local_string_check)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid independent local-string receipt; historical state was preserved.");
         }
     }
     if(block.indexed_unique_transfer_probe) {
@@ -1941,6 +1986,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
            block.named_rule_source_check->execution_probe->battery_check&&
            !execution.named_rule_battery_correct)||
        (block.local_int_check&&!execution.local_int_check_correct)||
+       (block.local_string_check&&!execution.local_string_check_correct)||
        (block.open_battery_probe&&!execution.open_battery_probe_correct)||
        (block.adjustment_project_probe&&!execution.adjustment_project_probe_correct)||
         (block.boolean_battery_probe&&!execution.boolean_battery_probe_correct)||
@@ -1964,7 +2010,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     const bool previously_completed=stdout_or_diagnostic_completed(data,lesson,block);
     auto proofs=case_proofs(data,key);
     const auto stored_program=state::string_value(data,"native_windows",key+"program");
-    if((block.local_int_check||block.indexed_unique_transfer_probe||block.defaulted_move_policy_probe||
+    if((block.local_int_check||block.local_string_check||block.indexed_unique_transfer_probe||block.defaulted_move_policy_probe||
         block.independent_copy_assignment_probe||block.move_assignment_invariant_probe||
         block.array_owner_read_probe||block.array_copy_move_probe||
         block.array_return_take_probe||
@@ -1981,6 +2027,9 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
         if(block.local_int_check)
             data.preferences["native_windows"][key+"local-int/v1"]=
                 local_int_completion_seal(key,program,*block.local_int_check);
+        if(block.local_string_check)
+            data.preferences["native_windows"][key+"local-string/v1"]=
+                local_string_completion_seal(key,program,*block.local_string_check);
         if(block.indexed_unique_transfer_probe)
             data.preferences["native_windows"][key+"indexed-unique-transfer/v1"]=
                 indexed_transfer_completion_seal(key,program,
@@ -2080,6 +2129,9 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
         if(block.local_int_check)
             values[key+"local-int/v1"]=
                 local_int_completion_seal(key,program,*block.local_int_check);
+        if(block.local_string_check)
+            values[key+"local-string/v1"]=
+                local_string_completion_seal(key,program,*block.local_string_check);
         if(block.indexed_unique_transfer_probe)
             values[key+"indexed-unique-transfer/v1"]=
                 indexed_transfer_completion_seal(key,program,

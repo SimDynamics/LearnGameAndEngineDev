@@ -2315,6 +2315,7 @@ struct LessonView {
         request.dual_interface_probe=block(index).dual_interface_probe;
         request.open_battery_probe=block(index).open_battery_probe;
         request.local_int_check=block(index).local_int_check;
+        request.local_string_check=block(index).local_string_check;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
         request.integer_battery_probe=block(index).integer_battery_probe;
@@ -4345,6 +4346,7 @@ struct LessonView {
                      (!block(index).named_rule_source_check->execution_probe->battery_check||
                       fresh.named_rule_battery_correct)))&&
                     (!block(index).local_int_check||fresh.local_int_check_correct)&&
+                    (!block(index).local_string_check||fresh.local_string_check_correct)&&
                     (!block(index).open_battery_probe||
                      fresh.open_battery_probe_correct)&&
                     (!block(index).boolean_battery_probe||
@@ -4383,6 +4385,11 @@ struct LessonView {
                     text+='\n'+(fresh.local_int_check_feedback.empty()
                         ?std::string("La salida visible coincide, pero falta comprobar su dependencia de las variables int declaradas.")
                         :fresh.local_int_check_feedback);
+                if(!fresh.local_string_check_correct&&block(index).local_string_check&&preserved_source&&
+                   evaluation.verdict==curriculum::OutputVerdict::correct)
+                    text+='\n'+(fresh.local_string_check_feedback.empty()
+                        ?std::string("La salida visible coincide, pero falta comprobar su dependencia de las variables de texto.")
+                        :fresh.local_string_check_feedback);
                 if(!independent&&preserved_source&&block(index).open_battery_probe)
                     text+='\n'+ui(
                         "La batería no acreditó los casos originales y el caso nuevo mediante ejecuciones independientes. Comprueba las llamadas, los resultados esperados y que ningún fallo detenga los casos posteriores.",
