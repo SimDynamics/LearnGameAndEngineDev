@@ -35,7 +35,7 @@ EXPECTED = {
 }
 
 
-def actual_editor_source() -> tuple[str, dict]:
+def actual_editor_source() -> tuple[str, list[dict]]:
     document = json.loads(LESSON.read_text(encoding="utf-8-sig"))
     matches = [
         (pi, bi)
@@ -52,13 +52,18 @@ def actual_editor_source() -> tuple[str, dict]:
     source = block.get("initialCode")
     if not isinstance(source, str) or "bool Deposito::transferir(" not in source:
         raise RuntimeError("Real U6L5 original member function was removed")
-    first_case = block["outputCheck"]["cases"][0]
-    if (not isinstance(first_case.get("standardInput"), str)
-            or not isinstance(first_case.get("outputs"), list)
-            or not first_case["outputs"]
-            or not all(isinstance(value, str) for value in first_case["outputs"])):
-        raise RuntimeError("The first public U6L5 stdout oracle is invalid")
-    return source, first_case
+    cases = block["outputCheck"]["cases"]
+    if not isinstance(cases, list) or not cases:
+        raise RuntimeError("U6L5 lost its authored public cases")
+    for number, case in enumerate(cases, 1):
+        if (not isinstance(case, dict)
+                or not isinstance(case.get("standardInput"), str)
+                or not isinstance(case.get("outputs"), list)
+                or not case["outputs"]
+                or not all(isinstance(value, str) for value in case["outputs"])
+                or type(case.get("exitCode", 0)) is not int):
+            raise RuntimeError(f"U6L5 public case {number} is invalid")
+    return source, cases
 
 
 def build(compiler: str, windows: bool, source: Path, binary: Path, work: Path) -> None:
@@ -95,7 +100,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="lgaed-u6l5-ownership-") as location:
         work = Path(location)
         original = work / "original.cpp"
-        original_source, first_case = actual_editor_source()
+        original_source, public_cases = actual_editor_source()
         # Preserve the exact published LF bytes on Windows as well as Linux.
         original.write_bytes(original_source.encode("utf-8"))
         generator = work / ("generate.exe" if args.windows else "generate")
@@ -142,30 +147,44 @@ def main() -> int:
                 )
             print(f"PASS private U6L5 {name}: "
                   f"{'accepted with identity/cleanup' if should_accept else 'rejected'}")
-        # A semantic counterexample should pass the *actual* published first
-        # visible case. Otherwise it would no longer demonstrate the blind
-        # spot that necessitates the independent ownership proof.
-        public_source = output / "equal_value_hidden_copy-public.cpp"
-        if not public_source.is_file():
-            raise RuntimeError("Missing authentic stdout-only counterexample")
-        public_binary = work / ("equal_value_hidden_copy_public" +
-                                (".exe" if args.windows else ""))
-        build(args.compiler, args.windows, public_source, public_binary, work)
-        public_result = subprocess.run(
-            [str(public_binary)], input=first_case["standardInput"], cwd=work,
-            capture_output=True, text=True, encoding="utf-8",
-            errors="replace", timeout=15,
-        )
-        if (public_result.returncode != first_case.get("exitCode", 0)
-                or public_result.stdout not in first_case["outputs"]
-                or public_result.stderr):
-            raise RuntimeError(
-                "The ownership counterexample no longer passes the genuine "
-                "visible first case; its private rejection cannot justify "
-                "this particular regression"
-            )
-        print("PASS U6L5 false ownership implementation matches the genuine "
-              "first public stdout but fails the independent identity witness")
+        # Full public QA is automatic; only the first authored case is
+        # mandatory for an actual student. A private semantic pass must not
+        # mask a regression in the original main or its later optional cases.
+        good_names = tuple(name for name, valid in EXPECTED.items() if valid)
+        public_names = (*good_names, "equal_value_hidden_copy")
+        public_executions = 0
+        for name in public_names:
+            public_source = output / (name + "-public.cpp")
+            if not public_source.is_file():
+                raise RuntimeError(f"Missing real public U6L5 variant: {name}")
+            public_binary = work / (name + "-public" +
+                                    (".exe" if args.windows else ""))
+            build(args.compiler, args.windows, public_source, public_binary, work)
+            # The intentionally incorrect solution is indistinguishable on
+            # the *first* public case, not necessarily on later optional cases.
+            cases = public_cases[:1] if name == "equal_value_hidden_copy" else public_cases
+            for number, case in enumerate(cases, 1):
+                execution = subprocess.run(
+                    [str(public_binary)], input=case["standardInput"], cwd=work,
+                    capture_output=True, text=True, encoding="utf-8",
+                    errors="replace", timeout=15,
+                )
+                if (execution.returncode != case.get("exitCode", 0)
+                        or execution.stdout not in case["outputs"]
+                        or execution.stderr):
+                    raise RuntimeError(
+                        f"{name}: actual public case {number} differs from "
+                        "its authored output/exit contract: "
+                        f"exit={execution.returncode}, "
+                        f"stdout={execution.stdout[-500:]!r}, "
+                        f"stderr={execution.stderr[-500:]!r}"
+                    )
+                public_executions += 1
+            print(f"PASS public U6L5 {name}: {len(cases)} real authored case(s)")
+        print("PASS U6L5 hidden-copy implementation matches the first "
+              "public stdout but fails the independent identity witness")
+        print(f"PASS U6L5 automatic public cases: {public_executions} "
+              "executions across original student-facing programs")
     print("PASS ten U6L5 actual-source private witness executions; "
           "no curriculum metadata or saved learner state changed")
     return 0
