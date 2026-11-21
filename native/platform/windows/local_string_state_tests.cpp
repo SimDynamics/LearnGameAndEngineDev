@@ -111,7 +111,7 @@ void run() {
         {"variable":"etiqueta","replacement":"CONTROL QA","moment":"beforeOutput",
          "outputs":["CONTROL QA","CONTROL QA\n"]}]}
     ])json";
-    root.Insert(L"compilerLocalStringChecks",JsonValue::Parse(authored));
+    root.Insert(L"compilerLocalStringChecks",JsonValue::Parse(winrt::to_hstring(authored)));
     const auto generated=winrt::to_string(root.Stringify());
     const auto reviewed=parse_lesson_json(generated,"es");
     const auto metadata=parse_lesson_progress_metadata(generated,"es");
@@ -122,7 +122,8 @@ void run() {
         require(current.local_string_check&&
                 current.local_string_check==projection.local_string_check&&
                 before.initial_code==current.initial_code&&
-                before.raw_json==current.raw_json&&
+                winrt::to_string(JsonObject::Parse(winrt::to_hstring(before.raw_json)).Stringify())==
+                    winrt::to_string(JsonObject::Parse(winrt::to_hstring(current.raw_json)).Stringify())&&
                 before.address.page==current.address.page&&
                 before.address.block==current.address.block&&
                 before.output_check->cases.front().outputs==
