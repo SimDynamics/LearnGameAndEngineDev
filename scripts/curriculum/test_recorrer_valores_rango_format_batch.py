@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -74,12 +75,12 @@ class RangeLoopFormatBatch(unittest.TestCase):
                     source=Path(folder)/f"{idx}-{name}.cpp"
                     binary=Path(folder)/f"{idx}-{name}"
                     source.write_text(runnable(block),encoding="utf-8")
-                    compiled=subprocess.run(["c++","-std=c++23","-O0","-o",str(binary),str(source)],
+                    compiled=subprocess.run(msvc_cpp23_command(binary, source),
                                             capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,compiled.returncode,identity+compiled.stderr)
                     runs=[]
                     for data in inputs:
-                        executed=subprocess.run([str(binary)],input=data,
+                        executed=subprocess.run([str(windows_executable(binary))],input=data,
                                                  capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,executed.returncode,identity)
                         self.assertEqual("",executed.stderr,identity)

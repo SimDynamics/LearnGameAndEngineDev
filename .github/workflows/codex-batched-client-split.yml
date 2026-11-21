@@ -7,6 +7,8 @@ on:
       - .github/workflows/codex-batched-client-split.yml
       - .github/workflows/**
       - scripts/curriculum/test_windows_ci_compilers.py
+      - scripts/curriculum/windows_cpp_ci.py
+      - scripts/curriculum/test_windows_cpp_ci.py
       - scripts/curriculum/test_current_batched_client_split.py
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/code_format_compat.py
@@ -38,6 +40,8 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
       - name: Guard the Windows-only compiler selection in all active workflows
-        run: python -B -m unittest discover -s scripts/curriculum -p test_windows_ci_compilers.py -v
+        run: |
+          python -B -m unittest discover -s scripts/curriculum -p test_windows_ci_compilers.py -v
+          python -B -m unittest discover -s scripts/curriculum -p test_windows_cpp_ci.py -v
       - name: Validate current U6L19 client authoring and historical receipts
         run: python -B -m unittest discover -s scripts/curriculum -p test_current_batched_client_split.py -v

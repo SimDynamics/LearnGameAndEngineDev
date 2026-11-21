@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -73,12 +74,12 @@ class SortingFormatBatch(unittest.TestCase):
                     src=Path(folder)/f"{index}-{tag}.cpp"
                     binary=Path(folder)/f"{index}-{tag}"
                     src.write_text(compilable(block),encoding="utf-8")
-                    built=subprocess.run(["c++","-std=c++23","-O0","-o",str(binary),str(src)],
+                    built=subprocess.run(msvc_cpp23_command(binary, src),
                                          capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,built.returncode,ident+built.stderr)
                     runs=[]
                     for stdin in inputs:
-                        run=subprocess.run([str(binary)],input=stdin,
+                        run=subprocess.run([str(windows_executable(binary))],input=stdin,
                                             capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,run.returncode,ident)
                         self.assertEqual("",run.stderr,ident)

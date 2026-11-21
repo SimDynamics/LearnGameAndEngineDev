@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 import stable_state_layout as state
@@ -71,12 +72,12 @@ class MedianFormatBatch(unittest.TestCase):
                     source=Path(folder)/f"{i}-{tag}.cpp"
                     binary=Path(folder)/f"{i}-{tag}"
                     source.write_text(runnable(bl),encoding="utf-8")
-                    built=subprocess.run(["c++","-std=c++23","-O0","-o",str(binary),str(source)],
+                    built=subprocess.run(msvc_cpp23_command(binary, source),
                                          capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,built.returncode,id_+built.stderr)
                     observations=[]
                     for stdin in inputs:
-                        executed=subprocess.run([str(binary)],input=stdin,capture_output=True,text=True,timeout=15)
+                        executed=subprocess.run([str(windows_executable(binary))],input=stdin,capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,executed.returncode,id_)
                         self.assertEqual("",executed.stderr,id_)
                         observations.append((executed.returncode,executed.stdout,executed.stderr))

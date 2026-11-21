@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -68,12 +69,12 @@ class BreakContinueFormatBatch(unittest.TestCase):
                     src=Path(folder)/f"{i}-{label}.cpp"
                     exe=Path(folder)/f"{i}-{label}"
                     src.write_text(runnable(block),encoding="utf-8")
-                    built=subprocess.run(["c++","-std=c++23","-O0","-o",str(exe),str(src)],
+                    built=subprocess.run(msvc_cpp23_command(exe, src),
                                          capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,built.returncode,ident+built.stderr)
                     results=[]
                     for data in inputs:
-                        r=subprocess.run([str(exe)],input=data,capture_output=True,text=True,timeout=15)
+                        r=subprocess.run([str(windows_executable(exe))],input=data,capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,r.returncode,ident)
                         self.assertEqual("",r.stderr,ident)
                         results.append((r.returncode,r.stdout,r.stderr))

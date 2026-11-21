@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -83,13 +84,13 @@ class CombinarCondicionesFormatoReal(unittest.TestCase):
                     executable = Path(directory) / f"{index}-{label}"
                     source.write_text(runnable(block[field], kind), encoding="utf-8")
                     compile_result = subprocess.run(
-                        ["c++", "-std=c++23", "-O0", "-o", str(executable), str(source)],
+                        msvc_cpp23_command(executable, source),
                         capture_output=True, text=True, timeout=90)
                     self.assertEqual(0, compile_result.returncode,
                                      f"{identity}: {compile_result.stderr}")
                     runs = []
                     for stdin in inputs:
-                        run = subprocess.run([str(executable)], input=stdin,
+                        run = subprocess.run([str(windows_executable(executable))], input=stdin,
                                              capture_output=True, text=True, timeout=15)
                         self.assertEqual(0, run.returncode, identity)
                         self.assertEqual("", run.stderr, identity)

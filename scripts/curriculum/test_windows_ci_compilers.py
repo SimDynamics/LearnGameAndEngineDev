@@ -51,6 +51,25 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 self.assertIn('"cl"', source)
                 self.assertNotRegex(source, r'["\'](?:g\+\+|clang\+\+|c\+\+)["\']')
 
+    def test_legibility_suite_runs_all_originals_on_windows_msvc(self):
+        workflow = (WORKFLOWS / "legibilidad-codigo.yml").read_text(encoding="utf-8")
+        self.assertIn("runs-on: windows-2022", workflow)
+        self.assertIn("ilammy/msvc-dev-cmd@v1", workflow)
+        self.assertIn("test_windows_cpp_ci.py", workflow)
+        files = sorted(set(re.findall(r"-p (test_[a-z0-9_]+\.py)", workflow)))
+        self.assertGreaterEqual(len(files), 45)
+        validated = 0
+        for name in files:
+            source = (ROOT / "scripts" / "curriculum" / name).read_text(encoding="utf-8")
+            with self.subTest(original_test=name):
+                for compiler in ("g++", "clang++", "c++"):
+                    self.assertNotIn(f'"{compiler}"', source)
+                    self.assertNotIn(f"'{compiler}'", source)
+                if "msvc_cpp23_command(" in source:
+                    self.assertIn("from windows_cpp_ci import msvc_cpp23_command", source)
+                    validated += 1
+        self.assertGreaterEqual(validated, 40, "Lost real native MSVC coverage")
+
     def test_real_rename_runtime_uses_msvc_not_unneeded_compilers(self):
         source = (ROOT / "scripts/curriculum/test_identifier_rename_execution.py").read_text(
             encoding="utf-8")

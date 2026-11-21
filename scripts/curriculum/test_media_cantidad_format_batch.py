@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 import stable_state_layout as state
@@ -66,12 +67,12 @@ class MeanFormatHistory(unittest.TestCase):
                     source=Path(folder)/f"{ordinal}-{version}.cpp"
                     executable=Path(folder)/f"{ordinal}-{version}"
                     source.write_text(runnable(block),encoding="utf-8")
-                    built=subprocess.run(["c++","-std=c++23","-O0","-o",str(executable),str(source)],
+                    built=subprocess.run(msvc_cpp23_command(executable, source),
                                          capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,built.returncode,identity+built.stderr)
                     observations=[]
                     for stdin in inputs:
-                        run=subprocess.run([str(executable)],input=stdin,capture_output=True,
+                        run=subprocess.run([str(windows_executable(executable))],input=stdin,capture_output=True,
                                            text=True,timeout=15)
                         self.assertEqual(0,run.returncode,identity)
                         self.assertEqual("",run.stderr,identity)

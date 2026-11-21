@@ -2,7 +2,7 @@ name: Auditoria global de legibilidad del codigo
 
 on:
   push:
-    branches: [main]
+    branches: [Codex, main]
     paths:
       - 'app/src/main/assets/content/**/lesson_*.json'
       - 'scripts/curriculum/auditar_legibilidad_codigo.py'
@@ -29,6 +29,8 @@ on:
       - 'scripts/curriculum/test_assetcheck_u4l7_source_format.py'
       - 'scripts/curriculum/auditar_tarjetas_orden_codigo.py'
       - '.github/workflows/legibilidad-codigo.yml'
+      - 'scripts/curriculum/windows_cpp_ci.py'
+      - 'scripts/curriculum/test_windows_cpp_ci.py'
   workflow_dispatch:
 
 permissions:
@@ -36,8 +38,8 @@ permissions:
 
 jobs:
   auditar:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: windows-2022
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,7 +47,11 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.12'
+      - name: Use MSVC x64 compiler for original C++ curricular tests
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Test MSVC compiler command and intentional failure
+        run: python -B -m unittest discover -s scripts/curriculum -p test_windows_cpp_ci.py -v
       - name: Probar auditor sin modificar fuentes
         run: python -m unittest discover -s scripts/curriculum -p test_auditar_legibilidad_codigo.py -v
       - name: Verificar formato físico con archivo original y progreso histórico

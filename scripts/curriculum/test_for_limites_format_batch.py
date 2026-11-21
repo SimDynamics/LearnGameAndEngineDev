@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -92,12 +93,12 @@ class ForLimitsFormatBatch(unittest.TestCase):
                     binary = Path(directory) / f"{idx}-{label}"
                     src.write_text(compilable_source(block), encoding="utf-8")
                     compilation = subprocess.run(
-                        ["c++","-std=c++23","-O0","-o",str(binary),str(src)],
+                        msvc_cpp23_command(binary, src),
                         capture_output=True,text=True,timeout=90)
                     self.assertEqual(0, compilation.returncode, identity + compilation.stderr)
                     results = []
                     for standard_input in inputs:
-                        run = subprocess.run([str(binary)], input=standard_input,
+                        run = subprocess.run([str(windows_executable(binary))], input=standard_input,
                                              capture_output=True,text=True,timeout=15)
                         self.assertEqual(0, run.returncode, identity)
                         self.assertEqual("", run.stderr, identity)

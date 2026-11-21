@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -75,12 +76,12 @@ class SafeIndexLoopsFormat(unittest.TestCase):
                     src=Path(folder)/f"{i}-{tag}.cpp"
                     executable=Path(folder)/f"{i}-{tag}"
                     src.write_text(runnable(block),encoding="utf-8")
-                    built=subprocess.run(["c++","-std=c++23","-O0","-o",str(executable),str(src)],
+                    built=subprocess.run(msvc_cpp23_command(executable, src),
                                          capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,built.returncode,identity+built.stderr)
                     runs=[]
                     for stdin in inputs:
-                        run=subprocess.run([str(executable)],input=stdin,
+                        run=subprocess.run([str(windows_executable(executable))],input=stdin,
                                            capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,run.returncode,identity)
                         self.assertEqual("",run.stderr,identity)

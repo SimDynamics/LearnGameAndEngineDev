@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -84,12 +85,12 @@ class SquareRootContractFormatBatch(unittest.TestCase):
                     source=Path(folder)/f"{i}-{label}.cpp"
                     binary=Path(folder)/f"{i}-{label}"
                     source.write_text(block[code_slot(block)],encoding="utf-8")
-                    compiled=subprocess.run(["c++","-std=c++23","-O0",str(source),"-o",str(binary)],
+                    compiled=subprocess.run(msvc_cpp23_command(binary, source),
                                             capture_output=True,text=True,timeout=90)
                     self.assertEqual(0,compiled.returncode,identity+compiled.stderr)
                     outputs=[]
                     for data in inputs:
-                        execution=subprocess.run([str(binary)],input=data,
+                        execution=subprocess.run([str(windows_executable(binary))],input=data,
                                                  capture_output=True,text=True,timeout=15)
                         self.assertEqual(0,execution.returncode,identity+execution.stderr)
                         self.assertEqual("",execution.stderr,identity)

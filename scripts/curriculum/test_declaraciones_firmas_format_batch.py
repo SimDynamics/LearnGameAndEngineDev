@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -15,7 +16,7 @@ POSITIONS = ((0,2),(1,2),(2,2),(3,2),(3,4),(4,2),(4,7),(5,3),(6,9),(7,5),(8,2),(
 FILL_BLANKS = {(1,2)}
 UNSOLVED_STARTERS = {(7,5), (9,7), (10,4), (11,9), (13,2)}
 EXPECTED_COMPILE_FAILURES = {
-    (14,2): ("u6-difference-unselected-definition", "undefined reference"),
+    (14,2): ("u6-difference-unselected-definition", "LNK2019"),
     (15,2): ("u6-difference-conflicting-return", "diferencia"),
     (17,2): ("u6-difference-missing-header", "diferencia_ausente.h"),
 }
@@ -91,25 +92,24 @@ class DeclarationsFormatBatch(unittest.TestCase):
                             source.parent.mkdir(parents=True,exist_ok=True)
                             source.write_text(item["initialCode"],encoding="utf-8")
                         source_args = [str(folder / name) for name in block["sourceFiles"]]
-                        command = ["c++","-std=c++23","-O0","-I",str(folder),
-                                   *source_args,"-o",str(exe)]
+                        command = msvc_cpp23_command(exe, *source_args, include=folder)
                     else:
                         source = folder / "program.cpp"
                         source.write_text(block[source_slot(block)],encoding="utf-8")
-                        command = ["c++","-std=c++23","-O0",str(source),"-o",str(exe)]
+                        command = msvc_cpp23_command(exe, source)
                     built = subprocess.run(command,capture_output=True,text=True,timeout=90)
                     failure = EXPECTED_COMPILE_FAILURES.get((p,b))
                     if failure:
                         self.assertEqual(failure[0],block["compileCheck"]["diagnostic"])
                         self.assertNotEqual(0,built.returncode,identity)
-                        self.assertIn(failure[1],built.stderr,identity)
-                        self.assertFalse(exe.exists(),identity)
+                        self.assertIn(failure[1],built.stdout+built.stderr,identity)
+                        self.assertFalse(windows_executable(exe).exists(),identity)
                         historical_runs.append(("intentional compile/link failure",failure[0]))
                         continue
                     self.assertEqual(0,built.returncode,identity+built.stderr)
                     outputs = []
                     for data in inputs:
-                        ran = subprocess.run([str(exe)],input=data,capture_output=True,
+                        ran = subprocess.run([str(windows_executable(exe))],input=data,capture_output=True,
                                              text=True,timeout=15)
                         self.assertEqual(0,ran.returncode,identity+ran.stderr)
                         self.assertEqual("",ran.stderr,identity)
@@ -144,13 +144,12 @@ class DeclarationsFormatBatch(unittest.TestCase):
                 for item in block["projectFiles"]:
                     (folder/item["path"]).write_text(item["initialCode"],encoding="utf-8")
                 exe=folder/"program"
-                command=["c++","-std=c++23","-O0","-I",str(folder),
-                         *(str(folder/name) for name in block["sourceFiles"]),
-                         "-o",str(exe)]
+                command=msvc_cpp23_command(
+                    exe, *(folder/name for name in block["sourceFiles"]), include=folder)
                 result=subprocess.run(command,capture_output=True,text=True,timeout=90)
                 self.assertNotEqual(0,result.returncode,identity)
-                self.assertIn(marker,result.stderr,identity)
-                self.assertFalse(exe.exists(),identity)
+                self.assertIn(marker,result.stdout+result.stderr,identity)
+                self.assertFalse(windows_executable(exe).exists(),identity)
 
 if __name__ == "__main__":
     unittest.main()

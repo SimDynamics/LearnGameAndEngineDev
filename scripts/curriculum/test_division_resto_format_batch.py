@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -73,12 +74,12 @@ class DivisionRestoRealFormat(unittest.TestCase):
                     exe = Path(folder) / f"{i}-{label}"
                     src.write_text(compilable_code(block), encoding="utf-8")
                     built = subprocess.run(
-                        ["c++", "-std=c++23", "-O0", "-o", str(exe), str(src)],
+                        msvc_cpp23_command(exe, src),
                         capture_output=True, text=True, timeout=90)
                     self.assertEqual(0, built.returncode, identity + built.stderr)
                     runs = []
                     for stdin in inputs:
-                        run = subprocess.run([str(exe)], input=stdin,
+                        run = subprocess.run([str(windows_executable(exe))], input=stdin,
                                              capture_output=True, text=True, timeout=15)
                         self.assertEqual(0, run.returncode, identity)
                         self.assertEqual("", run.stderr, identity)

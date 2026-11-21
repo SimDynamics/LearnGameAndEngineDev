@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -54,10 +55,10 @@ class RealAlternativeFormatBatch(unittest.TestCase):
                     source = Path(directory)/f"{index}-{label}.cpp"
                     exe = Path(directory)/f"{index}-{label}"
                     source.write_text(code, encoding="utf-8")
-                    built = subprocess.run(["c++", "-std=c++23", "-O0", "-o", str(exe), str(source)],
+                    built = subprocess.run(msvc_cpp23_command(exe, source),
                                            capture_output=True, text=True, timeout=90)
                     self.assertEqual(0, built.returncode, built.stderr)
-                    result = subprocess.run([str(exe)], capture_output=True, text=True, timeout=15)
+                    result = subprocess.run([str(windows_executable(exe))], capture_output=True, text=True, timeout=15)
                     self.assertEqual(0, result.returncode)
                     self.assertEqual("", result.stderr)
                     outputs.append(result.stdout)

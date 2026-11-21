@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import subprocess
+from windows_cpp_ci import msvc_cpp23_command, windows_executable
 import tempfile
 import unittest
 
@@ -55,10 +56,10 @@ class EveryCardExactlyOneLine(unittest.TestCase):
                 source=Path(folder)/f"{label}.cpp"
                 executable=Path(folder)/label
                 source.write_text(ordered_program(block)+"\n",encoding="utf-8")
-                built=subprocess.run(["c++","-std=c++23","-O0","-o",str(executable),str(source)],
+                built=subprocess.run(msvc_cpp23_command(executable, source),
                                       capture_output=True,text=True,timeout=90)
                 self.assertEqual(0,built.returncode,built.stderr)
-                executed=subprocess.run([str(executable)],capture_output=True,text=True,timeout=15)
+                executed=subprocess.run([str(windows_executable(executable))],capture_output=True,text=True,timeout=15)
                 self.assertEqual(0,executed.returncode,executed.stderr)
                 self.assertEqual("",executed.stderr)
                 observations.append(executed.stdout)
