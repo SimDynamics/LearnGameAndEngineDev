@@ -252,9 +252,15 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
             auto next=at+1;
             bool denial=false;
             if(next<words.size()&&
-               !clause_boundary(source,words[at],words[next])) {
+               !clause_boundary(source,words[at],words[next])&&
+               source.substr(words[at].end,
+                   words[next].start-words[at].end).find(':')==
+                       std::string::npos) {
                 if(forbidden(words[next].text))denial=true;
-                if(one_of(words[next].text,{"es","esta","son","estan"})&&
+                // A bare numeric subject is singular. "devoluciones=0:
+                // son inválidos los cobros" concerns cobros, not the
+                // preceding zero; the colon also ends that field's clause.
+                if(one_of(words[next].text,{"es","esta"})&&
                    next+1<words.size()&&forbidden(words[next+1].text))
                     denial=true;
                 if(negated(words[next].text)) {
