@@ -165,13 +165,14 @@ inline bool labelled(std::string_view source,const std::vector<Word>& words,
                        ((next==','||next=='-'||next=='+')&&
                         digit(following)))return false;
                 }
-                // A fractional or arithmetic expression is not the observed
-                // whole integer. Spaces around '/' or '*' do not make
-                // "piezas=-1 / 2" mean the integer -1. A slash followed by
-                // another field label remains ordinary readable punctuation.
+                // An arithmetic expression is not the observed whole integer.
+                // Whitespace around plus/minus matters: "piezas=-1 - 2"
+                // cannot borrow the integer prefix -1. Normal punctuation
+                // before a different named field remains readable prose.
                 const auto operation=skip_horizontal(end);
                 if(operation<folded.size()&&
-                   (folded[operation]=='/'||folded[operation]=='*'||
+                   (folded[operation]=='+'||folded[operation]=='-'||
+                    folded[operation]=='/'||folded[operation]=='*'||
                     folded[operation]=='%'||folded[operation]=='^')) {
                     const auto operand=skip_horizontal(operation+1);
                     if(operand<folded.size()&&
