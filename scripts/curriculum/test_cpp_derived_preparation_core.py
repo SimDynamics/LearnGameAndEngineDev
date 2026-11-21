@@ -7,6 +7,7 @@ changes to supplied declarations must be rejected.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -44,6 +45,28 @@ def main():
     parser.add_argument("--windows",action="store_true")
     args=parser.parse_args()
     original=fixture.original_editor()
+    # Resolve the public oracles through the original stable lesson owner.
+    # The native private driver does not infer any expected output from code.
+    lesson=json.loads(fixture.LESSON.read_text(encoding="utf-8"))
+    owners=[(p,b) for p,page in enumerate(lesson["stateLayout"]["current"])
+            for b,identity in enumerate(page["blocks"])
+            if identity==fixture.OWNER]
+    if len(owners)!=1:
+        raise AssertionError("U8L7 current owner is absent or duplicated")
+    p,b=owners[0]
+    editor=lesson["pages"][p]["blocks"][b]
+    if editor["type"]!="cpp_compiler" or editor["initialCode"]!=original:
+        raise AssertionError("U8L7 original source changed between readers")
+    public_cases=editor["outputCheck"]["cases"]
+    if len(public_cases)!=5:
+        raise AssertionError("U8L7 published public case count changed")
+    for index,case in enumerate(public_cases,1):
+        if (not isinstance(case.get("standardInput"),str) or
+            not isinstance(case.get("outputs"),list) or
+            not case["outputs"] or
+            not all(isinstance(x,str) for x in case["outputs"]) or
+            type(case.get("exitCode",0)) is not int):
+            raise AssertionError(f"Invalid U8L7 published case {index}")
     examples={
         **{name:(body,True) for name,body in fixture.GOOD.items()},
         **{name:(body,False) for name,body in fixture.BAD.items()},
@@ -54,10 +77,18 @@ def main():
         generator=folder/("source_gate"+suffix)
         build_generator(args.compiler,GENERATOR,generator,args.windows)
         published=folder/"original.cpp"
-        published.write_text(original,encoding="utf-8")
+        published.write_bytes(original.encode("utf-8"))
+        # Every published case starts with an occupied destination. A
+        # candidate may be built correctly yet discarded when an initially
+        # empty destination is passed by another caller. That source must
+        # pass stdout and fail the independent private ownership test.
+        public_variants=set(fixture.GOOD)|{
+            "discards_completed_candidate_for_empty_destination"
+        }
+        public_runs=0
         for name,(body,expected) in examples.items():
             source=folder/(name+".cpp")
-            source.write_text(fixture.compose(original,body),encoding="utf-8")
+            source.write_bytes(fixture.compose(original,body).encode("utf-8"))
             private=folder/(name+".private.cpp")
             generated=run([str(generator),str(published),str(source),str(private)])
             if generated.returncode or not private.is_file():
@@ -76,6 +107,37 @@ def main():
                                       result.returncode,result.stdout,result.stderr))
             print(f"{args.compiler}: {name}: "
                   f"{'PASS' if success else 'REJECT'}",flush=True)
+            # Only the first public case is mandatory for the learner.
+            # The remaining cases run automatically in isolated QA, never
+            # as saved progress or as substitutes for the private witness.
+            if name in public_variants:
+                public_binary=folder/(name+"-public"+suffix)
+                built=fixture.compile_cpp(
+                    args.compiler,source,public_binary,args.windows)
+                if built.returncode:
+                    raise AssertionError(
+                        (name,"Original U8L7 student main cannot compile",
+                         built.stdout,built.stderr))
+                for index,case in enumerate(public_cases,1):
+                    observed=subprocess.run(
+                        [str(public_binary)],cwd=ROOT,
+                        input=case["standardInput"],text=True,
+                        encoding="utf-8",errors="replace",
+                        capture_output=True,check=False,timeout=15)
+                    if (observed.returncode!=case.get("exitCode",0) or
+                        observed.stdout not in case["outputs"] or
+                        observed.stderr):
+                        raise AssertionError(
+                            (name,index,"Authentic U8L7 public result changed",
+                             observed.returncode,observed.stdout[-500:],
+                             observed.stderr[-500:]))
+                    public_runs+=1
+                print(f"{args.compiler}: public {name}: "
+                      f"{len(public_cases)} authentic cases PASS; "
+                      f"private semantics {'PASS' if success else 'REJECT'}",
+                      flush=True)
+        if public_runs!=len(public_variants)*len(public_cases):
+            raise AssertionError("U8L7 public/private QA omitted a variant")
 
         correct=fixture.compose(original,fixture.GOOD["prepare_then_swap"])
         forged={
@@ -110,8 +172,10 @@ def main():
             if attempted.returncode==0:
                 raise AssertionError((name,"Changed immutable source was accepted"))
             print(f"{args.compiler}: {name}: REJECT",flush=True)
-    print("PASS U8L7 authentic one-body source, three safe approaches, "
-          "twelve invalid semantics and eight forged source changes rejected.")
+    print("PASS U8L7 authenticated source and private derived preparation: "
+          "three safe approaches and thirteen invalid semantics tested; "
+          "all five real public cases also compared for the safe approaches "
+          "and the empty-destination false positive. Original history intact.")
 
 
 if __name__=="__main__":
