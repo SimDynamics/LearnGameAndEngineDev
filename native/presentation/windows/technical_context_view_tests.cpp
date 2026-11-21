@@ -283,8 +283,15 @@ void role_reference(View& fixture,HWND target,std::wstring_view context,std::wst
 void ordinary_span(HWND target,std::wstring_view context,std::wstring_view token){
     const auto start=passage_offset(target,context,token);const auto foreground=character(target,0).crTextColor;
     for(std::size_t offset=0;offset<token.size();++offset){const auto style=character(target,static_cast<LONG>(start+offset));
-        check(style.crTextColor==foreground&&!(style.dwEffects&CFE_UNDERLINE)&&(style.dwEffects&CFE_AUTOBACKCOLOR)&&!reference_at(target,start+offset),
-            "A bibliographic citation or ordinary neighboring prose acquired technical color/background/underline");}
+        const bool preserved=style.crTextColor==foreground&&
+            !(style.dwEffects&CFE_UNDERLINE)&&
+            (style.dwEffects&CFE_AUTOBACKCOLOR)&&!reference_at(target,start+offset);
+        if(!preserved)std::cerr<<"Unexpected ordinary prose style: context="<<utf8(context)
+            <<" token="<<utf8(token)<<" offset="<<offset
+            <<" ink="<<style.crTextColor<<" expected="<<foreground
+            <<" autoBackground="<<((style.dwEffects&CFE_AUTOBACKCOLOR)!=0)
+            <<" technicalReference="<<reference_at(target,start+offset)<<'\n';
+        check(preserved,"A bibliographic citation or ordinary neighboring prose acquired technical color/background/underline");}
 }
 void native_differences(const state::Preferences& before,const state::Preferences& after){
     const auto describe=[](const state::Value* value){if(!value)return std::string("missing");
@@ -628,7 +635,28 @@ void current_u2_roles(){
     const auto verify_feedback=[&]{const auto target=fixture.item(at.block,4);const auto raw=std::string("✓ Correcto\n\n")+choice.explanation;
         check(edit_text(target)==visible_prose(raw),"Actual U2 success feedback lost its complete current explanation");
         for(const auto instruction:{L"++turnos;",L"turnos = 1;",L"int turnos = 1;"})role_reference(fixture,target,instruction,instruction);
-        for(const auto prose:{L"aumenta en una unidad el valor existente",L"lo reemplaza por uno",L"es una definición, no una actualización del objeto existente"})ordinary_span(target,prose,prose);
+        // In the active authored explanation, "una unidad" and "uno"
+        // are intentionally marked as DATA. The old test treated the whole
+        // neighboring sentences as unmarked prose, contradicting Work's
+        // explicit semantic ranges rather than revealing a rendering defect.
+        const auto semantic=choice.text_semantics.find("/explanation");
+        check(semantic!=choice.text_semantics.end()&&
+              semantic->second.source==choice.explanation,
+            "Current U2 feedback lost its published semantic descriptor");
+        for(const auto label:{std::string_view("una unidad"),std::string_view("uno")}){
+            check(std::ranges::any_of(semantic->second.spans,[&](const auto& span){
+                return span.role==curriculum::SemanticRole::data&&span.text==label;
+            }),"Current U2 feedback lost a marked natural-data reference");
+        }
+        role_reference(fixture,target,L"aumenta en una unidad el valor existente",L"una unidad",true);
+        role_reference(fixture,target,L"lo reemplaza por uno",L"uno",true);
+        // Assert only the genuinely unmarked adjacent prose, including its
+        // punctuation, remains neutral and has no technical background.
+        ordinary_span(target,L"aumenta en una unidad el valor existente.",L"aumenta en ");
+        ordinary_span(target,L"aumenta en una unidad el valor existente.",L" el valor existente.");
+        ordinary_span(target,L"lo reemplaza por uno.",L"lo reemplaza por ");
+        ordinary_span(target,L"es una definición, no una actualización del objeto existente",
+            L"es una definición, no una actualización del objeto existente");
         ordinary_span(target,L"objeto existente",L"existente");
         source_and_shading(fixture,target,raw);
     };
