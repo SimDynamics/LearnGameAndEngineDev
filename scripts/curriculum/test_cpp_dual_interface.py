@@ -133,6 +133,7 @@ def main():
     candidates={
         "correct_direct":(VALUE,WRITE,True),
         "correct_method_and_put":(ALT_VALUE,ALT_WRITE,True),
+        "documented_dual_contract":(VALUE,WRITE,True),
         **{name:(a,b,False) for name,(a,b) in BAD.items()},
     }
     with tempfile.TemporaryDirectory(prefix="lgaed-u10l1-dual-") as d:
@@ -146,14 +147,21 @@ def main():
         # shortcut. All three must pass the original public stdout, while
         # only the two valid ones pass the separately compiled private check.
         public_variants={"correct_direct","correct_method_and_put",
-                         "report_stdout_instead"}
+                         "documented_dual_contract","report_stdout_instead"}
         public_runs=0
         for name,(value,report,should_pass) in candidates.items():
             candidate=folder/(name+".cpp")
-            candidate.write_bytes(
-                compose(original,(value,report)).encode("utf-8"))
+            source_for_case=original_path
+            edited=compose(original,(value,report))
+            if name=="documented_dual_contract":
+                note=("// class Muestra : public ConValor, public ConInforme {\n"
+                      "// virtual int valor() const = 0;\n")
+                source_for_case=folder/"documented-original.cpp"
+                source_for_case.write_bytes((note+original).encode("utf-8"))
+                edited=note+edited
+            candidate.write_bytes(edited.encode("utf-8"))
             probe_source=folder/(name+".private.cpp")
-            gen=run([str(executable),str(original_path),
+            gen=run([str(executable),str(source_for_case),
                      str(candidate),str(probe_source)])
             if gen.returncode or not probe_source.exists():
                 raise AssertionError((name,"Source gate rejected bodies",
@@ -236,7 +244,7 @@ def main():
             if result.returncode==0:
                 raise AssertionError((name,"Protected source mutation accepted"))
             print(f"{args.compiler}: {name}: REJECT",flush=True)
-    print(f"PASS U10L1 two-base contract: two valid, "
+    print(f"PASS U10L1 two-base contract: three valid, "
           f"{len(BAD)} semantic negatives and {len(attacks)} source attacks; "
           f"three authentic stdout cases also pass for a defective "
           f"std::cout-only reporter rejected by the private stream probe.")

@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/codex-dual-interface.yml
       - native/core/cpp_dual_interface_check.hpp
+      - native/core/cpp_class_structure_check.hpp
       - native/core/cpp_dual_interface_check_tests.cpp
       - native/core/cpp_multi_body_check.hpp
       - native/core/cpp_member_body_check.hpp
@@ -37,4 +38,6 @@ jobs:
         shell: cmd
         run: |
           python -B scripts\curriculum\test_cpp_dual_interface.py --compiler cl --windows
+          if errorlevel 1 exit /b 1
           python -B -m unittest discover -s scripts\curriculum -p test_cpp_dual_interface_authoring.py -v
+          if errorlevel 1 exit /b 1

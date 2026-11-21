@@ -34,6 +34,42 @@ int main(int argc,char** argv) try {
         "valor","escribir","cambiar","salida","nuevo",
         "codigo_","valor_","codigo","valor","="
     };
+    // Invalid author metadata must not borrow virtual declarations,
+    // ordered inheritance or protected int fields from a comment.
+    const auto reject_source=[&](std::string source,std::string_view why) {
+        auto forged=policy;
+        forged.original_source=std::move(source);
+        if(lgaed::curriculum::cpp_dual_interface_detail::valid(forged))
+            throw std::runtime_error(std::string(why));
+    };
+    {
+        auto source=original;
+        const std::string text="virtual int valor() const = 0;";
+        const auto at=source.find(text);
+        if(at==source.npos)throw std::runtime_error("Original value interface missing");
+        source.replace(at,text.size(),"virtual int valor() const;");
+        reject_source("// "+text+"\n"+source,
+                      "A commented pure virtual function replaced its interface");
+    }
+    {
+        auto source=original;
+        const std::string text=
+            "class Muestra : public ConValor, public ConInforme {";
+        const auto at=source.find(text);
+        if(at==source.npos)throw std::runtime_error("Original multiple base missing");
+        source.replace(at,text.size(),
+                       "class Muestra : private ConValor, public ConInforme {");
+        reject_source("// "+text+"\n"+source,
+                      "A comment impersonated public multiple inheritance");
+    }
+    {
+        auto source=original;
+        const std::string text="int codigo_;";
+        const auto at=source.find(text);
+        if(at==source.npos)throw std::runtime_error("Original code member missing");
+        source.replace(at,text.size(),"long codigo_; // int codigo_;");
+        reject_source(source,"A comment impersonated a direct int member");
+    }
     if(!lgaed::curriculum::cpp_dual_interface_matches(policy,candidate))
         throw std::runtime_error(
             "Protected dual-interface declarations, supplied data, "
