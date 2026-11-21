@@ -1191,17 +1191,17 @@ void integrated_order_reader_flow(const std::shared_ptr<windows::NarrationWorker
 
 void current_inline_feedback_reader(const std::shared_ptr<windows::NarrationWorker>& backend,
         std::optional<std::size_t> selected) {
-    struct Case { const char* file; std::size_t page,block; std::vector<std::string> incorrect; };
+    struct Case { const char* file; const char* owner; std::vector<std::string> incorrect; };
     const std::array<Case,9> cases{{
-        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",7,6,{"int","longitud_metros","partes"}},
-        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",3,3,{"double","int"}},
-        {"objetos_y_estado/lesson_declarar_e_inicializar.json",2,4,{"12","3"}},
-        {"objetos_y_estado/lesson_estado_asignacion_y_copia.json",5,4,{"+","-"}},
-        {"objetos_y_estado/lesson_nombres_con_intencion.json",3,4,{"recibidos","sobres_recibidos"}},
-        {"objetos_y_estado/lesson_conversiones_y_deduccion.json",3,5,{"int"}},
-        {"objetos_y_estado/lesson_cadenas_y_texto.json",3,4,{"\"Sector\"","\"Este\""}},
-        {"objetos_y_estado/lesson_caracteres_y_valores_logicos.json",2,3,{"'Y'","'Y'"}},
-        {"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",4,1,{"<<","\"Carga\""}},
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json","block_0007_0006",{"int","longitud_metros","partes"}},
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json","block_0003_0003",{"double","int"}},
+        {"objetos_y_estado/lesson_declarar_e_inicializar.json","block_0002_0004",{"12","3"}},
+        {"objetos_y_estado/lesson_estado_asignacion_y_copia.json","block_0005_0004",{"+","-"}},
+        {"objetos_y_estado/lesson_nombres_con_intencion.json","block_0003_0004",{"recibidos","sobres_recibidos"}},
+        {"objetos_y_estado/lesson_conversiones_y_deduccion.json","block_0003_0005",{"int"}},
+        {"objetos_y_estado/lesson_cadenas_y_texto.json","block_0003_0004",{"\"Sector\"","\"Este\""}},
+        {"objetos_y_estado/lesson_caracteres_y_valores_logicos.json","block_0002_0003",{"'Y'","'Y'"}},
+        {"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json","block_0004_0001",{"<<","\"Carga\""}},
     }};
     const auto visible=[](std::string text){std::erase(text,'`');return text;};
     for(std::size_t number=0;number<cases.size();++number){
@@ -1211,13 +1211,14 @@ void current_inline_feedback_reader(const std::shared_ptr<windows::NarrationWork
             "app/src/main/assets/content/es/programming/cpp_fundamentals"/test.file;
         const auto asset_hash=state::sha256(state::read_bytes(asset));
         const auto original=windows::load_lesson(asset);
-        const auto goal=original.pages.at(test.page).blocks.at(test.block);
+        const auto position=identity_position(original,test.owner);
+        const auto goal=original.pages.at(position.page).blocks.at(position.block);
         const auto asset_bytes=state::read_bytes(asset);
         const auto authored=winrt::Windows::Data::Json::JsonObject::Parse(wide(std::string(
             reinterpret_cast<const char*>(asset_bytes.data()),asset_bytes.size())))
-            .GetNamedArray(L"pages").GetObjectAt(static_cast<std::uint32_t>(test.page))
-            .GetNamedArray(L"blocks").GetObjectAt(static_cast<std::uint32_t>(test.block));
-        check(goal.type==curriculum::BlockType::inline_fill_code&&!goal.review_feedback.empty()
+            .GetNamedArray(L"pages").GetObjectAt(static_cast<std::uint32_t>(position.page))
+            .GetNamedArray(L"blocks").GetObjectAt(static_cast<std::uint32_t>(position.block));
+        check(goal.stable_id==test.owner&&goal.type==curriculum::BlockType::inline_fill_code&&!goal.review_feedback.empty()
             &&!goal.explanation.empty()&&goal.answers.size()==test.incorrect.size()
             &&!curriculum::evaluate_hole_answers(goal,test.incorrect).correct
             &&goal.review_feedback==utf8(authored.GetNamedString(L"reviewFeedback"))
