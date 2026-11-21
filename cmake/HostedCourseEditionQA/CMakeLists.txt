@@ -186,6 +186,13 @@ add_test(NAME native.current_u2l5_gates
 set_tests_properties(native.current_u2_roles native.current_u2l5_gates
     PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
 
+# Check actual U2L6 edition and retained history in isolated hosted Win32 QA.
+add_executable(lgaed_reading_gate_policy_tests
+    "${_lgaed_root}/native/presentation/windows/reading_gate_policy_tests.cpp")
+target_link_libraries(lgaed_reading_gate_policy_tests PRIVATE lgaed_curricular_windows)
+add_test(NAME native.current_u2l6_reading_gate COMMAND lgaed_reading_gate_policy_tests)
+set_tests_properties(native.current_u2l6_reading_gate PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+
 # Run the existing production StateStore/local-int integration against the
 # six current U2 editors using only in-memory authoring proposals. This tests
 # real Windows full/progress loaders, sealed receipts and reopen; it neither
