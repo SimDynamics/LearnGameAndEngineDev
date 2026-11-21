@@ -7950,7 +7950,7 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                 paths = ordinary_editorial_paths(prose_before, prose_after)
                 if ("reviewFeedback" in ordinary_editorial_fields(prose_before, prose_after)
                         and ordinary_feedback_paths(prose_before, prose_after) == required_paths
-                        and actual == option_after
+                        and (option_before == block or actual == option_after)
                         and proofs[0]["beforeSha256"] == fingerprint(first[0])
                         and proofs[0]["afterSha256"] == fingerprint(first[1])
                         and proofs[1]["beforeSha256"] == fingerprint(second[0])
