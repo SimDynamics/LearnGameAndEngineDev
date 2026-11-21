@@ -178,6 +178,24 @@ function(lgaed_add_compiler_guidance_state_target)
         PRIVATE lgaed_platform_windows lgaed_host_options)
 endfunction()
 
+# Shared native integration probe for all fourteen P3 source owners. Unlike
+# independent C++ fixtures, this opens every opt-in through both Windows
+# lesson loaders, then verifies cross-lesson receipts and saved drafts in one
+# isolated StateStore profile. Run in focused and full Windows test builds.
+function(lgaed_add_p3_ownership_shared_state_target)
+    if(TARGET lgaed_p3_ownership_authoring_state_tests)
+        return()
+    endif()
+    add_executable(lgaed_p3_ownership_authoring_state_tests
+        native/platform/windows/p3_ownership_authoring_state_tests.cpp)
+    target_link_libraries(lgaed_p3_ownership_authoring_state_tests
+        PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.p3_ownership_shared_state
+        COMMAND lgaed_p3_ownership_authoring_state_tests)
+    set_tests_properties(native.p3_ownership_shared_state
+        PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+endfunction()
+
 function(lgaed_add_named_rule_source_tests)
     if(TARGET lgaed_named_rule_check_tests)
         return()
@@ -241,6 +259,7 @@ if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
         # The three real-lesson CLI paths use no fixture files from the full
         # guidance suite. Run them here against the same native StateStore,
         # full/progress loaders and immutable historical owners.
+        lgaed_add_p3_ownership_shared_state_target()
         lgaed_add_compiler_guidance_state_target()
         add_test(NAME native.math_matching_text_live
             COMMAND lgaed_compiler_guidance_state_tests --math-matching-text-live)
@@ -854,6 +873,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_open_battery_runtime_test()
     lgaed_add_semantic_retirement_view_test()
     lgaed_add_compiler_case_order_view_test()
+    lgaed_add_p3_ownership_shared_state_target()
     lgaed_add_compiler_guidance_state_target()
     add_test(NAME native.math_matching_text_live
         COMMAND lgaed_compiler_guidance_state_tests --math-matching-text-live)
@@ -1273,6 +1293,7 @@ if(BUILD_TESTING)
     add_executable(lgaed_compiler_feedback_source_tests native/platform/windows/compiler_feedback_source_tests.cpp)
     target_link_libraries(lgaed_compiler_feedback_source_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.compiler_feedback_source COMMAND lgaed_compiler_feedback_source_tests)
+    lgaed_add_p3_ownership_shared_state_target()
     lgaed_add_compiler_guidance_state_target()
     add_test(NAME native.compiler_guidance_state COMMAND lgaed_compiler_guidance_state_tests)
     set_tests_properties(native.compiler_guidance_state PROPERTIES TIMEOUT 30)
