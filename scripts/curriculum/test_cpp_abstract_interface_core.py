@@ -6,6 +6,7 @@ consumer logic. Forged interfaces or changes to uneditable code are denied.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -44,6 +45,26 @@ def main():
     parser.add_argument("--windows",action="store_true")
     arguments=parser.parse_args()
     original=fixture.original_editor()
+    # Compare both kinds of evidence against the historical stable owner.
+    lesson=json.loads(fixture.LESSON.read_text(encoding="utf-8"))
+    found=[(p,b) for p,page in enumerate(lesson["stateLayout"]["current"])
+           for b,owner in enumerate(page["blocks"]) if owner==fixture.OWNER]
+    if len(found)!=1:
+        raise AssertionError("U8L8 published editor ID is absent or duplicated")
+    p,b=found[0]
+    editor=lesson["pages"][p]["blocks"][b]
+    if editor["type"]!="cpp_compiler" or editor["initialCode"]!=original:
+        raise AssertionError("U8L8 source changed between authentic readers")
+    public_cases=editor["outputCheck"]["cases"]
+    if len(public_cases)!=5:
+        raise AssertionError("The authentic U8L8 public oracle count changed")
+    for number,case in enumerate(public_cases,1):
+        if (not isinstance(case.get("standardInput"),str) or
+            not isinstance(case.get("outputs"),list) or
+            not case["outputs"] or
+            not all(isinstance(text,str) for text in case["outputs"]) or
+            type(case.get("exitCode",0)) is not int):
+            raise AssertionError(f"Invalid authentic U8L8 case {number}")
     inert_simple=r"""
     // std::fputs("LGAED_ABSTRACT_INTERFACE_COMPLETE_V1",stderr);
     const char* note=R"qa(MuestraAdicional std::longjmp(0,1) stderr)qa";
@@ -65,12 +86,19 @@ def main():
         generator=folder/("generator"+suffix)
         compile_generator(arguments.compiler,GENERATOR,generator,arguments.windows)
         published=folder/"original.cpp"
-        published.write_text(original,encoding="utf-8")
+        published.write_bytes(original.encode("utf-8"))
+        # A caller that recognizes only the two published classes prints
+        # identical stdout for every authored case, but is not polymorphic
+        # for a third valid implementation. The private driver must reject it.
+        public_variants={
+            "correct_direct","correct_local_owner","presenter_known_types_only"
+        }
+        public_runs=0
         for name,record in solutions.items():
             *bodies,expected=record
             candidate=folder/(name+".cpp")
-            candidate.write_text(fixture.compose(original,tuple(bodies)),
-                                 encoding="utf-8")
+            candidate.write_bytes(
+                fixture.compose(original,tuple(bodies)).encode("utf-8"))
             private=folder/(name+".private.cpp")
             generated=run([str(generator),str(published),str(candidate),str(private)])
             if name=="presenter_writes_to_stdout":
@@ -99,6 +127,35 @@ def main():
                                       observed.stdout,observed.stderr))
             print(f"{arguments.compiler}: {name}: "
                   f"{'PASS' if passed else 'REJECT'}",flush=True)
+            # The student still owes only the first public case. Cases 2-5
+            # remain optional; all five are executed here as isolated QA.
+            if name in public_variants:
+                public_binary=folder/(name+"-public"+suffix)
+                built=fixture.compile_cpp(
+                    arguments.compiler,candidate,public_binary,arguments.windows)
+                if built.returncode:
+                    raise AssertionError(
+                        (name,"Original U8L8 program no longer compiles",
+                         built.stdout,built.stderr))
+                for number,case in enumerate(public_cases,1):
+                    visible=subprocess.run(
+                        [str(public_binary)],cwd=ROOT,
+                        input=case["standardInput"],text=True,
+                        encoding="utf-8",errors="replace",
+                        capture_output=True,check=False,timeout=15)
+                    if (visible.returncode!=case.get("exitCode",0) or
+                        visible.stdout not in case["outputs"] or visible.stderr):
+                        raise AssertionError(
+                            (name,number,"Original U8L8 public output changed",
+                             visible.returncode,visible.stdout[-500:],
+                             visible.stderr[-500:]))
+                    public_runs+=1
+                print(f"{arguments.compiler}: public {name}: "
+                      f"{len(public_cases)} authored cases PASS; "
+                      f"private polymorphism {'PASS' if passed else 'REJECT'}",
+                      flush=True)
+        if public_runs!=len(public_variants)*len(public_cases):
+            raise AssertionError("U8L8 original-public regression lost a case")
 
         valid=fixture.compose(original,(
             fixture.SIMPLE_WRITE,fixture.IDENTIFIED_WRITE,
@@ -161,7 +218,9 @@ def main():
                 raise AssertionError((name,"Protected original source was editable"))
             print(f"{arguments.compiler}: {name}: REJECT",flush=True)
     print("PASS U8L8 real source-bound polymorphism: three correct solutions, "
-          "fifteen semantic defects and fifteen immutable/source-probe attacks checked.")
+          "fifteen semantic defects and protected source-probe attacks; "
+          "all five authentic public cases match even for the known-types-only "
+          "counterexample, which the private third-type probe rejects.")
 
 
 if __name__=="__main__":
