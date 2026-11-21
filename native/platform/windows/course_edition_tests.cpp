@@ -932,6 +932,81 @@ void run(const fs::path& fixture_source) {
         require(progress.completed == 1 && progress.total == 3, "El catálogo no refleja únicamente el quiz nuevo evaluado.");
     }
     after = profile.load(); preserved_values(expected_after_interaction, after);
+    // A real Windows course index supplies an exact CURRENT-edition scope.
+    // Reset only this isolated QA state after the student has answered the
+    // newly authored quiz and saved a new compiler draft. A reset is never
+    // inferred from publication, import or simply opening the updated lesson.
+    {
+        const auto scope = windows::catalog_scope(fixture.content, course_location());
+        require(scope.courses == std::vector<std::string>{"qa_edition"} &&
+                scope.units == std::vector<std::string>{std::string(new_unit)} &&
+                scope.lessons == std::vector<std::string>{
+                    std::string(new_id), std::string(next_id)},
+            "The native course index would reset historical or foreign lessons");
+        const auto old_draft = state::get_draft(after, old_key, "");
+        const auto current_draft = state::get_draft(after, new_key, "");
+        require(current_draft.has_saved && !current_draft.source.empty() &&
+                state::get_response(after, current, current.pages[0].blocks[0]),
+            "The isolated current-edition reset has no saved answer and draft to protect");
+        auto restarted = after;
+        require(curriculum::reset_catalog_progress(restarted, scope) > 0,
+            "The explicit current-edition reset did not clear any current progress");
+        require(state::current_page(restarted, current) == 0 &&
+                !state::get_response(restarted, current, current.pages[0].blocks[0]) &&
+                !windows::compiler_puzzle_completed(
+                    restarted, current, current.pages[1].blocks[0]) &&
+                !reference_available(restarted, current, 2),
+            "Resetting the current course left an answered new page or reference");
+        for (const auto key : {"course_qa_edition_completed",
+                               "unit_qa_edition__original_completed",
+                               "lesson_qa_edition__original__primera_completed",
+                               "lesson_qa_other__independiente__primera_completed"})
+            require(state::find(restarted, "learning_progress", key) &&
+                    state::find(after, "learning_progress", key) &&
+                    *state::find(restarted, "learning_progress", key) ==
+                    *state::find(after, "learning_progress", key),
+                "Resetting the current course erased historical or other-course achievements");
+        for (const auto domain : {"cpp_lesson_drafts", "qa_unrelated",
+                                  "attempt_reserve_seconds_test"})
+            require(restarted.preferences.at(domain) == after.preferences.at(domain),
+                "Resetting current progress changed saved drafts or unrelated preferences");
+        const auto recovered_old_draft = state::get_draft(restarted, old_key, "");
+        const auto recovered_new_draft = state::get_draft(restarted, new_key, "");
+        require(recovered_old_draft.source == old_draft.source &&
+                recovered_old_draft.input == old_draft.input &&
+                recovered_old_draft.has_saved == old_draft.has_saved &&
+                recovered_new_draft.source == current_draft.source &&
+                recovered_new_draft.input == current_draft.input &&
+                recovered_new_draft.selection_start == current_draft.selection_start &&
+                recovered_new_draft.selection_end == current_draft.selection_end &&
+                recovered_new_draft.has_saved == current_draft.has_saved &&
+                narration::read_history(restarted) == narration::read_history(after),
+            "The limited current-edition reset changed historical/current drafts or audio history");
+        catalog_pending(fixture, restarted);
+        const auto once = restarted;
+        require(curriculum::reset_catalog_progress(restarted, scope) == 0 &&
+                restarted == once,
+            "The explicit limited edition reset was not idempotent");
+        profile.save(restarted);
+        {
+            View reopened(profile, current);
+            require(lesson_page_state(reopened.view).index == 0 &&
+                    !lesson_page_state(reopened.view).can_next &&
+                    !navigate_lesson_view(reopened.view, 1),
+                "The actual Windows lesson resumed at an answered page after scoped reset");
+            const auto saved = reopened.saved();
+            require(!state::get_response(saved, current, current.pages[0].blocks[0]) &&
+                    !reference_available(saved, current, 2) &&
+                    state::get_draft(saved, new_key, "").source == current_draft.source &&
+                    state::get_draft(saved, old_key, "").source == old_draft.source,
+                "Reopening after reset inherited a retired answer or lost a saved compiler draft");
+        }
+        // Restore this *test-owned* snapshot for the independent import and
+        // negative-contract tests below. Never reset real profiles.
+        profile.save(after);
+        require(profile.load() == after,
+            "Isolated current-edition reset/regression did not restore its QA snapshot");
+    }
     require(bytes(revision_file) == revision_bytes && old_history.load(revision.id).files == revision.files
         && old_history.summaries().size() == 1 && new_history.summaries().empty(),
         "Cambió el historial antiguo o apareció bajo el nuevo proyecto.");
