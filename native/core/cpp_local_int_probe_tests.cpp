@@ -22,7 +22,10 @@ void equivalent_initializers_do_not_change_original_source() {
         "int llaves = {7};",
         "int llaves = 3 + 4;",
         "int llaves = static_cast<int>(7);",
-        "int llaves = [] { return 7; }();"
+        "int llaves = [] { return 7; }();",
+        "signed int llaves = 7;",
+        "int signed llaves{7};",
+        "signed llaves(7);"
     };
     for (const auto& declaration : declarations) {
         const std::string source = "#include <iostream>\nint main() {\n    " +
@@ -110,6 +113,12 @@ void separate_assignment_and_copy_before_update() {
     require(separate &&
         separate->find("llaves = 7;\n    llaves = 19;\n") != std::string::npos,
         "A complete assignment after declaration was rejected");
+    const auto signed_separate = cpp_local_int_override(
+        "int main() { signed llaves; llaves = 7; std::cout << llaves; }",
+        {"llaves", 19});
+    require(signed_separate &&
+        signed_separate->find("llaves = 7;\n    llaves = 19;\n") != std::string::npos,
+        "A signed int initialized by separate assignment was rejected");
     const std::string source = R"(#include <iostream>
 int main() {
     int aforo = 5;
@@ -151,7 +160,11 @@ void unsafe_ambiguous_and_other_scope_are_rejected() {
     const char* invalid[]{
         "const int llaves=7;",
         "unsigned int llaves=7;",
+        "unsigned llaves=7;",
         "long int llaves=7;",
+        "long signed int llaves=7;",
+        "signed int *llaves=nullptr;",
+        "signed llaves{7}, extra{8};"
         "auto llaves=7;",
         "int *llaves=nullptr;",
         "int llaves[1]{7};",
