@@ -992,6 +992,18 @@ aislado. Una ejecución portátil aprobada no sustituye la
 compilación integral del lector ni la evaluación visual y auditiva
 en el Windows del estudiante.
 
+La regresión `test_cpp_polymorphic_clone.py` conserva el `main` y
+contrasta los **cinco casos públicos originales** para tres soluciones
+válidas y dos contraejemplos: clonar sólo las clases concretas conocidas
+en lugar de invocar `clonar()` virtualmente y devolver un prefijo parcial
+si `clonar()` lanza `std::bad_alloc`. Ambos errores pueden imprimir
+exactamente los resultados públicos, pero fallan al introducir otra
+implementación conforme o una excepción controlada durante la
+duplicación. La sonda independiente exige tipo concreto, identidad
+distinta, limpieza y propagación de fallos. La QA adicional no convierte
+los cuatro casos posteriores al primero en pruebas obligatorias para
+el estudiante.
+
 ## Colecciones con propiedad única e informes por interfaz virtual
 
 Programación 3, **U8L9**, admite el campo raíz
