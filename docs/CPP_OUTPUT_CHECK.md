@@ -1144,6 +1144,17 @@ declaración cuando corresponda. Las sondas C++ aisladas y la QA de
 conservación no acreditan por sí solas la compilación integral de la app
 con la versión exacta de MSVC del proyecto ni su inspección visual.
 
+La regresión `test_cpp_abstract_interface_core.py` también compila el
+`main` original para **los cinco casos públicos** de dos soluciones
+correctas y de un contraejemplo que utiliza `dynamic_cast` para reconocer
+únicamente `MuestraSimple` y `MuestraIdentificada`. Los tres programas
+producen la misma salida con esos casos. Sin embargo, el contraejemplo
+falla al recibir una tercera implementación conforme de `Muestra`,
+mientras que las soluciones que invocan las operaciones virtuales pasan
+esa sonda privada. Así, `stdout` no sustituye la acreditación del
+despacho por interfaz. Solo el primer caso público es obligatorio para
+el estudiante; los cuatro restantes pertenecen a la QA automática.
+
 ## Baterías abiertas de una función booleana con dos enteros
 
 Windows admite la variante `boolean-pair-v1` dentro de la lista raíz
