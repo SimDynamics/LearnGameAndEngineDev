@@ -567,8 +567,16 @@ void current_required_compiler_reader(const std::shared_ptr<windows::NarrationWo
                 relation.prerequisites.front()==prerequisite;
         });
     };
+    const auto preserved_reference=[&](std::string_view owner,std::string_view reference){
+        return std::ranges::any_of(archived->reference_after,[&](const auto& relation){
+            return relation.activity==owner&&
+                std::ranges::find(relation.blocks,reference)!=relation.blocks.end();
+        });
+    };
     check(preserved_edge("block_0006_0006","block_0006_0002")&&
         preserved_edge("block_0007_0009","block_0006_0006")&&
+        preserved_reference("block_0006_0002","block_0007_0001")&&
+        preserved_reference("block_0007_0009","block_0008_0003")&&
         std::ranges::none_of(lesson.pages,[&](const auto& current){
             return std::ranges::any_of(current.blocks,[](const auto& block){
                 return block.type==curriculum::BlockType::cpp_compiler&&
