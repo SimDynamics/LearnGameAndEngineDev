@@ -4116,3 +4116,14 @@ Esta batería CTest es una **prueba de integración nativa**, distinta
 de las pruebas de código fuente con GCC, Clang o MSVC hospedado.
 Hasta obtener una ejecución y sus registros en el Windows autorizado,
 su presencia en CMake no se considera evidencia de éxito.
+
+Para detectar fallos de integración antes de esa ejecución local, el
+banco independiente `cmake/PortableCompilerGuidanceQA` incluye también
+`native.compiler_local_int_state` y `native.compiler_local_string_state`.
+El segundo compila y ejecuta las variantes U2L7 mediante MSVC y el
+`lgaed_cpp_tool_host` reales en un **runner Windows hospedado desechable**.
+Este banco genera una cabecera QA con las rutas del compilador y del SDK
+de ese runner; no cambia el manifiesto ni el toolchain fijados para
+la aplicación. El flujo de GitHub comunica por separado el estado
+`codex/local-variable-hosted-ctest`, sin equiparar esa evidencia con
+una instalación o ejecución en el Windows personal del estudiante.
