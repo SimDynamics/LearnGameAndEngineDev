@@ -5,6 +5,7 @@ Only in-memory authoring; never rewrites Work JSON, student drafts or progress.
 from copy import deepcopy
 import json
 import os
+import sys
 from pathlib import Path
 import subprocess
 import tempfile
@@ -183,4 +184,16 @@ class CurrentBatchSplit(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    if len(sys.argv) == 3 and sys.argv[1] == "--export-native-qa":
+        # Emit only disposable native QA data, not the Work lesson.
+        directory = Path(sys.argv[2])
+        directory.mkdir(parents=True, exist_ok=True)
+        CurrentBatchSplit.setUpClass()
+        candidate = CurrentBatchSplit().reviewed()
+        layout.validate_transition(CurrentBatchSplit.before, candidate)
+        for name, document in (("before", CurrentBatchSplit.before), ("after", candidate)):
+            (directory / (name + ".json")).write_text(
+                json.dumps(document, ensure_ascii=False), encoding="utf-8")
+        print("PASS isolated U6L19 Windows case fixture; curriculum intact")
+    else:
+        unittest.main()

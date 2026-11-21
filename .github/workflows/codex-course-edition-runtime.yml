@@ -11,6 +11,8 @@ on:
       - native/platform/windows/course_edition_tests.cpp
       - native/platform/windows/catalog_loader.cpp
       - native/platform/windows/local_int_state_tests.cpp
+      - native/platform/windows/u6l19_case_split_state_tests.cpp
+      - scripts/curriculum/test_current_batched_client_split.py
       - native/core/cpp_local_int_probe.hpp
       - native/presentation/windows/technical_context_view_tests.cpp
       - native/presentation/windows/lesson_view.cpp
@@ -68,7 +70,7 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           cmake -S cmake/HostedCourseEditionQA -B $build -G Ninja -DCMAKE_BUILD_TYPE=Debug
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build $build --target lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_local_int_state_tests lgaed_inline_feedback_view_tests --parallel 3
+          cmake --build $build --target lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_local_int_state_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Execute edition replacement, native quiz, scoped reset and reopen
         shell: pwsh
@@ -106,6 +108,12 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           ctest --test-dir $build -R '^native[.]current_inline_feedback$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'inline-feedback-win32.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve historical U6L19 batch without granting new standalone cases
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]u6l19_case_split_state$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u6l19-case-split-state.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve native test and compile evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -120,5 +128,6 @@ jobs:
             ${{ runner.temp }}/lgaed-course-edition-qa/current-u2-win32.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u2-local-int-state.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/inline-feedback-win32.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/u6l19-case-split-state.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/Testing/Temporary/*.log
             ${{ runner.temp }}/lgaed-course-edition-qa/CMakeFiles/CMakeConfigureLog.yaml

@@ -215,4 +215,26 @@ add_test(NAME native.current_inline_feedback
 set_tests_properties(native.current_inline_feedback
     PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
 
+# Native Windows case revision StateStore and preserved aggregate QA.
+set(_u6l19_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u6l19-case-split")
+add_custom_command(OUTPUT "${_u6l19_dir}/before.json" "${_u6l19_dir}/after.json"
+    COMMAND "${Python3_EXECUTABLE}" -B
+        "${_lgaed_root}/scripts/curriculum/test_current_batched_client_split.py"
+        --export-native-qa "${_u6l19_dir}"
+    DEPENDS "${_lgaed_root}/scripts/curriculum/test_current_batched_client_split.py"
+        "${_lgaed_root}/scripts/curriculum/stable_state_layout.py"
+        "${_lgaed_root}/app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json"
+    VERBATIM)
+add_custom_target(lgaed_u6l19_case_split_fixtures
+    DEPENDS "${_u6l19_dir}/before.json" "${_u6l19_dir}/after.json")
+add_executable(lgaed_u6l19_case_split_state_tests
+    "${_lgaed_root}/native/platform/windows/u6l19_case_split_state_tests.cpp")
+target_link_libraries(lgaed_u6l19_case_split_state_tests PRIVATE lgaed_platform_windows)
+add_dependencies(lgaed_u6l19_case_split_state_tests lgaed_u6l19_case_split_fixtures)
+add_test(NAME native.u6l19_case_split_state
+    COMMAND lgaed_u6l19_case_split_state_tests
+       "${_u6l19_dir}/before.json" "${_u6l19_dir}/after.json"
+       "${_u6l19_dir}/isolated-profile")
+set_tests_properties(native.u6l19_case_split_state PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+
 
