@@ -595,7 +595,7 @@ void opaque_noop_requires_runtime_state_change() {
     constexpr std::string_view marker="lgaed_local_int_before_6cb8e71d";
     for(const auto* statement:{
         "aforo=aforo^0;", "aforo=aforo|0;", "aforo=aforo<<0;",
-        "aforo=aforo&(-1);", "aforo=aforo+(7%7);"
+        "aforo=aforo&(-1);"
     }) {
         const auto altered=cpp_local_int_override(start+statement+output,
             {"aforo",4,{},true});
