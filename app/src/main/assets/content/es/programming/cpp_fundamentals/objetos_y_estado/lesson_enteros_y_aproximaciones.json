@@ -164,7 +164,7 @@
             ]
           ],
           "reviewFeedback": "Relaciona cada hueco con el dato que conservará esa variable. Distingue un recuento en unidades completas de una medida que necesita parte fraccionaria; revisa qué tipo de los practicados expresa cada representación. Mantén los valores iniciales del programa.",
-          "explanation": "El primer hueco nombra el tipo entero int y el segundo, el tipo double. cajas conserva un recuento de ocho unidades completas; metros conserva la medida 1.5, que necesita una parte fraccionaria. El tipo determina qué clase de valores puede guardar cada objeto (Stroustrup, 2024).\n\nOcho también se puede representar como double. Aquí utilizamos int para comunicar que las cajas se cuentan en unidades completas; la elección no se debe a que double sea incapaz de guardar ocho. En cambio, guardar 1.5 en un int descartaría la fracción que necesita la medida (Stroustrup, 2024).\n\nLa consola muestra 8 1.5, con el espacio que ya aporta el literal entre ambas variables. Las grafías equivalentes admitidas para int conservan ese mismo tipo entero; no cambian el recuento ni el significado de la actividad (Köppe et al., 2023)."
+          "explanation": "Escribimos int en la línea de cajas porque contamos ocho cajas enteras. Escribimos double en la línea de metros porque queremos guardar un metro y medio. La consola muestra 8 1.5. El espacio sale del texto entre comillas en la línea de std::cout (Stroustrup, 2024).\n\nSi escribiste signed int, int signed o signed en el primer hueco, las tres formas nombran el mismo tipo que int. En el resto de la lección usaremos int (Köppe et al., 2023)."
         },
         {
           "type": "fill_code",
@@ -175,7 +175,7 @@
             "2."
           ],
           "id": "p1u2l5_reparar_divisor_literal",
-          "question": "Reparte once metros de cinta en dos partes iguales. Escribe el divisor con el dígito 2 y un punto decimal. Puedes añadir un cero tras el punto. Debe aparecer 5.5 en la consola.",
+          "question": "Quieres repartir once metros de cinta en dos partes iguales. En el hueco después de /, escribe el número dos como double. Escribe el dos con punto decimal. Puedes poner un cero después del punto. Cada parte debe medir 5.5 metros.",
           "reviewFeedback": "Mira el tipo de cinta_metros a la izquierda de la división. El hueco debe aportar un dos de tipo double.",
           "explanation": "2.0 escribe el divisor como double. El once se convierte para hacer la división en ese mismo tipo. La mitad de once es 5.5 y la consola muestra 5.5. También puedes escribir el literal 2.."
         }
@@ -255,11 +255,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Dos y medio puede ser una distancia en metros o en kilómetros. En double distancia_metros = 2.5;, el nombre distancia_metros indica cómo interpretar el número guardado. Si vas a mostrarlo a otra persona, incluye la unidad en el mensaje, como en Distancia: 2.5 m.\n\nPiensa ahora en una regla que llega hasta diez metros y tiene marcas cada centímetro. El extremo de la regla te dice hasta dónde puedes medir. Las marcas te muestran cuánto detalle puedes distinguir. En un tipo numérico, el rango indica los valores que quedan entre sus límites. La precisión indica cuánto detalle puedes conservar dentro de esos límites (Stroustrup, 2024)."
+          "text": "Una distancia de dos y medio puede estar en metros o en kilómetros. En double distancia_metros = 2.5;, el nombre dice que el dato está en metros. Incluye la unidad también en la consola. Así, quien lea Distancia: 2.5 m sabrá qué mide ese número.\n\nImagina una cinta métrica que va de cero a diez metros. El rango te dice hasta dónde puedes medir con la cinta. Si solo tiene marcas cada centímetro, puedes leer los centímetros, pero tendrás que estimar cualquier medida que caiga entre dos marcas. Esa separación da una idea de la precisión. Al guardar números, el tipo también tiene límites de tamaño y puede distinguir números cercanos hasta cierto punto (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
-          "text": "Piensa en 2.5 como dos unidades más una mitad. Con la representación binaria de double que usamos aquí, se pueden formar cantidades exactas con mitades, cuartos y mitades cada vez más pequeñas. Una mitad ya está disponible, así que 2.5 se conserva exactamente. Una décima, 0.1, queda entre dos valores que ese tipo puede guardar. Al escribir ese literal, C++ usa un valor representable vecino (Köppe et al., 2023; Stroustrup, 2024)."
+          "text": "Una cinta de 2.5 metros mide dos metros enteros más medio metro. El double que usamos en Windows puede guardar ese medio metro exactamente.\n\nPara entender por qué, imagina que divides un metro en dos. Cada pieza mide medio metro. Si divides esas dos piezas otra vez, tienes cuatro cuartos de metro. Después tendrías ocho octavos. De ahí viene la palabra «binaria». Cada paso divide las piezas en dos. Puedes sumar piezas de estos tamaños para formar una medida. Por ejemplo, una mitad más un cuarto son tres cuartos (Stroustrup, 2024).\n\nUna décima es una de diez partes iguales. Para formar un décimo exacto con piezas del mismo tamaño, tendrías que poder repartir todas las piezas en diez grupos iguales. Al partir siempre en dos obtienes dos, cuatro, ocho, dieciséis y así sucesivamente. Para obtener un múltiplo de diez también haría falta un factor de cinco. Al escribir 0.1, double guarda un número muy cercano a un décimo. A eso le llamamos una aproximación (Köppe et al., 2023)."
         },
         {
           "type": "paragraph",
@@ -267,7 +267,7 @@
         },
         {
           "type": "multiple_choice",
-          "question": "Un programa guarda una longitud. ¿Qué información aporta el mensaje Longitud: 2.5 m además del número?",
+          "question": "La consola dice Longitud: 2.5 m. ¿Qué te aclara la letra m que aparece después del número?",
           "options": [
             "Que cualquier cálculo con ese número será exacto.",
             "La unidad con la que debe interpretarse.",
@@ -324,13 +324,13 @@
           "type": "multiple_choice",
           "correctIndex": 1,
           "id": "p1u2l5_elegir_prueba",
-          "question": "Dos programas muestran Parte: 4 m al repartir ocho metros entre dos. Uno usa dos operandos int y el otro usa una longitud double. ¿Con qué longitud los distingues?",
+          "question": "Dos programas cortan una cinta en dos partes iguales. Para una cinta de ocho metros, el primero calcula 8 / 2 y el segundo calcula 8.0 / 2. Los dos muestran Parte: 4 m.\n\nVas a probar otra longitud. Usa esa misma longitud en los dos programas y sigue dividiendo entre dos. ¿Con qué longitud verás un número distinto en cada consola?",
           "options": [
             "Diez metros",
             "Nueve metros",
             "Seis metros"
           ],
-          "explanation": "Ocho, diez y seis se pueden dividir entre dos con un resultado entero. Al probar con nueve metros, la versión con dos enteros muestra Parte: 4 m. La versión que divide una longitud de tipo double muestra Parte: 4.5 m."
+          "explanation": "Prueba con nueve metros. 9 / 2 da 4 porque divide dos enteros. 9.0 / 2 da 4.5 porque el primer número es double. Así puedes ver si el programa conserva el medio metro.\n\nCon diez metros, los dos mostrarían Parte: 5 m. Con seis, los dos mostrarían Parte: 3 m."
         }
       ]
     },
@@ -2048,6 +2048,36 @@
         "id": "block_0007_0004",
         "beforeSha256": "997df33bf466c7fc4dbe9fcebdb2f2e5448419532637531746ad0d4072d472c1",
         "afterSha256": "0b9e0d792bb3747906b2b6a3f33e430af48814a1be995f3b17abeee92bcfe944"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "6054a5653f728ac2170a09bec9128710bd7c7f920c0f7e0ffa7a679db562c235",
+        "afterSha256": "c077e1b2d8e52aecb46aa9c060cdb992f2ef0cb543dec78f830bf6bf33776570"
+      },
+      {
+        "id": "p1u2l5_mitades_y_decimas",
+        "beforeSha256": "311f8fe4eda41a1add7be696f940b4ca95bb75221cf4f49b6d625e8cd73a582f",
+        "afterSha256": "23ba3c833083d7d46146d17641ad9d22dca2ccc089c5bf363f740e63802df18d"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "18d5c7c4280b6355dcf7160be1ff156fbf6aab4120d2290cdc5602e831d3379d",
+        "afterSha256": "883284af0160401deaff417cbd50851b23873c147628bf895edf51fdda81c13a"
+      },
+      {
+        "id": "p1u2l5_reparar_divisor_literal",
+        "beforeSha256": "be1350c1b365f2814d12632d956d5b16721a7f09cf2957942285346b39f2adea",
+        "afterSha256": "582b7f6649020c9a0c9b916bd9fc0969bec08fd7e008047f57fe4e6edcb0528b"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "adaa6186b78f95a1166e028df386e361f34d47ccf84d9162e78b086355ff7597",
+        "afterSha256": "41a861ec00521284ec5145fac7f34e3c43fc3ea397597a4796c897c79cda8b54"
+      },
+      {
+        "id": "p1u2l5_elegir_prueba",
+        "beforeSha256": "c33e8c96db6723c403873237b1843952f702112fa3c57ad6fe3862538378b28c",
+        "afterSha256": "9f78e99c6d7f5349016ed128e459d90a1e376903b3f77059405b7f3e48c50a5b"
       }
     ],
     "retired": [
@@ -5345,32 +5375,25 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "7e17946893c9ad7b0ad274ddfee77374054ef7f81af876678c0b279925eb5f92",
+        "sourceSha256": "2709a8001996b106d869ed2711e81b1bfb41677495bc02a18d247dedbbcdb95b",
         "spans": [
           {
-            "start": 66,
-            "end": 96,
+            "start": 71,
+            "end": 101,
             "text": "double distancia_metros = 2.5;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 108,
-            "end": 124,
-            "text": "distancia_metros",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 245,
-            "end": 261,
+            "start": 202,
+            "end": 218,
             "text": "Distancia: 2.5 m",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 618,
-            "end": 636,
+            "start": 655,
+            "end": 673,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -5380,130 +5403,95 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "168aed3489725724e25599eabd6160ed71b31adb4a49d79d34a5304e0f45e306",
+        "sourceSha256": "ce330860e0889c5ce3129130ee97b2fb11923806c2b4bff58e559d63b3f26f1a",
         "spans": [
           {
-            "start": 38,
-            "end": 41,
+            "start": 11,
+            "end": 14,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 64,
-            "end": 70,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 72,
-            "end": 77,
+            "start": 30,
+            "end": 35,
             "text": "cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 102,
-            "end": 106,
-            "text": "ocho",
-            "role": "data",
-            "reading": "natural"
+            "start": 83,
+            "end": 89,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 127,
-            "end": 133,
+            "start": 105,
+            "end": 111,
             "text": "metros",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 153,
-            "end": 156,
-            "text": "1.5",
-            "role": "data",
+            "start": 173,
+            "end": 178,
+            "text": "8 1.5",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 260,
-            "end": 278,
+            "start": 236,
+            "end": 245,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 264,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
             "start": 281,
-            "end": 285,
-            "text": "Ocho",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 320,
-            "end": 326,
-            "text": "double",
+            "end": 291,
+            "text": "signed int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 344,
-            "end": 347,
+            "start": 293,
+            "end": 303,
+            "text": "int signed",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 306,
+            "end": 312,
+            "text": "signed",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 375,
+            "end": 378,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 440,
-            "end": 446,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 470,
-            "end": 474,
-            "text": "ocho",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 495,
-            "end": 498,
-            "text": "1.5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 505,
-            "end": 508,
+            "start": 415,
+            "end": 418,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 556,
-            "end": 574,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 596,
-            "end": 601,
-            "text": "8 1.5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 706,
-            "end": 709,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 800,
-            "end": 820,
+            "start": 419,
+            "end": 439,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -6580,12 +6568,19 @@
       {
         "block": "block_0005_0002",
         "path": "/question",
-        "sourceSha256": "dc07bb613bc6349e16e64790c197f0ddef61328a59d3c12e527f3258548d592c",
+        "sourceSha256": "aa8f4e95cf1df668cd196ec8f938c6b28dca97a5b74aa758987a01037829c4d3",
         "spans": [
           {
-            "start": 68,
-            "end": 83,
+            "start": 16,
+            "end": 31,
             "text": "Longitud: 2.5 m",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "m",
             "role": "output",
             "reading": "natural"
           }
@@ -7535,18 +7530,25 @@
       {
         "block": "p1u2l5_reparar_divisor_literal",
         "path": "/question",
-        "sourceSha256": "f4065b833748e69a5f92f1759b8339eed2a7a039d4a03de5a97c1b5575237519",
+        "sourceSha256": "56380c43c48f1c7ed3230f9afd802988235ffb68883d8f03e3f9af5999501211",
         "spans": [
           {
-            "start": 85,
-            "end": 86,
-            "text": "2",
+            "start": 84,
+            "end": 85,
+            "text": "/",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 158,
-            "end": 161,
+            "start": 114,
+            "end": 120,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 221,
             "text": "5.5",
             "role": "output",
             "reading": "natural"
@@ -7751,40 +7753,47 @@
       {
         "block": "p1u2l5_mitades_y_decimas",
         "path": "/text",
-        "sourceSha256": "856da258d03cfff45cc1a386c787824b335c62665e15ee069c616401425addfa",
+        "sourceSha256": "2d1f7ab83bb077c22d348af9614519e1e67b12163c7985f00e58cbcfa1f274dd",
         "spans": [
           {
-            "start": 10,
-            "end": 13,
-            "text": "2.5",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 80,
-            "end": 86,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 232,
-            "end": 235,
+            "start": 13,
+            "end": 16,
             "text": "2.5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 273,
-            "end": 276,
+            "start": 68,
+            "end": 74,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 516,
+            "end": 534,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 875,
+            "end": 878,
             "text": "0.1",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 393,
-            "end": 431,
-            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "start": 880,
+            "end": 886,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 964,
+            "end": 984,
+            "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           }
@@ -7821,54 +7830,82 @@
       {
         "block": "p1u2l5_elegir_prueba",
         "path": "/question",
-        "sourceSha256": "4197a8ae00f2a0f01167f7fff466b83fa9f310941245c0ae6345fd21465da6a9",
+        "sourceSha256": "90ad6205029b8f5c791a5b798e346bf95d29c62eaa79c4b38e815fc79f26d0d7",
         "spans": [
           {
-            "start": 23,
-            "end": 33,
+            "start": 104,
+            "end": 109,
+            "text": "8 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 138,
+            "text": "8.0 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 167,
             "text": "Parte: 4 m",
             "role": "output",
             "reading": "natural"
-          },
-          {
-            "start": 91,
-            "end": 94,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 122,
-            "end": 128,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
           }
         ]
       },
       {
         "block": "p1u2l5_elegir_prueba",
         "path": "/explanation",
-        "sourceSha256": "6864e06f1a3b4ff85e4fcad89b52771ee2ba2d4b032b8c420eb0b50c98be4765",
+        "sourceSha256": "fa32f932af0a879be651322dbfb7560872132da0e8a5983856071bf6c8c0609e",
         "spans": [
           {
-            "start": 134,
-            "end": 144,
-            "text": "Parte: 4 m",
-            "role": "output",
+            "start": 25,
+            "end": 30,
+            "text": "9 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 35,
+            "text": "4",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 189,
-            "end": 195,
+            "start": 63,
+            "end": 70,
+            "text": "9.0 / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 74,
+            "end": 77,
+            "text": "4.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 111,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 204,
-            "end": 216,
-            "text": "Parte: 4.5 m",
+            "start": 205,
+            "end": 215,
+            "text": "Parte: 5 m",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 256,
+            "text": "Parte: 3 m",
             "role": "output",
             "reading": "natural"
           }
