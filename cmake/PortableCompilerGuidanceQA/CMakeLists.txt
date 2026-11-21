@@ -302,6 +302,12 @@ if(LGAED_HOSTED_FEEDBACK_FONT_QA)
         COMMAND lgaed_u2_semantic_portable_qa --current-u2l5-native-gates)
     set_tests_properties(native.u2l5_native_reader_gates PROPERTIES
         TIMEOUT 180 RUN_SERIAL TRUE)
+    # U2L6 native reader regression: two source-owned independent compiler
+    # gates, restored drafts, attempted manual advance and exact references.
+    add_test(NAME native.u2l6_native_reader_gates
+        COMMAND lgaed_u2_semantic_portable_qa --current-u2l6-native-gates)
+    set_tests_properties(native.u2l6_native_reader_gates PROPERTIES
+        TIMEOUT 180 RUN_SERIAL TRUE)
     # Reuse the exact original nine-inline regression (including active U2L5)
     # with real production LessonView, CppFillView and StateStore. This
     # standalone hosted fixture does not run student code or synthesize audio;

@@ -708,6 +708,160 @@ void current_u2l5_native_reader_gates(){
         "after reopen; model receipts only, no generated PCM or child execution\n";
 }
 
+// The published U2L6 has TWO independent compiler gates on one page. Exercise
+// production LessonView, its real reader regions and on-disk QA StateStore;
+// fabricated receipts below are navigation fixtures, never compiler evidence.
+void current_u2l6_native_reader_gates() {
+    const auto relative="objetos_y_estado/lesson_conversiones_y_deduccion.json";
+    const auto lesson=load(relative);
+    const auto file=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
+    const auto original=state::sha256(state::read_bytes(file));
+    const auto first_at=curriculum::stable_block_position(lesson,"block_0006_0002");
+    check(first_at&&first_at->page==6&&first_at->block==2&&
+        lesson.pages[6].blocks.size()>6,
+        "The active U2L6 first compiler or page moved");
+    const auto& first=lesson.pages[6].blocks[first_at->block];
+    const auto& second=lesson.pages[6].blocks[6];
+    check(second.type==curriculum::BlockType::cpp_compiler&&
+        (second.stable_id=="block_0006_0006"||
+         second.stable_id=="p1u2l6_reparar_conversion")&&
+        first.output_check&&second.output_check&&
+        !first.output_check->cases.empty()&&!second.output_check->cases.empty()&&
+        std::ranges::any_of(lesson.activity_after,[&](const auto& relation){
+            return relation.activity==second.stable_id&&
+                relation.prerequisites.size()==1&&
+                relation.prerequisites.front()==first.stable_id;
+        }),"The two U2L6 editors lost their independent source-owned goals");
+
+    const auto reference=[&](std::string_view activity)->std::optional<curriculum::StatePosition>{
+        for(const auto& relation:lesson.reference_after)if(relation.activity==activity)
+            for(const auto& identity:relation.blocks){
+                const auto at=curriculum::stable_block_position(lesson,identity);
+                if(at&&lesson.pages[at->page].blocks[at->block].type==
+                       curriculum::BlockType::code)return at;
+            }
+        return {};
+    };
+    const auto first_reference=reference(first.stable_id);
+    const auto second_reference=reference(second.stable_id);
+    check(first_reference&&second_reference&&
+        first_reference->page>first_at->page&&
+        second_reference->page>=first_reference->page,
+        "U2L6 compiler reference ownership is no longer independent");
+    const auto& first_source=lesson.pages[first_reference->page].blocks[first_reference->block].code;
+    const auto& second_source=lesson.pages[second_reference->page].blocks[second_reference->block].code;
+    check(!first_source.empty()&&!second_source.empty(),
+        "The U2L6 checked references have no original C++ source");
+
+    const auto mock_receipt=[&](state::StateData& data,const curriculum::Block& owner,
+                                const std::string& source){
+        windows::CppRunRequest request;request.revision=1;request.source_utf8=source;
+        const auto& goal=owner.output_check->cases.front();
+        curriculum::FreshExecution observation{1,true,true,0,
+            goal.standard_input,goal.outputs.front()};
+        observation.executable=goal.executable;
+        check(windows::record_compiler_puzzle_case(
+            data,lesson,owner,request,observation,
+            "Synthetic U2L6 reader-only fixture, not a compiler execution"),
+            "A source-owned U2L6 model receipt was not accepted by the real completion gate");
+    };
+    const auto saved_pauses=[&](state::StateData& data){
+        auto history=narration::begin({},"qa-u2l6-first-page","qa-u2l6-reader",
+            {0,137,0,false},"qa-u2l6-first",lesson.pages[6].stable_id);
+        history=narration::begin(std::move(history),"qa-u2l6-second-page",
+            "qa-u2l6-reader",{1,239,0,false},"qa-u2l6-second",lesson.pages[6].stable_id);
+        narration::write_history(data,history);
+    };
+    const auto pending=[&](View& fixture,std::size_t owner){
+        const auto current=lesson_page_state(fixture.view);
+        const auto regions=lesson_reading_regions(fixture.view);
+        check(current.index==6&&
+            std::ranges::any_of(regions,[&](const auto& region){
+                return region.block_index==owner&&
+                    region.required_compiler&&!region.solved;
+            })&&
+            std::ranges::none_of(regions,[&](const auto& region){
+                return region.block_index!=std::numeric_limits<std::size_t>::max()&&
+                    region.block_index>owner;
+            }),"The real U2L6 reader exposed future text after a pending compiler");
+        check(!current.can_next&&!navigate_lesson_view(fixture.view,7)&&
+            lesson_page_state(fixture.view).index==6,
+            "Manual navigation bypassed a pending U2L6 compiler");
+    };
+    const auto append_draft=[&](View& fixture,std::size_t index,
+                                const std::string& source){
+        const auto target=fixture.item(index,10);
+        const auto pending_source=source+"// borrador QA sin comprobar\n";
+        const auto wide_source=wide(pending_source);
+        SendMessageW(target,EM_SETSEL,0,-1);
+        SendMessageW(target,EM_REPLACESEL,TRUE,
+            reinterpret_cast<LPARAM>(wide_source.c_str()));
+        pump();
+        check(edit_text(target)==pending_source,"The U2L6 real editor lost its QA draft");
+        return pending_source;
+    };
+    // The first compiler, even with a page-six bookmark, remains unproved.
+    {
+        View fixture(lesson,6,false,[&](state::StateData& data){
+            prepare_u2_visual_prefix(data,lesson,6);saved_pauses(data);
+        },false);
+        pending(fixture,first_at->block);
+        const auto pauses=narration::read_history(read_lesson_state(fixture.view));
+        check(pauses.entries.size()==2,"U2L6 independent QA pause slots were not stored");
+        const auto draft=append_draft(fixture,first_at->block,first.initial_code);
+        fixture.reopen();
+        pending(fixture,first_at->block);
+        const auto saved=read_lesson_state(fixture.view);
+        check(edit_text(fixture.item(first_at->block,10))==draft&&
+            narration::read_history(saved)==pauses&&
+            !windows::compiler_puzzle_completed(saved,lesson,first)&&
+            !windows::compiler_puzzle_completed(saved,lesson,second),
+            "Reopening a pending U2L6 first editor fabricated success or lost its draft/pause");
+    }
+    // One modeled completion must not unlock the second source or next page.
+    {
+        View fixture(lesson,6,false,[&](state::StateData& data){
+            mock_receipt(data,first,first_source);
+            prepare_u2_visual_prefix(data,lesson,6);saved_pauses(data);
+        },false);
+        pending(fixture,6);
+        const auto pauses=narration::read_history(read_lesson_state(fixture.view));
+        const auto draft=append_draft(fixture,6,second.initial_code);
+        fixture.reopen();
+        pending(fixture,6);
+        const auto saved=read_lesson_state(fixture.view);
+        check(windows::compiler_puzzle_completed(saved,lesson,first)&&
+            !windows::compiler_puzzle_completed(saved,lesson,second)&&
+            edit_text(fixture.item(6,10))==draft&&
+            narration::read_history(saved)==pauses,
+            "The first U2L6 proof credited the second or overwrote its separate draft/pause");
+    }
+    // Only both independent QA receipts release the authored reference pages.
+    for(const auto& at:{*first_reference,*second_reference}){
+        View fixture(lesson,at.page,false,[&](state::StateData& data){
+            mock_receipt(data,first,first_source);
+            mock_receipt(data,second,second_source);
+            prepare_u2_visual_prefix(data,lesson,at.page);
+        },false);
+        check(lesson_page_state(fixture.view).index==at.page&&
+            edit_text(fixture.item(at.block,1))==
+                lesson.pages[at.page].blocks[at.block].code,
+            "Both independent U2L6 receipts failed to release their exact reference");
+        fixture.reopen();
+        check(lesson_page_state(fixture.view).index==at.page&&
+            edit_text(fixture.item(at.block,1))==
+                lesson.pages[at.page].blocks[at.block].code,
+            "Reopening a released U2L6 reference rewrote its original program");
+    }
+    check(state::sha256(state::read_bytes(file))==original,
+        "U2L6 native reader QA modified a published curricular asset");
+    std::cout<<"PASS current U2L6 real Win32 LessonView gates: separate compiler "
+        "completion, manual navigation, unchanged drafts, independent stored "
+        "pauses, reference release and reopen. Model receipts only, no MSVC "
+        "execution, PCM synthesis or human listening claimed.\n";
+}
+
 void current_u2_roles(){
     const auto relative="objetos_y_estado/lesson_estado_asignacion_y_copia.json";const auto lesson=load(relative);
     const auto source=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
@@ -1176,6 +1330,7 @@ int main(int argc,char** argv){const auto ole=OleInitialize(nullptr);if(FAILED(o
         // independently of audio resources and pinned application toolchains.
         else if(argc==2&&std::string_view(argv[1])=="--current-u2-roles")current_u2_roles();
         else if(argc==2&&std::string_view(argv[1])=="--current-u2l5-native-gates")current_u2l5_native_reader_gates();
+        else if(argc==2&&std::string_view(argv[1])=="--current-u2l6-native-gates")current_u2l6_native_reader_gates();
         else if(argc==2&&std::string_view(argv[1])=="--console-string-references")current_console_string_references();
         else if(argc==2&&std::string_view(argv[1])=="--preview-naming")preview(2,true);
         else if(argc==3&&std::string_view(argv[1])=="--preview"){

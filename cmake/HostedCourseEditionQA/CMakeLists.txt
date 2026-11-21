@@ -183,8 +183,12 @@ add_test(NAME native.current_u2_roles
     COMMAND lgaed_technical_context_view_tests --current-u2-roles)
 add_test(NAME native.current_u2l5_gates
     COMMAND lgaed_technical_context_view_tests --current-u2l5-native-gates)
+# U2L6 has two required C++ editors on one page. Exercise their independent
+# real LessonView navigation, persistence, read barriers and references.
+add_test(NAME native.current_u2l6_native_gates
+    COMMAND lgaed_technical_context_view_tests --current-u2l6-native-gates)
 set_tests_properties(native.current_u2_roles native.current_u2l5_gates
-    PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+    native.current_u2l6_native_gates PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
 
 # Check actual U2L6 edition and retained history in isolated hosted Win32 QA.
 add_executable(lgaed_reading_gate_policy_tests
