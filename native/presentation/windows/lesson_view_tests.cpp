@@ -5423,7 +5423,7 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
     struct Plan { const char* filename; std::size_t page,block; std::vector<std::string> incorrect;
         std::size_t ordinary_prefix,compiler_prefix=0; };
     const Plan plans[]{
-        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",7,6,{"int","longitud_metros","partes"},12,2},
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",7,6,{"int","longitud_metros","partes"},15,1},
         {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",3,3,{"double","int"},6},
         {"objetos_y_estado/lesson_declarar_e_inicializar.json",2,4,{"12","3"},3},
         {"objetos_y_estado/lesson_estado_asignacion_y_copia.json",5,4,{"+","-"},10},
@@ -5431,7 +5431,7 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
         {"objetos_y_estado/lesson_conversiones_y_deduccion.json",3,5,{"int"},6},
         {"objetos_y_estado/lesson_cadenas_y_texto.json",3,4,{"\"Sector\"","\"Este\""},6},
         {"objetos_y_estado/lesson_caracteres_y_valores_logicos.json",2,3,{"'Y'","'Y'"},4},
-        {"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",4,1,{"<<","\"Carga\""},12},
+        {"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",1,8,{"<<","\"Carga\""},4},
     };
     const auto ordinary=[](BlockType type){return type==BlockType::multiple_choice||type==BlockType::output_prediction||
         type==BlockType::fill_code||type==BlockType::order_code||type==BlockType::inline_fill_code||type==BlockType::drag_fill_code;};
@@ -5601,8 +5601,8 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
         std::cout<<"PASS actual inline feedback "<<plan.filename<<" p"<<plan.page+1<<" b"<<plan.block+1
             <<": draft/rejection/correction/success/Reset/reopen and exact feedback narration sources\n";
     }
-    require(synthetic_ordinary==64&&synthetic_compilers==2,"The nine inline controls used another synthetic prerequisite scope");
-    std::cout<<"QA setup only: 64 canonical ordinary prerequisites and two synthetic compiler objectives, with sequential admitted arrivals; no compiler executions or prior listening claimed.\n";
+    require(synthetic_ordinary==59&&synthetic_compilers==1,"The nine inline controls used another synthetic prerequisite scope");
+    std::cout<<"QA setup only: 59 canonical ordinary prerequisites and one synthetic compiler objective, with sequential admitted arrivals; no compiler executions or prior listening claimed.\n";
     std::cout<<"PASS nine registered inline controls and "<<alternatives<<" additional authored alternatives; no synthesis or human listening claimed\n";
 }
 
