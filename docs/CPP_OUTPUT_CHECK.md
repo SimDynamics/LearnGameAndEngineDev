@@ -4022,23 +4022,23 @@ currículo corresponden al usuario y a Work respectivamente.
 ### Comprobación local de sondas de variables con MSVC
 
 La batería enfocada de dependencia de enteros y cadenas puede ejecutarse
-desde el checkout nativo autorizado, en la rama \`Codex\`, mediante:
+desde el checkout nativo autorizado, en la rama `Codex`, mediante:
 
-\`\`\`powershell
+```powershell
 & '.\scripts\windows\Test-LocalVariableDependency.ps1' -Preset windows-x64-debug
-\`\`\`
+```
 
 El script comprueba el checkout y la rama antes de compilar, resuelve el
 toolset MSVC y el Windows SDK fijados en el proyecto, y ejecuta las pruebas
-unitarias de \`cpp_local_int_probe\` y \`cpp_local_string_probe\`.
+unitarias de `cpp_local_int_probe` y `cpp_local_string_probe`.
 A continuación genera y compila con MSVC los **39 casos de enteros** y
 **25 casos de cadenas**, contrastando las salidas y los rechazos reales
 con los dos validadores Python existentes. Los dos códigos iniciales de
 U2L5 también se compilan y se comprueba que no acrediten sus objetivos.
 
 Solo se crean binarios y objetos QA en
-\`out/build/<preset>/local-variable-qa/\` y registros en
-\`out/build/<preset>/logs/local-variable-qa.*.log\`.
+`out/build/<preset>/local-variable-qa/` y registros en
+`out/build/<preset>/logs/local-variable-qa.*.log`.
 No se modifica ningún archivo curricular, borrador, perfil ni estado
 del estudiante. Se trabaja en un proceso oculto, sin instalar herramientas
 ni iniciar GitHub Actions. Esta comprobación de fuentes aisladas
