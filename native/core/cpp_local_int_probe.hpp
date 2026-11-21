@@ -3,6 +3,7 @@
 #include "core/cpp_expression_repair.hpp"
 
 #include <algorithm>
+#include <charconv>
 #include <cstdint>
 #include <set>
 #include <optional>
@@ -444,6 +445,22 @@ inline bool int_probe_trivial_noop(const Tokens& code,std::size_t statement,
         }else if(operation=="op:-") {
             if(right==Known::zero)return left;
             if(left==Known::one&&right==Known::one)return Known::zero;
+            // Two identical plain decimal int literals cancel exactly.
+            // Keep the proof limited to signed-int constants: a floating
+            // subtraction or a larger unsigned type can change the type of
+            // the surrounding addition even when the result prints as zero.
+            if(at==a+1&&at+2==b&&
+               code[a].value==code[at+1].value&&
+               code[a].value.starts_with("number:")) {
+                const auto digits=std::string_view(code[a].value).substr(7);
+                if(!digits.empty()&&(digits.size()==1||digits.front()!='0')) {
+                    std::int32_t literal=0;
+                    const auto [last,err]=std::from_chars(
+                        digits.data(),digits.data()+digits.size(),literal,10);
+                    if(err==std::errc{}&&
+                       last==digits.data()+digits.size())return Known::zero;
+                }
+            }
         }else if(operation=="op:*") {
             if(left==Known::one)return right;
             if(right==Known::one)return left;

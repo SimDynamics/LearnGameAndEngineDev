@@ -525,7 +525,11 @@ void composed_neutral_updates_cannot_fake_u2l3_increase() {
         "aforo=aforo*(1+0);",
         "aforo+=(0+0);",
         "aforo-=(1-1);",
-        "aforo+=(+0);"
+        "aforo+=(+0);",
+        "aforo=aforo+(2-2);",
+        "aforo+=(2-2);",
+        "aforo=aforo+((17-17));",
+        "aforo+=(2147483647-2147483647);"
     }) {
         require(!cpp_local_int_override(start+neutral+output,
             {"aforo",4,{},true}),
@@ -547,6 +551,13 @@ void composed_neutral_updates_cannot_fake_u2l3_increase() {
         genuine->find("aforo=aforo+0+3;\n    aforo += 4;\n")!=
             std::string::npos,
         "An expression with a real nonzero term was incorrectly ignored");
+    const auto nonzero=cpp_local_int_override(
+        start+"aforo=aforo+(2-3);"+output,
+        {"aforo",4,{},true});
+    require(nonzero&&
+        nonzero->find("aforo=aforo+(2-3);\n    aforo += 4;\n")!=
+            std::string::npos,
+        "A subtraction of different integer literals was mistaken for no-op");
 }
 
 void numeric_literal_identity_distinguishes_one_from_ten() {
