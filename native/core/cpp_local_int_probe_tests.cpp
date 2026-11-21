@@ -363,6 +363,33 @@ void changed_increase_is_observed_at_the_actual_update() {
                 other->find("std::cout<<anterior<<aforo;"),
             "After-update mutation incorrectly changed the already captured copy");
     }
+    // A fixed reassignment can reproduce 8 and become 12 after a hidden
+    // delta, even though it ignored the original value of aforo. Likewise,
+    // a different object's field with the same name is not a read of aforo.
+    for(const auto* replacement:{
+            "aforo = 8;",
+            "aforo = aforo;",
+            "aforo = (aforo);",
+            "aforo = datos.aforo;",
+            "aforo = ajustes::aforo;",
+            "aforo = ::aforo;"}) {
+        const auto sample=std::string(
+            "#include <iostream>\n"
+            "int aforo=8; namespace ajustes{int aforo=8;}\n"
+            "struct Datos{int aforo{8};};\n"
+            "int main(){Datos datos;int aforo=5; ")
+            +replacement+" std::cout<<aforo;}";
+        require(!cpp_local_int_override(sample,{"aforo",4,{},true}),
+            "A constant, qualified value or identity assignment was credited as an increase");
+    }
+    const auto dependent_member=cpp_local_int_override(
+        "#include <iostream>\nstruct Datos{int aforo{3};};\n"
+        "int main(){Datos datos;int aforo{5};aforo=aforo+datos.aforo;"
+        "std::cout<<aforo;}",
+        {"aforo",4,{},true});
+    require(dependent_member&&dependent_member->find(
+            "aforo=aforo+datos.aforo;\n    aforo += 4;\n")!=std::string::npos,
+        "A genuine update using the local and a differently owned field was rejected");
     for(const auto& original:{
             "int main(){int aforo{5}; std::cout<<aforo;}",
             "int main(){int aforo=5; if(true){aforo+=3;} std::cout<<aforo;}",
