@@ -1086,8 +1086,17 @@ void apply_rich_text_semantics(HWND edit,const curriculum::TextSemantics& semant
     const auto background=reader_theme::reference_background(edit);
     for(const auto& run:runs){
         if(run.start>=run.end)continue;
-        if(run.role==curriculum::SemanticRole::cpp)apply_cpp(edit,std::wstring_view(text).substr(run.start,run.end-run.start),run.start);
-        else if(run.role==curriculum::SemanticRole::string)format(edit,run.start,run.end,cpp_color(edit,CppInk::string));
+        if(run.role==curriculum::SemanticRole::cpp){
+            // A semantic C++ span owns its full lexical extent, including
+            // neutral punctuation not colored separately by the tokenizer.
+            // Reset only this authored range to the native code neutral ink
+            // BEFORE recoloring keywords, identifiers and literals. Adjacent
+            // unmarked prose keeps its original body tint and background.
+            const auto neutral=reader_theme::palette(edit).high_contrast
+                ?reader_theme::foreground(edit):RGB(216,216,216);
+            format(edit,run.start,run.end,neutral);
+            apply_cpp(edit,std::wstring_view(text).substr(run.start,run.end-run.start),run.start);
+        }else if(run.role==curriculum::SemanticRole::string)format(edit,run.start,run.end,cpp_color(edit,CppInk::string));
         else if(semantic_reference(run.role))format(edit,run.start,run.end,reader_theme::foreground(edit));
         if(!semantic_reference(run.role))continue;
         references.emplace_back(run.start,run.end);
