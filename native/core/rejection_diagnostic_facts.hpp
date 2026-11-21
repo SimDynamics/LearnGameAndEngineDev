@@ -356,18 +356,39 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
     }
     return found_allowed_interval||(lower_found&&upper_found);
 }
+// Only real infinitives/imperatives and their direct-object pronouns request
+// corrective action. A shared root alone also matches nouns ("revisor"),
+// adjectives ("verificable") and abstract terms ("revisionismo") which are
+// NOT instructions to repair the learner's rejected input. Keep nominal
+// "revisión necesaria" requests separate in actionable().
+inline bool corrective_instruction_verb(std::string_view word) {
+    constexpr std::string_view forms[]{
+        "revisar","revisa","revise","revisen","revisad","revisemos",
+        "verificar","verifica","verifique","verifiquen","verificad","verifiquemos",
+        "comprobar","comprueba","compruebe","comprueben","comprobad","comprobemos",
+        "corregir","corrige","corrija","corrijan","corregid","corrijamos",
+        "rectificar","rectifica","rectifique","rectifiquen","rectificad","rectifiquemos",
+        "modificar","modifica","modifique","modifiquen","modificad","modifiquemos",
+        "ajustar","ajusta","ajuste","ajusten","ajustad","ajustemos"
+    };
+    for(const auto form:forms) {
+        if(!word.starts_with(form))continue;
+        const auto rest=word.substr(form.size());
+        if(rest.empty()||one_of(rest,{"lo","la","los","las"}))return true;
+    }
+    return false;
+}
 inline bool actionable(const std::vector<Word>& words) {
     for(std::size_t i=0;i<words.size();++i){
-        bool action=false;
-        for(const auto stem:
-            {"revis","verific","verifiqu","comprueb","comprob","correg","corrij","rectific","modific","ajust"})
-            if(words[i].text.starts_with(stem)){action=true;break;}
-        if(!action)continue;
+        const bool nominal_request=one_of(words[i].text,
+            {"revision","verificacion","comprobacion",
+             "rectificacion","modificacion"});
+        if(!nominal_request&&!corrective_instruction_verb(words[i].text))
+            continue;
         // An affirmative nominal request ("verificacion necesaria") also
         // directs the reader to review rejected data. It is not the same as
         // reporting a completed verification or saying it is unnecessary.
-        if(one_of(words[i].text,{"revision","verificacion","comprobacion",
-                "rectificacion","modificacion"})) {
+        if(nominal_request) {
             const bool necessary=i+1<words.size()&&one_of(words[i+1].text,
                 {"necesaria","necesario","obligatoria","obligatorio",
                  "requerida","requerido"});

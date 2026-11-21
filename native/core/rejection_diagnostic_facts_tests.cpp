@@ -457,6 +457,65 @@ void numeric_domain_boundaries() {
         "Correctly reported extreme charges and refunds were rejected");
 }
 
+void corrective_actions_require_real_verbs_not_shared_stems() {
+    constexpr RejectionFacts box_facts[]{{1,-1},{3,21}};
+    constexpr RejectionFacts balance_facts[]{{2,10,0},{3,0,-1}};
+    const auto message=[](RejectionOperation operation,int request,int first,
+            int second,std::string_view wording) {
+        std::string line=operation==RejectionOperation::boxes?"Cajas":"Saldo";
+        line+=", petición "+std::to_string(request);
+        if(operation==RejectionOperation::boxes)
+            line+=", piezas="+std::to_string(first)+
+                ": rango permitido 0..20. ";
+        else line+=", cobros="+std::to_string(first)+
+                ", devoluciones="+std::to_string(second)+
+                ": intervalo permitido 0..9. ";
+        return line+std::string(wording)+"\n";
+    };
+    for(const auto operation:{RejectionOperation::boxes,RejectionOperation::balance}) {
+        const auto facts=operation==RejectionOperation::boxes?
+            std::span<const RejectionFacts>(box_facts):
+            std::span<const RejectionFacts>(balance_facts);
+        const auto verify=[&](std::string_view wording,bool expected) {
+            const auto first=message(operation,facts[0].request,
+                facts[0].first,facts[0].second,wording);
+            const auto second=message(operation,facts[1].request,
+                facts[1].first,facts[1].second,wording);
+            const auto result=evaluate_rejection_diagnostics(first+second,operation,facts);
+            require(result.correct==expected,
+                "An unrelated shared-stem word was credited as corrective advice: "+
+                std::string(wording)+" / "+result.reason);
+        };
+        for(const auto wording:{
+            "El revisionismo no es una acción.",
+            "El revisor figura en el historial.",
+            "El verificador está instalado.",
+            "La verificabilidad del cálculo es buena.",
+            "El comprobador terminó.",
+            "El informe es comprobatorio.",
+            "El corrector es otro programa.",
+            "El rectificador ya existe.",
+            "El modificador es una opción.",
+            "El ajustador está disponible.",
+            "El dato es revisable."
+        })verify(wording,false);
+        for(const auto wording:{
+            "Revise los datos.",
+            "Verifique la cantidad.",
+            "Compruebe la petición.",
+            "Es necesario verificar el dato.",
+            "Se requiere revisar el valor.",
+            "Revíselo.",
+            "Compruébelos.",
+            "Corrija la petición.",
+            "Rectifique la cantidad.",
+            "Modifique los datos.",
+            "Ajuste la entrada.",
+            "La revisión es necesaria."
+        })verify(wording,true);
+    }
+}
+
 void rejected_semantics() {
     constexpr RejectionFacts box_facts[]{{1,-1},{3,21}};
     constexpr RejectionFacts balance_facts[]{{2,10,0},{3,0,-1}};
@@ -622,6 +681,7 @@ int main() {
         unsupported_claims_keep_their_predicate_and_polarity();
         source_edits_stay_inside_assigned_diagnostic();
         numeric_domain_boundaries();
+        corrective_actions_require_real_verbs_not_shared_stems();
         rejected_semantics();
         std::cout<<"PASS U3L6 semantic diagnostics: closed intervals, spaced dashes, "
             "three valid review actions, field identities, scoped validity and action claims, negative cases\n";
