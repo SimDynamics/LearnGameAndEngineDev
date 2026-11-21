@@ -241,6 +241,13 @@ if(LGAED_HOSTED_FEEDBACK_FONT_QA)
         COMMAND lgaed_u2_semantic_portable_qa --current-u2-roles)
     set_tests_properties(native.u2_semantic_view_portable PROPERTIES
         TIMEOUT 180 RUN_SERIAL TRUE)
+    # Exercise the two current U2L5 REQUIRED compiler gates with production
+    # LessonView and StateStore, without pretending model receipts are runs
+    # or generating TTS audio on hosted Windows.
+    add_test(NAME native.u2l5_native_reader_gates
+        COMMAND lgaed_u2_semantic_portable_qa --current-u2l5-native-gates)
+    set_tests_properties(native.u2l5_native_reader_gates PROPERTIES
+        TIMEOUT 180 RUN_SERIAL TRUE)
     # Reuse the exact original nine-inline regression (including active U2L5)
     # with real production LessonView, CppFillView and StateStore. This
     # standalone hosted fixture does not run student code or synthesize audio;
