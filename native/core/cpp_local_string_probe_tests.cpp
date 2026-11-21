@@ -162,6 +162,35 @@ int main() {
             changed_label->find("std::cout<<etiqueta;")!=std::string::npos,
         "A later grouped string must remain independently variable without "
         "allowing a probe to miss its source dependency");
+    const std::string homonym=R"CPP(#include <iostream>
+#include <string>
+struct Datos {std::string etiqueta{"EXTERNA"};};
+int main() {
+    Datos datos;
+    std::string copia{datos.etiqueta}, etiqueta{"Aula-04"};
+    std::cout << datos.etiqueta;
+    std::cout << etiqueta;
+}
+)CPP";
+    const auto after_group=cpp_local_string_override(
+        homonym,{"etiqueta","CONTROL",initialized,{}});
+    const auto before_real_output=cpp_local_string_override(
+        homonym,{"etiqueta","CONTROL",printing,{}});
+    require(after_group&&before_real_output&&
+        after_group->find("etiqueta = std::string{")<
+            after_group->find("std::cout << datos.etiqueta;")&&
+        before_real_output->find("std::cout << datos.etiqueta;")<
+            before_real_output->find("etiqueta = std::string{")&&
+        before_real_output->find("etiqueta = std::string{")<
+            before_real_output->find("std::cout << etiqueta;"),
+        "A same-named field hid the actual local string definition or output");
+    require(!cpp_local_string_override(
+        "#include <iostream>\n#include <string>\n"
+        "struct Datos{std::string etiqueta{\"EXTERNA\"};};"
+        "int main(){Datos datos;std::string etiqueta{\"Aula-04\"};"
+        "std::cout<<datos.etiqueta;}",
+        {"etiqueta","CONTROL",printing,{}}),
+        "Printing a member of another object was mistaken for reading the local");
 }
 
 void after_real_assignment_and_noexcept() {
