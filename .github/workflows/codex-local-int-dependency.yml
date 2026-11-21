@@ -1,0 +1,95 @@
+name: Codex local-int dependency (isolated compiler evidence)
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-local-int-dependency.yml
+      - native/core/cpp_local_int_probe.hpp
+      - native/core/cpp_local_int_probe_tests.cpp
+      - native/core/cpp_local_int_live_fixtures.cpp
+      - native/core/cpp_expression_repair.hpp
+      - native/core/code_format_compat.hpp
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_local_int_probe_authoring.py
+      - scripts/curriculum/test_local_int_live_compilation.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_objetos_valores_y_tipos.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_declarar_e_inicializar.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  authoring:
+    name: Validate six authentic U2 editors, without modifying curriculum
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read the exact revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify append-only probes and original stable-state identities
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_local_int_probe_authoring.py -v
+
+  portable:
+    name: Probe mutations and 22 live C++ programs on ${{ matrix.compiler }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - name: Read the exact revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Compile and run the exact production probe's unit tests
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/cpp_local_int_probe_tests.cpp -o "$RUNNER_TEMP/lgaed_local_int_probe_tests"
+          "$RUNNER_TEMP/lgaed_local_int_probe_tests"
+      - name: Compile variant emitter and execute every original and mutated C++ case
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/cpp_local_int_live_fixtures.cpp -o "$RUNNER_TEMP/lgaed_local_int_fixtures"
+          python3 -B scripts/curriculum/test_local_int_live_compilation.py \
+            --emitter "$RUNNER_TEMP/lgaed_local_int_fixtures" --compiler "$CXX"
+
+  hosted-msvc:
+    name: Source-only MSVC, not the production-pinned Windows app
+    runs-on: windows-2022
+    timeout-minutes: 14
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Read the exact revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Prepare hosted Visual C++ for isolated source tests
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile and run the production probe's unit tests
+        run: |
+          $unit = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_probe_tests.exe'
+          $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_probe_tests.obj'
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /utf-8 /I native native\core\cpp_local_int_probe_tests.cpp "/Fe:$unit" "/Fo:$obj"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $unit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile and execute 22 original/mutated C++ programs on hosted MSVC
+        run: |
+          $emitter = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_fixtures.exe'
+          $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_fixtures.obj'
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /utf-8 /I native native\core\cpp_local_int_live_fixtures.cpp "/Fe:$emitter" "/Fo:$obj"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B scripts/curriculum/test_local_int_live_compilation.py --emitter "$emitter" --compiler MSVC
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

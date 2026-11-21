@@ -166,5 +166,81 @@ class LocalIntAuthoringTests(unittest.TestCase):
         self.rejected(item)
 
 
+    def test_six_live_u2_editors_accept_append_only_root_probes(self):
+        """Check the six existing owners with in-memory declarations only.
+
+        Native Windows receipt integration is tested separately. This test
+        also runs where the exact production MSVC image is unavailable.
+        """
+        def probe(name, number, stdout, after_update=False):
+            result = {"variable": name, "replacement": number,
+                      "outputs": [stdout, stdout + "\n"]}
+            if after_update:
+                result["afterUpdate"] = True
+            return result
+
+        cases = {
+            "lesson_objetos_valores_y_tipos.json": [
+                ("block_0004_0002", [probe("llaves", 13, "Llaves: 13")]),
+                ("block_0004_0006", [probe("llaves", 19, "Llaves: 19")]),
+            ],
+            "lesson_declarar_e_inicializar.json": [
+                ("block_0004_0002", [
+                    probe("cajas", 13, "Cajas: 13\nSobres: 9"),
+                    probe("sobres", 17, "Cajas: 4\nSobres: 17")]),
+                ("block_0004_0006", [
+                    probe("cajas", 6, "Cajas: 6\nSobres: 2"),
+                    probe("sobres", 17, "Cajas: 0\nSobres: 17")]),
+            ],
+            "lesson_estado_asignacion_y_copia.json": [
+                ("block_0006_0002", [
+                    probe("aforo", 10, "Antes: 10\nAhora: 13"),
+                    probe("anterior", 11, "Antes: 11\nAhora: 8"),
+                    probe("aforo", 4, "Antes: 5\nAhora: 12", True)]),
+                ("block_0006_0006", [
+                    probe("aforo", 10, "Antes: 13\nAhora: 13"),
+                    probe("anterior", 11, "Antes: 11\nAhora: 8"),
+                    probe("aforo", 4, "Antes: 12\nAhora: 12", True)]),
+            ],
+        }
+        directory = (Path(__file__).resolve().parents[2] /
+                     "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                     "objetos_y_estado")
+        checked = 0
+        for filename, entries in cases.items():
+            with self.subTest(lesson=filename):
+                original = json.loads((directory / filename).read_text(encoding="utf-8-sig"))
+                self.assertEqual(original["stateLayout"]["version"], 2)
+                self.assertEqual(original["stateLayout"]["locale"], "es")
+                self.assertNotIn("compilerLocalIntChecks", original)
+                owners = {}
+                for page, layout in zip(original["pages"],
+                                        original["stateLayout"]["current"], strict=True):
+                    for block, identity in zip(page["blocks"], layout["blocks"], strict=True):
+                        self.assertNotIn(identity, owners)
+                        owners[identity] = block
+                packet = []
+                for identity, variations in entries:
+                    self.assertIn(identity, owners)
+                    self.assertEqual(owners[identity]["type"], "cpp_compiler")
+                    self.assertEqual(len(owners[identity]["outputCheck"]["cases"]), 1)
+                    packet.append({"activity": identity, "probes": variations})
+                    checked += 1
+                revised = deepcopy(original)
+                revised["compilerLocalIntChecks"] = packet
+                state.validate_transition(original, revised)
+                self.valid(revised)
+                for protected in ("pages", "stateLayout", "activityAfter",
+                                  "referenceAfter", "textSemantics"):
+                    self.assertEqual(revised.get(protected), original.get(protected))
+                corrupted = deepcopy(revised)
+                corrupted["compilerLocalIntChecks"][0]["probes"][0]["replacement"] += 1
+                with self.assertRaises(state.LayoutError):
+                    state.validate_transition(revised, corrupted)
+                with self.assertRaises(state.LayoutError):
+                    state.validate_transition(revised, original)
+        self.assertEqual(checked, 6)
+
+
 if __name__ == "__main__":
     unittest.main()
