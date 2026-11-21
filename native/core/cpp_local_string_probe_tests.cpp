@@ -269,13 +269,13 @@ void trailing_return_main_preserves_string_dependency() {
     const char* suffixes[]{"", " noexcept", " noexcept(true)",
                            " noexcept(noexcept(7))"};
     for(const auto* suffix:suffixes) {
-        const auto source=std::string("#include <iostream>\n"
+        const auto program=std::string("#include <iostream>\n"
             "#include <string>\nauto main()")+suffix+" -> int {\n"
             "std::string etiqueta{\"Aula-04\"};\n"
             "std::cout<<etiqueta;\n}\n";
-        const auto first=cpp_local_string_override(source,
+        const auto first=cpp_local_string_override(program,
             {"etiqueta","CONTROL",initialized,{}});
-        const auto before=cpp_local_string_override(source,
+        const auto before=cpp_local_string_override(program,
             {"etiqueta","CONTROL",printing,{}});
         require(first&&before&&
             first->find("std::string etiqueta{\"Aula-04\"};\n"
@@ -327,7 +327,7 @@ void exact_text_bytes_and_type_checks() {
 }
 
 void source_identifier_contract_matches_string_probe_authoring() {
-    const std::string source=
+    const std::string program=
         "#include <string>\nint main(){std::string etiqueta{\"OK\"};"
         "std::cout<<etiqueta;}";
     for(const auto* bad:{
@@ -335,7 +335,7 @@ void source_identifier_contract_matches_string_probe_authoring() {
             "etiqueta otra", "true", "false", "nullptr", "__oculta"}) {
         CppLocalStringCheck invalid{{{bad,"CONTROL",initialized,{"CONTROL"}}}};
         require(!cpp_local_string_check_valid(invalid)&&
-                !cpp_local_string_override(source,{bad,"CONTROL",initialized,{}}),
+                !cpp_local_string_override(program,{bad,"CONTROL",initialized,{}}),
             "An invalid C++ owner was accepted by the local-string source probe");
     }
     const std::string unicode=
