@@ -254,6 +254,15 @@ int main(){int aforo=5;int anterior=aforo;aforo=8;
 std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP";
     if(cpp_local_int_override(fixed_increment,{"aforo",4,{},true}))
         throw std::runtime_error("A constant replacement masqueraded as an increase");
+    // A deliberately deceptive U2L3 source passes all three existing stdout
+    // variations by adding the missing 3 only in its output expression.
+    // Its alleged update is an identity, so reject it before compiling.
+    constexpr std::string_view neutral_update=R"CPP(#include <iostream>
+int main(){int aforo{5};int anterior=aforo;aforo=aforo+0;
+std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo+3;})CPP";
+    if(cpp_local_int_override(neutral_update,{"aforo",4,{},true}))
+        throw std::runtime_error(
+            "A neutral U2L3 update passed every private output variation");
     if(emitted!=43)throw std::runtime_error("Unexpected live fixture count");
     std::cout<<"PASS generated 43 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
