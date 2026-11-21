@@ -104,8 +104,34 @@ class WindowsCompilerPolicy(unittest.TestCase):
         unsupported = re.compile(r"(?i)\b(?:ubuntu|linux|macos)(?:[-.][\w.]+)?\b")
         runner_key = re.compile(r"(?i)^\s*(?:-\s*)?(?:runs-on|os)\s*:\s*(.*)$")
         matrix_item = re.compile(r"(?i)^\s*-\s*([a-z][a-z0-9_.-]*)\s*$")
-        for line in source.splitlines():
-            line = line.partition("#")[0]  # Comments are not runnable labels.
+        matrix_key = re.compile(r"(?i)^\s*matrix\s*:\s*(.*)$")
+        matrix_indent = None
+        for raw in source.splitlines():
+            line = raw.partition("#")[0]  # Comments are not runnable labels.
+            if not line.strip():
+                continue
+            indent = len(line) - len(line.lstrip(" "))
+            # Job authors may name their matrix dimension host, image,
+            # runner or anything else. The expression ${{ matrix.host }}
+            # still selects an OS even when no key is literally named "os".
+            if matrix_indent is not None:
+                if indent <= matrix_indent:
+                    matrix_indent = None
+                else:
+                    value = line.strip()
+                    if value.startswith("- "):
+                        value = value[2:].strip()
+                    if ":" in value:
+                        value = value.split(":", 1)[1].strip()
+                    value = value.strip("'\"")
+                    if ((value.startswith(("[", "{")) and unsupported.search(value))
+                            or unsupported.fullmatch(value)):
+                        return True
+            matrix = matrix_key.match(line)
+            if matrix:
+                matrix_indent = indent
+                if unsupported.search(matrix.group(1)):
+                    return True
             key = runner_key.match(line)
             if key and unsupported.search(key.group(1)):
                 return True
@@ -132,6 +158,9 @@ class WindowsCompilerPolicy(unittest.TestCase):
             "strategy:\n  matrix:\n    os: [windows-2022, linux]",
             "strategy:\n  matrix:\n    include:\n      - os: macos-15",
             "strategy:\n  matrix:\n    os:\n      - windows-2022\n      - ubuntu-24.04",
+            "runs-on: ${{ matrix.host }}\nstrategy:\n  matrix:\n    host: [windows-2022, ubuntu-24.04]",
+            "runs-on: ${{ matrix.runner }}\nstrategy:\n  matrix:\n    include:\n      - runner: macos-15",
+            "strategy:\n  matrix: {image: [windows-2022, linux]}",
         )
         for source in bad:
             with self.subTest(source=source):
@@ -141,6 +170,7 @@ class WindowsCompilerPolicy(unittest.TestCase):
             "runs-on: ${{ matrix.os }}\nstrategy:\n  matrix:\n    os: [windows-2022, windows-2025-vs2026]",
             "runs-on: windows-2022 # linux was retired",
             "name: Linux was removed\nruns-on: windows-2022",
+            "strategy:\n  matrix:\n    include:\n      - host: windows-2022\n        name: Linux was removed",
         ):
             with self.subTest(source=source):
                 self.assertFalse(self._uses_non_windows_runner(source))
