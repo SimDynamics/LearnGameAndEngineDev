@@ -1,5 +1,6 @@
 // Opt-in local-int authoring and real StateStore receipt integration.
 // This fixture never invokes the student's compiler or modifies curriculum.
+#include "core/compiler_flow.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/cpp_runner.hpp"
@@ -220,8 +221,196 @@ int main(){
         "safe source mutations and unchanged historical exercises.\n";
 }
 
+
+// Cross-editor WinRT state regression for the CURRENT U2L5 publication.
+// This uses real content/progress loaders and the existing state codec, but
+// models the compiler's verified outcome: it does NOT execute a student
+// compiler, create listening evidence or claim Win32 UI acceptance.
+void validate_current_u2l5_editor_state() {
+    const auto path=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_enteros_y_aproximaciones.json";
+    const auto lesson=load_lesson(path);
+    const auto compact=parse_lesson_progress_metadata(lesson.raw_json,"es");
+    const auto first_at=stable_block_position(lesson,"block_0006_0002");
+    const auto second_at=stable_block_position(lesson,"p1u2l5_reparar_agrupacion");
+    const auto first_ref=stable_block_position(lesson,"block_0007_0001");
+    const auto second_ref=stable_block_position(lesson,"p1u2l5_referencia_agrupacion");
+    require(first_at&&second_at&&first_ref&&second_ref&&
+        first_at->page==6&&first_at->block==2&&
+        second_at->page==7&&second_at->block==9&&
+        first_ref->page==7&&second_ref->page==8,
+        "The current U2L5 editor or its reference changed stable position");
+    const auto& first=lesson.pages.at(first_at->page).blocks.at(first_at->block);
+    const auto& second=lesson.pages.at(second_at->page).blocks.at(second_at->block);
+    const auto& reference_one=lesson.pages.at(first_ref->page).blocks.at(first_ref->block);
+    const auto& reference_two=lesson.pages.at(second_ref->page).blocks.at(second_ref->block);
+    const auto compact_owner=[&](std::string_view identity)->const Block& {
+        const auto at=stable_block_position(compact,identity);
+        require(at.has_value(),"Compact progress loader lost an active U2L5 editor");
+        return compact.pages.at(at->page).blocks.at(at->block);
+    };
+    require(lesson.compiler_puzzles_required&&first.output_check&&second.output_check&&
+        first.output_check->cases.size()==1&&second.output_check->cases.size()==1&&
+        first.output_check->cases.front().outputs.front()=="Parte: 4.5 m"&&
+        second.output_check->cases.front().outputs.front()=="Parte: 2.75 m"&&
+        first.local_int_check&&second.local_int_check&&
+        first.local_int_check==compact_owner(first.stable_id).local_int_check&&
+        second.local_int_check==compact_owner(second.stable_id).local_int_check&&
+        reference_one.type==BlockType::code&&reference_two.type==BlockType::code&&
+        !reference_one.code.empty()&&!reference_two.code.empty(),
+        "Full and compact U2L5 loaders disagree on the two authored objectives");
+    const auto& archives=lesson.state_layout.retirement_history;
+    require(archives.size()==1&&archives.front().current.size()>7&&
+        archives.front().current[6].blocks.size()>6&&
+        archives.front().current[7].blocks.size()>9&&
+        archives.front().current[6].blocks[2]=="block_0006_0002"&&
+        archives.front().current[6].blocks[6]=="block_0006_0006"&&
+        archives.front().current[7].blocks[9]=="block_0007_0009"&&
+        !stable_block_position(lesson,"block_0006_0006")&&
+        !stable_block_position(lesson,"block_0007_0009"),
+        "The archived three-editor chain became an active U2L5 obligation");
+    const auto prerequisites=activity_prerequisites(lesson,second);
+    require(prerequisites.size()==1&&prerequisites.front()==*first_at,
+        "The current second editor no longer depends on the first");
+
+    state::StateData learner;
+    learner.preferences["learning_progress"]["other_course_unchanged"]=std::int64_t{42};
+    learner.preferences["native_windows"]["unrelated_reader_setting"]=std::string("keep");
+    state::prepare_lesson_state(learner,lesson);
+    const auto first_key=draft_key("programming",lesson,first);
+    const auto second_key=draft_key("programming",lesson,second);
+    require(first_key!=second_key,"Two real editors share one draft address");
+    state::Draft draft_one;
+    draft_one.source=reference_one.code+"// QA draft one\n";
+    draft_one.input="private first draft";
+    draft_one.selection_start=3;draft_one.selection_end=9;
+    state::Draft draft_two;
+    draft_two.source=reference_two.code+"// QA draft two\n";
+    draft_two.input="private second draft";
+    draft_two.selection_start=4;draft_two.selection_end=10;
+    state::put_draft(learner,first_key,draft_one);
+    state::put_draft(learner,second_key,draft_two);
+    const auto verify_drafts=[&](const state::StateData& stored) {
+        const auto a=state::get_draft(stored,first_key,first.initial_code);
+        const auto b=state::get_draft(stored,second_key,second.initial_code);
+        require(a.has_saved&&b.has_saved&&a.source==draft_one.source&&
+            b.source==draft_two.source&&a.input==draft_one.input&&
+            b.input==draft_two.input&&
+            a.selection_start==draft_one.selection_start&&
+            b.selection_start==draft_two.selection_start&&
+            a.selection_end==draft_one.selection_end&&
+            b.selection_end==draft_two.selection_end,
+            "U2L5 compiler receipts or reopening merged independent source drafts");
+    };
+    const auto snapshot=[&](const state::StateData& data) {
+        return compiler_completion_snapshot(lesson,[&](const Block& block) {
+            return compiler_puzzle_completed(data,lesson,block);
+        });
+    };
+    const auto visible=[&](const state::StateData& data,bool first_reference) {
+        const auto& position=first_reference?*first_ref:*second_ref;
+        const auto& block=first_reference?reference_one:reference_two;
+        return compiler_reference_available(lesson,position.page,block,snapshot(data),
+            [&](const Block& owner){return compiler_puzzle_completed(data,lesson,owner);});
+    };
+    require(!compiler_puzzle_completed(learner,lesson,first)&&
+        !compiler_puzzle_completed(learner,lesson,second)&&
+        !compiler_activity_available(lesson,second,snapshot(learner))&&
+        !visible(learner,true)&&!visible(learner,false),
+        "A fresh U2L5 profile inherited compiler proof or unlocked its references");
+
+    const auto request_for_owner=[&](const Block& block,std::string source) {
+        CppRunRequest request;request.request_id=71;request.revision=41;
+        request.project_key="u2l5-private-state-only";
+        request.source_utf8=std::move(source);
+        request.local_int_check=block.local_int_check;
+        return request;
+    };
+    const auto first_request=request_for_owner(first,reference_one.code);
+    const auto second_request=request_for_owner(second,reference_two.code);
+    const auto first_probe=cpp_local_int_request_fingerprint(first_request);
+    const auto second_probe=cpp_local_int_request_fingerprint(second_request);
+    require(!first_probe.empty()&&!second_probe.empty()&&first_probe!=second_probe&&
+        compiler_runtime_request_allowed(first,first_request)&&
+        compiler_runtime_request_allowed(second,second_request),
+        "The native Windows worker cannot prepare the two private U2L5 source variants");
+    const auto unverified=learner;
+    auto unproved=visible_result(first_request.revision);
+    unproved.standard_output="Parte: 4.5 m";
+    unproved.local_int_request_fingerprint=first_probe;
+    require(!record_compiler_puzzle_case(learner,lesson,first,first_request,unproved,
+        "Synthetic stdout without semantic proof")&&learner==unverified,
+        "Current U2L5 accepted visible stdout without its private proof");
+    unproved.local_int_check_correct=true;
+    unproved.local_int_request_fingerprint=second_probe;
+    require(!record_compiler_puzzle_case(learner,lesson,first,first_request,unproved,
+        "Synthetic proof from the other editor")&&learner==unverified,
+        "Current U2L5 accepted another editor's private fingerprint");
+    const auto accepted=[&](const CppRunRequest& request,const Block& block,
+                            std::string_view fingerprint) {
+        auto evidence=visible_result(request.revision);
+        evidence.standard_output=block.output_check->cases.front().outputs.front();
+        evidence.local_int_check_correct=true;
+        evidence.local_int_request_fingerprint=std::string(fingerprint);
+        return evidence;
+    };
+    require(record_compiler_puzzle_case(learner,lesson,first,first_request,
+        accepted(first_request,first,first_probe),"Synthetic first-editor WinRT receipt")&&
+        compiler_puzzle_completed(learner,lesson,first)&&
+        !compiler_puzzle_completed(learner,lesson,second)&&
+        compiler_activity_available(lesson,second,snapshot(learner))&&
+        visible(learner,true)&&!visible(learner,false),
+        "First U2L5 receipt failed to unlock only its own reference and next editor");
+    const auto after_first=learner;
+    auto initial_second=request_for_owner(second,second.initial_code);
+    const auto initial_probe=cpp_local_int_request_fingerprint(initial_second);
+    if(!initial_probe.empty()) {
+        auto wrong=accepted(initial_second,second,initial_probe);
+        wrong.standard_output="Parte: 4.5 m"; // Its actual integer-division starter result.
+        require(!record_compiler_puzzle_case(learner,lesson,second,initial_second,wrong,
+            "Synthetic uncorrected second starter")&&learner==after_first,
+            "The incorrect current grouping passed its fixed first-case objective");
+    }
+    require(record_compiler_puzzle_case(learner,lesson,second,second_request,
+        accepted(second_request,second,second_probe),"Synthetic second-editor WinRT receipt")&&
+        compiler_puzzle_completed(learner,lesson,first)&&
+        compiler_puzzle_completed(learner,lesson,second)&&
+        visible(learner,true)&&visible(learner,false),
+        "Second U2L5 receipt did not unlock its own reference independently");
+    verify_drafts(learner);
+    require(learner.preferences.at("learning_progress").at("other_course_unchanged")==
+                state::Value{std::int64_t{42}}&&
+        learner.preferences.at("native_windows").at("unrelated_reader_setting")==
+                state::Value{std::string("keep")},
+        "U2L5 receipts damaged a different course or unrelated reader preferences");
+    const auto restored=state::decode(state::encode(learner));
+    state::validate_lesson_state(restored,lesson);
+    verify_drafts(restored);
+    require(compiler_puzzle_completed(restored,lesson,first)&&
+        compiler_puzzle_completed(restored,lesson,second)&&
+        visible(restored,true)&&visible(restored,false),
+        "Reopening authentic encoded U2L5 receipts lost progress or reader gates");
+
+    auto reset=restored;
+    reset_compiler_puzzle(reset,lesson,second);
+    require(compiler_puzzle_completed(reset,lesson,first)&&
+        !compiler_puzzle_completed(reset,lesson,second)&&
+        visible(reset,true)&&!visible(reset,false),
+        "Resetting the second editor erased the first proof or leaked its reference");
+    reset_compiler_puzzle(reset,lesson,first);
+    require(!compiler_puzzle_completed(reset,lesson,first)&&
+        !compiler_puzzle_completed(reset,lesson,second)&&
+        !visible(reset,true)&&!visible(reset,false),
+        "Resetting both editors left a visible protected reference");
+    std::cout<<"PASS published U2L5 WinRT StateStore: two independent real "
+        "objectives, preserved three-editor archive, source-pinned fingerprints, "
+        "separate saved drafts, synthetic receipts, reopen, reference gates "
+        "and isolated resets; no student execution or audio asserted.\n";
+}
+
 void run() {
     validate_other_u2_editors();
+    validate_current_u2l5_editor_state();
     const auto file=std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_objetos_valores_y_tipos.json";
     const auto old=load_lesson(file);
