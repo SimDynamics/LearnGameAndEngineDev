@@ -183,6 +183,17 @@ class WindowsCompilerPolicy(unittest.TestCase):
         self.assertLess(
             state_import.index("      - scripts/curriculum/**"),
             state_import.index("      - '!scripts/curriculum/test_windows_ci_compilers.py'"))
+        for targeted in ("test_windows_ci_compilers.py",
+                         "test_local_int_live_compilation.py",
+                         "test_local_string_live_compilation.py"):
+            with self.subTest(excluded_from_state_import=targeted):
+                self.assertLess(
+                    state_import.index("      - scripts/curriculum/**"),
+                    state_import.index(
+                        "      - '!scripts/curriculum/" + targeted + "'"))
+                self.assertIn(
+                    "      - '!scripts/curriculum/" + targeted + "'",
+                    state_import)
         self.assertIn("      - native/core/**", state_import)
         self.assertIn("Test-StateImportCI.ps1", state_import)
 

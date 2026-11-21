@@ -13,8 +13,12 @@ on:
       - native/core/**
       - native/platform/windows/**
       - scripts/curriculum/**
-      # The compiler-policy QA has its own fast Windows job, not a state-import build.
+      # Separate Windows QA checks do not modify state-import contracts.
+      # Negations follow the broad script path and keep the native/core,
+      # state-store and actual migration sources in this workflow.
       - '!scripts/curriculum/test_windows_ci_compilers.py'
+      - '!scripts/curriculum/test_local_int_live_compilation.py'
+      - '!scripts/curriculum/test_local_string_live_compilation.py'
   workflow_dispatch:
 
 permissions:
