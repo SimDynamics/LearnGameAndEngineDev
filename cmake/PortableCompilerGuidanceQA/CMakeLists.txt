@@ -16,8 +16,25 @@ set(LGAED_CPP_STANDARD 23)
 set(LGAED_CPP_STANDARD_OPTION "/std:c++latest")
 set(LGAED_DEFAULT_PROFILE "Codex")
 set(LGAED_DEP_ROOT "")
-set(LGAED_EDUCATIONAL_VC_ROOT "")
-set(LGAED_EDUCATIONAL_SDK_ROOT "")
+# Hosted Win32 execution needs the *disposable runner's* compiler and
+# SDK paths, not the separately pinned MSVC 14.51/SDK 28000 installation.
+# These values are confined to this standalone QA build; the root product
+# manifest and toolchain checks remain unchanged.
+if("$ENV{VCToolsInstallDir}" STREQUAL "" OR
+   "$ENV{WindowsSdkDir}" STREQUAL "" OR
+   "$ENV{WindowsSDKVersion}" STREQUAL "")
+    message(FATAL_ERROR "Hosted Win32 source QA needs activated MSVC/SDK tools.")
+endif()
+file(TO_CMAKE_PATH "$ENV{VCToolsInstallDir}" LGAED_EDUCATIONAL_VC_ROOT)
+file(TO_CMAKE_PATH "$ENV{WindowsSdkDir}" LGAED_EDUCATIONAL_SDK_ROOT)
+string(REGEX MATCH "[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+"
+    LGAED_HOSTED_WINDOWS_SDK_VERSION "$ENV{WindowsSDKVersion}")
+if(NOT LGAED_HOSTED_WINDOWS_SDK_VERSION)
+    message(FATAL_ERROR "Cannot resolve the hosted Windows SDK version.")
+endif()
+# The production config template deliberately pins SDK 28000. Substitute
+# ONLY its generated copy for this independently labeled hosted QA.
+# The original template remains immutable.
 # The root application config embeds CMAKE_SOURCE_DIR as its lesson-data
 # locator. In this standalone subproject CMAKE_SOURCE_DIR points at the QA
 # script directory, so substitute only that placeholder with the actual
@@ -25,6 +42,8 @@ set(LGAED_EDUCATIONAL_SDK_ROOT "")
 file(READ "${LGAED_ROOT}/cmake/native_build_config.hpp.in" _lgaed_original_config)
 string(REPLACE "@CMAKE_SOURCE_DIR@" "@LGAED_ROOT@"
     _lgaed_qa_config "${_lgaed_original_config}")
+string(REPLACE "10.0.28000.0" "${LGAED_HOSTED_WINDOWS_SDK_VERSION}"
+    _lgaed_qa_config "${_lgaed_qa_config}")
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/native_build_config_qa.hpp.in"
     "${_lgaed_qa_config}")
 configure_file("${CMAKE_CURRENT_BINARY_DIR}/native_build_config_qa.hpp.in"
@@ -184,6 +203,14 @@ add_test(NAME native.course_edition_reset_scope
 set_tests_properties(native.course_edition_reset_scope PROPERTIES
     TIMEOUT 120 RUN_SERIAL TRUE)
 
+# Host the original UTF-8 MSVC compiler runner in a private console.
+# The test executable finds this companion beside itself, not in a personal
+# installation. It is only built for the hosted U2L7 end-to-end regression.
+add_executable(lgaed_cpp_tool_host
+    "${LGAED_ROOT}/native/platform/windows/cpp_tool_host.cpp")
+target_link_libraries(lgaed_cpp_tool_host PRIVATE
+    lgaed_guidance_qa_options user32)
+
 # Local-int contracts use the real WinRT loader and StateStore codec without
 # running student binaries or changing the pinned Windows toolchain.
 add_executable(lgaed_local_int_state_tests
@@ -195,6 +222,21 @@ add_test(NAME native.compiler_local_int_state
     COMMAND lgaed_local_int_state_tests)
 set_tests_properties(native.compiler_local_int_state PROPERTIES
     TIMEOUT 180 RUN_SERIAL TRUE)
+
+# Execute the actual U2L7 local-string lesson and private probes with hosted
+# MSVC; preserve its own isolated QA profile and independent StateStore reopen.
+# This is NOT a production-pinned Windows application acceptance test.
+add_executable(lgaed_local_string_state_tests
+    "${LGAED_ROOT}/native/platform/windows/local_string_state_tests.cpp")
+target_link_libraries(lgaed_local_string_state_tests PRIVATE
+    lgaed_guidance_platform lgaed_guidance_qa_options)
+target_link_options(lgaed_local_string_state_tests PRIVATE /OPT:REF)
+add_dependencies(lgaed_local_string_state_tests lgaed_cpp_tool_host)
+add_test(NAME native.compiler_local_string_state
+    COMMAND lgaed_local_string_state_tests)
+set_tests_properties(native.compiler_local_string_state PROPERTIES
+    TIMEOUT 360 RUN_SERIAL TRUE)
+
 # Independent current-U2L5 reader gate and bookmark regressions on hosted
 # Windows. This uses the real published loader and narration-state codec.
 # It does not synthesize PCM or claim installed-application playback.
