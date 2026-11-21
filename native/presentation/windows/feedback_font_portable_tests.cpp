@@ -151,7 +151,7 @@ void exercise(){
         const auto length=static_cast<LONG>(wide(source).size());
         const auto size_first=point_height(feedback,0);
         const auto size_last=point_height(feedback,length-1);
-        const feedback_scale=scale(feedback),prose_scale=scale(prose);
+        const auto feedback_scale=scale(feedback),prose_scale=scale(prose);
         require(size_first==base&&size_last==base&&
             feedback_scale==expected_scale&&prose_scale==expected_scale,
             "Font parity changed: block="+std::to_string(block)+
