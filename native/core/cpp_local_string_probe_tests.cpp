@@ -265,6 +265,39 @@ int main() {
         "A similarly named or nested member call was incorrectly claimed as a root assignment");
 }
 
+void trailing_return_main_preserves_string_dependency() {
+    const char* suffixes[]{"", " noexcept", " noexcept(true)",
+                           " noexcept(noexcept(7))"};
+    for(const auto* suffix:suffixes) {
+        const auto source=std::string("#include <iostream>\n"
+            "#include <string>\nauto main()")+suffix+" -> int {\n"
+            "std::string etiqueta{\"Aula-04\"};\n"
+            "std::cout<<etiqueta;\n}\n";
+        const auto first=cpp_local_string_override(source,
+            {"etiqueta","CONTROL",initialized,{}});
+        const auto before=cpp_local_string_override(source,
+            {"etiqueta","CONTROL",printing,{}});
+        require(first&&before&&
+            first->find("std::string etiqueta{\"Aula-04\"};\n"
+                        "    etiqueta = std::string{")!=std::string::npos&&
+            before->find("etiqueta = std::string{")<
+                before->find("std::cout<<etiqueta;"),
+            "Valid auto main() -> int lost an independent local-string probe");
+    }
+    for(const auto* invalid:{
+        "#include <string>\nauto main()->long {"
+        "std::string etiqueta{\"Aula-04\"};}",
+        "#include <string>\nint main()->int {"
+        "std::string etiqueta{\"Aula-04\"};}",
+        "#include <string>\nauto main()->int {"
+        "std::string etiqueta{\"Aula-04\"};}"
+        "int main(){std::string etiqueta{\"B\"};}"}) {
+        require(!cpp_local_string_override(invalid,
+            {"etiqueta","CONTROL",initialized,{}}),
+            "An invalid or ambiguous trailing-return main was treated as a text owner");
+    }
+}
+
 void exact_text_bytes_and_type_checks() {
     const std::string data="003";
     const auto literal=lgaed::curriculum::cpp_local_string_detail::cpp_bytes_literal(data);
@@ -371,6 +404,7 @@ int main() {
         grouped_and_delayed_string_owners();
         after_real_assignment_and_noexcept();
         member_assign_updates_are_detected_without_guesswork();
+        trailing_return_main_preserves_string_dependency();
         exact_text_bytes_and_type_checks();
         source_identifier_contract_matches_string_probe_authoring();
         unsafe_or_ambiguous_positions_reject();
