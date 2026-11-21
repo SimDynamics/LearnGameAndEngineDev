@@ -1450,7 +1450,7 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
             return False
         semantics = _state_layout.text_semantics.validate(current_document)
         # An empty span list explicitly declares prose; absence is not authoring.
-        changed_paths = {"/" + field for field in revised_fields}
+        changed_paths = set(_state_layout.ordinary_editorial_paths(old, current))
         if not changed_paths <= set(semantics.get(identity, {})):
             return False
         # The *unchanged* options, feedback, and explanations must retain
