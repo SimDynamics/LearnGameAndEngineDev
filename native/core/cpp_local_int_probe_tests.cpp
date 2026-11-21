@@ -529,7 +529,14 @@ void composed_neutral_updates_cannot_fake_u2l3_increase() {
         "aforo=aforo+(2-2);",
         "aforo+=(2-2);",
         "aforo=aforo+((17-17));",
-        "aforo+=(2147483647-2147483647);"
+        "aforo+=(2147483647-2147483647);",
+        "aforo=aforo+2-2;",
+        "aforo=aforo-2+2;",
+        "aforo=aforo+3-2-1;",
+        "aforo=(aforo+7)-7;",
+        "aforo+=(2+3-5);",
+        "aforo-=(4-3-1);",
+        "aforo=aforo+(+6)-6;"
     }) {
         require(!cpp_local_int_override(start+neutral+output,
             {"aforo",4,{},true}),
@@ -558,6 +565,18 @@ void composed_neutral_updates_cannot_fake_u2l3_increase() {
         nonzero->find("aforo=aforo+(2-3);\n    aforo += 4;\n")!=
             std::string::npos,
         "A subtraction of different integer literals was mistaken for no-op");
+    for(const auto* genuine_additive:{
+        "aforo=aforo+2-1;",
+        "aforo=aforo+3-2-2;",
+        "aforo+=(2+3-4);"
+    }) {
+        const auto source=start+std::string(genuine_additive)+output;
+        const auto variant=cpp_local_int_override(source,{"aforo",4,{},true});
+        require(variant&&
+            variant->find(std::string(genuine_additive)+"\n    aforo += 4;\n")!=
+                std::string::npos,
+            "A nonzero additive change was confused with exact cancellation");
+    }
 }
 
 void numeric_literal_identity_distinguishes_one_from_ten() {

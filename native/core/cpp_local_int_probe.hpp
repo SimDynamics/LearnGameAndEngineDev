@@ -472,7 +472,67 @@ inline bool int_probe_trivial_noop(const Tokens& code,std::size_t statement,
         return Known::unknown;
     };
     const auto value=known(known,statement+2,end,0);
-    return op=="op:="?value==Known::local:value==Known::zero;
+    if(op=="op:"?value==Known::local:value==Known::zero)return true;
+    // The identity classifier above handles explicit zero/one operands.
+    // Detect composed additive cancellation as a separate, bounded proof:
+    // aforo=aforo+2-2 or aforo+=(3+4-7) must not masquerade as an increase.
+    // Only literal decimal int terms and this exact unqualified local are
+    // considered; calls, other variables, casts, unusual bases, precedence
+    // operators and unbounded arithmetic fail closed.
+    using Affine=std::pair<int,std::int64_t>; // local coefficient, literal offset
+    const auto additive=[&](auto&& self,std::size_t first,
+                            std::size_t last,unsigned depth)->std::optional<Affine> {
+        if(depth>32||first>=last)return {};
+        const auto [a,b]=unwrapped(first,last);
+        if(a>=b)return {};
+        if(b==a+1) {
+            if(code[a].value==wanted&&!qualified_member_name(code,a))
+                return Affine{1,0};
+            if(!code[a].value.starts_with("number:"))return {};
+            const auto digits=std::string_view(code[a].value).substr(7);
+            if(digits.empty()||(digits.size()>1&&digits.front()=='0'))return {};
+            std::int32_t amount=0;
+            const auto [parsed_end,parse_error]=std::from_chars(
+                digits.data(),digits.data()+digits.size(),amount,10);
+            if(parse_error!=std::errc{}||
+               parsed_end!=digits.data()+digits.size()||
+               amount>4096)return {};
+            return Affine{0,amount};
+        }
+        if(code[a].value=="op:+"||code[a].value=="op:-") {
+            auto inner=self(self,a+1,b,depth+1);
+            if(!inner)return {};
+            if(code[a].value=="op:-") {
+                inner->first=-inner->first;
+                inner->second=-inner->second;
+            }
+            return inner;
+        }
+        std::size_t split=b,level=0;
+        for(auto p=a;p<b;++p) {
+            const auto token=std::string_view(code[p].value);
+            if(token=="op:(")++level;
+            else if(token=="op:)") {
+                if(!level)return {};
+                --level;
+            }else if(!level&&p>a&&p+1<b&&
+                     (token=="op:+"||token=="op:-"))
+                split=p; // last top-level addition: left associativity
+        }
+        if(level||split==b)return {};
+        auto left=self(self,a,split,depth+1);
+        auto right=self(self,split+1,b,depth+1);
+        if(!left||!right)return {};
+        const int sign=code[split].value=="op:+"?1:-1;
+        const int coefficient=left->first+sign*right->first;
+        const std::int64_t offset=left->second+sign*right->second;
+        if(coefficient < -1||coefficient>1||
+           offset < -4096||offset>4096)return {};
+        return Affine{coefficient,offset};
+    };
+    const auto linear=additive(additive,statement+2,end,0);
+    return linear&&linear->second==0&&
+        linear->first==(op=="op:="?1:0);
 }
 
 // Locate an actual change to an initialized local int at the main-body

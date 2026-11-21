@@ -263,6 +263,23 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo+3;})CPP";
     if(cpp_local_int_override(neutral_update,{"aforo",4,{},true}))
         throw std::runtime_error(
             "A neutral U2L3 update passed every private output variation");
+    // Compound cancellation is another false increase: the visible report
+    // can be reproduced by computing +3 only at print time, and a naive
+    // hidden +4 would still appear to establish the required dependency.
+    for(const auto* neutral:{
+        "aforo=aforo+2-2;",
+        "aforo=aforo-2+2;",
+        "aforo+=(2+3-5);",
+        "aforo=aforo+(+6)-6;"
+    }) {
+        const auto source=std::string(
+            "#include <iostream>\nint main(){int aforo{5};int anterior=aforo;")
+            +neutral+
+            "std::cout<<\"Antes: \"<<anterior<<\"\\nAhora: \"<<aforo+3;}";
+        if(cpp_local_int_override(source,{"aforo",4,{},true}))
+            throw std::runtime_error(
+                "A compound neutral operation was credited as U2L3 increase");
+    }
     // A multiplier such as 10 (decimal), 010 (octal), 0x10 (hex) or
     // 0b10 (binary) is not the identity multiplier one. A lexical
     // shortcut must not reject a valid after-update variation.
