@@ -84,6 +84,14 @@ inline bool boundary(std::string_view token) {
     return token == "op:{" || token == "op:;" || token == "op:}";
 }
 
+// A field or namespace-qualified spelling is not the unqualified local.
+// Reuse this rule in declarations and pre-initialization read checks.
+inline bool qualified_member_name(const Tokens& code,std::size_t index) {
+    if(index==0)return false;
+    const auto previous=std::string_view(code[index-1].value);
+    return previous=="op:."||previous=="op:->"||previous=="op:::";
+}
+
 inline std::optional<Tokens> lexical(std::string_view source) {
     auto parsed = cpp_expression_repair_detail::tokens(source);
     if (!parsed || !cpp_expression_repair_detail::source_tokens_valid(*parsed))
@@ -197,7 +205,7 @@ inline std::optional<Declaration> simple_int_declaration(
                (token=="op:,"||token=="op:;"))break;
             // A sibling initialized from this value would be frozen before
             // our after-statement variation, giving a misleading result.
-            if(token==wanted)return {};
+            if(token==wanted&&!qualified_member_name(code,end))return {};
             if(token=="op:(")++parentheses;
             else if(token=="op:{")++braces;
             else if(token=="op:[")++brackets;
@@ -273,6 +281,9 @@ inline std::optional<std::size_t> first_assignment(
     for (auto i = after; i < closing; ++i) {
         const auto& t = code[i].value;
         if (t == wanted) {
+            // Other objects may expose a field of the same name before
+            // the local's first assignment. This is not a read of the local.
+            if(qualified_member_name(code,i))continue;
             if (braces != 1 || parentheses || brackets ||
                 i + 1 >= closing || code[i + 1].value != "op:=" ||
                 !boundary(code[i - 1].value)) return {};
@@ -282,12 +293,9 @@ inline std::optional<std::size_t> first_assignment(
             // by reading itself. But a member or qualified name with the
             // same spelling (data.llaves, ptr->llaves, config::llaves) is
             // a different object and must not be rejected as that read.
-            for(auto j=i+2;j<*end;++j) {
-                if(code[j].value!=wanted)continue;
-                const auto previous=j>i+2?code[j-1].value:std::string{};
-                if(previous!="op:."&&previous!="op:->"&&previous!="op:::")
+            for(auto j=i+2;j<*end;++j)
+                if(code[j].value==wanted&&!qualified_member_name(code,j))
                     return {};
-            }
             return end;
         }
         if (t == "op:{") ++braces;
