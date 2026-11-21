@@ -83,7 +83,7 @@ void after_real_assignment_and_noexcept() {
     for(const auto suffix:{"noexcept","noexcept(true)","noexcept(noexcept(4))"}) {
         const std::string src=std::string("#include <string>\nint main() ")+suffix+
             " {std::string codigo{\"04\"}; codigo=\"07\"; std::string etiqueta=codigo; }\n";
-        require(cpp_local_string_override(src,{"codigo","B2",updated,{}}),
+        require(cpp_local_string_override(src,{"codigo","B2",updated,{}}).has_value(),
             "A valid main() noexcept was not recognized");
     }
     require(!cpp_local_string_override(source,{"codigo","B2",updated,{}}),
