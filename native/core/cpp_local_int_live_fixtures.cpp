@@ -44,7 +44,7 @@ int main(int argc,char** argv) try {
     if(argc!=2)return 2;
     const std::filesystem::path directory=argv[1];
     std::filesystem::create_directories(directory);
-    const std::array<Scenario,6> examples{{
+    const std::array<Scenario,8> examples{{
         {"u2l1_llaves_7",
             R"CPP(#include <iostream>
 int main(){int llaves=3+4; std::cout<<"Llaves: "<<llaves;})CPP",
@@ -84,7 +84,36 @@ int main(){int aforo=5; aforo+=3; int anterior(aforo);
 std::cout<<"Antes: "<<anterior<<"\nAhora: "<<aforo;})CPP",
             "Antes: 8\nAhora: 8",
             {{{"aforo",10,{}},{"anterior",11,{}},{"aforo",4,{},true}}},
-            {{"Antes: 13\nAhora: 13","Antes: 11\nAhora: 8","Antes: 12\nAhora: 12"}},3}
+            {{"Antes: 13\nAhora: 13","Antes: 11\nAhora: 8","Antes: 12\nAhora: 12"}},3},
+        {"u2l5_division_variable",
+            R"CPP(#include <iostream>
+
+int main() {
+    double longitud_metros = 9.0;
+    int partes = 2;
+    double longitud_por_parte = longitud_metros / partes;
+    std::cout << "Parte: " << longitud_por_parte << " m";
+    return 0;
+}
+)CPP",
+            "Parte: 4.5 m",
+            {{{"partes",4,{}},{"partes",8,{}},{}}},
+            {{"Parte: 2.25 m", "Parte: 1.125 m", ""}},2},
+        {"u2l5_suma_agrupada",
+            R"CPP(#include <iostream>
+
+int main() {
+    double longitud_metros = 4.5;
+    int tramo_adicional_metros = 1;
+    int partes = 2;
+    double longitud_por_parte = (longitud_metros + tramo_adicional_metros) / partes;
+    std::cout << "Parte: " << longitud_por_parte << " m";
+    return 0;
+}
+)CPP",
+            "Parte: 2.75 m",
+            {{{"tramo_adicional_metros",3,{}},{"partes",4,{}},{}}},
+            {{"Parte: 3.75 m", "Parte: 1.375 m", ""}},2}
     }};
     std::size_t emitted=0;
     for(const auto& example:examples) {
@@ -140,8 +169,35 @@ std::cout<<"Antes: "<<aforo<<"\nAhora: "<<aforo;})CPP";
     emit(directory,"reject_print_aforo_twice",*missing_copy,
         "Antes: 11\nAhora: 8",false);
     ++emitted;
-    if(emitted!=22)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 22 isolated C++ executions for six U2 owners and four adversaries\n";
+    // Visible stdout alone is insufficient when the divider is printed as a literal.
+    // The production local-int mutation must reveal its independence from partes.
+    constexpr std::string_view fixed_division=R"CPP(#include <iostream>
+int main() {
+    double longitud_metros = 9.0;
+    int partes = 2;
+    std::cout << "Parte: 4.5 m";
+})CPP";
+    const auto missing_divisor=cpp_local_int_override(fixed_division,{"partes",4,{}});
+    if(!missing_divisor)throw std::runtime_error("Cannot probe hard-coded U2L5 division");
+    emit(directory,"reject_u2l5_fixed_division",*missing_divisor,"Parte: 2.25 m",false);
+    ++emitted;
+    // Deliberately keep the correct visible 2.75 but ignore the declared
+    // extra length: the private variation of tramo_adicional_metros must fail.
+    constexpr std::string_view fixed_addend=R"CPP(#include <iostream>
+int main() {
+    double longitud_metros = 4.5;
+    int tramo_adicional_metros = 1;
+    int partes = 2;
+    double longitud_por_parte = (longitud_metros + 1) / partes;
+    std::cout << "Parte: " << longitud_por_parte << " m";
+})CPP";
+    const auto missing_addend=cpp_local_int_override(fixed_addend,
+        {"tramo_adicional_metros",3,{}});
+    if(!missing_addend)throw std::runtime_error("Cannot probe hard-coded U2L5 addend");
+    emit(directory,"reject_u2l5_fixed_addend",*missing_addend,"Parte: 3.75 m",false);
+    ++emitted;
+    if(emitted!=30)throw std::runtime_error("Unexpected live fixture count");
+    std::cout<<"PASS generated 30 isolated C++ executions for eight U2 owners and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';

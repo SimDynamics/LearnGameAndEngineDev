@@ -7,6 +7,7 @@ curricular JSON, user account, saved profile or application toolchain is edited.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -33,11 +34,56 @@ def main() -> int:
         output = Path(tmp)
         emitted = subprocess.run([str(args.emitter.resolve()), str(output)],
                                  capture_output=True, timeout=30, check=True)
-        if b"PASS generated 22" not in emitted.stdout:
+        if b"PASS generated 30" not in emitted.stdout:
             raise RuntimeError("The real source-mutation fixture did not finish")
         sources = sorted(output.glob("*.cpp"))
-        if len(sources) != 22:
-            raise RuntimeError(f"Expected exactly 22 source programs, got {len(sources)}")
+        if len(sources) != 30:
+            raise RuntimeError(f"Expected exactly 30 source programs, got {len(sources)}")
+        # Verify that the emitted U2L5 originals remain the EXACT currently
+        # authored code references, not a convenient rewritten illustration.
+        # The private probes must also match their published values/outputs.
+        curriculum = (Path(__file__).resolve().parents[2] /
+                      "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                      "objetos_y_estado/lesson_enteros_y_aproximaciones.json")
+        authored = json.loads(curriculum.read_text(encoding="utf-8-sig"))
+        pages = authored["pages"]
+        layout = authored["stateLayout"]["current"]
+        blocks = {}
+        for page, state_page in zip(pages, layout, strict=True):
+            for block, identity in zip(page["blocks"], state_page["blocks"], strict=True):
+                if identity in blocks:
+                    raise RuntimeError(f"Duplicate active U2L5 owner: {identity}")
+                blocks[identity] = block
+
+        specs = {item["activity"]: item["probes"]
+                 for item in authored["compilerLocalIntChecks"]}
+        if len(specs) != 2:
+            raise RuntimeError("U2L5 no longer has exactly two independent probe owners")
+        contracts = [
+            ("u2l5_division_variable", "block_0006_0002",
+             "block_0007_0001", "Parte: 4.5 m",
+             [("partes", 4, "Parte: 2.25 m"), ("partes", 8, "Parte: 1.125 m")]),
+            ("u2l5_suma_agrupada", "p1u2l5_reparar_agrupacion",
+             "p1u2l5_referencia_agrupacion", "Parte: 2.75 m",
+             [("tramo_adicional_metros", 3, "Parte: 3.75 m"),
+              ("partes", 4, "Parte: 1.375 m")]),
+        ]
+        for name, owner, reference, visible, checks in contracts:
+            target = blocks[owner]
+            source = blocks[reference]
+            if target["type"] != "cpp_compiler" or source["type"] != "code":
+                raise RuntimeError(f"Current U2L5 source or editor retired: {owner}")
+            visible_outputs = target["outputCheck"]["cases"][0]["outputs"]
+            if visible_outputs != [visible, visible + "\n"]:
+                raise RuntimeError(f"Current U2L5 visible output changed: {owner}")
+            if (output / (name + ".cpp")).read_text(encoding="utf-8") != source["code"]:
+                raise RuntimeError(f"Generated U2L5 C++ differs from its actual reference: {reference}")
+            declared = specs.get(owner)
+            expected = [{"variable": variable, "replacement": replacement,
+                         "outputs": [stdout, stdout + "\n"]}
+                        for variable, replacement, stdout in checks]
+            if declared != expected:
+                raise RuntimeError(f"Private U2L5 probe declarations changed: {owner}")
         accepted = rejected = 0
         for source in sources:
             evidence = source.with_suffix(".expected").read_bytes()
@@ -70,11 +116,11 @@ def main() -> int:
                 accepted += 1
             else:
                 rejected += 1
-        if (accepted, rejected) != (18, 4):
+        if (accepted, rejected) != (24, 6):
             raise RuntimeError(f"Incorrect execution counts: {(accepted, rejected)}")
         print(f"PASS {args.compiler} on {sys.platform}: {accepted} positive "
               f"original/probe executions, {rejected} actual hard-coded-copy "
-              "counterexamples rejected; 22 real C++ compile-and-run cases.")
+              "counterexamples rejected; 30 real C++ compile-and-run cases.")
     return 0
 
 

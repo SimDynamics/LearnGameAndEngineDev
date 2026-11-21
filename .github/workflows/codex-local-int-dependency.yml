@@ -16,6 +16,7 @@ on:
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_objetos_valores_y_tipos.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_declarar_e_inicializar.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_enteros_y_aproximaciones.json
   workflow_dispatch:
 
 permissions:
@@ -35,7 +36,7 @@ jobs:
         run: python3 -B -m unittest discover -s scripts/curriculum -p test_local_int_probe_authoring.py -v
 
   portable:
-    name: Probe mutations and 22 live C++ programs on ${{ matrix.compiler }}
+    name: Probe mutations and 30 live C++ programs on ${{ matrix.compiler }}
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     strategy:
@@ -85,7 +86,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & $unit
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Compile and execute 22 original/mutated C++ programs on hosted MSVC
+      - name: Compile and execute 30 original/mutated C++ programs on hosted MSVC
         run: |
           $emitter = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_fixtures.exe'
           $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_fixtures.obj'

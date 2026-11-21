@@ -242,5 +242,50 @@ class LocalIntAuthoringTests(unittest.TestCase):
         self.assertEqual(checked, 6)
 
 
+    def test_published_u2l5_probes_and_historical_three_editor_archive(self):
+        """The current two editors may not inherit archived independent wins."""
+        path = (Path(__file__).resolve().parents[2] /
+                "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                "objetos_y_estado/lesson_enteros_y_aproximaciones.json")
+        document = json.loads(path.read_text(encoding="utf-8-sig"))
+        self.valid(document)
+        identities = {identity: (page, index, block)
+                      for page, (content, layout) in enumerate(zip(
+                          document["pages"], document["stateLayout"]["current"], strict=True))
+                      for index, (block, identity) in enumerate(zip(
+                          content["blocks"], layout["blocks"], strict=True))}
+        expected = {
+            "block_0006_0002": [
+                ("partes", 4, "Parte: 2.25 m"), ("partes", 8, "Parte: 1.125 m")],
+            "p1u2l5_reparar_agrupacion": [
+                ("tramo_adicional_metros", 3, "Parte: 3.75 m"),
+                ("partes", 4, "Parte: 1.375 m")],
+        }
+        self.assertEqual([entry["activity"] for entry in document["compilerLocalIntChecks"]],
+                         list(expected))
+        self.assertEqual((identities["block_0006_0002"][0],
+                          identities["p1u2l5_reparar_agrupacion"][0]), (6, 7))
+        for entry in document["compilerLocalIntChecks"]:
+            with self.subTest(owner=entry["activity"]):
+                owner = identities[entry["activity"]][2]
+                self.assertEqual(owner["type"], "cpp_compiler")
+                self.assertEqual(len(owner["outputCheck"]["cases"]), 1)
+                self.assertEqual(entry["probes"], [
+                    {"variable": variable, "replacement": replacement,
+                     "outputs": [output, output + "\n"]}
+                    for variable, replacement, output in expected[entry["activity"]]])
+        self.assertEqual([(item["activity"], item["requires"])
+                          for item in document["activityAfter"]],
+                         [("p1u2l5_reparar_agrupacion", ["block_0006_0002"])])
+        archived = document["stateLayout"]["retirementHistory"]
+        self.assertEqual(len(archived), 1)
+        old = archived[0]["current"]
+        self.assertEqual((old[6]["blocks"][2], old[6]["blocks"][6],
+                          old[7]["blocks"][9]),
+                         ("block_0006_0002", "block_0006_0006", "block_0007_0009"))
+        self.assertFalse(any(identity in identities for identity in (
+            "block_0006_0006", "block_0007_0009")))
+
+
 if __name__ == "__main__":
     unittest.main()
