@@ -100,6 +100,83 @@ class ReviewFeedbackProseRevisionTest(unittest.TestCase):
             PATH, 0, 0, original, layout._blocks(tampered)[IDENTITY],
             previous_document=before, current_document=tampered))
 
+    def test_published_u1l4_drag_fill_new_explanation_is_authenticated(self):
+        # Real U1L4: Work must be able to explain a previously unannotated
+        # drag-fill activity without changing its choices, order or storage.
+        # This is a QA-only proposal; the published curriculum is untouched.
+        relative = ("app/src/main/assets/content/es/programming/"
+                    "cpp_fundamentals/programas_y_ejecucion/"
+                    "lesson_fuente_compilacion_y_diagnostico.json")
+        before = json.loads(
+            (Path(__file__).resolve().parents[2] / relative).read_text(
+                encoding="utf-8"))
+        origins = layout.validate(before)
+        identity = "block_0004_0001"
+        live = [(page, block)
+                for page, record in enumerate(before["stateLayout"]["current"])
+                for block, owner in enumerate(record["blocks"])
+                if owner == identity]
+        self.assertEqual(len(live), 1)
+        position = live[0]
+        old = layout._blocks(before)[identity]
+        self.assertEqual(old["type"], "drag_fill_code")
+        self.assertEqual(old["id"], "piezas_estructura")
+        self.assertNotIn("explanation", old)
+        old_semantics = deepcopy(before["textSemantics"]["fields"])
+        explanation = ("La ficha main forma la función; los operadores "
+                       "completan la instrucción y su punto y coma.")
+        unsigned = deepcopy(before)
+        forged_block = layout._blocks(unsigned)[identity]
+        forged_block["explanation"] = explanation
+        self.assertFalse(contract.preserves_previous_exercise(
+            relative, *origins[position], old, forged_block,
+            previous_document=before, current_document=unsigned))
+        with self.assertRaises(ValueError):
+            layout.validate_transition(before, unsigned)
+
+        reviewed = layout.revise_ordinary_editorial(before, identity, {
+            "explanation": {"text": explanation, "spans": []},
+        })
+        now = layout._blocks(reviewed)[identity]
+        layout.validate_transition(before, reviewed)
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *origins[position], old, now,
+            previous_document=before, current_document=reviewed))
+        self.assertEqual(layout.state_fingerprint(old),
+                         layout.state_fingerprint(now))
+        self.assertEqual(reviewed["stateLayout"]["origin"],
+                         before["stateLayout"]["origin"])
+        self.assertEqual(reviewed["stateLayout"]["current"],
+                         before["stateLayout"]["current"])
+        self.assertEqual(reviewed["stateLayout"]["editorial"][:-1],
+                         before["stateLayout"]["editorial"])
+        self.assertEqual(reviewed["stateLayout"]["editorial"][-1]["id"],
+                         identity)
+        self.assertEqual(layout.ordinary_editorial_paths(old, now),
+                         ("/explanation",))
+        self.assertEqual(reviewed["textSemantics"]["fields"][:-1],
+                         old_semantics)
+        self.assertEqual(reviewed["textSemantics"]["fields"][-1]["block"],
+                         identity)
+        self.assertEqual(reviewed["textSemantics"]["fields"][-1]["path"],
+                         "/explanation")
+        for protected in set(old):
+            self.assertEqual(now[protected], old[protected])
+
+        for field, replacement in (
+            ("correctOrder", [2, 1, 0]),
+            ("question", "Otra pregunta que cambiaría el objetivo."),
+        ):
+            with self.subTest(tampered=field):
+                altered = deepcopy(reviewed)
+                layout._blocks(altered)[identity][field] = replacement
+                self.assertFalse(contract.preserves_previous_exercise(
+                    relative, *origins[position], old,
+                    layout._blocks(altered)[identity],
+                    previous_document=before, current_document=altered))
+                with self.assertRaises(ValueError):
+                    layout.validate_transition(before, altered)
+
     def test_string_guidance_with_question_or_explanation(self):
         for kind in ("fill_code", "output_prediction"):
             for prose in ("question", "explanation"):
