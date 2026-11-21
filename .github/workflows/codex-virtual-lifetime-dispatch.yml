@@ -36,5 +36,8 @@ jobs:
         shell: cmd
         run: |
           python -B scripts\curriculum\test_cpp_virtual_lifetime_dispatch.py --compiler cl --windows
+          if errorlevel 1 exit /b 1
           python -B scripts\curriculum\test_cpp_virtual_lifetime_dispatch_core.py --compiler cl --windows
+          if errorlevel 1 exit /b 1
           python -B -m unittest discover -s scripts\curriculum -p test_cpp_virtual_lifetime_dispatch_authoring.py -v
+          if errorlevel 1 exit /b 1

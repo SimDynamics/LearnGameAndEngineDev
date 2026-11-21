@@ -61,8 +61,14 @@ int main(int argc,char** argv) try {
         if(at==changed.npos)throw std::runtime_error("Original derived class missing");
         changed.replace(at,std::string_view(declaration).size(),
                         "class MedidaIdentificada {");
-        reject_original("// "+std::string(declaration)+"\n"+changed,
-                        "Comment faked public inheritance");
+        const auto documented="// "+std::string(declaration)+"\n"+changed;
+        const auto lexed=lgaed::curriculum::cpp_class_structure::lexical(documented);
+        if(!lexed)throw std::runtime_error("Cannot tokenize documented derived class");
+        const auto inherited=lgaed::curriculum::cpp_class_structure::defined_class(
+            *lexed,"MedidaIdentificada","Medida");
+        if(inherited)throw std::runtime_error(
+            "Tokenizer counted commented public inheritance as real");
+        reject_original(documented,"Comment faked public inheritance");
     }
     if(!lgaed::curriculum::cpp_virtual_lifetime_dispatch_matches(spec,candidate))
         throw std::runtime_error(
