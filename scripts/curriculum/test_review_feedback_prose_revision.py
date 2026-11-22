@@ -1,5 +1,6 @@
 """Authenticated co-edition of exercise wording and existing response guidance."""
 from copy import deepcopy
+import hashlib
 import json
 from pathlib import Path
 import unittest
@@ -107,9 +108,9 @@ class ReviewFeedbackProseRevisionTest(unittest.TestCase):
         relative = ("app/src/main/assets/content/es/programming/"
                     "cpp_fundamentals/programas_y_ejecucion/"
                     "lesson_fuente_compilacion_y_diagnostico.json")
-        before = json.loads(
-            (Path(__file__).resolve().parents[2] / relative).read_text(
-                encoding="utf-8"))
+        asset = Path(__file__).resolve().parents[2] / relative
+        original_bytes = asset.read_bytes()
+        before = json.loads(original_bytes)
         origins = layout.validate(before)
         identity = "block_0004_0001"
         live = [(page, block)
@@ -121,6 +122,24 @@ class ReviewFeedbackProseRevisionTest(unittest.TestCase):
         old = layout._blocks(before)[identity]
         self.assertEqual(old["type"], "drag_fill_code")
         self.assertEqual(old["id"], "piezas_estructura")
+        if "explanation" in old:
+            # After Work publishes this feedback, test its active authored
+            # text and provenance rather than proposing it a second time.
+            published_text = old["explanation"]
+            self.assertTrue(isinstance(published_text, str) and published_text.strip())
+            marks = [field for field in before.get("textSemantics", {}).get("fields", [])
+                     if (field["block"], field["path"]) == (identity, "/explanation")]
+            self.assertEqual(len(marks), 1)
+            self.assertEqual(marks[0]["sourceSha256"],
+                             hashlib.sha256(published_text.encode("utf-8")).hexdigest())
+            self.assertTrue(any(proof["id"] == identity
+                                for proof in before["stateLayout"]["editorial"]))
+            tampered = deepcopy(before)
+            layout._blocks(tampered)[identity]["explanation"] += " Texto sin procedencia."
+            with self.assertRaises(ValueError):
+                layout.validate_transition(before, tampered)
+            self.assertEqual(asset.read_bytes(), original_bytes)
+            return
         self.assertNotIn("explanation", old)
         old_semantics = deepcopy(before["textSemantics"]["fields"])
         explanation = ("La ficha main forma la función; los operadores "
@@ -306,6 +325,111 @@ class ReviewFeedbackProseRevisionTest(unittest.TestCase):
                     list(layout.ordinary_editorial_paths(previous, current)))
                 for field in set(previous) - {prose, "reviewFeedback"}:
                     self.assertEqual(previous[field], current[field])
+
+    def test_real_u2_question_explanation_and_hints_change_together(self):
+        """The two published U2 lessons can revise all their feedback at once.
+
+        Only isolated in-memory proposals are used. Historical responses,
+        ownership and the other authored semantic markers remain unchanged.
+        """
+        prefix = ("app/src/main/assets/content/es/programming/"
+                  "cpp_fundamentals/objetos_y_estado/")
+        for filename, kind in (
+                ("lesson_conversiones_y_deduccion.json", "multiple_choice"),
+                ("lesson_cadenas_y_texto.json", "fill_code")):
+            with self.subTest(lesson=filename):
+                relative = prefix + filename
+                asset = Path(__file__).resolve().parents[2] / relative
+                original_bytes = asset.read_bytes()
+                previous_doc = json.loads(original_bytes)
+                origins = layout.validate(previous_doc)
+                owners = layout._blocks(previous_doc)
+                candidates = [
+                    (p, b, identity)
+                    for p, page in enumerate(previous_doc["stateLayout"]["current"])
+                    for b, identity in enumerate(page["blocks"])
+                    if owners[identity].get("type") == kind
+                    and all(owners[identity].get(field)
+                            for field in ("question", "explanation", "reviewFeedback"))]
+                self.assertTrue(candidates)
+                page, index, identity = candidates[0]
+                old = owners[identity]
+
+                def marker_spans(pointer):
+                    found = [item["spans"] for item in
+                             previous_doc.get("textSemantics", {}).get("fields", [])
+                             if item["block"] == identity and item["path"] == pointer]
+                    self.assertLessEqual(len(found), 1)
+                    return deepcopy(found[0] if found else [])
+
+                changes = {
+                    field: {"text": old[field] + " Comprueba cada paso del ejemplo.",
+                            "spans": marker_spans("/" + field)}
+                    for field in ("question", "explanation")}
+                if kind == "multiple_choice":
+                    self.assertGreaterEqual(len(old["reviewFeedback"]), 3)
+                    guide_paths = ["/reviewFeedback/0", "/reviewFeedback/2"]
+                    changes["reviewFeedback"] = {
+                        str(i): {"text": old["reviewFeedback"][i] +
+                                " Revisa este caso en particular.",
+                                "spans": marker_spans("/reviewFeedback/" + str(i))}
+                        for i in (0, 2)}
+                else:
+                    guide_paths = ["/reviewFeedback"]
+                    changes["reviewFeedback"] = {
+                        "text": old["reviewFeedback"] + " Revisa el valor de origen.",
+                        "spans": marker_spans("/reviewFeedback")}
+
+                revised = layout.revise_ordinary_editorial(previous_doc, identity, changes)
+                current = layout._blocks(revised)[identity]
+                layout.validate_transition(previous_doc, revised)
+                self.assertEqual(
+                    layout.ordinary_editorial_paths(old, current),
+                    tuple(["/question", "/explanation", *guide_paths]))
+                self.assertEqual(
+                    revised["stateLayout"]["editorial"][-1]["reviewPaths"], guide_paths)
+                self.assertTrue(contract.preserves_previous_exercise(
+                    relative, *origins[(page, index)], old, current,
+                    previous_document=previous_doc, current_document=revised))
+                self.assertEqual(layout.state_fingerprint(old),
+                                 layout.state_fingerprint(current))
+                for field in set(old) - {"question", "explanation", "reviewFeedback"}:
+                    self.assertEqual(old[field], current[field])
+                for field in ("origin", "current", "family", "retired",
+                              "retirementHistory", "additions"):
+                    self.assertEqual(previous_doc["stateLayout"].get(field),
+                                     revised["stateLayout"].get(field))
+                self.assertEqual(previous_doc["stateLayout"]["editorial"],
+                                 revised["stateLayout"]["editorial"][:-1])
+
+                for mutation in ("answer", "stale-semantic", "missing-proof",
+                                 "unreviewed-hint"):
+                    if mutation == "unreviewed-hint" and kind != "multiple_choice":
+                        continue
+                    forged = deepcopy(revised)
+                    altered = layout._blocks(forged)[identity]
+                    if mutation == "answer":
+                        if kind == "multiple_choice":
+                            altered["correctIndex"] = (
+                                old["correctIndex"] + 1) % len(old["options"])
+                        else:
+                            altered["answers"][0] += "_sin_autorizacion"
+                    elif mutation == "stale-semantic":
+                        field = next(item for item in forged["textSemantics"]["fields"]
+                                     if item["block"] == identity
+                                     and item["path"] == "/explanation")
+                        field["sourceSha256"] = "0" * 64
+                    elif mutation == "missing-proof":
+                        forged["stateLayout"]["editorial"].pop()
+                    else:
+                        altered["reviewFeedback"][1] += " Pista sin revisión."
+                    with self.subTest(lesson=filename, mutation=mutation):
+                        with self.assertRaises(ValueError):
+                            layout.validate_transition(previous_doc, forged)
+                        self.assertFalse(contract.preserves_previous_exercise(
+                            relative, *origins[(page, index)], old, altered,
+                            previous_document=previous_doc, current_document=forged))
+                self.assertEqual(asset.read_bytes(), original_bytes)
 
     def test_rejects_guide_only_addition_and_mismatched_choice_positions(self):
         for kind in ("fill_code", "multiple_choice"):

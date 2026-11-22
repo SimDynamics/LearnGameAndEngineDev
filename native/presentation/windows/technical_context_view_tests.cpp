@@ -724,18 +724,16 @@ void current_u2l6_native_reader_gates() {
     const auto& first=lesson.pages[6].blocks[first_at->block];
     const auto& second=lesson.pages[6].blocks[6];
     check(second.type==curriculum::BlockType::cpp_compiler&&
-        (second.stable_id=="block_0006_0006"||
-         second.stable_id=="p1u2l6_reparar_conversion")&&
+        second.stable_id=="p1u2l6_reparar_conversion"&&
         first.output_check&&second.output_check&&
         !first.output_check->cases.empty()&&!second.output_check->cases.empty()&&
         std::ranges::any_of(lesson.activity_after,[&](const auto& relation){
             return relation.activity==second.stable_id&&
                 relation.prerequisites.size()==1&&
                 relation.prerequisites.front()==first.stable_id;
-        }),"The two U2L6 editors lost their independent source-owned goals");
-    if(second.stable_id=="p1u2l6_reparar_conversion")
-        check(first.local_int_check&&second.local_int_check,
-            "Current U2L6 requires independent int-variation evidence for both editors");
+        }),"The active U2L6 compiler reverted to its archived identity or lost its independent goal");
+    check(first.local_int_check&&second.local_int_check,
+        "Current U2L6 requires independent int-variation evidence for both editors");
 
     const auto reference=[&](std::string_view activity,
                              std::string_view expected_id)->std::optional<curriculum::StatePosition>{
@@ -752,9 +750,8 @@ void current_u2l6_native_reader_gates() {
         return {};
     };
     const auto first_reference=reference(first.stable_id,"block_0007_0001");
-    const auto second_reference=reference(second.stable_id,
-        second.stable_id=="p1u2l6_reparar_conversion"?
-            "p1u2l6_referencia_reparada":"block_0008_0003");
+    const auto second_reference=reference(
+        second.stable_id,"p1u2l6_referencia_reparada");
     check(first_reference&&second_reference&&
         first_reference->page>first_at->page&&
         second_reference->page>=first_reference->page,

@@ -41,6 +41,19 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 self.assertIn("runs-on: windows-2022", source)
                 self.assertIn("python -B", source)
 
+    def test_editorial_windows_suite_follows_the_live_u1_u2_owners(self):
+        workflow = (WORKFLOWS / "codex-general-choice-editorial.yml").read_text(
+            encoding="utf-8")
+        root = "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+        for lesson in (
+                "programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json",
+                "objetos_y_estado/lesson_conversiones_y_deduccion.json",
+                "objetos_y_estado/lesson_cadenas_y_texto.json"):
+            with self.subTest(lesson=lesson):
+                self.assertIn("      - " + root + lesson, workflow)
+        self.assertIn("runs-on: windows-2022", workflow)
+        self.assertIn("-p test_review_feedback_prose_revision.py -v", workflow)
+
     def test_order_equivalence_uses_windows_python_without_bash(self):
         source = (WORKFLOWS / "codex-order-equivalence-authoring.yml").read_text(encoding="utf-8")
         self.assertIn("runs-on: windows-2022", source)
@@ -187,16 +200,81 @@ class WindowsCompilerPolicy(unittest.TestCase):
             with self.subTest(file=relative):
                 self.assertFalse((ROOT / relative).exists())
 
+    @staticmethod
+    def _uses_unneeded_compiler(source):
+        # Detect actual compiler commands, including clang-cl, bare clang
+        # and versioned binaries. Log messages about removed compilers are
+        # not commands. Chained calls and shell substitution must still fail.
+        unused = re.compile(
+            r"(?i)(?<![A-Za-z0-9_.+-])(?:g\+\+|gcc|clang\+\+|clang-cl|clang)"
+            r"(?:-[0-9]+)?(?:\.exe)?(?![A-Za-z0-9_.+-])")
+        report = re.compile(
+            r"(?i)^(?:(?:-\s*)?run:\s*)?(?:echo|write-host)\s+")
+        separator = re.compile(r"(?:&&|\|\||[;&|])")
+        for raw in source.splitlines():
+            line = raw.partition("#")[0].strip()
+            if not line or line.startswith(("name:", "- name:")):
+                continue
+            match = report.match(line)
+            if match:
+                tail = line[match.end():].lstrip()
+                if "$(" not in tail and chr(96) not in tail:
+                    if tail.startswith(("'", '"')):
+                        quote = tail[0]
+                        end = 1
+                        while end < len(tail) and tail[end] != quote:
+                            end += 1
+                        if end < len(tail):
+                            # Mask only the reported literal. A following
+                            # pipeline or chained command remains inspected.
+                            line = tail[end + 1:]
+                    else:
+                        cut = separator.search(tail)
+                        line = tail[cut.start():] if cut else ""
+            if unused.search(line):
+                return True
+        return False
+
     def test_active_workflows_do_not_invoke_gcc_or_desktop_clang(self):
-        # Match executable/runner tokens, not words like the curricular
-        # explanation of a compiler or the "Windows" product description.
-        unused = re.compile(r"(?<![A-Za-z0-9_])(?:g\+\+|clang\+\+|gcc)(?![A-Za-z0-9_])",
-                            re.IGNORECASE)
-        workflows = sorted(WORKFLOWS.glob("*.yml"))
+        # Check both supported workflow extensions, not only *.yml.
+        workflows = sorted((*WORKFLOWS.glob("*.yml"),
+                            *WORKFLOWS.glob("*.yaml")))
         self.assertTrue(workflows)
         for path in workflows:
             with self.subTest(workflow=path.name):
-                self.assertNotRegex(path.read_text(encoding="utf-8"), unused)
+                self.assertFalse(self._uses_unneeded_compiler(
+                    path.read_text(encoding="utf-8")),
+                    "An active Windows workflow reintroduced GCC or Clang")
+
+    def test_compiler_audit_detects_direct_versioned_and_clang_cl_commands(self):
+        for source in (
+                "run: clang -c example.cpp",
+                "run: clang-cl.exe /c example.cpp",
+                "run: clang++-19 example.cpp",
+                "run: gcc-14 example.c",
+                "run: g++ -std=c++23 example.cpp",
+                "run: & clang-cl /std:c++latest example.cpp",
+                "run: echo 'gcc was removed' && gcc -c example.c",
+                "run: Write-Host 'Clang retired'; & clang-cl.exe /c example.cpp",
+                "run: echo 'clang removed' | clang -c example.c",
+                "run: echo $(clang --version)",
+                "run: echo gcc; gcc -c example.c"):
+            with self.subTest(command=source):
+                self.assertTrue(self._uses_unneeded_compiler(source))
+        for source in (
+                "name: Clang compiler was retired",
+                "- name: GCC is no longer needed",
+                "run: cl /nologo /std:c++latest example.cpp",
+                "- scripts/build-clang23-android.ps1",
+                "run: python -B -m unittest test_windows_ci_compilers.py",
+                "run: cl /c example.cpp # clang was retired",
+                "run: Write-Host 'Clang is retired'",
+                "run: echo 'gcc was removed'",
+                "run: Write-Host 'Clang; gcc are not used anymore' | Out-File logs.txt",
+                "run: echo gcc was removed",
+                "run: echo 'gcc' && cl /c example.cpp"):
+            with self.subTest(allowed=source):
+                self.assertFalse(self._uses_unneeded_compiler(source))
 
     def test_compiler_policy_uses_focused_ci_without_unrelated_native_rebuilds(self):
         policy = "scripts/curriculum/test_windows_ci_compilers.py"
@@ -216,7 +294,9 @@ class WindowsCompilerPolicy(unittest.TestCase):
             state_import.index("      - '!scripts/curriculum/test_windows_ci_compilers.py'"))
         for targeted in ("test_windows_ci_compilers.py",
                          "test_local_int_live_compilation.py",
-                         "test_local_string_live_compilation.py"):
+                         "test_local_string_live_compilation.py",
+                         "test_general_choice_revision_live.py",
+                         "test_review_feedback_prose_revision.py"):
             with self.subTest(excluded_from_state_import=targeted):
                 self.assertLess(
                     state_import.index("      - scripts/curriculum/**"),

@@ -1,8 +1,9 @@
 """Preview an exact C++ rename after an already published source reformat.
 
-READ ONLY. A preview is not a recognized stateLayout archive, a curriculum
-publication, a completed lesson or a historical migration. The Python and
-native loaders must independently authorize a future revision record.
+READ ONLY. A preview is not a curriculum publication, a completed lesson or
+a historical migration. Authenticated identifierRenameRevisions are now
+accepted by the Python validator and the Windows loader. A proposed lesson
+must still pass their full historical and active-objective contracts.
 """
 from __future__ import annotations
 
@@ -110,7 +111,8 @@ def verify_exact_published_rename_packet(
     publication, then compare every historical field. Do not trust a caller's
     owner name, storage position, family, editorial chain, source bytes or
     proposed digest merely because those values are well-formed hashes.
-    The proposed revision is not accepted by the runtime yet.
+    The returned packet still has to be assembled into a complete, validated
+    lesson before the native loader can accept the new authored wording.
     """
     if type(record) is not dict:
         raise RenamePreviewError("A rename archival packet must be a complete object")
@@ -136,14 +138,15 @@ def verify_exact_published_rename_packet(
 def validate_read_only_rename_draft(previous: dict, draft: dict) -> dict:
     """Preflight a complete lesson publication containing proposed C++ renames.
 
-    This is deliberately NOT stable_state_layout.validate(draft): production
-    loaders do not recognize identifierRenameRevisions yet. Instead restore
-    the whole previous publication, including all editorial proof prefixes,
-    published source formats, family, answers, storage and text semantics.
-    Only exact authenticated identifier substitutions may differ.
+    Restore the whole previous publication, including every editorial proof
+    prefix, source format, family, answer, storage address and text semantic
+    marker. Then run the real stable-state validator and publication-transition
+    guard on the candidate. These guards now recognize identifierRenameRevisions
+    in the native Windows loader as well.
 
-    The returned report is evidence for authoring, not permission for Windows
-    to open the candidate or rewrite learner drafts and receipts.
+    The returned report establishes that the candidate is eligible for
+    publication, not that Work has published it or that a student's live
+    profile, audio or saved draft has been touched.
     """
     state.validate(previous)
     if type(draft) is not dict or type(draft.get("stateLayout")) is not dict:
@@ -217,12 +220,20 @@ def validate_read_only_rename_draft(previous: dict, draft: dict) -> dict:
     if not rename.same_json_value_and_types(restored, previous):
         raise RenamePreviewError(
             "A rename draft changed other lesson metadata, positions, answers or resources")
-    # This exact published document has already passed validate(previous).
-    # Its restoration proves it retains the same state addresses and progress
-    # contract, without importing either draft into a learner profile.
+    # Restoration checks the complete bytes. The production Python state
+    # guards must independently accept the new signed editorial edges and
+    # reject a draft that this preliminary proof alone cannot authenticate.
+    # Windows has separate native-loader and durable-StateStore regressions
+    # for the identical identifierRenameRevisions schema.
+    try:
+        state.validate(draft)
+        state.validate_transition(previous, draft)
+    except (state.LayoutError, ValueError, KeyError, TypeError) as exc:
+        raise RenamePreviewError(
+            "The rename draft is not a valid authenticated state transition") from exc
     return {"lessonId": previous["id"], "locale": source_meta["locale"],
             "owners": confirmed, "publishedStateUnchanged": True,
-            "runtimeLoadSupported": False}
+            "runtimeLoadSupported": True}
 
 
 def build_read_only_rename_draft(
@@ -259,3 +270,74 @@ def build_read_only_rename_draft(
     candidate["stateLayout"]["identifierRenameRevisions"] = deepcopy(records)
     validate_read_only_rename_draft(previous, candidate)
     return candidate
+
+def prepare_declared_identifier_rename_draft(
+    published_document: dict,
+    plans: dict[str, dict[str, dict[str, str]]],
+) -> dict:
+    """Prepare exact, read-only renames from Work-declared owners and slots.
+
+    All name counts, source offsets and publication hashes come from the
+    existing signed lesson, not from claims entered by a caller. Only the
+    declared C++ tokens change, with no prose, grading or student-data edits.
+    Independent C++ compilation remains required to check real name binding.
+    """
+    state.validate(published_document)
+    if type(plans) is not dict or not 1 <= len(plans) <= 64:
+        raise RenamePreviewError("Specify 1 to 64 explicit stable owners")
+    original = state._blocks(published_document)
+    proposed_blocks: dict[str, dict] = {}
+    records: list[dict] = []
+    for identity, source_plans in plans.items():
+        if type(identity) is not str or identity not in original:
+            raise RenamePreviewError("Unknown active C++ rename owner")
+        if type(source_plans) is not dict or not source_plans:
+            raise RenamePreviewError("Each rename owner needs explicit source slots")
+        old = original[identity]
+        try:
+            slots = source_format.code_slots(old)
+        except source_format.SourceFormatError as exc:
+            raise RenamePreviewError("Invalid published source slots") from exc
+        revised_block = deepcopy(old)
+        counts: dict[str, dict[str, int]] = {}
+        for slot, declared in source_plans.items():
+            if (type(slot) is not str or slot not in slots or
+                    slots[slot][0] != "cpp" or
+                    type(declared) is not dict or not declared or
+                    any(type(a) is not str or type(b) is not str
+                        for a, b in declared.items())):
+                raise RenamePreviewError(
+                    "Declare only C++ source slots and literal name pairs")
+            source = slots[slot][1]
+            try:
+                tokens = source_format._cpp_tokens(source)
+                occurrences = {
+                    name: sum(token == "id:" + name for token in tokens)
+                    for name in declared
+                }
+                if not all(occurrences.values()):
+                    raise RenamePreviewError(
+                        "Every declared old name must occur as a C++ identifier")
+                rewritten = rename._exact_identifier_substitution(
+                    source, tokens, declared)
+            except (source_format.SourceFormatError,
+                    rename.IdentifierRenameError) as exc:
+                raise RenamePreviewError(
+                    "Cannot safely rewrite declared C++ identifiers") from exc
+            target = revised_block
+            parts = slot.split("/")
+            for part in parts[:-1]:
+                target = target[int(part)] if isinstance(target, list) else target[part]
+            if isinstance(target, list):
+                target[int(parts[-1])] = rewritten
+            else:
+                target[parts[-1]] = rewritten
+            counts[slot] = occurrences
+        packet = preview_published_rename(
+            published_document, identity, revised_block, source_plans, counts)
+        proposed_blocks[identity] = revised_block
+        records.append(packet)
+    # This final constructor independently validates the entire state-layout
+    # transition, including exact archival history and every unaffected owner.
+    return build_read_only_rename_draft(
+        published_document, proposed_blocks, records)

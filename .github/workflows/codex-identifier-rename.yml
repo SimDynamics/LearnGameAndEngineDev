@@ -10,6 +10,8 @@ on:
       - scripts/curriculum/test_identifier_rename_execution.py
       - scripts/curriculum/identifier_rename_archive_preview.py
       - scripts/curriculum/test_identifier_rename_archive_preview.py
+      - scripts/windows/test_identifier_rename_u2l6.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_conversiones_y_deduccion.json
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/code_format_compat.py
       - native/core/code_format_compat.hpp
@@ -51,3 +53,5 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_identifier_rename_archive_preview.py -v
       - name: Compile and run actual frequency programs before and after renaming
         run: python -B -m unittest discover -s scripts/curriculum -p test_identifier_rename_execution.py -v
+      - name: Authenticate and compile both U2L6 predictions with descriptive names
+        run: python -B scripts/windows/test_identifier_rename_u2l6.py -v
