@@ -176,11 +176,15 @@ inline std::optional<std::size_t> root_reassignment_end(
         if(braces==1&&!parentheses&&!brackets&&root_start(code,i)&&
            value==wanted&&i+1<closing) {
             const bool direct=code[i+1].value=="op:="||code[i+1].value=="op:+=";
-            // std::string::assign mutates the same existing string as
-            // operator=. Require a complete root-level member-call statement
-            // before inserting a hidden variation, never a nested expression.
+            // Assign, append and replace each update this existing string.
+            // Perturb a default-constructed owner AFTER its actual first
+            // value-producing statement, never before the call overwrites
+            // the control. Require a complete root-level member call.
             const bool assign_member=i+3<closing&&code[i+1].value=="op:."&&
-                code[i+2].value=="id:assign"&&code[i+3].value=="op:(";
+                (code[i+2].value=="id:assign"||
+                 code[i+2].value=="id:append"||
+                 code[i+2].value=="id:replace")&&
+                code[i+3].value=="op:(";
             if(direct||assign_member)
                 return cpp_local_int_probe_detail::statement_end(
                     code,assign_member?i+3:i+2,closing);
