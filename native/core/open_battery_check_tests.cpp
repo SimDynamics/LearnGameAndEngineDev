@@ -63,6 +63,19 @@ void generated() {
         library,"intentar_ajuste",OpenBatteryMutation::baseline);
     verify(baseline&&baseline->find("LGAED_OPEN_BATTERY_CALL:")!=std::string::npos,
            "Missing private call witness");
+    // The shared source lexer must distinguish private stderr witnesses
+    // from user-authored strings, while allowing documentary comments.
+    const auto forged_call=std::string(library)+R"cpp(
+const char* fake_witness = R"mark(LGAED_OPEN_BATTERY_CALL:3,3,7,59)mark";
+)cpp";
+    verify(!open_battery_mutated_library(
+        forged_call,"intentar_ajuste",OpenBatteryMutation::baseline),
+        "A source literal could impersonate an adjustment call witness");
+    const auto ordinary_comment=std::string(library)+
+        "\n// LGAED_OPEN_BATTERY_CALL:3,3,7,59 is an example, not executable code.\n";
+    verify(open_battery_mutated_library(
+        ordinary_comment,"intentar_ajuste",OpenBatteryMutation::baseline).has_value(),
+        "An inert comment blocked a legitimate adjustment source");
     const auto flip=open_battery_mutated_library(
         library,"intentar_ajuste",OpenBatteryMutation::invert_acceptance,
         OpenBatteryCall{3,3,7,59});
@@ -268,6 +281,15 @@ void comparison_instrumentation() {
         !=std::string::npos&&
         wrapped->find("std::cerr.write(buffer,")!=std::string::npos,
         "Parameter names were imposed or private numbers inherited output formatting");
+    const auto forged_result=std::string(comparison_source)+R"cpp(
+const char* forged_witness = "LGAED_OPEN_BATTERY_RESULT:1";
+)cpp";
+    verify(!open_battery_instrumented_comparison(forged_result,"evaluar"),
+        "A comparison source literal could impersonate a private result");
+    const auto documented=std::string(comparison_source)+
+        "\n// LGAED_OPEN_BATTERY_BEGIN:1 is only documentation.\n";
+    verify(open_battery_instrumented_comparison(documented,"evaluar").has_value(),
+        "A harmless source comment blocked a valid comparison wrapper");
     const std::string free_names=
         "static inline bool revisar(int id,int x,int lo,int hi,int before,bool ok,int after) {"
         "return ok && x+lo+hi+before+after==id;}";
