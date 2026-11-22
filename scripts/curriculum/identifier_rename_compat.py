@@ -41,6 +41,9 @@ def _declared_name(name: object) -> bool:
 _SPELLING_OBSERVERS = frozenset({
     "__func__", "__FUNCTION__", "__PRETTY_FUNCTION__", "__FUNCSIG__",
     "__FUNCDNAME__", "typeid",
+    # C++20 source_location::current().function_name() observes a
+    # declaration's spelling even when the revision changes only id tokens.
+    "source_location", "__builtin_FUNCTION",
 })
 
 
