@@ -479,8 +479,15 @@ void cadenas_three_puzzle_flow(){
         "An ordinary pending group's end lost its same-owner answer gate");
 }
 }
-int main() {
+int main(int argc,char** argv) {
     try {
+        if(argc==2&&std::string_view(argv[1])=="--u2l6-current-archived") {
+            current_objectives();
+            current_u2l6_reopened_pause();
+            std::cout<<"PASS active U2L6 two independent compiler gates, archived historical gate, manual advance and restored bookmark\n";
+            return 0;
+        }
+        require(argc==1,"Unknown reading gate QA arguments");
         current_objectives();current_u2l6_reopened_pause();grouped_feedback();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();cadenas_three_puzzle_flow();current_u2l5_reader_pauses_and_gates();
         std::cout<<"PASS current U2L6 objectives and restored pauses, actual U2L7 three-puzzle prompt/feedback gates, ordinary/mixed groups, late/finished bookmarks, local feedback permission and asynchronous same-script invalidation; pure gates only\n";
         return 0;

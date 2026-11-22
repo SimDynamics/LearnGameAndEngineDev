@@ -282,7 +282,12 @@ target_link_libraries(lgaed_reading_gate_portable_qa PRIVATE
 target_link_options(lgaed_reading_gate_portable_qa PRIVATE /OPT:REF)
 add_test(NAME native.reading_gate_u2l5_bookmarks
     COMMAND lgaed_reading_gate_portable_qa)
-set_tests_properties(native.reading_gate_u2l5_bookmarks PROPERTIES
+# The focused U2L6 policy test exercises both the active editor and its
+# separate archived predecessor. The historical U2L5 entry point is unchanged.
+add_test(NAME native.reading_gate_u2l6_current_archived
+    COMMAND lgaed_reading_gate_portable_qa --u2l6-current-archived)
+set_tests_properties(native.reading_gate_u2l5_bookmarks
+    native.reading_gate_u2l6_current_archived PROPERTIES
     TIMEOUT 180 RUN_SERIAL TRUE)
 
 
