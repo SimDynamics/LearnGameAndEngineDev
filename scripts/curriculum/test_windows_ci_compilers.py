@@ -282,6 +282,45 @@ class WindowsCompilerPolicy(unittest.TestCase):
         report = re.compile(
             r"(?i)^(?:(?:-\s*)?run:\s*)?(?:echo|write-host)\s+")
 
+        def visible_subcommand(expression):
+            # Split only on shell operators OUTSIDE quoted PowerShell strings.
+            # A format such as "clang; gcc retired" is not a command after
+            # its literal semicolon. Keep real chained commands inspectable.
+            result = []
+            quote = None
+            escaped = False
+            index = 0
+            while index < len(expression):
+                char = expression[index]
+                if escaped:
+                    escaped = False
+                    result.append(" ")
+                    index += 1
+                    continue
+                if char in ("\\", chr(96)) and quote != "'":
+                    escaped = True
+                    result.append(" ")
+                    index += 1
+                    continue
+                if char == "'" and quote != '"':
+                    if quote == "'" and expression[index:index + 2] == "''":
+                        result.extend("  ")
+                        index += 2
+                        continue
+                    quote = None if quote == "'" else "'"
+                    result.append(" ")
+                elif char == '"' and quote != "'":
+                    if quote == '"' and expression[index:index + 2] == '""':
+                        result.extend("  ")
+                        index += 2
+                        continue
+                    quote = None if quote == '"' else '"'
+                    result.append(" ")
+                else:
+                    result.append(" " if quote else char)
+                index += 1
+            return "".join(result)
+
         def invokes_compiler_substitution(tail):
             # In PowerShell, $(Get-Date) is not a compiler invocation;
             # $(clang --version) is. Single-quoted $(...) is literal data.
@@ -304,7 +343,7 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 if tail.startswith("$(", position) and quote != "'":
                     closing = tail.find(")", position + 2)
                     if closing >= 0 and subcommand.search(
-                            tail[position + 2:closing]):
+                            visible_subcommand(tail[position + 2:closing])):
                         return True
             return False
 
@@ -364,7 +403,11 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 'run: echo "gcc" && Write-Host "clang retired" && gcc -c x.c',
                 'run: echo "gcc" | Write-Host "clang" | clang-cl /c x.cpp',
                 'run: Write-Host "gcc" $(Get-Date -Format "clang; g++"); clang-cl /c x.cpp',
-                'run: echo "GCC" && Write-Host "$(clang --version)"'):
+                'run: echo "GCC" && Write-Host "$(clang --version)"',
+                'run: echo "$(Write-Host \'hello\'; clang --version)"',
+                "run: echo $(Get-Date; clang-cl.exe /c example.cpp)",
+                "run: echo $(Write-Host 'hello' | & clang -c test.cpp)",
+                "run: echo $(Write-Host 'gcc retired'; & clang++-19 -c test.cpp)"):
             with self.subTest(command=source):
                 self.assertTrue(self._uses_unneeded_compiler(source))
         for source in (
@@ -398,7 +441,13 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 'run: echo "clang is retired" "gcc retired"',
                 'run: echo "gcc" && Write-Host "clang retired"',
                 'run: echo "gcc" | Write-Host "clang" | cl /c x.cpp',
-                'run: Write-Host "gcc" $(Get-Date -Format "clang; g++")'):
+                'run: Write-Host "gcc" $(Get-Date -Format "clang; g++")',
+                "run: echo $(Get-Date -Format 'foo; gcc --version')",
+                'run: echo "GCC" $(Get-Date -Format "clang; gcc is retired")',
+                'run: Write-Host "GCC retired" $(Get-Date -Format "clang; clang-cl reported")',
+                'run: echo "$(Write-Host \'gcc; clang is retired\')"',
+                'run: echo "$(Write-Host \'hello; clang --version\')"',
+                'run: Write-Host "$(Get-Date -Format \'foo; gcc --version\')"'):
             with self.subTest(allowed=source):
                 self.assertFalse(self._uses_unneeded_compiler(source))
 
