@@ -401,11 +401,19 @@ void run_owner(const Lesson& original,const Lesson& reviewed,const Lesson& metad
     const auto optional_result=execute(optional_request,current.output_check->cases[1].outputs.front());
     const auto optional_capture=private_proof(optional_request,optional_result);
     auto partial=legacy;
-    require(record_compiler_puzzle_case(partial,reviewed,current,optional_request,optional_capture,
-                "A voluntary public case before the mandatory first case")&&
-            !compiler_puzzle_completed(partial,reviewed,current)&&
-            compiler_puzzle_case_count(partial,reviewed,current)==1&&!has_input_witness(partial),
+    // The return value reports objective completion, not whether a public
+    // observation was saved. An optional-only observation is retained below.
+    const bool optional_completed=record_compiler_puzzle_case(
+        partial,reviewed,current,optional_request,optional_capture,
+        "A voluntary public case before the mandatory first case");
+    require(!optional_completed,
+        "An optional-only observation reported objective completion");
+    require(!compiler_puzzle_completed(partial,reviewed,current),
         "An optional public input or its private runs completed the first case");
+    require(compiler_puzzle_case_count(partial,reviewed,current)==1,
+        "An optional-only run did not retain exactly one public observation");
+    require(!has_input_witness(partial),
+        "An optional-only observation wrote a completion witness before the first case");
     preserves_old_preferences(partial,legacy);
     {
         const auto partial_options=LaunchOptions{ProfileId::Codex,
