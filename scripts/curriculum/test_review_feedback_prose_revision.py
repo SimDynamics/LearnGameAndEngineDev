@@ -542,6 +542,163 @@ class ReviewFeedbackProseRevisionTest(unittest.TestCase):
                 layout.validate_transition(published, forged)
         self.assertEqual(asset.read_bytes(), original_bytes)
 
+    def test_published_u12_format_explanation_and_question_return_history(self):
+        """Real U12 format exercise reuses its signed prior std::hex edition.
+
+        The format question/explanation were published with explicit std::
+        names and later returned to shortened names. Restoring an earlier
+        complete authored block is a deliberate editorial return, never an
+        anonymous text edit or a new graded question.
+        """
+        relative = (
+            "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+            "archivos_y_programa_completo/"
+            "lesson_estado_del_formato_y_flujos_independientes.json")
+        asset = Path(__file__).resolve().parents[2] / relative
+        original_bytes = asset.read_bytes()
+        published = json.loads(original_bytes)
+        positions = layout.validate(published)
+        identity = "block_0002_0002"
+        location = next(
+            (p, b) for p, row in enumerate(published["stateLayout"]["current"])
+            for b, owner in enumerate(row["blocks"]) if owner == identity)
+        old = layout._blocks(published)[identity]
+        self.assertEqual(old["type"], "multiple_choice")
+        self.assertEqual(old["correctIndex"], 2)
+        self.assertEqual(len(old["options"]), 3)
+
+        abbreviations = (
+            ("texto << hex << 31", "texto << std::hex << 31"),
+            ("texto << dec", "texto << std::dec"))
+        def complete_names(source):
+            result = source
+            for short, full in abbreviations:
+                result = result.replace(short, full)
+            return result
+
+        question = complete_names(old["question"])
+        explanation = complete_names(old["explanation"])
+        if question == old["question"] and explanation == old["explanation"]:
+            # Work already published this correction. Verify its provenance
+            # and exact response contract instead of re-editing it.
+            self.assertIn("std::hex", question)
+            self.assertIn("std::dec", explanation)
+            self.assertTrue(any(
+                entry["id"] == identity and
+                entry["afterSha256"] == layout.fingerprint(old)
+                for entry in published["stateLayout"]["editorial"]))
+            original_marks = {
+                item["path"]: item
+                for item in published["textSemantics"]["fields"]
+                if item["block"] == identity}
+            for path, source in (("/question", question),
+                                 ("/explanation", explanation)):
+                self.assertEqual(
+                    original_marks[path]["sourceSha256"],
+                    hashlib.sha256(source.encode("utf-8")).hexdigest())
+            self.assertEqual(asset.read_bytes(), original_bytes)
+            return
+
+        self.assertNotEqual(question, old["question"])
+        self.assertNotEqual(explanation, old["explanation"])
+        self.assertIn("texto << std::hex << 31", question)
+        self.assertIn("texto << std::dec", explanation)
+        revised_block = deepcopy(old)
+        revised_block["question"] = question
+        revised_block["explanation"] = explanation
+        target_sha = layout.fingerprint(revised_block)
+        owner_edges = [
+            entry for entry in published["stateLayout"]["editorial"]
+            if entry["id"] == identity]
+        self.assertTrue(owner_edges)
+        history = [owner_edges[0]["beforeSha256"]] + [
+            entry["afterSha256"] for entry in owner_edges]
+        prior_versions = [
+            index for index, sha in enumerate(history[:-1])
+            if sha == target_sha]
+        self.assertTrue(prior_versions,
+            "An actual published std::hex edition was not found in the owner history")
+        spans = layout.text_semantics.select
+        changes = {
+            "question": {
+                "text": question,
+                "spans": [
+                    spans(question, "texto << std::hex << 31",
+                          "cpp", reading="technical"),
+                    spans(question, "texto << std::dec",
+                          "cpp", reading="technical")]},
+            "explanation": {
+                "text": explanation,
+                "spans": [
+                    spans(explanation, "texto << std::hex << 31",
+                          "cpp", reading="technical"),
+                    spans(explanation, "1f", "output",
+                          occurrence=1, reading="natural"),
+                    spans(explanation, "texto << std::dec",
+                          "cpp", reading="technical"),
+                    spans(explanation, "1f", "output",
+                          occurrence=2, reading="natural")]},
+        }
+        with self.assertRaises(ValueError):
+            layout.revise_ordinary_editorial(published, identity, changes)
+        updated = layout.revise_ordinary_editorial(
+            published, identity, {**changes, "returnTo": prior_versions[-1]})
+        layout.validate_transition(published, updated)
+        current = layout._blocks(updated)[identity]
+        self.assertEqual(current, revised_block)
+        self.assertEqual(layout.state_fingerprint(old),
+                         layout.state_fingerprint(current))
+        self.assertEqual(layout.ordinary_editorial_paths(old, current),
+                         ("/question", "/explanation"))
+        self.assertEqual(updated["stateLayout"]["origin"],
+                         published["stateLayout"]["origin"])
+        self.assertEqual(updated["stateLayout"]["current"],
+                         published["stateLayout"]["current"])
+        self.assertEqual(updated["stateLayout"]["editorial"][:-1],
+                         published["stateLayout"]["editorial"])
+        self.assertEqual(updated["stateLayout"]["editorial"][-1][
+            "returnTo"]["revision"], prior_versions[-1])
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *positions[location], old, current,
+            previous_document=published, current_document=updated))
+        self.assertEqual(layout._blocks(layout.align_for_previous_validation(
+            published, updated)), layout._blocks(published))
+        before_marks = {
+            entry["path"]: entry for entry in published["textSemantics"]["fields"]
+            if entry["block"] == identity}
+        after_marks = {
+            entry["path"]: entry for entry in updated["textSemantics"]["fields"]
+            if entry["block"] == identity}
+        self.assertEqual(before_marks.keys(), after_marks.keys())
+        for path, source in (("/question", question),
+                             ("/explanation", explanation)):
+            self.assertEqual(
+                after_marks[path]["sourceSha256"],
+                hashlib.sha256(source.encode("utf-8")).hexdigest())
+        for path in before_marks.keys() - {"/question", "/explanation"}:
+            self.assertEqual(before_marks[path], after_marks[path])
+
+        for label in ("answer-index", "option", "missing-return",
+                      "forged-reading", "forged-history"):
+            forged = deepcopy(updated)
+            block = layout._blocks(forged)[identity]
+            if label == "answer-index":
+                block["correctIndex"] = 0
+            elif label == "option":
+                block["options"][0] += " Alteración no autorizada."
+            elif label == "missing-return":
+                forged["stateLayout"]["editorial"][-1].pop("returnTo")
+            elif label == "forged-reading":
+                next(field for field in forged["textSemantics"]["fields"]
+                     if field["block"] == identity and
+                     field["path"] == "/question")["sourceSha256"] = "0" * 64
+            else:
+                forged["stateLayout"]["editorial"][-1][
+                    "returnTo"]["revision"] += 1
+            with self.subTest(forgery=label), self.assertRaises(ValueError):
+                layout.validate_transition(published, forged)
+        self.assertEqual(asset.read_bytes(), original_bytes)
+
     def test_rejects_guide_only_addition_and_mismatched_choice_positions(self):
         for kind in ("fill_code", "multiple_choice"):
             before = published(kind)
