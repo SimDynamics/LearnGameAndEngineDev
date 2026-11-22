@@ -3,6 +3,7 @@
 import copy
 import unittest
 
+import stable_state_layout as layout
 import validar_json_programacion as contract
 
 
@@ -128,13 +129,33 @@ class CppReviewFeedbackContractTest(unittest.TestCase):
 
     def test_new_inline_success_text_preserves_original_answer_and_every_existing_field(self):
         old = {"type": "inline_fill_code", "id": "original", "question": "Una pregunta.",
-               "template": "int x = [];", "answers": ["3"], "answerAlternatives": [["3", "03"]]}
-        current = dict(old, reviewFeedback="Revisa la cantidad.", explanation="Explicación posterior.")
-        self.assertTrue(self.preserved(old, current))
+               "template": "int x = [];", "answers": ["3"], "answerAlternatives": [["3", "03"]],
+               "reviewFeedback": "Revisa la cantidad."}
+        current = dict(old, explanation="Explicación posterior.")
+        # A new success explanation now requires authored provenance. The
+        # separate optional-guide tests retain the historical first-hint rule.
+        self.assertFalse(self.preserved(old, current))
+        source = {"id": "cpp_fundamentals__fixture__review", "title": "QA",
+                  "pages": [{"blocks": [copy.deepcopy(old)]}]}
+        before = layout.prepare_v2(source, "es", {"es": source})
+        identity = "block_0000_0000"
+        after = layout.revise_ordinary_editorial(before, identity, {
+            "explanation": {"text": current["explanation"], "spans": []}})
+        relative = "app/src/main/assets/content/es/programming/cpp_fundamentals/fixture/lesson_review.json"
+        self.assertEqual(current, layout._blocks(after)[identity])
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, 0, 0, old, current,
+            previous_document=before, current_document=after))
         for key, value in (("answers", ["4"]), ("template", "int y = [];"),
                            ("answerAlternatives", [["3", "4"]]), ("id", "changed"), ("question", "Changed")):
             with self.subTest(key=key):
-                self.assertFalse(self.preserved(old, dict(current, **{key: value})))
+                forged = copy.deepcopy(after)
+                changed = layout._blocks(forged)[identity]
+                changed[key] = value
+                forged["stateLayout"]["editorial"][-1]["afterSha256"] = layout.fingerprint(changed)
+                self.assertFalse(contract.preserves_previous_exercise(
+                    relative, 0, 0, old, changed,
+                    previous_document=before, current_document=forged))
         old["explanation"] = "Existing success."
         self.assertFalse(self.preserved(old, current))
 
@@ -156,3 +177,4 @@ class CppReviewFeedbackContractTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

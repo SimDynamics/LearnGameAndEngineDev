@@ -7,6 +7,13 @@ on:
       - .github/workflows/codex-general-choice-editorial.yml
       - scripts/curriculum/test_general_choice_revision_live.py
       - scripts/curriculum/test_review_feedback_prose_revision.py
+      - scripts/curriculum/test_legacy_review_feedback_adoption.py
+      - scripts/curriculum/test_cpp_review_feedback_contract.py
+      - scripts/curriculum/u12_composed_output_fixture_source.py
+      - scripts/curriculum/u12_composed_feedback_fixture_source.py
+      - scripts/curriculum/u12_append_hypothesis_fixture_source.py
+      - scripts/curriculum/compiler_import_fixture_source.py
+      - scripts/curriculum/diagnostic_fixture_source.py
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/validar_json_programacion.py
       - scripts/curriculum/text_semantics.py
@@ -35,11 +42,22 @@ jobs:
       - name: Read exact Codex publication
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Select Python for native Windows QA
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Verify historical first hints and all five affected build generators
+        run: >-
+          python -B -m unittest discover
+          -s scripts/curriculum
+          -p test_legacy_review_feedback_adoption.py -v
+      - name: Preserve optional hint and authenticated success-explanation contracts
+        run: >-
+          python -B -m unittest discover
+          -s scripts/curriculum
+          -p test_cpp_review_feedback_contract.py -v
       - name: Test real course against shared authoring and curricular validators
         run: >-
           python -B -m unittest discover

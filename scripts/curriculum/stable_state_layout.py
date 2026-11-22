@@ -7927,7 +7927,13 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     "Mathematical payloads must preserve their historical JSON key order and values")
         old_hash, new_hash = fingerprint(block), fingerprint(actual)
         proofs = appended.get(identity, [])
-        if block.get("reviewFeedback") != actual.get("reviewFeedback"):
+        # Historical publications may introduce an optional hint using the
+        # ordinary complete-block proof checked below. They do not revise a
+        # prior hint and predate reviewPaths and authored text descriptors.
+        # Keep the stricter revision contract for every already-present field,
+        # including malformed empty/null values; absence is not truthiness.
+        if ("reviewFeedback" in block
+                and block.get("reviewFeedback") != actual.get("reviewFeedback")):
             required_paths = ordinary_feedback_paths(block, actual)
             revised_fields = ordinary_editorial_fields(block, actual)
             ordinary_review = (bool(required_paths)
