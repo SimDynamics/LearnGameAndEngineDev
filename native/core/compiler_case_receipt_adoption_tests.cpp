@@ -103,6 +103,68 @@ void never_merge_another_program_or_client_epoch() {
         && proofs==adopted,"A second program rewrote a selected program's proofs");
 }
 
+void new_runtime_objective_never_inherits_a_stdout_receipt() {
+    OutputCheck historical;
+    historical.cases={make_case("7\n","7:1\n","consultar")};
+    const std::vector<std::string> older{"verified-historical-stdout"};
+    const auto denies=[&](const OutputCheck& changed,std::string_view reason) {
+        std::string selected_program;
+        std::vector<std::string> current(1);
+        require(!same_output_check_runtime_requirements(historical,changed) &&
+            !adopt_compatible_compiler_case_proofs(
+                changed,"same-epoch",selected_program,current,
+                historical,"same-epoch","same-source",older,authentic) &&
+            selected_program.empty()&&current.front().empty(),reason);
+    };
+
+    // Byte-for-byte identical public output is not proof of a new private
+    // execution obligation. Preserve the older state in its own epoch.
+    auto changed=historical;
+    changed.rejection_operation=RejectionOperation::boxes;
+    denies(changed,"New rejection facts inherited a stdout-only result");
+    changed=historical;
+    changed.observation_report=ReportMode::complete;
+    denies(changed,"New line-observation semantics inherited a stdout-only result");
+    changed=historical;
+    changed.assertion_check=AssertionMode::enabled_abort;
+    denies(changed,"New native assertion semantics inherited a stdout-only result");
+    changed=historical;
+    changed.open_battery_check=true;
+    denies(changed,"A new project battery inherited a stdout-only result");
+    changed=historical;
+    changed.boolean_battery_result=BooleanBatteryPublishedResult::failure;
+    denies(changed,"A bool-battery result inherited a stdout-only result");
+    changed=historical;
+    changed.reduction_check=true;
+    denies(changed,"A private reduction probe inherited a stdout-only result");
+    changed=historical;
+    changed.integer_battery_check=true;
+    denies(changed,"An integer battery inherited a stdout-only result");
+    changed=historical;
+    changed.integer_battery_failure_exit_code=2;
+    denies(changed,"Changed battery return-code rules inherited old evidence");
+    changed=historical;
+    changed.adjustment_project_check=true;
+    denies(changed,"A new multi-target project goal inherited stdout evidence");
+    changed=historical;
+    changed.input_comparison=TextComparison::tokens;
+    denies(changed,"A different input-comparison rule inherited old evidence");
+
+    // Original and reviewed objectives with identical runtime requirements
+    // may preserve proofs, despite newly clarified explanatory prose.
+    historical.assertion_check=AssertionMode::disabled;
+    changed=historical;
+    changed.cases.front().explanation="Clarified the original observed result";
+    std::string selected_program;
+    std::vector<std::string> current(1);
+    require(same_output_check_runtime_requirements(historical,changed) &&
+        adopt_compatible_compiler_case_proofs(changed,"same-epoch",
+            selected_program,current,historical,"same-epoch","same-source",
+            older,authentic) &&
+        selected_program=="same-source"&&!current.front().empty(),
+        "Equivalent runtime requirements discarded genuine historical evidence");
+}
+
 void same_input_with_different_requirements_is_not_sufficient() {
     OutputCheck old;
     old.cases={make_case("7\n","7:1\n","consultar")};
@@ -137,6 +199,7 @@ int main() {
         historical_aggregate_does_not_prove_independent_inputs();
         never_merge_another_program_or_client_epoch();
         same_input_with_different_requirements_is_not_sufficient();
+        new_runtime_objective_never_inherits_a_stdout_receipt();
         std::cout<<"PASS case-receipt adoption: optional history, unchanged first, "
                     "no cross-program or cross-epoch proof, protected requirements.\n";
         return 0;

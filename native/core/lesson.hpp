@@ -169,6 +169,23 @@ struct OutputCheck {
     // One captured project proves its component, client and complete battery.
     bool adjustment_project_check = false;
 };
+// A receipt for an unchanged case cannot prove a newly introduced semantic
+// runtime objective. Prose, explanation and choice hints do not affect this
+// equivalence; private probes, compiler behavior and input matching do.
+inline bool same_output_check_runtime_requirements(
+        const OutputCheck& earlier,const OutputCheck& current) {
+    return earlier.input_comparison==current.input_comparison &&
+        earlier.rejection_operation==current.rejection_operation &&
+        earlier.observation_report==current.observation_report &&
+        earlier.assertion_check==current.assertion_check &&
+        earlier.open_battery_check==current.open_battery_check &&
+        earlier.boolean_battery_result==current.boolean_battery_result &&
+        earlier.reduction_check==current.reduction_check &&
+        earlier.integer_battery_check==current.integer_battery_check &&
+        earlier.integer_battery_failure_exit_code==
+            current.integer_battery_failure_exit_code &&
+        earlier.adjustment_project_check==current.adjustment_project_check;
+}
 // A closed compile-time rejection is a different objective from runtime stdout.
 // The loader binds each diagnostic to its reviewed Spanish editor and source.
 struct CompileCheck {
