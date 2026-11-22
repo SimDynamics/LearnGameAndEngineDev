@@ -223,7 +223,9 @@ class RealChoiceEditorialRevision(unittest.TestCase):
                                   if (item["block"], item["path"]) == (OWNER, "/options/0"))
                     marker["sourceSha256"] = "0" * 64
                 else:
-                    forged["stateLayout"]["choiceRevisions"][-1]["block"]["correctIndex"] = 2
+                    next(item for item in forged["stateLayout"]["choiceRevisions"]
+                         if item.get("id") == OWNER and
+                         item.get("optionIndex") == 0)["block"]["correctIndex"] = 2
                 with self.assertRaises(state.LayoutError):
                     state.validate_transition(self.before, forged)
 
