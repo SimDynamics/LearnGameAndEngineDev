@@ -87,6 +87,11 @@ La app de depuración escribe automáticamente el archivo
 texto narrado, idioma y voz** del lector. El archivo contiene la lista
 deduplicada de grabaciones necesarias para las tres primeras lecciones.
 
+**Procedimiento histórico de Android:** el siguiente comando se ejecuta desde
+la raíz del [repositorio Android independiente](https://github.com/SimDynamics/LearnGraphicsProgramming),
+que conserva el exportador ADB y sus pruebas originales. El repositorio Windows
+no incluye ese programa y no necesita ADB para exportar su manifiesto.
+
 Cuando el teléfono haya terminado de pregenerar esas grabaciones:
 
 ```powershell
@@ -136,6 +141,11 @@ python scripts/narration/prepare_english_ai_pack.py --assets english_misaki/src/
 python scripts/narration/verify_windows_distribution.py --runtime out/narration/runtime.json
 python scripts/narration/export_first_unit_windows.py --verify-recordings
 ```
+
+La validación WAV de la exportación Windows utiliza
+`scripts/narration/first_unit_audio_contract.py`: el mismo contrato histórico
+RIFF/PCM16, mono y 24 kHz, sin importar ni ejecutar el exportador ADB Android.
+El comando de Windows no reescribe las grabaciones existentes al verificarlas.
 
 La distribución Windows actual utiliza las rutas locales de `runtime.json`,
 incluidos el JDK y los modelos instalados; no constituye un paquete portátil.

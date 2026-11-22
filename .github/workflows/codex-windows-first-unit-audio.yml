@@ -1,0 +1,39 @@
+name: Codex Windows first-unit WAV and manifest regression
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-windows-first-unit-audio.yml
+      - scripts/narration/first_unit_audio_contract.py
+      - scripts/narration/export_first_unit_windows.py
+      - scripts/narration/test_export_first_unit_windows.py
+      - scripts/narration/export_first_unit_from_android.py
+      - scripts/narration/test_export_first_unit_from_android.py
+      - scripts/narration/PREGENERATED_AUDIO.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-first-unit:
+    name: Read-only first-unit WAV, Opus and manifest checks (Windows)
+    runs-on: windows-2022
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Use Python 3.12 with no audio/model installations
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate PCM, missing/corrupt Opus, manifest identity and worker handshake
+        shell: pwsh
+        run: |
+          python -B -m unittest discover -s scripts/narration -p test_export_first_unit_windows.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B scripts/narration/export_first_unit_windows.py --help
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

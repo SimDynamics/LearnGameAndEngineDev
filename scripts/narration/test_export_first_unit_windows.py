@@ -10,6 +10,9 @@ import unittest
 from unittest.mock import patch
 import wave
 
+import export_first_unit_windows as windows_export
+from first_unit_audio_contract import inspect_wav
+
 from export_first_unit_windows import (LESSONS, missing_recordings, read_manifest,
                                        validate_manifest, write_manifest)
 
@@ -51,6 +54,32 @@ class WindowsFirstUnitExportTest(unittest.TestCase):
             mutate(candidate)
             with self.assertRaises(ValueError):
                 validate_manifest(candidate)
+
+    def test_exact_pcm_contract_rejects_corrupt_recordings_without_rewriting_them(self):
+        valid = pcm()
+        self.assertIsNone(inspect_wav(valid))
+        cases = (
+            (b"", "0 bytes"),
+            (valid[:-12], "RIFF"),
+            (b"run-as: package not debuggable\\n" * 4, "Not a RIFF"),
+            (valid[:12] + b"JUNK" + valid[16:], "Unexpected WAV chunk layout"),
+            (valid[:40] + (123).to_bytes(4, "little") + valid[44:], "PCM data length"),
+        )
+        for payload, expected in cases:
+            with self.subTest(error=expected):
+                self.assertIn(expected, inspect_wav(payload))
+        different_rate = bytearray(valid)
+        different_rate[24:28] = (48_000).to_bytes(4, "little")
+        self.assertIn("rate=48000", inspect_wav(bytes(different_rate)))
+
+    def test_windows_import_has_no_android_adb_dependency(self):
+        self.assertIs(windows_export.inspect_wav, inspect_wav)
+        directory = Path(__file__).resolve().parent
+        self.assertFalse((directory / "export_first_unit_from_android.py").exists())
+        self.assertFalse((directory / "test_export_first_unit_from_android.py").exists())
+        self.assertEqual(3, len(LESSONS))
+        self.assertTrue(all(lesson.startswith("cpp_fundamentals__intro_programming__")
+                            for lesson in LESSONS))
 
     def test_coverage_reports_missing_and_corrupt_without_touching_existing_audio(self):
         with tempfile.TemporaryDirectory() as directory:

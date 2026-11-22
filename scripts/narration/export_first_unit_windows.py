@@ -19,7 +19,7 @@ import tempfile
 import threading
 import uuid
 
-from export_first_unit_from_android import LESSONS, inspect_wav
+from first_unit_audio_contract import LESSONS, inspect_wav
 
 ROOT = Path(__file__).resolve().parents[2]
 HASH = re.compile(r"[0-9a-f]{64}")
