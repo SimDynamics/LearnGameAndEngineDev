@@ -72,6 +72,35 @@ class WindowsFirstUnitExportTest(unittest.TestCase):
         different_rate[24:28] = (48_000).to_bytes(4, "little")
         self.assertIn("rate=48000", inspect_wav(bytes(different_rate)))
 
+    def test_android_only_narration_tools_are_not_windows_requirements(self):
+        root = Path(__file__).resolve().parents[2]
+        narration = root / "scripts/narration"
+        for android_only in ("observe_kokoro.ps1", "package_prerendered_opus.py"):
+            with self.subTest(android_only=android_only):
+                self.assertFalse((narration / android_only).exists())
+        historical = (narration / "PREGENERATED_AUDIO.md").read_text(
+            encoding="utf-8")
+        self.assertIn("repositorio Android independiente", historical)
+        self.assertIn("SimDynamics/LearnGraphicsProgramming", historical)
+        self.assertIn("package_prerendered_opus.py", historical)
+        self.assertIn("observe_kokoro.ps1", historical)
+        # Windows runs on its own validated assets and original PCM checks.
+        for needed in (
+                "export_first_unit_windows.py", "first_unit_audio_contract.py",
+                "prepare_english_ai_pack.py", "verify_windows_distribution.py",
+                "export_misaki_bart.py", "export_misaki_spacy_pos.py"):
+            with self.subTest(retained=needed):
+                self.assertTrue((narration / needed).is_file())
+        for source in ("CMakeLists.txt", "CMakePresets.json",
+                       "scripts/windows/Build-Native.ps1",
+                       "scripts/windows/Build-NarrationWorker.ps1",
+                       "native/narration/worker/build_worker.py",
+                       "scripts/narration/export_first_unit_windows.py"):
+            value = (root / source).read_text(encoding="utf-8")
+            with self.subTest(runtime=source):
+                self.assertNotIn("observe_kokoro.ps1", value)
+                self.assertNotIn("package_prerendered_opus.py", value)
+
     def test_windows_import_has_no_android_adb_dependency(self):
         self.assertIs(windows_export.inspect_wav, inspect_wav)
         directory = Path(__file__).resolve().parent

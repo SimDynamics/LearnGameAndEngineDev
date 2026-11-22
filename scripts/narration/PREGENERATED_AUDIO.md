@@ -16,9 +16,17 @@ se obtiene otra clave, sin riesgo de reproducir un audio desactualizado.
 
 ## Empaquetar contenido
 
+Esta sección describe el empaquetado para el **APK Android histórico**, no
+el sistema de narración Windows. El script de empaquetado
+`scripts/narration/package_prerendered_opus.py` y el observador ADB
+`scripts/narration/observe_kokoro.ps1` se conservan sin cambios en el
+[repositorio Android independiente](https://github.com/SimDynamics/LearnGraphicsProgramming).
+Sus copias se retiraron exclusivamente de `LearnGameAndEngineDev` para Windows.
+Ningún modelo, WAV u Opus ya existente se ha eliminado.
+
 El archivo WAV debe generarse con la misma versión de la app y el mismo
 motor fonético y modelo. Una vez exportadas las grabaciones desde la caché
-privada de una instalación de depuración, desde la raíz del repositorio:
+privada de una instalación de depuración, desde la raíz del repositorio **Android**:
 
 ```powershell
 python scripts/narration/package_prerendered_opus.py "CARPETA_DE_WAVS_EXPORTADOS"
