@@ -431,6 +431,93 @@ class ReviewFeedbackProseRevisionTest(unittest.TestCase):
                             previous_document=previous_doc, current_document=forged))
                 self.assertEqual(asset.read_bytes(), original_bytes)
 
+    def test_published_u12l22_question_precision_preserves_prediction(self):
+        """A changed prediction question is authored prose, not a new answer.
+
+        Work owns the actual lesson update. This only verifies its exact
+        published source and a temporary, independently authenticated revision.
+        """
+        relative = (
+            "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+            "archivos_y_programa_completo/lesson_leer_un_grupo_con_cierre_propio.json")
+        asset = Path(__file__).resolve().parents[2] / relative
+        original_bytes = asset.read_bytes()
+        published = json.loads(original_bytes)
+        origins = layout.validate(published)
+        identity = "block_0001_0002"
+        location = next(
+            (p, b) for p, row in enumerate(published["stateLayout"]["current"])
+            for b, owner in enumerate(row["blocks"]) if owner == identity)
+        old = layout._blocks(published)[identity]
+        self.assertEqual(old["type"], "output_prediction")
+        self.assertEqual(old["id"], "mirar_no_consume")
+        self.assertEqual(old["answers"], ["1:}:fin"])
+        previous_question = (
+            "Predice la salida. Este ejemplo ya comprobó que hay caracteres disponibles.")
+        revised_question = (
+            "Predice la salida. La cadena mostrada contiene una llave de cierre "
+            "después de dos espacios.")
+        self.assertEqual(old["question"], previous_question)
+
+        unsigned = deepcopy(published)
+        layout._blocks(unsigned)[identity]["question"] = revised_question
+        with self.assertRaises(ValueError):
+            layout.validate_transition(published, unsigned)
+
+        revised = layout.revise_ordinary_editorial(published, identity, {
+            "question": {"text": revised_question, "spans": []}})
+        layout.validate_transition(published, revised)
+        actual = layout._blocks(revised)[identity]
+        self.assertEqual(actual["question"], revised_question)
+        self.assertEqual(actual["code"], old["code"])
+        self.assertEqual(actual["answers"], old["answers"])
+        self.assertEqual(actual["reviewFeedback"], old["reviewFeedback"])
+        self.assertEqual(actual["explanation"], old["explanation"])
+        self.assertEqual(layout.state_fingerprint(old),
+                         layout.state_fingerprint(actual))
+        self.assertEqual(layout.ordinary_editorial_paths(old, actual),
+                         ("/question",))
+        self.assertEqual(published["stateLayout"]["origin"],
+                         revised["stateLayout"]["origin"])
+        self.assertEqual(published["stateLayout"]["current"],
+                         revised["stateLayout"]["current"])
+        self.assertEqual(published["stateLayout"]["editorial"],
+                         revised["stateLayout"]["editorial"][:-1])
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *origins[location], old, actual,
+            previous_document=published, current_document=revised))
+        self.assertEqual(layout._blocks(layout.align_for_previous_validation(
+            published, revised)), layout._blocks(published))
+        previous_marks = {
+            entry["path"]: entry for entry in published["textSemantics"]["fields"]
+            if entry["block"] == identity}
+        latest_marks = {
+            entry["path"]: entry for entry in revised["textSemantics"]["fields"]
+            if entry["block"] == identity}
+        self.assertEqual(set(latest_marks), set(previous_marks))
+        self.assertEqual(latest_marks["/question"]["spans"], [])
+        self.assertEqual(latest_marks["/question"]["sourceSha256"],
+                         hashlib.sha256(revised_question.encode("utf-8")).hexdigest())
+        for path in set(previous_marks) - {"/question"}:
+            self.assertEqual(previous_marks[path], latest_marks[path])
+
+        for name in ("new answer", "altered source", "missing review", "wrong mark"):
+            forged = deepcopy(revised)
+            owner = layout._blocks(forged)[identity]
+            if name == "new answer":
+                owner["answers"] = ["0:}:fin"]
+            elif name == "altered source":
+                owner["code"] += "\n// Alteración no autorizada"
+            elif name == "missing review":
+                forged["stateLayout"]["editorial"].pop()
+            else:
+                next(item for item in forged["textSemantics"]["fields"]
+                     if item["block"] == identity and item["path"] == "/question")[
+                         "sourceSha256"] = "0" * 64
+            with self.subTest(forgery=name), self.assertRaises(ValueError):
+                layout.validate_transition(published, forged)
+        self.assertEqual(asset.read_bytes(), original_bytes)
+
     def test_rejects_guide_only_addition_and_mismatched_choice_positions(self):
         for kind in ("fill_code", "multiple_choice"):
             before = published(kind)
