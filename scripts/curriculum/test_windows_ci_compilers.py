@@ -121,13 +121,34 @@ class WindowsCompilerPolicy(unittest.TestCase):
         self.assertIn("Documento histórico de Android/WASI", legacy)
         self.assertIn("toolchains/versions.properties", legacy)
         self.assertIn("toolchains/windows.versions.json", legacy)
-        # Historical build recipes and the Android data tools remain untouched.
+        # The historical toolchain record is still referenced by Android history.
         self.assertTrue((ROOT / "toolchains/versions.properties").is_file())
-        self.assertTrue((ROOT / "tools/backup-android-data.ps1").is_file())
 
     def test_no_obsolete_android_build_workflows(self):
         for name in ("android-code-format-compat.yml", "build-clang23-android.yml"):
             self.assertFalse((WORKFLOWS / name).exists(), name)
+
+    def test_adb_maintenance_duplicates_retired_without_breaking_windows(self):
+        # Byte-identical copies reside in SimDynamics/LearnGraphicsProgramming.
+        retired = ("backup-android-data.ps1", "restore-kokoro-resources.ps1")
+        for name in retired:
+            with self.subTest(retired=name):
+                self.assertFalse((ROOT / "tools" / name).exists())
+        # Native builds, CI, and Windows scripts must not call these old entrypoints.
+        sources = [ROOT / "CMakeLists.txt", ROOT / "CMakePresets.json",
+                   ROOT / "app/build.gradle.kts"]
+        for folder in (WORKFLOWS, ROOT / "scripts/windows", ROOT / "cmake"):
+            sources.extend(p for p in folder.rglob("*") if p.is_file()
+                           and p.suffix in (".yml", ".yaml", ".py", ".ps1", ".cmake", ".txt"))
+        for path in sources:
+            source = path.read_text(encoding="utf-8")
+            for old in retired:
+                with self.subTest(source=str(path.relative_to(ROOT)), retired=old):
+                    self.assertNotIn(old, source)
+        # This historical Gradle task remains a real consumer of its recipe.
+        gradle = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
+        self.assertIn("scripts/runtime/prepare_clang21_installation.py", gradle)
+        self.assertTrue((ROOT / "scripts/runtime/prepare_clang21_installation.py").is_file())
 
     @staticmethod
     def _uses_non_windows_runner(source):

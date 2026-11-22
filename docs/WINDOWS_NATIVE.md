@@ -40,6 +40,14 @@ Windows es un proyecto independiente de Android. Su selección de herramientas
 no está limitada por la API mínima, el bytecode ni las dependencias de Android.
 El proyecto Android independiente continúa en `LearnGraphicsProgramming`.
 
+Los scripts ADB de respaldo y restauración de la aplicación Android se
+mantienen en el [repositorio Android independiente](https://github.com/SimDynamics/LearnGraphicsProgramming).
+Sus copias idénticas se retiraron de este repositorio Windows; no son
+herramientas de compilación, importación o ejecución nativa Windows. Los
+archivos históricos Gradle todavía conservados tienen dependencias internas
+propias, que no deben retirarse sin examinar sus consumidores.
+
+
 Herramientas seleccionadas: paquete MSVC v145 `14.51.36231`
 (compilador instalado `19.51.36260.0`), host/destino x64, Windows SDK y UCRT
 `10.0.28000.0`, CMake `4.4.5` y Ninja `1.13.2`. MSVC, ATL y Ninja se reutilizan de
