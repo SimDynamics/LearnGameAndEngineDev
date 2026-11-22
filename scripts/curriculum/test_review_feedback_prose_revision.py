@@ -510,8 +510,14 @@ class ReviewFeedbackProseRevisionTest(unittest.TestCase):
         self.assertTrue(contract.preserves_previous_exercise(
             relative, *origins[location], old, actual,
             previous_document=published, current_document=revised))
-        self.assertEqual(layout._blocks(layout.align_for_previous_validation(
-            published, revised)), layout._blocks(published))
+        # Ordinary editorial prose remains in the current block when aligning
+        # historical grading. Only the evaluated response contract rewinds.
+        aligned = layout._blocks(layout.align_for_previous_validation(
+            published, revised))[identity]
+        self.assertEqual(aligned["question"], revised_question)
+        self.assertEqual(layout.state_fingerprint(aligned),
+                         layout.state_fingerprint(old))
+        self.assertEqual(aligned["answers"], old["answers"])
         previous_marks = {
             entry["path"]: entry for entry in published["textSemantics"]["fields"]
             if entry["block"] == identity}
@@ -661,8 +667,16 @@ class ReviewFeedbackProseRevisionTest(unittest.TestCase):
         self.assertTrue(contract.preserves_previous_exercise(
             relative, *positions[location], old, current,
             previous_document=published, current_document=updated))
-        self.assertEqual(layout._blocks(layout.align_for_previous_validation(
-            published, updated)), layout._blocks(published))
+        # An editorial return preserves the new visible words, while the
+        # grading identity and historical output requirements remain stable.
+        aligned = layout._blocks(layout.align_for_previous_validation(
+            published, updated))[identity]
+        self.assertEqual(aligned["question"], question)
+        self.assertEqual(aligned["explanation"], explanation)
+        self.assertEqual(layout.state_fingerprint(aligned),
+                         layout.state_fingerprint(old))
+        self.assertEqual(aligned["options"], old["options"])
+        self.assertEqual(aligned["correctIndex"], old["correctIndex"])
         before_marks = {
             entry["path"]: entry for entry in published["textSemantics"]["fields"]
             if entry["block"] == identity}
