@@ -1,8 +1,9 @@
 """Preview an exact C++ rename after an already published source reformat.
 
-READ ONLY. A preview is not a recognized stateLayout archive, a curriculum
-publication, a completed lesson or a historical migration. The Python and
-native loaders must independently authorize a future revision record.
+READ ONLY. A preview is not a curriculum publication, a completed lesson or
+a historical migration. Authenticated identifierRenameRevisions are now
+accepted by the Python validator and the Windows loader. A proposed lesson
+must still pass their full historical and active-objective contracts.
 """
 from __future__ import annotations
 
@@ -110,7 +111,8 @@ def verify_exact_published_rename_packet(
     publication, then compare every historical field. Do not trust a caller's
     owner name, storage position, family, editorial chain, source bytes or
     proposed digest merely because those values are well-formed hashes.
-    The proposed revision is not accepted by the runtime yet.
+    The returned packet still has to be assembled into a complete, validated
+    lesson before the native loader can accept the new authored wording.
     """
     if type(record) is not dict:
         raise RenamePreviewError("A rename archival packet must be a complete object")
@@ -136,14 +138,15 @@ def verify_exact_published_rename_packet(
 def validate_read_only_rename_draft(previous: dict, draft: dict) -> dict:
     """Preflight a complete lesson publication containing proposed C++ renames.
 
-    This is deliberately NOT stable_state_layout.validate(draft): production
-    loaders do not recognize identifierRenameRevisions yet. Instead restore
-    the whole previous publication, including all editorial proof prefixes,
-    published source formats, family, answers, storage and text semantics.
-    Only exact authenticated identifier substitutions may differ.
+    Restore the whole previous publication, including every editorial proof
+    prefix, source format, family, answer, storage address and text semantic
+    marker. Then run the real stable-state validator and publication-transition
+    guard on the candidate. These guards now recognize identifierRenameRevisions
+    in the native Windows loader as well.
 
-    The returned report is evidence for authoring, not permission for Windows
-    to open the candidate or rewrite learner drafts and receipts.
+    The returned report establishes that the candidate is eligible for
+    publication, not that Work has published it or that a student's live
+    profile, audio or saved draft has been touched.
     """
     state.validate(previous)
     if type(draft) is not dict or type(draft.get("stateLayout")) is not dict:
@@ -217,12 +220,20 @@ def validate_read_only_rename_draft(previous: dict, draft: dict) -> dict:
     if not rename.same_json_value_and_types(restored, previous):
         raise RenamePreviewError(
             "A rename draft changed other lesson metadata, positions, answers or resources")
-    # This exact published document has already passed validate(previous).
-    # Its restoration proves it retains the same state addresses and progress
-    # contract, without importing either draft into a learner profile.
+    # Restoration checks the complete bytes. The production Python state
+    # guards must independently accept the new signed editorial edges and
+    # reject a draft that this preliminary proof alone cannot authenticate.
+    # Windows has separate native-loader and durable-StateStore regressions
+    # for the identical identifierRenameRevisions schema.
+    try:
+        state.validate(draft)
+        state.validate_transition(previous, draft)
+    except (state.LayoutError, ValueError, KeyError, TypeError) as exc:
+        raise RenamePreviewError(
+            "The rename draft is not a valid authenticated state transition") from exc
     return {"lessonId": previous["id"], "locale": source_meta["locale"],
             "owners": confirmed, "publishedStateUnchanged": True,
-            "runtimeLoadSupported": False}
+            "runtimeLoadSupported": True}
 
 
 def build_read_only_rename_draft(

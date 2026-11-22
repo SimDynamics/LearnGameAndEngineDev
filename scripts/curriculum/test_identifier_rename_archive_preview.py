@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import unittest
+from unittest import mock
 
 import code_format_compat as formats
 import identifier_rename_archive_preview as preview
@@ -198,7 +199,7 @@ class FormattedOwnerRenamePreview(unittest.TestCase):
         draft = self.draft_for_all_six_owners()
         report = preview.validate_read_only_rename_draft(self.lesson, draft)
         self.assertTrue(report["publishedStateUnchanged"])
-        self.assertFalse(report["runtimeLoadSupported"])
+        self.assertTrue(report["runtimeLoadSupported"])
         self.assertEqual(report["lessonId"], self.lesson["id"])
         self.assertEqual(len(report["owners"]), 6)
         self.assertEqual(
@@ -207,9 +208,10 @@ class FormattedOwnerRenamePreview(unittest.TestCase):
         self.assertEqual(len(draft["stateLayout"]["identifierRenameRevisions"]), 6)
         self.assertEqual(len(draft["stateLayout"]["editorial"]),
                          len(self.lesson["stateLayout"]["editorial"]) + 6)
-        # The Python layout validator now accepts the authenticated draft
-        # and restores the six original response fingerprints and addresses.
-        # The Windows native reader is still not enabled for these archives.
+        # The native Windows reader now implements this exact authenticated
+        # schema; its separate integration exercises retained StateStore
+        # receipts and drafts. This Python test proves the authoring contract
+        # without writing a published lesson or learner profile.
         state.validate(draft)
         state.validate_transition(self.lesson, draft)
         aligned = state.align_for_previous_validation(self.lesson, draft)
@@ -218,6 +220,20 @@ class FormattedOwnerRenamePreview(unittest.TestCase):
             self.lesson, draft["stateLayout"]["identifierRenameRevisions"][0],
             state._blocks(draft)[OWNERS[0][0]]))
         self.assertEqual(self.lesson, original_document)
+        self.assertEqual(PATH.read_bytes(), self.original_bytes)
+
+    def test_runtime_ready_report_requires_real_publication_guards(self):
+        draft = self.draft_for_all_six_owners()
+        with mock.patch.object(
+                preview.state, "validate_transition",
+                side_effect=state.LayoutError("simulated publication rejection")) as guard:
+            with self.assertRaisesRegex(
+                    preview.RenamePreviewError,
+                    "not a valid authenticated state transition"):
+                preview.validate_read_only_rename_draft(self.lesson, draft)
+        guard.assert_called_once_with(self.lesson, draft)
+        self.assertTrue(preview.validate_read_only_rename_draft(
+            self.lesson, draft)["runtimeLoadSupported"])
         self.assertEqual(PATH.read_bytes(), self.original_bytes)
 
     def test_draft_rejects_unrelated_edits_or_editorial_omissions(self):
