@@ -19,6 +19,10 @@ on:
       - '!scripts/curriculum/test_windows_ci_compilers.py'
       - '!scripts/curriculum/test_local_int_live_compilation.py'
       - '!scripts/curriculum/test_local_string_live_compilation.py'
+      # Editorial-only authoring regressions run in codex-general-choice-editorial.yml.
+      # They do not change the native StateStore or its Windows import runner.
+      - '!scripts/curriculum/test_general_choice_revision_live.py'
+      - '!scripts/curriculum/test_review_feedback_prose_revision.py'
   workflow_dispatch:
 
 permissions:
