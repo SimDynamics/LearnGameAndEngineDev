@@ -41,6 +41,19 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 self.assertIn("runs-on: windows-2022", source)
                 self.assertIn("python -B", source)
 
+    def test_editorial_windows_suite_follows_the_live_u1_u2_owners(self):
+        workflow = (WORKFLOWS / "codex-general-choice-editorial.yml").read_text(
+            encoding="utf-8")
+        root = "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+        for lesson in (
+                "programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json",
+                "objetos_y_estado/lesson_conversiones_y_deduccion.json",
+                "objetos_y_estado/lesson_cadenas_y_texto.json"):
+            with self.subTest(lesson=lesson):
+                self.assertIn("      - " + root + lesson, workflow)
+        self.assertIn("runs-on: windows-2022", workflow)
+        self.assertIn("-p test_review_feedback_prose_revision.py -v", workflow)
+
     def test_order_equivalence_uses_windows_python_without_bash(self):
         source = (WORKFLOWS / "codex-order-equivalence-authoring.yml").read_text(encoding="utf-8")
         self.assertIn("runs-on: windows-2022", source)
