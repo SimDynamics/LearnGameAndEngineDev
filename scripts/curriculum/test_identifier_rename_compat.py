@@ -356,6 +356,28 @@ class DeclaredIdentifierRenames(unittest.TestCase):
                         {"initialCode": {"maxima": "frecuencia_maxima_encontrada"}},
                         {"initialCode": {"maxima": 1}})
 
+    def test_source_location_exposes_function_names_and_cannot_be_renamed_lexically(self):
+        before = deepcopy(ORIGINAL)
+        before["initialCode"] = (
+            "#include <source_location>\n"
+            "#include <iostream>\n"
+            "void maxima() {\n"
+            '    std::cout << std::source_location::current().function_name();\n'
+            "}\n"
+            "int main() { maxima(); }\n"
+        )
+        after = deepcopy(before)
+        after["initialCode"] = before["initialCode"].replace(
+            "maxima()", "frecuencia_maxima_encontrada()")
+        self.assertEqual(before["initialCode"].count("maxima()"), 2)
+        with self.assertRaisesRegex(
+                renaming.IdentifierRenameError,
+                r"observe renamed C\+\+ symbol spelling"):
+            renaming.require_declared_cpp_renames(
+                before, after,
+                {"initialCode": {"maxima": "frecuencia_maxima_encontrada"}},
+                {"initialCode": {"maxima": 2}})
+
     def test_unchanged_preprocessor_stringize_and_paste_are_not_safe(self):
         for directive in ("#define STRINGIFY(x) #x",
                           "#define CONCAT(a,b) a##b"):
