@@ -297,7 +297,7 @@ int main(int argc,char** argv) {
         changed=first_request;changed.stdin_utf8="unexpected";rejected_capture(changed,first_result);
         changed=first_request;++changed.request_id;rejected_capture(changed,first_result);
         changed=first_request;++changed.revision;rejected_capture(changed,first_result);
-        changed=first_request;changed.backend=CppRunRequest::Backend::wasi;rejected_capture(changed,first_result);
+        changed=first_request;changed.backend=static_cast<CppRunRequest::Backend>(-1);rejected_capture(changed,first_result);
         changed=first_request;changed.rejection_probe=RejectionOperation::boxes;rejected_capture(changed,first_result);
         require(!compiler_runtime_request_allowed(first,changed),"An unrelated runtime probe changed the battery context");
         changed=first_request;changed.action=CppRunRequest::Action::execute;rejected_capture(changed,first_result);
