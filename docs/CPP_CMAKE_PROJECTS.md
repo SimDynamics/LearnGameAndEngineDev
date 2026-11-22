@@ -1,5 +1,16 @@
 # Laboratorio CMake de Android
 
+> **Referencia histórica del laboratorio Android.** Los pasos de CMake
+> 4.1.2, Ninja 1.12.1, Clang y WASI descritos aquí pertenecen a la
+> construcción del APK, no al ejecutor actual de LearnGameAndEngineDev
+> para Windows. El producto Windows utiliza MSVC C++23, y sus versiones
+> y rutas están en `toolchains/windows.versions.json`. Consulta
+> `docs/WINDOWS_NATIVE.md` para la construcción y la ejecución actuales.
+> Gradle conserva todavía la tarea `prepareCmakeRuntime`, que requiere
+> `toolchains/cmake/build-android-local.ps1`; no debe eliminarse esa
+> receta mientras el consumidor histórico permanezca en el repositorio.
+
+
 El bloque existente `cpp_compiler` puede optar por CMake mediante un objeto
 `cmake`. Los bloques sin ese objeto conservan el compilador, la selección
 `sourceFiles`, la entrada preparada y los borradores anteriores. No se cambian

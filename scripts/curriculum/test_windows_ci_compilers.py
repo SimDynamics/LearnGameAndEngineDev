@@ -124,6 +124,44 @@ class WindowsCompilerPolicy(unittest.TestCase):
         # The historical toolchain record is still referenced by Android history.
         self.assertTrue((ROOT / "toolchains/versions.properties").is_file())
 
+    def test_android_cmake_recipe_has_live_gradle_consumer_but_no_windows_dependency(self):
+        # Android assets are historical, but Gradle still declares a real task
+        # that consumes the recipe's generated tools. Preserve that owner.
+        gradle = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
+        self.assertIn("val prepareCmakeRuntime by tasks.registering", gradle)
+        self.assertIn('dir(".gradle/cmake-android-arm64")', gradle)
+        self.assertIn("toolchains/cmake/build-android-local.ps1", gradle)
+        root = ROOT / "toolchains/cmake"
+        script = (root / "build-android-local.ps1").read_text(encoding="utf-8")
+        self.assertIn(".gradle/cmake-android-arm64", script)
+        self.assertIn("extract-cmake-source.py", script)
+        for expected in (
+                "provenance.properties", "extract-cmake-source.py",
+                "cmake-android-resources.patch", "cmake-android-libuv.patch",
+                "cmake-android-pthread-source.patch", "cmake-android-affinity.patch",
+                "cmake-android-archive-h.patch", "cmake-android-archive_entry-h.patch",
+                "ninja-android-shell.patch", "llvm-ar/CMakeLists.txt"):
+            with self.subTest(historical_recipe=expected):
+                self.assertTrue((root / expected).is_file())
+        historical = (ROOT / "docs/CPP_CMAKE_PROJECTS.md").read_text(
+            encoding="utf-8")
+        archived_qa = (ROOT / "docs/curriculum/STABLE_LESSON_STATE_VERIFICATION.md").read_text(
+            encoding="utf-8")
+        self.assertIn("Referencia histórica del laboratorio Android", historical)
+        self.assertIn("Evidencia histórica del APK", archived_qa)
+        self.assertIn("toolchains/windows.versions.json", historical)
+        self.assertIn("docs/WINDOWS_NATIVE.md", historical)
+        # The active CMake/MSVC builder must never demand Android's NDK or
+        # packaged ARM64 CMake/Ninja, even if old Gradle recipes are retained.
+        for source in (
+                "CMakeLists.txt", "CMakePresets.json",
+                "cmake/WindowsToolchain.cmake",
+                "scripts/windows/Build-Native.ps1"):
+            with self.subTest(native_source=source):
+                content = (ROOT / source).read_text(encoding="utf-8")
+                self.assertNotIn("toolchains/cmake/build-android-local.ps1", content)
+                self.assertNotIn(".gradle/cmake-android-arm64", content)
+
     def test_no_obsolete_android_build_workflows(self):
         for name in ("android-code-format-compat.yml", "build-clang23-android.yml"):
             self.assertFalse((WORKFLOWS / name).exists(), name)
