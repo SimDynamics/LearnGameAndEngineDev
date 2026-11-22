@@ -3867,6 +3867,108 @@ necesitan sus propias comprobaciones. No deducirlas de este grafo.
 
 
 
+## Respuesta del mismo programa a distintas entradas
+
+`compilerInputChecks` permite añadir comprobaciones privadas de entrada a un
+editor C++ existente. Se declara en la raíz de una lección española con
+`stateLayout` v2 y conserva el bloque original, su código inicial, todos sus
+casos públicos, sus identidades y sus borradores. No depende de nombres de
+variables ni modifica el código del alumno.
+
+Por ejemplo, la propuesta QA de U2L9 conserva los dos casos públicos del
+editor de cajas y los cuatro del editor de paquetes, y añade únicamente:
+
+```json
+"compilerInputChecks": [
+  {
+    "activity": "p1u2l9_reparar_lectura_de_cajas",
+    "probes": [
+      {"standardInput": "Leo 2", "outputs": ["Leo: 5", "Leo: 5\n"]},
+      {"standardInput": "Rita 2", "outputs": ["Rita: 5", "Rita: 5\n"]},
+      {"standardInput": "Leo 4", "outputs": ["Leo: 7", "Leo: 7\n"]}
+    ]
+  },
+  {
+    "activity": "block_0009_0003",
+    "probes": [
+      {"standardInput": "Leo 4 2", "outputs": ["Leo: 22", "Leo: 22\n"]},
+      {"standardInput": "Iris 3 2", "outputs": ["Iris: 17", "Iris: 17\n"]},
+      {"standardInput": "Iris 4 1", "outputs": ["Iris: 21", "Iris: 21\n"]}
+    ]
+  }
+]
+```
+
+El contrato admite de 1 a 32 propietarios distintos y de 1 a 8 ejecuciones
+privadas por propietario. Cada entrada contiene exactamente `standardInput`
+y `outputs`; este último admite de 1 a 4 alternativas. Las cadenas pueden
+estar vacías, deben carecer de NUL y no pueden superar 4096 bytes UTF-8 cada
+una. Las salidas se comparan exactamente, conservando espacios y saltos
+finales; únicamente CRLF se normaliza a LF. Las alternativas duplicadas
+tras esa normalización se rechazan.
+
+El editor debe ser C++ de un solo archivo, con casos de salida y terminación
+normal, sin otro objetivo privado, diagnóstico de compilación ni proyecto
+CMake. `initialStandardInput` debe corresponder al primer caso público.
+Las entradas privadas deben distinguirse de ese primer caso y entre sí
+con la comparación `exact` o `tokens` ya declarada. En `tokens`, sólo se
+separan espacio, tabulador, CR, LF, tabulación vertical y salto de página,
+igual que en el evaluador nativo. Un espacio Unicode no se transforma
+silenciosamente en un separador ASCII. Las salidas privadas deben diferir
+de las alternativas del primer resultado público.
+
+Una entrada privada sí puede coincidir con un caso público opcional: su
+ejecución interna no acredita ese caso ni lo convierte en otra tarea manual.
+La primera ejecución pública correcta sigue siendo suficiente para avanzar
+cuando sus comprobaciones privadas también pasan. Ejecutar antes un caso
+opcional guarda únicamente su resultado parcial, que se puede reabrir sin
+desbloquear el primer caso.
+
+### Ejecución y conservación de U2L9
+
+El trabajador compila una vez el código entregado y conserva los bytes del
+ejecutable antes de iniciarlo. Cada entrada privada se entrega a un proceso
+nuevo del mismo binario, con la misma ruta, argumentos y entorno. Se restauran
+los archivos y los canales públicos al terminar, también ante una cancelación
+o excepción. El cuadro Entrada y la consola mantienen la ejecución elegida
+por el alumno. Las pruebas observan stdout y terminación normal; stderr
+mantiene el alcance ignorado del contrato público.
+
+Cada captura vincula solicitud, revisión, fuente, entrada pública, límites
+de ejecución, identidad de borrador y todas las entradas y salidas privadas.
+Las evidencias incluyen el hash de la fuente y del ejecutable, la entrada
+exacta y el resultado real del proceso. Una evidencia incompleta, cancelada,
+de otro binario o perteneciente a otra solicitud no concede el objetivo.
+
+El nuevo ámbito de recibos `input/v1/` conserva por separado programa, casos,
+finalización y sello de las comprobaciones privadas. El recibo stdout
+anterior permanece intacto aunque el alumno cambie una impresión fija por
+otro programa que lee la entrada. Tampoco se promueve automáticamente: el
+nuevo objetivo comienza sin acreditar. La invalidación de un intento o el
+reinicio de este objetivo afecta a su ámbito nuevo y conserva el anterior.
+Los formatos publicados de enteros y cadenas permanecen compatibles.
+
+La autoría ya publicada es acumulativa: no se permite retirar, reordenar ni
+reescribir una declaración previa. Los cargadores completo y de progreso
+validan el mismo contrato y detectan miembros JSON duplicados antes de que
+Windows.Data.Json pueda sustituirlos.
+
+La prueba `native.input_dependency_state` utiliza los bytes auténticos de
+U2L9 publicados en `51fc2709` y una propuesta aislada que sólo añade esta
+raíz. Compila las referencias y variantes equivalentes, rechaza impresiones
+fijas totales o parciales, conserva stderr inocuo, verifica los artefactos
+públicos y reabre perfiles QA con recibos, borradores, entrada y selección.
+`input_dependency_fixture_source.py` autentica la publicación y exporta
+`before.json`, `after.json` y su manifiesto sin sobrescribir otros datos.
+Esta propuesta QA no publica la declaración en el currículo.
+
+Las pruebas Win32 `native.curricular_input_lab` y
+`native.prepared_input_predictions` ejercitan la edición actual. Sus modos
+históricos usan la publicación auténtica `d90d3156`, conservada por
+`u2l9_history_fixture_source.py`, sin modificar su política de obligatoriedad.
+La entrada de QA local `scripts/windows/Test-LocalVariableState.ps1` incluye
+las comprobaciones del núcleo, autoría y estado de esta capacidad.
+
 ## Dependencia real de variables locales `int`, `char` y `bool`
 
 Work puede declarar `compilerLocalIntChecks` en la raíz de una lección
@@ -4218,4 +4320,5 @@ de ese runner; no cambia el manifiesto ni el toolchain fijados para
 la aplicación. El flujo de GitHub comunica por separado el estado
 `codex/local-variable-hosted-ctest`, sin equiparar esa evidencia con
 una instalación o ejecución en el Windows personal del estudiante.
+
 

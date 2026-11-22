@@ -48,6 +48,68 @@ def owns_word(text, owner, first, last):
     return all(not character.isalnum() and character != "_" for character in extra)
 
 
+def authored_prompt_field(pages, current, semantics):
+    matches = [block for page, row in zip(pages, current)
+               for identity, block in zip(row["blocks"], page["blocks"])
+               if identity == "block_0001_0001"]
+    if len(matches) != 1 or matches[0].get("type") != "paragraph":
+        raise AssertionError("The U2L9 prompt owner is missing or ambiguous")
+    source = matches[0]["text"]
+    fields = [field for field in semantics["fields"]
+              if field["block"] == "block_0001_0001" and field["path"] == "/text"]
+    if len(fields) != 1 or fields[0]["sourceSha256"] != hashlib.sha256(source.encode("utf-8")).hexdigest():
+        raise AssertionError("The prompt semantic field is not bound to its exact source")
+    for span in fields[0]["spans"]:
+        if not 0 <= span["start"] < span["end"] <= units(source) or \
+                slice_units(source, span["start"], span["end"]) != span["text"]:
+            raise AssertionError("The prompt semantic span lost its UTF-16 source owner")
+    return source, fields[0]
+
+
+def prompt_fragment(source, field, first, last):
+    spans = []
+    for span in field["spans"]:
+        if span["end"] <= first or span["start"] >= last:
+            continue
+        if not first <= span["start"] < span["end"] <= last:
+            raise AssertionError("An isolated prompt fixture split an authored semantic span")
+        spans.append(span | {"start": span["start"] - first, "end": span["end"] - first})
+    return {"text": slice_units(source, first, last), "textSemantics": {"spans": spans}}
+
+
+def prompt_fixtures(lesson):
+    meta = lesson["stateLayout"]
+    source, field = authored_prompt_field(lesson["pages"], meta["current"], lesson["textSemantics"])
+    result = {}
+    for name, text, role, reading in (
+            ("current-instruction", 'std::cout << "Cantidad: ";', "cpp", "technical"),
+            ("current-output", "Cantidad:", "output", "natural")):
+        selected = [span for span in field["spans"]
+                    if (span["text"], span["role"], span["reading"]) == (text, role, reading)]
+        if len(selected) != 1:
+            raise AssertionError(f"Missing exact current prompt meaning: {name}")
+        span = selected[0]
+        result[name] = prompt_fragment(source, field, span["start"], span["end"])
+    historical = []
+    for snapshot in meta.get("retirementHistory", []):
+        old_source, old_field = authored_prompt_field(
+            snapshot["pages"], snapshot["current"], snapshot["textSemantics"])
+        if old_field["sourceSha256"] == "e51751958497efb747b725f1126650e4431409777fbd87c70401e1638cfbdf9e":
+            historical.append((old_source, old_field))
+    if not historical:
+        raise AssertionError("The original archived prompt fixture was lost")
+    old_source, old_field = historical[0]
+    first = old_source.index("Por ejemplo, ")
+    last = old_source.index(". ", first) + 1
+    result["historical-prompt"] = prompt_fragment(
+        old_source, old_field, units(old_source[:first]), units(old_source[:last]))
+    if result["historical-prompt"]["text"] != "Por ejemplo, `Cantidad: ` puede avisar de que se recibirá una cantidad.":
+        raise AssertionError("The original archived prompt sentence changed")
+    # Preserve the original unmarked-prose regression in both auto/cpp contexts.
+    result["conjunction"] = {"text": "El texto contiene letras y palabras.", "textSemantics": None}
+    return result
+
+
 class SpanishProseBoundariesTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -73,8 +135,10 @@ class SpanishProseBoundariesTest(unittest.TestCase):
         if U11_ASSET.read_bytes() != cls.u11_bytes:
             raise AssertionError("Narration QA changed the current U11L14 asset")
 
-    def checked_plan(self, source, voice, context="auto", previous_prose_inference=False):
+    def checked_plan(self, source, voice, context="auto", previous_prose_inference=False, text_semantics=None):
         previous = {"previousProseInference": True} if previous_prose_inference else {}
+        if text_semantics is not None:
+            previous["textSemantics"] = text_semantics
         plan = self.worker.ask("plan", text=source, readingContext=context, language="es", voice=voice, **previous)
         self.assertTrue(plan["segments"])
         cursor = 0
@@ -274,14 +338,11 @@ class SpanishProseBoundariesTest(unittest.TestCase):
         asset = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json"
         original = asset.read_bytes()
         lesson = json.loads(original.decode("utf-8-sig"))
-        prompts = [block["text"] for page in lesson["pages"] for block in page["blocks"]
-                   if block.get("type") == "paragraph" and block.get("text", "").startswith("Un prompt es un mensaje")]
-        self.assertEqual(1, len(prompts), "The current prompt narration owner changed")
-        # Retain the complete local sentence, including its explanation after
-        # the sample. Tint/backticks alone never establish an output role.
-        sentence = "Por ejemplo, " + prompts[0].split("Por ejemplo, ", 1)[1].split(". ", 1)[0] + "."
-        self.assertEqual("Por ejemplo, `Cantidad: ` puede avisar de que se recibirá una cantidad.", sentence)
-        sources = {"current-prompt": sentence, "conjunction": "El texto contiene letras y palabras."}
+        # Select by immutable owner and authenticated meaning, then translate
+        # every UTF-16 span with its excerpt. The current C++ instruction and
+        # the console text have separate reading contracts; keep the archived
+        # sentence as an independent fixture instead of imposing it on today.
+        sources = prompt_fixtures(lesson)
         folder = OUT / f"output-colon-conjunction-{time.time_ns()}"
         folder.mkdir(parents=True, exist_ok=False)
         evidence = {"asset": str(asset), "assetSha256": hashlib.sha256(original).hexdigest(), "sources": sources, "voices": {}}
@@ -289,15 +350,22 @@ class SpanishProseBoundariesTest(unittest.TestCase):
         try:
             for voice in VOICES:
                 evidence["voices"][voice] = {}
-                for name, source in sources.items():
-                    plans = {context: self.checked_plan(source, voice, context) for context in ("auto", "cpp")}
+                for name, fixture in sources.items():
+                    source, meaning = fixture["text"], fixture["textSemantics"]
+                    plans = {context: self.checked_plan(source, voice, context, text_semantics=meaning)
+                             for context in ("auto", "cpp")}
                     self.assertEqual(plans["auto"]["segments"], plans["cpp"]["segments"],
-                                     "A colored C++ puzzle context changed ordinary output/prose speech")
+                                     "Puzzle context changed explicitly authored prompt meaning")
+                    speech = " ".join(part["spokenText"] for part in plans["auto"]["segments"])
+                    if name == "current-instruction":
+                        self.assertIn("punto y coma", speech)
+                        self.assertIn("Cantidad", speech)
+                    else:
+                        self.assertNotIn("dos puntos", speech)
                     rows = []
                     for part in plans["auto"]["segments"]:
-                        self.assertNotIn("dos puntos", part["spokenText"])
                         self.assertNotIn("i griega", part["spokenText"])
-                        words = ("Cantidad",) if name == "current-prompt" else ("letras", "y", "palabras")
+                        words = ("letras", "y", "palabras") if name == "conjunction" else ("Cantidad",)
                         for word in words:
                             for match in re.finditer(r"\b" + word + r"\b", part["text"]):
                                 first, last = units(part["text"][:match.start()]), units(part["text"][:match.end()])
@@ -339,8 +407,8 @@ class SpanishProseBoundariesTest(unittest.TestCase):
             self.worker.close()
             type(self).worker = Worker()
             for voice in VOICES:
-                for source in sources.values():
-                    self.checked_plan(source, voice, "cpp")
+                for fixture in sources.values():
+                    self.checked_plan(fixture["text"], voice, "cpp", text_semantics=fixture["textSemantics"])
             for request, result, stamp in retained:
                 repeated = self.worker.ask("prepare", **(request | {"readingContext": "cpp"}))
                 self.assertTrue(repeated["cacheHit"])
@@ -355,3 +423,4 @@ class SpanishProseBoundariesTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

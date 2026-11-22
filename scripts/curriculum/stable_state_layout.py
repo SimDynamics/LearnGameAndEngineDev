@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerLocalIntChecks", "compilerLocalStringChecks", "compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerInputChecks", "compilerLocalIntChecks", "compilerLocalStringChecks", "compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -6571,6 +6571,100 @@ def _validate_order_visual_separators(document: dict) -> None:
                 "Visual separators require an original, evaluated order-code owner")
 
 
+def _input_case_key(value: str, comparison: str):
+    # The native evaluator treats exactly these six ASCII bytes as separators.
+    # str.split() would also collapse Unicode whitespace, changing its contract.
+    if comparison == "tokens":
+        return tuple(part for part in re.split(r"[ \t\r\n\v\f]+", value) if part)
+    return value
+
+
+def _validate_compiler_input_checks(document: dict) -> None:
+    """Require private input sensitivity while retaining all public cases."""
+    if "compilerInputChecks" not in document:
+        return
+    layout = document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version") == 2 and
+            layout.get("locale") == "es",
+            "Input checks require an existing Spanish v2 lesson")
+    checks = document["compilerInputChecks"]
+    require(type(checks) is list and 1 <= len(checks) <= 32,
+            "Input checks require 1..32 distinct owners")
+    owners, seen = _blocks(document), set()
+    forbidden = {
+        "compilerLocalIntChecks", "compilerLocalStringChecks", "compilerWorkflowChecks",
+        "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerOpenBatteryChecks",
+        "compilerReductionChecks", "compilerCmakeGraphChecks",
+        "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks",
+        "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks",
+        "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks",
+        "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks",
+        "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks",
+        "compilerInterfaceCollectionChecks", "compilerPolymorphicCloneChecks", "compilerDualInterfaceChecks",
+    }
+    for check in checks:
+        require(type(check) is dict and set(check) == {"activity", "probes"},
+                "An input check requires exactly activity and probes")
+        identity = _identity(check["activity"])
+        require(identity not in seen, "Duplicate input-check owner")
+        seen.add(identity)
+        owner = owners.get(identity)
+        require(type(owner) is dict and owner.get("type") == "cpp_compiler" and
+                owner.get("language", "cpp") == "cpp" and
+                type(owner.get("initialCode")) is str and bool(owner["initialCode"]) and
+                type(owner.get("outputCheck")) is dict and
+                type(owner["outputCheck"].get("cases")) is list and
+                bool(owner["outputCheck"]["cases"]) and
+                not ({"compileCheck", "cmake", "projectFiles", "sourceFiles"} & set(owner)),
+                "An input check requires an existing single-file C++ output editor")
+        output_check = owner["outputCheck"]
+        comparison = output_check.get("inputComparison", "exact")
+        require(type(comparison) is str and comparison in {"exact", "tokens"},
+                "An input check requires exact or token input comparison")
+        for case in output_check["cases"]:
+            require(type(case) is dict and type(case.get("standardInput")) is str and
+                    type(case.get("outputs")) is list and bool(case["outputs"]) and
+                    all(type(value) is str for value in case["outputs"]) and
+                    type(case.get("exitCode", 0)) is int and case.get("exitCode", 0) == 0 and
+                    not ({"target", "standardError", "standardErrorExact"} & set(case)),
+                    "Input checks preserve normal-exit public output cases")
+        first = output_check["cases"][0]
+        require(type(owner.get("initialStandardInput", "")) is str and
+                _input_case_key(first["standardInput"], comparison) ==
+                _input_case_key(owner.get("initialStandardInput", ""), comparison),
+                "The original prepared input must match its first public case")
+        for key in forbidden:
+            related = document.get(key, [])
+            if type(related) is list:
+                require(not any(type(item) is dict and item.get("activity") == identity
+                                for item in related),
+                        "An input-check owner cannot share another runtime objective")
+        probes = check["probes"]
+        require(type(probes) is list and 1 <= len(probes) <= 8,
+                "An input check requires 1..8 private executions")
+        known = {_input_case_key(first["standardInput"], comparison)}
+        visible = {value.replace("\r\n", "\n") for value in first["outputs"]}
+        for probe in probes:
+            require(type(probe) is dict and set(probe) == {"standardInput", "outputs"},
+                    "An input probe requires exactly standardInput and outputs")
+            value, outputs = probe["standardInput"], probe["outputs"]
+            require(type(value) is str and "\x00" not in value and
+                    len(value.encode("utf-8")) <= 4096,
+                    "Private standardInput must be a bounded string without NUL")
+            key = _input_case_key(value, comparison)
+            require(key not in known,
+                    "Private input must differ from the first case and other private inputs")
+            known.add(key)
+            require(type(outputs) is list and 1 <= len(outputs) <= 4 and
+                    all(type(text) is str and "\x00" not in text and
+                        len(text.encode("utf-8")) <= 4096 for text in outputs),
+                    "Private input needs 1..4 bounded exact output alternatives")
+            canonical = [text.replace("\r\n", "\n") for text in outputs]
+            require(len(set(canonical)) == len(canonical) and
+                    not (set(canonical) & visible),
+                    "Private output must be distinct and distinguish the first public result")
+
+
 def _validate_compiler_local_int_checks(document: dict) -> None:
     """Require real, independently checked variable dependence, not stdout alone."""
     if "compilerLocalIntChecks" not in document:
@@ -6788,6 +6882,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_named_rule_checks(document)
     _validate_compiler_local_int_checks(document)
     _validate_compiler_local_string_checks(document)
+    _validate_compiler_input_checks(document)
     _validate_compiler_indexed_unique_transfer_checks(document)
     _validate_compiler_defaulted_move_policy_checks(document)
     _validate_compiler_independent_copy_assignment_checks(document)
@@ -7561,6 +7656,11 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
              current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
              baseline["compilerLocalIntChecks"]),
             "Published local-int checks cannot be removed, reordered or rewritten")
+    require(not baseline.get("compilerInputChecks") or
+            (type(current.get("compilerInputChecks")) is list and
+             current["compilerInputChecks"][:len(baseline["compilerInputChecks"])] ==
+             baseline["compilerInputChecks"]),
+            "Published input checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerLocalStringChecks") or
             (type(current.get("compilerLocalStringChecks")) is list and
              current["compilerLocalStringChecks"][:len(baseline["compilerLocalStringChecks"])] ==
@@ -8157,6 +8257,11 @@ def validate_transition(previous: dict, current: dict) -> None:
              current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
              baseline["compilerLocalIntChecks"]),
             "Published local-int checks cannot be removed, reordered or rewritten")
+    require(not baseline.get("compilerInputChecks") or
+            (type(current.get("compilerInputChecks")) is list and
+             current["compilerInputChecks"][:len(baseline["compilerInputChecks"])] ==
+             baseline["compilerInputChecks"]),
+            "Published input checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerLocalStringChecks") or
             (type(current.get("compilerLocalStringChecks")) is list and
              current["compilerLocalStringChecks"][:len(baseline["compilerLocalStringChecks"])] ==

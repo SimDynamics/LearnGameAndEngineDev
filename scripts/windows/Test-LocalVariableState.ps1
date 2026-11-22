@@ -8,7 +8,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# Native Windows integration QA of the two local-variable source probes:
+# Native Windows integration QA of local-variable and input dependencies:
 # real lesson loaders, completion receipts, isolated StateStore and MSVC runs.
 # Neither this script nor its tests touch the learner's stored progress.
 $root = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -45,7 +45,7 @@ try {
         throw 'Native local-variable QA requires the current Codex branch.'
     }
 
-    # Compile only the two original Win32 integration tests and their shared
+    # Compile the focused Win32 integration tests and their shared
     # production dependencies; never build or launch the full application.
     $buildArgs = @{
         Preset = $Preset
@@ -56,8 +56,9 @@ try {
     }
     & (Join-Path $PSScriptRoot 'Build-Native.ps1') @buildArgs
 
-    $expected = @('native.local_int_state', 'native.local_string_state')
-    $regex = '^native[.]local_(int|string)_state$'
+    $expected = @('native.local_int_state', 'native.local_string_state',
+        'native.input_probe', 'native.input_dependency_state', 'native.input_dependency_authoring')
+    $regex = '^native[.](local_(int|string)_state|input_(probe|dependency_state|dependency_authoring))$'
     Push-Location -LiteralPath $root
     try {
         $json = & $ctest --preset $Preset --show-only=json-v1 -R $regex
@@ -72,7 +73,7 @@ try {
     $inventory = ($json -join [Environment]::NewLine) | ConvertFrom-Json
     $found = @($inventory.tests | ForEach-Object { [string] $_.name })
     if ($found.Count -ne $expected.Count) {
-        throw "Expected two state tests; found: $($found -join ', ')"
+        throw "Expected $($expected.Count) focused tests; found: $($found -join ', ')"
     }
     foreach ($name in $expected) {
         if ($found -cnotcontains $name) {
@@ -116,7 +117,7 @@ try {
     if ($exitCode -ne 0) {
         throw "Local-variable Win32 integration failed ($exitCode). Logs: $stdoutPath and $stderrPath"
     }
-    Write-Host "PASS native local-variable integration: both Win32 source/StateStore tests."
+    Write-Host "PASS native local-variable and input integration: Win32 source/StateStore, core and authoring tests."
 }
 finally {
     foreach ($name in $environmentNames) {
@@ -124,3 +125,4 @@ finally {
             $name, $originalEnvironment[$name], 'Process')
     }
 }
+

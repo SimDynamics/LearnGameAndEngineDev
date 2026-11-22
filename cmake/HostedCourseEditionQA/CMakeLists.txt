@@ -271,6 +271,22 @@ target_link_libraries(lgaed_local_string_state_tests PRIVATE lgaed_platform_wind
 add_test(NAME native.current_u2_local_string_state COMMAND lgaed_local_string_state_tests)
 set_tests_properties(native.current_u2_local_string_state PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
 
+include("${_lgaed_root}/cmake/InputDependencyTests.cmake")
+lgaed_add_input_dependency_state_tests("${_lgaed_root}")
+
+add_executable(lgaed_curricular_input_lab_tests
+    "${_lgaed_root}/native/presentation/windows/curricular_input_lab_tests.cpp")
+target_link_libraries(lgaed_curricular_input_lab_tests PRIVATE lgaed_curricular_windows)
+add_test(NAME native.curricular_input_lab COMMAND lgaed_curricular_input_lab_tests)
+set_tests_properties(native.curricular_input_lab PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+add_executable(lgaed_exact_prediction_view_tests
+    "${_lgaed_root}/native/presentation/windows/exact_prediction_view_tests.cpp")
+target_link_libraries(lgaed_exact_prediction_view_tests PRIVATE lgaed_curricular_windows)
+add_test(NAME native.prepared_input_predictions
+    COMMAND lgaed_exact_prediction_view_tests --prepared-input)
+set_tests_properties(native.prepared_input_predictions PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+lgaed_add_u2l9_input_view_history_tests("${_lgaed_root}")
+
 # Test the nine current inline-answer Win32 controls through the original
 # production LessonView translation unit (no copied mock implementation).
 # The fixture's prior completions are modelled, NOT student executions or

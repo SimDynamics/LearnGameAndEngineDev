@@ -4610,6 +4610,119 @@ std::optional<std::string> narration_language_tag(std::string_view authored) {
     return narration_tag(winrt::to_hstring(authored));
 }
 
+// A root-authored input requirement preserves the student's source and every
+// public case. One visible attempt runs the same executable against private
+// input variations; those observations are never public case receipts.
+void read_compiler_input_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerInputChecks"))return;
+    const auto entries=array(root,"compilerInputChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Input checks require existing Spanish v2 compiler owners.");
+    const OriginalJson original(lesson.raw_json);
+    const auto raw_entries=original.elements(
+        original.member(original.root(),"compilerInputChecks"));
+    require(raw_entries.size()==entries.Size(),
+        "Original input-check owner count differs from the parsed document.");
+    std::set<std::string> seen;
+    std::size_t owner_index=0;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        const auto raw_item=raw_entries.at(owner_index++);
+        (void)original.member(raw_item,"activity");
+        (void)original.member(raw_item,"probes");
+        allowed_keys(item,{"activity","probes"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&seen.insert(identity).second,
+            "Duplicate or invalid input-check owner.");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate input-check block identity.");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&!owner->output_check->cases.empty()&&
+                !owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->initial_code.empty()&&!owner->local_int_check&&
+                !owner->local_string_check&&!owner->named_rule_source_check&&
+                !owner->indexed_unique_transfer_probe&&!owner->defaulted_move_policy_probe&&
+                !owner->independent_copy_assignment_probe&&!owner->move_assignment_invariant_probe&&
+                !owner->array_owner_read_probe&&!owner->array_copy_move_probe&&
+                !owner->array_return_take_probe&&!owner->polymorphic_destruction_probe&&
+                !owner->virtual_lifetime_probe&&!owner->derived_preparation_probe&&
+                !owner->abstract_interface_probe&&!owner->interface_collection_probe&&
+                !owner->polymorphic_clone_probe&&!owner->dual_interface_probe&&
+                !owner->open_battery_probe&&!owner->reduction_probe&&
+                !owner->boolean_battery_probe&&!owner->integer_battery_probe&&
+                !owner->adjustment_project_probe&&!owner->cmake_graph_check,
+            "An input check requires an unchanged standalone C++ output editor.");
+        const auto owner_json=JsonObject::Parse(key(owner->raw_json));
+        require(!owner_json.HasKey(L"language")||text(owner_json,"language")=="cpp",
+            "Input checks require a C++ editor.");
+        const auto& output=*owner->output_check;
+        require(output.input_comparison==TextComparison::exact||
+                output.input_comparison==TextComparison::tokens,
+            "Input checks require exact or token input comparison.");
+        for(const auto& sample:output.cases)
+            require(sample.exit_code==0&&!sample.executable&&
+                    sample.standard_error==StandardErrorExpectation::ignored&&
+                    !sample.standard_error_exact,
+                "Input checks preserve normal-exit public output cases.");
+        const auto tokens=output.input_comparison==TextComparison::tokens;
+        const auto& first=output.cases.front();
+        require(cpp_input_case_key(first.standard_input,tokens)==
+                cpp_input_case_key(owner->standard_input.value_or(""),tokens),
+            "Prepared input must match the first public case.");
+        for(const auto* conflicting:{
+                "compilerLocalIntChecks","compilerLocalStringChecks","compilerWorkflowChecks",
+                "compilerRuntimeChecks","compilerNamedRuleChecks","compilerOpenBatteryChecks",
+                "compilerReductionChecks","compilerCmakeGraphChecks",
+                "compilerIndexedUniqueTransferChecks","compilerDefaultedMovePolicyChecks",
+                "compilerIndependentCopyAssignmentChecks","compilerMoveAssignmentInvariantChecks",
+                "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks","compilerArrayReturnTakeChecks",
+                "compilerPolymorphicDestructionChecks","compilerVirtualLifetimeDispatchChecks",
+                "compilerDerivedPreparationChecks","compilerAbstractInterfaceChecks",
+                "compilerInterfaceCollectionChecks","compilerPolymorphicCloneChecks","compilerDualInterfaceChecks"}) {
+            if(!root.HasKey(key(conflicting)))continue;
+            for(const auto& other:array(root,conflicting))
+                require(text(other.GetObject(),"activity")!=identity,
+                    "An input-check owner cannot share another compiler runtime objective.");
+        }
+        const auto probes=array(item,"probes");
+        require(probes.Size()>0&&probes.Size()<=8,
+            "An input check requires 1..8 private executions.");
+        const auto raw_probes=original.elements(original.member(raw_item,"probes"));
+        require(raw_probes.size()==probes.Size(),
+            "Original private-input count differs from the parsed declaration.");
+        std::set<std::string> inputs{cpp_input_case_key(first.standard_input,tokens)};
+        CppInputCheck spec;
+        std::size_t probe_index=0;
+        for(const auto& variant:probes) {
+            const auto probe=variant.GetObject();
+            const auto raw_probe=raw_probes.at(probe_index++);
+            (void)original.member(raw_probe,"standardInput");
+            (void)original.member(raw_probe,"outputs");
+            allowed_keys(probe,{"standardInput","outputs"},true);
+            CppInputProbe next;
+            next.standard_input=text(probe,"standardInput");
+            next.outputs=strings(array(probe,"outputs"),true);
+            require(inputs.insert(cpp_input_case_key(next.standard_input,tokens)).second,
+                "Private input must differ from the first case and other private inputs.");
+            for(const auto& expected:next.outputs)
+                require(!std::ranges::any_of(first.outputs,[&](const auto& visible) {
+                    return cpp_input_normalize_newlines(expected)==
+                           cpp_input_normalize_newlines(visible);
+                }),"A private input result must distinguish the first public output.");
+            spec.probes.push_back(std::move(next));
+        }
+        require(cpp_input_check_valid(spec),
+            "Invalid, repeated or unbounded private input execution.");
+        owner->input_check=std::move(spec);
+    }
+}
+
 // An opt-in semantic requirement of an existing output-check editor. Each
 // independent probe changes the typed integral local after initialization, then
 // compiles the whole program. The original lesson block, source, output case
@@ -7423,6 +7536,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_workflow_checks(root,lesson);
         read_compiler_local_int_checks(root,lesson);
         read_compiler_local_string_checks(root,lesson);
+        read_compiler_input_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_indexed_unique_transfer_checks(root,lesson);
@@ -7565,6 +7679,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_workflow_checks(root,lesson);
         read_compiler_local_int_checks(root,lesson);
         read_compiler_local_string_checks(root,lesson);
+        read_compiler_input_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_indexed_unique_transfer_checks(root,lesson);

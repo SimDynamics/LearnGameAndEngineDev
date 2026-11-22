@@ -396,11 +396,56 @@ using winrt::Windows::Data::Json::JsonValue;
 std::filesystem::path project_path(std::string_view path){return std::filesystem::path(winrt::to_hstring(path).c_str());}
 std::string fingerprint(const CppRunRequest& request,bool configuration=false){return state::sha256(curriculum::cpp_project_frame(request.project_files,request.source_files,request.cmake,configuration)+utf8(build::educational_vc_root)+utf8(build::educational_sdk_version)+utf8(build::educational_cmake)+utf8(build::educational_ninja)
     +"/windows-cpp-profile-v1/"+std::to_string(build::cpp_standard)+'/'+utf8(build::cpp_standard_option)+"/Zc:__cplusplus/cmake-rules-v1");}
+// A new capture domain binds the same compiled source and private stdin goals
+// to this request, revision and execution settings. Public inputs stay editable.
+std::string input_check_fingerprint(const CppRunRequest& request) {
+    if(!request.input_check||!curriculum::cpp_input_check_valid(*request.input_check)||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||
+       !request.projects_directory.is_absolute()||request.source_utf8.empty()||
+       request.source_utf8.size()>4*1024*1024||request.source_utf8.find('\0')!=std::string::npos||
+       request.stdin_utf8.size()>4*1024*1024||request.compile_timeout.count()<=0||
+       request.execution_timeout.count()<=0||request.output_limit_bytes==0||
+       request.output_limit_bytes>16*1024*1024||
+       request.diagnostic||request.cmake||!request.project_files.empty()||
+       !request.source_files.empty()||request.local_int_check||request.local_string_check||
+       request.named_rule_probe||request.open_battery_probe||request.boolean_battery_probe||
+       request.reduction_probe||request.integer_battery_probe||request.adjustment_project_probe||
+       request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+       request.independent_copy_assignment_probe||request.move_assignment_invariant_probe||
+       request.array_owner_read_probe||request.array_copy_move_probe||request.array_return_take_probe||
+       request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
+       request.derived_preparation_probe||request.abstract_interface_probe||
+       request.interface_collection_probe||request.polymorphic_clone_probe||request.dual_interface_probe||
+       request.rejection_probe||request.observation_probe||request.assertion_mode||
+       request.cmake_graph_check||request.capture_cmake_graph||
+       !request.integer_battery_prerequisite.empty()||
+       !request.cmake_initial_observation_prerequisite.empty())return {};
+    const auto field=[](std::string_view part) {
+        return std::to_string(part.size())+":"+std::string(part);
+    };
+    auto frame=std::string("compiler-input-capture-v1/")+
+        field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+field(request.project_key)+
+        field(utf8(request.projects_directory.wstring()))+
+        field(std::to_string(static_cast<int>(request.backend)))+
+        field(std::to_string(static_cast<int>(request.action)))+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes))+
+        field(std::to_string(request.input_check->probes.size()));
+    for(const auto& probe:request.input_check->probes) {
+        frame+=field(probe.standard_input)+field(std::to_string(probe.outputs.size()));
+        for(const auto& output:probe.outputs)frame+=field(output);
+    }
+    return state::sha256(frame);
+}
+
 // Private integer variations bind the exact student source, input and lesson
 // draft identity to all independently authored expected results. Never reuse
 // an ordinary output receipt as proof of these hidden observations.
 std::string local_int_fingerprint(const CppRunRequest& request) {
-    if(!request.local_int_check||request.local_string_check||
+    if(!request.local_int_check||request.local_string_check||request.input_check||
        !curriculum::cpp_local_int_check_valid(*request.local_int_check)||
        request.backend!=CppRunRequest::Backend::native_msvc||
        request.action!=CppRunRequest::Action::compile_run||
@@ -445,7 +490,7 @@ std::string local_int_fingerprint(const CppRunRequest& request) {
 }
 
 std::string local_string_fingerprint(const CppRunRequest& request) {
-    if(!request.local_string_check||request.local_int_check||
+    if(!request.local_string_check||request.local_int_check||request.input_check||
        !curriculum::cpp_local_string_check_valid(*request.local_string_check)||
        request.backend!=CppRunRequest::Backend::native_msvc||
        request.action!=CppRunRequest::Action::compile_run||
@@ -3465,6 +3510,43 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(result.execution.exit_code&&*result.execution.exit_code<=255)fresh.exit_code=static_cast<int>(*result.execution.exit_code);
     fresh.standard_input=request.stdin_utf8;fresh.standard_output=result.execution.stdout_bytes;
     fresh.standard_error=result.execution.stderr_bytes;fresh.executable=result.executable;
+    if(request.input_check) {
+        const auto frame=input_check_fingerprint(request);
+        fresh.input_request_fingerprint=frame;
+        fresh.input_check_feedback=
+            "La salida visible coincide, pero no se completaron las comprobaciones "
+            "independientes de lectura de la entrada.";
+        const auto& executable=result.input_executable_sha256;
+        const bool digest=executable.size()==64&&std::ranges::all_of(executable,[](char c) {
+            return (c>='0'&&c<='9')||(c>='a'&&c<='f');
+        });
+        if(!frame.empty()&&result.input_request_fingerprint==frame&&digest&&
+           fresh.compilation_succeeded&&fresh.execution_succeeded&&
+           result.input_evidence.size()==request.input_check->probes.size()) {
+            bool passed=true;
+            const auto source=state::sha256(request.source_utf8);
+            for(std::size_t i=0;i<request.input_check->probes.size();++i) {
+                const auto& probe=request.input_check->probes[i];
+                const auto& evidence=result.input_evidence[i];
+                if(evidence.source_sha256!=source||evidence.standard_input!=probe.standard_input||
+                   evidence.executable_sha256!=executable||!evidence.execution.succeeded()) {
+                    passed=false;
+                    break;
+                }
+                // Input probes author stdout only. An ordinary diagnostic on
+                // stderr has the same permitted meaning as in the public run.
+                if(!curriculum::cpp_input_expected_output(evidence.execution.stdout_bytes,probe)) {
+                    passed=false;
+                    fresh.input_check_feedback=
+                        "Comprueba que el resultado se calcula a partir de la entrada leída. "
+                        "El mismo programa no produjo el resultado esperado con otros datos.";
+                    break;
+                }
+            }
+            fresh.input_check_correct=passed;
+            if(passed)fresh.input_check_feedback.clear();
+        }
+    }
     if(request.local_string_check) {
         const auto frame=local_string_fingerprint(request);
         fresh.local_string_request_fingerprint=frame;
@@ -4828,6 +4910,80 @@ void clear_private_probe_directory(const std::filesystem::path& directory,
     }
 }
 
+// Reuse the one freshly compiled public executable. Private stdin runs never
+// compile another source, expose a phase-labelled path or retain earlier outputs.
+// The captured executable predates the public process; later files cannot replace it.
+void complete_input_check(const CppRunRequest& request,CppRunResult& result,
+        const std::vector<wchar_t>& environment,std::string_view initial_toolchain,
+        std::string_view compiled_executable,std::stop_token stop) {
+    if(!request.input_check||input_check_fingerprint(request).empty()||
+       !result.error_utf8.empty()||!result.compilation.succeeded()||
+       !result.execution.succeeded()||compiled_executable.empty()||
+       state::sha256(compiled_executable)!=result.input_executable_sha256||
+       stop.stop_requested())return;
+    const auto& directory=result.run_directory;
+    const auto executable=directory/L"program.exe";
+    const auto input=directory/L"stdin.bin";
+    constexpr std::uintmax_t artifact_limit=128ULL*1024*1024;
+    std::uintmax_t retained_bytes=0;
+    std::vector<std::filesystem::path> directories;
+    std::vector<std::pair<std::filesystem::path,std::string>> files;
+    const auto retain=[&](auto&& self,const std::filesystem::path& parent)->bool {
+        for(const auto& entry:std::filesystem::directory_iterator(parent)) {
+            state::require_safe_path(entry.path());
+            const auto relative=entry.path().lexically_relative(directory);
+            if(entry.is_directory()) {
+                directories.push_back(relative);
+                if(!self(self,entry.path()))return false;
+            }else if(entry.is_regular_file()) {
+                const auto size=entry.file_size();
+                if(size>artifact_limit-retained_bytes)return false;
+                auto bytes=read_exact(entry.path(),static_cast<std::size_t>(size));
+                if(bytes.size()!=size)
+                    throw std::runtime_error("A public input-check artifact could not be retained");
+                retained_bytes+=size;
+                files.emplace_back(relative,std::move(bytes));
+            }else return false;
+        }
+        return true;
+    };
+    if(!retain(retain,directory))return;
+    const auto restore=[&] {
+        clear_private_probe_directory(directory);
+        for(const auto& relative:directories) {
+            const auto path=directory/relative;
+            std::filesystem::create_directories(path);state::require_safe_path(path);
+        }
+        for(const auto& [relative,bytes]:files) {
+            const auto path=directory/relative;
+            state::require_safe_path(path);write_exact(path,bytes);
+        }
+    };
+    std::vector<CppInputEvidence> evidence;
+    const auto source=state::sha256(request.source_utf8);
+    try {
+        for(const auto& probe:request.input_check->probes) {
+            if(stop.stop_requested())break;
+            clear_private_probe_directory(directory);
+            write_exact(executable,compiled_executable);
+            write_exact(input,probe.standard_input);
+            write_exact(directory/L"compiler-stdin.bin","");
+            write_exact(directory/L"toolchain.txt",initial_toolchain);
+            auto observed=run_phase(executable,{},directory,input,L"execution",
+                request.execution_timeout,request.output_limit_bytes,false,stop,false,&environment);
+            evidence.push_back(CppInputEvidence{
+                source,probe.standard_input,result.input_executable_sha256,std::move(observed)});
+            if(!evidence.back().execution.succeeded())break;
+        }
+    }catch(...) {
+        restore();
+        throw;
+    }
+    restore();
+    // A cancellation after the last child exits is still an incomplete request.
+    if(!stop.stop_requested())result.input_evidence=std::move(evidence);
+}
+
 // Each objective supplies its own instrumented sources and typed observations.
 // This helper owns only the physical execution: every phase sees the public
 // path/argv/input/environment, and the public filesystem is restored byte for byte.
@@ -5673,6 +5829,9 @@ std::string cpp_local_int_request_fingerprint(const CppRunRequest& request) {
 std::string cpp_local_string_request_fingerprint(const CppRunRequest& request) {
     return local_string_fingerprint(request);
 }
+std::string cpp_input_request_fingerprint(const CppRunRequest& request) {
+    return input_check_fingerprint(request);
+}
 
 std::string cpp_defaulted_move_policy_request_fingerprint(
         const CppRunRequest& request) {
@@ -5746,6 +5905,11 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
     result.revision = request.revision;
     if(request.diagnostic)result.diagnostic.emplace();
     try {
+        if(request.input_check) {
+            result.input_request_fingerprint=input_check_fingerprint(request);
+            if(result.input_request_fingerprint.empty())
+                throw std::invalid_argument("Invalid or combined private input-check request");
+        }
         if(named_rule_battery_requested(request))
             result.named_rule_battery_request_fingerprint=named_rule_battery_fingerprint(request);
         if(named_rule_constant_variations_requested(request))
@@ -5832,7 +5996,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         if(!request.project_files.empty()){run_multifile(request,result,input,compiler_input,stop);return result;}
         write_exact(source, request.source_utf8);
         const auto arguments=single_file_arguments(result.run_directory);
-        const bool has_private_probe=request.local_int_check||request.local_string_check||request.boolean_battery_probe||request.reduction_probe||
+        const bool has_private_probe=request.input_check||request.local_int_check||request.local_string_check||request.boolean_battery_probe||request.reduction_probe||
             named_rule_battery_requested(request)||request.indexed_unique_transfer_probe||
             request.defaulted_move_policy_probe||request.independent_copy_assignment_probe||
             request.move_assignment_invariant_probe||request.array_owner_read_probe||
@@ -5849,8 +6013,19 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         result.compilation = run_phase(compiler, arguments, result.run_directory,
             compiler_input, L"compilation", request.compile_timeout,
             request.output_limit_bytes, true, stop, true,fixed_environment);
+        std::string input_executable;
         if (result.compilation.succeeded()) {
             result.artifact=executable;result.target_type="EXECUTABLE";
+            if(request.input_check) {
+                state::require_safe_path(executable);
+                const auto size=std::filesystem::file_size(executable);
+                if(size==0||size>128ULL*1024*1024)
+                    throw std::runtime_error("Input-check executable exceeds private capacity");
+                input_executable=read_exact(executable,static_cast<std::size_t>(size));
+                if(input_executable.size()!=size)
+                    throw std::runtime_error("Input-check executable was not captured completely");
+                result.input_executable_sha256=state::sha256(input_executable);
+            }
             if(has_private_probe) {
                 // Match the private executions: no phase source/object file
                 // remains visible to the public program while it runs.
@@ -5889,6 +6064,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         complete_reduction_probe(request,result,compiler,private_environment,initial_toolchain,stop);
         complete_local_int_check(request,result,compiler,private_environment,initial_toolchain,stop);
         complete_local_string_check(request,result,compiler,private_environment,initial_toolchain,stop);
+        complete_input_check(request,result,private_environment,initial_toolchain,input_executable,stop);
     } catch (const std::exception& exception) {
         result.error_utf8 = exception.what();
         auto& phase = request.diagnostic?result.compilation:request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:

@@ -22,6 +22,7 @@
 #include "core/cpp_dual_interface_check.hpp"
 #include "core/cpp_local_int_probe.hpp"
 #include "core/cpp_local_string_probe.hpp"
+#include "core/cpp_input_probe.hpp"
 #include "core/open_battery_check.hpp"
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
@@ -389,6 +390,8 @@ struct Block {
     std::string compiler_client_epoch;
     // Exploration has its own stable block identity and never stores an answer.
     std::optional<SimulationSpec> simulation;
+    // Private stdin executions retain the original public cases and receipts.
+    std::optional<CppInputCheck> input_check;
 };
 struct Page {
     std::string stable_id;
@@ -655,6 +658,9 @@ struct FreshExecution {
     // Live CMake evidence is bound to its complete request. This does not
     // replace or change any persisted historical completion receipt.
     std::string cmake_graph_request_fingerprint{};
+    bool input_check_correct = false;
+    std::string input_check_feedback;
+    std::string input_request_fingerprint;
 };
 enum class OutputVerdict { unavailable, correct, incorrect };
 struct OutputEvaluation {
@@ -669,3 +675,4 @@ struct OutputEvaluation {
     const OutputCheck&, const FreshExecution&, std::uint64_t current_revision);
 
 } // namespace lgaed::curriculum
+

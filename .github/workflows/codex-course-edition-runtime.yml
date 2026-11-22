@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/codex-course-edition-runtime.yml
       - cmake/HostedCourseEditionQA/**
+      - cmake/InputDependencyTests.cmake
       - cmake/CurricularWindows.cmake
       - cmake/native_build_config.hpp.in
       - native/platform/windows/course_edition_tests.cpp
@@ -15,6 +16,14 @@ on:
       - scripts/curriculum/choice_retirement_fixture_source.py
       - scripts/curriculum/test_choice_retirement_history.py
       - scripts/curriculum/local_scalar_fixture_source.py
+      - scripts/curriculum/input_dependency_fixture_source.py
+      - scripts/curriculum/test_input_dependency_authoring.py
+      - native/core/cpp_input_probe.hpp
+      - native/core/cpp_input_probe_tests.cpp
+      - native/platform/windows/input_dependency_state_tests.cpp
+      - native/presentation/windows/curricular_input_lab_tests.cpp
+      - native/presentation/windows/exact_prediction_view_tests.cpp
+      - scripts/curriculum/u2l9_history_fixture_source.py
       - scripts/curriculum/test_local_scalar_probe_authoring.py
       - scripts/curriculum/course_edition_fixture_source.py
       - native/platform/windows/local_int_state_tests.cpp
@@ -94,7 +103,7 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           cmake -S cmake/HostedCourseEditionQA -B $build -G Ninja -DCMAKE_BUILD_TYPE=Debug
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
+          cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_curricular_input_lab_tests lgaed_exact_prediction_view_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve earlier reading snapshots across an authenticated option review
         shell: pwsh
@@ -107,6 +116,18 @@ jobs:
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           ctest --test-dir $build -R '^native[.]current_u2l8_local_scalar_state$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u2l8-local-scalar-state.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify U2L9 input dependencies and preserved history with real MSVC
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]input_(probe|dependency_state)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u2l9-input-dependency.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify current and archived U2L9 input controls and first-case access
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.](curricular_input_lab(_history)?|prepared_input_predictions(_history)?)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u2l9-current-history-view.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Execute edition replacement, native quiz, scoped reset and reopen
         shell: pwsh

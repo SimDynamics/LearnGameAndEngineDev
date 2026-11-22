@@ -1,6 +1,7 @@
 #include "core/attempts.hpp"
 #include "core/compile_check_test_fixture.hpp"
 #include "platform/windows/compiler_completion.hpp"
+#include "platform/windows/cpp_runner.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
@@ -14,6 +15,7 @@
 #include <winrt/Windows.Data.Json.h>
 #include <array>
 #include <chrono>
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <string_view>
@@ -91,6 +93,122 @@ const std::array plans{
         "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__maximo_regla_cuatro",true,"Orion: 103",true,PredictionGroup::prepared_input},
 };
 
+
+
+// Only earlier-page quizzes are prepared from their authored answers to
+// isolate this UI scenario. This is QA setup, not evidence of quiz interaction.
+// Compiler prerequisites are observed separately through the real runner.
+void prepare_u2l9_prior_quizzes(state::StateData& data,const curriculum::Lesson& lesson,
+        curriculum::StatePosition target) {
+    using curriculum::BlockType;
+    using namespace winrt::Windows::Data::Json;
+    for(std::size_t p=0;p<target.page;++p) {
+        for(const auto& block:lesson.pages[p].blocks) {
+            state::Response response;
+            if(block.type==BlockType::multiple_choice) {
+                check(block.correct_index.has_value(),"An earlier QA choice has no authored answer");
+                response.selected=static_cast<std::int64_t>(*block.correct_index);
+                response.correct=curriculum::evaluate_choice(block,*block.correct_index).correct;
+            } else if(block.type==BlockType::fill_code||block.type==BlockType::output_prediction) {
+                check(!block.answers.empty(),"An earlier QA answer is missing");
+                response.answer=block.answers.front();
+                response.correct=curriculum::evaluate_text_answer(block,response.answer).correct;
+            } else if(block.type==BlockType::inline_fill_code) {
+                JsonArray answers;
+                for(const auto& answer:block.answers)answers.Append(JsonValue::CreateStringValue(wide(answer)));
+                JsonObject raw;raw.Insert(L"answers",answers);
+                response.raw_json=winrt::to_string(raw.Stringify());
+                response.correct=curriculum::evaluate_hole_answers(block,block.answers).correct;
+            } else if(block.type==BlockType::drag_fill_code) {
+                JsonArray slots;
+                for(const auto slot:block.correct_order)slots.Append(JsonValue::CreateNumberValue(static_cast<double>(slot)));
+                JsonObject raw;raw.Insert(L"slots",slots);
+                response.raw_json=winrt::to_string(raw.Stringify());
+                response.correct=curriculum::evaluate_drag_answers(block,block.correct_order).correct;
+            } else {
+                check(block.type!=BlockType::order_code&&block.type!=BlockType::math_puzzle,
+                    "A new earlier U2L9 exercise needs an explicitly audited QA preparation");
+                continue;
+            }
+            check(response.correct,"An authored earlier-page QA response is invalid");
+            state::put_response(data,lesson,block,response);
+        }
+        (void)state::mark_page_reached(data,lesson,p);
+    }
+}
+
+// Real prerequisite observations for the current and authenticated archived
+// U2L9 publications. Only the first case earns its receipt; an independent
+// boxes input is observed without turning it into another required case.
+void prepare_u2l9_prerequisites(state::StateData& data,const curriculum::Lesson& lesson,
+        curriculum::StatePosition target,const std::filesystem::path& projects) {
+    check(lesson.id=="cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida"&&
+          lesson.compiler_puzzles_required,"U2L9 prerequisite QA requires its actual published policy");
+    const auto source_at=[&](std::string_view identity)->std::string {
+        const auto at=curriculum::stable_block_position(lesson,identity);
+        check(at.has_value(),"An authored U2L9 prerequisite reference is missing");
+        const auto& block=lesson.pages.at(at->page).blocks.at(at->block);
+        check(!block.code.empty(),"An authored U2L9 prerequisite source is empty");
+        return block.code;
+    };
+    static std::uint64_t request_id=90000;
+    for(std::size_t p=0;p<=target.page;++p)
+        for(std::size_t b=0;b<lesson.pages[p].blocks.size();++b) {
+            if(p==target.page&&b>=target.block)break;
+            const auto& owner=lesson.pages[p].blocks[b];
+            if(owner.type!=curriculum::BlockType::cpp_compiler)continue;
+            check(owner.output_check&&!owner.output_check->cases.empty(),
+                "A preceding U2L9 compiler has no independent output contract");
+            const bool boxes=owner.stable_id=="p1u2l9_reparar_lectura_de_cajas"||
+                owner.stable_id=="block_0006_0002";
+            std::string source;
+            if(boxes)source=source_at("block_0007_0001");
+            else if(owner.stable_id=="block_0008_0008")source=owner.initial_code;
+            else if(owner.stable_id=="block_0009_0003")source=source_at("block_0010_0001");
+            else if(owner.stable_id=="block_0011_0006")source=source_at("block_0012_0002");
+            else check(false,"U2L9 QA must explicitly audit a newly added prerequisite");
+            check(windows::compiler_puzzle_case_count(data,lesson,owner)==0&&
+                !windows::compiler_puzzle_completed(data,lesson,owner),
+                "A supposedly fresh U2L9 prerequisite already has credit");
+            const std::size_t observations=boxes?2:1;
+            check(owner.output_check->cases.size()>=observations,
+                "The independent boxes input disappeared from its original contract");
+            for(std::size_t index=0;index<observations;++index) {
+                const auto& item=owner.output_check->cases[index];
+                windows::CppRunRequest request;
+                request.request_id=++request_id;request.revision=request_id;
+                request.project_key=curriculum::draft_key("programming",lesson,owner);
+                request.projects_directory=projects;request.source_utf8=source;
+                request.stdin_utf8=item.standard_input;
+                request.compile_timeout=std::chrono::seconds(60);
+                request.execution_timeout=std::chrono::seconds(8);
+                check(windows::compiler_runtime_request_allowed(owner,request),
+                    "The prerequisite source or input does not match its own U2L9 owner");
+                const auto result=windows::run_cpp(request);
+                const auto captured=windows::capture_cpp_execution(request,result);
+                check(result.error_utf8.empty()&&result.compilation.succeeded()&&
+                    result.execution.succeeded()&&result.execution.stderr_bytes.empty()&&
+                    windows::evaluate_cpp_output_check(*owner.output_check,captured,request.revision).verdict==
+                        curriculum::OutputVerdict::correct,
+                    "A real U2L9 prerequisite failed its independently authored input/output");
+                if(index==0)check(windows::record_compiler_puzzle_case(
+                    data,lesson,owner,request,captured,"Real U2L9 prerequisite execution"),
+                    "A real first prerequisite case did not produce its own receipt");
+            }
+            check(windows::compiler_puzzle_completed(data,lesson,owner)&&
+                  windows::compiler_puzzle_case_count(data,lesson,owner)==1,
+                "A U2L9 prerequisite required or credited more than its first manual case");
+        }
+}
+
+state::Preferences u2l9_compiler_receipts(const state::StateData& data) {
+    state::Preferences receipts;
+    if(const auto domain=data.preferences.find("native_windows");domain!=data.preferences.end())
+        for(const auto& [key,value]:domain->second)
+            if(key.starts_with("compiler-puzzle/v1/"))receipts.emplace(key,value);
+    return receipts;
+}
+
 void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson& lesson){
     // Synthetic receipts isolate the prediction controls on their actual later
     // pages. They are QA prerequisites only, and do not claim any compilation.
@@ -109,12 +227,17 @@ void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson
         check(windows::compiler_puzzle_completed(data,lesson,block),"Cannot isolate prediction from its compiler prerequisites");
     }
 }
-void require_no_compiler_credit(const state::StateData& data,const curriculum::Lesson& lesson){
-    for(const auto& page:lesson.pages)for(const auto& block:page.blocks)
-        if(block.type==curriculum::BlockType::cpp_compiler)
-            check(windows::compiler_puzzle_case_count(data,lesson,block)==0
-                &&!windows::compiler_puzzle_completed(data,lesson,block),
-                "Prepared-input prediction QA invented a compiler receipt or achievement");
+void require_prepared_compiler_credit(const state::StateData& data,const curriculum::Lesson& lesson,
+        curriculum::StatePosition target){
+    for(std::size_t p=0;p<lesson.pages.size();++p)
+        for(std::size_t b=0;b<lesson.pages[p].blocks.size();++b){
+            const auto& block=lesson.pages[p].blocks[b];
+            if(block.type!=curriculum::BlockType::cpp_compiler)continue;
+            const bool prior=p<target.page||(p==target.page&&b<target.block);
+            check(windows::compiler_puzzle_case_count(data,lesson,block)==(prior?1u:0u)
+                &&windows::compiler_puzzle_completed(data,lesson,block)==prior,
+                "Prepared-input QA changed a real prerequisite or credited a later compiler");
+        }
 }
 
 void prepare_visual_profile(std::string_view scenario,std::wstring_view token){
@@ -143,7 +266,7 @@ void prepare_visual_profile(std::string_view scenario,std::wstring_view token){
             &&target.output_comparison==(prepared?curriculum::TextComparison::exact:curriculum::TextComparison::trimmed),
         "The selected visual activity lost its published contract");
     if(prepared)check(target.id==lesson.id+(stages?"__etapas_lectura_y_actualizacion":"__distinguir_regla_cuatro")
-        &&curriculum::uses_single_line_answer(target)==variants&&!lesson.compiler_puzzles_required,
+        &&curriculum::uses_single_line_answer(target)==variants&&lesson.compiler_puzzles_required,
         "The current U2L9 prediction lost its independent exact answer contract");
     const auto prerequisites=curriculum::activity_prerequisites(lesson,target);
     check(scenario=="u11l2"||choice||prepared?prerequisites.empty():prerequisites.size()==1
@@ -172,25 +295,32 @@ void prepare_visual_profile(std::string_view scenario,std::wstring_view token){
         check(compilers==1,"The isolated U11L11 QA requires exactly its audited compiler prerequisite");
         seed_compiler_prerequisites(data,lesson);
     }
-    if(prepared)require_no_compiler_credit(data,lesson);
+    if(prepared){
+        prepare_u2l9_prior_quizzes(data,lesson,*position);
+        prepare_u2l9_prerequisites(data,lesson,*position,environment.paths.projects);
+        require_prepared_compiler_credit(data,lesson,*position);
+    }
     state::save_current_page(data,lesson,position->page);auto& preferences=data.preferences["native_windows"];
     preferences["ui_language"]=std::string("es");preferences["content_language"]=std::string("es");
     preferences["catalog/locale"]=std::string("es");preferences["catalog/route"]=std::string("programming");
     preferences["catalog/course"]=std::string("cpp_fundamentals");
     const auto unit_end=lesson.id.rfind("__");check(unit_end!=std::string::npos,"The selected lesson has no catalog unit identity");
     preferences["catalog/unit"]=lesson.id.substr(0,unit_end);preferences["navigation/lesson"]=lesson.id;
-    for(const auto& page:lesson.pages)for(const auto& block:page.blocks)
-        check(!state::get_response(data,lesson,block),"Preparing visual QA invented a quiz response or achievement");
+    for(std::size_t p=0;p<lesson.pages.size();++p)for(const auto& block:lesson.pages[p].blocks)
+        if(!prepared||p>=position->page)
+            check(!state::get_response(data,lesson,block),"Visual QA answered the selected or a later quiz");
     state::validate_lesson_state(data,lesson);store.save(data);const auto saved=store.load();
     check(saved==data&&state::current_page(saved,lesson)==position->page&&!state::get_response(saved,lesson,target),
         "The prepared visual QA profile did not preserve the unanswered activity");
-    if(prepared)require_no_compiler_credit(saved,lesson);
+    if(prepared)require_prepared_compiler_credit(saved,lesson,*position);
     check(state::sha256(state::read_bytes(path))==asset_hash,"Preparing visual QA changed an authored asset");
     std::cout<<"profile=Codex\nqa_instance="<<utf8(token)<<"\ndata_root="<<utf8(environment.paths.root.native())
         <<"\nlesson="<<lesson.id<<"\ntarget="<<identity<<"\npage="<<position->page+1
         <<"\npage_index="<<position->page<<"\nblock="<<position->block+1
         <<"\nsynthetic_prerequisites="<<(scenario=="u11l11"?"block_0004_0003-only-not-a-real-execution":"none")
-        <<"\nquiz_responses=none\ntarget_completed=0\nwindows_created=0\n";
+        <<"\nreal_u2l9_prerequisites="<<(prepared?"preceding-first-cases-only":"none")
+        <<"\nquiz_responses="<<(prepared?"earlier-pages-authored-QA-setup":"none")
+        <<"\ntarget_completed=0\nwindows_created=0\n";
 }
 
 struct View {
@@ -208,9 +338,11 @@ struct View {
         state::StateData data;state::prepare_lesson_state(data,lesson);
         if(seed_prerequisites)seed_compiler_prerequisites(data,lesson);
         else{
-            check(!lesson.compiler_puzzles_required&&curriculum::activity_prerequisites(lesson,this->target()).empty(),
+            check(lesson.compiler_puzzles_required&&curriculum::activity_prerequisites(lesson,this->target()).empty(),
                 "The prepared-input prediction acquired an unaudited compiler prerequisite");
-            require_no_compiler_credit(data,lesson);
+            prepare_u2l9_prior_quizzes(data,lesson,target);
+            prepare_u2l9_prerequisites(data,lesson,target,environment.paths.projects);
+            require_prepared_compiler_credit(data,lesson,target);
         }
         data.preferences["native_windows"]["ui_language"]=std::string("es");
         data.preferences["exact_prediction_qa_unrelated"]["keep"]=std::string(" \t unrelated preference\r\n");
@@ -445,13 +577,17 @@ void proposed_u11_recovery_explanation(){
     std::cout<<"PASS exact U11L14 recovery explanation proposal: real draft/retry/success, precise reader source, prior accepted payload preserved, scoped Reset and reopen; no asset edits or audio playback claimed\n";
 }
 
-void current_literal_predictions(PredictionGroup group){
+void current_literal_predictions(PredictionGroup group,const std::filesystem::path& historical={}){
     const auto content=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
     std::size_t exact=0,trimmed=0,rejected=0,native_rejected=0,core_only_rejected=0;
     for(const auto& plan:plans){
         if(plan.group!=group)continue;
         active_case=std::string(plan.filename)+" / "+plan.identity;active_step="load current JSON";
-        const auto path=content/plan.filename;const auto original=state::read_bytes(path);const auto digest=state::sha256(original);
+        const auto path=historical.empty()?content/plan.filename:historical;
+        const auto original=state::read_bytes(path);const auto digest=state::sha256(original);
+        if(!historical.empty())check(group==PredictionGroup::prepared_input&&
+            digest=="61ff67f148ad78c31036763889ebdb85e31ce315cb1103de516ee975819fd0e1",
+            "The U2L9 history fixture is not the exact published d90d3156 source");
         const auto lesson=windows::load_lesson(path);const auto position=curriculum::stable_block_position(lesson,plan.identity);
         check(position.has_value(),"The current literal prediction's persistent identity is missing");
         const auto& block=lesson.pages.at(position->page).blocks.at(position->block);
@@ -463,7 +599,8 @@ void current_literal_predictions(PredictionGroup group){
         const bool single_line=curriculum::uses_single_line_answer(block);
         std::cout<<"RUN "<<active_case<<" ["<<(single_line?"single-line":"multiline")<<"]\n"<<std::flush;
         View fixture(lesson,*position,plan.editorial_feedback,group!=PredictionGroup::prepared_input);const auto before=fixture.saved();
-        if(group==PredictionGroup::prepared_input)require_no_compiler_credit(before,lesson);
+        const auto compiler_receipts=u2l9_compiler_receipts(before);
+        if(group==PredictionGroup::prepared_input)require_prepared_compiler_credit(before,lesson,*position);
         const auto unrelated=before.preferences.at("exact_prediction_qa_unrelated");fixture.incomplete();
         fixture.draft(plan.internal_error?std::string(plan.internal_error):expected+' ');
         if(plan.exact){
@@ -495,19 +632,32 @@ void current_literal_predictions(PredictionGroup group){
         }
         const auto saved=fixture.saved();
         check(saved.preferences.at("exact_prediction_qa_unrelated")==unrelated,"Prediction QA altered an unrelated preference");
-        if(group==PredictionGroup::prepared_input)require_no_compiler_credit(saved,lesson);
+        if(group==PredictionGroup::prepared_input){
+            require_prepared_compiler_credit(saved,lesson,*position);
+            check(u2l9_compiler_receipts(saved)==compiler_receipts,
+                "Answering a prediction rewrote a real prerequisite receipt");
+        }
         else for(const auto& page:lesson.pages)for(const auto& item:page.blocks)
                 if(item.type==curriculum::BlockType::cpp_compiler&&item.output_check)
                     check(windows::compiler_puzzle_completed(saved,lesson,item),"Answering a prediction changed a compiler prerequisite receipt");
         fixture.reset();fixture.incomplete();
-        if(group==PredictionGroup::prepared_input)require_no_compiler_credit(fixture.saved(),lesson);
+        if(group==PredictionGroup::prepared_input){
+            const auto reset=fixture.saved();
+            require_prepared_compiler_credit(reset,lesson,*position);
+            check(u2l9_compiler_receipts(reset)==compiler_receipts,
+                "Resetting a prediction changed its independent compiler receipts");
+        }
         check(state::sha256(state::read_bytes(path))==digest,"Prediction QA changed authored lesson bytes or stateLayout");
         std::cout<<"PASS "<<(plan.exact?"exact ":"trimmed ")<<lesson.id<<" / "<<block.stable_id<<"\n";
     }
     if(group==PredictionGroup::prepared_input){
         check(exact==5&&trimmed==0&&rejected==35&&native_rejected==27&&core_only_rejected==8,
             "The registered five prepared-input exact predictions are incomplete");
-        std::cout<<"PASS five current U2L9 exact predictions: 27 native character mutations plus 8 exact evaluator newline checks, authored question/source/full guide/success reading regions, unreviewed draft/reopen, single-line Enter preservation, retry/correct/reopen/Reset, response payload preservation, incomplete/draft/correct heart conservation and untouched assets; no compiler prerequisites, receipts or achievements\n";
+        std::cout<<"PASS five "<<(historical.empty()?"current":"authenticated archived")
+            <<" U2L9 exact predictions: 27 native character mutations plus 8 exact evaluator newline checks, "
+            <<"authored question/source/full guide/success reading regions, unreviewed draft/reopen, "
+            <<"single-line Enter preservation, retry/correct/reopen/Reset, response payload and heart conservation; "
+            <<"real preceding compiler receipts remain byte-for-byte intact; no synthetic U2L9 credit or asset edits\n";
     }else{
         check(exact==9&&trimmed==4&&rejected==62&&native_rejected==54&&core_only_rejected==8,
             "The registered nine-plus-four literal prediction matrix is incomplete");
@@ -518,21 +668,23 @@ void current_literal_predictions(PredictionGroup group){
 
 int main(int argc,char** argv){
     const bool prepared_input=argc==2&&std::string_view(argv[1])=="--prepared-input";
+    const bool prepared_history=argc==3&&std::string_view(argv[1])=="--prepared-input-history";
     const bool u11_precision=argc==2&&std::string_view(argv[1])=="--u11-precision";
-    if(argc!=1&&!prepared_input&&!u11_precision){const bool shape=argc==4&&std::string_view(argv[1])=="--prepare-visual"
+    if(argc!=1&&!prepared_input&&!prepared_history&&!u11_precision){const bool shape=argc==4&&std::string_view(argv[1])=="--prepare-visual"
             &&(std::string_view(argv[2])=="u11l2"||std::string_view(argv[2])=="u11l11"||std::string_view(argv[2])=="u11l11-choice"||std::string_view(argv[2])=="u2l9-stages"||std::string_view(argv[2])=="u2l9-variants");
         const auto raw=shape?std::string_view(argv[3]):std::string_view{};const std::wstring token(raw.begin(),raw.end());
         if(!shape||!is_valid_qa_instance(token)){
-            std::cerr<<"Usage: exact_prediction_view_tests [--prepared-input | --u11-precision | --prepare-visual <u11l2|u11l11|u11l11-choice|u2l9-stages|u2l9-variants> <safe-new-QA-token>]\n";return 2;}
-        // Preparation performs JSON/state/file operations only. Native control
-        // and apartment initialization belong solely to the normal regression.
-        try{prepare_visual_profile(argv[2],token);return 0;}
+            std::cerr<<"Usage: exact_prediction_view_tests [--prepared-input | --prepared-input-history <authentic-json> | --u11-precision | --prepare-visual <u11l2|u11l11|u11l11-choice|u2l9-stages|u2l9-variants> <safe-new-QA-token>]\n";return 2;}
+        // U2L9 prepares real preceding compiler evidence, without answering
+        // the selected prediction or creating a visible lesson view.
+        try{winrt::init_apartment();prepare_visual_profile(argv[2],token);return 0;}
         catch(const std::exception& error){std::cerr<<"Visual QA preparation failed: "<<error.what()<<'\n';return 1;}
     }
     const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);int result=0;
     try{if(u11_precision)proposed_u11_recovery_explanation();
-        else current_literal_predictions(prepared_input?PredictionGroup::prepared_input:PredictionGroup::baseline);}
+        else current_literal_predictions(prepared_input||prepared_history?PredictionGroup::prepared_input:PredictionGroup::baseline,
+            prepared_history?std::filesystem::path(argv[2]):std::filesystem::path{});}
     catch(const std::exception& error){std::cerr<<active_case<<" ["<<active_step<<"]: "<<error.what()<<'\n';result=1;}
     OleUninitialize();return result;
 }
