@@ -4038,10 +4038,13 @@ visuales. Ejemplo de estructura, para añadir mediante la autoría curricular:
 }]
 ```
 
-`afterInitialization` inserta la nueva asignación inmediatamente
-después de la definición de esa variable `std::string` local de
-`main`. `afterFirstAssignment` la inserta después de su primera
-asignación posterior a la definición, por ejemplo `codigo = "07";`.
+`afterInitialization` inserta la variación después de la declaración
+completa de la variable `std::string` local de `main`. Si la cadena se
+construyó vacía y recibe su valor por una operación posterior reconocida,
+la variación se inserta después de esa operación, para no perderla antes
+del cálculo. `afterFirstAssignment` la inserta después de la primera
+actualización completa posterior a la definición, como
+`codigo = "07";` o `codigo.replace(0, codigo.size(), "07");`.
 `beforeOutput` inserta un valor de control inmediatamente antes de la
 primera salida de `std::cout` que **lee realmente** esa variable. No
 basta que el texto coincida con un literal o que se imprima la
@@ -4052,12 +4055,15 @@ completas de varias cadenas con el mismo tipo explícito, como
 `std::string edificio{"Aula"}, codigo{"04"};`. La variación se inserta
 **después del punto y coma de toda la declaración**, nunca entre
 declaradores. También admite `std::string edificio, codigo;` seguido de
-asignaciones mediante `=`, `+=` o `codigo.assign(...)`: para
-`afterInitialization`, sustituye el valor **después de la primera asignación
-completa**, de modo que la instrucción original no borre la variación antes
-del cálculo. Lo mismo se aplica a `afterFirstAssignment` cuando la actualización
-usa `assign(...)`. Estas formas equivalentes
-siguen exigiendo compilaciones y salidas independientes correctas.
+operaciones completas de escritura mediante `=`, `+=`, `assign(...)` o
+`append(...)`. Por ejemplo, una cadena inicialmente vacía que recibe
+`edificio.append("Aula");` se varía después de esa llamada, no antes.
+`replace(...)` también es una actualización reconocida para
+`afterFirstAssignment`. Estas operaciones deben actuar directamente sobre
+la cadena local en una instrucción del cuerpo principal de `main`, no
+dentro de otro ámbito. Tanto la fuente original como la variante privada
+se compilan y ejecutan: la coincidencia de los textos visibles por sí sola
+no acredita una dependencia.
 Las declaraciones ambiguas que mezclen punteros o propietarios de otro
 tipo se rechazan. También se rechaza una declaración agrupada cuyo
 inicializador hermano lea la variable intervenida, porque una variación
