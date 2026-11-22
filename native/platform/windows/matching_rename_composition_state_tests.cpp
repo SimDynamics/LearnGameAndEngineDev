@@ -218,6 +218,19 @@ void assetcheck_p2_prompt_revision(const std::filesystem::path& folder,
     const auto key=state::response_storage_key(original,old);
     const auto receipt=state::string_value(saved,"learning_progress",key);
     saved.preferences["p2-prompt-qa"]["foreign"]=std::string("unchanged");
+    const auto original_position=stable_block_position(original,identity);
+    require(original_position.has_value(),
+        "The P2 original prompt lost its stable narration owner");
+    const auto old_hash=state::sha256(old.prompt);
+    const auto revised_hash=state::sha256(current.prompt);
+    require(old_hash!=revised_hash,"A changed P2 prompt retained its old narration hash");
+    narration::Position heard{4,170,0,false};
+    heard.heard_prefix=narration::HeardPrefix{old_hash,500000,1000000};
+    narration::History listening;
+    listening.entries.push_back({"qa-p2-original-prompt",identity,heard,
+        original.pages.at(original_position->page).stable_id});
+    narration::write_history(saved,listening);
+    const auto previous_listening=narration::read_history(saved);
     store.save(saved);
     state::StateStore reader(store.root().parent_path());
     auto progress=reader.load();
@@ -232,13 +245,18 @@ void assetcheck_p2_prompt_revision(const std::filesystem::path& folder,
         state::response_storage_key(revised,current)==key&&
         state::response_storage_key(compact,metadata)==key&&
         state::string_value(progress,"learning_progress",key)==receipt&&
+        narration::read_history(progress)==previous_listening&&
+        narration::heard_prefix_matches(heard,old_hash,1000000)&&
+        !narration::heard_prefix_matches(heard,revised_hash,1000000)&&
         state::string_value(progress,"p2-prompt-qa","foreign")=="unchanged",
         "A P2 prompt revision regraded or removed an already saved matching answer");
     reader.save(progress);
     state::StateStore reopened(reader.root().parent_path());
     const auto durable=reopened.load();
     state::validate_lesson_state(durable,revised);
-    require(durable==progress,"P2 revised prompt lost its durable StateStore response");
+    require(durable==progress&&
+        narration::read_history(durable)==previous_listening,
+        "P2 revised prompt lost its saved response or historical listening bookmark");
 
     // The complete and compact WinRT loaders reject the same forged history
     // and answer mapping; a cosmetic edit must not authorize either change.
@@ -258,8 +276,8 @@ void assetcheck_p2_prompt_revision(const std::filesystem::path& folder,
         Insert(L"a",JsonValue::CreateStringValue(L"dos"));
     reject_both(forged);
     std::cout<<"PASS P2 AssetCheck authenticated matching prompt: exact "
-        "source/target mapping, prior response, durable StateStore, "
-        "full/compact loaders and forged-answer rejection\n";
+        "source/target mapping, prior response, old-only listening credit, "
+        "durable StateStore, full/compact loaders and forged-answer rejection\n";
 }
 
 void reject_forgery(std::string_view raw) {
