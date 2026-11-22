@@ -43,7 +43,8 @@ El proyecto Android independiente continúa en `LearnGraphicsProgramming`.
 Herramientas seleccionadas: paquete MSVC v145 `14.51.36231`
 (compilador instalado `19.51.36260.0`), host/destino x64, Windows SDK y UCRT
 `10.0.28000.0`, CMake `4.4.5` y Ninja `1.13.2`. MSVC, ATL y Ninja se reutilizan de
-Visual Studio 2026 estable. CMake se instala bajo `C:\LGP-Tools\CMake`.
+Visual Studio 2026 estable. CMake se selecciona en `C:\LGAED-Dep\CMake\4.4.5\bin\cmake.exe`,
+según `toolchains/windows.versions.json`.
 Una selección incompatible
 falla con un diagnóstico, en lugar de cambiar silenciosamente de herramientas.
 
@@ -66,7 +67,8 @@ Vulkan SDK para Windows `1.4.363.0` y el JDK completo OpenJDK `27.0.1.0.3`. El S
 Vulkan se instala para el usuario con `copy_only=1`: contiene las herramientas
 y cabeceras Windows y no instala otro controlador gráfico. No se sustituyen
 por cabeceras o compiladores antiguos del NDK Android.
-FFmpeg y Vulkan SDK también se alojan bajo `C:\LGP-Tools`, en carpetas versionadas.
+FFmpeg se resuelve en `C:\LGAED-Dep\FFmpeg\9.0.2\bin\ffmpeg.exe` y
+Vulkan SDK en `C:\LGAED-Dep\VulkanSDK\1.4.363.0`, según el mismo manifiesto.
 Las herramientas extraídas desde Codex no se instalan en `AppData\Local\Programs`:
 Windows puede redirigir esa escritura al caché privado de la aplicación empaquetada.
 El selector y CMake comprueban las rutas físicas antes de compilar y rechazan esas

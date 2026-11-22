@@ -107,6 +107,24 @@ class WindowsCompilerPolicy(unittest.TestCase):
                     "check-cmake-preparation:", "capture-u4l3-real-console:"):
             self.assertIn(job, source)
 
+    def test_windows_tool_paths_match_the_active_manifest_not_android_history(self):
+        versions = json.loads(
+            (ROOT / "toolchains/windows.versions.json").read_text(encoding="utf-8"))
+        guide = (ROOT / "docs/WINDOWS_NATIVE.md").read_text(encoding="utf-8")
+        for section in ("cmake", "ffmpeg", "vulkan"):
+            with self.subTest(tool=section):
+                self.assertIn("`" + versions[section]["path"] + "`", guide)
+        self.assertNotIn("C:\\LGP-Tools", guide)
+        self.assertIn("14.51.36231", guide)
+        legacy = (ROOT / "docs/ADVANCED_CPP_RUNTIME.md").read_text(
+            encoding="utf-8")
+        self.assertIn("Documento histórico de Android/WASI", legacy)
+        self.assertIn("toolchains/versions.properties", legacy)
+        self.assertIn("toolchains/windows.versions.json", legacy)
+        # Historical build recipes and the Android data tools remain untouched.
+        self.assertTrue((ROOT / "toolchains/versions.properties").is_file())
+        self.assertTrue((ROOT / "tools/backup-android-data.ps1").is_file())
+
     def test_no_obsolete_android_build_workflows(self):
         for name in ("android-code-format-compat.yml", "build-clang23-android.yml"):
             self.assertFalse((WORKFLOWS / name).exists(), name)
