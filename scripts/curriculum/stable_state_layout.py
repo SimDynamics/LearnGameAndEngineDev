@@ -7890,8 +7890,15 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         protected = _compiler_case_order_projection(
             current, identity, matching_before.get(
                 identity, rename_blocks.get(identity, actual)))
+        # A matching-card text revision is presentation-only. If it was
+        # published BEFORE an independent C++ rename, the predecessor already
+        # displays revised labels while the current layout still archives its
+        # original evaluation block. Compare both publications through that
+        # SAME authenticated matching predecessor. Never treat revised text
+        # as a changed response contract or relax any journal checks.
         previous_source = _compiler_case_order_projection(
-            baseline, identity, old_rename_blocks.get(identity, block))
+            baseline, identity, old_rename_blocks.get(
+                identity, matching_before.get(identity, block)))
         format_original = next((entry["block"] for entry in current_formats if entry["id"] == identity), None)
         if format_original is not None:
             if identity in new_closed_sources:
