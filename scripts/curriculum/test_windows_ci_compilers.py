@@ -41,6 +41,37 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 self.assertIn("runs-on: windows-2022", source)
                 self.assertIn("python -B", source)
 
+    def test_exact_workflow_watch_paths_exist(self):
+        # Retirement of Android-only tools must not leave dead path filters
+        # behind. Check literal paths; globs and exclusions are intentional
+        # patterns and are not required to resolve to an existing file.
+        workflows = sorted((*WORKFLOWS.glob("*.yml"),
+                            *WORKFLOWS.glob("*.yaml")))
+        self.assertTrue(workflows)
+        checked = 0
+        for workflow in workflows:
+            in_paths = False
+            for line in workflow.read_text(encoding="utf-8").splitlines():
+                if re.fullmatch(r" {4}paths:\s*(?:#.*)?", line):
+                    in_paths = True
+                    continue
+                if not in_paths:
+                    continue
+                entry = re.fullmatch(r" {6}-\s+(.+?)\s*", line)
+                if entry:
+                    path = entry.group(1).strip()
+                    if len(path) >= 2 and path[0] in ("'", '"') and path[-1] == path[0]:
+                        path = path[1:-1]
+                    if path.startswith("!") or re.search(r"[*?\[\]{}]", path):
+                        continue
+                    checked += 1
+                    with self.subTest(workflow=workflow.name, watched=path):
+                        self.assertTrue((ROOT / path).exists(),
+                                        "A workflow watches a retired repository path")
+                elif line.strip() and not line.lstrip().startswith("#"):
+                    in_paths = False
+        self.assertGreater(checked, 0, "No literal workflow paths were checked")
+
     def test_editorial_windows_suite_follows_the_live_u1_u2_owners(self):
         workflow = (WORKFLOWS / "codex-general-choice-editorial.yml").read_text(
             encoding="utf-8")
