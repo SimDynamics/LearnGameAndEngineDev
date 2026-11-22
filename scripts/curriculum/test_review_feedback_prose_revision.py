@@ -457,6 +457,26 @@ class ReviewFeedbackProseRevisionTest(unittest.TestCase):
         revised_question = (
             "Predice la salida. La cadena mostrada contiene una llave de cierre "
             "después de dos espacios.")
+        if old["question"] == revised_question:
+            # Work may have published the authenticated correction already.
+            # A regression must verify its live provenance, not require
+            # the obsolete wording to remain in the active curriculum.
+            self.assertTrue(any(
+                edge["id"] == identity
+                for edge in published["stateLayout"]["editorial"]))
+            current_marker = next(
+                field for field in published["textSemantics"]["fields"]
+                if field["block"] == identity and field["path"] == "/question")
+            self.assertEqual(current_marker["spans"], [])
+            self.assertEqual(
+                current_marker["sourceSha256"],
+                hashlib.sha256(revised_question.encode("utf-8")).hexdigest())
+            unsigned = deepcopy(published)
+            layout._blocks(unsigned)[identity]["question"] = previous_question
+            with self.assertRaises(ValueError):
+                layout.validate_transition(published, unsigned)
+            self.assertEqual(asset.read_bytes(), original_bytes)
+            return
         self.assertEqual(old["question"], previous_question)
 
         unsigned = deepcopy(published)
