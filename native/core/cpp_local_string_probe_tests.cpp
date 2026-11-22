@@ -355,6 +355,57 @@ void trailing_return_main_preserves_string_dependency() {
     }
 }
 
+void cstdio_output_reads_actual_label() {
+    constexpr std::string_view prefix=R"CPP(#include <cstdio>
+#include <string>
+int main() {
+    std::string edificio{"Aula"};
+    std::string codigo{"04"};
+    std::string etiqueta = edificio + "-" + codigo;
+)CPP";
+    constexpr std::string_view suffix="\n}\n";
+    const char* statements[]{
+        "    std::printf(\"%s\", etiqueta.c_str());",
+        "    printf(\"%s\", etiqueta.c_str());",
+        "    std::puts(etiqueta.c_str());",
+        "    puts(etiqueta.c_str());"
+    };
+    for(const auto* statement:statements) {
+        const auto program=std::string(prefix)+statement+suffix.data();
+        const auto changed=cpp_local_string_override(program,
+            {"etiqueta","CONTROL",printing,{}});
+        require(changed&&
+                changed->find("etiqueta = std::string{")!=changed->npos&&
+                changed->find("etiqueta = std::string{")<
+                    changed->find(statement)&&
+                changed->find("std::string etiqueta = edificio + \"-\" + codigo;")<
+                    changed->find("etiqueta = std::string{")&&
+                program.find("CONTROL")==program.npos,
+            "C stdio string output did not read the actual local label");
+    }
+    // Printing the expected message literally cannot substitute for reading
+    // etiqueta; a similarly named member cannot borrow its local owner.
+    for(const auto* statement:{
+        "std::printf(\"%s\", \"Aula-04\");",
+        "std::puts(\"Aula-04\");",
+        "std::printf(\"%s\", datos.etiqueta.c_str());"
+    }) {
+        const auto program=std::string("#include <cstdio>\n#include <string>\n"
+            "struct Datos {std::string etiqueta{\"EXTERNA\"};};\n"
+            "int main(){Datos datos; std::string etiqueta{\"Aula-04\"};\n")+
+            statement+"\n}\n";
+        require(!cpp_local_string_override(program,
+            {"etiqueta","CONTROL",printing,{}}),
+            "A hard-coded or member-owned stdio value impersonated the local");
+    }
+    require(!cpp_local_string_override(
+        "#include <cstdio>\n#include <string>\n"
+        "int main(){std::string etiqueta{\"Aula-04\"};"
+        "if(true){std::printf(\"%s\",etiqueta.c_str());}}",
+        {"etiqueta","CONTROL",printing,{}}),
+        "A nested printf was credited as a root-level output");
+}
+
 void exact_text_bytes_and_type_checks() {
     const std::string data="003";
     const auto literal=lgaed::curriculum::cpp_local_string_detail::cpp_bytes_literal(data);
@@ -462,6 +513,7 @@ int main() {
         after_real_assignment_and_noexcept();
         member_assign_updates_are_detected_without_guesswork();
         trailing_return_main_preserves_string_dependency();
+        cstdio_output_reads_actual_label();
         exact_text_bytes_and_type_checks();
         source_identifier_contract_matches_string_probe_authoring();
         unsafe_or_ambiguous_positions_reject();
