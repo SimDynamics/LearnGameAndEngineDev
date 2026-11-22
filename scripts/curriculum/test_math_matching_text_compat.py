@@ -424,7 +424,10 @@ class RealAssetCheckLineEndingPrompt(unittest.TestCase):
             marker = next(
                 field for field in previous["textSemantics"]["fields"]
                 if field["block"] == identity and field["path"] == "/prompt")
-            self.assertEqual(marker["spans"], [])
+            # A corrected prompt may have new authored technical spans.
+            # Its UTF-16 ranges are validated by state.validate(previous);
+            # require the exact text owner rather than forcing blank marks.
+            self.assertIsInstance(marker["spans"], list)
             self.assertEqual(marker["sourceSha256"],
                              state.hashlib.sha256(
                                  old["prompt"].encode("utf-8")).hexdigest())
