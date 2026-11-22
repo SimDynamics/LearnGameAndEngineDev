@@ -4046,9 +4046,15 @@ del cálculo. `afterFirstAssignment` la inserta después de la primera
 actualización completa posterior a la definición, como
 `codigo = "07";` o `codigo.replace(0, codigo.size(), "07");`.
 `beforeOutput` inserta un valor de control inmediatamente antes de la
-primera salida de `std::cout` que **lee realmente** esa variable. No
-basta que el texto coincida con un literal o que se imprima la
-concatenación de las variables originales omitiendo `etiqueta`.
+primera instrucción de salida, en el cuerpo directo de `main`, que
+**lee realmente** la variable. Acepta `std::cout << etiqueta`,
+`std::printf("%s", etiqueta.c_str())` y
+`std::puts(etiqueta.c_str())`, también con `printf` o `puts` sin
+`std::`. La salida debe seguir cumpliendo los resultados de la
+consigna: `puts` añade un salto final. No basta imprimir un literal
+fijo o concatenar únicamente las variables originales omitiendo
+`etiqueta`. Un uso en otro ámbito o en un miembro `datos.etiqueta`
+no acredita la lectura de esa variable local.
 
 Además de declaraciones individuales, la sonda admite declaraciones
 completas de varias cadenas con el mismo tipo explícito, como
@@ -4117,7 +4123,7 @@ toolset MSVC y el Windows SDK fijados en el proyecto, y ejecuta las pruebas
 unitarias de `cpp_local_int_probe` y `cpp_local_string_probe`.
 A continuación genera, compila y ejecuta con MSVC **55 casos de enteros**
 (43 positivos, 6 rechazados por salidas incorrectas y 6 bloqueados por
-protecciones) y **37 casos de cadenas** (34 positivos y 3 rechazos de
+protecciones) y **44 casos de cadenas** (40 positivos y 4 rechazos de
 salidas fijas), contrastando los resultados con los validadores Python.
 Los dos códigos iniciales de U2L5 también se compilan y ejecutan para
 comprobar que no acrediten sus objetivos.
