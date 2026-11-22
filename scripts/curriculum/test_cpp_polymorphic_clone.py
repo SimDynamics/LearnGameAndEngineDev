@@ -241,6 +241,7 @@ def main()->None:
         "correct_direct":(SIMPLE,IDENTIFIED,DUPLICATE,True),
         "correct_reserved":(ALT_SIMPLE,ALT_IDENTIFIED,ALT_DUPLICATE,True),
         "correct_with_inert_notes":(INERT_SIMPLE,IDENTIFIED,DUPLICATE,True),
+        "unrelated_namespaced_base":(SIMPLE,IDENTIFIED,DUPLICATE,True),
         **{name:(*bodies,False) for name,bodies in BAD.items()},
     }
     with tempfile.TemporaryDirectory(prefix="lgaed-u8l10-cloning-") as d:
@@ -256,15 +257,23 @@ def main()->None:
         # both can match every published stdout without meeting ownership.
         public_variants={
             "correct_direct","correct_reserved","correct_with_inert_notes",
-            "duplicate_known_types_only","duplicate_swallows_bad_alloc"
+            "unrelated_namespaced_base","duplicate_known_types_only",
+            "duplicate_swallows_bad_alloc"
         }
         public_runs=0
         for name,record in solutions.items():
             *bodies,expected=record
             source=folder/(name+".cpp")
-            source.write_bytes(compose(original,tuple(bodies)).encode("utf-8"))
+            source_for_case=published
+            code=compose(original,tuple(bodies))
+            if name=="unrelated_namespaced_base":
+                note="namespace LgaedOther { class Muestra {}; }\n"
+                source_for_case=folder/"namespaced-original.cpp"
+                source_for_case.write_bytes((note+original).encode("utf-8"))
+                code=note+code
+            source.write_bytes(code.encode("utf-8"))
             private=folder/(name+".private.cpp")
-            generated=run([str(generator),str(published),str(source),str(private)])
+            generated=run([str(generator),str(source_for_case),str(source),str(private)])
             if generated.returncode or not private.is_file():
                 raise AssertionError((name,"Protected-body source gate failed",
                                       generated.stdout,generated.stderr))

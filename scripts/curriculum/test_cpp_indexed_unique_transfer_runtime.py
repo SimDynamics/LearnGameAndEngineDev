@@ -32,6 +32,8 @@ EXPECTED = {
     "same_value_without_identity": False,
     "correct_transfer_extra_stdout": False,
     "equal_value_hidden_copy": False,
+    "comment_before_class": True,
+    "literal_before_class": True,
 }
 
 
@@ -185,7 +187,7 @@ def main() -> int:
               "public stdout but fails the independent identity witness")
         print(f"PASS U6L5 automatic public cases: {public_executions} "
               "executions across original student-facing programs")
-    print("PASS ten U6L5 actual-source private witness executions; "
+    print("PASS twelve U6L5 actual-source private witness executions; "
           "no curriculum metadata or saved learner state changed")
     return 0
 

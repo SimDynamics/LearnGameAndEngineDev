@@ -3,6 +3,7 @@
 #include "core/code_format_compat.hpp"
 #include "core/cpp_private_probe_neutral.hpp"
 #include "core/cpp_member_body_check.hpp"
+#include "core/cpp_class_structure_check.hpp"
 
 #include <algorithm>
 #include <array>
@@ -52,42 +53,15 @@ inline std::string move_signature(const CppArrayCopyMovePolicy& p) {
         p.class_name+"&& "+p.move_parameter+") noexcept";
 }
 inline bool owns_original_members(const CppArrayCopyMovePolicy& p) {
-    const auto scanned=code_format::cpp_tokens(p.original_source);
-    if(!scanned||code_format::cpp_position_sensitive_tokens(*scanned))return false;
-    const auto& tokens=*scanned;
-    std::optional<std::size_t> opening;
-    for(std::size_t i=0;i+2<tokens.size();++i)
-        if((tokens[i]=="id:class"||tokens[i]=="id:struct")&&
-           tokens[i+1]=="id:"+p.class_name&&tokens[i+2]=="op:{") {
-            if(opening)return false;
-            opening=i+2;
-        }
-    if(!opening)return false;
-    std::size_t depth=1,closing=0;
-    for(auto i=*opening+1;i<tokens.size();++i) {
-        if(tokens[i]=="op:{")++depth;
-        else if(tokens[i]=="op:}"&&--depth==0) {
-            closing=i;break;
-        }
-    }
-    if(!closing)return false;
-    const std::array<std::string,9> expected_owner{{
-        "id:std","op:::","id:unique_ptr","op:<","id:int",
-        "op:[","op:]","op:>","id:"+p.owner_member}};
-    const std::array<std::string,2> expected_size{{
-        "id:int","id:"+p.count_member}};
-    bool found_owner=false,found_size=false;
-    for(auto i=*opening+1;i<closing;++i) {
-        if(i+expected_owner.size()<=closing&&std::equal(
-             expected_owner.begin(),expected_owner.end(),
-             tokens.begin()+static_cast<std::ptrdiff_t>(i)))
-            found_owner=true;
-        if(i+expected_size.size()<=closing&&std::equal(
-             expected_size.begin(),expected_size.end(),
-             tokens.begin()+static_cast<std::ptrdiff_t>(i)))
-            found_size=true;
-    }
-    return found_owner&&found_size;
+    const auto code=cpp_class_structure::lexical(p.original_source);
+    if(!code)return false;
+    const auto owner=cpp_class_structure::defined_class(*code,p.class_name);
+    return owner &&
+        cpp_class_structure::direct_field(*code,*owner,{
+            "id:std","op:::","id:unique_ptr","op:<","id:int",
+            "op:[","op:]","op:>","id:"+p.owner_member})&&
+        cpp_class_structure::direct_field(*code,*owner,{
+            "id:int","id:"+p.count_member});
 }
 inline bool policy_valid(const CppArrayCopyMovePolicy& p) {
     for(const auto item:{std::string_view(p.class_name),

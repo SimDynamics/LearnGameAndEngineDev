@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/cpp_multi_body_check.hpp"
+#include "core/cpp_class_structure_check.hpp"
 
 #include <algorithm>
 #include <array>
@@ -55,16 +56,23 @@ inline bool valid(const CppVirtualLifetimeDispatchPolicy& p) {
         p.register_stream+") const";
     const auto signature_b="void "+p.derived_class+"::"+p.write_method+
         "(std::ostream& "+p.write_stream+") const";
-    return p.editable.bodies[0].signature==signature_a&&
-        p.editable.bodies[1].signature==signature_b&&
-        source.find("class "+p.base_class+" {")!=std::string::npos&&
-        source.find("class "+p.derived_class+" : public "+p.base_class+" {")!=
-            std::string::npos&&
-        source.find("virtual ~"+p.base_class+"()")!=std::string::npos&&
-        source.find("virtual void "+p.write_method+"(std::ostream&")!=
-            std::string::npos&&
-        source.find("void "+p.write_method+"(std::ostream& "+
-                    p.write_stream+") const override;")!=std::string::npos;
+    if(p.editable.bodies[0].signature!=signature_a||
+       p.editable.bodies[1].signature!=signature_b)return false;
+    const auto code=cpp_class_structure::lexical(source);
+    if(!code)return false;
+    const auto base=cpp_class_structure::defined_class(*code,p.base_class);
+    const auto derived=cpp_class_structure::defined_class(
+        *code,p.derived_class,p.base_class);
+    return base&&derived&&
+        cpp_class_structure::direct_contains(*code,*base,{
+            "id:virtual","op:~","id:"+p.base_class,"op:(","op:)"})&&
+        cpp_class_structure::direct_contains(*code,*base,{
+            "id:virtual","id:void","id:"+p.write_method,
+            "op:(","id:std","op:::","id:ostream","op:&"})&&
+        cpp_class_structure::direct_contains(*code,*derived,{
+            "id:void","id:"+p.write_method,"op:(","id:std","op:::",
+            "id:ostream","op:&","id:"+p.write_stream,"op:)",
+            "id:const","id:override","op:;"});
 }
 inline void substitute(std::string& source,std::string_view key,
                        std::string_view replacement) {

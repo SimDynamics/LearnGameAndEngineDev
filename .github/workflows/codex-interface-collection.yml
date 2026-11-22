@@ -9,6 +9,8 @@ on:
       - scripts/curriculum/test_cpp_interface_collection_authoring.py
       - scripts/curriculum/stable_state_layout.py
       - native/core/cpp_interface_collection_check.hpp
+      - native/core/cpp_class_structure_check.hpp
+      - native/core/cpp_class_structure_check_tests.cpp
       - native/core/cpp_interface_collection_check_tests.cpp
       - native/core/cpp_multi_body_check.hpp
       - native/core/cpp_member_body_check.hpp
@@ -32,8 +34,17 @@ jobs:
         with:
           python-version: '3.12'
       - uses: ilammy/msvc-dev-cmd@v1
+      - name: Reject inactive and macro-generated C++ class contracts
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative native\core\cpp_class_structure_check_tests.cpp /Fe:class_structure_qa.exe
+          if errorlevel 1 exit /b 1
+          .\class_structure_qa.exe
+          if errorlevel 1 exit /b 1
       - name: Compile original, accepted alternatives and safe counterexamples
         shell: cmd
         run: |
           python -B scripts\curriculum\test_cpp_interface_collection.py --compiler cl --windows
+          if errorlevel 1 exit /b 1
           python -B -m unittest discover -s scripts\curriculum -p test_cpp_interface_collection_authoring.py -v
+          if errorlevel 1 exit /b 1

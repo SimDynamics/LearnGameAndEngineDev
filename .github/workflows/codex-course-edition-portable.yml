@@ -33,23 +33,17 @@ permissions:
 
 jobs:
   native-contract:
-    name: Native edition namespace and epoch contract (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    name: Native edition namespace and epoch contract (Windows MSVC)
+    runs-on: windows-2022
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-2022]
     steps:
       - name: Check out the exact Codex publication
         uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Select Windows MSVC for an independent core check
-        if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
       - name: Compile and run the isolated native contract with MSVC
-        if: runner.os == 'Windows'
         shell: cmd
         run: |
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /Inative native\\core\\course_edition_contract_tests.cpp /Fe:"%RUNNER_TEMP%\\course_edition_contract_tests.exe"
@@ -99,13 +93,9 @@ jobs:
           "%RUNNER_TEMP%\lgaed_catalog_version_tests.exe"
 
   authoring:
-    name: Verify edition authoring and retained files (${{ matrix.os }}, Python 3.12)
-    runs-on: ${{ matrix.os }}
+    name: Verify edition authoring and retained files (Windows, Python 3.12)
+    runs-on: windows-2022
     timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-2022]
     steps:
       - name: Check out the exact Codex publication
         uses: actions/checkout@v4

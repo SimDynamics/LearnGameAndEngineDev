@@ -69,6 +69,7 @@ def main():
             raise AssertionError(f"Invalid U8L7 published case {index}")
     examples={
         **{name:(body,True) for name,body in fixture.GOOD.items()},
+        "documented_balance_contract":(fixture.GOOD["prepare_then_move"],True),
         **{name:(body,False) for name,body in fixture.BAD.items()},
     }
     with tempfile.TemporaryDirectory(prefix="lgaed-u8l7-private-") as directory:
@@ -83,14 +84,24 @@ def main():
         # empty destination is passed by another caller. That source must
         # pass stdout and fail the independent private ownership test.
         public_variants=set(fixture.GOOD)|{
+            "documented_balance_contract",
             "discards_completed_candidate_for_empty_destination"
         }
         public_runs=0
         for name,(body,expected) in examples.items():
             source=folder/(name+".cpp")
-            source.write_bytes(fixture.compose(original,body).encode("utf-8"))
+            source_for_case=published
+            candidate=fixture.compose(original,body)
+            if name=="documented_balance_contract":
+                # Former literal matching ended the Balance scope at this
+                # fake, commented "};" before seeing any actual member.
+                note="// struct Balance { }; class Recurso {\n"
+                source_for_case=folder/"documented-original.cpp"
+                source_for_case.write_bytes((note+original).encode("utf-8"))
+                candidate=note+candidate
+            source.write_bytes(candidate.encode("utf-8"))
             private=folder/(name+".private.cpp")
-            generated=run([str(generator),str(published),str(source),str(private)])
+            generated=run([str(generator),str(source_for_case),str(source),str(private)])
             if generated.returncode or not private.is_file():
                 raise AssertionError((name,"Valid editable body rejected",
                                       generated.stdout,generated.stderr))
@@ -173,7 +184,7 @@ def main():
                 raise AssertionError((name,"Changed immutable source was accepted"))
             print(f"{args.compiler}: {name}: REJECT",flush=True)
     print("PASS U8L7 authenticated source and private derived preparation: "
-          "three safe approaches and thirteen invalid semantics tested; "
+          "four safe approaches and thirteen invalid semantics tested; "
           "all five real public cases also compared for the safe approaches "
           "and the empty-destination false positive. Original history intact.")
 

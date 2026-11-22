@@ -367,6 +367,93 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
                     relative, *position, old, active,
                     previous_document=self.original, current_document=forged))
 
+    def test_choice_with_indexed_hint_coedition_in_either_order(self):
+        """A corrected option and its independent feedback revision may publish together.
+
+        The archived option keeps its exact former contract, while each
+        guidance marker is scoped to its own answer position. Both editing
+        orders must preserve the student's answer and historical provenance.
+        """
+        import validar_json_programacion as contract
+
+        relative = "app/src/main/assets/content/es/" + RELATIVE
+        position = next((page, block)
+                        for page, row in enumerate(self.original["stateLayout"]["current"])
+                        for block, identity in enumerate(row["blocks"]) if identity == OWNER)
+        question = self.block["question"].replace(
+            "¿Qué falta?", "¿Qué condición debe comprobarse primero?")
+        self.assertNotEqual(question, self.block["question"])
+        hint = self.block["reviewFeedback"][0] + " Comprueba el estado de partida."
+
+        def review_guidance(document):
+            return layout.revise_ordinary_editorial(document, OWNER, {
+                "question": {
+                    "text": question,
+                    "spans": [layout.text_semantics.select(
+                        question, "enviar", "cpp", reading="technical")]},
+                "reviewFeedback": {
+                    "0": {"text": hint, "spans": []}},
+            })
+
+        for order in ("option-first", "guidance-first"):
+            with self.subTest(order=order):
+                if order == "option-first":
+                    intermediate = self.revise()
+                    final = review_guidance(intermediate)
+                else:
+                    intermediate = review_guidance(self.original)
+                    final = layout.revise_choice_editorial(
+                        intermediate, OWNER, 0, REVISED)
+                layout.validate_transition(self.original, intermediate)
+                layout.validate_transition(intermediate, final)
+                layout.validate_transition(self.original, final)
+                self.assertEqual(layout.validate(self.original), layout.validate(final))
+
+                old, new = self.block, layout._blocks(final)[OWNER]
+                # Authenticated wording changes the live option bytes, so
+                # its raw state fingerprint must change. Only the option
+                # restored through the signed archive retains the prior
+                # response contract, including the originally correct index.
+                archived_choice = final["stateLayout"]["choiceRevisions"][-1]
+                restored = layout._general_choice_projection(archived_choice, new)
+                self.assertEqual(layout.state_fingerprint(old),
+                                 layout.state_fingerprint(restored))
+                self.assertEqual(old["correctIndex"], new["correctIndex"])
+                self.assertEqual(old["options"][1:], new["options"][1:])
+                self.assertEqual(new["reviewFeedback"][0], hint)
+                self.assertEqual(old["reviewFeedback"][1:], new["reviewFeedback"][1:])
+                self.assertEqual(
+                    ("/question", "/reviewFeedback/0"),
+                    layout.ordinary_editorial_paths(
+                        {**old, "options": new["options"]}, new))
+                self.assertTrue(contract.preserves_general_choice_option_revision(
+                    relative, *position, old, new,
+                    previous_document=self.original, current_document=final))
+                self.assertTrue(contract.preserves_previous_exercise(
+                    relative, *position, old, new,
+                    previous_document=self.original, current_document=final))
+                self.assertEqual(self.original["stateLayout"]["origin"],
+                                 final["stateLayout"]["origin"])
+
+                for mutation in ("missing-feedback-mark", "other-hint", "answer"):
+                    tampered = deepcopy(final)
+                    active = layout._blocks(tampered)[OWNER]
+                    if mutation == "missing-feedback-mark":
+                        tampered["textSemantics"]["fields"] = [
+                            marker for marker in tampered["textSemantics"]["fields"]
+                            if (marker["block"], marker["path"]) !=
+                            (OWNER, "/reviewFeedback/0")]
+                    elif mutation == "other-hint":
+                        active["reviewFeedback"][1] += " Pista sin revisión."
+                    else:
+                        active["correctIndex"] = 2
+                    self.assertFalse(contract.preserves_general_choice_option_revision(
+                        relative, *position, old, active,
+                        previous_document=self.original, current_document=tampered))
+                    self.assertFalse(contract.preserves_previous_exercise(
+                        relative, *position, old, active,
+                        previous_document=self.original, current_document=tampered))
+
     def test_prose_before_option_survives_skipped_publication_without_reusing_answer(self):
         """A signed question correction may precede the independently archived option.
 

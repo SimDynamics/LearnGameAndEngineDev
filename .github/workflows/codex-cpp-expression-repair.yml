@@ -24,15 +24,23 @@ permissions:
 
 jobs:
   expression-contracts:
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 6
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     steps:
       - name: Read the exact revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Select Python for native Windows QA
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Verify optional repair contracts and historical preservation
-        run: python3 -B -m unittest discover -s scripts/curriculum -p test_cmake_graph_checks.py -v
+        run: python -B -m unittest discover -s scripts/curriculum -p test_cmake_graph_checks.py -v
 
   expression-msvc:
     runs-on: windows-2022

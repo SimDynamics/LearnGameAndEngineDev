@@ -17,16 +17,24 @@ permissions:
 jobs:
   original-assetcheck-history:
     name: Real owners, archived formats and current lesson (Python)
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 10
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     steps:
       - name: Read full published history in exact Codex revision
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Select Python for native Windows QA
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Test all pinned publications, real current owners and rejected mutations
         run: >
-          python3 -B -m unittest discover
+          python -B -m unittest discover
           -s scripts/curriculum
           -p test_assetcheck_u4l7_source_format.py -v

@@ -32,6 +32,50 @@ int main(int argc,char** argv)try {
     const lgaed::curriculum::CppArrayCopyMovePolicy spec{
         original,"Tramo","datos_","cantidad_","otra","otra",
         "cantidad","acceso","configurar","leer","escribir","vaciar","sumar"};
+    // Invalid original-source metadata is verified without compiling the
+    // forged program or affecting curriculum/student state.
+    const auto reject_owner=[&](std::string source,std::string_view reason) {
+        auto forged=spec;
+        forged.original_source=std::move(source);
+        if(lgaed::curriculum::cpp_array_copy_move_detail::
+                owns_original_members(forged))
+            throw std::runtime_error(std::string(reason));
+    };
+    {
+        auto source=original;
+        const std::string field="    std::unique_ptr<int[]> datos_{};";
+        const auto at=source.find("\n"+field);
+        if(at==std::string::npos)
+            throw std::runtime_error("Original Tramo array field missing");
+        source.replace(at+1,field.size(),
+                       "    std::unique_ptr<int[]> otro_{};");
+        source+="\nnamespace LgaedUnrelated { "
+                "class Tramo { std::unique_ptr<int[]> datos_{}; }; }\n";
+        reject_owner(source,
+                     "A namespaced Tramo impersonated the real owning array");
+    }
+    {
+        auto source=original;
+        const std::string field="    int cantidad_ = 0;";
+        const auto at=source.find("\n"+field);
+        if(at==std::string::npos)
+            throw std::runtime_error("Original Tramo count field missing");
+        source.replace(at+1,field.size(),"    int otra_cantidad_ = 0;");
+        source+="\nnamespace LgaedUnrelated { class Tramo { int cantidad_ = 0; }; }\n";
+        reject_owner(source,
+                     "An unrelated class supplied a missing Tramo count");
+    }
+    {
+        auto source=original;
+        const std::string field="    std::unique_ptr<int[]> datos_{};";
+        const auto at=source.find("\n"+field);
+        if(at==std::string::npos)
+            throw std::runtime_error("Original Tramo array field missing");
+        source.replace(at+1,field.size(),"    std::unique_ptr<int[]> otro_{};");
+        source+="\n#if 0\n"+field+"\n#endif\n";
+        reject_owner(source,
+                     "A disabled array member authenticated the original owner");
+    }
     if(!lgaed::curriculum::cpp_array_copy_move_matches(spec,candidate))
         throw std::runtime_error(
             "Changes outside the two published Tramo operator= bodies were rejected");

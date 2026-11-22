@@ -37,17 +37,25 @@ permissions:
 jobs:
   authoring:
     name: Validate six authentic U2 editors, without modifying curriculum
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 5
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
     steps:
       - name: Read the exact revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Select Python for native Windows authoring tests
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Verify append-only probes and original stable-state identities
-        run: python3 -B -m unittest discover -s scripts/curriculum -p test_local_int_probe_authoring.py -v
+        run: python -B -m unittest discover -s scripts/curriculum -p test_local_int_probe_authoring.py -v
       - name: Validate two authentic U2L7 text owners and original answer contracts
-        run: python3 -B -m unittest discover -s scripts/curriculum -p test_local_string_probe_authoring.py -v
+        run: python -B -m unittest discover -s scripts/curriculum -p test_local_string_probe_authoring.py -v
 
   hosted-msvc:
     name: Source-only MSVC, not the production-pinned Windows app
@@ -97,7 +105,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & $unit
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Compile and execute 30 generated string programs on hosted MSVC
+      - name: Compile and execute 37 generated string programs on hosted MSVC
         run: |
           $emitter = Join-Path $env:RUNNER_TEMP 'lgaed_local_string_fixtures.exe'
           $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_string_fixtures.obj'
@@ -182,19 +190,24 @@ jobs:
     # This tests hosted source probes, not the production-pinned Windows app.
     if: ${{ always() }}
     needs: [authoring, hosted-msvc, hosted-win32-state-source]
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 2
     permissions:
       statuses: write
     steps:
+      - name: Set up Python for Windows status reporting
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Report the exact commit's compiler-probe status
+        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AUTHORING: ${{ needs.authoring.result }}
           HOSTED_MSVC: ${{ needs.hosted-msvc.result }}
           WIN32_OBJECTS: ${{ needs.hosted-win32-state-source.result }}
         run: |
-          python3 - <<'PY'
+          @'
           import json
           import os
           from urllib.request import Request, urlopen
@@ -240,4 +253,4 @@ jobs:
               if response.status != 201:
                   raise RuntimeError("The commit status was not accepted")
           print("Source-only probe CI status:", state, results)
-          PY
+          '@ | python -B -

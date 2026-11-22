@@ -20,7 +20,8 @@ PATH=ROOT / ("app/src/main/assets/content/es/programming/"
              "lesson_elegir_copia_y_movimiento_de_una_clase.json")
 OWNER="block_0018_0002"
 MARKER="LGAED_DEFAULTED_MOVE_POLICY_COMPLETE_V1"
-EXPECTED=("correct_defaulted","correct_reordered_named_noexcept")
+EXPECTED=("correct_defaulted","correct_reordered_named_noexcept",
+          "comment_before_class","raw_literal_before_class")
 
 
 def execute(command,*,timeout=90):
@@ -133,7 +134,7 @@ def main():
                         f"stderr={run.stderr[-500:]!r}")
             print(f"{options.compiler}: {name} all "+
                   f"{len(public_cases)} optional/public cases: PASS",flush=True)
-    print("PASS genuine U6L6 move policy: two valid = default variants, "
+    print("PASS genuine U6L6 move policy: four valid = default variants, "
           "unchanged historical type/main, no allocation during moves, "
           "real forbidden-copy compiler diagnostics, identity and cleanup.")
 

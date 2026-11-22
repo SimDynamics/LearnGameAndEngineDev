@@ -63,6 +63,8 @@ def main() -> None:
                 qa.COPY["candidate_swap"],
                 qa.MOVE["move_and_exchange"]),
         }
+        allowed["namespaced_owner_reference"]=(
+            qa.COPY["candidate_swap"],qa.MOVE["move_and_exchange"])
         faulty={
             **{name:(bad,qa.MOVE["move_and_exchange"])
                for name,bad in qa.BAD_COPY.items()},
@@ -73,15 +75,28 @@ def main() -> None:
         # all reproduce the original stdout. Identity, strong exception
         # safety and returned references require the separate private driver.
         public_variants={
-            "swap_and_move","ctor_and_swap","reuses_equal_size_array",
+            "swap_and_move","ctor_and_swap","namespaced_owner_reference",
+            "reuses_equal_size_array",
             "swallows_bad_alloc","returns_move_source"
         }
         public_runs=0
         for name,(copy,move) in [*allowed.items(),*faulty.items()]:
             candidate=directory/(name+"-student.cpp")
-            candidate.write_bytes(qa.compose(original,copy,move).encode("utf-8"))
+            source_for_case=original_file
+            code=qa.compose(original,copy,move)
+            if name=="namespaced_owner_reference":
+                # A separate namespaced type uses identical field names
+                # without replacing the published global Tramo.
+                extra=("\nnamespace LgaedUnrelated {\n"
+                       "class Tramo { int cantidad_ = 0; "
+                       "std::unique_ptr<int[]> datos_{}; };\n"
+                       "}\n")
+                source_for_case=directory/"namespaced-original.cpp"
+                source_for_case.write_bytes((original+extra).encode("utf-8"))
+                code+=extra
+            candidate.write_bytes(code.encode("utf-8"))
             private=directory/(name+"-private.cpp")
-            gate=qa.run([str(generator),str(original_file),str(candidate),
+            gate=qa.run([str(generator),str(source_for_case),str(candidate),
                          str(private)])
             if gate.returncode or not private.is_file():
                 raise AssertionError((name,"valid method-body edit rejected",
@@ -203,7 +218,7 @@ def main() -> None:
             print(f"{options.compiler}: protected {name}: REJECT",flush=True)
     print("PASS U6L11 native authoring: valid and faulty copy/move bodies, "
           "protected original source, independent identity/cleanup proof; "
-          "two correct and three defective implementations were compared "
+          "three correct and three defective implementations were compared "
           "against all three genuine public cases without granting stdout "
           "alone semantic credit.")
 

@@ -1739,11 +1739,19 @@ declarados; no demuestran equivalencia semántica para todas las entradas
 posibles. El inicial sin ampliar sigue sin acreditar el objetivo aunque
 termine con `Fallos=0`, y cambiar sólo una etiqueta tampoco crea una prueba nueva.
 
+Además del resultado global y el mensaje, la instrumentación observa el
+**valor bool que devuelve cada comparación**. En la ejecución original todos
+deben ser verdaderos; al introducir un defecto, únicamente la comparación
+correspondiente a ese caso debe ser falsa. Un retorno fijo 1 o una línea
+«Fallos=1» fabricada no acredita el contraste si la función de comparación
+continúa devolviendo verdadero. El lector conserva intactos los mensajes
+públicos, incluso si la comparación escribió su diagnóstico a stderr.
+
 Esta acreditación usa
-`open-cmake-battery-independent-mutations-v4`. Los recibos v1, v2 y v3 conservan
-su identidad y alcance anteriores; no acreditan automáticamente la nueva
-mutación del destino. V3 mantiene su alcance de asociación entre números y
-llamadas, sin atribuirle esa comprobación adicional. Los borradores y los archivos
+`open-cmake-battery-independent-mutations-v5`. Los recibos v1 a v4 conservan
+su identidad y alcance anteriores, pero no acreditan el nuevo testigo de
+comparación individual. V4 conserva las tres mutaciones por caso y sus números,
+sin atribuirle una observación del retorno bool. Los borradores y los archivos
 del estudiante no se renumeran ni se reescriben al incorporar el objetivo.
 
 ### Entrada y acciones de ejecución
@@ -4030,10 +4038,13 @@ visuales. Ejemplo de estructura, para añadir mediante la autoría curricular:
 }]
 ```
 
-`afterInitialization` inserta la nueva asignación inmediatamente
-después de la definición de esa variable `std::string` local de
-`main`. `afterFirstAssignment` la inserta después de su primera
-asignación posterior a la definición, por ejemplo `codigo = "07";`.
+`afterInitialization` inserta la variación después de la declaración
+completa de la variable `std::string` local de `main`. Si la cadena se
+construyó vacía y recibe su valor por una operación posterior reconocida,
+la variación se inserta después de esa operación, para no perderla antes
+del cálculo. `afterFirstAssignment` la inserta después de la primera
+actualización completa posterior a la definición, como
+`codigo = "07";` o `codigo.replace(0, codigo.size(), "07");`.
 `beforeOutput` inserta un valor de control inmediatamente antes de la
 primera salida de `std::cout` que **lee realmente** esa variable. No
 basta que el texto coincida con un literal o que se imprima la
@@ -4044,12 +4055,15 @@ completas de varias cadenas con el mismo tipo explícito, como
 `std::string edificio{"Aula"}, codigo{"04"};`. La variación se inserta
 **después del punto y coma de toda la declaración**, nunca entre
 declaradores. También admite `std::string edificio, codigo;` seguido de
-asignaciones mediante `=`, `+=` o `codigo.assign(...)`: para
-`afterInitialization`, sustituye el valor **después de la primera asignación
-completa**, de modo que la instrucción original no borre la variación antes
-del cálculo. Lo mismo se aplica a `afterFirstAssignment` cuando la actualización
-usa `assign(...)`. Estas formas equivalentes
-siguen exigiendo compilaciones y salidas independientes correctas.
+operaciones completas de escritura mediante `=`, `+=`, `assign(...)` o
+`append(...)`. Por ejemplo, una cadena inicialmente vacía que recibe
+`edificio.append("Aula");` se varía después de esa llamada, no antes.
+`replace(...)` también es una actualización reconocida para
+`afterFirstAssignment`. Estas operaciones deben actuar directamente sobre
+la cadena local en una instrucción del cuerpo principal de `main`, no
+dentro de otro ámbito. Tanto la fuente original como la variante privada
+se compilan y ejecutan: la coincidencia de los textos visibles por sí sola
+no acredita una dependencia.
 Las declaraciones ambiguas que mezclen punteros o propietarios de otro
 tipo se rechazan. También se rechaza una declaración agrupada cuyo
 inicializador hermano lea la variable intervenida, porque una variación

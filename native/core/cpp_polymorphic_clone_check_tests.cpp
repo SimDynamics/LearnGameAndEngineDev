@@ -92,6 +92,30 @@ void check_original_virtual_declarations(
         "using  Muestras /* kept source note */=std::vector<std::unique_ptr<Muestra>>;");
     if(!guard::valid(formatted))
         throw std::runtime_error("Safe C++ whitespace/comment formatting of the alias was rejected");
+    // The class gate used by abstract interfaces and cloning has one
+    // global owner. A similarly named namespace-local type remains inert.
+    {
+        const std::string unrelated=
+            "namespace LgaedOther { class Muestra { public: "
+            "virtual ~Muestra() = default; }; }\n";
+        auto documented=policy;
+        documented.original_source=unrelated+policy.original_source;
+        if(!guard::valid(documented))
+            throw std::runtime_error(
+                "A namespaced base concealed the valid global clone interface");
+        auto missing=policy;
+        const auto class_position=missing.original_source.find("\nclass Muestra {");
+        const auto class_closing=class_position==std::string::npos?
+            std::string::npos:missing.original_source.find("\n};",class_position);
+        if(class_position==std::string::npos||class_closing==std::string::npos)
+            throw std::runtime_error("Original global polymorphic base vanished");
+        missing.original_source.erase(
+            class_position,class_closing+3-class_position);
+        missing.original_source+=unrelated;
+        if(guard::valid(missing))
+            throw std::runtime_error(
+                "A namespaced base replaced the missing global cloning owner");
+    }
 }
 
 }

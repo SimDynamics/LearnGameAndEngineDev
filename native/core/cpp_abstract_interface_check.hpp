@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/cpp_multi_body_check.hpp"
+#include "core/cpp_class_structure_check.hpp"
 #include "core/cpp_private_probe_neutral.hpp"
 
 #include <algorithm>
@@ -51,44 +52,26 @@ inline bool identifier(std::string_view name) {
 inline bool direct_class_declaration(
         std::string_view source,std::string_view class_name,
         std::string_view declaration) {
-    namespace scanner=cpp_member_body_detail;
-    const auto signature="class "+std::string(class_name);
-    const auto class_at=scanner::definition_start(source,signature);
-    if(!class_at)return false;
-    const auto open=scanner::definition_opening(
-        source,*class_at+signature.size());
-    if(!open)return false;
-    const auto end=scanner::closing_brace(source,open->position);
-    if(!end)return false;
-    const auto begin=open->position+open->length;
-    const auto tokens=code_format::cpp_tokens(source.substr(begin,*end-begin));
+    const auto tokens=cpp_class_structure::lexical(source);
     const auto expected=code_format::cpp_tokens(declaration);
     if(!tokens||!expected||expected->empty())return false;
-    std::vector<std::string_view> actual;
-    actual.reserve(tokens->size());
-    for(const auto& token:*tokens) {
-        if(token.starts_with("comment:"))continue;
-        // A preprocessor branch can change which declaration exists.
-        // Do not authenticate an ambiguous base-class source without it
-        // being resolved by a trusted complete publication.
-        if(token.starts_with("directive:"))return false;
-        actual.push_back(token);
-    }
-    std::size_t depth=0;
+    const auto owner=cpp_class_structure::defined_class(*tokens,class_name);
+    if(!owner)return false; // Only the global curriculum owner can attest.
+    std::size_t depth=1;
     bool found=false;
-    for(std::size_t i=0;i<actual.size();++i) {
-        if(depth==0 && i+expected->size()<=actual.size() &&
-           std::equal(expected->begin(),expected->end(),actual.begin()+i)) {
+    for(auto i=owner->opening+1;i<owner->closing;++i) {
+        if(depth==1&&i+expected->size()<=owner->closing&&
+           std::equal(expected->begin(),expected->end(),tokens->begin()+i)) {
             if(found)return false;
             found=true;
         }
-        if(actual[i]=="op:{"||actual[i]=="op:<%")++depth;
-        else if(actual[i]=="op:}"||actual[i]=="op:%>") {
-            if(depth==0)return false;
+        if(cpp_class_structure::open_brace((*tokens)[i]))++depth;
+        else if(cpp_class_structure::close_brace((*tokens)[i])) {
+            if(!depth)return false;
             --depth;
         }
     }
-    return depth==0&&found;
+    return depth==1&&found;
 }
 
 // Only methods directly declared in the selected class are its editable
@@ -151,6 +134,10 @@ inline std::optional<CppMemberBodySpan> inline_body(
     // Match genuine line-leading definitions, not example classes copied
     // into comments, string literals or raw documentation. The same lexical
     // scanner already protects qualified member definitions and free bodies.
+    const auto scanned=cpp_class_structure::lexical(code);
+    if(!scanned||!cpp_class_structure::defined_class(
+            *scanned,class_name,base_name))
+        return {}; // A nested class is not the published global owner.
     const auto class_signature="class "+std::string(class_name)+
         " : public "+std::string(base_name);
     const auto class_at=scanner::definition_start(code,class_signature);
@@ -230,6 +217,12 @@ inline bool valid(const CppAbstractInterfacePolicy& p) {
             std::string_view(p.object_parameter)})
         if(!identifier(value))return false;
     const auto& source=p.original_source;
+    const auto scanned=cpp_class_structure::lexical(source);
+    if(!scanned||
+       !cpp_class_structure::defined_class(*scanned,p.base_class)||
+       !cpp_class_structure::defined_class(*scanned,p.simple_class,p.base_class)||
+       !cpp_class_structure::defined_class(*scanned,p.identified_class,p.base_class))
+        return false;
     if(!spans(p,source,false))return false;
     // The provided interface and getters are an executable prerequisite,
     // not a phrase that may be quoted elsewhere in its original source.

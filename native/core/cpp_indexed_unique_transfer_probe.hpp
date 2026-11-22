@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/cpp_member_body_check.hpp"
+#include "core/cpp_class_definition_instrumentation.hpp"
 #include "core/code_format_compat.hpp"
 
 #include <algorithm>
@@ -110,16 +111,10 @@ inline std::optional<std::string> cpp_indexed_unique_transfer_probe_source(
     // Attach only a friend witness to the original class, not another owner,
     // another implementation or a replacement public API. The student source
     // was authenticated before this strictly private instrumentation.
-    const std::string class_declaration="class "+spec.class_name+" {";
-    const auto found=candidate.find(class_declaration);
-    if(found==candidate.npos || candidate.find(class_declaration,found+1)!=candidate.npos)
-        return {};
-    const auto class_open=found+class_declaration.size()-1;
-    const auto class_close=cpp_member_body_detail::closing_brace(candidate,class_open);
-    if(!class_close || candidate.substr(*class_close+1).find(';')==std::string_view::npos)
-        return {};
+    const auto insertion=cpp_class_definition_instrumentation::body_insertion(candidate,spec.class_name);
+    if(!insertion)return {};
     std::string instrumented(candidate);
-    instrumented.insert(class_open+1,"\n    friend struct lgaed_transfer_qa::Access;\n");
+    instrumented.insert(*insertion,"\n    friend struct lgaed_transfer_qa::Access;\n");
 
     static constexpr std::string_view prelude=R"probe(#include <cstddef>
 #include <cstdlib>

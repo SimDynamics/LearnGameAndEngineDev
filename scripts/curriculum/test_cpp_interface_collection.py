@@ -209,6 +209,9 @@ def main()->None:
     solutions={
         "valid_push":(ADD,REPORT,True),
         "valid_emplace":(ALT_ADD,ALT_REPORT,True),
+        "documented_interface":(ADD,REPORT,True),
+        "unrelated_namespace_alias":(ADD,REPORT,True),
+        "unrelated_namespaced_class":(ADD,REPORT,True),
         **{name:(a,b,False) for name,(a,b) in BAD.items()}
     }
     with tempfile.TemporaryDirectory(prefix="lgaed-u8l9-owners-") as d:
@@ -221,13 +224,42 @@ def main()->None:
         # Only the two published subclasses appear in all five stdout cases.
         # A hardcoded dynamic_cast chain can match each of them while failing
         # to consume a third valid Muestra interface implementation.
-        public_variants={"valid_push","valid_emplace","known_types_only"}
+        public_variants={"valid_push","valid_emplace",
+                         "documented_interface","unrelated_namespace_alias",
+                         "unrelated_namespaced_class","known_types_only"}
         public_runs=0
         for name,(add,report,expected) in solutions.items():
             edited=folder/(name+".cpp")
-            edited.write_bytes(compose(original,add,report).encode("utf-8"))
+            source_for_case=source
+            candidate=compose(original,add,report)
+            if name=="documented_interface":
+                note=("// class Muestra {\n"
+                      "// class MuestraSimple : public Muestra {\n"
+                      "// using Muestras = std::vector<std::unique_ptr<Muestra>>;\n")
+                source_for_case=folder/"documented-original.cpp"
+                source_for_case.write_bytes((note+original).encode("utf-8"))
+                candidate=note+candidate
+            if name=="unrelated_namespaced_class":
+                # This separate class shares a spelling, not the identity
+                # of the global Muestra used by the published interface.
+                extra="\nnamespace LgaedOther { class Muestra {}; }\n"
+                source_for_case=folder/"nested-class-original.cpp"
+                source_for_case.write_bytes((original+extra).encode("utf-8"))
+                candidate+=extra
+            if name=="unrelated_namespace_alias":
+                # A real global alias remains the owner contract when an
+                # unrelated namespace has a different alias with that name.
+                # Avoid a deliberately shadowing local declaration: MSVC
+                # warns C4459 under the /W4 /WX contract for this QA.
+                extra=("\nnamespace lgaed_alias_example {\n"
+                       "  using Muestras = std::vector<std::unique_ptr<MuestraSimple>>;\n"
+                       "}\n")
+                source_for_case=folder/"alias-original.cpp"
+                source_for_case.write_bytes((original+extra).encode("utf-8"))
+                candidate+=extra
+            edited.write_bytes(candidate.encode("utf-8"))
             witness=folder/(name+".private.cpp")
-            created=run([str(generator),str(source),str(edited),str(witness)])
+            created=run([str(generator),str(source_for_case),str(edited),str(witness)])
             if created.returncode or not witness.is_file():
                 raise AssertionError((name,"Source gate denied body-only edit",
                                       created.stdout,created.stderr))
@@ -306,7 +338,7 @@ def main()->None:
                 raise AssertionError((name,"Immutable source accepted mutation"))
             print(f"{args.compiler}: {name}: REJECT",flush=True)
     print(f"PASS U8L9 independent ownership/interface proof: "
-          f"two valid, {len(BAD)} defective and {len(attacks)} tampered sources; "
+          f"five valid, {len(BAD)} defective and {len(attacks)} tampered sources; "
           f"all five original public cases match even for the "
           f"known-types-only counterexample, which the private third-type "
           f"and owner-identity probe rejects.")

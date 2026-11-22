@@ -33,6 +33,50 @@ int main(int argc,char** argv)try {
         original,"Lote","datos_","cantidad_","cantidad","indice","resultado",
         "configurar","leer","cantidad","acceso","escribir","vaciar","sumar"
     };
+    // These temporary metadata attacks never execute the invalid program.
+    // A namespaced owner, a nested owner or a disabled declaration cannot
+    // replace one of the authenticated global Lote fields.
+    const auto reject_original=[&](std::string source,std::string_view reason) {
+        auto forged=spec;
+        forged.original_source=std::move(source);
+        if(lgaed::curriculum::cpp_array_owner_read_detail::
+                original_fields(forged))
+            throw std::runtime_error(std::string(reason));
+    };
+    {
+        auto source=original;
+        const std::string field="    std::unique_ptr<int[]> datos_{};";
+        const auto at=source.find("\n"+field);
+        if(at==std::string::npos)
+            throw std::runtime_error("Original Lote owner field missing");
+        source.replace(at+1,field.size(),"    std::unique_ptr<int[]> otro_{};");
+        source+="\nnamespace LgaedForeign { class Lote { "
+                "std::unique_ptr<int[]> datos_{}; int cantidad_ = 0; }; }\n";
+        reject_original(source,
+                        "Namespaced Lote impersonated the global owner field");
+    }
+    {
+        auto source=original;
+        const std::string field="    int cantidad_ = 0;";
+        const auto at=source.find("\n"+field);
+        if(at==std::string::npos)
+            throw std::runtime_error("Original Lote count field missing");
+        source.replace(at+1,field.size(),"    int otra_cantidad_ = 0;");
+        source+="\nclass LgaedWrapper { class Lote { int cantidad_ = 0; }; };\n";
+        reject_original(source,
+                        "Nested Lote impersonated the global element count");
+    }
+    {
+        auto source=original;
+        const std::string field="    std::unique_ptr<int[]> datos_{};";
+        const auto at=source.find("\n"+field);
+        if(at==std::string::npos)
+            throw std::runtime_error("Original Lote owner field missing");
+        source.replace(at+1,field.size(),"    std::unique_ptr<int[]> otro_{};");
+        source+="\n#if 0\n"+field+"\n#endif\n";
+        reject_original(source,
+                        "Preprocessor-disabled array field satisfied the contract");
+    }
     if(!lgaed::curriculum::cpp_array_owner_read_matches(spec,candidate))
         throw std::runtime_error("Changed protected source or invalid method bodies");
     const auto probe=lgaed::curriculum::cpp_array_owner_read_private_driver(

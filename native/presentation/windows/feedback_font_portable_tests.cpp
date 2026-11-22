@@ -130,7 +130,10 @@ struct Fixture{
             {"type":"inline_fill_code","question":"Completa las dos variables.",
              "language":"cpp","template":"int llaves = [];\nint cajas = [];",
              "answers":["7","2"],"explanation":"Ambos valores se conservan.",
-             "reviewFeedback":"Comprueba las dos inicializaciones."}
+             "reviewFeedback":"Comprueba las dos inicializaciones."},
+            {"type":"drag_fill_code","question":"Coloca la función.",
+             "template":"int []() { return 0[] }",
+             "choices":["main",";"],"correctOrder":[0,1]}
           ]}]
         })json";
         lesson=windows::parse_lesson_json(file,"es");
@@ -247,6 +250,48 @@ void exercise(){
         verify(i+1,150);
     }
     unchanged();
+    // Hosted Win32 verifies the same production instruction that the
+    // full pinned-compiler '--order-help' test checks after localization.
+    // No historical answers, UI texts or stored profiles are written here.
+    struct DragInstructions {
+        std::string_view locale,order,fill;
+    };
+    const std::array<DragInstructions,3> desktop_languages{{
+        {"es","Arrastra las líneas de código hasta dejarlas en el orden correcto.",
+              "Arrastra cada bloque de código hasta el espacio vacío correspondiente."},
+        {"en","Drag the code lines into the correct order.",
+              "Drag each code block into its matching empty slot."},
+        {"fr","Faites glisser les lignes de code pour les mettre dans le bon ordre.",
+              "Faites glisser chaque bloc de code vers l’emplacement vide correspondant."}
+    }};
+    const auto original_curriculum=f.lesson.raw_json;
+    const auto check_drag_help=[&](int owner,std::string_view expected) {
+        const auto help=control(f.view,id(owner,37));
+        require(edit_text(help)==expected,
+            "A real Win32 order/drag-fill helper does not match its localized desktop instruction");
+        const auto regions=lesson_reading_regions(f.view);
+        require(std::ranges::count_if(regions,[&](const auto& region) {
+            return region.target==help&&region.source_text==expected;
+        })==1,"The lesson reader disagrees with its visible order/drag-fill instruction");
+        require(edit_text(help).find("Press and hold")==std::string::npos&&
+                edit_text(help).find("Maintenez le doigt")==std::string::npos,
+            "The Windows-only lesson announced a retired touch-only gesture");
+        require(f.lesson.raw_json==original_curriculum,
+            "Changing the UI instruction rewrote immutable curricular content");
+    };
+    for(const auto& language:desktop_languages) {
+        update_lesson_preferences(f.view,[&](state::StateData& data) {
+            data.preferences["native_windows"]["ui_language"]=std::string(language.locale);
+        });
+        dispatch(f.host);
+        check_drag_help(4,language.order);
+        check_drag_help(6,language.fill);
+        f.reopen();
+        check_drag_help(4,language.order);
+        check_drag_help(6,language.fill);
+    }
+    std::cout<<"PASS hosted Win32 desktop order AND drag-fill help ES/EN/FR: "
+             <<"identical visible/reader instructions after language changes and reopen.\n";
     std::cout<<"PASS real LessonView feedback: fill_code, choice, prediction, "
         "order_code, inline_fill_code, correct/incorrect and 75/100/125/150% shared 18sp; "
         "reopen and narration preserved.\n";

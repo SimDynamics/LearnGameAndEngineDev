@@ -74,20 +74,55 @@ def main():
                 qa.CONFIGURE["allocate_then_swap"],
                 qa.READ["bounds_first"]),
         }
+        # These are separate in-memory authored sources. A class declaration
+        # mentioned before the actual definition must never receive the
+        # private friend, and the original lesson file stays untouched.
+        descriptive_prefixes={
+            "comment_before_class":
+                "// A class example before the real declaration:\n"
+                "// class Lote {\n",
+            "raw_literal_before_class":
+                'const char* documented = R"info(class Lote {\n)info";\n',
+        }
+        for label in descriptive_prefixes:
+            allowed[label]=(qa.CONFIGURE["allocate_then_swap"],
+                            qa.READ["bounds_first"])
+        allowed["namespaced_same_name"]=(qa.CONFIGURE["allocate_then_swap"],
+                                        qa.READ["bounds_first"])
         deficient={
             **{name:(body,qa.READ["bounds_first"])
                for name,body in qa.BAD_CONFIGURE.items()},
             **{name:(qa.CONFIGURE["allocate_then_swap"],body)
                for name,body in qa.BAD_READ.items()},
         }
-        public_variants=("swap_and_bounds","new_and_range","reject_changes_output")
+        public_variants=("swap_and_bounds","new_and_range",
+                         "comment_before_class","raw_literal_before_class",
+                         "namespaced_same_name","reject_changes_output")
         public_runs=0
         for label,(configure,read) in [*allowed.items(),*deficient.items()]:
             candidate=qa.compose(original,configure,read)
+            source_original=original_file
+            if label in descriptive_prefixes:
+                prefix=descriptive_prefixes[label]
+                if "class Lote {\n" not in prefix:
+                    raise AssertionError("The class shadow must have exact original bytes")
+                source_original=root/(label+"-original.cpp")
+                source_original.write_bytes((prefix+original).encode("utf-8"))
+                candidate=prefix+candidate
+            if label=="namespaced_same_name":
+                # The real global Lote is unchanged. A same-named C++ type
+                # inside an unrelated namespace must not steal the private
+                # friend or change the array witness ownership.
+                extra=("\nnamespace LgaedForeign {\n"
+                       "class Lote { std::unique_ptr<int[]> datos_{}; "
+                       "int cantidad_ = 0; };\n}\n")
+                source_original=root/"namespaced-original.cpp"
+                source_original.write_bytes((original+extra).encode("utf-8"))
+                candidate+=extra
             candidate_file=root/(label+"-student.cpp")
             candidate_file.write_bytes(candidate.encode("utf-8"))
             private_file=root/(label+"-private.cpp")
-            result=qa.run([str(generator),str(original_file),
+            result=qa.run([str(generator),str(source_original),
                            str(candidate_file),str(private_file)])
             if result.returncode or not private_file.exists():
                 raise AssertionError((label,"rejected legitimate body-only edit",
@@ -200,7 +235,7 @@ def main():
             print(f"{options.compiler}: protected {label}: REJECT",flush=True)
 
     print("PASS U6L10 native source and semantic probe, including three "
-          "authentic public cases for both valid variants and the invalid "
+          "authentic public cases for five valid variants and the invalid "
           "output-overwrite counterexample. Public stdout does not replace "
           "the independent padded read and array-allocation witness.")
 

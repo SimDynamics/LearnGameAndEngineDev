@@ -1,12 +1,15 @@
 #pragma once
 
 #include "core/cpp_multi_body_check.hpp"
+#include "core/cpp_class_structure_check.hpp"
 
 #include <algorithm>
 #include <array>
+#include <initializer_list>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace lgaed::curriculum {
 
@@ -61,29 +64,33 @@ inline bool valid(const CppPolymorphicDestructionPolicy& p) {
        bodies[2].signature.find("std::unique_ptr<"+p.base_class+"> "+
           p.factory_function+"(")!=0)
         return false;
-    // Keep the declared names bound to actual source objects. Otherwise
-    // well-formed but misspelled author metadata would make every valid
-    // student solution fail the private C++ check after the first case.
-    const auto owned_type=source.find("class "+p.owned_class+" {")!=std::string::npos||
-        source.find("struct "+p.owned_class+" {")!=std::string::npos;
-    const auto write_operation=source.find("void "+p.write_method+"(")!=std::string::npos;
-    const auto cycle_at=source.find("struct "+p.cycle_class+" {");
-    const auto cycle_end=cycle_at==std::string::npos
-        ?std::string::npos:source.find("};",cycle_at);
-    if(!owned_type||!write_operation||cycle_end==std::string::npos)return false;
-    const auto cycle=std::string_view(source).substr(cycle_at,cycle_end-cycle_at);
-    for(std::string_view field:{std::string_view(p.base_alive),
-            std::string_view(p.derived_alive),std::string_view(p.owned_alive),
-            std::string_view(p.base_destroyed),
-            std::string_view(p.derived_destroyed),
-            std::string_view(p.owned_destroyed)})
-        if(cycle.find("int "+std::string(field))==cycle.npos)return false;
-    // The actual base virtuality and single-owner member are immutable.
-    // The private driver verifies real derived identity and complete cleanup.
-    return source.find("virtual ~"+p.base_class+"() noexcept;")!=std::string::npos&&
-        source.find("~"+p.derived_class+"() noexcept override;")!=std::string::npos&&
-        source.find("std::unique_ptr<"+p.owned_class+"> "+p.owned_member+";")!=
-            std::string::npos;
+    // Protect *global* curricular owners and direct member declarations.
+    // A same-named type inside a function or namespace is unrelated: it
+    // cannot supply Ciclo's counters, Ficha, a destructor or ficha_.
+    const auto code=cpp_class_structure::lexical(source);
+    if(!code)return false;
+    const auto cycle=cpp_class_structure::defined_class(*code,p.cycle_class);
+    const auto owned=cpp_class_structure::defined_class(*code,p.owned_class);
+    const auto base_class=cpp_class_structure::defined_class(*code,p.base_class);
+    const auto derived_class=cpp_class_structure::defined_class(
+        *code,p.derived_class,p.base_class);
+    if(!cycle||!owned||!base_class||!derived_class)return false;
+    const auto has=cpp_class_structure::direct_contains;
+    return cpp_class_structure::direct_int_fields(*code,*cycle,{
+            p.base_alive,p.derived_alive,p.owned_alive,
+            p.base_destroyed,p.derived_destroyed,p.owned_destroyed})&&
+        has(*code,*base_class,{
+            "id:virtual","op:~","id:"+p.base_class,
+            "op:(","op:)","id:noexcept","op:;"})&&
+        has(*code,*derived_class,{
+            "op:~","id:"+p.derived_class,"op:(","op:)",
+            "id:noexcept","id:override","op:;"})&&
+        has(*code,*derived_class,{
+            "id:std","op:::","id:unique_ptr","op:<",
+            "id:"+p.owned_class,"op:>","id:"+p.owned_member,"op:;"})&&
+        has(*code,*base_class,{
+            "id:virtual","id:void","id:"+p.write_method,"op:(",
+            "id:std","op:::","id:ostream","op:&"});
 }
 inline void substitute(std::string& source,std::string_view key,
                        std::string_view replacement) {

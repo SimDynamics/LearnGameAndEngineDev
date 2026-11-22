@@ -139,6 +139,11 @@ inline bool clause_boundary(std::string_view folded,const Word& left,
 inline bool labelled(std::string_view source,const std::vector<Word>& words,
         std::initializer_list<std::string_view> names,int expected) {
     const auto folded=fold_spanish(source);
+    const auto skip_horizontal=[&](std::size_t offset) {
+        while(offset<folded.size()&&
+              (folded[offset]==' '||folded[offset]=='\t'))++offset;
+        return offset;
+    };
     bool found=false;
     for(std::size_t i=0;i<words.size();++i)if(one_of(words[i].text,names)) {
         // Allow "petición número 2", "cobros: 10" and "piezas recibidas -1".
@@ -159,6 +164,22 @@ inline bool labelled(std::string_view source,const std::vector<Word>& words,
                     if((next=='.'&&(following=='.'||digit(following)))||
                        ((next==','||next=='-'||next=='+')&&
                         digit(following)))return false;
+                }
+                // An arithmetic expression is not the observed whole integer.
+                // Whitespace around plus/minus matters: "piezas=-1 - 2"
+                // cannot borrow the integer prefix -1. Normal punctuation
+                // before a different named field remains readable prose.
+                const auto operation=skip_horizontal(end);
+                if(operation<folded.size()&&
+                   (folded[operation]=='+'||folded[operation]=='-'||
+                    folded[operation]=='/'||folded[operation]=='*'||
+                    folded[operation]=='%'||folded[operation]=='^')) {
+                    const auto operand=skip_horizontal(operation+1);
+                    if(operand<folded.size()&&
+                       (digit(folded[operand])||
+                        ((folded[operand]=='+'||folded[operand]=='-')&&
+                         operand+1<folded.size()&&digit(folded[operand+1]))))
+                        return false;
                 }
                 if(*words[j].number!=expected)return false;
                 found=true;

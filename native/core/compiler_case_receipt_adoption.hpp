@@ -26,7 +26,7 @@ template<class MakeProof>
         std::string_view historical_program,
         std::span<const std::string> historical_proofs, MakeProof&& make_proof) {
     if(current_proofs.size()!=current.cases.size() ||
-       historical.input_comparison!=current.input_comparison ||
+       !same_output_check_runtime_requirements(historical,current) ||
        historical_client_epoch!=current_client_epoch ||
        historical_program.empty() ||
        (!current_program.empty() && current_program!=historical_program))

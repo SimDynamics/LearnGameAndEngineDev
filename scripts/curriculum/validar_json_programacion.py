@@ -1539,7 +1539,11 @@ def preserves_general_choice_option_revision(relative, pn, bn, old, current, *,
         if not prose:
             return False
         semantics = _state_layout.text_semantics.validate(current_document)
-        changed_paths = {"/" + field for field in prose}
+        # Indexed reviewFeedback belongs to each choice (e.g. /reviewFeedback/0),
+        # never to the nonexistent aggregate /reviewFeedback marker.
+        # Use the same authenticated paths as the state/layout transition and
+        # ordinary editorial validator, including changed question/explanation.
+        changed_paths = set(_state_layout.ordinary_editorial_paths(expected, current))
         if not changed_paths <= set(semantics.get(identity, {})):
             return False
         root = _state_layout.text_semantics.ROOT_FIELD

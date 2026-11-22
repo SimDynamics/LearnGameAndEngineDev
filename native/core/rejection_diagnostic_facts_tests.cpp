@@ -478,7 +478,9 @@ void diagnostic_numbers_must_be_complete_integers() {
         evaluate_rejection_diagnostics(balance("2","10","0"),
         RejectionOperation::balance,balance_expected).correct,
         "Valid complete integer evidence no longer passes");
-    for(const auto malformed:{"1x","1e0","1.5","1_0","1-0","1,5","1..2"}) {
+    for(const auto malformed:{"1x","1e0","1.5","1_0","1-0","1,5","1..2",
+                               "1/2","1 / 2","1/-2","1*2","1 % 2","1^2",
+                               "1 + 2","1 - 2","1 + -2","1 - -2"}) {
         require(!evaluate_rejection_diagnostics(box(malformed,"-1"),
             RejectionOperation::boxes,boxes_expected).correct,
             "A numeric prefix falsely named the observed request");
@@ -487,22 +489,46 @@ void diagnostic_numbers_must_be_complete_integers() {
             "A malformed balance-request number was accepted");
     }
     for(const auto malformed:{"-1x","-1kg","-1e0","-1.0","-1_0",
-                              "-1-0","-1,5","-1..2"}) {
+                              "-1-0","-1,5","-1..2","-1/2","-1 / -2",
+                              "-1*2","-1 % 2","-1^2",
+                              "-1 + 2","-1 - 2","-1 + -2"}) {
         require(!evaluate_rejection_diagnostics(box("1",malformed),
             RejectionOperation::boxes,boxes_expected).correct,
             "A malformed pieces value was treated as the expected integer");
     }
     for(const auto malformed:{"10x","10kg","10e0","10.0","10_0",
-                              "10-0","10,5","10..11"}) {
+                              "10-0","10,5","10..11","10/2","10 * 2",
+                              "10 + 2","10 - 2"}) {
         require(!evaluate_rejection_diagnostics(balance("2",malformed,"0"),
             RejectionOperation::balance,balance_expected).correct,
             "A malformed charges value was treated as a valid field fact");
     }
-    for(const auto malformed:{"0x","0e0","0.0","0_0","0-0","0,5","0..1"}) {
+    for(const auto malformed:{"0x","0e0","0.0","0_0","0-0","0,5","0..1",
+                               "0/2","0 % 2","0 + 2","0 - 2"}) {
         require(!evaluate_rejection_diagnostics(balance("2","10",malformed),
             RejectionOperation::balance,balance_expected).correct,
             "A malformed refunds value was treated as zero");
     }
+    // A slash between field statements is not fractional arithmetic:
+    // preserve fully identified numbers while rejecting "petition 1/2".
+    require(evaluate_rejection_diagnostics(
+        "Cajas, petición 1 / registro, piezas=-1: rango permitido 0..20. "
+        "Revise la cantidad.\n"
+        "Cajas, petición 3, piezas=21: rango permitido 0..20. "
+        "Revise la cantidad.\n",
+        RejectionOperation::boxes,boxes_expected).correct,
+        "A separator between full facts was mistaken for arithmetic");
+
+    // Dash punctuation may separate a complete request and its next named
+    // field. Do not reject it as subtraction unless the operand is numeric.
+    require(evaluate_rejection_diagnostics(
+        "Cajas, petición 1 - piezas=-1: rango permitido 0..20. "
+        "Revise la cantidad.\n"
+        "Cajas, petición 3 - piezas=21: rango permitido 0..20. "
+        "Revise la cantidad.\n",
+        RejectionOperation::boxes,boxes_expected).correct,
+        "A dash between named fields was mistaken for subtraction");
+
     // Normal separators and closed intervals still communicate whole facts.
     require(evaluate_rejection_diagnostics(
         "Cajas, petición 1, piezas=-1: rango permitido [0,20]. "

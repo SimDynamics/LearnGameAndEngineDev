@@ -2590,6 +2590,79 @@ void optional_separator_help_matches_screen_reader_and_grading() {
     std::cout<<"PASS optional code-order help: exact visible/reader instruction, no old shortcuts, blank moved or untouched, same graded order and persisted answer\n";
 }
 
+
+void desktop_drag_instructions_match_visible_and_spoken_text_in_all_languages() {
+    // Only the human-facing instruction changes. The original order, answer
+    // and saved draft remain under the same source-owned lesson identity.
+    const std::array<std::string_view,3> locales{"es","en","fr"};
+    const std::array<std::array<std::string_view,3>,3> expected{{
+        {{
+            "Arrastra las líneas de código hasta dejarlas en el orden correcto.",
+            "Drag the code lines into the correct order.",
+            "Faites glisser les lignes de code pour les mettre dans le bon ordre."
+        }},
+        {{
+            "Arrastra las líneas de código para ordenarlas. Puedes mover las tarjetas vacías si quieres dejar una línea en blanco.",
+            "Drag the code lines to put them in order. You can move blank cards if you want to leave an empty line.",
+            "Faites glisser les lignes de code pour les mettre dans l’ordre. Vous pouvez déplacer les cartes vides pour laisser une ligne blanche."
+        }},
+        {{
+            "Arrastra cada bloque de código hasta el espacio vacío correspondiente.",
+            "Drag each code block into its matching empty slot.",
+            "Faites glisser chaque bloc de code vers l’emplacement vide correspondant."
+        }}
+    }};
+    for(std::size_t kind=0;kind<expected.size();++kind) {
+        Fixture fixture({},[kind](const curriculum::Lesson&) {
+            if(kind==2)
+                return windows::parse_lesson_json(R"json({
+                    "id":"qa_desktop_drag_help","title":"Ayuda de arrastrar",
+                    "pages":[{"blocks":[{
+                        "type":"drag_fill_code","question":"Coloca la función.",
+                        "template":"int []() { return 0[] }",
+                        "choices":["main",";"],"correctOrder":[0,1]
+                    }]}
+                ]})json");
+            auto model=windows::parse_lesson_json(R"json({
+                "id":"qa_desktop_order_help","title":"Ayuda de ordenar",
+                "pages":[{"blocks":[{
+                    "type":"order_code","question":"Ordena las líneas.",
+                    "fragments":["return 0;","int main() {"],"correctOrder":[1,0]
+                }]}
+            ]})json");
+            model.pages[0].blocks[0].optional_order_separators=(kind==1?1:0);
+            return model;
+        },true);
+        const auto original_json=fixture.lesson.raw_json;
+        const auto verify=[&](std::string_view locale,std::string_view instruction){
+            require(fixture.text(0,37)==instruction,
+                "The Windows drag instruction did not match its selected UI language");
+            const auto help=fixture.control(0,37);
+            const auto regions=lesson_reading_regions(fixture.view);
+            require(std::ranges::count_if(regions,[&](const auto& region) {
+                return region.target==help&&region.source_text==instruction;
+            })==1,"The native reader did not receive the exact visible drag instruction");
+            require(fixture.text(0,37).find("Press and hold")==std::string::npos&&
+                fixture.text(0,37).find("Maintenez le doigt")==std::string::npos,
+                "A Windows-only lesson still announces a touch-only drag gesture");
+            require(fixture.lesson.raw_json==original_json,
+                "Localizing desktop drag help rewrote the published lesson source");
+        };
+        for(std::size_t language=0;language<locales.size();++language) {
+            const auto locale=locales[language];
+            update_lesson_preferences(fixture.view,[locale](state::StateData& data) {
+                data.preferences["native_windows"]["ui_language"]=std::string(locale);
+            });
+            verify(locale,expected[kind][language]);
+            fixture.reopen();
+            verify(locale,expected[kind][language]);
+        }
+    }
+    std::cout<<"PASS native Win32 drag/order/blank-card help in ES/EN/FR: "
+             <<"same visible and narrated desktop instructions, language changes, "
+             <<"reopening, and immutable curricular source\n";
+}
+
 void lesson_original_math_auto_policy() {
     Fixture fixture({},[](const curriculum::Lesson&){
         auto lesson=windows::parse_lesson_json(R"json({"id":"qa_math_original_auto","title":"6 × 100 = 600","pages":[{"blocks":[
@@ -5813,7 +5886,7 @@ int main(int argc,char* argv[]) {
     if (!RegisterClassW(&host)) return 2;
     try {
         if(lesson_menu_only){lesson_menu_retains_import_pages_and_settings_with_hooks();return 0;}
-        if(order_help_only){optional_separator_help_matches_screen_reader_and_grading();return 0;}
+        if(order_help_only){optional_separator_help_matches_screen_reader_and_grading();desktop_drag_instructions_match_visible_and_spoken_text_in_all_languages();return 0;}
         if(feedback_font_only){exercise_feedback_matches_curricular_body_font();return 0;}
         if(main_u1_editor_only){pinned_main_u1l5_intermediate_editor_execution();return 0;}
         if(u1_editor_only){

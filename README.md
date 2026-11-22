@@ -1,8 +1,10 @@
 # LearnGameAndEngineDev
 
-Aplicación educativa para Windows en desarrollo, implementada en C++20 y Win32.
+Aplicación educativa para Windows en desarrollo, implementada en C++23 con MSVC x64 y Win32.
 Integra lecciones, ejercicios y herramientas de ejecución y comprobación de código.
 Incluye seguimiento del progreso y narración para acompañar el estudio.
+
+El producto vigente es exclusivamente Windows. El código y los documentos heredados de la etapa Android se conservan como material histórico, no como una segunda plataforma activa de esta aplicación.
 
 ## Participación en el proyecto
 

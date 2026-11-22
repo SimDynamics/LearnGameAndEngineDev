@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/cpp_multi_body_check.hpp"
+#include "core/cpp_class_structure_check.hpp"
 
 #include <algorithm>
 #include <array>
@@ -74,31 +75,47 @@ inline bool valid(const CppDualInterfacePolicy& p) {
        p.value_interface==p.report_interface ||
        p.code_member==p.value_member)return false;
     const auto& source=p.original_source;
-    return cpp_multi_body_detail::spans(source,bodies(p),false).has_value()&&
-        source.find("class "+p.value_interface+" {")!=source.npos&&
-        source.find("class "+p.report_interface+" {")!=source.npos&&
-        source.find("virtual ~"+p.value_interface+"() = default;")!=
-            source.npos&&
-        source.find("virtual ~"+p.report_interface+"() = default;")!=
-            source.npos&&
-        source.find("virtual int "+p.value_method+"() const = 0;")!=
-            source.npos&&
-        source.find("virtual void "+p.write_method+
-            "(std::ostream& "+p.stream_parameter+") const = 0;")!=
-            source.npos&&
-        source.find("class "+p.concrete_class+" : public "+
-            p.value_interface+", public "+p.report_interface+" {")!=
-            source.npos&&
-        source.find(p.concrete_class+"(int "+p.constructor_code_parameter+
-            ", int "+p.constructor_value_parameter+") : "+
-            p.code_member+"{"+p.constructor_code_parameter+"}, "+
-            p.value_member+"{"+p.constructor_value_parameter+"} {}")!=
-            source.npos&&
-        source.find("void "+p.change_method+"(int "+p.change_parameter+
-            ") { "+p.value_member+" = "+p.change_parameter+"; }")!=
-            source.npos&&
-        source.find("int "+p.code_member+";")!=source.npos&&
-        source.find("int "+p.value_member+";")!=source.npos;
+    if(!cpp_multi_body_detail::spans(source,bodies(p),false))
+        return false;
+    const auto code=cpp_class_structure::lexical(source);
+    if(!code)return false;
+    const auto value=cpp_class_structure::defined_class(*code,p.value_interface);
+    const auto report=cpp_class_structure::defined_class(*code,p.report_interface);
+    const auto concrete=cpp_class_structure::defined_public_bases(
+        *code,p.concrete_class,{p.value_interface,p.report_interface});
+    if(!value||!report||!concrete)return false;
+    const auto has=cpp_class_structure::direct_contains;
+    // Both abstract interfaces and both public bases must be actual C++.
+    // A copied phrase in a comment or raw literal cannot supply an owner.
+    return has(*code,*value,{
+            "id:virtual","op:~","id:"+p.value_interface,
+            "op:(","op:)","op:=","id:default","op:;"})&&
+        has(*code,*report,{
+            "id:virtual","op:~","id:"+p.report_interface,
+            "op:(","op:)","op:=","id:default","op:;"})&&
+        has(*code,*value,{
+            "id:virtual","id:int","id:"+p.value_method,
+            "op:(","op:)","id:const","op:=","number:0","op:;"})&&
+        has(*code,*report,{
+            "id:virtual","id:void","id:"+p.write_method,
+            "op:(","id:std","op:::","id:ostream","op:&",
+            "id:"+p.stream_parameter,"op:)","id:const",
+            "op:=","number:0","op:;"})&&
+        cpp_class_structure::direct_int_fields(
+            *code,*concrete,{p.code_member,p.value_member})&&
+        has(*code,*concrete,{
+            "id:"+p.concrete_class,"op:(",
+            "id:int","id:"+p.constructor_code_parameter,"op:,",
+            "id:int","id:"+p.constructor_value_parameter,"op:)",
+            "op::","id:"+p.code_member,"op:{",
+            "id:"+p.constructor_code_parameter,"op:}","op:,",
+            "id:"+p.value_member,"op:{",
+            "id:"+p.constructor_value_parameter,"op:}","op:{"})&&
+        has(*code,*concrete,{
+            "id:void","id:"+p.change_method,"op:(",
+            "id:int","id:"+p.change_parameter,"op:)","op:{",
+            "id:"+p.value_member,"op:=",
+            "id:"+p.change_parameter,"op:;","op:}"});
 }
 inline void substitute(std::string& text,std::string_view needle,
                        std::string_view replacement) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/code_format_compat.hpp"
+#include "core/cpp_member_body_check.hpp"
 
 #include <array>
 #include <charconv>
@@ -113,15 +114,34 @@ inline bool matches_observation_report(ReportMode mode,std::string_view input,
 // U3L8 may change main's processing and presentation only. Preserve the
 // parser implementations, includes, original main signature and final scope.
 inline bool report_main_only_edit(std::string_view original,std::string_view candidate) {
-    constexpr std::string_view main_marker="int main() {";
-    const auto at=original.find(main_marker);
-    if(at==original.npos||original.find(main_marker,at+1)!=original.npos)return false;
-    const auto prefix=original.substr(0,at+main_marker.size());
-    constexpr std::string_view suffix="\n}\n";
-    if(!original.ends_with(suffix)||!candidate.starts_with(prefix)||
-        !candidate.ends_with(suffix)||candidate.size()<prefix.size()+suffix.size())return false;
-    const auto body=candidate.substr(prefix.size(),candidate.size()-prefix.size()-suffix.size());
-    return code_format::confined_function_body_edit(body);
+    // Bind to a genuine, line-leading function definition. An instructional
+    // comment or raw string can quote "int main() {" without defining main.
+    constexpr std::string_view signature="int main()";
+    if(original.empty()||original.size()>cpp_member_body_detail::source_limit||
+       original.find('\0')!=original.npos||
+       candidate.size()>cpp_member_body_detail::source_limit||
+       candidate.find('\0')!=candidate.npos||
+       cpp_member_body_detail::physical_splice(original))return false;
+    const auto at=cpp_member_body_detail::definition_start(original,signature);
+    if(!at)return false;
+    const auto opening=cpp_member_body_detail::definition_opening(
+        original,*at+signature.size());
+    if(!opening)return false;
+    const auto closing=cpp_member_body_detail::closing_brace(
+        original,opening->position);
+    if(!closing)return false;
+    const auto prefix=original.substr(0,opening->position+opening->length);
+    const auto suffix=original.substr(*closing);
+    if(candidate.size()<prefix.size()+suffix.size()||
+       !candidate.starts_with(prefix)||!candidate.ends_with(suffix))return false;
+    const auto body=candidate.substr(prefix.size(),
+        candidate.size()-prefix.size()-suffix.size());
+    if(!code_format::confined_function_body_edit(body))return false;
+    // The unchanged closing brace must still close the actual main, never
+    // a forged nested declaration or an early main termination.
+    const auto candidate_closing=cpp_member_body_detail::closing_brace(
+        candidate,opening->position);
+    return candidate_closing&&*candidate_closing==candidate.size()-suffix.size();
 }
 
 // Discriminating fresh inputs, separate from the student's three public

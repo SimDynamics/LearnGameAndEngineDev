@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/cpp_multi_body_check.hpp"
+#include "core/cpp_class_structure_check.hpp"
 
 #include <algorithm>
 #include <array>
@@ -64,30 +65,32 @@ inline bool valid(const CppDerivedPreparationPolicy& p) {
         ", int "+p.mode_parameter+", "+p.balance_class+"& "+
         p.balance_parameter+")";
     if(p.editable.bodies[0].signature!=signature)return false;
-    const auto& source=p.editable.original_source;
-    const auto base=source.find("class "+p.base_class+" {");
-    const auto derived=source.find("class "+p.derived_class+
-        " : public "+p.base_class+" {");
-    const auto resource=source.find("class "+p.resource_class+" {");
-    const auto balance=source.find("struct "+p.balance_class+" {");
-    const auto balance_close=balance==source.npos?
-        source.npos:source.find("};",balance);
-    if(base==source.npos||derived==source.npos||resource==source.npos||
-       balance_close==source.npos||balance_close<=balance)return false;
-    const auto record=std::string_view(source).substr(balance,balance_close-balance);
-    for(std::string_view field:{
-            std::string_view(p.resource_alive),std::string_view(p.base_complete),
-            std::string_view(p.derived_complete),std::string_view(p.resource_complete),
-            std::string_view(p.base_destroyed),
-            std::string_view(p.derived_destroyed),
-            std::string_view(p.resource_destroyed)})
-        if(record.find("int "+std::string(field))==record.npos)return false;
-    // The author cannot silently substitute a base-only construction
-    // policy or a different heap-owning member while retaining this goal.
-    return source.find("virtual ~"+p.base_class+"() noexcept")!=source.npos&&
-        source.find("~"+p.derived_class+"() noexcept override")!=source.npos&&
-        source.find("std::unique_ptr<"+p.resource_class+">")!=source.npos&&
-        source.find("void "+p.print_method+"(std::ostream&")!=source.npos;
+    const auto code=cpp_class_structure::lexical(p.editable.original_source);
+    if(!code)return false;
+    const auto base=cpp_class_structure::defined_class(*code,p.base_class);
+    const auto derived=cpp_class_structure::defined_class(
+        *code,p.derived_class,p.base_class);
+    const auto resource=cpp_class_structure::defined_class(*code,p.resource_class);
+    const auto balance=cpp_class_structure::defined_class(*code,p.balance_class);
+    if(!base||!derived||!resource||!balance||
+       !cpp_class_structure::direct_int_fields(*code,*balance,{
+           p.resource_alive,p.base_complete,p.derived_complete,p.resource_complete,
+           p.base_destroyed,p.derived_destroyed,p.resource_destroyed}))
+        return false;
+    // Bind declarations to their real protected classes. The separately
+    // compiled witness still proves survival and exceptional cleanup.
+    return cpp_class_structure::direct_contains(*code,*base,{
+            "id:virtual","op:~","id:"+p.base_class,
+            "op:(","op:)","id:noexcept"})&&
+        cpp_class_structure::direct_contains(*code,*derived,{
+            "op:~","id:"+p.derived_class,"op:(","op:)",
+            "id:noexcept","id:override"})&&
+        cpp_class_structure::direct_contains(*code,*base,{
+            "id:std","op:::","id:unique_ptr","op:<",
+            "id:"+p.resource_class,"op:>"})&&
+        cpp_class_structure::direct_contains(*code,*base,{
+            "id:virtual","id:void","id:"+p.print_method,
+            "op:(","id:std","op:::","id:ostream","op:&"});
 }
 inline void substitute(std::string& code,std::string_view key,
                        std::string_view value) {

@@ -141,6 +141,51 @@ void source_declaration_regression(
             "int codigo_aux() const noexcept { return codigo_; } "
             "// int codigo() const noexcept",
             "A commented code getter impersonated the real identified getter");
+    // The base-class declaration belongs to the global lesson type.
+    // A class with the same name in a namespace must neither replace nor
+    // make the real global class ambiguous.
+    {
+        const auto extra=std::string(
+            "namespace LgaedOther { class Muestra { "
+            "virtual ~Muestra() = default; }; }\n");
+        const auto only_nested=check::direct_class_declaration(
+            extra,"Muestra","virtual ~Muestra() = default;");
+        if(only_nested)
+            throw std::runtime_error(
+                "Namespaced Muestra impersonated the required global interface");
+        auto documented=original;
+        documented.original_source=extra+original.original_source;
+        if(!check::valid(documented))
+            throw std::runtime_error(
+                "Unrelated namespaced Muestra displaced the real base class");
+        auto missing_global=original;
+        // Remove the entire global base declaration rather than merely
+        // changing its name: no real curricular Muestra may remain in scope.
+        const auto name=missing_global.original_source.find("\nclass Muestra {");
+        const auto closing=name==std::string::npos?std::string::npos:
+            missing_global.original_source.find("\n};",name);
+        if(name==std::string::npos||closing==std::string::npos)
+            throw std::runtime_error("Missing original global Muestra declaration");
+        missing_global.original_source.erase(name,closing+3-name);
+        missing_global.original_source+=extra;
+        const auto scan=lgaed::curriculum::cpp_class_structure::lexical(
+            missing_global.original_source);
+        if(!scan)throw std::runtime_error("Cannot tokenize missing global Muestra fixture");
+        const auto owner=lgaed::curriculum::cpp_class_structure::defined_class(
+            *scan,"Muestra");
+        if(owner) {
+            std::string witnessed;
+            for(std::size_t i=0;i+1<scan->size();++i)
+                if((*scan)[i]=="id:class"&&(*scan)[i+1]=="id:Muestra")
+                    witnessed+="class Muestra at token "+std::to_string(i)+
+                        " (open="+std::to_string(owner->opening)+"); ";
+            throw std::runtime_error(
+                "A namespaced class was falsely global: "+witnessed);
+        }
+        if(check::valid(missing_global))
+            throw std::runtime_error(
+                "Namespaced class authenticated a missing global Muestra owner");
+    }
 }
 
 } // namespace

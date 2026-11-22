@@ -263,7 +263,64 @@ int main() {
         "#include <string>\nint main(){std::string codigo{\"04\"}; if(true){codigo.assign(\"07\");}}",
         {"codigo","B2",updated,{}}),
         "A similarly named or nested member call was incorrectly claimed as a root assignment");
+
+    // Default construction plus append is an equivalent way to initialize
+    // original U2L7 text. Injecting before append would be overwritten or
+    // produce "Sala NorteAula", falsely rejecting a working solution.
+    const std::string appended=R"CPP(#include <iostream>
+#include <string>
+int main() {
+    std::string edificio, codigo;
+    edificio.append("Aula");
+    codigo.append("04");
+    std::string etiqueta = edificio + "-" + codigo;
+    std::cout << etiqueta;
 }
+)CPP";
+    const auto appended_building=cpp_local_string_override(appended,
+        {"edificio","Sala Norte",initialized,{}});
+    const auto appended_code=cpp_local_string_override(appended,
+        {"codigo","003",initialized,{}});
+    require(appended_building&&appended_code&&
+            appended_building->find("edificio.append(\"Aula\");")<
+                appended_building->find("edificio = std::string{")&&
+            appended_building->find("edificio = std::string{")<
+                appended_building->find("codigo.append(\"04\");")&&
+            appended_code->find("codigo.append(\"04\");")<
+                appended_code->find("codigo = std::string{")&&
+            appended_code->find("codigo = std::string{")<
+                appended_code->find("std::string etiqueta"),
+        "The hidden string control preceded a legitimate append initializer");
+
+    // One replace call is a valid alternative to assigning a later string.
+    const std::string replaced=R"CPP(#include <iostream>
+#include <string>
+int main() {
+    std::string edificio{"Aula"};
+    std::string codigo{"04"};
+    std::string etiqueta = edificio + "-" + codigo;
+    codigo.replace(0, codigo.size(), "07");
+    etiqueta = edificio + "-" + codigo;
+    std::cout << etiqueta;
+}
+)CPP";
+    const auto updated_replacement=cpp_local_string_override(replaced,
+        {"codigo","B2",updated,{}});
+    require(updated_replacement&&
+            updated_replacement->find("codigo.replace(0, codigo.size(), \"07\");")<
+                updated_replacement->find("codigo = std::string{")&&
+            updated_replacement->find("codigo = std::string{")<
+                updated_replacement->rfind("etiqueta = edificio + \"-\" + codigo;"),
+        "A real replace member update was not tested before recomputing the label");
+    require(!cpp_local_string_override(
+        "#include <string>\nint main(){std::string codigo{\"04\"};codigo.appendage(\"07\");}",
+        {"codigo","B2",updated,{}})&&
+        !cpp_local_string_override(
+        "#include <string>\nint main(){std::string codigo{\"04\"};if(true){codigo.replace(0,2,\"07\");}}",
+        {"codigo","B2",updated,{}}),
+        "An unrelated or nested string member pretended to update the root owner");
+}
+
 
 void trailing_return_main_preserves_string_dependency() {
     const char* suffixes[]{"", " noexcept", " noexcept(true)",

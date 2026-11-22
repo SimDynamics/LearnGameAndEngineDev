@@ -1811,7 +1811,8 @@ static void prepare_compiler_expansion(state::StateData& data,const curriculum::
         const auto program=state::string_value(data,"native_windows",old_key+"program");
         if(!program.empty()&&!state::find(data,"native_windows",key+"program")) {
             const auto old_proofs=case_proofs(data,old_key);std::vector<std::string> proofs(block.output_check->cases.size());
-            if(original.output_check->input_comparison==block.output_check->input_comparison)
+            if(curriculum::same_output_check_runtime_requirements(
+                    *original.output_check,*block.output_check))
                 for(std::size_t index=0;index<block.output_check->cases.size();++index)
                     for(std::size_t prior=0;prior<old_proofs.size();++prior)
                         if(!old_proofs[prior].empty()&&curriculum::same_output_case_requirements(original.output_check->cases[prior],block.output_check->cases[index])) {

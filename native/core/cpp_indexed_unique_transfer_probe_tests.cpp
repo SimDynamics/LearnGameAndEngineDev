@@ -150,6 +150,26 @@ int main(int argc,char** argv) try {
                 (std::string(version.name)+"-public.cpp"),edited);
         std::cout<<version.name<<' '<<(version.accepts?"pass":"reject")<<'\n';
     }
+    // Real code may document the class declaration before its definition.
+    // Neither a comment nor a quoted/raw literal can own the private friend.
+    const auto documented=[&](std::string_view name,std::string_view prefix) {
+        auto decorated=std::string(prefix)+original;
+        auto revised=spec;
+        revised.member.original_source=decorated;
+        const auto body=cpp_member_body_span(revised.member);
+        require(body.has_value(),"A documented class lost its authentic method body");
+        const auto edited=decorated.substr(0,body->begin)+
+            std::string(versions.front().body)+decorated.substr(body->end);
+        const auto probe=cpp_indexed_unique_transfer_probe_source(revised,edited);
+        require(probe.has_value(),"A comment/literal was mistaken for a class definition");
+        write(std::filesystem::path(argv[2])/(std::string(name)+".cpp"),*probe);
+        write(std::filesystem::path(argv[2])/(std::string(name)+"-public.cpp"),edited);
+        std::cout<<name<<" pass\n";
+    };
+    documented("comment_before_class",
+               "// The declaration below is class Deposito { in a lesson.\n");
+    documented("literal_before_class",
+               "const char* example = R\"text(class Deposito {)text\";\n");
     for(const auto& attacked:{
             candidate("\n#define private public\nreturn false;\n"),
             candidate("\nreturn false; }\nvoid extra(){}\n"),

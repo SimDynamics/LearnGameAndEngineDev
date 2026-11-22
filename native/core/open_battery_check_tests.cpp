@@ -41,6 +41,7 @@ std::vector<OpenBatteryRun> correct(OpenBatteryCall added,int added_number=12) {
     runs[0].calls.push_back(added);
     runs[0].case_numbers.assign(original_numbers.begin(),original_numbers.end());
     runs[0].case_numbers.push_back(added_number);
+    runs[0].comparison_results.assign(runs[0].calls.size(),true);
     for(std::size_t i=1;i<runs.size();++i) {
         runs[i]=runs[0];
         runs[i].exit_code=1;
@@ -53,6 +54,7 @@ std::vector<OpenBatteryRun> correct(OpenBatteryCall added,int added_number=12) {
         runs[i].mutation=mutations[(i-1)%mutations.size()];
         const auto target=(i-1)/mutations.size();
         runs[i].target=target<originals.size()?originals[target]:added;
+        runs[i].comparison_results[target]=false;
     }
     return runs;
 }
@@ -252,6 +254,7 @@ void comparison_instrumentation() {
     const auto wrapped=open_battery_instrumented_comparison(comparison_source,"evaluar");
     verify(wrapped&&
         wrapped->find("LGAED_OPEN_BATTERY_BEGIN:")!=std::string::npos&&
+        wrapped->find("LGAED_OPEN_BATTERY_RESULT:")!=std::string::npos&&
         wrapped->find("LGAED_OPEN_BATTERY_END:")!=std::string::npos&&
         wrapped->find("lgaed_open_battery_original_evaluar(\n")!=std::string::npos,
         "The actual comparison definition was not wrapped");
@@ -294,21 +297,26 @@ void numbered_trace_parsing() {
     const std::string first=
         "LGAED_OPEN_BATTERY_BEGIN:-2147483648\r\n"
         "LGAED_OPEN_BATTERY_CALL:3,3,7,59\r\n"
+        "LGAED_OPEN_BATTERY_RESULT:1\r\n"
         "LGAED_OPEN_BATTERY_END:-2147483648\r\n";
     const std::string second=
         "LGAED_OPEN_BATTERY_BEGIN:2147483647\n"
         "LGAED_OPEN_BATTERY_CALL:-20,20,20,-8\n"
+        "LGAED_OPEN_BATTERY_RESULT:0\n"
         "LGAED_OPEN_BATTERY_END:2147483647\n";
     const auto parsed=open_battery_parse_trace("Antes="+first+"Entre\n"+second+"Después");
     verify(parsed&&parsed->calls==std::vector<OpenBatteryCall>{{3,3,7,59},{-20,20,20,-8}}&&
         parsed->case_numbers==std::vector<int>{std::numeric_limits<int>::min(),std::numeric_limits<int>::max()}&&
+        parsed->comparison_results==std::vector<unsigned char>{1,0}&&
         parsed->visible=="Antes=Entre\nDespués",
         "Numbered records lost signed facts, CRLF or partial student diagnostics");
     const auto interleaved=open_battery_parse_trace(
         "LGAED_OPEN_BATTERY_BEGIN:0\n"
         "Preparado=OK\nLGAED_OPEN_BATTERY_CALL:3,3,7,59\n"
-        "Resultado=" "LGAED_OPEN_BATTERY_END:0\n" "OK\n");
+        "Resultado=" "LGAED_OPEN_BATTERY_RESULT:1\n"
+        "LGAED_OPEN_BATTERY_END:0\n" "OK\n");
     verify(interleaved&&interleaved->case_numbers==std::vector<int>{0}&&
+        interleaved->comparison_results==std::vector<unsigned char>{1}&&
         interleaved->visible=="Preparado=OK\nResultado=OK\n",
         "Visible messages inside a comparison were removed or zero was not a case number");
     const auto ordinary=open_battery_parse_trace("Sólo diagnóstico\n");
@@ -321,7 +329,7 @@ void numbered_trace_parsing() {
         "LGAED_OPEN_BATTERY_BEGIN:12\nLGAED_OPEN_BATTERY_END:12\n",
         "LGAED_OPEN_BATTERY_BEGIN:12\nLGAED_OPEN_BATTERY_BEGIN:13\n",
         "LGAED_OPEN_BATTERY_BEGIN:12\nLGAED_OPEN_BATTERY_CALL:3,3,7,59\n",
-        "LGAED_OPEN_BATTERY_BEGIN:12\nLGAED_OPEN_BATTERY_CALL:3,3,7,59\nLGAED_OPEN_BATTERY_END:13\n",
+        "LGAED_OPEN_BATTERY_BEGIN:12\nLGAED_OPEN_BATTERY_CALL:3,3,7,59\nLGAED_OPEN_BATTERY_RESULT:1\nLGAED_OPEN_BATTERY_END:13\n",
         "LGAED_OPEN_BATTERY_BEGIN:12\nLGAED_OPEN_BATTERY_CALL:3,3,7,59\nLGAED_OPEN_BATTERY_CALL:3,3,7,59\nLGAED_OPEN_BATTERY_END:12\n",
         "LGAED_OPEN_BATTERY_BEGIN:12\nLGAED_OPEN_BATTERY_CALL:3,3,7,59\nLGAED_OPEN_BATTERY_END:12",
         "LGAED_OPEN_BATTERY_BEGIN:2147483648\n",
@@ -383,9 +391,11 @@ void numbered_judgments() {
     for(auto& run:runs) {
         std::swap(run.calls[0],run.calls.back());
         std::swap(run.case_numbers[0],run.case_numbers.back());
+        std::swap(run.comparison_results[0],run.comparison_results.back());
     }
     std::ranges::reverse(runs.back().calls);
     std::ranges::reverse(runs.back().case_numbers);
+    std::ranges::reverse(runs.back().comparison_results);
     verify(baseline_accepted(runs)&&accepted(runs),
         "Equivalent order changes lost case identity despite matching actual tuples");
     for(const int number:{0,std::numeric_limits<int>::min(),std::numeric_limits<int>::max()}) {
@@ -514,10 +524,35 @@ void destination_coverage() {
            "A former twenty-five-run witness silently acquired v4 credit");
     verify(!open_battery_mutation_plan({},added),"An empty plan was accepted");
     verify(open_battery_objective_version==
-           "open-cmake-battery-independent-mutations-v4",
+           "open-cmake-battery-independent-mutations-v5",
            "The stronger contract reused the previous receipt version");
 }
 void judgments() {
+    // A fixed report/return code cannot substitute for each comparator's
+    // actual boolean answer. Exercise this without changing student assets.
+    {
+        const OpenBatteryCall added{3,3,7,59};
+        auto forged=correct(added);
+        forged[0].comparison_results[4]=false;
+        verify(!open_battery_verify(originals,original_numbers,forged,"project-fingerprint").accepted,
+               "A passing baseline hid a false comparator behind Fallos=0");
+        forged=correct(added);
+        forged[1].comparison_results[0]=true;
+        verify(!open_battery_verify(originals,original_numbers,forged,"project-fingerprint").accepted,
+               "A forged Fallos=1 credited a comparator that returned success");
+        forged=correct(added);
+        forged[1].comparison_results[1]=false;
+        verify(!open_battery_verify(originals,original_numbers,forged,"project-fingerprint").accepted,
+               "A mutant caused an unrelated comparison to fail");
+        forged=correct(added);
+        forged.back().comparison_results.pop_back();
+        verify(!open_battery_verify(originals,original_numbers,forged,"project-fingerprint").accepted,
+               "A mutation omitted one actual comparator outcome");
+        forged=correct(added);
+        forged[0].comparison_results.clear();
+        verify(!open_battery_verify(originals,original_numbers,forged,"project-fingerprint").accepted,
+               "Historical v4 evidence acquired v5 comparison-result credit");
+    }
     for(const auto added:{OpenBatteryCall{3,3,7,59},
                           OpenBatteryCall{7,3,7,-13}}) {
         const auto runs=correct(added);

@@ -67,6 +67,7 @@ def main():
     examples={
         "real_virtual_calls":(fixture.GOOD_REG,fixture.GOOD_WRITE,True),
         "equivalent_virtual_calls":(fixture.ALT_REG,fixture.ALT_WRITE,True),
+        "documented_class_contract":(fixture.GOOD_REG,fixture.GOOD_WRITE,True),
         **{name:(body,fixture.GOOD_WRITE,False)
            for name,body in fixture.BAD_REG.items()},
         **{name:(fixture.GOOD_REG,body,False)
@@ -84,14 +85,22 @@ def main():
         # derived object is queried using a construction/destruction label.
         public_variants={
             "real_virtual_calls","equivalent_virtual_calls",
-            "guesses_virtual_dispatch_from_phase_label"
+            "documented_class_contract","guesses_virtual_dispatch_from_phase_label"
         }
         public_runs=0
         for name,(reg,write,expected) in examples.items():
             code=temp/(name+".cpp")
-            code.write_bytes(fixture.compose(original,reg,write).encode("utf-8"))
+            source_for_case=published
+            candidate=fixture.compose(original,reg,write)
+            if name=="documented_class_contract":
+                note=("// class Medida {\n"
+                      "// class MedidaIdentificada : public Medida {\n")
+                source_for_case=temp/"documented-original.cpp"
+                source_for_case.write_bytes((note+original).encode("utf-8"))
+                candidate=note+candidate
+            code.write_bytes(candidate.encode("utf-8"))
             proof=temp/(name+".private.cpp")
-            result=run([str(generator),str(published),str(code),str(proof)])
+            result=run([str(generator),str(source_for_case),str(code),str(proof)])
             if result.returncode or not proof.is_file():
                 raise AssertionError((name,"Original source gate rejected editable bodies",
                                       result.stdout,result.stderr))
@@ -169,7 +178,7 @@ def main():
             if result.returncode==0:
                 raise AssertionError((name,"Forged source escaped native boundary"))
             print(f"{args.compiler}: {name}: REJECT",flush=True)
-    print("PASS U8L6 native source gate, two correct implementations and "
+    print("PASS U8L6 native source gate, three correct implementations and "
           "twelve counterexamples, authentic source and unchanged main; "
           "all five public cases distinguish neither correct dispatch "
           "from the phase-label shortcut nor replace private semantics.")

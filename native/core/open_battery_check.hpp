@@ -26,12 +26,12 @@ struct OpenBatteryCall {
 enum class OpenBatteryMutation {
     baseline, invert_acceptance, corrupt_destination, corrupt_nonzero_destination
 };
-// V1 checked only acceptance; V2 also checked destinations; V3 bound each
-// comparison to its case number. V4 also changes a nonzero destination to a
-// different nonzero value, so truthiness alone cannot verify an exact adjustment.
-// Preserve historical receipts without promoting them to this stronger goal.
+// V1 checked acceptance; V2 also destinations; V3 bound case numbers; V4
+// changed nonzero destinations. V5 additionally observes the actual boolean
+// comparison for every numbered call, not just printed reports or process exit.
+// Older receipts retain their history but cannot prove this stronger objective.
 inline constexpr std::string_view open_battery_objective_version =
-    "open-cmake-battery-independent-mutations-v4";
+    "open-cmake-battery-independent-mutations-v5";
 struct OpenBatteryPhase {
     OpenBatteryMutation mutation=OpenBatteryMutation::baseline;
     std::optional<OpenBatteryCall> target;
@@ -55,8 +55,10 @@ struct OpenBatteryRun {
     std::vector<OpenBatteryCall> calls;
     // Student-visible streams without private witness lines.
     std::string stdout_bytes, stderr_bytes;
-    // Each number belongs to the actual library call at the same position.
+    // Each number and boolean verdict belongs to the actual library call
+    // at the same position. Reports and process exit are separate evidence.
     std::vector<int> case_numbers;
+    std::vector<unsigned char> comparison_results;
 };
 struct OpenBatteryVerdict {
     bool accepted=false;
@@ -448,6 +450,9 @@ inline std::optional<std::string> open_battery_instrumented_comparison(
         source+=item.parameters[i];
     }
     source+=");\n"
+        "    lgaed_open_battery_emit(\"LGAED_OPEN_BATTERY_RESULT:\", "
+        "sizeof(\"LGAED_OPEN_BATTERY_RESULT:\") - 1, "
+        "lgaed_open_battery_result ? 1 : 0);\n"
         "    lgaed_open_battery_emit(\"LGAED_OPEN_BATTERY_END:\", "
         "sizeof(\"LGAED_OPEN_BATTERY_END:\") - 1, "+item.parameters.front()+");\n"
         "    return lgaed_open_battery_result;\n"
@@ -518,16 +523,18 @@ inline std::optional<std::vector<OpenBatteryCall>> open_battery_parse_calls(
 struct OpenBatteryTrace {
     std::vector<OpenBatteryCall> calls;
     std::vector<int> case_numbers;
+    std::vector<unsigned char> comparison_results;
     std::string visible;
 };
 // This stricter decoder is used only for the numbered-comparison objective.
 // The legacy call decoder above remains available to library-only consumers.
 // Private records can follow partial student output, but must be complete and
-// paired: BEGIN(number), one CALL(tuple), END(the same number).
+// paired: BEGIN(number), one CALL(tuple), RESULT(0/1), END(the same number).
 inline std::optional<OpenBatteryTrace> open_battery_parse_trace(std::string_view all) {
     constexpr std::string_view prefix="LGAED_OPEN_BATTERY_";
     constexpr std::string_view begin_marker="LGAED_OPEN_BATTERY_BEGIN:";
     constexpr std::string_view call_marker="LGAED_OPEN_BATTERY_CALL:";
+    constexpr std::string_view result_marker="LGAED_OPEN_BATTERY_RESULT:";
     constexpr std::string_view end_marker="LGAED_OPEN_BATTERY_END:";
     const auto number=[](std::string_view text)->std::optional<int> {
         if(text.empty())return {};
@@ -539,6 +546,7 @@ inline std::optional<OpenBatteryTrace> open_battery_parse_trace(std::string_view
     OpenBatteryTrace result;
     std::optional<int> current_number;
     std::optional<OpenBatteryCall> current_call;
+    std::optional<bool> current_result;
     for(std::size_t position=0;position<all.size();) {
         const auto begin=all.find(prefix,position);
         if(begin==all.npos) {
@@ -571,18 +579,26 @@ inline std::optional<OpenBatteryTrace> open_battery_parse_trace(std::string_view
                 }
             }
             current_call=OpenBatteryCall{values[0],values[1],values[2],values[3]};
+        }else if(line.starts_with(result_marker)) {
+            if(!current_number||!current_call||current_result.has_value())return {};
+            const auto truth=line.substr(result_marker.size());
+            if(truth!="0"&&truth!="1")return {};
+            current_result=truth=="1";
         }else if(line.starts_with(end_marker)) {
             const auto ended=number(line.substr(end_marker.size()));
-            if(!ended||!current_number||*ended!=*current_number||!current_call)return {};
+            if(!ended||!current_number||*ended!=*current_number||
+               !current_call||!current_result.has_value())return {};
             result.calls.push_back(*current_call);
             result.case_numbers.push_back(*current_number);
+            result.comparison_results.push_back(*current_result);
             if(result.calls.size()>34)return {};
             current_number.reset();
             current_call.reset();
+            current_result.reset();
         }else return {};
         position=end+1;
     }
-    if(current_number||current_call)return {};
+    if(current_number||current_call||current_result)return {};
     return result;
 }
 
@@ -611,6 +627,10 @@ inline OpenBatteryVerdict open_battery_verify_baseline(
     if(baseline.case_numbers.size()!=baseline.calls.size()||
        !open_battery_case_numbers_valid(baseline.case_numbers))
         return {false,"Cada comparación necesita un número propio y no repetido.",{}};
+    if(baseline.comparison_results.size()!=baseline.calls.size()||
+       std::ranges::any_of(baseline.comparison_results,
+           [](unsigned char result){return result!=1u;}))
+        return {false,"Cada caso original debe devolver una comparación correcta.",{}};
     for(std::size_t i=0;i<original.size();++i) {
         const auto found=std::ranges::find(baseline.calls,original[i]);
         if(found==baseline.calls.end()||std::ranges::count(baseline.calls,original[i])!=1)
@@ -653,6 +673,7 @@ inline OpenBatteryVerdict open_battery_verify(
             return {false,"La comparación no comunicó el fallo observado.",baseline.added};
         if(run.calls.size()!=runs.front().calls.size()||
            run.case_numbers.size()!=run.calls.size()||
+           run.comparison_results.size()!=run.calls.size()||
            !open_battery_case_numbers_valid(run.case_numbers))
             return {false,"Faltan comparaciones o sus números no son propios.",baseline.added};
         // Execution order may change; case identity must remain associated
@@ -665,6 +686,12 @@ inline OpenBatteryVerdict open_battery_verify(
             const auto index=static_cast<std::size_t>(found-run.calls.begin());
             if(run.case_numbers[index]!=runs.front().case_numbers[j])
                 return {false,"El número de una comparación cambió entre ejecuciones.",baseline.added};
+            // Only the independently mutated target may fail its comparison.
+            // A fabricated failure count or fixed nonzero return is insufficient.
+            const unsigned char should_match=
+                static_cast<unsigned char>(call!=*required.target);
+            if(run.comparison_results[index]!=should_match)
+                return {false,"El comparador no detectó exactamente la mutación del caso.",baseline.added};
         }
     }
     return {true,"Los casos originales y el nuevo conservan sus números y detectan las mutaciones.",baseline.added};

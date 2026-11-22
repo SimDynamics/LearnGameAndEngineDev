@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/cpp_multi_body_check.hpp"
+#include "core/cpp_class_structure_check.hpp"
 
 #include <algorithm>
 #include <array>
@@ -97,22 +98,39 @@ inline bool valid(const CppInterfaceCollectionPolicy& policy) {
     if(!cpp_multi_body_detail::valid_source(source) ||
        !cpp_multi_body_detail::spans(source,bodies(policy),false))
         return false;
-    // Prove that an actual polymorphic vector of unique owners is present.
-    // The immutable source gate then prevents the candidate from changing it.
-    return source.find("class "+policy.base_class+" {")!=source.npos &&
-        source.find("class "+policy.simple_class+" : public "+
-            policy.base_class+" {")!=source.npos &&
-        source.find("class "+policy.identified_class+" : public "+
-            policy.base_class+" {")!=source.npos &&
-        source.find("virtual ~"+policy.base_class+"() = default;")!=
-            source.npos &&
-        source.find("virtual int "+policy.number_method+
-            "() const noexcept = 0;")!=source.npos &&
-        source.find("virtual void "+policy.write_method+
-            "(std::ostream& "+policy.stream_parameter+") const = 0;")!=
-            source.npos &&
-        source.find("using "+policy.vector_alias+" = std::vector<"
-            "std::unique_ptr<"+policy.base_class+">>;")!=source.npos;
+    // Bind author-declared types and virtual methods to real tokens, not
+    // equivalent spellings inside a comment or raw string. Body/source
+    // preservation and actual owner identity are checked separately.
+    const auto code=cpp_class_structure::lexical(source);
+    if(!code)return false;
+    const auto base=cpp_class_structure::defined_class(*code,policy.base_class);
+    const auto simple=cpp_class_structure::defined_class(
+        *code,policy.simple_class,policy.base_class);
+    const auto identified=cpp_class_structure::defined_class(
+        *code,policy.identified_class,policy.base_class);
+    if(!base||!simple||!identified)return false;
+    const auto has=cpp_class_structure::direct_contains;
+    if(!has(*code,*base,{
+            "id:virtual","op:~","id:"+policy.base_class,
+            "op:(","op:)","op:=","id:default","op:;"})||
+       !has(*code,*base,{
+            "id:virtual","id:int","id:"+policy.number_method,
+            "op:(","op:)","id:const","id:noexcept",
+            "op:=","number:0","op:;"})||
+       !has(*code,*base,{
+            "id:virtual","id:void","id:"+policy.write_method,"op:(",
+            "id:std","op:::","id:ostream","op:&",
+            "id:"+policy.stream_parameter,"op:)","id:const",
+            "op:=","number:0","op:;"}))
+        return false;
+    // The alias must belong to the translation unit, not a nested helper
+    // that shadows an incorrect global vector. Do not infer its scope from
+    // merely finding the right sequence of lexemes somewhere in the file.
+    return cpp_class_structure::global_alias(*code,policy.vector_alias,{
+        "id:using","id:"+policy.vector_alias,"op:=",
+        "id:std","op:::","id:vector","op:<",
+        "id:std","op:::","id:unique_ptr","op:<",
+        "id:"+policy.base_class,"op:>>","op:;"});
 }
 
 inline void substitute(std::string& source,std::string_view name,

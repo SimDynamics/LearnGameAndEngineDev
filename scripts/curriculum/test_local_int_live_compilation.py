@@ -1,4 +1,4 @@
-"""Compile and execute the core local-int probe's real generated C++ programs.
+"""Compile and execute authentic local-int C++23 programs with Windows MSVC.
 
 The emitter calls the production cpp_local_int_override implementation, then
 this fixture runs the ORIGINAL and ALTERED programs on the host compiler. No
@@ -13,22 +13,19 @@ import subprocess
 import sys
 import tempfile
 
+from windows_cpp_ci import msvc_cpp23_command
+
 
 def build_command(compiler: str, source: Path, binary: Path) -> list[str]:
-    if compiler == "MSVC":
-        return ["cl", "/nologo", "/std:c++latest", "/EHsc", "/utf-8", "/W4",
-                "/Fe:" + str(binary), "/Fo:" + str(source.with_suffix(".obj")),
-                str(source)]
-    if compiler not in {"g++", "clang++"}:
-        raise ValueError("Unsupported compiler for local-int integration")
-    return [compiler, "-std=c++23", "-Wall", "-Wextra", "-pedantic",
-            str(source), "-o", str(binary)]
+    if compiler != "MSVC":
+        raise ValueError("Windows MSVC C++23 is required for local-int integration")
+    return msvc_cpp23_command(binary, source)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--emitter", required=True, type=Path)
-    parser.add_argument("--compiler", required=True, choices=["g++", "clang++", "MSVC"])
+    parser.add_argument("--compiler", required=True, choices=("MSVC",))
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="lgaed-local-int-live-") as tmp:
         output = Path(tmp)
@@ -100,7 +97,7 @@ def main() -> int:
             initial_source = output / (name + "_initial.cpp")
             initial_source.write_text(starter, encoding="utf-8")
             initial_binary = initial_source.with_suffix(
-                ".exe" if sys.platform == "win32" else ".bin")
+                ".exe")
             initial_build = subprocess.run(
                 build_command(args.compiler, initial_source, initial_binary),
                 cwd=output, capture_output=True, timeout=90, check=False)
@@ -128,7 +125,7 @@ def main() -> int:
             kind, separator, expected = evidence.partition(b"\n")
             if not separator or kind not in {b"A", b"R", b"K"}:
                 raise RuntimeError(f"Missing or invalid expected stdout: {source.name}")
-            binary = source.with_suffix(".exe" if sys.platform == "win32" else ".bin")
+            binary = source.with_suffix(".exe")
             command = build_command(args.compiler, source, binary)
             compile_run = subprocess.run(command, cwd=output, capture_output=True,
                                          timeout=90, check=False)

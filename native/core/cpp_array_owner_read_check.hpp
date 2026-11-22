@@ -3,6 +3,8 @@
 #include "core/code_format_compat.hpp"
 #include "core/cpp_private_probe_neutral.hpp"
 #include "core/cpp_member_body_check.hpp"
+#include "core/cpp_class_definition_instrumentation.hpp"
+#include "core/cpp_class_structure_check.hpp"
 
 #include <algorithm>
 #include <array>
@@ -54,42 +56,16 @@ inline std::string read_signature(const CppArrayOwnerReadPolicy& spec) {
 }
 
 inline bool original_fields(const CppArrayOwnerReadPolicy& p) {
-    const auto scanned=code_format::cpp_tokens(p.original_source);
-    if(!scanned||code_format::cpp_position_sensitive_tokens(*scanned))return false;
-    const auto& tokens=*scanned;
-    std::optional<std::size_t> opening;
-    for(std::size_t i=0;i+2<tokens.size();++i)
-        if(tokens[i]=="id:class"&&tokens[i+1]=="id:"+p.class_name&&
-           tokens[i+2]=="op:{") {
-            if(opening)return false;
-            opening=i+2;
-        }
-    if(!opening)return false;
-    std::size_t depth=1,closing=0;
-    for(auto i=*opening+1;i<tokens.size();++i) {
-        if(tokens[i]=="op:{")++depth;
-        else if(tokens[i]=="op:}"&&--depth==0){closing=i;break;}
-    }
-    if(!closing)return false;
-    const std::array<std::string,9> owner{{
-        "id:std","op:::","id:unique_ptr","op:<","id:int",
-        "op:[","op:]","op:>","id:"+p.owner_member}};
-    const std::array<std::string,2> count{{
-        "id:int","id:"+p.count_member}};
-    bool has_owner=false,has_count=false;
-    for(auto i=*opening+1;i<closing;++i) {
-        if(i+owner.size()<=closing&&std::equal(
-                owner.begin(),owner.end(),
-                tokens.begin()+static_cast<std::ptrdiff_t>(i)))
-            has_owner=true;
-        if(i+count.size()<=closing&&std::equal(
-                count.begin(),count.end(),
-                tokens.begin()+static_cast<std::ptrdiff_t>(i)))
-            has_count=true;
-    }
-    return has_owner&&has_count;
+    const auto code=cpp_class_structure::lexical(p.original_source);
+    if(!code)return false;
+    const auto owner=cpp_class_structure::defined_class(*code,p.class_name);
+    return owner &&
+        cpp_class_structure::direct_field(*code,*owner,{
+            "id:std","op:::","id:unique_ptr","op:<","id:int",
+            "op:[","op:]","op:>","id:"+p.owner_member})&&
+        cpp_class_structure::direct_field(*code,*owner,{
+            "id:int","id:"+p.count_member});
 }
-
 inline bool valid(const CppArrayOwnerReadPolicy& spec) {
     for(const auto field:{std::string_view(spec.class_name),
             std::string_view(spec.owner_member),std::string_view(spec.count_member),
@@ -167,13 +143,14 @@ inline bool cpp_array_owner_read_matches(const CppArrayOwnerReadPolicy& spec,
 inline std::optional<std::string> cpp_array_owner_read_private_driver(
         const CppArrayOwnerReadPolicy& spec,std::string_view candidate) {
     if(!cpp_array_owner_read_matches(spec,candidate))return {};
-    const auto class_open="class "+spec.class_name+" {\n";
+    // Locate the actual class definition, not the same words in a comment,
+    // raw string or a forward declaration. Authored source remains unchanged.
+    const auto insertion=cpp_class_definition_instrumentation::body_insertion(
+        candidate,spec.class_name);
+    if(!insertion)return {};
     auto source=std::string(candidate);
-    const auto at=source.find(class_open);
-    if(at==source.npos||source.find(class_open,at+class_open.size())!=source.npos)
-        return {};
-    source.insert(at+class_open.size(),
-        "    friend struct lgaed_array_qa::Access;\n");
+    source.insert(*insertion,
+        "\n    friend struct lgaed_array_qa::Access;\n");
     static constexpr std::string_view prelude=R"lgaed(#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
