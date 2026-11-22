@@ -11,6 +11,9 @@ on:
       - native/platform/windows/course_edition_tests.cpp
       - native/platform/windows/catalog_loader.cpp
       - native/platform/windows/content_loader.cpp
+      - native/platform/windows/general_choice_editorial_tests.cpp
+      - scripts/curriculum/choice_retirement_fixture_source.py
+      - scripts/curriculum/test_choice_retirement_history.py
       - scripts/curriculum/course_edition_fixture_source.py
       - native/platform/windows/local_int_state_tests.cpp
       - native/platform/windows/local_string_state_tests.cpp
@@ -65,6 +68,7 @@ jobs:
       - name: Read the exact Codex revision
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Select Python for original edition fixtures
         uses: actions/setup-python@v5
@@ -88,7 +92,13 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           cmake -S cmake/HostedCourseEditionQA -B $build -G Ninja -DCMAKE_BUILD_TYPE=Debug
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build $build --target lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
+          cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve earlier reading snapshots across an authenticated option review
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]general_choice_retirement_history$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'choice-retirement-history.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Execute edition replacement, native quiz, scoped reset and reopen
         shell: pwsh
@@ -164,6 +174,7 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
           path: |
+            ${{ runner.temp }}/lgaed-course-edition-qa/choice-retirement-history.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/course-edition-runtime.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/simulation-empty-text-runtime.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/compiler-first-case-win32.xml
@@ -177,3 +188,4 @@ jobs:
             ${{ runner.temp }}/lgaed-course-edition-qa/u3-named-rules-win32.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/Testing/Temporary/*.log
             ${{ runner.temp }}/lgaed-course-edition-qa/CMakeFiles/CMakeConfigureLog.yaml
+

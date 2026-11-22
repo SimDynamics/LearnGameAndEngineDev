@@ -1142,7 +1142,7 @@ def _general_choice_semantic_projection(
     return overlay
 
 
-def _general_choice_projection(item: dict, block: dict) -> dict:
+def _general_choice_projection(item: dict, block: dict, *, reading_snapshot: bool = False) -> dict:
     """Restore the archived response, while retaining later authenticated prose.
 
     A corrected choice can subsequently receive an ordinary question or
@@ -1155,6 +1155,21 @@ def _general_choice_projection(item: dict, block: dict) -> dict:
     expected = deepcopy(original)
     index = item["optionIndex"]
     expected["options"][index] = item["replacement"]
+    if reading_snapshot:
+        # The caller authenticates this complete historical reading source.
+        # It may predate the question/guidance saved in the option archive.
+        # Restore only the reviewed option; every evaluated field stays exact.
+        require(block.get("type") == "multiple_choice"
+                and type(block.get("options")) is list
+                and len(block["options"]) == len(original["options"]),
+                "A historical choice must retain its original type and option count")
+        require(block["options"][index] in (original["options"][index], item["replacement"]),
+                "A historical choice has neither its original nor its reviewed option")
+        result = deepcopy(block)
+        result["options"][index] = original["options"][index]
+        require(state_fingerprint(result) == state_fingerprint(original),
+                "A historical choice changed another option, answer or protected field")
+        return result
     if block != original and block != expected:
         require(bool(ordinary_editorial_fields(expected, block)),
                 "General choice review changed another option, answer or authored field")
@@ -1163,13 +1178,19 @@ def _general_choice_projection(item: dict, block: dict) -> dict:
     return result
 
 
-def _historical_choice_contract(document: dict, identity: str, block: dict) -> dict:
+def _historical_choice_contract(document: dict, identity: str, block: dict,
+                                *, reading_snapshot: bool = False) -> dict:
     # Only callers that have validated the complete document/transition use
     # this projection. Keep current prose/guidance for its ordinary validator.
     if identity not in _choice_revisions(document):
         return block
     if (general := _general_choice_revision(document, identity)) is not None:
-        return _general_choice_projection(general, block)
+        if reading_snapshot:
+            nodes = {proof[field] for proof in document["stateLayout"]["editorial"]
+                     if proof["id"] == identity for field in ("beforeSha256", "afterSha256")}
+            require(fingerprint(block) in nodes,
+                    "A historical choice needs an exact source in its owner's editorial history")
+        return _general_choice_projection(general, block, reading_snapshot=reading_snapshot)
     result = historical_choice_payload(block)
     spec = CHOICE_OPTION_REVISIONS.get((document.get("id"), identity))
     if spec is not None and "paired_explanation" in spec:
@@ -3105,7 +3126,8 @@ def _validate_retirement_history(document: dict) -> None:
                             and expected_reference == reference_reviewed
                             and _reviewed_compiler_reference(protected_available[block_id]) == reference_reviewed,
                             "A historical revised compiler reference requires its matching active revision archive")
-                old_reading = _historical_choice_contract(document, block_id, source)
+                old_reading = _historical_choice_contract(
+                    document, block_id, source, reading_snapshot=True)
                 active_reading = _historical_choice_contract(document, block_id, protected_available[block_id])
                 old_reading = _historical_math_text_contract(
                     document, block_id, old_reading, reading_snapshot=True)
@@ -8793,3 +8815,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

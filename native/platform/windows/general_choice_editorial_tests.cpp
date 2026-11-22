@@ -6,14 +6,18 @@
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Foundation.h>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <iterator>
+#include <optional>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace {
 using namespace lgaed;
@@ -26,7 +30,7 @@ void require(bool valid,std::string_view message) {
 }
 std::string read_file(const std::filesystem::path& path) {
     std::ifstream stream(path,std::ios::binary);
-    require(stream.good(),"The generated U9 general-choice fixture was not found");
+    require(stream.good(),"The generated general-choice fixture was not found");
     return {std::istreambuf_iterator<char>(stream),std::istreambuf_iterator<char>()};
 }
 void rejected_change(std::string_view original,
@@ -41,10 +45,162 @@ void rejected_change(std::string_view original,
     catch(const std::exception&) {rejected_progress=true;}
     require(rejected_full&&rejected_progress,reason);
 }
+
+std::vector<JsonObject> historical_choice_blocks(const JsonObject& root,
+        std::string_view identity) {
+    std::vector<JsonObject> result;
+    for(const auto& item:root.GetNamedObject(L"stateLayout")
+            .GetNamedArray(L"retirementHistory")) {
+        const auto snapshot=item.GetObject();
+        const auto ownership=snapshot.GetNamedArray(L"current");
+        const auto pages=snapshot.GetNamedArray(L"pages");
+        for(unsigned p=0;p<ownership.Size();++p) {
+            const auto names=ownership.GetObjectAt(p).GetNamedArray(L"blocks");
+            const auto blocks=pages.GetObjectAt(p).GetNamedArray(L"blocks");
+            for(unsigned b=0;b<names.Size();++b)
+                if(winrt::to_string(names.GetStringAt(b))==identity)
+                    result.push_back(blocks.GetObjectAt(b));
+        }
+    }
+    return result;
+}
+
+void verify_retirement_choice_pair(const std::filesystem::path& directory,
+        std::string_view fixture) {
+    const auto before_bytes=read_file(directory/(std::string(fixture)+"-before.json"));
+    const auto after_bytes=read_file(directory/(std::string(fixture)+"-after.json"));
+    const auto original=parse_lesson_json(before_bytes,"es");
+    const auto revised=parse_lesson_json(after_bytes,"es");
+    const auto progress=parse_lesson_progress_metadata(after_bytes,"es");
+    const auto before_json=JsonObject::Parse(winrt::to_hstring(before_bytes));
+    const auto after_json=JsonObject::Parse(winrt::to_hstring(after_bytes));
+    const auto before_layout=before_json.GetNamedObject(L"stateLayout");
+    const auto after_layout=after_json.GetNamedObject(L"stateLayout");
+    std::set<std::string> previous_revisions;
+    if(before_layout.HasKey(L"choiceRevisions"))
+        for(const auto& value:before_layout.GetNamedArray(L"choiceRevisions"))
+            previous_revisions.insert(winrt::to_string(value.GetObject().GetNamedString(L"id")));
+    std::optional<JsonObject> added;
+    for(const auto& value:after_layout.GetNamedArray(L"choiceRevisions")) {
+        const auto record=value.GetObject();
+        if(previous_revisions.contains(winrt::to_string(record.GetNamedString(L"id"))))continue;
+        require(!added,"The retirement fixture must introduce one reviewed choice");
+        added=record;
+    }
+    require(added.has_value(),"The retirement fixture has no new reviewed choice");
+    const auto identity=winrt::to_string(added->GetNamedString(L"id"));
+    const auto option=static_cast<std::size_t>(added->GetNamedNumber(L"optionIndex"));
+    require(before_layout.GetNamedArray(L"retirementHistory").Stringify()==
+            after_layout.GetNamedArray(L"retirementHistory").Stringify(),
+        "Authoring rewrote an already published retirement snapshot");
+
+    const auto old_position=stable_block_position(original,identity);
+    const auto position=stable_block_position(revised,identity);
+    require(old_position&&position&&*old_position==*position,
+        "Historical prose support moved the reviewed activity");
+    const auto& before=original.pages[position->page].blocks[position->block];
+    const auto& after=revised.pages[position->page].blocks[position->block];
+    const auto& metadata=progress.pages[position->page].blocks[position->block];
+    require(after.choice_revision&&metadata.choice_revision&&
+            after.choice_revision->general_option_index==option&&
+            metadata.choice_revision->general_option_index==option&&
+            after.options==metadata.options&&after.correct_index==before.correct_index&&
+            after.question==before.question&&after.explanation==before.explanation&&
+            after.review_feedback_options==before.review_feedback_options&&
+            after.options.size()==before.options.size()&&
+            after.options.at(option)!=before.options.at(option),
+        "The full/progress loaders lost the current authenticated choice contract");
+    for(std::size_t index=0;index<before.options.size();++index)
+        if(index!=option)require(after.options[index]==before.options[index],
+            "The reviewed choice changed an unrelated answer");
+
+    require(!original.state_layout.retirement_history.empty()&&
+            original.state_layout.retirement_history.size()==revised.state_layout.retirement_history.size(),
+        "The real earlier reading snapshots are missing");
+    bool older_prose=false;
+    for(std::size_t h=0;h<original.state_layout.retirement_history.size();++h) {
+        const auto& old=original.state_layout.retirement_history[h];
+        const auto& current=revised.state_layout.retirement_history[h];
+        require(old.sha256==current.sha256&&old.text_semantics==current.text_semantics,
+            "Loading a reviewed option rewrote its archived reading representation");
+        for(std::size_t p=0;p<old.current.size();++p)
+            for(std::size_t b=0;b<old.current[p].blocks.size();++b) {
+                if(old.current[p].blocks[b]!=identity)continue;
+                const auto& old_block=old.pages[p].blocks[b];
+                const auto& new_block=current.pages[p].blocks[b];
+                older_prose=older_prose||old_block.question!=before.question||
+                    old_block.explanation!=before.explanation;
+                require(old_block.question==new_block.question&&
+                        old_block.explanation==new_block.explanation&&
+                        old_block.review_feedback_options==new_block.review_feedback_options&&
+                        old_block.text_semantics==new_block.text_semantics&&
+                        old_block.options==new_block.options&&
+                        old_block.correct_index==new_block.correct_index,
+                    "A snapshot borrowed later question, explanation or option text");
+            }
+    }
+    require(older_prose,
+        "The regression no longer includes prose older than the choice archive");
+
+    state::StateData saved;
+    state::prepare_lesson_state(saved,original);
+    state::Response response;
+    require(before.correct_index.has_value(),"The original choice has no correct answer");
+    response.selected=static_cast<std::int64_t>(*before.correct_index);response.correct=true;
+    response.raw_json=R"({"incorrectAttempts":3,"opaque":{"caret":11}})";
+    const auto address=exercise_key(original,before);
+    state::put_response(saved,address,response);
+    const auto old_receipt=state::string_value(saved,"learning_progress",address);
+    auto reopened=saved;
+    state::prepare_lesson_state(reopened,revised);
+    const auto restored=state::get_response(reopened,revised,after);
+    require(state::response_storage_key(revised,after)==address&&restored&&
+            restored->correct&&restored->selected==static_cast<std::int64_t>(*before.correct_index)&&
+            !restored->historical_choice&&
+            state::string_value(reopened,"learning_progress",address)==old_receipt,
+        "Historical prose support lost an existing answer, retry count or storage owner");
+
+    rejected_change(after_bytes,[&](JsonObject root) {
+        auto blocks=historical_choice_blocks(root,identity);
+        require(!blocks.empty(),"There is no archived choice to corrupt");
+        blocks.front().Insert(L"question",JsonValue::CreateStringValue(L"Invented historical wording"));
+    },"Unpublished prose was accepted as an earlier reading snapshot");
+    rejected_change(after_bytes,[&](JsonObject root) {
+        auto blocks=historical_choice_blocks(root,identity);
+        require(!blocks.empty(),"There is no archived answer to corrupt");
+        blocks.front().Insert(L"correctIndex",JsonValue::CreateNumberValue(
+            static_cast<double>((*before.correct_index+1)%before.options.size())));
+    },"A changed historical correct answer was accepted");
+    rejected_change(after_bytes,[&](JsonObject root) {
+        root.GetNamedArray(L"pages").GetObjectAt(static_cast<unsigned>(position->page))
+            .GetNamedArray(L"blocks").GetObjectAt(static_cast<unsigned>(position->block))
+            .Insert(L"question",JsonValue::CreateStringValue(L"Unreviewed active question"));
+    },"Historical snapshot permission leaked into the active choice projection");
+    std::cout<<"PASS retirement choice "<<fixture
+        <<": original archived prose, full/progress loaders, unchanged answers and response state\n";
+}
 }
 
 int main(int argc,char** argv) {
     try {
+        if(argc==3&&std::string_view(argv[1])=="--retirement-history") {
+            const std::filesystem::path directory(argv[2]);
+            verify_retirement_choice_pair(directory,"synthetic");
+            verify_retirement_choice_pair(directory,"published");
+            const auto manifest=JsonObject::Parse(winrt::to_hstring(
+                read_file(directory/"manifest.json")));
+            const auto rejected=manifest.GetNamedArray(L"rejected");
+            require(rejected.Size()>0,"The retirement fixture has no protected-contract counterexamples");
+            for(const auto& value:rejected) {
+                const auto record=value.GetObject();
+                const auto source=read_file(directory/winrt::to_string(record.GetNamedString(L"file")));
+                const auto reason=winrt::to_string(record.GetNamedString(L"reason"));
+                rejected_change(source,[](JsonObject) {},reason);
+            }
+            std::cout<<"PASS retirement choice: "<<rejected.Size()
+                <<" authenticated-history counterexamples rejected by both Windows loaders\n";
+            return 0;
+        }
         require(argc==4,"Expected original, reviewed and synthetic unmarked-predecessor choice JSON paths");
         const auto original=load_lesson(std::filesystem::path(argv[1]),"es");
         const auto revised=load_lesson(std::filesystem::path(argv[2]),"es");
