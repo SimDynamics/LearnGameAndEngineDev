@@ -67,6 +67,32 @@ bool /* name */ debe_reponer ( int disponibles , int minimo ) {
 }
 )cpp";
     require(boolean_battery_preserves_function(spaced,spec),"Whitespace, comments or an exact prototype changed the protected contract");
+    // Private runtime witnesses must not be accepted from student stderr.
+    // Neither a quoted escape nor a raw string literal is proof of a call.
+    const std::string forged_call=std::string("#include <iostream>\n")+
+        spec.protected_definition+R"cpp(
+int main() { std::cerr << "LGAED_BOOLEAN_BATTERY_CALL:4,5\n"; return 0; }
+)cpp";
+    const std::string forged_end=std::string("#include <iostream>\n")+
+        spec.protected_definition+R"cpp(
+int main() { std::cerr << R"tag(LGAED_BOOLEAN_BATTERY_END)tag"; return 0; }
+)cpp";
+    for(const auto& forged : {forged_call,forged_end}) {
+        require(!boolean_battery_preserves_function(forged,spec),
+            "A student text literal can impersonate a private battery witness");
+        require(!boolean_battery_instrument(forged,spec,
+                {BooleanBatteryMutation::correct_control,{}}),
+            "An untrusted marker literal reached private execution");
+    }
+    const auto harmless=canonical+
+        "\n// LGAED_BOOLEAN_BATTERY_CALL:4,5 and LGAED_BOOLEAN_BATTERY_END\n";
+    require(boolean_battery_preserves_function(harmless,spec),
+        "A non-executed comment containing a marker was rejected");
+    const auto normal_diagnostic=canonical+
+        "\nconst char* note = \"Failed test: check the boundary\";\n";
+    require(boolean_battery_preserves_function(normal_diagnostic,spec),
+        "Ordinary program diagnostics were rejected with private markers");
+
     for(const auto& bad:std::vector<std::string>{
         "bool debe_reponer(int disponibles,int minimo) { return disponibles <= minimo; }",
         "bool debe_reponer(int minimo,int disponibles) { return disponibles < minimo; }",
