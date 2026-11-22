@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Supón que quieres guardar el nombre de una zona. Para ese dato usamos std::string. C++ llama cadena a un texto como Norte porque sus letras tienen un orden (Stroustrup, 2024).\n\nMira las dos líneas de arriba del programa.\n\n#include <string> permite usar std::string para guardar texto.\n#include <iostream> permite usar std::cout para mostrarlo.\n\nLa parte std:: indica que los dos nombres vienen de la biblioteca estándar de C++, que contiene tipos y herramientas que podemos usar en nuestros programas (Köppe et al., 2023; Stroustrup, 2024)."
+          "text": "Quieres guardar el nombre de una zona, por ejemplo Norte. En C++ puedes guardarlo en una variable de tipo std::string. Al leerla obtienes las cinco letras en el mismo orden en que las escribiste. A una secuencia de caracteres como esta la llamamos cadena. Una cadena también puede contener dígitos y espacios, como en Zona 2 (Stroustrup, 2024).\n\nFíjate en las dos primeras líneas del siguiente programa.\n\n#include <iostream> permite usar std::cout para mostrar texto.\n#include <string> permite usar std::string para guardarlo.\n\nLa parte std:: indica que esos nombres pertenecen a la biblioteca estándar de C++ (Köppe et al., 2023; Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
-          "text": "Fíjate en std::string zona = \"Norte\";. La variable se llama zona y empieza guardando Norte. Las comillas marcan dónde empieza y termina el texto escrito en el código (Stroustrup, 2024)."
+          "text": "std::string zona = \"Norte\";\nLa variable se llama zona. Las comillas delimitan el texto en el código. La variable guarda las cinco letras de Norte (Stroustrup, 2024)."
         },
         {
           "type": "code",
@@ -23,7 +23,7 @@
         },
         {
           "type": "paragraph",
-          "text": "std::cout << zona; lee la variable y muestra Norte. Si escribes std::cout << \"zona\";, las letras que salen de las comillas son zona."
+          "text": "std::cout << zona; muestra lo que guarda la variable. En este programa aparece Norte.\n\n¿Qué pasaría si pusieras el nombre entre comillas? Con std::cout << \"zona\"; le das a std::cout un texto escrito en el código. Aparece la palabra zona."
         },
         {
           "type": "fill_code",
@@ -147,6 +147,10 @@
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string sala = \"Sala\";\n    std::string numero = \"2\";\n    std::string nombre = sala + \" \" + numero;\n    std::cout << nombre;\n    return 0;\n}\n"
         },
         {
+          "type": "paragraph",
+          "text": "sala + \" \" + numero une, en orden, la palabra Sala, un espacio y el dígito 2. La variable nombre guarda el resultado y std::cout << nombre; muestra Sala 2. Después de la unión, sala sigue guardando Sala y numero sigue guardando 2."
+        },
+        {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta, sin escribir las comillas del código.",
@@ -167,10 +171,6 @@
           ],
           "reviewFeedback": "Revisa qué texto debe aportar cada variable y cómo se delimita un literal para inicializar una cadena. Localiza el separador que ya proporciona la expresión de salida; comprueba si tus datos repiten u omiten caracteres del mensaje solicitado.",
           "explanation": "\"Sector\" da la primera palabra y \"Oeste\" da la segunda. El texto entre comillas de la línea de salida pone el espacio en medio. La consola muestra Sector Oeste (Stroustrup, 2024)."
-        },
-        {
-          "type": "paragraph",
-          "text": "La línea de nombre guarda Sala 2. sala sigue guardando Sala y numero sigue guardando el texto 2. Al final, std::cout lee nombre y muestra Sala 2."
         },
         {
           "type": "fill_code",
@@ -194,18 +194,18 @@
         },
         {
           "type": "paragraph",
-          "text": "Mira la diferencia entre 2 y \"2\". El primero es un número de tipo int. El segundo aporta el texto que va entre las comillas. Si lo guardas en una variable std::string, esa variable guarda el carácter 2 (Stroustrup, 2024).\n\nEn la primera línea de salida de abajo, a y b son cadenas. El signo + une sus textos. En la segunda, x e y son enteros. El mismo signo suma las dos cantidades."
+          "text": "2 es un número de tipo int. En cambio, las comillas de \"2\" indican que escribiste texto. Una variable de tipo std::string puede guardar ese texto, que aquí tiene un solo carácter (Stroustrup, 2024).\n\nEn el siguiente programa hay una sola instrucción con std::cout. Sigue lo que escribe de izquierda a derecha.\n\n1. a + b une los textos guardados en las dos cadenas.\n2. \"\\n\" hace que el siguiente resultado aparezca en otro renglón.\n3. x + y suma las cantidades guardadas en los dos enteros."
         },
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "question": "Escribe los dos renglones que muestra std::cout. En el primero se unen los textos y en el segundo se suman los números.",
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"12\";\n    std::string b = \"3\";\n    int x = 12;\n    int y = 3;\n    std::cout << a + b << \"\\n\" << x + y;\n    return 0;\n}\n",
           "answers": [
             "123\n15"
           ],
-          "explanation": "La primera línea junta los textos \"12\" y \"3\". Sale 123. La segunda suma doce y tres. Sale 15.",
-          "reviewFeedback": "Antes de calcular cada línea, identifica los tipos de los dos operandos. Que un texto contenga dígitos no cambia por sí solo el tipo de las variables que participan en la operación."
+          "explanation": "a guarda 12 como texto y b guarda 3 como texto. Al unirlos aparece 123 en el primer renglón. Después del salto de línea, se muestra la suma de los enteros doce y tres. Aparece 15 en el segundo renglón.",
+          "reviewFeedback": "En a + b, lee los caracteres de la primera cadena y luego los de la segunda. En x + y, calcula la suma."
         },
         {
           "type": "multiple_choice",
@@ -231,8 +231,8 @@
           "answers": [
             "cartel"
           ],
-          "explanation": "cartel lee el texto de la variable y la consola muestra Entrada.",
-          "reviewFeedback": "La salida debe consultar un valor ya guardado. Distingue escribir el nombre de una variable para leerla de escribir un nuevo texto entre comillas."
+          "explanation": "En std::cout << cartel; se lee el texto guardado en cartel. Por eso aparece Entrada en la consola.",
+          "reviewFeedback": "Busca la declaración que contiene el literal \"Entrada\". ¿Cómo se llama la variable que guarda ese texto?"
         }
       ]
     },
@@ -244,7 +244,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si cartel guarda Taller, la expresión cartel + \" abierto\" forma Taller abierto. Para guardar ese texto nuevo en cartel puedes escribir cartel = cartel + \" abierto\";.\n\nTambién puedes usar cartel += \" abierto\";. En esta línea, += añade el texto de la derecha al final del que ya hay en la variable. El espacio antes de la palabra abierto se añade junto con las letras (Köppe et al., 2023; Stroustrup, 2024).\n\nPara usar + al unir texto, empieza con una variable std::string como cartel. Escribir \"Taller\" + \" abierto\" da un error porque los dos textos escritos así son literales. En el ejemplo que sigue, cartel ya es una cadena (Köppe et al., 2023)."
+          "text": "Imagina que cartel es una variable std::string que guarda Taller. Puedes unir su texto con otro en el orden que necesites.\n\ncartel + \" abierto\" forma Taller abierto. El espacio está al principio de \" abierto\".\n\"Zona: \" + cartel forma Zona: Taller. Esta vez el texto fijo va primero y el espacio está después de los dos puntos.\n\nCada expresión forma un texto nuevo. En ambos ejemplos cartel sigue guardando Taller. En cambio, con dos literales como \"Taller\" + \" abierto\" el programa da un error de compilación. El operador + que usamos en estos ejemplos para unir textos necesita que al menos uno de los dos sea de tipo std::string (Köppe et al., 2023).\n\nPara cambiar lo que guarda la propia variable, escribe cartel += \" abierto\";. Esta instrucción añade el espacio y la palabra al final de cartel. Ahora la variable guarda Taller abierto. También puedes escribir esa actualización como cartel = cartel + \" abierto\"; (Köppe et al., 2023; Stroustrup, 2024)."
         },
         {
           "type": "output_prediction",
@@ -266,11 +266,11 @@
             "La separación entre instrucciones del archivo fuente."
           ],
           "correctIndex": 1,
-          "explanation": "Concatenar no inserta espacios que no estén en sus operandos.",
+          "explanation": "El primer carácter de \" abierto\" es un espacio. Al añadir ese texto a Taller, el espacio queda justo después de la última letra de Taller. Por eso ves Taller abierto.",
           "reviewFeedback": [
-            "Comprueba qué caracteres aporta el literal añadido. Revisa si la instrucción de salida introduce por sí misma algún separador que no esté en los datos.",
+            "Fíjate en el primer carácter entre las comillas de \" abierto\". ¿Quién puso ahí el espacio?",
             "Localiza el espacio dentro del texto añadido y relaciona su posición con la unión de las dos palabras.",
-            "Distingue un espacio que forma parte de un literal del espacio que separa elementos del código fuente. Sólo uno de ellos pertenece al texto guardado."
+            "Busca el espacio dentro de \" abierto\". ¿Dónde aparecerá al unir las dos palabras?"
           ]
         },
         {
@@ -284,6 +284,18 @@
           "question": "El cartel ya guarda Material. En el hueco, escribe el operador que añade el texto de la derecha al cartel. La consola debe mostrar Material listo.",
           "reviewFeedback": "Busca el operador que une los dos textos y guarda el resultado en la variable de la izquierda.",
           "explanation": "+= añade el espacio y la palabra listo al texto guardado en cartel. Por eso la consola muestra Material listo."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona{\"Norte\"};\n    auto aviso{\"Zona: \" + zona};\n    zona += \" A\";\n    std::cout << aviso << \"\\n\" << zona;\n    return 0;\n}\n",
+          "answers": [
+            "Zona: Norte\nNorte A"
+          ],
+          "question": "El programa prepara un aviso con el nombre de la zona. Después añade una letra al nombre. Escribe qué muestra la consola en cada renglón. Primero muestra aviso y después zona.",
+          "reviewFeedback": "Busca el texto que guarda zona cuando se crea aviso. Luego mira en qué variable se añade \" A\".",
+          "explanation": "Al declarar aviso, \"Zona: \" + zona une el texto fijo con Norte. El resultado es una cadena std::string. Ese es el tipo que el compilador deduce para aviso.\n\nzona += \" A\"; añade un espacio y la letra A a zona. El aviso conserva el texto que ya tenía. Por eso ves estos dos renglones.\n\nZona: Norte\nNorte A",
+          "id": "p1u2l7_predecir_aviso_y_zona"
         }
       ]
     },
@@ -347,7 +359,7 @@
         },
         {
           "type": "multiple_choice",
-          "question": "Un código debe conservar la forma 0015 para imprimirlo. ¿Qué dato expresa mejor esa tarea?",
+          "question": "El código de una caja es 0015. Quieres imprimirlo con los dos ceros iniciales tal como lo guardaste. ¿Qué declaración usarías?",
           "options": [
             "std::string codigo = \"0015\";",
             "int codigo = 15;",
@@ -356,9 +368,9 @@
           "correctIndex": 0,
           "explanation": "std::string guarda los cuatro caracteres de 0015. Así la consola puede mostrar el código con los dos ceros al principio.",
           "reviewFeedback": [
-            "Relaciona el dato conservado con la forma exacta que requiere la tarea. Distingue representar una cantidad de conservar los caracteres de un código.",
-            "Revisa qué información de la forma 0015 debe mantenerse. Un valor numérico no conserva por sí solo todos los caracteres con los que se escribió una etiqueta.",
-            "Distingue conservar una cantidad con parte fraccionaria de conservar una secuencia concreta de dígitos. Comprueba qué pide imprimir la tarea."
+            "Cuenta los caracteres entre las comillas de \"0015\".",
+            "Si guardas el número 15, ¿queda guardado cuántos ceros llevaba delante el código de la caja?",
+            "El punto de 15.0 permite escribir un número de tipo double. Fíjate en cuáles son los cuatro caracteres que necesitas conservar."
           ]
         },
         {
@@ -767,9 +779,9 @@
           "block_0003_0000",
           "block_0003_0001",
           "block_0003_0002",
+          "p1u2l7_guardar_sala",
           "block_0003_0003",
           "block_0003_0004",
-          "p1u2l7_guardar_sala",
           "p1u2l7_poner_el_separador"
         ]
       },
@@ -790,7 +802,8 @@
           "block_0005_0001",
           "block_0005_0002",
           "block_0005_0003",
-          "p1u2l7_agregar_con_espacio"
+          "p1u2l7_agregar_con_espacio",
+          "p1u2l7_predecir_aviso_y_zona"
         ]
       },
       {
@@ -1606,6 +1619,15 @@
           "block": 6
         },
         "progressPage": "page_0008"
+      },
+      {
+        "id": "p1u2l7_predecir_aviso_y_zona",
+        "sha256": "df3ddbaae6eb8cdc6371a6f714576b16e7766c2164b4329b8094665c8d27ca61",
+        "storage": {
+          "page": 10,
+          "block": 0
+        },
+        "progressPage": "page_0005"
       }
     ],
     "editorial": [
@@ -1823,6 +1845,71 @@
         "id": "block_0007_0006",
         "beforeSha256": "e192525ebb79ac84e7eb4386000761b8ee6d9c79cb5ba18c7bae5b87e77d6d44",
         "afterSha256": "ebc0417595cdcb00f821a6b052a0fabd63bce763f2a5a818c7ced861a7f1c856"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "01ee00065249a5d9a0d090293f08da023f508b2f04740e25d99cd928c909f484",
+        "afterSha256": "15f8e9c3325d453833aaece478e9bf0ac3bf8cbe0d9253837c519e2e8c5f4b3e"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "ee00a6881e8d4c3a01422b157f9eebff01de3b652b0df497f1b4aeb2e62bd4e3",
+        "afterSha256": "16d5749174b42e62811cd8dca69f0797046d7976e349883ffac3fcc01d888f36"
+      },
+      {
+        "id": "p1u2l7_leer_zona",
+        "beforeSha256": "e0bcf52b89c63d10db1c98f5cb37a608cec4656f68b18e6f5117421cb74db390",
+        "afterSha256": "be7da72cba67db40f485b4e9f736b0915362aef17b0b074147fd790f602809af"
+      },
+      {
+        "id": "p1u2l7_guardar_sala",
+        "beforeSha256": "0007ef4155c582398497277e72ed7b4185e35e2f4cd2d836a6ed23b92493efb1",
+        "afterSha256": "0e80065a8030b904aedb895700e516c23537af553e78aae00b157e78ecec706c"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "fe94ca292ba91b11ef0ede3d6a1d223309a78b2313b33f68968f20ea8411339c",
+        "afterSha256": "21c07b3fe178db2ddffe56471d075ad9976a6873e8be53dc6f57b1557907e131"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "a8d40d5e999dba22ea117150d77c8b06853ff786ac563114716621a598d3152e",
+        "afterSha256": "49c68de28ca03d8129ce4a816df32c2c0dc3270acec3f082f8362020f9b7101c"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "17015a276dfebd963d6a90962c99bcd828ecf7ba6bbca0d562a5fbe4d55b1803",
+        "afterSha256": "7f5a5344dbc6222d8dc2debb92a749021c3a2de419092f6afb54d88ca44d1341",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "a81714fa62d502c3b308a0187fb07f161ccc5ee688d90e4a37598353d4e594e0",
+        "afterSha256": "cfb4668bd1ba9152f81c4a234291be8b974c573befaf1f101c41e6f939ab98a0",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "b9a7c415557da2ac6e53af3c22ebab1ab45bb7461890a75c7bc9262918b4c374",
+        "afterSha256": "d54b3c952b239950f3da9bc93b171af2cf0b88d0b6cc51a776aba66c0196b780",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/2"
+        ]
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "9d61a49da99b62ff636fa72a06ab60cda0add394d3773104a310ab6ae6988b4d",
+        "afterSha256": "76fbbd56f7f08601f94b53328ea77a088ebe0a023a740b091ee4d2d39f12f319",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
       }
     ],
     "retired": [
@@ -5026,67 +5113,74 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "b08cec17626c2c3490bed3d972faa4256e4d2c71de9a20f0a4a1a481ed2ea3a6",
+        "sourceSha256": "f48fbc4d8d2d5935d354473bc3565c9dc9bf8d731ad86f99c2bdc4871bba1dda",
         "spans": [
           {
-            "start": 70,
-            "end": 81,
-            "text": "std::string",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 116,
-            "end": 121,
+            "start": 51,
+            "end": 56,
             "text": "Norte",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 156,
-            "end": 174,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 222,
-            "end": 239,
-            "text": "#include <string>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 253,
-            "end": 264,
+            "start": 106,
+            "end": 117,
             "text": "std::string",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 285,
-            "end": 304,
+            "start": 318,
+            "end": 324,
+            "text": "Zona 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 343,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 405,
+            "end": 424,
             "text": "#include <iostream>",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 318,
-            "end": 327,
+            "start": 438,
+            "end": 447,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 354,
-            "end": 359,
+            "start": 468,
+            "end": 485,
+            "text": "#include <string>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 499,
+            "end": 510,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 537,
+            "end": 542,
             "text": "std::",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 501,
-            "end": 539,
+            "start": 610,
+            "end": 648,
             "text": "(Köppe et al., 2023; Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -5096,32 +5190,32 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "4a58de2583978f650f2f3159f5cd6c8f09ae15bd2672c507277cfec8efab972c",
+        "sourceSha256": "baa70c998a62ae7fb41541eba046dcbd192d8201212db65bddf8ad7b94c52782",
         "spans": [
           {
-            "start": 10,
-            "end": 37,
+            "start": 0,
+            "end": 27,
             "text": "std::string zona = \"Norte\";",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 60,
-            "end": 64,
+            "start": 49,
+            "end": 53,
             "text": "zona",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 85,
-            "end": 90,
+            "start": 140,
+            "end": 145,
             "text": "Norte",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 166,
-            "end": 184,
+            "start": 146,
+            "end": 164,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -5869,82 +5963,68 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "24479fcaf616928e425510d6861bea3d6a2679824f6c422fa012dfa75edccdbf",
+        "sourceSha256": "0322f1e83a137579743a67fb48a82292fe7c1b331ce8143b50d21a7750270e6e",
         "spans": [
           {
-            "start": 25,
-            "end": 26,
+            "start": 0,
+            "end": 1,
             "text": "2",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 29,
-            "end": 32,
-            "text": "\"2\"",
-            "role": "string",
-            "reading": "natural"
-          },
-          {
-            "start": 66,
-            "end": 69,
+            "start": 23,
+            "end": 26,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 155,
-            "end": 166,
+            "start": 55,
+            "end": 58,
+            "text": "\"2\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 121,
             "text": "std::string",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 200,
-            "end": 201,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 202,
-            "end": 220,
+            "start": 179,
+            "end": 197,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 263,
-            "end": 264,
-            "text": "a",
+            "start": 254,
+            "end": 263,
+            "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 267,
-            "end": 268,
-            "text": "b",
+            "start": 314,
+            "end": 319,
+            "text": "a + b",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 291,
-            "end": 292,
-            "text": "+",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 368,
+            "end": 372,
+            "text": "\"\\n\"",
+            "role": "string",
+            "reading": "natural"
           },
           {
-            "start": 324,
-            "end": 325,
-            "text": "x",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 328,
-            "end": 329,
-            "text": "y",
+            "start": 434,
+            "end": 439,
+            "text": "x + y",
             "role": "cpp",
             "reading": "technical"
           }
@@ -5953,38 +6033,60 @@
       {
         "block": "block_0004_0002",
         "path": "/question",
-        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
-        "spans": []
+        "sourceSha256": "7e9c91a6feff5ae05700d3c3c8efaa52e1db42700e060453b2e8277e2ccf3355",
+        "spans": [
+          {
+            "start": 38,
+            "end": 47,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "d1d78200be8e1f2fb19894e8d1a662fa8ab845e5a2f9ead8ca0519bd9ad322dc",
+        "sourceSha256": "78bee9c9b2e77c4fa267c1a9333492b6026e546e562e994e3d2642e8f894e269",
         "spans": [
           {
+            "start": 0,
+            "end": 1,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 9,
+            "end": 11,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
             "start": 34,
-            "end": 38,
-            "text": "\"12\"",
-            "role": "string",
+            "end": 35,
+            "text": "3",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 41,
-            "end": 44,
-            "text": "\"3\"",
-            "role": "string",
-            "reading": "natural"
-          },
-          {
-            "start": 51,
-            "end": 54,
+            "start": 67,
+            "end": 70,
             "text": "123",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 90,
-            "end": 92,
+            "start": 176,
+            "end": 178,
             "text": "15",
             "role": "output",
             "reading": "natural"
@@ -5994,14 +6096,21 @@
       {
         "block": "block_0004_0002",
         "path": "/reviewFeedback",
-        "sourceSha256": "c7b50dfad3a379814dd6c3218a6536fad7a7cdf4e7777c4608f0841c4a6c1554",
+        "sourceSha256": "b00f90286273579b09958fa04045fd1255a55a95bc6763ff49cba2e835a16a5d",
         "spans": [
           {
-            "start": 58,
-            "end": 61,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 3,
+            "end": 8,
+            "text": "a + b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 85,
+            "text": "x + y",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -6131,18 +6240,25 @@
       {
         "block": "block_0004_0004",
         "path": "/explanation",
-        "sourceSha256": "30ee0dcc69091872351ccd0e83493fc4ea9a873427eee3d07a57c506ba205f96",
+        "sourceSha256": "cb6159a32b5c0f73689bc2833300786a4dd1a0b68d72c6a526af156f2804e5d6",
         "spans": [
           {
-            "start": 0,
-            "end": 6,
+            "start": 3,
+            "end": 23,
+            "text": "std::cout << cartel;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 58,
             "text": "cartel",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 56,
-            "end": 63,
+            "start": 76,
+            "end": 83,
             "text": "Entrada",
             "role": "output",
             "reading": "natural"
@@ -6152,8 +6268,16 @@
       {
         "block": "block_0004_0004",
         "path": "/reviewFeedback",
-        "sourceSha256": "d1231e8bcdc7584a8858d12356adca564950f5db22532caeb62922a9401852fc",
-        "spans": []
+        "sourceSha256": "15c4dd589245dc6299df2e33f6fcf5bd61d71fed971882a05ae910a565bda453",
+        "spans": [
+          {
+            "start": 45,
+            "end": 54,
+            "text": "\"Entrada\"",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
@@ -6164,117 +6288,138 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "18a1cd50ba3b14f19f1b28141fbc549ab89a7475b1a134705567826169e16b33",
+        "sourceSha256": "c0ae4d8222fcc72c7ea38f8608e763dc37bad5ba15df8bbb1415fe890dce71ba",
         "spans": [
           {
-            "start": 3,
-            "end": 9,
+            "start": 12,
+            "end": 18,
             "text": "cartel",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 17,
-            "end": 23,
-            "text": "Taller",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 38,
-            "end": 57,
-            "text": "cartel + \" abierto\"",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 64,
-            "end": 78,
-            "text": "Taller abierto",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 112,
-            "end": 118,
-            "text": "cartel",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 135,
-            "end": 164,
-            "text": "cartel = cartel + \" abierto\";",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 187,
-            "end": 208,
-            "text": "cartel += \" abierto\";",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 225,
-            "end": 227,
-            "text": "+=",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 328,
-            "end": 335,
-            "text": "abierto",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 366,
-            "end": 404,
-            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 417,
-            "end": 418,
-            "text": "+",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 459,
-            "end": 470,
+            "start": 35,
+            "end": 46,
             "text": "std::string",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 476,
-            "end": 482,
+            "start": 58,
+            "end": 64,
+            "text": "Taller",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 143,
+            "text": "cartel + \" abierto\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 164,
+            "text": "Taller abierto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 208,
+            "text": "\" abierto\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 227,
+            "text": "\"Zona: \" + cartel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 246,
+            "text": "Zona: Taller",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 389,
             "text": "cartel",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 493,
-            "end": 514,
+            "start": 406,
+            "end": 412,
+            "text": "Taller",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 448,
+            "end": 469,
             "text": "\"Taller\" + \" abierto\"",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 602,
-            "end": 608,
+            "start": 522,
+            "end": 523,
+            "text": "+",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 619,
+            "end": 630,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 631,
+            "end": 651,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 709,
+            "end": 730,
+            "text": "cartel += \" abierto\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 791,
+            "end": 797,
             "text": "cartel",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 626,
-            "end": 646,
-            "text": "(Köppe et al., 2023)",
+            "start": 824,
+            "end": 838,
+            "text": "Taller abierto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 887,
+            "end": 916,
+            "text": "cartel = cartel + \" abierto\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 917,
+            "end": 955,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -6380,8 +6525,37 @@
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "0509dc7437b5a946fcba3b4a1e58ede9cc894f3e0483bae8fc48b7a3d7c6e4fc",
-        "spans": []
+        "sourceSha256": "a4f511fddee65b909e9e175ebe89b75f556f5954286df42928439ffff657b8d6",
+        "spans": [
+          {
+            "start": 22,
+            "end": 32,
+            "text": "\" abierto\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 76,
+            "text": "Taller",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 137,
+            "text": "Taller",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 165,
+            "text": "Taller abierto",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -6434,8 +6608,16 @@
       {
         "block": "block_0005_0003",
         "path": "/reviewFeedback/0",
-        "sourceSha256": "833f95ed450cfed6274c250f9f75a89427211bb5d99465e6dab1954085c133f0",
-        "spans": []
+        "sourceSha256": "85e4abc9526e519f6a12108b85e02b5bca6174abe684cc66dfa2319d6b39ac66",
+        "spans": [
+          {
+            "start": 51,
+            "end": 61,
+            "text": "\" abierto\"",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -6454,13 +6636,13 @@
       {
         "block": "block_0005_0003",
         "path": "/reviewFeedback/2",
-        "sourceSha256": "f3dab2d584ec04a9708c201421cdd0c804f7efc36649d371c78d52395a2027eb",
+        "sourceSha256": "a4fa51081f5056cea1e27c9b5a98a0f09531f9ba0eff1c245ba771d6c936204c",
         "spans": [
           {
-            "start": 108,
-            "end": 111,
-            "text": "uno",
-            "role": "data",
+            "start": 27,
+            "end": 37,
+            "text": "\" abierto\"",
+            "role": "string",
             "reading": "natural"
           }
         ]
@@ -6682,13 +6864,13 @@
       {
         "block": "block_0007_0004",
         "path": "/question",
-        "sourceSha256": "7e0ef0fab02754191851f65a955ae45ed7f81d7c603aca9caa7c67cebd1f1650",
+        "sourceSha256": "266b49f2e8459c427179823c8abef3768a4093548fdf44e079e203623ed11093",
         "spans": [
           {
-            "start": 34,
-            "end": 38,
+            "start": 25,
+            "end": 29,
             "text": "0015",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -6759,19 +6941,27 @@
       {
         "block": "block_0007_0004",
         "path": "/reviewFeedback/0",
-        "sourceSha256": "2ba222a7f76427172c6c914ef8c6fe7447603859327162fe78f6a53ee163b0ca",
-        "spans": []
+        "sourceSha256": "41d5042c589c388207cf3c182a5c9b5e913c47744e84fb0c65ba42056eb0c760",
+        "spans": [
+          {
+            "start": 44,
+            "end": 50,
+            "text": "\"0015\"",
+            "role": "string",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0004",
         "path": "/reviewFeedback/1",
-        "sourceSha256": "de625034939af8fc4d64a7b29071b9464703acf1ce69800bd1106bfa72adaf82",
+        "sourceSha256": "54495ef994714ebc4e2adda8fdbbd612cc6ce012b7698acf4d60ea6fc3036fb9",
         "spans": [
           {
-            "start": 35,
-            "end": 39,
-            "text": "0015",
-            "role": "output",
+            "start": 21,
+            "end": 23,
+            "text": "15",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -6779,8 +6969,23 @@
       {
         "block": "block_0007_0004",
         "path": "/reviewFeedback/2",
-        "sourceSha256": "ee73d33e316622eb4564872382675cef370f57683fa220376f33c0024fbdfb10",
-        "spans": []
+        "sourceSha256": "804d7166b15fb7ba9dca52b190ec0feca6057f71605e6f249aa9b9d3ac818341",
+        "spans": [
+          {
+            "start": 12,
+            "end": 16,
+            "text": "15.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 58,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0005",
@@ -7215,7 +7420,7 @@
       {
         "block": "p1u2l7_leer_zona",
         "path": "/text",
-        "sourceSha256": "03d003a5b181b13e92ea89738508f4702ff45cd73bc8c0670e0cd18959166dff",
+        "sourceSha256": "068e124ee74845be5bcbfae89e544ad908c9bb149a290cc650437f73d31dcde7",
         "spans": [
           {
             "start": 0,
@@ -7225,22 +7430,29 @@
             "reading": "technical"
           },
           {
-            "start": 45,
-            "end": 50,
+            "start": 79,
+            "end": 84,
             "text": "Norte",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 64,
-            "end": 84,
+            "start": 142,
+            "end": 162,
             "text": "std::cout << \"zona\";",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 127,
-            "end": 131,
+            "start": 172,
+            "end": 181,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 232,
+            "end": 236,
             "text": "zona",
             "role": "output",
             "reading": "natural"
@@ -7250,69 +7462,76 @@
       {
         "block": "p1u2l7_guardar_sala",
         "path": "/text",
-        "sourceSha256": "96d6f4562d3513a8b8cff04bdb6255422db6ce454f5c6eaf6c09c5c42dc99c74",
+        "sourceSha256": "642f95bd7ef5af39ae286d2b080451f04a86431dea3864bf8ba33562db22dba3",
         "spans": [
           {
-            "start": 12,
-            "end": 18,
-            "text": "nombre",
+            "start": 0,
+            "end": 19,
+            "text": "sala + \" \" + numero",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 26,
-            "end": 32,
-            "text": "Sala 2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 34,
-            "end": 38,
-            "text": "sala",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 55,
-            "end": 59,
+            "start": 46,
+            "end": 50,
             "text": "Sala",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 62,
-            "end": 68,
-            "text": "numero",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 94,
-            "end": 95,
+            "start": 75,
+            "end": 76,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 116,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 121,
-            "end": 127,
+            "start": 90,
+            "end": 96,
             "text": "nombre",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 138,
-            "end": 144,
+            "start": 119,
+            "end": 139,
+            "text": "std::cout << nombre;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 148,
+            "end": 154,
             "text": "Sala 2",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 181,
+            "text": "sala",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 198,
+            "end": 202,
+            "text": "Sala",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 211,
+            "text": "numero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 228,
+            "end": 229,
+            "text": "2",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -7556,6 +7775,125 @@
             "end": 110,
             "text": "Aula-07",
             "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l7_predecir_aviso_y_zona",
+        "path": "/question",
+        "sourceSha256": "1b39b43f955a88784c1bc5fcc1b90e2a9a302b6e42adf0ee7d9f8d05496fe36b",
+        "spans": [
+          {
+            "start": 154,
+            "end": 159,
+            "text": "aviso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 174,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l7_predecir_aviso_y_zona",
+        "path": "/explanation",
+        "sourceSha256": "3256c7774015f8f2f9a1b261ca65c9378993cc9323db762ef59591e629cc98e3",
+        "spans": [
+          {
+            "start": 12,
+            "end": 17,
+            "text": "aviso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 34,
+            "text": "\"Zona: \" + zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 62,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 102,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 154,
+            "text": "aviso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 170,
+            "text": "zona += \" A\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 207,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 284,
+            "end": 295,
+            "text": "Zona: Norte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 303,
+            "text": "Norte A",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l7_predecir_aviso_y_zona",
+        "path": "/reviewFeedback",
+        "sourceSha256": "030a561fceffb2513e2a807048ebe740d0903caecc32ed4fb30bcb0ece575232",
+        "spans": [
+          {
+            "start": 26,
+            "end": 30,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 51,
+            "text": "aviso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 93,
+            "text": "\" A\"",
+            "role": "string",
             "reading": "natural"
           }
         ]
