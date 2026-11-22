@@ -172,6 +172,29 @@ class FrequencyRenameRuntime(unittest.TestCase):
                 results.append(self._execute(binary, ""))
             self.assertEqual(results, [(0, "Maxima:8\n", "")] * 2)
 
+    def test_source_location_renaming_changes_real_msvc_output(self) -> None:
+        # The C++20 standard library exposes the current function spelling.
+        # This is an actual compiled counterexample, not just a lexical guess.
+        previous = (
+            "#include <iostream>\n"
+            "#include <source_location>\n"
+            "void maxima() {\n"
+            '    std::cout << std::source_location::current().function_name() << "\\n";\n'
+            "}\n"
+            "int main() { maxima(); }\n"
+        )
+        revised = previous.replace(
+            "maxima()", "frecuencia_maxima_encontrada()")
+        with tempfile.TemporaryDirectory(prefix="lgaed-source-location-rename-") as tmp:
+            folder = Path(tmp)
+            old = self._execute(self._compile(previous, folder, "old-function"), "")
+            new = self._execute(self._compile(revised, folder, "new-function"), "")
+        self.assertEqual((old[0], old[2], new[0], new[2]), (0, "", 0, ""))
+        self.assertIn("maxima", old[1])
+        self.assertIn("frecuencia_maxima_encontrada", new[1])
+        self.assertNotEqual(old[1], new[1],
+                            "A function-name observable change escaped native verification")
+
     def test_prediction_normalizes_one_terminal_newline_only(self) -> None:
         # A published answer need not repeat the final std::cout line ending.
         correct = "Frecuencias:\n[]=2\nMaxima:2"
