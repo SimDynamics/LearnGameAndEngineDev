@@ -202,16 +202,35 @@ class WindowsCompilerPolicy(unittest.TestCase):
 
     @staticmethod
     def _uses_unneeded_compiler(source):
-        # Detect an executable token, including clang-cl, bare clang and
-        # versioned binaries. Do not confuse tool names embedded in source
-        # filenames, comments or descriptive workflow step labels with calls.
+        # Detect actual compiler commands, including clang-cl, bare clang
+        # and versioned binaries. Log messages about removed compilers are
+        # not commands. Chained calls and shell substitution must still fail.
         unused = re.compile(
             r"(?i)(?<![A-Za-z0-9_.+-])(?:g\+\+|gcc|clang\+\+|clang-cl|clang)"
             r"(?:-[0-9]+)?(?:\.exe)?(?![A-Za-z0-9_.+-])")
+        report = re.compile(
+            r"(?i)^(?:(?:-\s*)?run:\s*)?(?:echo|write-host)\s+")
+        separator = re.compile(r"(?:&&|\|\||[;&|])")
         for raw in source.splitlines():
             line = raw.partition("#")[0].strip()
             if not line or line.startswith(("name:", "- name:")):
                 continue
+            match = report.match(line)
+            if match:
+                tail = line[match.end():].lstrip()
+                if "$(" not in tail and chr(96) not in tail:
+                    if tail.startswith(("'", '"')):
+                        quote = tail[0]
+                        end = 1
+                        while end < len(tail) and tail[end] != quote:
+                            end += 1
+                        if end < len(tail):
+                            # Mask only the reported literal. A following
+                            # pipeline or chained command remains inspected.
+                            line = tail[end + 1:]
+                    else:
+                        cut = separator.search(tail)
+                        line = tail[cut.start():] if cut else ""
             if unused.search(line):
                 return True
         return False
@@ -234,7 +253,12 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 "run: clang++-19 example.cpp",
                 "run: gcc-14 example.c",
                 "run: g++ -std=c++23 example.cpp",
-                "run: & clang-cl /std:c++latest example.cpp"):
+                "run: & clang-cl /std:c++latest example.cpp",
+                "run: echo 'gcc was removed' && gcc -c example.c",
+                "run: Write-Host 'Clang retired'; & clang-cl.exe /c example.cpp",
+                "run: echo 'clang removed' | clang -c example.c",
+                "run: echo $(clang --version)",
+                "run: echo gcc; gcc -c example.c"):
             with self.subTest(command=source):
                 self.assertTrue(self._uses_unneeded_compiler(source))
         for source in (
@@ -243,7 +267,12 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 "run: cl /nologo /std:c++latest example.cpp",
                 "- scripts/build-clang23-android.ps1",
                 "run: python -B -m unittest test_windows_ci_compilers.py",
-                "run: cl /c example.cpp # clang was retired"):
+                "run: cl /c example.cpp # clang was retired",
+                "run: Write-Host 'Clang is retired'",
+                "run: echo 'gcc was removed'",
+                "run: Write-Host 'Clang; gcc are not used anymore' | Out-File logs.txt",
+                "run: echo gcc was removed",
+                "run: echo 'gcc' && cl /c example.cpp"):
             with self.subTest(allowed=source):
                 self.assertFalse(self._uses_unneeded_compiler(source))
 
