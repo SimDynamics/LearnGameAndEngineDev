@@ -127,7 +127,8 @@ void observable_identifier_spelling() {
 
     for(const std::string_view observer:{
             "__FUNCTION__", "__PRETTY_FUNCTION__", "__FUNCSIG__",
-            "__FUNCDNAME__", "typeid"}) {
+            "__FUNCDNAME__", "typeid", "__builtin_FUNCTION",
+            "source_location"}) {
         before[0].source="const char* maxima() { return "+
             std::string(observer)+"; }\n";
         after[0].source="const char* frecuencia_maxima_encontrada() { return "+
@@ -135,6 +136,21 @@ void observable_identifier_spelling() {
         require(!declared_tokens_only(before,after,plan),
             "C++ function/type spelling observer passed identifier-only validation");
     }
+
+    // Valid C++20 introspection can change visible output when a function
+    // is renamed. An identifier-only token diff cannot certify equivalence.
+    before[0].source=
+        "#include <source_location>\n#include <iostream>\n"
+        "void maxima() { std::cout << std::source_location::current().function_name(); }\n"
+        "int main() { maxima(); }\n";
+    after[0].source=
+        "#include <source_location>\n#include <iostream>\n"
+        "void frecuencia_maxima_encontrada() { "
+        "std::cout << std::source_location::current().function_name(); }\n"
+        "int main() { frecuencia_maxima_encontrada(); }\n";
+    plan[0].names[0].occurrences=2;
+    require(!declared_tokens_only(before,after,plan),
+        "std::source_location::current().function_name() can reveal the renamed function");
 
     for(const std::string_view macro:{
             "#define STRINGIFY(x) #x",
