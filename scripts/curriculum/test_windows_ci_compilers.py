@@ -277,7 +277,7 @@ class WindowsCompilerPolicy(unittest.TestCase):
             r"(?i)(?<![A-Za-z0-9_.+-])(?:g\+\+|gcc|clang\+\+|clang-cl|clang)"
             r"(?:-[0-9]+)?(?:\.exe)?(?![A-Za-z0-9_.+-])")
         subcommand = re.compile(
-            r"(?i)(?:^|[;&|])\s*&?\s*(?:g\+\+|gcc|clang\+\+|clang-cl|clang)"
+            r"(?i)(?:^|[;&|{}()])\s*&?\s*(?:g\+\+|gcc|clang\+\+|clang-cl|clang)"
             r"(?:-[0-9]+)?(?:\.exe)?(?=\s|$|[;&|])")
         report = re.compile(
             r"(?i)^(?:(?:-\s*)?run:\s*)?(?:echo|write-host)\s+")
@@ -321,10 +321,46 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 index += 1
             return "".join(result)
 
+        def balanced_substitution_body(tail, opening):
+            # PowerShell substitutions may nest $(...), group expressions,
+            # and contain quoted parentheses. The first ')' is not their end.
+            depth = 1
+            quote = None
+            escaped = False
+            index = opening + 2
+            while index < len(tail):
+                char = tail[index]
+                if escaped:
+                    escaped = False
+                    index += 1
+                    continue
+                if char in ("\\", chr(96)) and quote != "'":
+                    escaped = True
+                    index += 1
+                    continue
+                if char == "'" and quote != '"':
+                    if quote == "'" and tail[index:index + 2] == "''":
+                        index += 2
+                        continue
+                    quote = None if quote == "'" else "'"
+                elif char == '"' and quote != "'":
+                    if quote == '"' and tail[index:index + 2] == '""':
+                        index += 2
+                        continue
+                    quote = None if quote == '"' else '"'
+                elif quote is None:
+                    if char == "(":
+                        depth += 1
+                    elif char == ")":
+                        depth -= 1
+                        if depth == 0:
+                            return tail[opening + 2:index]
+                index += 1
+            return None
+
         def invokes_compiler_substitution(tail):
-            # In PowerShell, $(Get-Date) is not a compiler invocation;
-            # $(clang --version) is. Single-quoted $(...) is literal data.
-            # A backtick may simply escape a character, such as newline.
+            # Inspect real commands inside $(...), but not quoted report text.
+            # Nested substitutions and if (...) groups must not hide compilers.
             quote = None
             escaped = False
             for position, character in enumerate(tail):
@@ -341,9 +377,9 @@ class WindowsCompilerPolicy(unittest.TestCase):
                         quote = None
                     continue
                 if tail.startswith("$(", position) and quote != "'":
-                    closing = tail.find(")", position + 2)
-                    if closing >= 0 and subcommand.search(
-                            visible_subcommand(tail[position + 2:closing])):
+                    body = balanced_substitution_body(tail, position)
+                    if body is not None and subcommand.search(
+                            visible_subcommand(body)):
                         return True
             return False
 
@@ -450,6 +486,28 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 'run: Write-Host "$(Get-Date -Format \'foo; gcc --version\')"'):
             with self.subTest(allowed=source):
                 self.assertFalse(self._uses_unneeded_compiler(source))
+
+    def test_nested_powershell_substitutions_distinguish_execution_from_text(self):
+        # Compiler calls inside nested PowerShell expressions are executable.
+        # Parentheses and compiler names inside quoted reports are not.
+        executed = (
+            'run: Write-Host "$(Write-Host $(Get-Date); & clang-cl.exe /c example.cpp)"',
+            "run: echo $(if (Test-Path sample.cpp) { & clang++-19 -c sample.cpp })",
+            'run: echo "$(Write-Host \'gcc retired (report)\'; & clang-cl /c x.cpp)"',
+            'run: echo "$(Write-Host $(Get-Date -Format \'gcc; clang\'); gcc -c x.c)"',
+        )
+        reported = (
+            'run: echo "$(Write-Host \'old (gcc; clang --version) message\')"',
+            'run: Write-Host "$(Get-Date -Format \'foo (gcc; clang)\')"',
+            'run: echo "$(Write-Host $(Get-Date -Format \'gcc; clang\'))"',
+            'run: echo "$(Write-Host \'gcc (x)\'; Write-Host \'clang; retired\')"',
+        )
+        for command in executed:
+            with self.subTest(executes=command):
+                self.assertTrue(self._uses_unneeded_compiler(command))
+        for command in reported:
+            with self.subTest(reports=command):
+                self.assertFalse(self._uses_unneeded_compiler(command))
 
     def test_compiler_policy_uses_focused_ci_without_unrelated_native_rebuilds(self):
         policy = "scripts/curriculum/test_windows_ci_compilers.py"
