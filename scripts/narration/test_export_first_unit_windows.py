@@ -110,6 +110,25 @@ class WindowsFirstUnitExportTest(unittest.TestCase):
         self.assertTrue(all(lesson.startswith("cpp_fundamentals__intro_programming__")
                             for lesson in LESSONS))
 
+    def test_windows_audio_workflow_watches_existing_native_files(self):
+        root = Path(__file__).resolve().parents[2]
+        workflow = (root / ".github/workflows/codex-windows-first-unit-audio.yml").read_text(
+            encoding="utf-8")
+        self.assertIn("runs-on: windows-2022", workflow)
+        watched = {line.removeprefix("      - ").strip()
+                   for line in workflow.splitlines()
+                   if line.startswith("      - scripts/narration/")}
+        for expected in (
+                "scripts/narration/first_unit_audio_contract.py",
+                "scripts/narration/export_first_unit_windows.py",
+                "scripts/narration/test_export_first_unit_windows.py"):
+            self.assertIn(expected, watched)
+        for path in watched:
+            with self.subTest(path=path):
+                self.assertTrue((root / path).is_file(),
+                                "Windows audio CI watches a missing file")
+                self.assertNotIn("_from_android.py", path)
+
     def test_coverage_reports_missing_and_corrupt_without_touching_existing_audio(self):
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
