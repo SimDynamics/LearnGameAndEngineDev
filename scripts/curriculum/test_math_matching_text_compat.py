@@ -127,6 +127,17 @@ class RealFrequencyMatchingEditorial(unittest.TestCase):
                          self.lesson.get("textSemantics"))
         self.assertEqual(state.original_projection(draft),
                          state.original_projection(self.lesson))
+        # The direct curricular guard must share this authenticated contract
+        # with P2 rather than relying on a course-specific exception.
+        relative = PATH.relative_to(Path(__file__).resolve().parents[2]).as_posix()
+        storage = state.validate(self.lesson)
+        location = next(
+            (p, b) for p, row in enumerate(self.lesson["stateLayout"]["current"])
+            for b, identity in enumerate(row["blocks"]) if identity == OWNER)
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *storage[location], self.original, state._blocks(draft)[OWNER],
+            previous_document=self.lesson, current_document=draft,
+            course_id="cpp_fundamentals"))
         no_proof = deepcopy(draft)
         del no_proof["stateLayout"]["mathMatchingTextRevisions"]
         with self.assertRaises(state.LayoutError):
