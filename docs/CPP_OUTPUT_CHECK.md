@@ -4428,6 +4428,56 @@ comprueba en `local_string_state_tests.cpp`. La validación visual
 habitual y la autoría definitiva de las salidas del currículo
 corresponden al usuario y a Work respectivamente.
 
+### Historial y reapertura de los cuatro contratos privados
+
+Los requisitos de variables por nombre, cadenas, entradas y roles libres
+se verifican también al restaurar una página posterior. Un sello histórico
+`reference-proof/v1` sigue almacenado, pero no sustituye la acreditación
+privada del editor al decidir qué referencias y actividades se pueden abrir.
+Los éxitos y reinicios del contrato privado conservan también ese sello
+anterior; sus decisiones de acceso usan el recibo independiente nuevo.
+La primera ejecución obligatoria correcta mantiene el acceso habitual; las
+entradas posteriores siguen siendo opcionales.
+
+Las nuevas acreditaciones de enteros, caracteres y booleanos se guardan en
+`local-int/v2/`, y las de cadenas en `local-string/v2/`. Estos ámbitos separan
+el programa, los casos y la finalización nuevos de los recibos anteriores de
+stdout, aunque el alumno corrija el ejercicio con otra fuente. La
+invalidación del intento y el reinicio afectan al ámbito nuevo. Los sellos
+privados `local-int/v1` y `local-string/v1` conservan sus preimágenes.
+
+Un recibo privado válido del formato anterior puede adoptarse comprobando
+su programa, todos sus casos, la finalización y la declaración exacta.
+Los datos originales se conservan byte por byte. Un logro antiguo de stdout
+sin su sello privado no se adopta. El marcador `legacy-adopted/v1` impide
+que un reinicio o un nuevo intento recuperen después esa acreditación
+anterior; un recibo incompleto o adulterado no concede progreso.
+
+Si la salida pública coincide pero la comprobación privada falla, se guarda
+la guía vinculada a la fuente, entrada, revisión y especificación realmente
+ejecutadas. La reapertura muestra esa guía sin convertirla en un acierto.
+Las salidas literales sin candidatos suficientes para formar una sonda
+muestran la explicación del requisito de datos y permanecen sin acreditar;
+ese caso no promete un recibo de revisión persistente.
+
+`local_dependency_view_fixture_source.py` autentica nueve lecciones en main
+`2ca32b2337178d1effa3a2c81759e2493cd746d0` y exporta sus bytes originales,
+las propuestas que añaden exclusivamente las raíces privadas y un
+manifiesto de dieciséis propietarios. U2L10 reúne ambos contratos en la
+misma propuesta. Los borradores de solución proceden de referencias
+publicadas o de reparaciones mínimas explícitas de sus códigos iniciales.
+El exportador comprueba toda la transición y no sobrescribe datos distintos.
+
+`native.local_dependency_receipts` ejercita el formato anterior, su adopción,
+el rechazo de stdout sin prueba privada, los intentos nuevos, el reinicio
+y la guía de los cuatro contratos con el runner Windows y StateStore.
+Los nueve tests `native.local_dependency_view_u2l1` a
+`native.local_dependency_view_u3l2` recorren los dieciséis editores en
+LessonView real: ejecución anterior, referencia y marcador guardados,
+reapertura con el contrato nuevo, rechazo, corrección y reapertura del
+resultado. La preparación de otros ejercicios es únicamente estado QA.
+Estas pruebas no activan las declaraciones en el currículo publicado.
+
 ### Comprobación local de sondas de variables con MSVC
 
 La batería enfocada de dependencia de enteros y cadenas puede ejecutarse
@@ -4473,8 +4523,11 @@ CTest nativo incorpora por separado:
   ejecuciones MSVC reales, rechazo de salidas fijas, recibos por editor,
   guardado y reapertura del StateStore en un perfil QA único.
 
-Para construir únicamente estos dos ejecutables y ejecutar exactamente
-ambas pruebas en el checkout Windows autorizado de `Codex`:
+`Test-LocalVariableState.ps1` reúne veinte comprobaciones: los contratos
+anteriores de núcleo, autoría y estado, la conservación de recibos privados,
+la autoría de las nueve lecciones y sus nueve recorridos de LessonView.
+Para construir los ejecutables enfocados y comprobar ese inventario exacto
+en el checkout Windows autorizado de `Codex`:
 
 ```powershell
 & '.\scripts\windows\Test-LocalVariableState.ps1' -Preset windows-x64-debug

@@ -1355,6 +1355,11 @@ struct LessonView {
     using CompletionSnapshot = curriculum::CompilerCompletionSnapshot;
     CompletionSnapshot completion_snapshot(const curriculum::Lesson& source) const {
         return curriculum::compiler_completion_snapshot(source,[&](const auto& current){
+            // Earlier reference receipts prove only the former visible output.
+            // Keep them stored, but these dependency goals need their own witness.
+            if(current.local_int_check||current.local_string_check||
+               current.input_check||current.local_role_check)
+                return windows::compiler_puzzle_completed(data,source,current);
             const auto receipt = state::string_value(data,"native_windows",reference_key(current));
             return windows::compiler_puzzle_completed(data,source,current)||(!receipt.empty()&&receipt==reference_seal(current));
         });
@@ -1553,8 +1558,11 @@ struct LessonView {
     }
     void clear_reference_completion(std::size_t index) {
         if (!has_references(block(index))) return;
-        if (auto domain = data.preferences.find("native_windows"); domain != data.preferences.end())
-            if (domain->second.erase(reference_key(block(index)))) mark_dirty();
+        if(!block(index).local_int_check&&!block(index).local_string_check&&
+           !block(index).input_check&&!block(index).local_role_check) {
+            if (auto domain = data.preferences.find("native_windows"); domain != data.preferences.end())
+                if (domain->second.erase(reference_key(block(index)))) mark_dirty();
+        }
         refresh_references();
     }
 
@@ -4168,7 +4176,9 @@ struct LessonView {
                         :block(index).compile_check->explanation);
                     if(windows::record_compiler_diagnostic_case(data,lesson,block(index),running_program,*result,text)){
                         feedback(index,text,true,true,false,"/compileCheck/explanation");if(hooks.feedback_changed)hooks.feedback_changed(window,index,true);
-                        if(has_references(block(index)))data.preferences["native_windows"][reference_key(block(index))]=reference_seal(block(index));
+                        if(has_references(block(index))&&!block(index).local_int_check&&!block(index).local_string_check&&
+                           !block(index).input_check&&!block(index).local_role_check)
+                            data.preferences["native_windows"][reference_key(block(index))]=reference_seal(block(index));
                         mark_dirty();flush();refresh_references();
                     }
                 }else if(windows::accepted_compile_diagnostic(running_program,*result)){
@@ -4367,6 +4377,18 @@ struct LessonView {
                             data,lesson,block(index),running_program));
                 const bool correct=evaluation.verdict==curriculum::OutputVerdict::correct&&
                     preserved_source&&independent&&graph_ready&&observation_ready;
+                // A valid public capture can need guidance even when a local
+                // binding is absent. This feedback never substitutes for its witness.
+                const bool dependency_feedback=(block(index).local_int_check||block(index).local_string_check||
+                    block(index).input_check||block(index).local_role_check)&&
+                    evaluation.verdict==curriculum::OutputVerdict::correct&&
+                    fresh.source_revision==running_program.revision&&running_program.revision==vm.revision&&
+                    running_program.source_utf8==vm.source_editor->document().text&&
+                    fresh.standard_input==running_program.stdin_utf8&&
+                    running_program.local_int_check==block(index).local_int_check&&
+                    running_program.local_string_check==block(index).local_string_check&&
+                    running_program.input_check==block(index).input_check&&
+                    running_program.local_role_check==block(index).local_role_check;
                 auto text = verdict_text(correct);
                 if(!observation_ready&&preserved_source&&graph_ready&&
                    evaluation.verdict==curriculum::OutputVerdict::correct)
@@ -4383,23 +4405,19 @@ struct LessonView {
                         "La structure CMake ne respecte pas encore le contrat : ")
                         +graph.reason;
                 }
-                if(!fresh.local_int_check_correct&&block(index).local_int_check&&preserved_source&&
-                   evaluation.verdict==curriculum::OutputVerdict::correct)
+                if(!fresh.local_int_check_correct&&block(index).local_int_check&&dependency_feedback)
                     text+='\n'+(fresh.local_int_check_feedback.empty()
                         ?std::string("La salida visible coincide, pero falta comprobar su dependencia de las variables int declaradas.")
                         :fresh.local_int_check_feedback);
-                if(!fresh.local_string_check_correct&&block(index).local_string_check&&preserved_source&&
-                   evaluation.verdict==curriculum::OutputVerdict::correct)
+                if(!fresh.local_string_check_correct&&block(index).local_string_check&&dependency_feedback)
                     text+='\n'+(fresh.local_string_check_feedback.empty()
                         ?std::string("La salida visible coincide, pero falta comprobar su dependencia de las variables de texto.")
                         :fresh.local_string_check_feedback);
-                if(!fresh.input_check_correct&&block(index).input_check&&preserved_source&&
-                   evaluation.verdict==curriculum::OutputVerdict::correct)
+                if(!fresh.input_check_correct&&block(index).input_check&&dependency_feedback)
                     text+='\n'+(fresh.input_check_feedback.empty()
                         ?std::string("Comprueba que el programa use todos los datos de entrada para calcular y mostrar el resultado.")
                         :fresh.input_check_feedback);
-                if(!fresh.local_role_check_correct&&block(index).local_role_check&&preserved_source&&
-                   evaluation.verdict==curriculum::OutputVerdict::correct)
+                if(!fresh.local_role_check_correct&&block(index).local_role_check&&dependency_feedback)
                     text+='\n'+(fresh.local_role_check_feedback.empty()
                         ?std::string("Comprueba que el resultado use los datos guardados y que los valores que debes conservar permanezcan independientes de las actualizaciones.")
                         :fresh.local_role_check_feedback);
@@ -4506,7 +4524,8 @@ struct LessonView {
                 if(named_variation_pending&&preserved_source)
                     text+='\n'+fresh.named_rule_constant_variation_feedback;
                 if(!independent&&!named_battery_pending&&!named_variation_pending&&
-                   preserved_source&&!block(index).input_check&&!block(index).local_role_check&&
+                   preserved_source&&!block(index).local_int_check&&!block(index).local_string_check&&
+                   !block(index).input_check&&!block(index).local_role_check&&
                    !block(index).open_battery_probe&&
                    !block(index).boolean_battery_probe&&!block(index).reduction_probe&&
                    !block(index).integer_battery_probe&&!block(index).adjustment_project_probe&&
@@ -4528,9 +4547,10 @@ struct LessonView {
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
                         "La sortie du test modifié correspond, mais la vérification indépendante des fonctions a échoué. Vérifiez le calcul réel.");
-                // Reduction feedback already identifies its exact source or
-                // observation failure; do not append an unrelated project rule.
-                if(!preserved_source&&!block(index).reduction_probe) {
+                // Dependency and reduction feedback describe their own checks.
+                if(!preserved_source&&!block(index).reduction_probe&&
+                   !block(index).local_int_check&&!block(index).local_string_check&&
+                   !block(index).input_check&&!block(index).local_role_check) {
                     if(block(index).adjustment_project_probe)
                         text+='\n'+ui(
                             "Incluye la cabecera pública proporcionada en la biblioteca, el cliente y el comprobador, y conserva su interfaz y las rutas del proyecto. Ejecuta el comprobador con la entrada vacía y la configuración solicitada.",
@@ -4675,7 +4695,9 @@ struct LessonView {
                 if(correct&&vm.status&&block(index).output_check&&
                     windows::compiler_puzzle_completed(data,lesson,block(index)))
                     set_rich_text(vm.status,compiler_progress_text(index,true));
-                if (objective_completed && has_references(block(index))) {
+                if (objective_completed && has_references(block(index))&&
+                    !block(index).local_int_check&&!block(index).local_string_check&&
+                    !block(index).input_check&&!block(index).local_role_check) {
                     data.preferences["native_windows"][reference_key(block(index))] = reference_seal(block(index));
                 }
                 if(correct){refresh_compiler_history(index);mark_dirty();flush();refresh_references();}

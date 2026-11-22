@@ -123,3 +123,64 @@ function(lgaed_add_u2l9_input_view_history_tests source_root)
     set_tests_properties(native.curricular_input_lab_history PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     set_tests_properties(native.prepared_input_predictions_history PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
 endfunction()
+
+# Preserve stdout-era history while adopting only fully sealed private v1
+# receipts. This uses the production Windows runner and an isolated StateStore.
+function(lgaed_add_local_dependency_receipt_tests source_root)
+    if(TARGET lgaed_local_dependency_receipt_tests)
+        return()
+    endif()
+    add_executable(lgaed_local_dependency_receipt_tests
+        "${source_root}/native/platform/windows/local_dependency_receipt_tests.cpp")
+    target_link_libraries(lgaed_local_dependency_receipt_tests
+        PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.local_dependency_receipts
+        COMMAND lgaed_local_dependency_receipt_tests)
+    set_tests_properties(native.local_dependency_receipts
+        PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+endfunction()
+
+# Exercise the real reader across all sixteen variable/input owners in nine
+# authenticated lessons. Only private QA copies receive the new declarations.
+# Keep presentation out of the StateImport-only configuration.
+function(lgaed_add_local_dependency_view_tests source_root presentation_target)
+    if(TARGET lgaed_local_dependency_view_tests)
+        return()
+    endif()
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    set(_view_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/local-dependency-view")
+    set(_view_fixture_files "${_view_fixture_dir}/manifest.json")
+    foreach(_lesson IN ITEMS u2l1 u2l2 u2l3 u2l7 u2l8 u2l9 u2l10 u3l1 u3l2)
+        foreach(_file IN ITEMS before.json after.json)
+            list(APPEND _view_fixture_files "${_view_fixture_dir}/${_lesson}/${_file}")
+        endforeach()
+    endforeach()
+    add_custom_command(OUTPUT ${_view_fixture_files}
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${source_root}/scripts/curriculum/local_dependency_view_fixture_source.py"
+            --output-dir "${_view_fixture_dir}"
+        DEPENDS "${source_root}/scripts/curriculum/local_dependency_view_fixture_source.py"
+            "${source_root}/scripts/curriculum/code_format_compat.py"
+            "${source_root}/scripts/curriculum/diagnostic_fixture_source.py"
+            "${source_root}/scripts/curriculum/stable_state_layout.py"
+            "${source_root}/scripts/curriculum/local_scalar_fixture_source.py"
+            "${source_root}/scripts/curriculum/input_dependency_fixture_source.py"
+            "${source_root}/scripts/curriculum/local_role_fixture_source.py"
+        VERBATIM)
+    add_custom_target(lgaed_local_dependency_view_fixtures DEPENDS ${_view_fixture_files})
+    add_executable(lgaed_local_dependency_view_tests
+        "${source_root}/native/presentation/windows/local_dependency_view_tests.cpp")
+    target_link_libraries(lgaed_local_dependency_view_tests
+        PRIVATE ${presentation_target} lgaed_host_options)
+    add_dependencies(lgaed_local_dependency_view_tests lgaed_local_dependency_view_fixtures)
+    foreach(_lesson IN ITEMS u2l1 u2l2 u2l3 u2l7 u2l8 u2l9 u2l10 u3l1 u3l2)
+        add_test(NAME native.local_dependency_view_${_lesson}
+            COMMAND lgaed_local_dependency_view_tests "${_view_fixture_dir}/manifest.json" "${_lesson}")
+        set_tests_properties(native.local_dependency_view_${_lesson}
+            PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+    endforeach()
+    add_test(NAME native.local_dependency_view_authoring
+        COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+            -s "${source_root}/scripts/curriculum" -p test_local_dependency_view_authoring.py -v)
+    set_tests_properties(native.local_dependency_view_authoring PROPERTIES TIMEOUT 120)
+endfunction()

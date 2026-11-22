@@ -18,12 +18,20 @@ std::string token(std::string_view text) { return std::to_string(text.size()) + 
 std::string root(const curriculum::Lesson& lesson, const curriculum::Block& block) {
     return "compiler-puzzle/v1/" + lesson.locale + '/' + lesson.id + '/' + curriculum::exercise_key(lesson,block) + '/';
 }
+std::string legacy_base(const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    return root(lesson,block) + state::sha256(curriculum::reference_objective_frame(lesson,block)) + '/';
+}
 std::string base(const curriculum::Lesson& lesson, const curriculum::Block& block) {
-    auto key=root(lesson,block) + state::sha256(curriculum::reference_objective_frame(lesson,block)) + '/';
+    auto key=legacy_base(lesson,block);
     // The new objective may be solved with a different source than the old
     // stdout-only achievement. Keep both programs and all historical bytes.
     if(block.input_check)key+="input/v1/";
     if(block.local_role_check)key+="local-roles/v1/";
+    // V1 local-int/string proofs shared their stdout program and case keys.
+    // New attempts need a separate epoch when the student corrects a fixed
+    // report. Existing V1 proof bytes remain readable at legacy_base().
+    if(block.local_int_check)key+="local-int/v2/";
+    if(block.local_string_check)key+="local-string/v2/";
     return key;
 }
 // A precise owner, not a generic option to require extra undocumented work.
@@ -509,8 +517,9 @@ std::optional<CurrentCompilerGuidance> current_v2_guidance(const curriculum::Les
         return CurrentCompilerGuidance{block.output_check->cases.front().explanation,"/outputCheck/cases/0/explanation"};
     return {};
 }
-void validate_receipts(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
-    if(!curriculum::has_compiler_objective(block))return;const auto key=base(lesson,block);
+void validate_receipts_at_key(const state::StateData& data,const curriculum::Lesson& lesson,
+        const curriculum::Block& block,const std::string& key) {
+    if(!curriculum::has_compiler_objective(block))return;
     validate_integer_client_receipt(data,lesson,block);
     for(const auto suffix:{"program","completed","feedback"})if(const auto value=state::find(data,"native_windows",key+suffix);value&&!std::holds_alternative<std::string>(*value))
         throw std::runtime_error("Invalid compiler execution provenance; data was preserved.");
@@ -523,6 +532,9 @@ void validate_receipts(const state::StateData& data,const curriculum::Lesson& le
         if(!valid_completion_seal(block,key,program,proofs,std::get<std::string>(*value)))
             throw std::runtime_error("Invalid compiler completion proof; data was preserved.");
     }
+}
+void validate_receipts(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    validate_receipts_at_key(data,lesson,block,base(lesson,block));
 }
 }
 bool compiler_selective_history_required(const curriculum::Lesson& lesson,const curriculum::Block& block) {
@@ -1378,9 +1390,133 @@ std::string indexed_transfer_completion_seal(std::string_view key,
         token(spec.transfer_method)+token(spec.put_method)+
         token(spec.change_method)+token(spec.clear_method));
 }
+namespace {
+constexpr auto local_adoption_suffix="legacy-adopted/v1";
+bool scoped_local_owner(const curriculum::Block& block) {
+    return block.local_int_check.has_value()||block.local_string_check.has_value();
+}
+bool local_adoption_marked(const state::StateData& data,const std::string& key) {
+    const auto stored=state::find(data,"native_windows",key+local_adoption_suffix);
+    if(!stored)return false;
+    const auto marker=std::get_if<bool>(stored);
+    if(!marker||!*marker)
+        throw std::runtime_error("Invalid local dependency adoption marker; historical data was preserved.");
+    return true;
+}
+bool has_local_scope(const state::StateData& data,const std::string& key) {
+    const auto domain=data.preferences.find("native_windows");
+    return domain!=data.preferences.end()&&std::ranges::any_of(domain->second,
+        [&](const auto& item){return item.first.starts_with(key);});
+}
+std::optional<std::string> authenticated_legacy_local_key(const state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    if(!scoped_local_owner(block))return {};
+    const auto key=legacy_base(lesson,block);
+    const auto suffix=block.local_int_check?"local-int/v1":"local-string/v1";
+    const auto stored=state::find(data,"native_windows",key+suffix);
+    // An old stdout success is historical data, never a local dependency proof.
+    if(!stored)return {};
+    validate_receipts_at_key(data,lesson,block,key);
+    const auto receipt=std::get_if<std::string>(stored);
+    const auto program=state::string_value(data,"native_windows",key+"program");
+    const auto cases=case_proofs(data,key);
+    const auto expected=block.local_int_check
+        ?local_int_completion_seal(key,program,*block.local_int_check)
+        :local_string_completion_seal(key,program,*block.local_string_check);
+    if(!receipt||program.empty()||*receipt!=expected||
+       !valid_completion_seal(block,key,program,cases,
+           state::string_value(data,"native_windows",key+"completed")))
+        throw std::runtime_error("Invalid historical local dependency proof; data was preserved.");
+    return key;
+}
+std::string completed_read_base(const state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    const auto key=base(lesson,block);
+    if(scoped_local_owner(block)) {
+        (void)local_adoption_marked(data,key);
+        // A V2 attempt, including a rejection or Reset marker, is authoritative.
+        // Do not revive V1 after the student starts this separate epoch.
+        if(!has_local_scope(data,key))
+            if(const auto previous=authenticated_legacy_local_key(data,lesson,block))return *previous;
+    }
+    return key;
+}
+void prepare_local_dependency_epoch(state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    if(!scoped_local_owner(block))return;
+    validate_compiler_puzzle_state(data,lesson,block);
+    const auto key=base(lesson,block);
+    if(local_adoption_marked(data,key))return;
+    const auto previous=authenticated_legacy_local_key(data,lesson,block);
+    if(previous&&!has_local_scope(data,key)) {
+        const auto program=state::string_value(data,"native_windows",*previous+"program");
+        const auto old_proofs=case_proofs(data,*previous);
+        std::vector<std::string> proofs(old_proofs.size());
+        for(std::size_t i=0;i<proofs.size();++i)
+            if(!old_proofs[i].empty())proofs[i]=proof(key,program,i,block.output_check->cases[i]);
+        const auto seal=std::ranges::all_of(proofs,[](const auto& item){return !item.empty();})
+            ?complete_seal(key,program,proofs):first_case_complete_seal(key,program,proofs);
+        const auto feedback=state::string_value(data,"native_windows",*previous+"feedback");
+        const auto origin=restored_feedback_origin(data,*previous,block,feedback,
+            state::string_value(data,"native_windows",*previous+"completed"));
+        // The exact V1 spec/program/cases have already been authenticated. Only
+        // their new namespace seals are derived; every V1 key stays untouched.
+        auto& values=data.preferences["native_windows"];
+        values[key+"program"]=program;values[key+"cases"]=std::move(proofs);
+        values[key+"completed"]=seal;
+        if(state::find(data,"native_windows",*previous+"feedback"))values[key+"feedback"]=feedback;
+        if(block.local_int_check)
+            values[key+"local-int/v1"]=local_int_completion_seal(key,program,*block.local_int_check);
+        else values[key+"local-string/v1"]=local_string_completion_seal(key,program,*block.local_string_check);
+        if(!origin.empty())record_feedback_origin(data,key,block,origin,feedback,seal);
+    }
+    data.preferences["native_windows"][key+local_adoption_suffix]=true;
+}
+bool private_dependency_owner(const curriculum::Block& block) {
+    return scoped_local_owner(block)||block.input_check||block.local_role_check;
+}
+std::string private_review_fingerprint(const CppRunRequest& request) {
+    if(request.input_check)return cpp_input_request_fingerprint(request);
+    if(request.local_role_check)return cpp_local_role_request_fingerprint(request);
+    if(request.local_int_check)return cpp_local_int_request_fingerprint(request);
+    if(request.local_string_check)return cpp_local_string_request_fingerprint(request);
+    return {};
+}
+std::string private_review_rules(const curriculum::Block& block) {
+    if(!private_dependency_owner(block))return {};
+    auto frame=std::string("compiler-private-review-rules-v1/")+token(review_rules(block));
+    if(block.input_check)frame+=token(input_completion_seal({},{},*block.input_check));
+    if(block.local_role_check)frame+=token(local_role_completion_seal({},{},*block.local_role_check));
+    if(block.local_int_check)frame+=token(local_int_completion_seal({},{},*block.local_int_check));
+    if(block.local_string_check)frame+=token(local_string_completion_seal({},{},*block.local_string_check));
+    return state::sha256(frame);
+}
+std::string private_review_seal(std::string_view key,std::string_view program,std::string_view input,
+        std::string_view target,std::string_view rules,std::string_view feedback,
+        const std::vector<std::string>& capture) {
+    auto frame=std::string("compiler-private-review-v1/")+
+        token(review_seal(key,program,input,target,rules,feedback));
+    for(const auto& field:capture)frame+=token(field);
+    return state::sha256(frame);
+}
+bool private_review_capture_matches(const std::vector<std::string>& capture,
+        const curriculum::Block& block,const CppRunRequest& current) {
+    if(capture.size()!=4||capture[0]!="private-review/v1"||capture[3].empty())return false;
+    auto snapshot=current;
+    for(const auto index:{1,2}) {
+        const auto& text=capture[index];std::uint64_t value=0;
+        if(text.empty()||(text.size()>1&&text.front()=='0'))return false;
+        const auto parsed=std::from_chars(text.data(),text.data()+text.size(),value);
+        if(parsed.ec!=std::errc{}||parsed.ptr!=text.data()+text.size())return false;
+        if(index==1)snapshot.request_id=value;else snapshot.revision=value;
+    }
+    return compiler_runtime_request_allowed(block,snapshot)&&
+        capture[3]==private_review_fingerprint(snapshot);
+}
+}
 static bool stdout_or_diagnostic_completed(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!curriculum::has_compiler_objective(block))return false;
-    const auto key=base(lesson,block);
+    const auto key=completed_read_base(data,lesson,block);
     const auto captured=state::string_value(data,"native_windows",key+"program");
     const auto proofs=case_proofs(data,key);
     if(block.input_check&&
@@ -1464,7 +1600,7 @@ bool compiler_puzzle_completed(const state::StateData& data,const curriculum::Le
 }
 std::string compiler_puzzle_feedback(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!compiler_puzzle_completed(data,lesson,block))return {};
-    auto stored=state::string_value(data,"native_windows",base(lesson,block)+"feedback");
+    auto stored=state::string_value(data,"native_windows",completed_read_base(data,lesson,block)+"feedback");
     if(!stored.empty())if(const auto current=current_crt_feedback_case(lesson,block);current&&!current->explanation.empty())
         return stored.substr(0,stored.find_first_of("\r\n"))+'\n'+current->explanation;
     // The same authenticated, active-owner v2 rule already used by the
@@ -1484,6 +1620,8 @@ std::string compiler_puzzle_review(const state::StateData& data,const curriculum
     if(block.boolean_battery_probe!=current.boolean_battery_probe)return {};
     if(block.reduction_probe!=current.reduction_probe)return {};
     if(block.integer_battery_probe!=current.integer_battery_probe)return {};
+    if(block.input_check!=current.input_check||block.local_role_check!=current.local_role_check||
+       block.local_int_check!=current.local_int_check||block.local_string_check!=current.local_string_check)return {};
     const auto key=base(lesson,block)+"review/";
     const auto text=[&](std::string_view suffix)->const std::string*{
         const auto value=state::find(data,"native_windows",key+std::string(suffix));
@@ -1499,13 +1637,18 @@ std::string compiler_puzzle_review(const state::StateData& data,const curriculum
         if(!capture||!diagnostic_review_capture_matches(*capture,block,current)||
             (*rules!=diagnostic_review_rules(block,current)&&*rules!=diagnostic_review_rules(block,current,true))||
             *seal!=diagnostic_review_seal(key,*program,*input,*target,*rules,*feedback,*capture))return {};
+    }else if(*rules==private_review_rules(block)) {
+        const auto stored=state::find(data,"native_windows",key+"capture");
+        const auto capture=stored?std::get_if<std::vector<std::string>>(stored):nullptr;
+        if(!capture||!private_review_capture_matches(*capture,block,current)||
+           *seal!=private_review_seal(key,*program,*input,*target,*rules,*feedback,*capture))return {};
     }else if((*rules!=review_rules(block)&&*rules!=review_rules(block,true))||*seal!=review_seal(key,*program,*input,*target,*rules,*feedback))return {};
     return *feedback;
 }
 std::optional<CompilerFeedback> compiler_puzzle_success_feedback(const state::StateData& data,
         const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!curriculum::has_compiler_objective(block))return std::nullopt;
-    const auto key=base(lesson,block);
+    const auto key=completed_read_base(data,lesson,block);
     if(const auto guidance=current_v2_guidance(lesson,block);guidance&&compiler_puzzle_completed(data,lesson,block)){
         const auto original=state::string_value(data,"native_windows",key+"feedback");
         if(!original.empty()){
@@ -1539,14 +1682,37 @@ bool record_compiler_puzzle_review(state::StateData& data,const curriculum::Less
     if(block.boolean_battery_probe!=captured.boolean_battery_probe)return false;
     if(block.reduction_probe!=captured.reduction_probe)return false;
     if(block.integer_battery_probe!=captured.integer_battery_probe)return false;
+    if(block.input_check!=captured.input_check||block.local_role_check!=captured.local_role_check||
+       block.local_int_check!=captured.local_int_check||block.local_string_check!=captured.local_string_check)return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
-    if(evaluation.verdict!=curriculum::OutputVerdict::incorrect)return false;
-    const auto key=base(lesson,block)+"review/",program=compiler_program_frame(captured),target=review_target(captured),rules=review_rules(block);
+    const bool private_rejected=evaluation.verdict==curriculum::OutputVerdict::correct&&
+        ((block.input_check&&!execution.input_check_correct)||
+         (block.local_role_check&&!execution.local_role_check_correct)||
+         (block.local_int_check&&!execution.local_int_check_correct)||
+         (block.local_string_check&&!execution.local_string_check_correct));
+    if(evaluation.verdict!=curriculum::OutputVerdict::incorrect&&!private_rejected)return false;
+    if(private_rejected&&!compiler_runtime_request_allowed(block,captured))return false;
+    // A missing source plan has no private capture fingerprint. It may show a
+    // structural guide in the UI, but cannot use this bound-review path.
+    const auto fingerprint=private_rejected?private_review_fingerprint(captured):std::string{};
+    if(private_rejected&&fingerprint.empty())return false;
+    prepare_local_dependency_epoch(data,lesson,block);
+    const auto key=base(lesson,block)+"review/",program=compiler_program_frame(captured),target=review_target(captured),
+        rules=private_rejected?private_review_rules(block):review_rules(block);
     auto& values=data.preferences["native_windows"];
     values[key+"program"]=program;values[key+"input"]=captured.stdin_utf8;values[key+"target"]=target;
     values[key+"rules"]=rules;values[key+"feedback"]=std::string(feedback);
-    values[key+"seal"]=review_seal(key,program,captured.stdin_utf8,target,rules,feedback);
-    record_feedback_origin(data,key,block,evaluation.feedback_path,feedback,std::get<std::string>(values.at(key+"seal")));
+    if(private_rejected) {
+        const std::vector<std::string> capture{"private-review/v1",std::to_string(captured.request_id),
+            std::to_string(captured.revision),fingerprint};
+        values[key+"capture"]=capture;
+        values[key+"seal"]=private_review_seal(key,program,captured.stdin_utf8,target,rules,feedback,capture);
+    }else {
+        values.erase(key+"capture");
+        values[key+"seal"]=review_seal(key,program,captured.stdin_utf8,target,rules,feedback);
+    }
+    record_feedback_origin(data,key,block,private_rejected?std::string_view{}:evaluation.feedback_path,
+        feedback,std::get<std::string>(values.at(key+"seal")));
     return true;
 }
 bool record_compiler_diagnostic_review(state::StateData& data,const curriculum::Lesson& lesson,
@@ -1577,7 +1743,7 @@ std::size_t compiler_puzzle_case_count(const state::StateData& data,const curric
     if(!curriculum::has_compiler_objective(block)||
         !selective_history_receipt_valid(data,lesson,block))return 0;
     if(block.compile_check)return compiler_puzzle_completed(data,lesson,block)?1:0;
-    const auto key=base(lesson,block),captured=state::string_value(data,"native_windows",key+"program");
+    const auto key=completed_read_base(data,lesson,block),captured=state::string_value(data,"native_windows",key+"program");
     const auto proofs=case_proofs(data,key);std::size_t count=0;
     for(std::size_t index=0;index<std::min(proofs.size(),block.output_check->cases.size());++index)
         if(proofs[index]==proof(key,captured,index,block.output_check->cases[index]))++count;
@@ -1645,6 +1811,9 @@ void validate_compiler_puzzle_state(const state::StateData& data,const curriculu
         }
     }
     if(block.local_int_check) {
+        (void)authenticated_legacy_local_key(data,lesson,block);
+        (void)local_adoption_marked(data,base(lesson,block));
+        validate_receipts(data,lesson,block);
         const auto key=base(lesson,block);
         if(const auto* stored=state::find(data,"native_windows",key+"local-int/v1")) {
             const auto* receipt=std::get_if<std::string>(stored);
@@ -1659,6 +1828,9 @@ void validate_compiler_puzzle_state(const state::StateData& data,const curriculu
         }
     }
     if(block.local_string_check) {
+        (void)authenticated_legacy_local_key(data,lesson,block);
+        (void)local_adoption_marked(data,base(lesson,block));
+        validate_receipts(data,lesson,block);
         const auto key=base(lesson,block);
         if(const auto* stored=state::find(data,"native_windows",key+"local-string/v1")) {
             const auto* receipt=std::get_if<std::string>(stored);
@@ -1983,11 +2155,12 @@ static void adopt_compiler_case_stage(state::StateData& data,const curriculum::L
 void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::Lesson& lesson) {
     // Validate every reusable version before the staged store changes any receipt.
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks)
-        if((block.integer_battery_probe&&block.integer_battery_probe->prerequisite)||
+        if(scoped_local_owner(block)||(block.integer_battery_probe&&block.integer_battery_probe->prerequisite)||
            (block.cmake_graph_check&&block.cmake_graph_check->initial_observation)||
            block.compiler_revision||!block.compiler_case_order_revisions.empty()||!block.compiler_case_revisions.empty())
             validate_compiler_puzzle_state(data,lesson,block);
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks) {
+        prepare_local_dependency_epoch(data,lesson,block);
         const auto stages=compiler_case_stages(block);
         if(stages.empty()) {
             prepare_compiler_expansion(data,lesson,block);continue;
@@ -2113,7 +2286,8 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
                 compiler_cmake_initial_observation_prerequisite(data,lesson,block,captured))))))return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
-    if(block.input_check||block.local_role_check)validate_compiler_puzzle_state(data,lesson,block);
+    if(private_dependency_owner(block))validate_compiler_puzzle_state(data,lesson,block);
+    prepare_local_dependency_epoch(data,lesson,block);
     // Validate the saved execution receipt before changing a previous
     // rejection. A malformed case vector, program or completion type must
     // not erase that review on the way to throwing an exception.
@@ -2449,13 +2623,18 @@ bool record_compiler_diagnostic_case(state::StateData& data,const curriculum::Le
     return true;
 }
 void reset_compiler_puzzle(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
-    const auto prefix=(block.input_check||block.local_role_check)?base(lesson,block):root(lesson,block);
+    if(scoped_local_owner(block))validate_compiler_puzzle_state(data,lesson,block);
+    const auto prefix=private_dependency_owner(block)?base(lesson,block):root(lesson,block);
     if(const auto domain=data.preferences.find("native_windows");domain!=data.preferences.end())
         std::erase_if(domain->second,[&](const auto& item){return item.first.starts_with(prefix);});
+    // Reset revokes only this dependency epoch and permanently suppresses its
+    // compatibility fallback. V1 stdout/private receipts remain historical.
+    if(scoped_local_owner(block))data.preferences["native_windows"][prefix+local_adoption_suffix]=true;
 }
 void invalidate_compiler_puzzle_attempt(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
                                       const CppRunRequest& current) {
     if(!curriculum::has_compiler_objective(block))return;
+    prepare_local_dependency_epoch(data,lesson,block);
     // A rejected attempt is specific to stdin and target as well as source.
     // Partial success deliberately remains reusable across authored inputs.
     // An invalid saved receipt cannot cost the student the last feedback.
@@ -2470,7 +2649,9 @@ void invalidate_compiler_puzzle_attempt(state::StateData& data,const curriculum:
         // grows (for example, stdout plus a runtime stderr diagnostic).
         const auto prefix=base(lesson,block),review_prefix=prefix+"review/";
         if(const auto domain=data.preferences.find("native_windows");domain!=data.preferences.end())
-            std::erase_if(domain->second,[&](const auto& item){return item.first.starts_with(prefix)&&!item.first.starts_with(review_prefix);});
+            std::erase_if(domain->second,[&](const auto& item){return item.first.starts_with(prefix)&&
+                !item.first.starts_with(review_prefix)&&
+                (!scoped_local_owner(block)||item.first!=prefix+local_adoption_suffix);});
     }
 }
 } // namespace lgaed::windows

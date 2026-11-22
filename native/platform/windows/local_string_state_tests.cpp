@@ -219,7 +219,8 @@ void run() {
         "Original stdout-only receipt was not retained");
     const auto legacy=saved;
     require(!compiler_puzzle_completed(saved,reviewed,owner(reviewed,first))&&
-            compiler_puzzle_case_count(saved,reviewed,owner(reviewed,first))==1&&
+            compiler_puzzle_case_count(saved,reviewed,owner(reviewed,first))==0&&
+            compiler_puzzle_case_count(saved,original,owner(original,first))==1&&
             count_receipts(saved)==0&&saved==legacy,
         "An old visible stdout was promoted to the new string dependence");
 
@@ -356,3 +357,4 @@ int main() try {
     std::cerr<<"FAIL native U2L7 local string: "<<error.what()<<'\n';
     return 1;
 }
+

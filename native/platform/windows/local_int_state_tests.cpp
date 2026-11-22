@@ -754,7 +754,8 @@ void validate_u2l8_scalars(const std::filesystem::path& directory) {
         "Replaying real stdout must lack private evidence without relying on a stale revision");
     require(saved==legacy&&!compiler_puzzle_completed(saved,reviewed,current)&&
             !compiler_puzzle_completed(saved,metadata,projection)&&
-            compiler_puzzle_case_count(saved,reviewed,current)==1&&saved_local_receipt(saved).empty()&&
+            compiler_puzzle_case_count(saved,reviewed,current)==0&&
+            compiler_puzzle_case_count(saved,original,former)==1&&saved_local_receipt(saved).empty()&&
             !record_compiler_puzzle_case(saved,reviewed,current,original_request,old_proof,
                 "Historical request cannot acquire a new typed proof")&&
             !record_compiler_puzzle_case(saved,reviewed,current,replay_request,replay_proof,
@@ -1010,7 +1011,8 @@ void run() {
         "The original output requirement was not accredited in the isolated model");
     const auto before=learner;
     require(!compiler_puzzle_completed(learner,current,block)&&
-            compiler_puzzle_case_count(learner,current,block)==1&&
+            compiler_puzzle_case_count(learner,current,block)==0&&
+            compiler_puzzle_case_count(learner,old,former)==1&&
             saved_local_receipt(learner).empty()&&learner==before,
         "An old stdout-only result forged semantic dependency credit");
     auto fresh=visible_result(request.revision);

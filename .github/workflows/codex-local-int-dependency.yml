@@ -17,6 +17,13 @@ on:
       - scripts/curriculum/input_dependency_fixture_source.py
       - scripts/curriculum/test_input_dependency_authoring.py
       - cmake/InputDependencyTests.cmake
+      - native/platform/windows/local_dependency_receipt_tests.cpp
+      - native/presentation/windows/local_dependency_view_tests.cpp
+      - scripts/curriculum/local_dependency_view_fixture_source.py
+      - scripts/curriculum/test_local_dependency_view_authoring.py
+      - native/platform/windows/compiler_completion.cpp
+      - native/presentation/windows/lesson_view.cpp
+      - scripts/curriculum/code_format_compat.py
       - native/core/cpp_local_int_probe_tests.cpp
       - native/core/cpp_local_string_probe.hpp
       - native/core/cpp_local_string_probe_tests.cpp
@@ -66,6 +73,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Validate all sixteen view contracts against nine authenticated publications
+        run: python -B -m unittest discover -s scripts/curriculum -p test_local_dependency_view_authoring.py -v
       - name: Verify name-free local roles against the authenticated U2L10 publication
         run: python -B -m unittest discover -s scripts/curriculum -p test_local_role_probe_authoring.py -v
       - name: Verify private inputs and preserved public U2L9 U2L10 U3L1 U3L2 cases
@@ -202,7 +211,7 @@ jobs:
           [System.IO.File]::WriteAllText(
             (Join-Path $generated 'native_build_config.hpp'), $template,
             [System.Text.UTF8Encoding]::new($false))
-      - name: Compile four native integration test translation units
+      - name: Compile six native integration test translation units
         run: |
           $generated = Join-Path $env:RUNNER_TEMP 'local-state-generated'
           $flags = @(
@@ -216,7 +225,9 @@ jobs:
               'native/platform/windows/local_int_state_tests.cpp',
               'native/platform/windows/local_string_state_tests.cpp',
               'native/platform/windows/input_dependency_state_tests.cpp',
-              'native/platform/windows/local_role_state_tests.cpp')) {
+              'native/platform/windows/local_role_state_tests.cpp',
+              'native/platform/windows/local_dependency_receipt_tests.cpp',
+              'native/presentation/windows/local_dependency_view_tests.cpp')) {
             $object = Join-Path $env:RUNNER_TEMP (
               [System.IO.Path]::GetFileNameWithoutExtension($source) + '.obj')
             & cl @flags $source "/Fo:$object"

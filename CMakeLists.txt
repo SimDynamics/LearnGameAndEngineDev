@@ -201,10 +201,12 @@ function(lgaed_add_local_variable_state_tests)
     include("${CMAKE_SOURCE_DIR}/cmake/InputDependencyTests.cmake")
     lgaed_add_input_dependency_state_tests("${CMAKE_SOURCE_DIR}")
     lgaed_add_local_role_state_tests("${CMAKE_SOURCE_DIR}")
+    lgaed_add_local_dependency_receipt_tests("${CMAKE_SOURCE_DIR}")
     add_custom_target(lgaed_local_variable_state_qa_targets
         DEPENDS lgaed_local_int_state_tests lgaed_local_string_state_tests
             lgaed_input_dependency_state_tests lgaed_input_probe_tests
-            lgaed_local_role_state_tests lgaed_local_role_probe_tests)
+            lgaed_local_role_state_tests lgaed_local_role_probe_tests
+            lgaed_local_dependency_receipt_tests)
 endfunction()
 
 # Shared native integration probe for all fourteen P3 source owners. Unlike
@@ -1312,6 +1314,8 @@ if(BUILD_TESTING)
     lgaed_add_p3_ownership_shared_state_target()
     lgaed_add_compiler_guidance_state_target()
     lgaed_add_local_variable_state_tests()
+    lgaed_add_local_dependency_view_tests("${CMAKE_SOURCE_DIR}" lgaed_presentation_windows)
+    add_dependencies(lgaed_local_variable_state_qa_targets lgaed_local_dependency_view_tests)
     add_test(NAME native.compiler_guidance_state COMMAND lgaed_compiler_guidance_state_tests)
     set_tests_properties(native.compiler_guidance_state PROPERTIES TIMEOUT 30)
     add_test(NAME native.compiler_review_guidance_priority COMMAND lgaed_compiler_guidance_state_tests --review-priority)

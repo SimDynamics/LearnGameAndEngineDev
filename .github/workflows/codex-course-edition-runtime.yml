@@ -7,6 +7,10 @@ on:
       - .github/workflows/codex-course-edition-runtime.yml
       - cmake/HostedCourseEditionQA/**
       - cmake/InputDependencyTests.cmake
+      - native/platform/windows/local_dependency_receipt_tests.cpp
+      - native/presentation/windows/local_dependency_view_tests.cpp
+      - scripts/curriculum/local_dependency_view_fixture_source.py
+      - scripts/curriculum/test_local_dependency_view_authoring.py
       - cmake/CurricularWindows.cmake
       - cmake/native_build_config.hpp.in
       - native/platform/windows/course_edition_tests.cpp
@@ -108,7 +112,19 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           cmake -S cmake/HostedCourseEditionQA -B $build -G Ninja -DCMAKE_BUILD_TYPE=Debug
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_role_state_tests lgaed_local_role_probe_tests lgaed_curricular_input_lab_tests lgaed_exact_prediction_view_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
+          cmake --build $build --target lgaed_general_choice_editorial_tests lgaed_course_edition_tests lgaed_simulation_tests lgaed_simulation_view_tests lgaed_simulation_lesson_tests lgaed_compiler_first_case_view_tests lgaed_technical_context_view_tests lgaed_reading_gate_policy_tests lgaed_local_int_state_tests lgaed_local_string_state_tests lgaed_input_dependency_state_tests lgaed_input_probe_tests lgaed_local_role_state_tests lgaed_local_role_probe_tests lgaed_local_dependency_receipt_tests lgaed_local_dependency_view_tests lgaed_curricular_input_lab_tests lgaed_exact_prediction_view_tests lgaed_inline_feedback_view_tests lgaed_u6l19_case_split_state_tests lgaed_u3_runtime_semantics_tests lgaed_u3_named_rule_runtime_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve historical receipts and private feedback across new attempts and reset
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]local_dependency_receipts$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'local-dependency-receipts.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify all sixteen variable and input editors through real Win32 LessonView
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]local_dependency_view_u[23]l[0-9]+$' --verbose --output-on-failure --stop-on-failure --no-tests=error --output-junit (Join-Path $build 'local-dependency-view.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve earlier reading snapshots across an authenticated option review
         shell: pwsh
@@ -220,6 +236,8 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
           path: |
+            ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-receipts.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-view.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l10-local-roles.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/continued-input-dependency.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l9-input-dependency.xml

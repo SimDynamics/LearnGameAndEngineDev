@@ -46,7 +46,7 @@ try {
     }
 
     # Compile the focused Win32 integration tests and their shared
-    # production dependencies; never build or launch the full application.
+    # production dependencies, including the reader used by the view tests.
     $buildArgs = @{
         Preset = $Preset
         Profile = 'Codex'
@@ -59,8 +59,14 @@ try {
     $expected = @('native.local_int_state', 'native.local_string_state',
         'native.input_probe', 'native.input_dependency_state', 'native.input_dependency_authoring',
         'native.continued_input_dependency_state', 'native.local_role_probe',
-        'native.current_u2l10_local_role_state', 'native.local_role_authoring')
-    $regex = '^native[.](local_(int|string)_state|input_(probe|dependency_state|dependency_authoring)|continued_input_dependency_state|local_role_(probe|authoring)|current_u2l10_local_role_state)$'
+        'native.current_u2l10_local_role_state', 'native.local_role_authoring',
+        'native.local_dependency_receipts', 'native.local_dependency_view_authoring',
+        'native.local_dependency_view_u2l1', 'native.local_dependency_view_u2l2',
+        'native.local_dependency_view_u2l3', 'native.local_dependency_view_u2l7',
+        'native.local_dependency_view_u2l8', 'native.local_dependency_view_u2l9',
+        'native.local_dependency_view_u2l10', 'native.local_dependency_view_u3l1',
+        'native.local_dependency_view_u3l2')
+    $regex = '^native[.](local_(int|string)_state|input_(probe|dependency_state|dependency_authoring)|continued_input_dependency_state|local_role_(probe|authoring)|current_u2l10_local_role_state|local_dependency_(receipts|view_(authoring|u[23]l[0-9]+)))$'
     Push-Location -LiteralPath $root
     try {
         $json = & $ctest --preset $Preset --show-only=json-v1 -R $regex
@@ -119,7 +125,7 @@ try {
     if ($exitCode -ne 0) {
         throw "Local-variable Win32 integration failed ($exitCode). Logs: $stdoutPath and $stderrPath"
     }
-    Write-Host "PASS native local-variable and input integration: Win32 source/StateStore, core and authoring tests."
+    Write-Host "PASS native local-variable and input integration: sixteen Win32 editors, preserved receipts, core and authoring tests."
 }
 finally {
     foreach ($name in $environmentNames) {
