@@ -8,6 +8,7 @@ import re
 import unittest
 
 import math_matching_text_compat as matching
+import identifier_rename_archive_preview as rename_preview
 import stable_state_layout as state
 import text_semantics
 
@@ -232,6 +233,115 @@ class RealFrequencyMatchingEditorial(unittest.TestCase):
                 field["sourceSha256"]="0"*64
         with self.assertRaises(matching.MatchingTextError):
             matching.verify_matching_preview(self.lesson,replaced,proof)
+
+    def test_six_compiler_names_and_matching_text_compose_in_either_order(self):
+        """Both independent authoring orders must keep original code and card credit."""
+        plans = {
+            "block_0006_0002": {"code": {
+                "maxima": "frecuencia_maxima_encontrada",
+                "mayores": "etiquetas_mas_frecuentes"}},
+            "recuperacion_entrada_editor": {"initialCode": {
+                "maxima": "frecuencia_maxima_encontrada",
+                "mayores": "etiquetas_mas_frecuentes"}},
+            "block_0006_0009": {"initialCode": {
+                "maxima": "frecuencia_maxima_encontrada",
+                "mayores": "etiquetas_mas_frecuentes"}},
+            "block_0007_0002": {"code": {
+                "maxima": "frecuencia_maxima_encontrada",
+                "mayores": "etiquetas_mas_frecuentes"}},
+            "block_0007_0004": {"code": {
+                "maxima": "frecuencia_maxima_encontrada",
+                "mayores": "etiquetas_mas_frecuentes"}},
+            "frecuencias_numericas_referencia_programa": {"code": {
+                "maxima": "frecuencia_maxima_encontrada",
+                "mayores": "valores_mas_frecuentes"}},
+        }
+        changes, spans = self.revisions()
+        source_first = rename_preview.prepare_declared_identifier_rename_draft(
+            self.lesson, plans)
+        names_then_text, last_text_proof = matching.preview_math_matching_text_review(
+            source_first, OWNER, changes, spans)
+        text_first, early_text_proof = matching.preview_math_matching_text_review(
+            self.lesson, OWNER, changes, spans)
+        text_then_names = rename_preview.prepare_declared_identifier_rename_draft(
+            text_first, plans)
+
+        for parent, child in (
+                (self.lesson, source_first),
+                (source_first, names_then_text),
+                (self.lesson, text_first),
+                (text_first, text_then_names),
+                (self.lesson, names_then_text),
+                (self.lesson, text_then_names)):
+            with self.subTest(edge=len(parent["stateLayout"]["editorial"])):
+                state.validate(parent)
+                state.validate(child)
+                state.validate_transition(parent, child)
+        self.assertEqual(names_then_text["pages"], text_then_names["pages"])
+        self.assertEqual(names_then_text["textSemantics"],
+                         text_then_names["textSemantics"])
+        self.assertEqual(state.original_projection(names_then_text),
+                         state.original_projection(self.lesson))
+        self.assertEqual(state.original_projection(text_then_names),
+                         state.original_projection(self.lesson))
+        self.assertEqual(
+            state._blocks(state.align_for_previous_validation(
+                self.lesson, names_then_text)),
+            state._blocks(self.lesson))
+        self.assertEqual(
+            state._blocks(state.align_for_previous_validation(
+                self.lesson, text_then_names)),
+            state._blocks(self.lesson))
+        self.assertEqual(
+            last_text_proof["beforeSha256"], early_text_proof["beforeSha256"])
+        self.assertEqual(
+            last_text_proof["afterSha256"], early_text_proof["afterSha256"])
+        for result in (names_then_text, text_then_names):
+            metadata = result["stateLayout"]
+            self.assertEqual(
+                {entry["id"] for entry in metadata["identifierRenameRevisions"]},
+                set(plans))
+            self.assertEqual(
+                [entry["id"] for entry in metadata["mathMatchingTextRevisions"]],
+                [OWNER])
+            self.assertEqual(
+                self.original["responses"][0]["validator"]["expected"],
+                state._blocks(result)[OWNER]["responses"][0]["validator"]["expected"])
+            self.assertEqual(
+                [card["id"] for card in self.original["responses"][0]["sources"]],
+                [card["id"] for card in
+                 state._blocks(result)[OWNER]["responses"][0]["sources"]])
+        self.assertEqual(PATH.read_bytes(), self.original_bytes)
+
+    def test_combined_rename_and_matching_rejects_cross_owner_forgery(self):
+        plans = {"block_0007_0002": {"code": {
+            "maxima": "frecuencia_maxima_encontrada",
+            "mayores": "etiquetas_mas_frecuentes"}}}
+        targets, spans = self.revisions()
+        renamed = rename_preview.prepare_declared_identifier_rename_draft(
+            self.lesson, plans)
+        combined, _ = matching.preview_math_matching_text_review(
+            renamed, OWNER, targets, spans)
+        state.validate_transition(self.lesson, combined)
+        for label, mutation in (
+            ("missing matching history", lambda d: d["stateLayout"][
+                "mathMatchingTextRevisions"].pop()),
+            ("foreign rename proof", lambda d: d["stateLayout"][
+                "identifierRenameRevisions"][0].update({
+                    "beforeSha256": "0" * 64})),
+            ("foreign card identity", lambda d: state._blocks(d)[OWNER][
+                "responses"][0]["sources"][2].update({"id": "invented"})),
+            ("unreviewed text mark", lambda d: next(
+                f for f in d["textSemantics"]["fields"]
+                if f["block"] == OWNER and f["path"] == PROMPT
+            ).update({"sourceSha256": "0" * 64})),
+        ):
+            with self.subTest(forgery=label):
+                forged = deepcopy(combined)
+                mutation(forged)
+                with self.assertRaises(state.LayoutError):
+                    state.validate(forged)
+        self.assertEqual(PATH.read_bytes(), self.original_bytes)
 
     def test_only_supported_text_and_matching_type_can_be_reviewed(self):
         targets, spans = self.revisions()
