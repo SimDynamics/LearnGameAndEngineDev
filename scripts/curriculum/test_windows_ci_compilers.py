@@ -57,7 +57,8 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 "codex-batched-client-split.yml",
                 "codex-order-equivalence-authoring.yml",
                 "codex-course-edition-portable.yml",
-                "codex-compiler-case-evaluator.yml"):
+                "codex-compiler-case-evaluator.yml",
+                "codex-reviewed-diagnostic-format.yml"):
             with self.subTest(workflow=name):
                 source = (WORKFLOWS / name).read_text(encoding="utf-8")
                 self.assertIn("runs-on: windows-2022", source)
