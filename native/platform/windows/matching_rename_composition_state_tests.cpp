@@ -165,6 +165,103 @@ void reopen_order(const Lesson& original,const Lesson& halfway,
         narration::read_history(durable)==previous_listening,
         "The signed composite lost its durable student state when reopened");
 }
+void assetcheck_p2_prompt_revision(const std::filesystem::path& folder,
+                                   const std::filesystem::path& qa) {
+    // A matching prompt in another course is a general authored-text edit.
+    // A completed learner response and its source/target pairing stay owned
+    // by the same puzzle, even if only the narration wording changes.
+    constexpr auto identity="block_0002_0005";
+    const auto original=load_lesson(folder/"assetcheck-p2-original.json");
+    const auto revised=load_lesson(folder/"assetcheck-p2-revised.json");
+    const auto compact=load_lesson_progress_metadata(
+        folder/"assetcheck-p2-revised.json");
+    const auto& old=owned(original,identity);
+    const auto& current=owned(revised,identity);
+    const auto& metadata=owned(compact,identity);
+    require(old.type==BlockType::math_puzzle&&
+        current.type==BlockType::math_puzzle&&
+        old.prompt.find("Las barras inclinadas")!=std::string::npos&&
+        current.prompt.find("barra inversa")!=std::string::npos&&
+        current.prompt==metadata.prompt&&old.prompt!=current.prompt&&
+        old.address.page==current.address.page&&
+        old.address.block==current.address.block&&
+        current.address.page==metadata.address.page&&
+        current.address.block==metadata.address.block&&
+        revised.state_layout.signatures==original.state_layout.signatures&&
+        compact.state_layout.signatures==original.state_layout.signatures&&
+        same_pages(revised.state_layout.origin,original.state_layout.origin)&&
+        same_pages(compact.state_layout.origin,original.state_layout.origin)&&
+        revised.state_layout.math_matching_text_revisions.size()==1&&
+        compact.state_layout.math_matching_text_revisions.size()==1,
+        "The P2 matching prompt changed its original owner or grading lineage");
+    const auto old_source=JsonObject::Parse(winrt::to_hstring(
+        math_evaluation_source(old)));
+    const auto revised_source=JsonObject::Parse(winrt::to_hstring(
+        math_evaluation_source(current)));
+    const auto compact_source=JsonObject::Parse(winrt::to_hstring(
+        math_evaluation_source(metadata)));
+    require(old_source.GetNamedArray(L"responses").Stringify()==
+                revised_source.GetNamedArray(L"responses").Stringify()&&
+            old_source.GetNamedArray(L"responses").Stringify()==
+                compact_source.GetNamedArray(L"responses").Stringify()&&
+            matching_answer(old)==matching_answer(current)&&
+            matching_answer(old)==matching_answer(metadata),
+        "P2 text changed its source/target identities or expected matching answer");
+
+    state::StateStore store(qa/"assetcheck-p2");
+    auto saved=store.load();
+    state::prepare_lesson_state(saved,original);
+    state::Response answer;
+    answer.correct=true;
+    answer.raw_json=R"({"responses":{"relaciones":{"a":"cero","b":"uno","c":"dos_vacia","d":"dos"}},"opaque":"original-P2-response"})";
+    state::put_response(saved,original,old,answer);
+    const auto key=state::response_storage_key(original,old);
+    const auto receipt=state::string_value(saved,"learning_progress",key);
+    saved.preferences["p2-prompt-qa"]["foreign"]=std::string("unchanged");
+    store.save(saved);
+    state::StateStore reader(store.root().parent_path());
+    auto progress=reader.load();
+    state::prepare_lesson_state(progress,revised);
+    state::validate_lesson_state(progress,revised);
+    state::validate_lesson_state(progress,compact);
+    const auto active=state::get_response(progress,revised,current);
+    const auto projected=state::get_response(progress,compact,metadata);
+    require(active&&projected&&active->correct&&projected->correct&&
+        active->raw_json==answer.raw_json&&
+        projected->raw_json==answer.raw_json&&
+        state::response_storage_key(revised,current)==key&&
+        state::response_storage_key(compact,metadata)==key&&
+        state::string_value(progress,"learning_progress",key)==receipt&&
+        state::string_value(progress,"p2-prompt-qa","foreign")=="unchanged",
+        "A P2 prompt revision regraded or removed an already saved matching answer");
+    reader.save(progress);
+    state::StateStore reopened(reader.root().parent_path());
+    const auto durable=reopened.load();
+    state::validate_lesson_state(durable,revised);
+    require(durable==progress,"P2 revised prompt lost its durable StateStore response");
+
+    // The complete and compact WinRT loaders reject the same forged history
+    // and answer mapping; a cosmetic edit must not authorize either change.
+    auto forged=JsonObject::Parse(winrt::to_hstring(revised.raw_json));
+    forged.GetNamedObject(L"stateLayout").
+        GetNamedArray(L"mathMatchingTextRevisions").GetObjectAt(0).
+        Insert(L"afterSha256",JsonValue::CreateStringValue(
+            winrt::to_hstring(std::string(64,'0'))));
+    reject_both(forged);
+    forged=JsonObject::Parse(winrt::to_hstring(revised.raw_json));
+    const auto at=stable_block_position(revised,identity);
+    require(at.has_value(),"The P2 matching answer was not indexed");
+    forged.GetNamedArray(L"pages").GetObjectAt(at->page).
+        GetNamedArray(L"blocks").GetObjectAt(at->block).
+        GetNamedArray(L"responses").GetObjectAt(0).
+        GetNamedObject(L"validator").GetNamedObject(L"expected").
+        Insert(L"a",JsonValue::CreateStringValue(L"dos"));
+    reject_both(forged);
+    std::cout<<"PASS P2 AssetCheck authenticated matching prompt: exact "
+        "source/target mapping, prior response, durable StateStore, "
+        "full/compact loaders and forged-answer rejection\n";
+}
+
 void reject_forgery(std::string_view raw) {
     auto forged=JsonObject::Parse(winrt::to_hstring(raw));
     auto record=forged.GetNamedObject(L"stateLayout").
@@ -203,6 +300,7 @@ int main(int argc,char** argv)try{
                  qa,"cards-then-names");
     reject_forgery(names_then_cards.raw_json);
     reject_forgery(cards_then_names.raw_json);
+    assetcheck_p2_prompt_revision(folder,qa);
     std::cout<<"PASS U5L13 native Windows dual-order C++ and matching prose: "
         "six code owners, exact historical answer IDs, full/metadata loaders, "
         "reopened draft, old-only narration credit and forged-proof rejection\n";
