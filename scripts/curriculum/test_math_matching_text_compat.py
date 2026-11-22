@@ -398,6 +398,56 @@ class RealAssetCheckLineEndingPrompt(unittest.TestCase):
         new_phrase = ("En las etiquetas, las secuencias con barra inversa "
                       "representan LF o CR; no son una barra y una letra "
                       "escritas en el manifiesto.")
+        if old["prompt"].count(new_phrase) == 1:
+            # A published authorial correction is the goal of this test.
+            # Once Work delivers it, validate its immutable answer history
+            # instead of trying to rewrite the already-reviewed text again.
+            journals = [
+                item for item in previous["stateLayout"].get(
+                    "mathMatchingTextRevisions", [])
+                if item.get("id") == identity]
+            self.assertEqual(len(journals), 1)
+            archived = state.parse_json(journals[0]["rawJson"])
+            self.assertEqual(archived["prompt"].count(old_phrase), 1)
+            self.assertEqual(old["responses"], archived["responses"])
+            self.assertEqual(journals[0]["paths"], ["/prompt"])
+            positions = state.validate(previous)
+            location = next(
+                (p, b) for p, page in enumerate(
+                    previous["stateLayout"]["current"])
+                for b, owner in enumerate(page["blocks"])
+                if owner == identity)
+            origin = positions[location]
+            historical = state.original_projection(previous)[
+                "pages"][origin[0]]["blocks"][origin[1]]
+            self.assertEqual(historical["prompt"], archived["prompt"])
+            marker = next(
+                field for field in previous["textSemantics"]["fields"]
+                if field["block"] == identity and field["path"] == "/prompt")
+            self.assertEqual(marker["spans"], [])
+            self.assertEqual(marker["sourceSha256"],
+                             state.hashlib.sha256(
+                                 old["prompt"].encode("utf-8")).hexdigest())
+            for name, tamper in (
+                ("answer mapping", lambda d: state._blocks(d)[identity][
+                    "responses"][0]["validator"]["expected"].update(
+                    {"a": "dos"})),
+                ("forged history", lambda d: d["stateLayout"][
+                    "mathMatchingTextRevisions"][0].update({
+                        "afterSha256": "0" * 64})),
+                ("forged text marker", lambda d: next(
+                    field for field in d["textSemantics"]["fields"]
+                    if field["block"] == identity
+                    and field["path"] == "/prompt"
+                ).update({"sourceSha256": "0" * 64})),
+            ):
+                forged = deepcopy(previous)
+                tamper(forged)
+                with self.subTest(tamper=name), self.assertRaises(
+                        state.LayoutError):
+                    state.validate(forged)
+            self.assertEqual(asset.read_bytes(), initial_bytes)
+            return
         self.assertEqual(old["prompt"].count(old_phrase), 1)
         revised_prompt = old["prompt"].replace(old_phrase, new_phrase)
         updated, proof = matching.preview_math_matching_text_review(
