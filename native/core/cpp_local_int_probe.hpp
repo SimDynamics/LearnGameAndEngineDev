@@ -14,16 +14,18 @@
 
 namespace lgaed::curriculum {
 
+enum class CppLocalValueType { integer, character, boolean };
+
 // An opt-in source perturbation only. The caller must compile and run both
 // the unchanged student program and each isolated probe against independent
 // output goals. This instrumented source is never a learner draft or a receipt.
 struct CppLocalIntProbe {
     std::string variable;
     std::int32_t replacement = 0;
-    // Separate, independently authored outputs after replacing this int.
+    // Separate, independently authored outputs after replacing this local value.
     // The ordinary visible OutputCheck is not part of this hidden evidence.
     std::vector<std::string> expected_stdout{};
-    // False: replace the initialized local int. True: add an independent
+    // False: replace the initialized local. True (int only): add an independent
     // delta immediately after its first complete root-level state update.
     // This witnesses a changed increase without rewriting the student's
     // original initializer, addition expression or saved source.
@@ -32,6 +34,10 @@ struct CppLocalIntProbe {
     // This is independent of the replacement delta and visible stdout.
     // An absent value preserves the previously published afterUpdate contract.
     std::optional<std::int32_t> expected_increase = std::nullopt;
+    // Kept last so existing aggregate initializers retain the int contract.
+    // Character probes carry one printable ASCII byte; boolean probes carry
+    // exactly zero or one. Their authored JSON replacements remain typed.
+    CppLocalValueType value_type = CppLocalValueType::integer;
     bool operator==(const CppLocalIntProbe&) const = default;
 };
 
@@ -39,6 +45,21 @@ struct CppLocalIntCheck {
     std::vector<CppLocalIntProbe> probes;
     bool operator==(const CppLocalIntCheck&) const = default;
 };
+
+inline bool cpp_local_int_probe_value_valid(const CppLocalIntProbe& probe) {
+    switch(probe.value_type) {
+    case CppLocalValueType::integer:
+        return !probe.expected_increase ||
+            (probe.after_update && *probe.expected_increase > 0);
+    case CppLocalValueType::character:
+        return !probe.after_update && !probe.expected_increase &&
+            probe.replacement >= 32 && probe.replacement <= 126;
+    case CppLocalValueType::boolean:
+        return !probe.after_update && !probe.expected_increase &&
+            (probe.replacement == 0 || probe.replacement == 1);
+    }
+    return false;
+}
 
 // The expression evaluator also recognizes tokens such as numeric literals
 // and bool constants; its keyword test alone is not a C++ identifier lexer.
@@ -75,8 +96,7 @@ inline bool cpp_local_int_check_valid(const CppLocalIntCheck& check) {
         if(!cpp_local_probe_identifier(probe.variable)||
            probe.variable=="main"||probe.expected_stdout.empty()||
            probe.expected_stdout.size()>4||
-           (probe.expected_increase &&
-            (!probe.after_update || *probe.expected_increase <= 0)))return false;
+           !cpp_local_int_probe_value_valid(probe))return false;
         std::set<std::string> distinct;
         for(const auto& output:probe.expected_stdout)
             if(output.empty()||output.size()>4096||
@@ -84,8 +104,9 @@ inline bool cpp_local_int_check_valid(const CppLocalIntCheck& check) {
                !distinct.insert(cpp_local_int_canonical_stdout(output)).second)return false;
         for(std::size_t prior=0;prior<index;++prior)
             if(check.probes[prior].variable==probe.variable&&
-               check.probes[prior].replacement==probe.replacement&&
-               check.probes[prior].after_update==probe.after_update)return false;
+               (check.probes[prior].value_type!=probe.value_type ||
+                (check.probes[prior].replacement==probe.replacement&&
+                 check.probes[prior].after_update==probe.after_update)))return false;
     }
     return true;
 }
@@ -116,7 +137,7 @@ inline bool qualified_member_name(const Tokens& code,std::size_t index) {
 
 // The private probe recompiles a modified file. A learner must not be able
 // to produce the "changed" stdout from the probe's extra source lines,
-// file name, build time or a premature exit rather than the local int.
+// file name, build time or a premature exit rather than the local value.
 // Inspect lexical identifiers only: comments and C++ string/raw literals
 // explaining __LINE__ or exit are inert and must remain admissible.
 inline bool recompile_observation_neutral(const Tokens& code) {
@@ -236,10 +257,10 @@ struct Declaration {
     bool initialized;
 };
 
-// Walk all declarators in one complete signed/int statement. An inserted
+// Walk all declarators in one complete scalar declaration. An inserted
 // mutation belongs AFTER the final semicolon, never between declarators.
 // Reject pointers, references, arrays, duplicate names and a later initializer
-// that reads the probed int: mutating after the statement would otherwise
+// that reads the probed local: mutating after the statement would otherwise
 // miss that data dependency and could falsely credit an independent output.
 inline std::optional<Declaration> simple_int_declaration(
         const Tokens& code, std::size_t at, std::size_t closing,
@@ -291,18 +312,25 @@ inline std::optional<Declaration> simple_int_declaration(
 
 inline std::optional<Declaration> local_declaration(
         const Tokens& code, std::size_t opening, std::size_t closing,
-        std::string_view variable) {
+        std::string_view variable,
+        CppLocalValueType value_type=CppLocalValueType::integer) {
     std::optional<Declaration> result;
     std::size_t braces = 1, parentheses = 0, brackets = 0;
     for (auto i = opening + 1; i < closing; ++i) {
         const auto& t = code[i].value;
+        const bool integer=value_type==CppLocalValueType::integer;
+        const bool matches_type=integer?(t=="id:int"||t=="id:signed"):
+            (value_type==CppLocalValueType::character&&t=="id:char")||
+            (value_type==CppLocalValueType::boolean&&t=="id:bool");
         // signed, signed int and int signed all declare the C++ type int.
+        // A char or bool objective requires that exact declared type, not
+        // an integer, signed/unsigned char, alias or inferred conversion.
         // Match only complete main-body declarations, not nested scopes.
         if (braces == 1 && !parentheses && !brackets &&
             i > 0 && boundary(code[i - 1].value) &&
-            (t == "id:int" || t == "id:signed")) {
+            matches_type) {
             auto name = i + 1;
-            if (name < closing &&
+            if (integer && name < closing &&
                 ((t == "id:signed" && code[name].value == "id:int") ||
                  (t == "id:int" && code[name].value == "id:signed")))
                 ++name;
@@ -331,7 +359,7 @@ inline std::optional<Declaration> local_declaration(
     return result;
 }
 
-// A plain int may be initialized in a separate complete statement. Refuse
+// A plain scalar may be initialized in a separate complete statement. Refuse
 // any read or conditional update before that assignment, rather than
 // fabricating a probe at a location that did not establish its first value.
 inline std::optional<std::size_t> first_assignment(
@@ -706,21 +734,20 @@ inline std::optional<std::pair<std::size_t,std::size_t>> first_state_update(
 }
 } // namespace cpp_local_int_probe_detail
 
-// Insert a new value just after a complete local int initialization inside
+// Insert a typed value just after a complete local scalar initialization inside
 // main(). Reject ambiguous syntax, macros and other scopes instead of
 // substituting coincidental names in strings, comments or unrelated code.
 [[nodiscard]] inline std::optional<std::string> cpp_local_int_override(
         std::string_view source, const CppLocalIntProbe& probe) {
     if (!cpp_local_probe_identifier(probe.variable) ||
         probe.variable == "main" ||
-        (probe.expected_increase &&
-         (!probe.after_update || *probe.expected_increase <= 0))) return {};
+        !cpp_local_int_probe_value_valid(probe)) return {};
     const auto code = cpp_local_int_probe_detail::lexical(source);
     if (!code) return {};
     const auto body = cpp_local_int_probe_detail::main_body(*code);
     if (!body) return {};
     const auto declaration = cpp_local_int_probe_detail::local_declaration(
-        *code, body->first, body->second, probe.variable);
+        *code, body->first, body->second, probe.variable, probe.value_type);
     if (!declaration) return {};
     auto end = declaration->end;
     if (!declaration->initialized) {
@@ -819,7 +846,12 @@ inline std::optional<std::pair<std::size_t,std::size_t>> first_state_update(
     variant += "\n    ";
     variant += probe.variable;
     variant += " = ";
-    variant += std::to_string(probe.replacement);
+    if(probe.value_type==CppLocalValueType::character)
+        variant += "static_cast<char>("+std::to_string(probe.replacement)+")";
+    else if(probe.value_type==CppLocalValueType::boolean)
+        variant += probe.replacement ? "true" : "false";
+    else
+        variant += std::to_string(probe.replacement);
     variant += ";\n";
     variant += source.substr(offset);
     return variant;

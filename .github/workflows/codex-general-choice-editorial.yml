@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/codex-general-choice-editorial.yml
       - scripts/curriculum/test_general_choice_revision_live.py
+      - scripts/curriculum/test_pending_presentation_contract.py
       - scripts/curriculum/test_choice_retirement_history.py
       - scripts/curriculum/choice_retirement_fixture_source.py
       - scripts/curriculum/test_review_feedback_prose_revision.py
@@ -22,6 +23,7 @@ on:
       # Live U1/U2 sources covered by the same authenticated authoring tests.
       - app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_conversiones_y_deduccion.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_caracteres_y_valores_logicos.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_cadenas_y_texto.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_leer_un_grupo_con_cierre_propio.json
@@ -50,6 +52,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Preserve archived U2L8 explanations and authenticate current prose
+        run: >-
+          python -B -m unittest discover
+          -s scripts/curriculum
+          -p test_pending_presentation_contract.py -v
       - name: Keep authenticated historical prose while revising one option
         run: >-
           python -B -m unittest discover

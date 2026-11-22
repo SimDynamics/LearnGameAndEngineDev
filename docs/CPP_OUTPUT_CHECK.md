@@ -3867,7 +3867,7 @@ necesitan sus propias comprobaciones. No deducirlas de este grafo.
 
 
 
-## Dependencia real de variables `int` locales
+## Dependencia real de variables locales `int`, `char` y `bool`
 
 Work puede declarar `compilerLocalIntChecks` en la raíz de una lección
 española v2 sin modificar los editores ya publicados. Ejemplo:
@@ -3927,6 +3927,42 @@ Si no existe `compilerLocalIntChecks`, no cambia la evaluación anterior.
 Esta capacidad se limita de momento a editores C++ de una sola fuente
 y ejecución MSVC nativa. La revisión curricular y sus valores esperados
 pertenecen a Work.
+
+### Tipos explícitos para caracteres y valores lógicos
+
+Cada sonda puede declarar `valueType`. Si se omite, mantiene exactamente
+el contrato `int` publicado. También se admite `"valueType": "int"`.
+Para `char`, `replacement` es una cadena con un único carácter ASCII
+imprimible; para `bool`, es un booleano JSON real. No se convierten
+automáticamente los números `0`/`1` ni las cadenas `"true"`/`"false"`.
+
+```json
+"compilerLocalIntChecks": [{
+  "activity": "block_0006_0002",
+  "probes": [
+    {"variable": "pasillo", "valueType": "char", "replacement": "D",
+     "outputs": ["Pasillo: D\nAbierta: 1", "Pasillo: D\nAbierta: 1\n"]},
+    {"variable": "abierta", "valueType": "bool", "replacement": false,
+     "outputs": ["Pasillo: C\nAbierta: 0", "Pasillo: C\nAbierta: 0\n"]}
+  ]
+}]
+```
+
+El localizador exige el tipo declarado por la sonda. `int pasillo` no
+acredita un objetivo `char`, ni `int abierta` acredita uno `bool`. Se
+admiten las inicializaciones mediante `=`, `{}` o `()`, las expresiones
+equivalentes y una asignación inicial separada inequívoca. Cada variante
+parte del programa original y cambia una sola variable; las sondas no
+se acumulan entre sí. La salida pública y sus alternativas de salto final
+siguen siendo las del caso ya publicado.
+
+Las sondas de `char` y `bool` sólo actúan después de la inicialización:
+`afterUpdate` y `expectedIncrease` siguen reservados a `int`. Una misma
+variable no puede tener distintos tipos declarados entre sus sondas.
+El tipo explícito se incorpora a la huella de ejecución y al comprobante
+independiente, conservando la representación histórica de las sondas
+`int`. Una respuesta anterior basada únicamente en la salida pública se
+conserva y necesita la nueva comprobación para acreditar la dependencia.
 
 
 #### Incremento real exacto declarado por el autor
@@ -4182,3 +4218,4 @@ de ese runner; no cambia el manifiesto ni el toolchain fijados para
 la aplicación. El flujo de GitHub comunica por separado el estado
 `codex/local-variable-hosted-ctest`, sin equiparar esa evidencia con
 una instalación o ejecución en el Windows personal del estudiante.
+

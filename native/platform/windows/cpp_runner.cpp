@@ -427,6 +427,11 @@ std::string local_int_fingerprint(const CppRunRequest& request) {
     for(const auto& probe:request.local_int_check->probes) {
         const auto variant=curriculum::cpp_local_int_override(request.source_utf8,probe);
         if(!variant)return {};
+        // Keep every published int preimage byte-for-byte. New value types
+        // add an explicit domain token before the existing probe fields.
+        if(probe.value_type!=curriculum::CppLocalValueType::integer)
+            frame+=field("value-type-v1")+field(
+                probe.value_type==curriculum::CppLocalValueType::character?"char":"bool");
         frame+=field(probe.variable)+field(std::to_string(probe.replacement))+
             field(state::sha256(*variant));
         if(probe.after_update)frame+=field("after-update-v1");
@@ -3495,8 +3500,11 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(request.local_int_check) {
         const auto frame=local_int_fingerprint(request);
         fresh.local_int_request_fingerprint=frame;
-        fresh.local_int_check_feedback=
-            "La salida coincide, pero no se acreditó que dependa de las variables int declaradas.";
+        fresh.local_int_check_feedback=std::ranges::all_of(
+            request.local_int_check->probes,[](const auto& probe) {
+                return probe.value_type==curriculum::CppLocalValueType::integer;
+            })?"La salida coincide, pero no se acreditó que dependa de las variables int declaradas.":
+               "La salida coincide, pero no se acreditó que dependa de las variables declaradas.";
         if(!frame.empty()&&result.local_int_request_fingerprint==frame&&
            fresh.compilation_succeeded&&fresh.execution_succeeded&&
            result.local_int_evidence.size()==request.local_int_check->probes.size()) {
@@ -3514,9 +3522,15 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                         probe,captured.execution.stdout_bytes);
                 if(!exact) {
                     passed=false;
+                    const std::string value_type=
+                        probe.value_type==curriculum::CppLocalValueType::character?"char":
+                        probe.value_type==curriculum::CppLocalValueType::boolean?"bool":"int";
+                    const auto fixed=probe.value_type==curriculum::CppLocalValueType::integer
+                        ?"una cifra fija. ":"un valor fijo. ";
                     fresh.local_int_check_feedback=
-                        "Comprueba que los resultados proceden de la variable int '"+probe.variable+
-                        "' y no de una cifra fija. La prueba independiente no reprodujo el cambio solicitado.";
+                        "Comprueba que los resultados proceden de la variable "+value_type+
+                        " '"+probe.variable+"' y no de "+fixed+
+                        "La prueba independiente no reprodujo el cambio solicitado.";
                     break;
                 }
             }

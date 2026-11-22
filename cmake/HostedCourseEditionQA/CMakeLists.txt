@@ -242,6 +242,27 @@ add_test(NAME native.current_u2_local_int_state
 set_tests_properties(native.current_u2_local_int_state
     PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
 
+# The original U2L8 publication is immutable QA input; the authoring proposal
+# adds only independent char/bool observations to its existing editor.
+set(_u2l8_scalar_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u2l8-scalars")
+add_custom_command(OUTPUT "${_u2l8_scalar_dir}/before.json"
+        "${_u2l8_scalar_dir}/after.json" "${_u2l8_scalar_dir}/manifest.json"
+    COMMAND "${Python3_EXECUTABLE}" -B
+        "${_lgaed_root}/scripts/curriculum/local_scalar_fixture_source.py"
+        --output-dir "${_u2l8_scalar_dir}"
+    DEPENDS "${_lgaed_root}/scripts/curriculum/local_scalar_fixture_source.py"
+        "${_lgaed_root}/scripts/curriculum/diagnostic_fixture_source.py"
+        "${_lgaed_root}/scripts/curriculum/stable_state_layout.py"
+    VERBATIM)
+add_custom_target(lgaed_u2l8_scalar_fixtures
+    DEPENDS "${_u2l8_scalar_dir}/before.json"
+        "${_u2l8_scalar_dir}/after.json" "${_u2l8_scalar_dir}/manifest.json")
+add_dependencies(lgaed_local_int_state_tests lgaed_u2l8_scalar_fixtures)
+add_test(NAME native.current_u2l8_local_scalar_state
+    COMMAND lgaed_local_int_state_tests --u2l8-scalars "${_u2l8_scalar_dir}")
+set_tests_properties(native.current_u2l8_local_scalar_state
+    PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
+
 # Test the original U2L7 owners with the unchanged production MSVC runner.
 # Keep all prospective curriculum authoring and stored progress in isolated QA.
 add_executable(lgaed_local_string_state_tests

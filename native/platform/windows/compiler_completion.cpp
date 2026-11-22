@@ -1287,6 +1287,10 @@ std::string local_int_completion_seal(std::string_view key,
     auto frame=std::string("compiler-local-int-complete-v1/")+
         token(key)+token(program);
     for(const auto& item:spec.probes) {
+        // The int receipt is already published; only new types extend it.
+        if(item.value_type!=curriculum::CppLocalValueType::integer)
+            frame+=token("value-type-v1")+token(
+                item.value_type==curriculum::CppLocalValueType::character?"char":"bool");
         frame+=token(item.variable)+token(std::to_string(item.replacement));
         if(item.after_update)frame+=token("after-update-v1");
         if(item.expected_increase)

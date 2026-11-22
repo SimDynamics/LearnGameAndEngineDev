@@ -22,6 +22,8 @@ on:
       - native/core/code_format_compat.hpp
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/test_local_int_probe_authoring.py
+      - scripts/curriculum/test_local_scalar_probe_authoring.py
+      - scripts/curriculum/local_scalar_fixture_source.py
       - scripts/curriculum/test_local_string_probe_authoring.py
       - app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_cadenas_y_texto.json
       - scripts/curriculum/test_local_int_live_compilation.py
@@ -36,7 +38,7 @@ permissions:
 
 jobs:
   authoring:
-    name: Validate six authentic U2 editors, without modifying curriculum
+    name: Validate authentic U2 int, char, bool and string editor contracts
     runs-on: windows-2022
     timeout-minutes: 5
     env:
@@ -47,11 +49,14 @@ jobs:
       - name: Read the exact revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Select Python for native Windows authoring tests
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Verify typed char and bool probes against the immutable U2L8 source
+        run: python -B -m unittest discover -s scripts/curriculum -p test_local_scalar_probe_authoring.py -v
       - name: Verify append-only probes and original stable-state identities
         run: python -B -m unittest discover -s scripts/curriculum -p test_local_int_probe_authoring.py -v
       - name: Validate two authentic U2L7 text owners and original answer contracts
@@ -254,3 +259,4 @@ jobs:
                   raise RuntimeError("The commit status was not accepted")
           print("Source-only probe CI status:", state, results)
           '@ | python -B -
+

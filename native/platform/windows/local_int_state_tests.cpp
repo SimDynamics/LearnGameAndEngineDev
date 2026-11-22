@@ -1,5 +1,6 @@
-// Opt-in local-int authoring and real StateStore receipt integration.
-// This fixture never invokes the student's compiler or modifies curriculum.
+// Opt-in local-scalar authoring and real StateStore receipt integration.
+// The U2L8 mode runs hosted MSVC in an isolated QA instance. Neither mode
+// modifies curriculum or opens a personal Work/Codex profile.
 #include "core/compiler_flow.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/compiler_completion.hpp"
@@ -13,6 +14,7 @@
 #include <winrt/Windows.Foundation.Collections.h>
 
 #include <array>
+#include <chrono>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -553,6 +555,356 @@ void validate_current_u2l5_editor_state() {
         "and isolated resets; no student execution or audio asserted.\n";
 }
 
+void validate_u2l8_scalars(const std::filesystem::path& directory) {
+    // before.json is copied byte-for-byte from the published 19d83972 lesson.
+    // after.json may only append the root-authored private dependency checks.
+    const auto original=load_lesson(directory/"before.json");
+    require(state::sha256(original.raw_json)==
+        "d44ea3aca4844b169373abd9cc5bf31d59fa03ec53b3ea9b4cd686f6ddca4b6c",
+        "The U2L8 baseline is not the authentic published 19d83972 lesson");
+    const auto reviewed=load_lesson(directory/"after.json");
+    const auto old_metadata=parse_lesson_progress_metadata(original.raw_json,"es");
+    const auto metadata=parse_lesson_progress_metadata(reviewed.raw_json,"es");
+    const auto block_at=[](const Lesson& lesson,std::string_view identity)->const Block& {
+        const auto at=stable_block_position(lesson,identity);
+        require(at.has_value(),"An authentic U2L8 stable owner is missing");
+        return lesson.pages.at(at->page).blocks.at(at->block);
+    };
+    const auto canonical=[](std::string_view raw) {
+        return winrt::to_string(JsonObject::Parse(winrt::to_hstring(raw)).Stringify());
+    };
+    constexpr std::string_view identity="block_0006_0002";
+    const auto& former=block_at(original,identity);
+    const auto& current=block_at(reviewed,identity);
+    const auto& projection=block_at(metadata,identity);
+    const auto root=JsonObject::Parse(winrt::to_hstring(reviewed.raw_json));
+    require(root.HasKey(L"compilerLocalIntChecks")&&
+            !JsonObject::Parse(winrt::to_hstring(original.raw_json)).HasKey(L"compilerLocalIntChecks"),
+        "The U2L8 fixture does not introduce its opt-in root declaration");
+    const auto declarations=root.GetNamedArray(L"compilerLocalIntChecks");
+    require(declarations.Size()==1&&
+            declarations.GetObjectAt(0).GetNamedString(L"activity")==L"block_0006_0002",
+        "The U2L8 declaration changed or added a compiler owner");
+    const auto without_checks=JsonObject::Parse(winrt::to_hstring(reviewed.raw_json));
+    without_checks.Remove(L"compilerLocalIntChecks");
+    require(winrt::to_string(without_checks.Stringify())==canonical(original.raw_json)&&
+            reviewed.pages.size()==original.pages.size()&&
+            original.compiler_puzzles_required&&reviewed.compiler_puzzles_required&&
+            old_metadata.compiler_puzzles_required&&metadata.compiler_puzzles_required,
+        "The scalar fixture changed curriculum, history or the original reader contract");
+    for(std::size_t p=0;p<original.pages.size();++p) {
+        require(reviewed.pages[p].blocks.size()==original.pages[p].blocks.size(),
+            "The scalar fixture changed an original U2L8 page");
+        for(std::size_t b=0;b<original.pages[p].blocks.size();++b) {
+            const auto& before=original.pages[p].blocks[b];
+            const auto& after=reviewed.pages[p].blocks[b];
+            require(canonical(before.raw_json)==canonical(after.raw_json)&&
+                    before.address.page==after.address.page&&
+                    before.address.block==after.address.block,
+                "The scalar fixture changed an original U2L8 block or stable address");
+            require(!before.local_int_check&&
+                    (after.local_int_check.has_value()==(&after==&current)),
+                "A scalar dependency leaked onto another U2L8 block");
+        }
+    }
+    const std::vector<std::string> visible_outputs{
+        "Pasillo: C\nAbierta: 1","Pasillo: C\nAbierta: 1\n"};
+    require(!former.local_int_check&&!block_at(old_metadata,identity).local_int_check&&
+            current.local_int_check&&current.local_int_check==projection.local_int_check&&
+            former.initial_code==current.initial_code&&
+            current.initial_code==projection.initial_code&&
+            former.output_check&&current.output_check&&projection.output_check&&
+            former.output_check->cases.size()==1&&current.output_check->cases.size()==1&&
+            projection.output_check->cases.size()==1&&
+            former.output_check->cases.front().outputs==visible_outputs&&
+            current.output_check->cases.front().outputs==visible_outputs&&
+            projection.output_check->cases.front().outputs==visible_outputs,
+        "Full and progress loaders disagree on the one unchanged U2L8 visible case");
+    const auto& probes=current.local_int_check->probes;
+    require(probes.size()==2&&
+            probes[0].variable=="pasillo"&&probes[0].replacement=='D'&&
+            probes[0].value_type==CppLocalValueType::character&&
+            !probes[0].after_update&&!probes[0].expected_increase&&
+            probes[0].expected_stdout==std::vector<std::string>{
+                "Pasillo: D\nAbierta: 1","Pasillo: D\nAbierta: 1\n"}&&
+            probes[1].variable=="abierta"&&probes[1].replacement==0&&
+            probes[1].value_type==CppLocalValueType::boolean&&
+            !probes[1].after_update&&!probes[1].expected_increase&&
+            probes[1].expected_stdout==std::vector<std::string>{
+                "Pasillo: C\nAbierta: 0","Pasillo: C\nAbierta: 0\n"},
+        "Native U2L8 typed specs differ from their two independent authored goals");
+
+    const auto equals=block_at(original,"block_0007_0001").code;
+    const auto braces=block_at(original,"block_0008_0003").code;
+    auto parentheses=overwrite_first(equals,"char pasillo = 'C';","char pasillo('C');");
+    parentheses=overwrite_first(parentheses,"bool abierta = true;","bool abierta(true);");
+    auto assigned=overwrite_first(equals,"char pasillo = 'C';","char pasillo;\n    pasillo = 'C';");
+    assigned=overwrite_first(assigned,"bool abierta = true;","bool abierta;\n    abierta = true;");
+    const auto newline=overwrite_first(equals,
+        "std::cout << \"Abierta: \" << abierta;",
+        "std::cout << \"Abierta: \" << abierta << '\\n';");
+
+    const auto options=LaunchOptions{ProfileId::Codex,
+        L"local-scalars-u2l8-"+std::to_wstring(GetCurrentProcessId())+
+        L"-"+std::to_wstring(GetTickCount64()),false};
+    const auto environment=resolve_windows_environment(options);
+    require(environment.options.qa_instance.has_value()&&
+            !environment.options.qa_instance->empty(),
+        "U2L8 runtime or persistence would target a personal profile");
+    initialize_profile_directories(environment.paths);
+    const auto projects=environment.paths.projects/L"independent U2L8 scalar tests";
+    std::uint64_t next_request=100;
+    const auto make_request=[&](std::string source,bool checked=true) {
+        CppRunRequest request;
+        request.request_id=++next_request;request.revision=next_request+100;
+        request.project_key="isolated-u2l8-scalars";
+        request.source_utf8=std::move(source);
+        request.stdin_utf8=current.standard_input.value_or("");
+        request.projects_directory=projects;
+        request.compile_timeout=std::chrono::seconds(60);
+        request.execution_timeout=std::chrono::seconds(8);
+        if(checked)request.local_int_check=current.local_int_check;
+        return request;
+    };
+    const auto execute=[&](const CppRunRequest& request,std::string_view expected) {
+        const auto result=run_cpp(request);
+        require(result.error_utf8.empty()&&result.compilation.succeeded()&&
+                result.execution.succeeded()&&result.execution.stderr_bytes.empty()&&
+                cpp_local_int_canonical_stdout(result.execution.stdout_bytes)==expected,
+            "Real MSVC failed the public U2L8 observation: "+
+            result.error_utf8+result.compilation.stderr_bytes+result.execution.stderr_bytes);
+        return result;
+    };
+    const auto private_proof=[&](const CppRunRequest& request,const CppRunResult& result) {
+        const auto proof=capture_cpp_execution(request,result);
+        require(compiler_runtime_request_allowed(current,request)&&
+                !cpp_local_int_request_fingerprint(request).empty()&&
+                proof.local_int_check_correct&&
+                proof.local_int_request_fingerprint==cpp_local_int_request_fingerprint(request)&&
+                result.local_int_evidence.size()==2,
+            "A valid U2L8 source did not earn two authentic private observations");
+        for(std::size_t i=0;i<probes.size();++i) {
+            const auto variant=cpp_local_int_override(request.source_utf8,probes[i]);
+            const auto& evidence=result.local_int_evidence[i];
+            require(variant&&evidence.instrumented_source_sha256==state::sha256(*variant)&&
+                    evidence.compilation.succeeded()&&evidence.execution.succeeded()&&
+                    evidence.execution.stderr_bytes.empty()&&
+                    cpp_local_int_expected_output(probes[i],evidence.execution.stdout_bytes),
+                "U2L8 private evidence is not bound to its exact typed source variant");
+        }
+        return proof;
+    };
+    const auto original_request=make_request(equals,false);
+    const auto checked_request=make_request(equals);
+    require(compiler_runtime_request_allowed(former,original_request)&&
+            compiler_runtime_request_allowed(current,checked_request)&&
+            !compiler_runtime_request_allowed(current,original_request),
+        "The historical and checked U2L8 requests lost their distinct contracts");
+
+    state::StateData saved;
+    saved.preferences["learning_progress"]["other_course_unchanged"]=std::int64_t{42};
+    saved.preferences["native_windows"]["unrelated_reader_setting"]=std::string("keep");
+    state::prepare_lesson_state(saved,original);
+    const auto key=draft_key("programming",original,former);
+    require(key==draft_key("programming",reviewed,current),
+        "The opt-in scalar check moved the original U2L8 draft");
+    state::Draft draft;
+    draft.source=parentheses+"// QA unfinished edit; keep this exact draft.\n";
+    draft.input="private U2L8 draft input";
+    draft.selection_start=9;draft.selection_end=27;
+    state::put_draft(saved,key,draft);
+    const auto verify_draft=[&](const state::StateData& data) {
+        const auto actual=state::get_draft(data,key,current.initial_code);
+        require(actual.has_saved&&actual.source==draft.source&&actual.input==draft.input&&
+                actual.selection_start==draft.selection_start&&
+                actual.selection_end==draft.selection_end&&
+                data.preferences.at("learning_progress").at("other_course_unchanged")==
+                    state::Value{std::int64_t{42}}&&
+                data.preferences.at("native_windows").at("unrelated_reader_setting")==
+                    state::Value{std::string("keep")},
+            "U2L8 execution or reopening changed a draft, selection or unrelated preference");
+    };
+    const auto old_result=execute(original_request,visible_outputs.front());
+    const auto old_proof=capture_cpp_execution(original_request,old_result);
+    require(record_compiler_puzzle_case(saved,original,former,original_request,old_proof,
+            "Real historical U2L8 visible output")&&
+            compiler_puzzle_completed(saved,original,former)&&
+            compiler_puzzle_case_count(saved,original,former)==1&&saved_local_receipt(saved).empty(),
+        "The real historical U2L8 stdout receipt was not retained");
+    const auto legacy=saved;
+    {
+        state::StateStore writer(environment.paths.root);
+        require(writer.empty(),"The supposedly fresh U2L8 QA profile contains progress");
+        (void)writer.load();writer.save(saved);
+    }
+    {
+        state::StateStore historical_reader(environment.paths.root);
+        require(!historical_reader.empty(),"The U2L8 historical QA save is missing");
+        saved=historical_reader.load();
+    }
+    state::validate_lesson_state(saved,reviewed);
+    verify_draft(saved);
+    auto replay_request=original_request;
+    replay_request.local_int_check=current.local_int_check;
+    const auto replay_proof=capture_cpp_execution(replay_request,old_result);
+    require(compiler_runtime_request_allowed(current,replay_request)&&
+            replay_proof.source_revision==replay_request.revision&&
+            replay_proof.local_int_request_fingerprint==cpp_local_int_request_fingerprint(replay_request)&&
+            !replay_proof.local_int_check_correct,
+        "Replaying real stdout must lack private evidence without relying on a stale revision");
+    require(saved==legacy&&!compiler_puzzle_completed(saved,reviewed,current)&&
+            !compiler_puzzle_completed(saved,metadata,projection)&&
+            compiler_puzzle_case_count(saved,reviewed,current)==1&&saved_local_receipt(saved).empty()&&
+            !record_compiler_puzzle_case(saved,reviewed,current,original_request,old_proof,
+                "Historical request cannot acquire a new typed proof")&&
+            !record_compiler_puzzle_case(saved,reviewed,current,replay_request,replay_proof,
+                "Matching visible output cannot acquire private evidence")&&saved==legacy,
+        "Reopening or replaying old U2L8 stdout promoted it to a char/bool dependency");
+
+    const auto checked_result=execute(checked_request,visible_outputs.front());
+    const auto checked_proof=private_proof(checked_request,checked_result);
+    auto tampered=checked_result;
+    tampered.local_int_evidence[0].instrumented_source_sha256=state::sha256(equals);
+    const auto unbound=capture_cpp_execution(checked_request,tampered);
+    require(!unbound.local_int_check_correct&&
+            !record_compiler_puzzle_case(saved,reviewed,current,checked_request,unbound,
+                "Private char evidence from the unchanged source")&&saved==legacy,
+        "A private observation from the wrong U2L8 source earned credit");
+    require(record_compiler_puzzle_case(saved,reviewed,current,checked_request,checked_proof,
+            "Real independent U2L8 char/bool observations")&&
+            compiler_puzzle_completed(saved,reviewed,current)&&
+            compiler_puzzle_case_count(saved,reviewed,current)==1&&!saved_local_receipt(saved).empty(),
+        "One visible U2L8 case plus its two private observations did not complete the owner");
+    for(const auto& [name,value]:legacy.preferences.at("native_windows"))
+        require(saved.preferences.at("native_windows").at(name)==value,
+            "Adding U2L8 private evidence rewrote an existing historical receipt");
+
+    const auto equivalent=[&](std::string_view description,const std::string& source,
+                              std::string_view expected) {
+        const auto request=make_request(source);
+        require(compiler_runtime_request_allowed(current,request),
+            "An equivalent U2L8 spelling failed the typed source gate");
+        const auto result=execute(request,expected);
+        const auto proof=private_proof(request,result);
+        state::StateData fresh;
+        state::prepare_lesson_state(fresh,reviewed);
+        require(!compiler_puzzle_completed(fresh,reviewed,current)&&
+                compiler_puzzle_case_count(fresh,reviewed,current)==0&&
+                record_compiler_puzzle_case(fresh,reviewed,current,request,proof,description)&&
+                compiler_puzzle_completed(fresh,reviewed,current)&&
+                compiler_puzzle_case_count(fresh,reviewed,current)==1&&!saved_local_receipt(fresh).empty(),
+            "A single real visible case did not finish an equivalent U2L8 source");
+        std::cout<<"PASS real U2L8 scalar source: "<<description<<'\n';
+    };
+    equivalent("published brace initialization",braces,visible_outputs.front());
+    equivalent("parenthesized initialization",parentheses,visible_outputs.front());
+    equivalent("declaration followed by assignment",assigned,visible_outputs.front());
+    equivalent("optional final newline",newline,visible_outputs.back());
+
+    const auto fixed_char=overwrite_first(equals,
+        "std::cout << \"Pasillo: \" << pasillo << '\\n';",
+        "std::cout << \"Pasillo: C\\n\";");
+    const auto fixed_bool=overwrite_first(equals,
+        "std::cout << \"Abierta: \" << abierta;",
+        "std::cout << \"Abierta: 1\";");
+    const auto fixed_both=overwrite_first(fixed_char,
+        "std::cout << \"Abierta: \" << abierta;",
+        "std::cout << \"Abierta: 1\";");
+    const auto reject_fixed=[&](std::string_view description,const std::string& source,
+                               std::array<bool,2> expected_private) {
+        const auto request=make_request(source);
+        require(compiler_runtime_request_allowed(current,request),
+            "The fixed-output counterexample did not reach the runtime checker");
+        const auto result=execute(request,visible_outputs.front());
+        require(result.local_int_evidence.size()==2,
+            "A fixed-output counterexample lacks its two real private observations");
+        for(std::size_t i=0;i<probes.size();++i) {
+            const auto& evidence=result.local_int_evidence[i];
+            require(evidence.compilation.succeeded()&&evidence.execution.succeeded()&&
+                    evidence.execution.stderr_bytes.empty()&&
+                    cpp_local_int_expected_output(probes[i],evidence.execution.stdout_bytes)==expected_private[i],
+                "The independent char/bool probe did not isolate the fixed output line");
+        }
+        const auto rejected=capture_cpp_execution(request,result);
+        const auto unchanged=saved;
+        require(!rejected.local_int_check_correct&&
+                !record_compiler_puzzle_case(saved,reviewed,current,request,rejected,description)&&
+                saved==unchanged,
+            "Correct public U2L8 output hid a missing char or bool dependency");
+    };
+    reject_fixed("Both output lines fixed",fixed_both,{false,false});
+    reject_fixed("Only the char output line fixed",fixed_char,{false,true});
+    reject_fixed("Only the bool output line fixed",fixed_bool,{true,false});
+
+    auto wrong_char=overwrite_first(equals,"char pasillo = 'C';","int pasillo = 67;");
+    wrong_char=overwrite_first(wrong_char,"<< pasillo <<","<< static_cast<char>(pasillo) <<");
+    const auto wrong_bool=overwrite_first(equals,"bool abierta = true;","int abierta = 1;");
+    for(const auto& source:{wrong_char,wrong_bool}) {
+        // Compile the genuine visible-output counterexample without private
+        // authoring, then prove it cannot be admitted or credited as typed.
+        const auto plain=make_request(source,false);
+        const auto result=execute(plain,visible_outputs.front());
+        auto typed=plain;typed.local_int_check=current.local_int_check;
+        const auto rejected=capture_cpp_execution(typed,result);
+        const auto unchanged=saved;
+        require(!compiler_runtime_request_allowed(current,typed)&&
+                cpp_local_int_request_fingerprint(typed).empty()&&!rejected.local_int_check_correct&&
+                !record_compiler_puzzle_case(saved,reviewed,current,typed,rejected,
+                    "An int declaration cannot stand in for char or bool")&&saved==unchanged,
+            "A correct visible result concealed an int in place of the authored scalar type");
+    }
+
+    verify_draft(saved);
+    {
+        state::StateStore writer(environment.paths.root);
+        require(!writer.empty()&&writer.load()==legacy,
+            "An uncommitted U2L8 test changed the durable historical state");
+        writer.save(saved);
+    }
+    state::StateStore reopened(environment.paths.root);
+    require(!reopened.empty(),"The U2L8 private QA receipt was not saved");
+    const auto restored=reopened.load();
+    state::validate_lesson_state(restored,reviewed);
+    validate_compiler_puzzle_state(restored,reviewed,current);
+    validate_compiler_puzzle_state(restored,metadata,projection);
+    verify_draft(restored);
+    require(restored==saved&&compiler_puzzle_completed(restored,original,former)&&
+            compiler_puzzle_completed(restored,reviewed,current)&&
+            compiler_puzzle_completed(restored,metadata,projection)&&
+            compiler_puzzle_case_count(restored,reviewed,current)==1&&
+            saved_local_receipt(restored)==saved_local_receipt(saved),
+        "StateStore reopening lost the U2L8 receipt or changed its single visible obligation");
+
+    // Both native loaders must preserve JSON types, rather than interpreting
+    // ASCII numbers or a string spelling of false as a typed declaration.
+    for(const unsigned scenario:{0u,1u,2u,3u,4u,5u,6u}) {
+        const auto invalid=JsonObject::Parse(winrt::to_hstring(reviewed.raw_json));
+        const auto authored=invalid.GetNamedArray(L"compilerLocalIntChecks").GetObjectAt(0)
+            .GetNamedArray(L"probes");
+        if(scenario==0)authored.GetObjectAt(0).Insert(L"replacement",JsonValue::CreateNumberValue(68));
+        if(scenario==1)authored.GetObjectAt(1).Insert(L"replacement",JsonValue::CreateNumberValue(0));
+        if(scenario==2)authored.GetObjectAt(1).Insert(L"replacement",JsonValue::CreateStringValue(L"false"));
+        if(scenario==3)authored.GetObjectAt(0).Remove(L"valueType");
+        if(scenario==4)authored.GetObjectAt(1).Insert(L"afterUpdate",JsonValue::CreateBooleanValue(true));
+        if(scenario==5)authored.GetObjectAt(0).Insert(L"valueType",JsonValue::CreateStringValue(L"integer"));
+        if(scenario==6) {
+            const auto mixed=authored.GetObjectAt(1);
+            mixed.Insert(L"variable",JsonValue::CreateStringValue(L"pasillo"));
+            mixed.Insert(L"valueType",JsonValue::CreateStringValue(L"int"));
+            mixed.Insert(L"replacement",JsonValue::CreateNumberValue(68));
+        }
+        rejects(invalid);
+    }
+    // WinRT merges duplicate members; the original source parser must still
+    // reject a hidden first valueType even when the last value looks valid.
+    rejects_raw(overwrite_first(canonical(reviewed.raw_json),
+        R"("valueType":"char")",R"("valueType":"int","valueType":"char")"));
+    std::cout<<"PASS real Windows U2L8 char/bool: authenticated original blocks, "
+        "full/progress typed specs, five valid source forms, three fixed-output and "
+        "two wrong-type counterexamples, one visible case, immutable historical stdout, "
+        "private evidence and saved draft/selection/preferences after StateStore reopen.\n";
+}
+
 void run() {
     validate_other_u2_editors();
     validate_current_u2l5_editor_state();
@@ -773,6 +1125,9 @@ int main(int argc,char** argv)try {
     winrt::init_apartment();
     if(argc==2&&std::string_view(argv[1])=="--export-six-u2-qa"){
         validate_other_u2_editors(true);return 0;
+    }
+    if(argc==3&&std::string_view(argv[1])=="--u2l8-scalars"){
+        validate_u2l8_scalars(std::filesystem::path(argv[2]));return 0;
     }
     require(argc==1,"Unknown local-int QA command");
     run();

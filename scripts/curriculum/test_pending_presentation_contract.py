@@ -4,7 +4,94 @@ import copy
 import json
 import unittest
 
+import stable_state_layout as layout
 import validar_json_programacion as contract
+
+
+U2L8_LESSON = "objetos_y_estado/lesson_caracteres_y_valores_logicos.json"
+U2L8_LOCATIONS = ((1, 5), (2, 3), (3, 3), (4, 3), (6, 2), (6, 3), (6, 5), (8, 5))
+U2L8_RETIRED_EDITOR = "block_0006_0006"
+
+
+def verified_u2l8_explanations(document):
+    """Keep the old oracle and trace active prose through its actual archives.
+
+    The six-edge publication, its later bibliography archives, and the reading
+    snapshot retained by the current edition are all supported. No live prose
+    becomes a replacement oracle merely because its answer contract matches.
+    """
+    layout.validate(document)
+    layout.text_semantics.validate(document)
+    metadata = document["stateLayout"]
+    current = layout._blocks(document)
+    snapshots = [snapshot for snapshot in metadata.get("retirementHistory", [])
+                 if U2L8_RETIRED_EDITOR in snapshot["retired"]]
+    layout.require(len(snapshots) <= 1, "The U2L8 source snapshot must be unique")
+    if snapshots:
+        snapshot = snapshots[0]
+        prefix = layout._validate_retirement_editorial_prefix(document, snapshot)
+        layout.require(prefix is not None, "The U2L8 source needs its exact editorial prefix")
+        historical = {
+            identity: block
+            for page, record in zip(snapshot["pages"], snapshot["current"])
+            for block, identity in zip(page["blocks"], record["blocks"])
+        }
+    else:
+        historical = current
+        prefix = len(metadata["editorial"])
+
+    markers = {(field["block"], field["path"]): field
+               for field in document.get("textSemantics", {}).get("fields", [])}
+    result = []
+    prose = {"question", "explanation", "reviewFeedback"}
+    for page, block_index in U2L8_LOCATIONS:
+        identity = f"block_{page - 1:04d}_{block_index - 1:04d}"
+        layout.require(identity in historical and identity in current,
+                       "A reviewed U2L8 exercise lost its stable owner")
+        previous, active = historical[identity], current[identity]
+        reviewed = copy.deepcopy(previous)
+        # A bibliography-only revision already carries both complete blocks.
+        # Rewind only an exact destination at the authenticated snapshot time.
+        for edge in reversed(metadata["editorial"][:prefix]):
+            if edge["id"] != identity or "bibliography" not in edge:
+                continue
+            if layout.fingerprint(reviewed) != edge["afterSha256"]:
+                continue
+            archive = edge["bibliography"]
+            layout.require(reviewed == archive["currentBlock"]
+                           and layout.fingerprint(archive["previousBlock"]) == edge["beforeSha256"],
+                           "The reviewed explanation lost its exact bibliography source")
+            reviewed = copy.deepcopy(archive["previousBlock"])
+        location = (U2L8_LESSON, page, block_index)
+        kind, explanation = contract.EXPLANATION_CLARIFICATIONS[location]
+        restored = contract.restore_approved_editorial_fields(
+            location, {"type": kind, "explanation": explanation}, reviewed)
+        layout.require(reviewed["type"] == kind and restored["explanation"] == explanation,
+                       "The archived U2L8 explanation differs from its pinned reviewed source")
+        layout.require({key: value for key, value in previous.items() if key not in prose}
+                       == {key: value for key, value in active.items() if key not in prose},
+                       "A revised U2L8 explanation changed its program, answer or other protected field")
+        if active != previous:
+            paths = layout.ordinary_editorial_paths(previous, active)
+            layout.require(bool(paths), "The active U2L8 change is not an ordinary authored prose revision")
+            proofs = [edge for edge in metadata["editorial"][prefix:] if edge["id"] == identity]
+            layout.require(bool(proofs)
+                           and proofs[0]["beforeSha256"] == layout.fingerprint(previous)
+                           and proofs[-1]["afterSha256"] == layout.fingerprint(active),
+                           "The active U2L8 explanation lost its complete previous/current provenance")
+            layout.require(all((identity, path) in markers for path in paths),
+                           "A revised U2L8 field lost its authored reading descriptor")
+            required_reviews = set(layout.ordinary_feedback_paths(previous, active))
+            recorded_reviews = {path for proof in proofs for path in proof.get("reviewPaths", [])}
+            available_reviews = {path for path in layout.text_semantics.public_text_fields(active)
+                                 if path == "/reviewFeedback" or path.startswith("/reviewFeedback/")}
+            # A later valid editorial return can restore an earlier hint.
+            # Its recorded revision remains real even when the net text delta
+            # is empty; every still-changed hint must nevertheless be traced.
+            layout.require(required_reviews <= recorded_reviews <= available_reviews,
+                           "The active U2L8 hints differ from their authenticated review paths")
+        result.append((location, kind, explanation, reviewed, previous, active))
+    return result
 
 
 class PendingPresentationContractTest(unittest.TestCase):
@@ -44,20 +131,13 @@ class PendingPresentationContractTest(unittest.TestCase):
                 self.assertFalse(self.emphasis([{"text": "objeto", "occurrence": occurrence}]))
 
     def test_eight_pinned_explanations_match_the_reviewed_source_and_preserve_all_other_fields(self):
-        lesson = "objetos_y_estado/lesson_caracteres_y_valores_logicos.json"
-        locations = ((1, 5), (2, 3), (3, 3), (4, 3), (6, 2), (6, 3), (6, 5), (8, 5))
-        source = json.loads((contract.CONTENT / lesson).read_text(encoding="utf-8-sig"))
-        for page, block in locations:
-            location = (lesson, page, block)
-            kind, explanation = contract.EXPLANATION_CLARIFICATIONS[location]
-            published = source["pages"][page - 1]["blocks"][block - 1]
-            self.assertEqual(kind, published["type"])
-            # Keep the original reviewed oracle. Seven APA revisions now have
-            # a separately pinned source/destination transition, not a new
-            # baseline that accepts an arbitrary current explanation.
-            restored = contract.restore_approved_editorial_fields(
-                location, {"type": kind, "explanation": explanation}, published)
-            self.assertEqual(explanation, restored["explanation"])
+        source = json.loads((contract.CONTENT / U2L8_LESSON).read_text(encoding="utf-8-sig"))
+        reviewed_sources = verified_u2l8_explanations(source)
+        self.assertEqual(len(reviewed_sources), 8)
+        for location, kind, explanation, reviewed, previous, active in reviewed_sources:
+            lesson, page, block = location
+            self.assertEqual(previous["answers"], active["answers"])
+            self.assertEqual(previous["code"], active["code"])
             old = {"type": kind, "id": "stable", "question": "Original question",
                    "code": "Original C++ source", "answers": ["original"],
                    "language": "cpp", "explanation": "Previous wording"}
@@ -69,6 +149,71 @@ class PendingPresentationContractTest(unittest.TestCase):
                 with self.subTest(page=page, block=block, changed=key):
                     self.assertFalse(contract.preserves_previous_exercise(relative, page - 1, block - 1, old, changed))
             self.assertFalse(contract.preserves_previous_exercise(relative, page - 1, block, old, current))
+
+    def test_u2l8_rejects_unproven_active_text_and_rehashed_program_or_answer_changes(self):
+        source = json.loads((contract.CONTENT / U2L8_LESSON).read_text(encoding="utf-8-sig"))
+        identity = "block_0000_0004"
+        original = layout._blocks(source)[identity]
+        for field, value in (("explanation", original["explanation"] + " Texto sin procedencia."),
+                             ("answers", ["'Z'"]), ("code", original["code"] + "\n// Alterado")):
+            changed = copy.deepcopy(source)
+            active = layout._blocks(changed)[identity]
+            active[field] = value
+            if field != "explanation":
+                proofs = [edge for edge in changed["stateLayout"]["editorial"]
+                          if edge["id"] == identity]
+                if proofs:
+                    proofs[-1]["afterSha256"] = layout.fingerprint(active)
+                else:
+                    changed["stateLayout"]["editorial"].append({
+                        "id": identity, "beforeSha256": layout.fingerprint(original),
+                        "afterSha256": layout.fingerprint(active),
+                    })
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                verified_u2l8_explanations(changed)
+
+    def test_u2l8_rejects_false_archive_provenance_and_reading_descriptors(self):
+        source = json.loads((contract.CONTENT / U2L8_LESSON).read_text(encoding="utf-8-sig"))
+        changed = copy.deepcopy(source)
+        changed["stateLayout"]["editorial"][-1]["afterSha256"] = "0" * 64
+        with self.assertRaises(ValueError):
+            verified_u2l8_explanations(changed)
+        changed = copy.deepcopy(source)
+        marker = next(field for field in changed["textSemantics"]["fields"]
+                      if (field["block"], field["path"]) == ("block_0000_0004", "/explanation"))
+        marker["sourceSha256"] = "0" * 64
+        with self.assertRaises(ValueError):
+            verified_u2l8_explanations(changed)
+        for index, edge in enumerate(source["stateLayout"]["editorial"]):
+            if "bibliography" not in edge or edge["id"] != "block_0002_0002":
+                continue
+            changed = copy.deepcopy(source)
+            changed["stateLayout"]["editorial"][index]["bibliography"]["previousBlock"][
+                "explanation"] += " Fuente inventada."
+            with self.assertRaises(ValueError):
+                verified_u2l8_explanations(changed)
+        for index, snapshot in enumerate(source["stateLayout"].get("retirementHistory", [])):
+            if U2L8_RETIRED_EDITOR not in snapshot["retired"]:
+                continue
+            changed = copy.deepcopy(source)
+            historical = changed["stateLayout"]["retirementHistory"][index]
+            for page, record in zip(historical["pages"], historical["current"]):
+                if "block_0000_0004" in record["blocks"]:
+                    page["blocks"][record["blocks"].index("block_0000_0004")][
+                        "explanation"] += " Fuente inventada."
+            with self.assertRaises(ValueError):
+                verified_u2l8_explanations(changed)
+            changed = copy.deepcopy(source)
+            for edge in changed["stateLayout"]["editorial"]:
+                if edge["id"] == "block_0000_0004":
+                    edge.pop("reviewPaths", None)
+            with self.assertRaises(ValueError):
+                verified_u2l8_explanations(changed)
+            changed = copy.deepcopy(source)
+            changed["textSemantics"]["fields"] = [field for field in changed["textSemantics"]["fields"]
+                if (field["block"], field["path"]) != ("block_0000_0004", "/explanation")]
+            with self.assertRaises(ValueError):
+                verified_u2l8_explanations(changed)
 
     def test_italic_styles_are_explicit_optional_and_do_not_rewrite_original_text(self):
         for style in ("bold", "italic", "bold_italic"):
@@ -138,3 +283,4 @@ class PendingPresentationContractTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

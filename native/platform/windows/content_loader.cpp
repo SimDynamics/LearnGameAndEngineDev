@@ -4611,7 +4611,7 @@ std::optional<std::string> narration_language_tag(std::string_view authored) {
 }
 
 // An opt-in semantic requirement of an existing output-check editor. Each
-// independent probe changes the live int after its own initialization, then
+// independent probe changes the typed integral local after initialization, then
 // compiles the whole program. The original lesson block, source, output case
 // and storage owner remain unchanged.
 void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
@@ -4716,17 +4716,40 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
                 (void)original.member(raw_probe,"afterUpdate");
             if(probe.HasKey(L"expectedIncrease"))
                 (void)original.member(raw_probe,"expectedIncrease");
-            allowed_keys(probe,{"variable","replacement","outputs","afterUpdate","expectedIncrease"});
-            const auto number=probe.GetNamedValue(L"replacement");
-            require(number.ValueType()==JsonValueType::Number&&
-                    std::isfinite(number.GetNumber())&&
-                    std::trunc(number.GetNumber())==number.GetNumber()&&
-                    number.GetNumber()>=std::numeric_limits<std::int32_t>::min()&&
-                    number.GetNumber()<=std::numeric_limits<std::int32_t>::max(),
-                "An integer variation requires a signed 32-bit replacement.");
+            if(probe.HasKey(L"valueType"))
+                (void)original.member(raw_probe,"valueType");
+            allowed_keys(probe,{"variable","replacement","outputs","afterUpdate","expectedIncrease","valueType"});
             CppLocalIntProbe next;
             next.variable=text(probe,"variable");
-            next.replacement=static_cast<std::int32_t>(number.GetNumber());
+            const auto value_type=probe.HasKey(L"valueType")?text(probe,"valueType"):"int";
+            const auto replacement=probe.GetNamedValue(L"replacement");
+            if(value_type=="int") {
+                require(replacement.ValueType()==JsonValueType::Number&&
+                        std::isfinite(replacement.GetNumber())&&
+                        std::trunc(replacement.GetNumber())==replacement.GetNumber()&&
+                        replacement.GetNumber()>=std::numeric_limits<std::int32_t>::min()&&
+                        replacement.GetNumber()<=std::numeric_limits<std::int32_t>::max(),
+                    "An integer variation requires a signed 32-bit replacement.");
+                next.replacement=static_cast<std::int32_t>(replacement.GetNumber());
+            }else if(value_type=="char") {
+                require(replacement.ValueType()==JsonValueType::String,
+                    "A character variation requires one printable ASCII character.");
+                const auto character=utf8(replacement.GetString());
+                require(character.size()==1&&character.front()>=32&&character.front()<=126,
+                    "A character variation requires one printable ASCII character.");
+                next.value_type=CppLocalValueType::character;
+                next.replacement=static_cast<unsigned char>(character.front());
+            }else if(value_type=="bool") {
+                require(replacement.ValueType()==JsonValueType::Boolean,
+                    "A boolean variation requires a JSON boolean replacement.");
+                next.value_type=CppLocalValueType::boolean;
+                next.replacement=replacement.GetBoolean()?1:0;
+            }else {
+                throw std::runtime_error("Local valueType must be int, char or bool.");
+            }
+            require(next.value_type==CppLocalValueType::integer||
+                    (!probe.HasKey(L"afterUpdate")&&!probe.HasKey(L"expectedIncrease")),
+                "Local char/bool probes only vary the initialized value.");
             next.expected_stdout=strings(array(probe,"outputs"),true);
             if(probe.HasKey(L"afterUpdate")) {
                 const auto flag=probe.GetNamedValue(L"afterUpdate");

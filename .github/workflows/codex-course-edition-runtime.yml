@@ -14,6 +14,8 @@ on:
       - native/platform/windows/general_choice_editorial_tests.cpp
       - scripts/curriculum/choice_retirement_fixture_source.py
       - scripts/curriculum/test_choice_retirement_history.py
+      - scripts/curriculum/local_scalar_fixture_source.py
+      - scripts/curriculum/test_local_scalar_probe_authoring.py
       - scripts/curriculum/course_edition_fixture_source.py
       - native/platform/windows/local_int_state_tests.cpp
       - native/platform/windows/local_string_state_tests.cpp
@@ -100,6 +102,12 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           ctest --test-dir $build -R '^native[.]general_choice_retirement_history$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'choice-retirement-history.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify U2L8 char and bool dependencies with real MSVC and StateStore
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]current_u2l8_local_scalar_state$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u2l8-local-scalar-state.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Execute edition replacement, native quiz, scoped reset and reopen
         shell: pwsh
         run: |
@@ -174,6 +182,7 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
           path: |
+            ${{ runner.temp }}/lgaed-course-edition-qa/u2l8-local-scalar-state.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/choice-retirement-history.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/course-edition-runtime.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/simulation-empty-text-runtime.xml

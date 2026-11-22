@@ -6631,10 +6631,11 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
         require(type(probes) is list and 1 <= len(probes) <= 8,
                 "Local-int owner requires 1..8 private variations")
         known = set()
+        variable_types = {}
         for probe in probes:
             require(type(probe) is dict and
                     {"variable", "replacement", "outputs"} <= set(probe) <=
-                    {"variable", "replacement", "outputs", "afterUpdate", "expectedIncrease"},
+                    {"variable", "replacement", "outputs", "afterUpdate", "expectedIncrease", "valueType"},
                     "Local-int variation requires variable, replacement and outputs")
             variable, replacement, outputs = (
                 probe["variable"], probe["replacement"], probe["outputs"])
@@ -6643,8 +6644,25 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
                 variable != "main" and not variable.startswith("__") and
                 not (variable.startswith("_") and len(variable) > 1 and variable[1].isupper()),
                 "Invalid local-int variable name")
-            require(type(replacement) is int and -(2 ** 31) <= replacement < 2 ** 31,
-                    "Local-int replacement requires a signed 32-bit integer")
+            value_type = probe.get("valueType", "int")
+            require(type(value_type) is str and value_type in {"int", "char", "bool"},
+                    "Local valueType must be int, char or bool")
+            require(variable not in variable_types or variable_types[variable] == value_type,
+                    "A local variable cannot have conflicting authored types")
+            variable_types[variable] = value_type
+            if value_type == "int":
+                require(type(replacement) is int and -(2 ** 31) <= replacement < 2 ** 31,
+                        "Local-int replacement requires a signed 32-bit integer")
+            elif value_type == "char":
+                require(type(replacement) is str and len(replacement) == 1
+                        and 32 <= ord(replacement) <= 126,
+                        "Local-char replacement requires one printable ASCII character")
+            else:
+                require(type(replacement) is bool,
+                        "Local-bool replacement requires a JSON boolean")
+            require(value_type == "int" or
+                    not ({"afterUpdate", "expectedIncrease"} & set(probe)),
+                    "Local char/bool probes only vary the initialized value")
             after_update = probe.get("afterUpdate", False)
             require(type(after_update) is bool and
                     ("afterUpdate" not in probe or after_update is True),
@@ -6654,9 +6672,9 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
                 require(after_update and type(increase) is int and
                         1 <= increase < 2 ** 31,
                         "Local-int expectedIncrease requires positive int32 and afterUpdate")
-            require((variable, replacement, after_update) not in known,
+            require((variable, value_type, replacement, after_update) not in known,
                     "A local-int variation cannot repeat a prior replacement")
-            known.add((variable, replacement, after_update))
+            known.add((variable, value_type, replacement, after_update))
             require(type(outputs) is list and 1 <= len(outputs) <= 4 and
                     all(type(o) is str and o and "\x00" not in o and
                         len(o.encode("utf-8")) <= 4096 and

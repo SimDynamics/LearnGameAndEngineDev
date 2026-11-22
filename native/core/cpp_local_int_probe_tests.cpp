@@ -9,6 +9,7 @@
 
 namespace {
 using lgaed::curriculum::CppLocalIntProbe;
+using lgaed::curriculum::CppLocalValueType;
 using lgaed::curriculum::cpp_local_int_override;
 
 void require(bool condition, std::string_view explanation) {
@@ -874,6 +875,203 @@ void expected_outputs_are_independent_and_reversible() {
     require(!cpp_local_int_check_valid(check), "Missing independent output was admitted");
 }
 
+CppLocalIntProbe typed_probe(std::string_view variable,std::int32_t replacement,
+                            CppLocalValueType type) {
+    return {std::string(variable),replacement,{"private"},false,std::nullopt,type};
+}
+
+void typed_local_initializers_preserve_source_and_exact_type() {
+    const auto character=typed_probe("pasillo",68,CppLocalValueType::character);
+    const auto boolean=typed_probe("abierta",0,CppLocalValueType::boolean);
+    const char* character_declarations[]{
+        "char pasillo = 'C';", "char pasillo{'C'};",
+        "char pasillo('C');", "char pasillo = {'C'};",
+        "char pasillo = '\\x43';", "char pasillo = '\\103';",
+        "char pasillo = static_cast<char>('A' + 2);",
+        "char pasillo = [] { return 'C'; }();",
+        "char pasillo; pasillo = 'C';",
+        "char otro{'A'}, pasillo('C'), siguiente='E';"
+    };
+    const char* boolean_declarations[]{
+        "bool abierta = true;", "bool abierta{true};",
+        "bool abierta(true);", "bool abierta = {true};",
+        "bool abierta = !false;", "bool abierta = (2 > 1);",
+        "bool abierta = static_cast<bool>(1);",
+        "bool abierta = [] { return true; }();",
+        "bool abierta; abierta = (2 > 1);",
+        "bool antes=false, abierta(true), despues{false};"
+    };
+    for(const auto* declaration:character_declarations) {
+        const auto source=std::string("#include <iostream>\nint main(){\n")
+            +declaration+"\nstd::cout << pasillo;\n}\n";
+        const auto original=source;
+        const auto varied=cpp_local_int_override(source,character);
+        require(varied&&source==original&&
+            varied->find(std::string(declaration)+
+                "\n    pasillo = static_cast<char>(68);\n")!=std::string::npos&&
+            varied->find("std::cout << pasillo;")!=std::string::npos,
+            "An equivalent char initializer was changed or could not be probed");
+    }
+    for(const auto* declaration:boolean_declarations) {
+        const auto source=std::string("#include <iostream>\nint main(){\n")
+            +declaration+"\nstd::cout << abierta;\n}\n";
+        const auto original=source;
+        const auto varied=cpp_local_int_override(source,boolean);
+        require(varied&&source==original&&
+            varied->find(std::string(declaration)+
+                "\n    abierta = false;\n")!=std::string::npos&&
+            varied->find("std::cout << abierta;")!=std::string::npos,
+            "An equivalent bool initializer was changed or could not be probed");
+    }
+    const auto true_variant=cpp_local_int_override(
+        "int main(){bool abierta=false;return abierta;}",
+        typed_probe("abierta",1,CppLocalValueType::boolean));
+    require(true_variant&&true_variant->find("abierta = true;")!=std::string::npos,
+        "A true bool replacement was emitted as a different value");
+}
+
+void mixed_character_and_boolean_probes_are_independent() {
+    const std::string source=
+        "#include <iostream>\r\n"
+        "auto main() noexcept(noexcept(7)) -> int {\r\n"
+        "    char pasillo{'C'};\r\n"
+        "    bool abierta{true};\r\n"
+        "    // pasillo and abierta are not identifiers in this comment.\r\n"
+        "    std::cout << \"Pasillo: \" << pasillo << \"\\nAbierta: \" << abierta;\r\n"
+        "}\r\n";
+    auto character=typed_probe("pasillo",68,CppLocalValueType::character);
+    character.expected_stdout={"Pasillo: D\nAbierta: 1","Pasillo: D\nAbierta: 1\n"};
+    auto boolean=typed_probe("abierta",0,CppLocalValueType::boolean);
+    boolean.expected_stdout={"Pasillo: C\nAbierta: 0","Pasillo: C\nAbierta: 0\n"};
+    const auto original=source;
+    const auto passage=cpp_local_int_override(source,character);
+    const auto opened=cpp_local_int_override(source,boolean);
+    require(passage&&opened&&source==original&&
+        passage->find("char pasillo{'C'};\n    pasillo = static_cast<char>(68);\n")
+            !=std::string::npos&&
+        passage->find("bool abierta{true};\r\n")!=std::string::npos&&
+        passage->find("abierta = false;")==std::string::npos&&
+        opened->find("char pasillo{'C'};\r\n")!=std::string::npos&&
+        opened->find("bool abierta{true};\n    abierta = false;\n")!=std::string::npos&&
+        opened->find("pasillo = static_cast<char>")==std::string::npos,
+        "A typed probe rewrote the other variable, its initializer or the draft");
+    require(lgaed::curriculum::cpp_local_int_check_valid({{character,boolean}})&&
+        lgaed::curriculum::cpp_local_int_expected_output(
+            character,"Pasillo: D\nAbierta: 1")&&
+        lgaed::curriculum::cpp_local_int_expected_output(
+            boolean,"Pasillo: C\r\nAbierta: 0\r\n")&&
+        !lgaed::curriculum::cpp_local_int_expected_output(
+            character,"Pasillo: C\nAbierta: 1")&&
+        !lgaed::curriculum::cpp_local_int_expected_output(
+            boolean,"Pasillo: D\nAbierta: 0"),
+        "Typed expectations lost optional final newlines or independent exact output");
+}
+
+void typed_probes_reject_other_types_and_ambiguous_owners() {
+    const auto character=typed_probe("valor",68,CppLocalValueType::character);
+    const auto boolean=typed_probe("valor",0,CppLocalValueType::boolean);
+    for(const auto* declaration:{
+            "int valor=67;", "bool valor=true;", "signed char valor='C';",
+            "unsigned char valor='C';", "wchar_t valor=L'C';",
+            "char8_t valor=u8'C';", "char16_t valor=u'C';",
+            "auto valor='C';", "const char valor='C';",
+            "volatile char valor='C';", "static char valor='C';",
+            "char* valor=nullptr;", "char& valor=otro;", "char valor[2]{};",
+            "char valor='C', valor='D';", "char valor='C', copia=valor;",
+            "{char valor='C';}", "char valor; valor=valor;",
+            "char valor; if(true){valor='C';}"}) {
+        require(!cpp_local_int_override(std::string("int main(){")+declaration+"}",
+                                      character),
+            "A char probe accepted another type, scope or ambiguous initialization");
+    }
+    for(const auto* declaration:{
+            "int valor=1;", "char valor='C';", "unsigned valor=1;",
+            "auto valor=true;", "const bool valor=true;",
+            "volatile bool valor=true;", "static bool valor=true;",
+            "bool* valor=nullptr;", "bool& valor=otra;", "bool valor[2]{};",
+            "bool valor=true, valor=false;", "bool valor=true, copia=valor;",
+            "{bool valor=true;}", "bool valor; valor=!valor;",
+            "bool valor; if(true){valor=true;}"}) {
+        require(!cpp_local_int_override(std::string("int main(){")+declaration+"}",
+                                      boolean),
+            "A bool probe accepted another type, scope or ambiguous initialization");
+    }
+    require(!cpp_local_int_override("char valor='C';int main(){return valor;}",character)&&
+        !cpp_local_int_override("bool valor=true;int main(){return valor;}",boolean)&&
+        !cpp_local_int_override("int main(){char valor='C';}",{"valor",68})&&
+        !cpp_local_int_override("int main(){bool valor=true;}",{"valor",0}),
+        "An old int contract accepted a new type or a global was treated as local");
+    for(const auto& probe:{character,boolean}) {
+        const std::string declaration=probe.value_type==CppLocalValueType::character
+            ? "char valor='C';" : "bool valor=true;";
+        for(const auto* observation:{"return __LINE__;", "exit(0);", "return __COUNTER__;"})
+            require(!cpp_local_int_override(std::string("int main(){")+declaration+
+                    observation+"}",probe),
+                "A typed variation bypassed the private-recompile observation guard");
+    }
+}
+
+void typed_probe_value_contract_is_strict_and_consistent() {
+    using lgaed::curriculum::cpp_local_int_check_valid;
+    const std::string chars="int main(){char valor='C';}";
+    const std::string bools="int main(){bool valor=true;}";
+    for(const auto value:{32,39,92,126}) {
+        const auto probe=typed_probe("valor",value,CppLocalValueType::character);
+        const auto varied=cpp_local_int_override(chars,probe);
+        require(cpp_local_int_check_valid({{probe}})&&varied&&
+            varied->find("static_cast<char>("+std::to_string(value)+")")!=std::string::npos,
+            "A printable ASCII byte, quote or slash was not represented safely");
+    }
+    for(const auto value:{INT32_MIN,-1,0,31,127,128,255,INT32_MAX}) {
+        const auto probe=typed_probe("valor",value,CppLocalValueType::character);
+        require(!cpp_local_int_check_valid({{probe}})&&!cpp_local_int_override(chars,probe),
+            "An out-of-contract char byte reached source instrumentation");
+    }
+    for(const auto value:{INT32_MIN,-1,2,68,INT32_MAX}) {
+        const auto probe=typed_probe("valor",value,CppLocalValueType::boolean);
+        require(!cpp_local_int_check_valid({{probe}})&&!cpp_local_int_override(bools,probe),
+            "An arbitrary integer was silently converted to a bool probe");
+    }
+    for(const auto type:{CppLocalValueType::character,CppLocalValueType::boolean}) {
+        auto probe=typed_probe("valor",type==CppLocalValueType::character?68:0,type);
+        const auto& source=type==CppLocalValueType::character?chars:bools;
+        probe.after_update=true;
+        require(!cpp_local_int_check_valid({{probe}})&&!cpp_local_int_override(source,probe),
+            "A non-int probe admitted afterUpdate");
+        probe.expected_increase=3;
+        require(!cpp_local_int_check_valid({{probe}})&&!cpp_local_int_override(source,probe),
+            "A non-int probe admitted an expected increase");
+        probe.after_update=false;
+        require(!cpp_local_int_check_valid({{probe}})&&!cpp_local_int_override(source,probe),
+            "An expected increase without afterUpdate reached a typed override");
+    }
+    auto unknown=typed_probe("valor",68,static_cast<CppLocalValueType>(99));
+    require(!cpp_local_int_check_valid({{unknown}})&&!cpp_local_int_override(chars,unknown),
+        "An unrecognized scalar type was silently treated as int");
+    const auto character=typed_probe("valor",68,CppLocalValueType::character);
+    const auto integer=typed_probe("valor",68,CppLocalValueType::integer);
+    const auto boolean=typed_probe("valor",0,CppLocalValueType::boolean);
+    require(!cpp_local_int_check_valid({{character,character}})&&
+        !cpp_local_int_check_valid({{character,integer}})&&
+        !cpp_local_int_check_valid({{character,boolean}})&&
+        !cpp_local_int_check_valid({{integer,boolean}}),
+        "One variable admitted duplicate probes or conflicting declared types");
+}
+
+void old_int_aggregate_and_emitted_source_remain_identical() {
+    CppLocalIntProbe previous{"llaves",13,{"Llaves: 13"}};
+    auto explicit_type=previous;
+    explicit_type.value_type=CppLocalValueType::integer;
+    const std::string source="int main(){int llaves=7;std::cout<<llaves;}";
+    const std::string expected=
+        "int main(){int llaves=7;\n    llaves = 13;\nstd::cout<<llaves;}";
+    require(previous.value_type==CppLocalValueType::integer&&previous==explicit_type&&
+        cpp_local_int_override(source,previous)==expected&&
+        cpp_local_int_override(source,explicit_type)==expected&&
+        !lgaed::curriculum::cpp_local_int_check_valid({{previous,explicit_type}}),
+        "Adding explicit scalar types changed an old int aggregate or its bytes");
+}
+
 } // namespace
 
 int main() {
@@ -900,8 +1098,15 @@ int main() {
         private_delta_respects_signed_int_bounds();
         crlf_after_update_preserves_source_and_comment();
         numeric_literal_identity_distinguishes_one_from_ten();
+        typed_local_initializers_preserve_source_and_exact_type();
+        mixed_character_and_boolean_probes_are_independent();
+        typed_probes_reject_other_types_and_ambiguous_owners();
+        typed_probe_value_contract_is_strict_and_consistent();
+        old_int_aggregate_and_emitted_source_remain_identical();
         std::cout << "PASS local int probes: equivalent initialization, independent "
-                     "variables, copy state, safe token positions.\n";
+                     "variables, copy state, safe token positions.\n"
+                     "PASS typed local probes: char/bool initialization, independent "
+                     "values, strict types and preserved int contracts.\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "FAIL local int probes: " << error.what() << '\n';
