@@ -140,6 +140,24 @@ add_test(NAME native.u5l13_identifier_rename_historical
     COMMAND lgaed_compiler_guidance_portable_qa --identifier-rename-live)
 add_test(NAME native.u5l13_math_matching_text_historical
     COMMAND lgaed_compiler_guidance_portable_qa --math-matching-text-live)
+# Temporary authenticated source-and-card fixtures are opt-in, never installed.
+# An MSVC runner can inspect both editorial orders using the production
+# full/compact parsers and durable isolated StateStore.
+set(LGAED_U5L13_COMPOSITION_FIXTURE_DIR "" CACHE PATH
+    "Verified, disposable U5L13 source/card composition JSON directory")
+if(LGAED_U5L13_COMPOSITION_FIXTURE_DIR)
+    add_executable(lgaed_matching_rename_composition_state_qa
+        "${LGAED_ROOT}/native/platform/windows/matching_rename_composition_state_tests.cpp")
+    target_link_libraries(lgaed_matching_rename_composition_state_qa PRIVATE
+        lgaed_guidance_platform lgaed_guidance_qa_options)
+    target_link_options(lgaed_matching_rename_composition_state_qa PRIVATE /OPT:REF)
+    add_test(NAME native.u5l13_matching_rename_composition
+        COMMAND lgaed_matching_rename_composition_state_qa
+        "${LGAED_U5L13_COMPOSITION_FIXTURE_DIR}"
+        "${CMAKE_CURRENT_BINARY_DIR}/u5l13-composition-qa")
+    set_tests_properties(native.u5l13_matching_rename_composition
+        PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+endif()
 add_test(NAME native.u6l5_indexed_unique_transfer_state
     COMMAND lgaed_compiler_guidance_portable_qa --indexed-unique-transfer-state-live)
 add_test(NAME native.u6l6_defaulted_move_policy_state
