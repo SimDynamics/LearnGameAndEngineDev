@@ -189,6 +189,31 @@ int main() {
             "Aula-07",
             {{{"codigo","B2",update,{}},"Aula-B2"},
              {{"etiqueta","CONTROL",output,{}},"CONTROL"}}}
+, 
+        {"u2l7_printf_output",
+            R"CPP(#include <cstdio>
+#include <string>
+int main() {
+    std::string edificio{"Aula"};
+    std::string codigo{"04"};
+    std::string etiqueta = edificio + "-" + codigo;
+    std::printf("%s", etiqueta.c_str());
+})CPP",
+            "Aula-04",
+            {{{"codigo","003",init,{}}, "Aula-003"},
+             {{"etiqueta","CONTROL",output,{}}, "CONTROL"}}},
+        {"u2l7_puts_output",
+            R"CPP(#include <cstdio>
+#include <string>
+int main() {
+    std::string edificio{"Aula"};
+    std::string codigo{"04"};
+    std::string etiqueta = edificio + "-" + codigo;
+    std::puts(etiqueta.c_str());
+})CPP",
+            "Aula-04\n",
+            {{{"codigo","003",init,{}}, "Aula-003\n"},
+             {{"etiqueta","CONTROL",output,{}}, "CONTROL\n"}}}
     };
     std::size_t accepted=0,rejected=0;
     for(const auto& scenario:scenarios) {
@@ -229,6 +254,16 @@ etiqueta=edificio+"-"+codigo;std::cout<<"Aula-07";})CPP";
     if(!missed_update)throw std::runtime_error("A fixed updated label escaped the probe");
     emit(directory,"reject_fixed_updated_code",*missed_update,"Aula-B2",false);
     ++rejected;
+    // A hard-coded C stdio message is not proof of a local string read.
+    constexpr std::string_view fixed_printf=R"CPP(#include <cstdio>
+#include <string>
+int main(){std::string edificio{"Aula"};std::string codigo{"04"};
+std::string etiqueta=edificio+"-"+codigo;std::printf("%s","Aula-04");})CPP";
+    const auto missed_printf=cpp_local_string_override(fixed_printf,
+        {"edificio","Sala Norte",init,{}});
+    if(!missed_printf)throw std::runtime_error("A fixed printf hid its input dependency");
+    emit(directory,"reject_fixed_printf",*missed_printf,"Sala Norte-04",false);
+    ++rejected;
     // A student may construct etiqueta but print its inputs instead; both
     // public outputs look identical. No valid before-output probe exists
     // because the output statement does NOT read etiqueta itself.
@@ -238,10 +273,10 @@ int main(){std::string edificio{"Aula"};std::string codigo{"04"};
 std::string etiqueta=edificio+"-"+codigo;std::cout<<edificio<<"-"<<codigo;})CPP";
     if(cpp_local_string_override(unread,{"etiqueta","CONTROL",output,{}}))
         throw std::runtime_error("An unread etiqueta passed the private output control");
-    if(accepted!=34||rejected!=3)
+    if(accepted!=40||rejected!=4)
         throw std::runtime_error("Private source fixture count changed unexpectedly");
-    std::cout<<"PASS generated 37 private C++ string cases (34 positive, "
-                "3 hard-coded negative) and one structurally rejected unread etiqueta\n";
+    std::cout<<"PASS generated 44 private C++ string cases (40 positive, "
+                "4 hard-coded negative) and one structurally rejected unread etiqueta\n";
     return 0;
 }catch(const std::exception& error) {
     std::cerr<<"FAIL local string C++ fixture: "<<error.what()<<'\n';
