@@ -12,6 +12,9 @@ on:
       - toolchains/windows.versions.json
       - native/core/**
       - native/platform/windows/**
+      # Test-only source is exercised by codex-compiler-guidance-source.yml.
+      # No pinned full-app or narration rebuild is needed for isolated QA edits.
+      - '!native/platform/windows/matching_rename_composition_state_tests.cpp'
       - scripts/curriculum/**
       # Separate Windows QA checks do not modify state-import contracts.
       # Negations follow the broad script path and keep the native/core,
@@ -23,6 +26,10 @@ on:
       # They do not change the native StateStore or its Windows import runner.
       - '!scripts/curriculum/test_general_choice_revision_live.py'
       - '!scripts/curriculum/test_review_feedback_prose_revision.py'
+      # Isolated U5L13 fixture generation and authoring regression are covered
+      # by the focused Windows compiler-guidance suite.
+      - '!scripts/curriculum/export_u5l13_composition_fixture.py'
+      - '!scripts/curriculum/test_math_matching_text_compat.py'
   workflow_dispatch:
 
 permissions:

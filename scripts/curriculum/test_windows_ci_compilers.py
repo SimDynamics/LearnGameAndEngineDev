@@ -509,6 +509,33 @@ class WindowsCompilerPolicy(unittest.TestCase):
             with self.subTest(reports=command):
                 self.assertFalse(self._uses_unneeded_compiler(command))
 
+    def test_isolated_composition_qa_avoids_unrelated_pinned_windows_builds(self):
+        isolated = "native/platform/windows/matching_rename_composition_state_tests.cpp"
+        focused = (WORKFLOWS / "codex-compiler-guidance-source.yml").read_text(
+            encoding="utf-8")
+        self.assertIn("      - " + isolated, focused)
+        self.assertIn("LGAED_U5L13_COMPOSITION_FIXTURE_DIR", focused)
+        self.assertIn("Execute saved progress reopen and authenticated guidance checks",
+                      focused)
+        for name in ("windows-state-import.yml", "windows-reader-build.yml",
+                     "windows-narration-worker.yml"):
+            source = (WORKFLOWS / name).read_text(encoding="utf-8")
+            with self.subTest(workflow=name):
+                self.assertIn("      - native/platform/windows/**", source)
+                self.assertIn("      - '!" + isolated + "'", source)
+                self.assertLess(source.index("      - native/platform/windows/**"),
+                                source.index("      - '!" + isolated + "'"))
+        state_import = (WORKFLOWS / "windows-state-import.yml").read_text(
+            encoding="utf-8")
+        for script in ("export_u5l13_composition_fixture.py",
+                       "test_math_matching_text_compat.py"):
+            with self.subTest(script=script):
+                excluded = "      - '!scripts/curriculum/" + script + "'"
+                self.assertIn(excluded, state_import)
+                self.assertLess(state_import.index("      - scripts/curriculum/**"),
+                                state_import.index(excluded))
+                self.assertIn("      - scripts/curriculum/" + script, focused)
+
     def test_compiler_policy_uses_focused_ci_without_unrelated_native_rebuilds(self):
         policy = "scripts/curriculum/test_windows_ci_compilers.py"
         fast = (WORKFLOWS / "codex-batched-client-split.yml").read_text(encoding="utf-8")
