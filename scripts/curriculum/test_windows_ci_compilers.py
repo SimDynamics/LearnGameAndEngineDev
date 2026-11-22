@@ -223,6 +223,53 @@ class WindowsCompilerPolicy(unittest.TestCase):
         return raw
 
     @staticmethod
+    def _following_command_after_report(tail):
+        # A reporting command may contain multiple quoted arguments or
+        # PowerShell $(...) expressions. A subsequent executable starts only
+        # after a separator outside both scopes. Doubled apostrophes and
+        # backtick-escaped quotes are part of a literal, not its boundary.
+        quote = None
+        escaped = False
+        expression_depth = 0
+        index = 0
+        while index < len(tail):
+            char = tail[index]
+            if escaped:
+                escaped = False
+                index += 1
+                continue
+            if char in ("\\", chr(96)) and quote != "'":
+                escaped = True
+                index += 1
+                continue
+            if char == "'" and quote != '"':
+                if quote == "'" and tail[index:index + 2] == "''":
+                    index += 2
+                    continue
+                quote = None if quote == "'" else "'"
+                index += 1
+                continue
+            if char == '"' and quote != "'":
+                if quote == '"' and tail[index:index + 2] == '""':
+                    index += 2
+                    continue
+                quote = None if quote == '"' else '"'
+                index += 1
+                continue
+            if tail.startswith("$(", index) and quote != "'":
+                expression_depth += 1
+                index += 2
+                continue
+            if expression_depth and char == "(":
+                expression_depth += 1
+            elif expression_depth and char == ")":
+                expression_depth -= 1
+            elif not expression_depth and quote is None and char in ";&|":
+                return tail[index:]
+            index += 1
+        return ""
+
+    @staticmethod
     def _uses_unneeded_compiler(source):
         # Detect compiler executable tokens, but distinguish log messages
         # and their harmless PowerShell formatting from actual subprocesses.
@@ -234,7 +281,6 @@ class WindowsCompilerPolicy(unittest.TestCase):
             r"(?:-[0-9]+)?(?:\.exe)?(?=\s|$|[;&|])")
         report = re.compile(
             r"(?i)^(?:(?:-\s*)?run:\s*)?(?:echo|write-host)\s+")
-        separator = re.compile(r"(?:&&|\|\||[;&|])")
 
         def invokes_compiler_substitution(tail):
             # In PowerShell, $(Get-Date) is not a compiler invocation;
@@ -266,25 +312,18 @@ class WindowsCompilerPolicy(unittest.TestCase):
             line = WindowsCompilerPolicy._strip_shell_comment(raw).strip()
             if not line or line.startswith(("name:", "- name:")):
                 continue
-            match = report.match(line)
-            if match:
-                tail = line[match.end():].lstrip()
+            # Continue through reporting-only commands. A keyword inside
+            # another echo/Write-Host is not an executed compiler, even when
+            # several log statements are chained on the same workflow line.
+            while True:
+                command = line.lstrip(" \t;&|")
+                match = report.match(command)
+                if not match:
+                    break
+                tail = command[match.end():].lstrip()
                 if invokes_compiler_substitution(tail):
                     return True
-                if tail.startswith(("'", '"')):
-                    quote = tail[0]
-                    end = 1
-                    while end < len(tail) and tail[end] != quote:
-                        end += 1
-                    if end < len(tail):
-                        line = tail[end + 1:]
-                else:
-                    cut = separator.search(tail)
-                    line = tail[cut.start():] if cut else ""
-                # Compiler names quoted by a different subcommand (for
-                # example, $(Write-Host 'gcc')) are not command invocations.
-                # The actual substitutions were checked separately above.
-                line = re.sub(r"\$\([^)]*\)", "", line)
+                line = WindowsCompilerPolicy._following_command_after_report(tail)
             if unused.search(line):
                 return True
         return False
@@ -320,7 +359,12 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 'run: Write-Host "# info"; & clang -c example.cpp',
                 "run: echo 'gcc retired' $(gcc --version)",
                 'run: echo "$(clang --version)"',
-                "run: echo 'gcc retired' $(Get-Date); clang-cl.exe /c example.cpp"):
+                "run: echo 'gcc retired' $(Get-Date); clang-cl.exe /c example.cpp",
+                "run: Write-Host 'Don''t use gcc' ; clang --version",
+                'run: echo "gcc" && Write-Host "clang retired" && gcc -c x.c',
+                'run: echo "gcc" | Write-Host "clang" | clang-cl /c x.cpp',
+                'run: Write-Host "gcc" $(Get-Date -Format "clang; g++"); clang-cl /c x.cpp',
+                'run: echo "GCC" && Write-Host "$(clang --version)"'):
             with self.subTest(command=source):
                 self.assertTrue(self._uses_unneeded_compiler(source))
         for source in (
@@ -347,7 +391,14 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 "run: echo '$(clang --version)'",
                 'run: echo "$(Get-Date) Clang retired"',
                 "run: echo gcc retired $(Get-Date)",
-                "run: echo $(Get-Date -Format 'gcc')"):
+                "run: echo $(Get-Date -Format 'gcc')",
+                "run: Write-Host 'Don''t use gcc'",
+                'run: Write-Host "Clang ' + chr(96) + '"retired' + chr(96) + '" gcc"',
+                'run: Write-Host "gcc" -NoNewline "clang retired"',
+                'run: echo "clang is retired" "gcc retired"',
+                'run: echo "gcc" && Write-Host "clang retired"',
+                'run: echo "gcc" | Write-Host "clang" | cl /c x.cpp',
+                'run: Write-Host "gcc" $(Get-Date -Format "clang; g++")'):
             with self.subTest(allowed=source):
                 self.assertFalse(self._uses_unneeded_compiler(source))
 
