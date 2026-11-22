@@ -200,16 +200,52 @@ class WindowsCompilerPolicy(unittest.TestCase):
             with self.subTest(file=relative):
                 self.assertFalse((ROOT / relative).exists())
 
+    @staticmethod
+    def _uses_unneeded_compiler(source):
+        # Detect an executable token, including clang-cl, bare clang and
+        # versioned binaries. Do not confuse tool names embedded in source
+        # filenames, comments or descriptive workflow step labels with calls.
+        unused = re.compile(
+            r"(?i)(?<![A-Za-z0-9_.+-])(?:g\+\+|gcc|clang\+\+|clang-cl|clang)"
+            r"(?:-[0-9]+)?(?:\.exe)?(?![A-Za-z0-9_.+-])")
+        for raw in source.splitlines():
+            line = raw.partition("#")[0].strip()
+            if not line or line.startswith(("name:", "- name:")):
+                continue
+            if unused.search(line):
+                return True
+        return False
+
     def test_active_workflows_do_not_invoke_gcc_or_desktop_clang(self):
-        # Match executable/runner tokens, not words like the curricular
-        # explanation of a compiler or the "Windows" product description.
-        unused = re.compile(r"(?<![A-Za-z0-9_])(?:g\+\+|clang\+\+|gcc)(?![A-Za-z0-9_])",
-                            re.IGNORECASE)
-        workflows = sorted(WORKFLOWS.glob("*.yml"))
+        # Check both supported workflow extensions, not only *.yml.
+        workflows = sorted((*WORKFLOWS.glob("*.yml"),
+                            *WORKFLOWS.glob("*.yaml")))
         self.assertTrue(workflows)
         for path in workflows:
             with self.subTest(workflow=path.name):
-                self.assertNotRegex(path.read_text(encoding="utf-8"), unused)
+                self.assertFalse(self._uses_unneeded_compiler(
+                    path.read_text(encoding="utf-8")),
+                    "An active Windows workflow reintroduced GCC or Clang")
+
+    def test_compiler_audit_detects_direct_versioned_and_clang_cl_commands(self):
+        for source in (
+                "run: clang -c example.cpp",
+                "run: clang-cl.exe /c example.cpp",
+                "run: clang++-19 example.cpp",
+                "run: gcc-14 example.c",
+                "run: g++ -std=c++23 example.cpp",
+                "run: & clang-cl /std:c++latest example.cpp"):
+            with self.subTest(command=source):
+                self.assertTrue(self._uses_unneeded_compiler(source))
+        for source in (
+                "name: Clang compiler was retired",
+                "- name: GCC is no longer needed",
+                "run: cl /nologo /std:c++latest example.cpp",
+                "- scripts/build-clang23-android.ps1",
+                "run: python -B -m unittest test_windows_ci_compilers.py",
+                "run: cl /c example.cpp # clang was retired"):
+            with self.subTest(allowed=source):
+                self.assertFalse(self._uses_unneeded_compiler(source))
 
     def test_compiler_policy_uses_focused_ci_without_unrelated_native_rebuilds(self):
         policy = "scripts/curriculum/test_windows_ci_compilers.py"
