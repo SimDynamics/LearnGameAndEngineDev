@@ -137,6 +137,38 @@ add_test(NAME native.course_edition
     COMMAND lgaed_course_edition_tests "${_edition_dir}")
 set_tests_properties(native.course_edition PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
 
+# A published retirement can preserve prose older than an option review.
+# Validate both Windows loaders and retained responses against exact Git bytes.
+set(_choice_retirement_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/choice-retirement")
+set(_choice_retirement_outputs)
+foreach(_fixture manifest.json synthetic-before.json synthetic-after.json
+        published-before.json published-after.json
+        rejected-unknown-option.json rejected-another-option.json
+        rejected-correct-index.json rejected-option-count.json
+        rejected-option-type.json rejected-unpublished-prose.json)
+    list(APPEND _choice_retirement_outputs "${_choice_retirement_dir}/${_fixture}")
+endforeach()
+add_custom_command(OUTPUT ${_choice_retirement_outputs}
+    COMMAND "${Python3_EXECUTABLE}" -B
+        "${_lgaed_root}/scripts/curriculum/choice_retirement_fixture_source.py"
+        --output-dir "${_choice_retirement_dir}"
+    DEPENDS "${_lgaed_root}/scripts/curriculum/choice_retirement_fixture_source.py"
+        "${_lgaed_root}/scripts/curriculum/diagnostic_fixture_source.py"
+        "${_lgaed_root}/scripts/curriculum/stable_state_layout.py"
+        "${_lgaed_root}/scripts/curriculum/text_semantics.py"
+    VERBATIM)
+add_custom_target(lgaed_choice_retirement_fixtures
+    DEPENDS ${_choice_retirement_outputs})
+add_executable(lgaed_general_choice_editorial_tests
+    "${_lgaed_root}/native/platform/windows/general_choice_editorial_tests.cpp")
+target_link_libraries(lgaed_general_choice_editorial_tests PRIVATE lgaed_platform_windows)
+add_dependencies(lgaed_general_choice_editorial_tests lgaed_choice_retirement_fixtures)
+add_test(NAME native.general_choice_retirement_history
+    COMMAND lgaed_general_choice_editorial_tests
+        --retirement-history "${_choice_retirement_dir}")
+set_tests_properties(native.general_choice_retirement_history
+    PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+
 # Windows-only integration: the original simulation model, its real RichEdit
 # controls and its authored example in the production LessonView.
 add_executable(lgaed_simulation_tests
@@ -278,5 +310,6 @@ add_test(NAME native.u3_named_rules_single_file
     COMMAND lgaed_u3_named_rule_runtime_tests --single-file
         "${_lgaed_root}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json")
 set_tests_properties(native.u3_named_rules_single_file PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
+
 
 

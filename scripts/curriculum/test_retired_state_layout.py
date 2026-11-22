@@ -195,13 +195,10 @@ class RetiredStateLayoutTest(unittest.TestCase):
                 self.assertEqual(historical, {key: captured[key] for key in historical})
                 proposal = deepcopy(published)
                 proposal["stateLayout"]["retirementHistory"][-1] = captured
-                # The pinned first retirement predates authenticated guide
-                # revisions. Its order refinement introduced a reviewFeedback
-                # field while changing fragments and explaining their order.
-                # The immutable historical asset remains valid and its exact
-                # retirement snapshot matches our rehearsal above; replaying
-                # those distinct old publications as one NEW authoring action
-                # must be rejected by the stricter current transition guard.
+                # The pinned order refinement introduced an optional first
+                # hint; it did not replace an existing guide. Preserve that
+                # authenticated transition together with its original order
+                # contract, proof chain and exact retirement snapshot.
                 original_blocks = layout._all_blocks(previous)
                 revised_blocks = layout._all_blocks(proposal)
                 legacy_guides = [
@@ -223,11 +220,30 @@ class RetiredStateLayoutTest(unittest.TestCase):
                             proof["id"] == identity
                             and "reviewPaths" not in proof
                             for proof in proposal["stateLayout"]["editorial"]))
-                    with self.assertRaisesRegex(layout.LayoutError,
-                                                "A revised review hint needs authored prose"):
-                        layout.validate_transition(previous, proposal)
-                else:
-                    layout.validate_transition(previous, proposal)
+                layout.validate_transition(previous, proposal)
+                for identity in legacy_guides:
+                    for fault in ("missing-refinement", "missing-proof", "invented-review-path"):
+                        forged = deepcopy(proposal)
+                        if fault == "missing-refinement":
+                            forged["stateLayout"]["orderRefinements"] = [
+                                item for item in forged["stateLayout"]["orderRefinements"]
+                                if item["id"] != identity
+                            ]
+                        else:
+                            journal = forged["stateLayout"]["editorial"]
+                            added = [
+                                index for index in range(
+                                    len(previous["stateLayout"]["editorial"]), len(journal))
+                                if journal[index]["id"] == identity
+                            ]
+                            self.assertTrue(added)
+                            if fault == "missing-proof":
+                                del journal[added[-1]]
+                            else:
+                                journal[added[-1]]["reviewPaths"] = ["/reviewFeedback"]
+                        with self.subTest(filename=filename, identity=identity, fault=fault):
+                            with self.assertRaises(layout.LayoutError):
+                                layout.validate_transition(previous, forged)
             check_published_stage(before, intermediate)
             check_published_stage(intermediate, after)
             self.assertEqual(original, after)
@@ -548,3 +564,4 @@ class RetiredStateLayoutTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

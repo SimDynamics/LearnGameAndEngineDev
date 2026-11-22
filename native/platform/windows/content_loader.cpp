@@ -595,10 +595,10 @@ std::string state_fingerprint(const JsonObject& original) {
 }
 // A reviewed option is an editorial text revision, not a new answer. Project
 // only that option back to the full archived predecessor before comparing the
-// immutable historical response signature. Other option texts, the correct
-// index, question, feedback and every unlisted property remain unchanged.
+// immutable historical response signature. For the active owner, other option
+// texts, the correct index, question, feedback and unlisted properties stay exact.
 JsonObject general_choice_projection(const JsonObject& current,
-        const JsonObject& revision,bool allow_original=false) {
+        const JsonObject& revision,bool allow_original=false,bool reading_snapshot=false) {
     const auto original=revision.GetNamedObject(L"block");
     require(text(original,"type")=="multiple_choice"&&
             text(current,"type")=="multiple_choice",
@@ -614,6 +614,24 @@ JsonObject general_choice_projection(const JsonObject& current,
     require(authored_nonblank(replacement)&&
             replacement!=utf8(earlier.GetStringAt(static_cast<unsigned>(position))),
         "A general choice review must revise one nonblank option");
+    if(reading_snapshot) {
+        // A retirement can precede later question/explanation reviews. Its
+        // complete source is authenticated by the owner's editorial chain at
+        // the call site; keep that historical prose while normalizing only
+        // the explicitly reviewed option for the protected response check.
+        require(allow_original,
+            "Historical choice projection requires a reading snapshot");
+        const auto old_option=utf8(earlier.GetStringAt(static_cast<unsigned>(position)));
+        const auto option=utf8(now.GetStringAt(static_cast<unsigned>(position)));
+        require(option==old_option||option==replacement,
+            "A historical choice has an unknown option representation");
+        const auto projected=JsonObject::Parse(current.Stringify());
+        projected.GetNamedArray(L"options").SetAt(static_cast<unsigned>(position),
+            earlier.GetAt(static_cast<unsigned>(position)));
+        require(state_fingerprint(projected)==state_fingerprint(original),
+            "A historical choice revision changed its protected response contract");
+        return projected;
+    }
     if(fingerprint(current)==fingerprint(original)) {
         require(allow_original,
             "A general choice revision has no active wording change");
@@ -3678,8 +3696,12 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                             "A historical mathematical prompt needs an exact occurrence in its owner's editorial chain");
                         require_math_prompt_contract(original_document.text(original_blocks.at(b)),math_text_raw.at(id),true);
                     }
+                    if(general!=general_choice_revisions.end())
+                        require(editorial_nodes.contains(id)&&
+                            std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
+                            "A historical choice needs an exact occurrence in its owner's editorial chain");
                     const auto normalized=general!=general_choice_revisions.end()?
-                        general_choice_projection(projected,general->second,true):projected;
+                        general_choice_projection(projected,general->second,true,true):projected;
                     const auto digest = state_fingerprint(normalized);
                     if(source.HasKey(L"compileCheck"))require(editorial_nodes.contains(id)&&
                         std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),

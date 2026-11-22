@@ -6,6 +6,8 @@ on:
     paths:
       - .github/workflows/codex-general-choice-editorial.yml
       - scripts/curriculum/test_general_choice_revision_live.py
+      - scripts/curriculum/test_choice_retirement_history.py
+      - scripts/curriculum/choice_retirement_fixture_source.py
       - scripts/curriculum/test_review_feedback_prose_revision.py
       - scripts/curriculum/test_legacy_review_feedback_adoption.py
       - scripts/curriculum/test_cpp_review_feedback_contract.py
@@ -48,6 +50,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Keep authenticated historical prose while revising one option
+        run: >-
+          python -B -m unittest discover
+          -s scripts/curriculum
+          -p test_choice_retirement_history.py -v
       - name: Verify historical first hints and all five affected build generators
         run: >-
           python -B -m unittest discover
@@ -68,3 +75,4 @@ jobs:
           python -B -m unittest discover
           -s scripts/curriculum
           -p test_review_feedback_prose_revision.py -v
+
