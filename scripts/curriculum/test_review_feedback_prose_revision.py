@@ -462,12 +462,16 @@ class ReviewFeedbackProseRevisionTest(unittest.TestCase):
             # A regression must verify its live provenance, not require
             # the obsolete wording to remain in the active curriculum.
             self.assertTrue(any(
-                edge["id"] == identity
+                edge["id"] == identity and
+                edge["afterSha256"] == layout.fingerprint(old)
                 for edge in published["stateLayout"]["editorial"]))
             current_marker = next(
                 field for field in published["textSemantics"]["fields"]
                 if field["block"] == identity and field["path"] == "/question")
-            self.assertEqual(current_marker["spans"], [])
+            # Work can author nonempty marks for the revised question.
+            # The source digest and the shared semantic validator, not a
+            # forced empty span list, authenticate their boundaries.
+            self.assertIsInstance(current_marker["spans"], list)
             self.assertEqual(
                 current_marker["sourceSha256"],
                 hashlib.sha256(revised_question.encode("utf-8")).hexdigest())
