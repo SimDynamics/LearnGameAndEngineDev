@@ -224,15 +224,44 @@ class WindowsCompilerPolicy(unittest.TestCase):
 
     @staticmethod
     def _uses_unneeded_compiler(source):
-        # Detect actual compiler commands, including clang-cl, bare clang
-        # and versioned binaries. Log messages about removed compilers are
-        # not commands. Chained calls and shell substitution must still fail.
+        # Detect compiler executable tokens, but distinguish log messages
+        # and their harmless PowerShell formatting from actual subprocesses.
         unused = re.compile(
             r"(?i)(?<![A-Za-z0-9_.+-])(?:g\+\+|gcc|clang\+\+|clang-cl|clang)"
             r"(?:-[0-9]+)?(?:\.exe)?(?![A-Za-z0-9_.+-])")
+        subcommand = re.compile(
+            r"(?i)(?:^|[;&|])\s*&?\s*(?:g\+\+|gcc|clang\+\+|clang-cl|clang)"
+            r"(?:-[0-9]+)?(?:\.exe)?(?=\s|$|[;&|])")
         report = re.compile(
             r"(?i)^(?:(?:-\s*)?run:\s*)?(?:echo|write-host)\s+")
         separator = re.compile(r"(?:&&|\|\||[;&|])")
+
+        def invokes_compiler_substitution(tail):
+            # In PowerShell, $(Get-Date) is not a compiler invocation;
+            # $(clang --version) is. Single-quoted $(...) is literal data.
+            # A backtick may simply escape a character, such as newline.
+            quote = None
+            escaped = False
+            for position, character in enumerate(tail):
+                if escaped:
+                    escaped = False
+                    continue
+                if character in ("\\", chr(96)) and quote != "'":
+                    escaped = True
+                    continue
+                if character in ("'", '"'):
+                    if quote is None:
+                        quote = character
+                    elif quote == character:
+                        quote = None
+                    continue
+                if tail.startswith("$(", position) and quote != "'":
+                    closing = tail.find(")", position + 2)
+                    if closing >= 0 and subcommand.search(
+                            tail[position + 2:closing]):
+                        return True
+            return False
+
         for raw in source.splitlines():
             line = WindowsCompilerPolicy._strip_shell_comment(raw).strip()
             if not line or line.startswith(("name:", "- name:")):
@@ -240,19 +269,22 @@ class WindowsCompilerPolicy(unittest.TestCase):
             match = report.match(line)
             if match:
                 tail = line[match.end():].lstrip()
-                if "$(" not in tail and chr(96) not in tail:
-                    if tail.startswith(("'", '"')):
-                        quote = tail[0]
-                        end = 1
-                        while end < len(tail) and tail[end] != quote:
-                            end += 1
-                        if end < len(tail):
-                            # Mask only the reported literal. A following
-                            # pipeline or chained command remains inspected.
-                            line = tail[end + 1:]
-                    else:
-                        cut = separator.search(tail)
-                        line = tail[cut.start():] if cut else ""
+                if invokes_compiler_substitution(tail):
+                    return True
+                if tail.startswith(("'", '"')):
+                    quote = tail[0]
+                    end = 1
+                    while end < len(tail) and tail[end] != quote:
+                        end += 1
+                    if end < len(tail):
+                        line = tail[end + 1:]
+                else:
+                    cut = separator.search(tail)
+                    line = tail[cut.start():] if cut else ""
+                # Compiler names quoted by a different subcommand (for
+                # example, $(Write-Host 'gcc')) are not command invocations.
+                # The actual substitutions were checked separately above.
+                line = re.sub(r"\$\([^)]*\)", "", line)
             if unused.search(line):
                 return True
         return False
@@ -285,7 +317,10 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 "run: Write-Host '# compiled on MSVC' ; & clang-cl.exe /c example.cpp",
                 "run: echo '# heading' && clang++ -std=c++23 example.cpp",
                 "run: echo 'Clang # retired' && gcc -c example.c",
-                'run: Write-Host "# info"; & clang -c example.cpp'):
+                'run: Write-Host "# info"; & clang -c example.cpp',
+                "run: echo 'gcc retired' $(gcc --version)",
+                'run: echo "$(clang --version)"',
+                "run: echo 'gcc retired' $(Get-Date); clang-cl.exe /c example.cpp"):
             with self.subTest(command=source):
                 self.assertTrue(self._uses_unneeded_compiler(source))
         for source in (
@@ -304,7 +339,15 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 "run: echo '# it was clang-cl.exe' # clang retired",
                 "run: Write-Host '# clang retired' ; cl /c example.cpp",
                 "run: echo 'Build is # MSVC only'",
-                "run: cl /c sample.cpp # clang++-19 is retired"):
+                "run: cl /c sample.cpp # clang++-19 is retired",
+                'run: echo "GCC is retired" $(Get-Date)',
+                'run: Write-Host "Clang is retired" $(Get-Date)',
+                'run: Write-Host "Clang is retired" ' + chr(96) + 'n',
+                "run: echo 'Clang was retired' $(Write-Host 'gcc')",
+                "run: echo '$(clang --version)'",
+                'run: echo "$(Get-Date) Clang retired"',
+                "run: echo gcc retired $(Get-Date)",
+                "run: echo $(Get-Date -Format 'gcc')"):
             with self.subTest(allowed=source):
                 self.assertFalse(self._uses_unneeded_compiler(source))
 
