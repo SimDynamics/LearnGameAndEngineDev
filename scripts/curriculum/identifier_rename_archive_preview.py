@@ -270,3 +270,74 @@ def build_read_only_rename_draft(
     candidate["stateLayout"]["identifierRenameRevisions"] = deepcopy(records)
     validate_read_only_rename_draft(previous, candidate)
     return candidate
+
+def prepare_declared_identifier_rename_draft(
+    published_document: dict,
+    plans: dict[str, dict[str, dict[str, str]]],
+) -> dict:
+    """Prepare exact, read-only renames from Work-declared owners and slots.
+
+    All name counts, source offsets and publication hashes come from the
+    existing signed lesson, not from claims entered by a caller. Only the
+    declared C++ tokens change, with no prose, grading or student-data edits.
+    Independent C++ compilation remains required to check real name binding.
+    """
+    state.validate(published_document)
+    if type(plans) is not dict or not 1 <= len(plans) <= 64:
+        raise RenamePreviewError("Specify 1 to 64 explicit stable owners")
+    original = state._blocks(published_document)
+    proposed_blocks: dict[str, dict] = {}
+    records: list[dict] = []
+    for identity, source_plans in plans.items():
+        if type(identity) is not str or identity not in original:
+            raise RenamePreviewError("Unknown active C++ rename owner")
+        if type(source_plans) is not dict or not source_plans:
+            raise RenamePreviewError("Each rename owner needs explicit source slots")
+        old = original[identity]
+        try:
+            slots = source_format.code_slots(old)
+        except source_format.SourceFormatError as exc:
+            raise RenamePreviewError("Invalid published source slots") from exc
+        revised_block = deepcopy(old)
+        counts: dict[str, dict[str, int]] = {}
+        for slot, declared in source_plans.items():
+            if (type(slot) is not str or slot not in slots or
+                    slots[slot][0] != "cpp" or
+                    type(declared) is not dict or not declared or
+                    any(type(a) is not str or type(b) is not str
+                        for a, b in declared.items())):
+                raise RenamePreviewError(
+                    "Declare only C++ source slots and literal name pairs")
+            source = slots[slot][1]
+            try:
+                tokens = source_format._cpp_tokens(source)
+                occurrences = {
+                    name: sum(token == "id:" + name for token in tokens)
+                    for name in declared
+                }
+                if not all(occurrences.values()):
+                    raise RenamePreviewError(
+                        "Every declared old name must occur as a C++ identifier")
+                rewritten = rename._exact_identifier_substitution(
+                    source, tokens, declared)
+            except (source_format.SourceFormatError,
+                    rename.IdentifierRenameError) as exc:
+                raise RenamePreviewError(
+                    "Cannot safely rewrite declared C++ identifiers") from exc
+            target = revised_block
+            parts = slot.split("/")
+            for part in parts[:-1]:
+                target = target[int(part)] if isinstance(target, list) else target[part]
+            if isinstance(target, list):
+                target[int(parts[-1])] = rewritten
+            else:
+                target[parts[-1]] = rewritten
+            counts[slot] = occurrences
+        packet = preview_published_rename(
+            published_document, identity, revised_block, source_plans, counts)
+        proposed_blocks[identity] = revised_block
+        records.append(packet)
+    # This final constructor independently validates the entire state-layout
+    # transition, including exact archival history and every unaffected owner.
+    return build_read_only_rename_draft(
+        published_document, proposed_blocks, records)
