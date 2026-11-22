@@ -5,6 +5,8 @@ on:
     branches: [Codex]
     paths:
       - native/core/open_battery_check.hpp
+      - native/platform/windows/open_battery_runtime_tests.cpp
+      - native/platform/windows/cpp_runner.hpp
       - native/core/adjustment_project_check.hpp
       - native/core/rejection_diagnostic_facts.hpp
       - native/core/open_battery_check_tests.cpp
@@ -41,6 +43,13 @@ jobs:
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\reduction_check_tests.cpp /Fe:"%RUNNER_TEMP%\reduction_core.exe"
           if errorlevel 1 exit /b %errorlevel%
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\integer_battery_check_tests.cpp /Fe:"%RUNNER_TEMP%\integer_battery_core.exe"
+      - name: Compile the original Windows battery runtime test
+        shell: cmd
+        run: >-
+          cl /nologo /c /std:c++latest /EHsc /W4 /permissive- /Zc:__cplusplus /utf-8 /bigobj
+          /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00
+          /I native native\platform\windows\open_battery_runtime_tests.cpp
+          /Fo:"%RUNNER_TEMP%\open_battery_runtime_tests.obj"
       - name: Run MSVC core mutation tests
         shell: cmd
         run: |
