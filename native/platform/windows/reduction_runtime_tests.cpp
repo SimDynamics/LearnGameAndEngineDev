@@ -322,7 +322,7 @@ int main(int argc,char** argv) {
         changed=reference_request;changed.stdin_utf8="unexpected";rejected_capture(changed,reference_result);
         changed=reference_request;++changed.request_id;rejected_capture(changed,reference_result);
         changed=reference_request;++changed.revision;rejected_capture(changed,reference_result);
-        changed=reference_request;changed.backend=CppRunRequest::Backend::wasi;rejected_capture(changed,reference_result);
+        changed=reference_request;changed.backend=static_cast<CppRunRequest::Backend>(-1);rejected_capture(changed,reference_result);
         changed=reference_request;changed.compile_timeout+=1ms;rejected_capture(changed,reference_result);
         changed=reference_request;changed.project_key="different profile";rejected_capture(changed,reference_result);
         changed=reference_request;changed.action=CppRunRequest::Action::execute;rejected_capture(changed,reference_result);

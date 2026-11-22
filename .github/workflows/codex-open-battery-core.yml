@@ -5,6 +5,11 @@ on:
     branches: [Codex]
     paths:
       - native/core/open_battery_check.hpp
+      - native/platform/windows/open_battery_runtime_tests.cpp
+      - native/platform/windows/boolean_battery_runtime_tests.cpp
+      - native/platform/windows/reduction_runtime_tests.cpp
+      - cmake/native_build_config.hpp.in
+      - native/platform/windows/cpp_runner.hpp
       - native/core/adjustment_project_check.hpp
       - native/core/rejection_diagnostic_facts.hpp
       - native/core/open_battery_check_tests.cpp
@@ -41,6 +46,55 @@ jobs:
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\reduction_check_tests.cpp /Fe:"%RUNNER_TEMP%\reduction_core.exe"
           if errorlevel 1 exit /b %errorlevel%
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\integer_battery_check_tests.cpp /Fe:"%RUNNER_TEMP%\integer_battery_core.exe"
+      - name: Generate existing build configuration header for this exact checkout
+        shell: pwsh
+        run: |
+          $root = (Get-Location).Path.Replace('\', '/')
+          $generated = Join-Path $env:RUNNER_TEMP 'open-battery-generated'
+          [void][System.IO.Directory]::CreateDirectory($generated)
+          $template = Get-Content -LiteralPath 'cmake/native_build_config.hpp.in' -Raw -Encoding UTF8
+          $replacements = @{
+            '@LGAED_CPP_STANDARD@' = '23'
+            '@LGAED_CPP_STANDARD_OPTION@' = '/std:c++latest'
+            '@LGAED_DEFAULT_PROFILE@' = 'Codex'
+            '@CMAKE_SOURCE_DIR@' = $root
+            '@LGAED_DEP_ROOT@' = ''
+            '@LGAED_EDUCATIONAL_VC_ROOT@' = $env:VCToolsInstallDir.Replace('\', '/')
+            '@LGAED_EDUCATIONAL_SDK_ROOT@' = $env:WindowsSdkDir.Replace('\', '/')
+            '@CMAKE_COMMAND@' = 'cmake'
+            '@CMAKE_MAKE_PROGRAM@' = 'ninja'
+            '@CMAKE_RC_COMPILER@' = 'rc'
+            '@CMAKE_CURRENT_BINARY_DIR@' = $generated.Replace('\', '/')
+          }
+          foreach ($entry in $replacements.GetEnumerator()) {
+            $template = $template.Replace($entry.Key, $entry.Value)
+          }
+          if ($template -match '@[A-Z_]+@') {
+            throw 'Native test configuration has unresolved placeholders'
+          }
+          [System.IO.File]::WriteAllText(
+            (Join-Path $generated 'native_build_config.hpp'), $template,
+            [System.Text.UTF8Encoding]::new($false))
+      - name: Compile the three original Windows battery runtime tests
+        shell: pwsh
+        run: |
+          $generated = Join-Path $env:RUNNER_TEMP 'open-battery-generated'
+          $flags = @(
+            '/nologo', '/std:c++latest', '/EHsc', '/W4',
+            '/permissive-', '/Zc:__cplusplus', '/utf-8', '/bigobj',
+            '/DUNICODE', '/D_UNICODE', '/DWIN32_LEAN_AND_MEAN', '/DNOMINMAX',
+            '/D_WIN32_WINNT=0x0A00', '/DWINVER=0x0A00',
+            '/I', 'native', '/I', $generated, '/c'
+          )
+          foreach ($source in @(
+              'native/platform/windows/open_battery_runtime_tests.cpp',
+              'native/platform/windows/boolean_battery_runtime_tests.cpp',
+              'native/platform/windows/reduction_runtime_tests.cpp')) {
+            $object = Join-Path $env:RUNNER_TEMP (
+              [System.IO.Path]::GetFileNameWithoutExtension($source) + '.obj')
+            & cl @flags $source "/Fo:$object"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
       - name: Run MSVC core mutation tests
         shell: cmd
         run: |

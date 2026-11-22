@@ -759,7 +759,9 @@ void verify_adjustment_constructor(const std::filesystem::path& fixture_path,
     changed=positive;++changed.revision;reject_reuse(changed);
     changed=positive;changed.cmake->target="consultar_ajustes";reject_reuse(changed);
     changed=positive;changed.cmake->build_type="Release";reject_reuse(changed);
-    changed=positive;changed.backend=CppRunRequest::Backend::wasi;reject_reuse(changed);
+    // Windows supports only native_msvc. Exercise rejection of an invalid
+    // backend without referring to a removed platform enumerator.
+    changed=positive;changed.backend=static_cast<CppRunRequest::Backend>(-1);reject_reuse(changed);
     changed=positive;changed.action=CppRunRequest::Action::configure;reject_reuse(changed);
     changed=positive;changed.open_battery_probe=owner(previous_lesson).open_battery_probe;
     require(changed.open_battery_probe.has_value(),"The mixed-proof negative lost its legacy probe");
