@@ -1122,6 +1122,20 @@ private:
         return cursor;
     }
 };
+void require_layout_json_numbers(const JsonObject& root,std::string_view source) {
+    if(!root.HasKey(L"compilerLocalRoleChecks")) {
+        require_integer_json_numbers(source);
+        return;
+    }
+    // Role values have their own bounded int/double contract and binary64
+    // receipt frame. They do not participate in historical block/layout
+    // fingerprints. Keep the original lexical guard everywhere else and use
+    // the exact authored root slice, including its duplicate-key protection.
+    const OriginalJson original(source);
+    const auto roles=original.member(original.root(),"compilerLocalRoleChecks");
+    require_integer_json_numbers(source.substr(0,roles.begin));
+    require_integer_json_numbers(source.substr(roles.end));
+}
 std::optional<CourseEdition> read_course_edition(
         const JsonObject& root, std::string_view locale, std::string_view source) {
     if (!root.HasKey(L"courseEdition")) return {};
@@ -1643,6 +1657,9 @@ bool bibliography_pair(const JsonObject& before,const JsonObject& after){
 std::vector<StatePositionalReadingPage> compiler_positional_reading_pages(const JsonObject& root,
         const JsonObject& metadata,const JsonArray& pages,const StateLayout& layout,std::string_view lesson_id) {
     if(layout.version!=2||layout.locale!="es")return {};
+    // These closed publications predate the role root. Its presence cannot
+    // match any of their complete-document hashes; never strip it to match.
+    if(root.HasKey(L"compilerLocalRoleChecks"))return {};
     // Complete publications: 617f03472d20a97f2e1e110a3233ad11fd966d01 ->
     // 5d115a0c99c8d2a17d01eee99dfe887247b82dbb. Only this closed source
     // data restores positional pages; it grants no active editorial permission.
@@ -1993,6 +2010,7 @@ std::optional<StateReadingRevision> remainder_reading_revision(const JsonObject&
     if(lesson_id!=owner||layout.version!=2||layout.locale!="es")return {};
     // These two complete publications can restore only their authentic p3 at
     // prefix17. A coherent later edit or different authoring is not that source.
+    if(root.HasKey(L"compilerLocalRoleChecks"))return {};
     const auto editorial=array(metadata,"editorial");const auto root_hash=fingerprint(root);
     const bool published26=editorial.Size()==26
         &&root_hash=="f48a23a3ba894ce7256211371deee1167675d491bf41992df32f6d4ec19b81d9";
@@ -7653,7 +7671,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         require(!lesson.id.empty() && !lesson.title.empty(), "Lesson identity/title missing"); lesson.raw_json = source;
         const auto pages = array(root, "pages"); require(pages.Size() > 0 && pages.Size() <= 2048, "Invalid page count");
         if (root.HasKey(L"stateLayout")) {
-            require_integer_json_numbers(source);
+            require_layout_json_numbers(root,source);
             lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale, lesson.id,root,source);
         } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);reject_unmapped_compiler_revisions(pages);}
         bind_course_edition(lesson);
@@ -7739,7 +7757,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         const auto pages = array(root,"pages");
         require(pages.Size() > 0 && pages.Size() <= 2048,"Invalid page count");
         if (root.HasKey(L"stateLayout")) {
-            require_integer_json_numbers(source);
+            require_layout_json_numbers(root,source);
             lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale,lesson.id,root,source);
         } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);reject_unmapped_compiler_revisions(pages);}
         bind_course_edition(lesson);

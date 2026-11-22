@@ -223,6 +223,14 @@ void validate_schema(const Lesson& original,const Lesson& reviewed) {
         {"\"initialValue\":1.5","\"initialValue\":99,\"initialValue\":1.5"},
         {"\"beforeUpdateOf\":\"current\"","\"beforeUpdateOf\":\"wrong\",\"beforeUpdateOf\":\"current\""}
     }})reject_raw(replace_once(raw,before,after),"duplicate raw member");
+    // The decimal adapter belongs only to the new role declaration. Existing
+    // document/layout number syntax retains its historical integer guard.
+    const auto outside=JsonObject::Parse(winrt::to_hstring(raw));
+    outside.Insert(L"qaOutsideRoleDecimal",JsonValue::CreateNumberValue(1.25));
+    reject_raw(winrt::to_string(outside.Stringify()),"decimal outside the role root");
+    const auto layout=winrt::to_string(root.GetNamedObject(L"stateLayout").Stringify());
+    const auto decimal_layout=replace_once(layout,"\"version\":2","\"version\":2.0");
+    reject_raw(replace_once(raw,layout,decimal_layout),"historical layout integer written as 2.0");
     // Integral JSON floating notation is legitimate; it must not be mistaken
     // for a bool or force an integer token outside the new numeric contract.
     const auto integral=replace_once(raw,"\"initialValue\":7","\"initialValue\":7.0");
@@ -231,8 +239,9 @@ void validate_schema(const Lesson& original,const Lesson& reviewed) {
     require(block_at(full,owner_ids[1]).local_role_check==block_at(reviewed,owner_ids[1]).local_role_check&&
             block_at(progress,owner_ids[1]).local_role_check==block_at(full,owner_ids[1]).local_role_check,
         "Integral floating JSON notation changed a local-role value");
-    std::cout<<"PASS U2L10 role authoring: both loaders reject 24 malformed contracts; "
-        "double bounds, int32, snapshots and integral numeric notation retained.\n";
+    std::cout<<"PASS U2L10 role authoring: both loaders reject 24 malformed contracts and "
+        "two decimal forms outside the role root; double bounds, int32, snapshots and "
+        "integral role numeric notation retained.\n";
 }
 
 bool has_role_witness(const state::StateData& data) {
