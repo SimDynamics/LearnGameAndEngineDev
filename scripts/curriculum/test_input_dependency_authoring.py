@@ -330,7 +330,7 @@ class ExtendedInputDependencyAuthoringTests(unittest.TestCase):
     def test_extended_export_is_exact_repeatable_and_preflights_all_three_destinations(self):
         with tempfile.TemporaryDirectory(prefix="lgaed-extended-input-qa-") as temp:
             output = Path(temp) / "export"
-            self.assertEqual(output, fixture.export_extended(output))
+            self.assertEqual(output.resolve(), fixture.export_extended(output))
             for name, source in fixture.EXTENDED_PUBLICATIONS.items():
                 folder = output / name
                 self.assertEqual(fixture.extended_published_bytes(name), (folder / "before.json").read_bytes())
