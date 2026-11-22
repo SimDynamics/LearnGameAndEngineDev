@@ -72,6 +72,49 @@ class WindowsCompilerPolicy(unittest.TestCase):
                     in_paths = False
         self.assertGreater(checked, 0, "No literal workflow paths were checked")
 
+    def test_workflow_source_invocations_and_unittest_patterns_exist(self):
+        # In addition to path filters, verify source paths named in actual
+        # workflow commands. Artifact outputs under RUNNER_TEMP are excluded.
+        direct = re.compile(
+            r"(?<![A-Za-z0-9_.+-])"
+            r"((?:scripts|tools|native|cmake)[/\\]+"
+            r"(?:[A-Za-z0-9_.+-]+[/\\]+)*"
+            r"[A-Za-z0-9_.+-]+\.(?:py|ps1|cpp))"
+            r"(?=$|[^A-Za-z0-9_.+-])")
+        discovery = re.compile(
+            r"-s\s+(scripts[/\\][A-Za-z0-9_-]+)\s+"
+            r"-p\s+(test_[A-Za-z0-9_]+\.py)\b")
+        # Check that the scanner recognizes a hypothetical retired command,
+        # including Windows separators, without executing anything.
+        self.assertEqual(
+            re.sub(r"[/\\]+", "/", direct.findall(
+                r"run: python -B scripts\windows\retired.py")[0]),
+            "scripts/windows/retired.py")
+        self.assertEqual(
+            discovery.findall("-s scripts/curriculum -p test_retired.py"),
+            [("scripts/curriculum", "test_retired.py")])
+
+        checked = 0
+        for workflow in sorted((*WORKFLOWS.glob("*.yml"),
+                                *WORKFLOWS.glob("*.yaml"))):
+            source = workflow.read_text(encoding="utf-8")
+            for line in source.splitlines():
+                if line.lstrip().startswith("#"):
+                    continue
+                for candidate in direct.findall(line):
+                    relative = re.sub(r"[/\\]+", "/", candidate)
+                    checked += 1
+                    with self.subTest(workflow=workflow.name, source=relative):
+                        self.assertTrue((ROOT / relative).is_file(),
+                                        "A workflow references a retired source")
+            for directory, filename in discovery.findall(source):
+                relative = re.sub(r"[/\\]+", "/", directory) + "/" + filename
+                checked += 1
+                with self.subTest(workflow=workflow.name, unittest=relative):
+                    self.assertTrue((ROOT / relative).is_file(),
+                                    "An unittest discovery pattern names a missing test")
+        self.assertGreater(checked, 0, "No executable source paths were checked")
+
     def test_editorial_windows_suite_follows_the_live_u1_u2_owners(self):
         workflow = (WORKFLOWS / "codex-general-choice-editorial.yml").read_text(
             encoding="utf-8")
