@@ -219,18 +219,34 @@ inline std::optional<std::size_t> first_output_start(
             const auto first=(value=="id:cout")?i:
                 (i+2<closing&&value=="id:std"&&
                  code[i+1].value=="op:::"&&code[i+2].value=="id:cout")?i+2:closing;
-            if(first<closing) {
+            // Equivalent C++23 student solutions may print a std::string
+            // through printf("%s", etiqueta.c_str()) or puts(etiqueta.c_str()).
+            // Keep the same root-statement and actual-local-read requirements
+            // as cout; a hard-coded message or datos.etiqueta is not evidence.
+            const auto cstdio_name=[](std::string_view name) {
+                return name=="id:printf"||name=="id:puts";
+            };
+            const auto cstdio=(cstdio_name(value)&&i+1<closing&&
+                    code[i+1].value=="op:(")?i:
+                (i+3<closing&&value=="id:std"&&
+                 code[i+1].value=="op:::"&&cstdio_name(code[i+2].value)&&
+                 code[i+3].value=="op:(")?i+2:closing;
+            if(first<closing||cstdio<closing) {
+                const bool ostream=first<closing;
+                const auto function=ostream?first:cstdio;
                 const auto end=cpp_local_int_probe_detail::statement_end(
-                    code,first+1,closing);
+                    code,function+1,closing);
                 if(!end)return {};
-                bool inserted=false,reads_variable=false;
-                for(auto n=first+1;n<*end;++n) {
-                    inserted=inserted||code[n].value=="op:<<";
+                bool produces_output=false,reads_variable=false;
+                for(auto n=function+1;n<*end;++n) {
+                    produces_output=produces_output||
+                        (ostream?code[n].value=="op:<<":
+                         (n==function+1&&code[n].value=="op:("));
                     reads_variable=reads_variable||
                         (code[n].value==wanted&&
                          !cpp_local_int_probe_detail::qualified_member_name(code,n));
                 }
-                if(inserted&&reads_variable)return i;
+                if(produces_output&&reads_variable)return i;
             }
         }
         if(value=="op:{")++braces;
