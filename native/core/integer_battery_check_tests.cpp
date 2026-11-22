@@ -115,6 +115,21 @@ bool accepted(const IntegerBatterySpec& spec,const std::vector<IntegerBatteryRun
 void source_and_authoring() {
     auto spec=contract(true);
     require(integer_battery_preserves_function(boxes,spec),"Original protected source was rejected");
+    const auto forged_call=std::string(boxes)+R"cpp(
+const char* injected_trace = R"tag(LGAED_INTEGER_BATTERY_CALL:0,4,1)tag";
+)cpp";
+    require(!integer_battery_extract_definition(forged_call,"cajas_para"),
+        "An integer-battery call marker inside a student literal was accepted");
+    require(!integer_battery_instrument(forged_call,spec,{IntegerBatteryMutation::control,{}}),
+        "An untrusted integer-battery call marker reached native execution");
+    const auto forged_end=std::string(boxes)+
+        "\nconst char* end_marker = \"LGAED_INTEGER_BATTERY_END\";\n";
+    require(!integer_battery_extract_definition(forged_end,"cajas_para"),
+        "A student string impersonated the integer-battery completion witness");
+    const auto documented=std::string(boxes)+
+        "\n// LGAED_INTEGER_BATTERY_END is documentation, not an executed record.\n";
+    require(integer_battery_extract_definition(documented,"cajas_para").has_value(),
+        "An inert comment was mistaken for a private execution record");
     require(integer_battery_preserves_function(replace(std::string(boxes),"return piezas / 4;",
         "return /* preserve defect */ piezas / 4 ;"),spec),"Whitespace/comments changed the protected body");
     require(!integer_battery_preserves_function(replace(std::string(boxes),"piezas / 4","(piezas + 3) / 4"),spec),
