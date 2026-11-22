@@ -85,7 +85,7 @@ try {
     $textEmitter = Join-Path $build 'local-string-fixtures.exe'
 
     # Both Python drivers compile every generated original and mutation under
-    # this same child vcvars environment. They enforce 55 integer and 37 string
+    # this same child vcvars environment. They enforce 55 integer and 44 string
     # private cases, including deliberately incorrect outputs.
     $commands = @(
         'chcp 65001 >nul',
@@ -135,7 +135,7 @@ try {
     if ($exitCode -ne 0) {
         throw "Local variable dependency QA failed ($exitCode). Logs: $stdoutPath and $stderrPath"
     }
-    Write-Host "Local MSVC source QA passed: both probe units, 55 integer and 37 string compiled cases, plus two current U2L5 starters."
+    Write-Host "Local MSVC source QA passed: both probe units, 55 integer and 44 string compiled cases, plus two current U2L5 starters."
 }
 finally {
     foreach ($name in $environmentNames) {
