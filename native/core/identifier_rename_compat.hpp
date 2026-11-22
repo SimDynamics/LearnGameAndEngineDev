@@ -88,7 +88,10 @@ inline bool directive_mentions(std::string_view directive,std::string_view name)
 inline bool spelling_sensitive_tokens(const std::vector<std::string>& tokens) {
     static constexpr std::string_view observers[]{
         "__func__", "__FUNCTION__", "__PRETTY_FUNCTION__",
-        "__FUNCSIG__", "__FUNCDNAME__", "typeid"
+        "__FUNCSIG__", "__FUNCDNAME__", "typeid",
+        // C++20 source_location::current().function_name() exposes the
+        // declaration spelling at runtime, even if only id tokens change.
+        "source_location", "__builtin_FUNCTION"
     };
     for(const auto& token:tokens) {
         if(token.starts_with("id:")) {
