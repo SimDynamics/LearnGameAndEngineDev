@@ -719,6 +719,32 @@ class WindowsCompilerPolicy(unittest.TestCase):
         self.assertIn("      - native/core/**", state_import)
         self.assertIn("Test-StateImportCI.ps1", state_import)
 
+    def test_hosted_msvc_restoration_is_explicit_and_preserves_exact_pin(self):
+        workflow = (WORKFLOWS / "windows-reader-build.yml").read_text(
+            encoding="utf-8")
+        helper = (ROOT / "scripts/windows/Restore-HostedPinnedMsvc.ps1").read_text(
+            encoding="utf-8")
+        manifest = json.loads((ROOT / "toolchains/windows.versions.json").read_text(
+            encoding="utf-8"))
+        self.assertEqual(manifest["visualStudio"]["msvcToolset"], "14.51.36231")
+        self.assertEqual(manifest["visualStudio"]["compilerVersion"], "19.51.36260.0")
+        self.assertIn("scripts/windows/Restore-HostedPinnedMsvc.ps1", workflow)
+        self.assertLess(workflow.index("Restore the exact pinned MSVC"),
+                        workflow.index("Fail early if hosted Windows lacks the exact declared MSVC"))
+        for guard in ("GITHUB_ACTIONS -ne 'true'", "RUNNER_OS -ne 'Windows'",
+                      "RUNNER_ENVIRONMENT -ne 'github-hosted'"):
+            with self.subTest(hosted_only=guard):
+                self.assertIn(guard, helper)
+        self.assertIn("Microsoft.VisualStudio.Component.VC.14.51.x86.x64", helper)
+        self.assertIn("GetFolderPath('ProgramFilesX86')", helper)
+        self.assertIn("setup.exe", helper)
+        self.assertIn("Test-PinnedCompiler", helper)
+        self.assertIn("$actual -eq $requiredVersion", helper)
+        self.assertIn("no fallback is allowed", helper)
+        self.assertNotIn("14.52.", helper)
+        self.assertNotIn("windows-latest", workflow)
+        self.assertIn("runs-on: windows-2025-vs2026", workflow)
+
     def test_historical_state_import_runs_python_before_pinned_msvc_preflight(self):
         workflow = (WORKFLOWS / "windows-state-import.yml").read_text(encoding="utf-8")
         python = workflow.index("Select the declared Python version")
