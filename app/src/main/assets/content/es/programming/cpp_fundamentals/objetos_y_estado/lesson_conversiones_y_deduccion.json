@@ -246,7 +246,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En una declaración con auto, el compilador mira el tipo de lo que escribes después del signo igual. Usa ese tipo para la variable. A ese paso le llamamos deducir el tipo.\n\nauto cantidad = 6;. El literal 6 es int. La variable cantidad queda de tipo int.\nauto medida = 6.5;. El literal 6.5 es double. La variable medida queda de tipo double (Köppe et al., 2023; Stroustrup, 2024)."
+          "text": "auto cantidad = 6;\nAquí 6 da el valor inicial de cantidad. Como escribiste auto, el compilador determina el tipo de la variable a partir de la expresión que le da ese primer valor. En esta línea, la expresión es el literal 6. Su tipo es int, así que cantidad queda declarada como int. A esto le llamamos deducir el tipo.\n\nTambién puedes darle el valor inicial entre llaves. Si escribes auto cantidad{6}; en lugar de la primera línea, el compilador vuelve a deducir int. Con paréntesis, auto cantidad(6); también declara una variable de tipo int.\n\n¿Qué cambia si escribes auto medida{6.5};? Ahora el literal que da el valor inicial es 6.5. Su tipo es double, así que medida queda declarada como double (Köppe et al., 2023; Stroustrup, 2024)."
         },
         {
           "type": "code",
@@ -272,6 +272,23 @@
             "Que una cantidad pueda dividirse no determina el tipo de su literal inicial. Revisa la escritura del inicializador, antes de pensar en operaciones futuras.",
             "Distingue la palabra que pide deducción del tipo que el compilador determina. Revisa si la definición deja el tipo fijado antes de ejecutar las instrucciones."
           ]
+        },
+        {
+          "type": "multiple_choice",
+          "correctIndex": 1,
+          "question": "double metros = 6;\nauto copia{metros};\n\n¿Qué tipo tiene copia?",
+          "options": [
+            "int, porque la longitud vale seis metros enteros.",
+            "double, porque el valor inicial se lee de metros y esa variable es double.",
+            "El tipo queda pendiente hasta que se asigne otro valor a copia."
+          ],
+          "reviewFeedback": [
+            "Mira el tipo escrito al declarar metros. ¿Cambia ese tipo porque se guarde un número entero de metros?",
+            "Mira qué variable aparece entre las llaves y de qué tipo es.",
+            "La declaración de copia ya tiene un valor inicial. Busca de dónde sale."
+          ],
+          "explanation": "La primera línea declara metros como double y guarda el seis con ese tipo. En la segunda línea, el valor inicial de copia viene de metros. El compilador deduce double para copia.",
+          "id": "p1u2l6_deducir_de_una_variable"
         }
       ]
     },
@@ -283,18 +300,18 @@
         },
         {
           "type": "paragraph",
-          "text": "Si después del signo igual hay una división, decide primero qué tipo produce esa división. Eso es lo que usa auto.\n\nEn auto mitad = 9 / 2;, divides dos enteros. La división da 4 de tipo int. Ese es el tipo de mitad.\n\nEn auto mitad = 9.0 / 2;, divides un double entre dos. La división da 4.5 de tipo double. Ese es el tipo de mitad (Stroustrup, 2024)."
+          "text": "Una división también puede dar el valor inicial de una variable. Al compilar, los tipos de los números que se dividen permiten saber de qué tipo será el resultado.\n\nauto mitad = 9 / 2;\nLos dos números son int. La división de dos enteros da un int, así que ese es el tipo de mitad. Al ejecutar la línea, se guarda 4.\n\nauto mitad = 9.0 / 2;\nEl literal 9.0 es double. En esta división el dos también se convierte a double. El resultado tiene tipo double, así que mitad queda con ese tipo y guarda 4.5 (Stroustrup, 2024)."
         },
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "question": "Sigue las dos divisiones. ¿Qué números muestra std::cout al leer primero primera y después segunda? Sepáralos con un espacio.",
           "code": "#include <iostream>\n\nint main() {\n    auto primera = 9 / 2;\n    auto segunda = 9.0 / 2;\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n",
           "answers": [
             "4 4.5"
           ],
-          "explanation": "9 / 2 tiene tipo int y da 4. 9.0 / 2 tiene tipo double y da 4.5. En cada declaración, auto deduce el tipo que produjo esa división. La consola muestra 4 4.5.",
-          "reviewFeedback": "Determina el tipo de los operandos y el de cada división completa. Después aplica la deducción desde ese resultado; auto no incorpora una conversión para satisfacer la intención del nombre."
+          "explanation": "En 9 / 2 ambos números son int. La variable primera es int y guarda 4. En 9.0 / 2 el primer número es double. La variable segunda es double y guarda 4.5. La consola muestra 4 4.5.",
+          "reviewFeedback": "Mira cómo está escrito el nueve en cada división. Si ambos números son int, la división descarta la fracción. Si uno es double, esta división conserva el medio."
         },
         {
           "type": "multiple_choice",
@@ -329,7 +346,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las dos variables de abajo empiezan guardando seis. Mira cómo se escribe el literal en cada línea.\n\ngrados_enteros empieza con 6 y es int.\ngrados_medidos empieza con 6.0 y es double.\n\nLuego se asigna siete y medio a las dos. Cada variable conserva el tipo que el compilador dedujo al declararla. Para saber qué guarda cada una, aplica la regla de ese tipo al nuevo valor (Köppe et al., 2023)."
+          "text": "auto pisos{2};\nEsta declaración crea una variable de tipo int porque 2 es un literal entero.\n\npisos = 3.5;\nAquí pisos ya existe y sigue siendo int. Para guardar el nuevo valor, C++ convierte 3.5 a int. Descarta el medio y guarda 3.\n\nEn el siguiente programa, las dos variables empiezan con el mismo número. Una se declara con 6 y la otra con 6.0. La primera queda como int y la segunda como double. Esos tipos siguen siendo los mismos cuando más adelante se asigna 7.5 a las dos variables (Köppe et al., 2023)."
         },
         {
           "type": "output_prediction",
@@ -340,8 +357,8 @@
           ],
           "id": "p1u2l6_predecir_asignacion_deducida",
           "question": "Escribe lo que aparece en la consola después de las dos asignaciones. Separa los dos números con un espacio.",
-          "reviewFeedback": "Para cada variable, mira primero el literal de la declaración y decide qué tipo se deduce. Usa ese tipo al guardar el valor de la asignación.",
-          "explanation": "grados_enteros sigue siendo int. Al guardar 7.5, descarta la fracción y guarda 7. grados_medidos es double y guarda 7.5. La consola muestra 7 7.5."
+          "reviewFeedback": "Busca las dos declaraciones con auto. ¿Cuál de las variables puede guardar el medio grado? Escribe primero lo que guarda grados_enteros y después lo que guarda grados_medidos.",
+          "explanation": "grados_enteros = 7.5;\nLa variable grados_enteros ya es de tipo int. Para guardar el nuevo valor, C++ descarta el medio grado y guarda 7.\n\ngrados_medidos = 7.5;\nLa variable grados_medidos ya es de tipo double. Puede guardar 7.5 exactamente, incluido el medio grado. La consola muestra 7 7.5."
         }
       ]
     },
@@ -414,7 +431,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la línea de entero, total / partes divide dos enteros y da 7. auto deduce int a partir de ese resultado.\n\nEn la línea de decimal, static_cast<double>(total) aporta un double antes de dividir. Por eso decimal guarda 7.5. Las últimas dos instrucciones muestran los valores de cada variable con su rótulo."
+          "text": "En auto entero = total / partes;, tanto total como partes son int. Por eso el resultado de la división tiene tipo int y el compilador deduce ese mismo tipo para entero. Al dividir quince entre dos como enteros, se guarda 7.\n\nEn la línea de decimal, static_cast<double>(total) convierte el quince a double antes de dividir. Esta vez el resultado incluye la media unidad. decimal guarda 7.5."
         },
         {
           "type": "output_prediction",
@@ -429,18 +446,18 @@
         },
         {
           "type": "multiple_choice",
-          "question": "Tu programa tiene una medida de 7.5 y la vas a guardar como int. Antes de usar ese entero, ¿qué debes revisar para saber si todavía te sirve?",
+          "question": "Una cuerda mide 7.5 metros. Al convertir la medida a int, quedan 7 metros completos. ¿Qué debes revisar antes de usar ese entero?",
           "options": [
             "Usar siempre auto, sin mirar el inicializador.",
             "Confiar sólo en que el programa compiló.",
             "Explicar qué información puede perderse y por qué esa pérdida es aceptable para la tarea."
           ],
           "correctIndex": 2,
-          "explanation": "El entero guardará 7. Si solo necesitas contar tramos de un metro completo, siete te sirve. Si tienes que informar cuánto mide todo el tramo, te falta medio metro.",
+          "explanation": "Al convertir 7.5 a int se descarta medio metro. Si quieres saber cuántos tramos completos de un metro puedes cortar, el entero 7 te sirve. Si vas a calcular el precio de toda la cuerda por metro, usa la medida completa de 7.5 metros para incluir también ese medio metro.",
           "reviewFeedback": [
-            "La deducción también depende de lo que hace el inicializador. Revisa qué información conserva cada operación y si satisface el objetivo del cálculo.",
-            "Separa la aceptación del código por el compilador de la conservación de la información necesaria para la tarea.",
-            "Relaciona la información que se conserva o se descarta con el resultado que necesita la tarea."
+            "Mira el tipo que recibe la medida. Si la guardas en un int, ¿qué parte de la longitud queda fuera?",
+            "El programa puede compilar y guardar 7. Revisa si el cálculo necesita también el medio metro de cuerda.",
+            "Revisa si la tarea requiere la longitud completa o solo la cantidad de tramos enteros de un metro."
           ]
         },
         {
@@ -810,7 +827,8 @@
           "block_0004_0003",
           "block_0004_0004",
           "p1u2l6_leer_los_tipos_deducidos",
-          "block_0004_0005"
+          "block_0004_0005",
+          "p1u2l6_deducir_de_una_variable"
         ]
       },
       {
@@ -1719,6 +1737,15 @@
           "block": 14
         },
         "progressPage": "page_0008"
+      },
+      {
+        "id": "p1u2l6_deducir_de_una_variable",
+        "sha256": "46234308051706267d8a2ce0b9a5c1385b3e027cf4b79df26583bcf25e7b468b",
+        "storage": {
+          "page": 10,
+          "block": 0
+        },
+        "progressPage": "page_0004"
       }
     ],
     "editorial": [
@@ -2247,6 +2274,52 @@
         "id": "block_0007_0004",
         "beforeSha256": "4b980bd138273f1a4bb7ad5cfee88d319511c52c1f2731672b3980f67678c5a9",
         "afterSha256": "b2fc081645ab7baacd9cc00c4dd7dff270f6bb9d2ce0e6e586860fd92948daa8"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "a5f32d67ee287e215bfb98869b021aac295a8c3254cd524173405b24ecae1dbd",
+        "afterSha256": "905694c23eb8083c3b9cd222f22f666b63ed96632e9333906d01e99bfdad2c97"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "08b6ab8eb6a31106dbbacb889b4c91e6271892988c50280b3805e35b2e7898e9",
+        "afterSha256": "86aace1bcc662e1befa683dcf55c05ea6d8ab2daab380f43f3c0926b57aeb8cb"
+      },
+      {
+        "id": "p1u2l6_asignar_dato",
+        "beforeSha256": "c68c4791fbda3ed781c55ed967e06e5735fea9518af42e7ecb1b6ca80c86120c",
+        "afterSha256": "5757a41dc2ed70a67e44368ca51dcaebc05fb9d9b2ecc92607ca439d7f8e7ccd"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "735468fd61ad566b023a893b9557f967aba4e387ef4ae5a5182015787d00cd0e",
+        "afterSha256": "9ec001ec27d42dd7e8d349eebb9f8aef9d7ebe0e4abccbc15eeb16dfb6634d68"
+      },
+      {
+        "id": "p1u2l6_predecir_asignacion_deducida",
+        "beforeSha256": "b901f036d6f88835330b0f1c95c0068f7b7078a707b316d6ab6697b0a3a9199c",
+        "afterSha256": "fafe2858796d325d8390a85fbc26925b45f31142bce66cc93409a1f756f67cb4",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "f56281a6be690fb87c340e33d2f78eeb34dd683fd5ba2088ce21bd3690873050",
+        "afterSha256": "eb358d4837279f46a96f0703d6cdb7ffc27013ccf33d3c76d6532e08df728769",
+        "reviewPaths": [
+          "/reviewFeedback"
+        ]
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "b2fc081645ab7baacd9cc00c4dd7dff270f6bb9d2ce0e6e586860fd92948daa8",
+        "afterSha256": "71885bae23aa38ec86564a13c8eccad5fb226a2ad6dd19607cdd26f6a6a62926",
+        "reviewPaths": [
+          "/reviewFeedback/0",
+          "/reviewFeedback/1",
+          "/reviewFeedback/2"
+        ]
       }
     ],
     "retired": [
@@ -7357,88 +7430,130 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "b75955ac3c010b8609c6ac4ace1051bb82927dec3ae4f5406036f45bd80a7095",
+        "sourceSha256": "a1ce6a046b095f9fb39bed134997dacf938582618af4d80cfc8271c466a6dbfb",
         "spans": [
           {
-            "start": 23,
-            "end": 27,
-            "text": "auto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 172,
-            "end": 190,
+            "start": 0,
+            "end": 18,
             "text": "auto cantidad = 6;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 203,
-            "end": 204,
+            "start": 24,
+            "end": 25,
             "text": "6",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 208,
-            "end": 211,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 225,
-            "end": 233,
+            "start": 49,
+            "end": 57,
             "text": "cantidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 248,
-            "end": 251,
+            "start": 75,
+            "end": 79,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 223,
+            "end": 224,
+            "text": "6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 237,
+            "end": 240,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 253,
-            "end": 271,
-            "text": "auto medida = 6.5;",
+            "start": 250,
+            "end": 258,
+            "text": "cantidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 284,
-            "end": 287,
+            "start": 280,
+            "end": 283,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 403,
+            "text": "auto cantidad{6};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 465,
+            "end": 468,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 486,
+            "end": 503,
+            "text": "auto cantidad(6);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 541,
+            "end": 544,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 571,
+            "end": 588,
+            "text": "auto medida{6.5};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 634,
+            "end": 637,
             "text": "6.5",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 291,
-            "end": 297,
+            "start": 650,
+            "end": 656,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 311,
-            "end": 317,
+            "start": 666,
+            "end": 672,
             "text": "medida",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 332,
-            "end": 338,
+            "start": 694,
+            "end": 700,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 339,
-            "end": 377,
+            "start": 701,
+            "end": 739,
             "text": "(Köppe et al., 2023; Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -7577,81 +7692,95 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "863c06161d09b1ee29099ae2413863d0b84c494d5307bb8d37ab42d2a5956154",
+        "sourceSha256": "222e6cacc91b3d8e9156036073dacb20608ecf6021007d69323c2dc3060c6b59",
         "spans": [
           {
-            "start": 109,
-            "end": 113,
-            "text": "auto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 119,
-            "end": 138,
+            "start": 165,
+            "end": 184,
             "text": "auto mitad = 9 / 2;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 176,
-            "end": 177,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 186,
-            "end": 189,
+            "start": 205,
+            "end": 208,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 209,
-            "end": 214,
+            "start": 243,
+            "end": 246,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 279,
             "text": "mitad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 220,
-            "end": 241,
+            "start": 313,
+            "end": 314,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 338,
             "text": "auto mitad = 9.0 / 2;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 254,
-            "end": 260,
+            "start": 350,
+            "end": 353,
+            "text": "9.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 357,
+            "end": 363,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 287,
-            "end": 290,
-            "text": "4.5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 299,
-            "end": 305,
+            "start": 412,
+            "end": 418,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 325,
-            "end": 330,
+            "start": 444,
+            "end": 450,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 460,
+            "end": 465,
             "text": "mitad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 331,
-            "end": 349,
+            "start": 494,
+            "end": 497,
+            "text": "4.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 498,
+            "end": 516,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -7661,66 +7790,109 @@
       {
         "block": "block_0005_0002",
         "path": "/question",
-        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
-        "spans": []
+        "sourceSha256": "d38fd2fcedadc65e86f6d6cd2297f05740533766190bd9e958fc5713bc74f865",
+        "spans": [
+          {
+            "start": 47,
+            "end": 56,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 80,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 98,
+            "text": "segunda",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "ae2ae584a81c5d2b32a5a98c5c22547bf0491b68e0053d78dc5fbfb7ece40d97",
+        "sourceSha256": "a5fde384df4976e5b055aa23eacb29a7db9731de2bb0d4ef7d54b97e44b1c264",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
+            "start": 3,
+            "end": 8,
             "text": "9 / 2",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 17,
-            "end": 20,
+            "start": 27,
+            "end": 30,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 26,
-            "end": 27,
+            "start": 44,
+            "end": 51,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 58,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 69,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 29,
-            "end": 36,
+            "start": 74,
+            "end": 81,
             "text": "9.0 / 2",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 48,
-            "end": 54,
+            "start": 102,
+            "end": 108,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 60,
-            "end": 63,
+            "start": 122,
+            "end": 129,
+            "text": "segunda",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 133,
+            "end": 139,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 152,
             "text": "4.5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 86,
-            "end": 90,
-            "text": "auto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 151,
-            "end": 156,
+            "start": 173,
+            "end": 178,
             "text": "4 4.5",
             "role": "output",
             "reading": "natural"
@@ -7730,12 +7902,19 @@
       {
         "block": "block_0005_0002",
         "path": "/reviewFeedback",
-        "sourceSha256": "77537acd380cfba38f994154f4e3959877452d4979f43231ed91458639bcbd26",
+        "sourceSha256": "614be8ae3b69d1dfe0778507ea9d43ce5e8ec8ba5550fd8b8422e1e129dc77c8",
         "spans": [
           {
-            "start": 116,
-            "end": 120,
-            "text": "auto",
+            "start": 71,
+            "end": 74,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 120,
+            "end": 126,
+            "text": "double",
             "role": "cpp",
             "reading": "technical"
           }
@@ -8039,74 +8218,88 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "55ff2cbf4e155f9e5d420a692fc3ccc0963fc94ab0e63d80f2ca665f197d422c",
+        "sourceSha256": "1e72e550c238ce8edb15088c8be2fcba598061081ef3f431258d13c52f46efa8",
         "spans": [
           {
-            "start": 15,
-            "end": 21,
-            "text": "entero",
+            "start": 3,
+            "end": 32,
+            "text": "auto entero = total / partes;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 23,
-            "end": 37,
-            "text": "total / partes",
+            "start": 40,
+            "end": 45,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 57,
+            "text": "partes",
             "role": "cpp",
             "reading": "technical"
           },
           {
             "start": 62,
-            "end": 63,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 65,
-            "end": 69,
-            "text": "auto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 77,
-            "end": 80,
+            "end": 65,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 124,
-            "end": 131,
+            "start": 114,
+            "end": 117,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 161,
+            "end": 167,
+            "text": "entero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 221,
+            "end": 222,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 247,
             "text": "decimal",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 133,
-            "end": 159,
+            "start": 249,
+            "end": 275,
             "text": "static_cast<double>(total)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 170,
-            "end": 176,
+            "start": 298,
+            "end": 304,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 203,
-            "end": 210,
+            "start": 370,
+            "end": 377,
             "text": "decimal",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 218,
-            "end": 221,
+            "start": 385,
+            "end": 388,
             "text": "7.5",
             "role": "data",
             "reading": "natural"
@@ -8191,33 +8384,61 @@
       {
         "block": "block_0007_0004",
         "path": "/question",
-        "sourceSha256": "2e29f3809395bc241fa47c5dec36f95d94bbfa312dea7866d7cf88e3f48de271",
+        "sourceSha256": "dd9cd9e0499a17ed29f99e1e7ef0197f43b7b19ae42bb8837c8c13b474a39889",
         "spans": [
           {
-            "start": 32,
-            "end": 35,
+            "start": 16,
+            "end": 19,
             "text": "7.5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 60,
-            "end": 63,
+            "start": 53,
+            "end": 56,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 66,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0007_0004",
         "path": "/explanation",
-        "sourceSha256": "aca02fb4d7b0c802620222a515df1b774febbec8823b4dd14034c0c6cebc6f1e",
+        "sourceSha256": "a7500bbdf1082898bf8b675a773332e6a28055b4ad236f2d0647c8dbe661df95",
         "spans": [
           {
+            "start": 13,
+            "end": 16,
+            "text": "7.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 19,
-            "end": 20,
+            "end": 22,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 128,
             "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 225,
+            "text": "7.5",
             "role": "data",
             "reading": "natural"
           }
@@ -8252,19 +8473,35 @@
       {
         "block": "block_0007_0004",
         "path": "/reviewFeedback/0",
-        "sourceSha256": "89d6ec54c2990be091a062a2039f27b744829cadd12a65da8babb3a536ff120b",
-        "spans": []
+        "sourceSha256": "27be28c960f90843c668c955e1be1d1e6fff49a60f959eca59373349b4cd0dd3",
+        "spans": [
+          {
+            "start": 55,
+            "end": 58,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0004",
         "path": "/reviewFeedback/1",
-        "sourceSha256": "b3ee13d81d5e63475fc93c2f1f112ea0ddb7f03c89c405bc88e9040ffbf7f294",
-        "spans": []
+        "sourceSha256": "fde5193c1942a3b8674de431c27d0d966f4a18eeb2e04e0e0f2bd7d6a4fdaab1",
+        "spans": [
+          {
+            "start": 37,
+            "end": 38,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0004",
         "path": "/reviewFeedback/2",
-        "sourceSha256": "66c276001afd6bbef5edadac934bec79c764010250fcdc77f2968db4db634a9e",
+        "sourceSha256": "6675c5732da615d7b215df53cf972987e65c5e9cca7cdfe8752d6b91cefafbdd",
         "spans": []
       },
       {
@@ -8825,53 +9062,109 @@
       {
         "block": "p1u2l6_asignar_dato",
         "path": "/text",
-        "sourceSha256": "2de101481ee7124904452e64f2fe96fc8ac3f19cf775ff4a1acc926b8f3f6731",
+        "sourceSha256": "c273ef5de7e18ea49c24fb2d87896ea2c41dee7bf945df863b8befb138104e4a",
         "spans": [
           {
-            "start": 100,
-            "end": 114,
-            "text": "grados_enteros",
+            "start": 0,
+            "end": 14,
+            "text": "auto pisos{2};",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 127,
-            "end": 128,
-            "text": "6",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 134,
-            "end": 137,
+            "start": 58,
+            "end": 61,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 139,
-            "end": 153,
-            "text": "grados_medidos",
+            "start": 69,
+            "end": 70,
+            "text": "2",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 166,
-            "end": 169,
+            "start": 94,
+            "end": 106,
+            "text": "pisos = 3.5;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 117,
+            "text": "pisos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 146,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 191,
+            "end": 194,
+            "text": "3.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 200,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 229,
+            "end": 230,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 326,
+            "end": 327,
+            "text": "6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 342,
+            "end": 345,
             "text": "6.0",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 175,
-            "end": 181,
+            "start": 369,
+            "end": 372,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 391,
+            "end": 397,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 371,
-            "end": 391,
+            "start": 465,
+            "end": 468,
+            "text": "7.5",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 489,
+            "end": 509,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -8887,60 +9180,67 @@
       {
         "block": "p1u2l6_predecir_asignacion_deducida",
         "path": "/explanation",
-        "sourceSha256": "1ce15790375bd13fda0d0816567b936ed726785262e0787a1259edc78f303c16",
+        "sourceSha256": "7c448f1a81a7ce60731b7bfbdff203f30e0e4ac9da29589d1b03edcaa0e1336b",
         "spans": [
           {
             "start": 0,
-            "end": 14,
+            "end": 21,
+            "text": "grados_enteros = 7.5;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 48,
             "text": "grados_enteros",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 28,
-            "end": 31,
+            "start": 63,
+            "end": 66,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 44,
-            "end": 47,
-            "text": "7.5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 79,
-            "end": 80,
+            "start": 134,
+            "end": 135,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 82,
-            "end": 96,
+            "start": 138,
+            "end": 159,
+            "text": "grados_medidos = 7.5;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 186,
             "text": "grados_medidos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 100,
-            "end": 106,
+            "start": 201,
+            "end": 207,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 116,
-            "end": 119,
+            "start": 223,
+            "end": 226,
             "text": "7.5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 140,
-            "end": 145,
+            "start": 284,
+            "end": 289,
             "text": "7 7.5",
             "role": "output",
             "reading": "natural"
@@ -8950,8 +9250,30 @@
       {
         "block": "p1u2l6_predecir_asignacion_deducida",
         "path": "/reviewFeedback",
-        "sourceSha256": "23dfa529951379cedfca09db95a74c9a93006eabec2e3bc8b11bc412707a1c78",
-        "spans": []
+        "sourceSha256": "e102e275f69a56c089728038a54093b17dee7626c205f5904ea88986cedabc25",
+        "spans": [
+          {
+            "start": 32,
+            "end": 36,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 135,
+            "text": "grados_enteros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 160,
+            "end": 174,
+            "text": "grados_medidos",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "p1u2l6_encontrar_error",
@@ -9088,6 +9410,173 @@
             "text": "Decimal: 4.25",
             "role": "output",
             "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l6_deducir_de_una_variable",
+        "path": "/question",
+        "sourceSha256": "2cd6532bb586b9c7540ded3c563d80dc405b31b36d37535c7e34e77070251cbd",
+        "spans": [
+          {
+            "start": 0,
+            "end": 18,
+            "text": "double metros = 6;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 38,
+            "text": "auto copia{metros};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 61,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l6_deducir_de_una_variable",
+        "path": "/explanation",
+        "sourceSha256": "f706d0f500e2f89e978e25cc56c17759067d206cde6041def58ef2d0a7f9c0b1",
+        "spans": [
+          {
+            "start": 25,
+            "end": 31,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 43,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 121,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 137,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 160,
+            "end": 166,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 177,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l6_deducir_de_una_variable",
+        "path": "/options/0",
+        "sourceSha256": "a635604b47b966c69121d9e36e963a55def951c4aad025853fbbc535b3dd65d9",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l6_deducir_de_una_variable",
+        "path": "/options/1",
+        "sourceSha256": "50c988c96f5e291ca71bbeef22e938b759a33fe125d88855a8589c917b02cce5",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 48,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 73,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l6_deducir_de_una_variable",
+        "path": "/options/2",
+        "sourceSha256": "1cd57fec4a202c40191a7cec4599d9f949ee44362ecb12147d712f6bf3f9dafd",
+        "spans": [
+          {
+            "start": 57,
+            "end": 62,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l6_deducir_de_una_variable",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "36a606911484dc2bdf4706694425d4a793d2646d52846e5ede357902d2a14460",
+        "spans": [
+          {
+            "start": 33,
+            "end": 39,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u2l6_deducir_de_una_variable",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "d266d7d6ffe28bb29815d187e3442afa125b70b3be111e206dd9100b17436ac1",
+        "spans": []
+      },
+      {
+        "block": "p1u2l6_deducir_de_una_variable",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "5c0931296cc7c652bc7f9c9d595ddb3fdd14802bd3248c160bbc53f1bd80a2d6",
+        "spans": [
+          {
+            "start": 18,
+            "end": 23,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }
