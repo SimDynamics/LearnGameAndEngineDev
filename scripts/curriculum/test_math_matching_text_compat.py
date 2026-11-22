@@ -11,6 +11,7 @@ import math_matching_text_compat as matching
 import identifier_rename_archive_preview as rename_preview
 import stable_state_layout as state
 import text_semantics
+import validar_json_programacion as contract
 
 
 PATH = (Path(__file__).resolve().parents[2] /
@@ -405,6 +406,36 @@ class RealAssetCheckLineEndingPrompt(unittest.TestCase):
             previous, updated)), state._blocks(previous))
         self.assertEqual(state.original_projection(updated),
                          state.original_projection(previous))
+        relative = asset.relative_to(Path(__file__).resolve().parents[2]).as_posix()
+        original_positions = state.validate(previous)
+        location = next((p, b)
+            for p, page in enumerate(previous["stateLayout"]["current"])
+            for b, owner in enumerate(page["blocks"]) if owner == identity)
+        storage = original_positions[location]
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *storage, old, revised,
+            previous_document=previous, current_document=updated,
+            course_id="programming_practice_tools"))
+        # This is not a legacy exemption for another course, unknown lesson or
+        # shifted owner; even an authentic journal must match its origin.
+        for invalid in (
+            {"relative": relative.replace("programming_practice_tools",
+                                          "cpp_fundamentals")},
+            {"course_id": "cpp_fundamentals"},
+            {"pn": storage[0] + 1},
+            {"bn": storage[1] + 1},
+        ):
+            with self.subTest(wrong_binding=invalid):
+                arguments = {"relative": relative, "pn": storage[0],
+                             "bn": storage[1],
+                             "course_id": "programming_practice_tools"}
+                arguments.update(invalid)
+                self.assertFalse(contract.preserves_previous_exercise(
+                    arguments["relative"], arguments["pn"], arguments["bn"],
+                    old, revised, previous_document=previous,
+                    current_document=updated, course_id=arguments["course_id"]))
+        self.assertFalse(contract.preserves_previous_exercise(
+            relative, *storage, old, revised, course_id="programming_practice_tools"))
         self.assertEqual(asset.read_bytes(), initial_bytes)
 
         # A prose edit never authorizes changing source/target IDs, the
@@ -423,10 +454,15 @@ class RealAssetCheckLineEndingPrompt(unittest.TestCase):
                 if field["block"] == identity and field["path"] == "/prompt"
             ).update({"sourceSha256": "0" * 64})),
         ):
-            with self.subTest(tamper=name), self.assertRaises(state.LayoutError):
-                forged = deepcopy(updated)
-                tamper(forged)
-                state.validate(forged)
+            forged = deepcopy(updated)
+            tamper(forged)
+            with self.subTest(tamper=name):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(forged)
+                self.assertFalse(contract.preserves_previous_exercise(
+                    relative, *storage, old, state._blocks(forged)[identity],
+                    previous_document=previous, current_document=forged,
+                    course_id="programming_practice_tools"))
         self.assertEqual(asset.read_bytes(), initial_bytes)
 
 
