@@ -366,5 +366,70 @@ class RealFrequencyMatchingEditorial(unittest.TestCase):
         self.assertEqual(PATH.read_bytes(),self.original_bytes)
 
 
+
+class RealAssetCheckLineEndingPrompt(unittest.TestCase):
+    """The same matching-text authoring must also work in Programación 2."""
+
+    def test_published_assetcheck_prompt_retains_exact_mapping_and_history(self):
+        asset = (Path(__file__).resolve().parents[2] /
+            "app/src/main/assets/content/es/programming/programming_practice_tools/"
+            "proyecto_assetcheck/lesson_leer_manifiesto_y_publicar_informe.json")
+        initial_bytes = asset.read_bytes()
+        previous = json.loads(initial_bytes)
+        state.validate(previous)
+        identity = "block_0002_0005"
+        old = state._blocks(previous)[identity]
+        self.assertEqual(old["id"], "assetcheck_archivo_marcas_de_linea")
+        self.assertEqual(old["responses"][0]["type"], "math_matching_drag")
+        old_phrase = ("Las barras inclinadas representan caracteres de escape, "
+                      "no texto literal del manifiesto.")
+        new_phrase = ("En las etiquetas, las secuencias con barra inversa "
+                      "representan LF o CR; no son una barra y una letra "
+                      "escritas en el manifiesto.")
+        self.assertEqual(old["prompt"].count(old_phrase), 1)
+        revised_prompt = old["prompt"].replace(old_phrase, new_phrase)
+        updated, proof = matching.preview_math_matching_text_review(
+            previous, identity, {"/prompt": revised_prompt}, {"/prompt": []})
+        self.assertTrue(matching.verify_matching_preview(previous, updated, proof))
+        state.validate(updated)
+        state.validate_transition(previous, updated)
+        revised = state._blocks(updated)[identity]
+        self.assertEqual(revised["prompt"], revised_prompt)
+        self.assertEqual(revised["responses"], old["responses"])
+        self.assertEqual(revised["id"], old["id"])
+        self.assertEqual(updated["stateLayout"]["origin"],
+                         previous["stateLayout"]["origin"])
+        self.assertEqual(updated["stateLayout"]["current"],
+                         previous["stateLayout"]["current"])
+        self.assertEqual(state._blocks(state.align_for_previous_validation(
+            previous, updated)), state._blocks(previous))
+        self.assertEqual(state.original_projection(updated),
+                         state.original_projection(previous))
+        self.assertEqual(asset.read_bytes(), initial_bytes)
+
+        # A prose edit never authorizes changing source/target IDs, the
+        # evaluated matching pairs or the original reading provenance.
+        for name, tamper in (
+            ("answer mapping", lambda d: state._blocks(d)[identity][
+                "responses"][0]["validator"]["expected"].update({"a": "dos"})),
+            ("new source ID", lambda d: state._blocks(d)[identity][
+                "responses"][0]["sources"][0].update({"id": "different"})),
+            ("forged history", lambda d: d["stateLayout"][
+                "mathMatchingTextRevisions"][0].update({"afterSha256": "0" * 64})),
+            ("missing journal", lambda d: d["stateLayout"].pop(
+                "mathMatchingTextRevisions")),
+            ("forged text marker", lambda d: next(
+                field for field in d["textSemantics"]["fields"]
+                if field["block"] == identity and field["path"] == "/prompt"
+            ).update({"sourceSha256": "0" * 64})),
+        ):
+            with self.subTest(tamper=name), self.assertRaises(state.LayoutError):
+                forged = deepcopy(updated)
+                tamper(forged)
+                state.validate(forged)
+        self.assertEqual(asset.read_bytes(), initial_bytes)
+
+
+
 if __name__=="__main__":
     unittest.main()
