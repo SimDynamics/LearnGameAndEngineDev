@@ -53,16 +53,47 @@ class RealChoiceEditorialRevision(unittest.TestCase):
         cls.original_bytes = PATH.read_bytes()
         cls.before = json.loads(cls.original_bytes)
         before_block = owner_block(cls.before)
-        if before_block.get("type") != "multiple_choice" or before_block["options"][0] != OLD_TEXT:
-            raise AssertionError("Published initial choice differs from the authentic curriculum")
-        if before_block["correctIndex"] != 0:
-            raise AssertionError("Published answer position is no longer zero")
+        if (before_block.get("type") != "multiple_choice"
+                or before_block["correctIndex"] != 0
+                or before_block["options"][0] not in {OLD_TEXT, NEW_TEXT}):
+            raise AssertionError("The real choice owner or correct answer has changed")
         cls.origin = state.validate(cls.before)[owner_location(cls.before)]
-        # Explicit [] marks ordinary, unhighlighted option prose; it is not
-        # permission to inherit the previous option's reading or color spans.
-        cls.after = state.revise_choice_editorial(cls.before, OWNER, 0, NEW_TEXT, spans=[])
+        cls.published_revision = before_block["options"][0] == NEW_TEXT
+        if cls.published_revision:
+            # Work has published the correction. The actual signed edition
+            # is the test source; never manufacture a second option revision.
+            cls.after = cls.before
+            records = [
+                item for item in cls.after["stateLayout"].get("choiceRevisions", [])
+                if item.get("id") == OWNER and item.get("optionIndex") == 0
+            ]
+            if (len(records) != 1
+                    or records[0]["replacement"] != NEW_TEXT
+                    or records[0]["block"]["options"][0] != OLD_TEXT):
+                raise AssertionError("The published correction lacks an authentic archive")
+        else:
+            # Before Work publishes, exercise an isolated authored revision.
+            # [] marks ordinary prose, not inherited old narration credit.
+            cls.after = state.revise_choice_editorial(
+                cls.before, OWNER, 0, NEW_TEXT, spans=[])
 
     def test_current_publication_accepts_the_exact_general_revision(self) -> None:
+        if self.published_revision:
+            state.validate(self.after)
+            record = next(item for item in self.after["stateLayout"]["choiceRevisions"]
+                          if item.get("id") == OWNER and item.get("optionIndex") == 0)
+            active = owner_block(self.after)
+            prior = state._historical_choice_contract(self.after, OWNER, active)
+            self.assertEqual(prior["options"][0], OLD_TEXT)
+            self.assertEqual(active["options"][0], NEW_TEXT)
+            self.assertEqual(active["correctIndex"], 0)
+            self.assertEqual(prior["options"][1:], active["options"][1:])
+            self.assertEqual(record["block"]["correctIndex"], active["correctIndex"])
+            self.assertEqual(record["block"]["options"][1:], active["options"][1:])
+            marker = next(item for item in self.after["textSemantics"]["fields"]
+                          if (item["block"], item["path"]) == (OWNER, "/options/0"))
+            self.assertEqual(marker, record["semanticAfter"])
+            return
         state.validate_transition(self.before, self.after)
         self.assertTrue(curriculum.preserves_general_choice_option_revision(
             RELATIVE, *self.origin, owner_block(self.before), owner_block(self.after),
@@ -79,6 +110,22 @@ class RealChoiceEditorialRevision(unittest.TestCase):
                          owner_block(self.before)["explanation"])
 
     def test_reopened_revision_retains_storage_and_passes_curricular_guard(self) -> None:
+        if self.published_revision:
+            reopened = json.loads(json.dumps(self.after, ensure_ascii=False))
+            self.assertEqual(state.validate(reopened), state.validate(self.before))
+            self.assertEqual(state.validate(reopened)[owner_location(reopened)],
+                             self.origin)
+            projection = state.original_projection(reopened)
+            archived = projection["pages"][self.origin[0]]["blocks"][self.origin[1]]
+            self.assertEqual(archived["options"][0], OLD_TEXT)
+            self.assertEqual(archived["correctIndex"], 0)
+            record = next(item for item in reopened["stateLayout"]["choiceRevisions"]
+                          if item.get("id") == OWNER and item.get("optionIndex") == 0)
+            marker = next(item for item in projection["textSemantics"]["fields"]
+                          if (item["block"], item["path"]) == (OWNER, "/options/0"))
+            self.assertEqual(marker, record["semanticBefore"])
+            self.assertEqual(PATH.read_bytes(), self.original_bytes)
+            return
         # Reload the *published-format* JSON. Keep every original state owner
         # and verify the same guard used when comparing earlier curricular
         # publications, not merely the choice-specific helper.
@@ -106,6 +153,24 @@ class RealChoiceEditorialRevision(unittest.TestCase):
                 self.after, OWNER, 0, OLD_TEXT, spans=[])
 
     def test_history_and_other_course_activities_are_untouched(self) -> None:
+        if self.published_revision:
+            # The live publication can include unrelated later revisions.
+            # The archived choice alone must restore the original option
+            # without overwriting any newer legitimate authorial prose.
+            state.validate(self.after)
+            self.assertEqual(state._historical_choice_contract(
+                self.after, OWNER, owner_block(self.after))["options"][0],
+                OLD_TEXT)
+            archived = next(item for item in self.after["stateLayout"][
+                "choiceRevisions"] if item.get("id") == OWNER and
+                item.get("optionIndex") == 0)
+            self.assertEqual(archived["block"]["options"][0], OLD_TEXT)
+            self.assertEqual(archived["replacement"], NEW_TEXT)
+            self.assertEqual(archived["semanticBefore"].get("path")
+                             if archived["semanticBefore"] else None,
+                             "/options/0")
+            self.assertEqual(PATH.read_bytes(), self.original_bytes)
+            return
         old, new = self.before["stateLayout"], self.after["stateLayout"]
         for field in ("origin", "current", "family", "additions", "retired",
                       "retirementHistory", "sourceFormatRevisions"):
