@@ -317,6 +317,42 @@ void source_edits_stay_inside_original_main() {
     require(!report_main_only_edit(original,modify(
         "\n    int x=0; /* unclosed comment\n")),
         "An unterminated source token bypassed the C++ lexical checker");
+
+    // Documentation may literally describe "int main() {" on other lines,
+    // without defining another function. Preserve the supplied parser while
+    // letting the genuine main accept alternative student implementations.
+    const std::string documented=
+        "#include <iostream>\n"
+        "// int main() { is the student's next function\n"
+        "const char* note=R\"guide(\nint main() {\n)guide\";\n"
+        "int parse(int value) { return value; }\n"
+        "int main() {\n"
+        "    std::cout << parse(1);\n"
+        "}\n"
+        "// int main() { is a previously described function\n";
+    require(report_main_only_edit(documented,documented),
+        "Documentary signatures made the actual main inaccessible");
+    auto revised=documented;
+    const auto previous_print=std::string("    std::cout << parse(1);");
+    const auto print_at=revised.find(previous_print);
+    require(print_at!=std::string::npos,"Main's original print statement missing");
+    revised.replace(print_at,previous_print.size(),
+        "    std::cout << parse(2);");
+    require(report_main_only_edit(documented,revised),
+        "An authentic main edit was rejected after comment/raw decoys");
+    auto forged=documented;
+    const auto original_parser=std::string("return value;");
+    const auto parser_at=forged.find(original_parser);
+    require(parser_at!=std::string::npos,"Supplied parser statement missing");
+    forged.replace(parser_at,original_parser.size(),"return value + 1;");
+    require(!report_main_only_edit(documented,forged),
+        "A protected parser was editable through a fake main signature");
+    auto changed_comment=documented;
+    const auto comment_at=changed_comment.find("student's");
+    require(comment_at!=std::string::npos,"Supplied comment not found");
+    changed_comment.replace(comment_at,9,"editor's ");
+    require(!report_main_only_edit(documented,changed_comment),
+        "A curricular comment was allowed to change with main");
 }
 
 void receipt_requires_same_output_error_and_exit() {
