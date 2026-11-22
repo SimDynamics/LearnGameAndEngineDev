@@ -273,6 +273,7 @@ set_tests_properties(native.current_u2_local_string_state PROPERTIES TIMEOUT 420
 
 include("${_lgaed_root}/cmake/InputDependencyTests.cmake")
 lgaed_add_input_dependency_state_tests("${_lgaed_root}")
+lgaed_add_local_role_state_tests("${_lgaed_root}")
 
 add_executable(lgaed_curricular_input_lab_tests
     "${_lgaed_root}/native/presentation/windows/curricular_input_lab_tests.cpp")

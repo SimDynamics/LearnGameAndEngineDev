@@ -4723,6 +4723,152 @@ void read_compiler_input_checks(const JsonObject& root,Lesson& lesson) {
     }
 }
 
+// Role labels belong to the authoring contract, never to the student's source.
+// Runtime binding selects scalar objects by independent observations, keeping
+// the published block and every pre-existing receipt unchanged.
+void read_compiler_local_role_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerLocalRoleChecks"))return;
+    const auto entries=array(root,"compilerLocalRoleChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Local-role checks require existing Spanish v2 compiler owners.");
+    const OriginalJson original(lesson.raw_json);
+    const auto raw_entries=original.elements(
+        original.member(original.root(),"compilerLocalRoleChecks"));
+    require(raw_entries.size()==entries.Size(),
+        "Original local-role owner count differs from the parsed document.");
+    const auto numeric=[](const JsonObject& object,std::string_view field) {
+        const auto value=object.GetNamedValue(key(field));
+        require(value.ValueType()==JsonValueType::Number,
+            "A local-role value must be a JSON number, never a boolean or string.");
+        const auto result=value.GetNumber();
+        require(std::isfinite(result),"A local-role value must be finite.");
+        return result;
+    };
+    std::set<std::string> seen;
+    std::size_t entry_index=0;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        const auto raw_item=raw_entries.at(entry_index++);
+        (void)original.member(raw_item,"activity");
+        (void)original.member(raw_item,"roles");
+        allowed_keys(item,{"activity","roles"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&seen.insert(identity).second,
+            "Duplicate or invalid local-role owner.");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate local-role block identity.");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->output_check&&owner->output_check->cases.size()==1&&
+                !owner->initial_code.empty()&&!owner->compile_check&&!owner->cmake&&
+                owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->input_check&&!owner->local_int_check&&!owner->local_string_check,
+            "Local roles require an unchanged standalone C++ output editor.");
+        const auto owner_json=JsonObject::Parse(key(owner->raw_json));
+        require((!owner_json.HasKey(L"language")||text(owner_json,"language")=="cpp")&&
+                !owner_json.HasKey(L"compileCheck")&&!owner_json.HasKey(L"cmake")&&
+                !owner_json.HasKey(L"projectFiles")&&!owner_json.HasKey(L"sourceFiles"),
+            "Local roles require one C++ source and a normal public output case.");
+        const auto& sample=owner->output_check->cases.front();
+        const auto raw_sample=array(owner_json.GetNamedObject(L"outputCheck"),"cases")
+            .GetObjectAt(0);
+        require(sample.standard_input.empty()&&owner->standard_input.value_or("").empty()&&
+                (!owner_json.HasKey(L"initialStandardInput")||text(owner_json,"initialStandardInput").empty())&&
+                sample.exit_code==0&&!sample.executable&&
+                sample.standard_error==StandardErrorExpectation::ignored&&
+                !sample.standard_error_exact&&!raw_sample.HasKey(L"target")&&
+                !raw_sample.HasKey(L"standardError")&&!raw_sample.HasKey(L"standardErrorExact"),
+            "Local roles preserve one normal-exit output case with empty input.");
+        for(const auto* conflict:{
+                "compilerInputChecks","compilerLocalIntChecks","compilerLocalStringChecks",
+                "compilerWorkflowChecks","compilerRuntimeChecks","compilerNamedRuleChecks",
+                "compilerOpenBatteryChecks","compilerReductionChecks","compilerCmakeGraphChecks",
+                "compilerIndexedUniqueTransferChecks","compilerDefaultedMovePolicyChecks",
+                "compilerIndependentCopyAssignmentChecks","compilerMoveAssignmentInvariantChecks",
+                "compilerArrayOwnerReadChecks","compilerArrayCopyMoveChecks","compilerArrayReturnTakeChecks",
+                "compilerPolymorphicDestructionChecks","compilerVirtualLifetimeDispatchChecks",
+                "compilerDerivedPreparationChecks","compilerAbstractInterfaceChecks",
+                "compilerInterfaceCollectionChecks","compilerPolymorphicCloneChecks","compilerDualInterfaceChecks"}) {
+            if(!root.HasKey(key(conflict)))continue;
+            for(const auto& other:array(root,conflict))
+                require(text(other.GetObject(),"activity")!=identity,
+                    "A local-role owner cannot share another private runtime objective.");
+        }
+        const auto roles=array(item,"roles");
+        require(roles.Size()>0&&roles.Size()<=4,"A local-role check needs 1..4 roles.");
+        const auto raw_roles=original.elements(original.member(raw_item,"roles"));
+        require(raw_roles.size()==roles.Size(),"Original role count differs from its declaration.");
+        CppLocalRoleCheck spec;
+        std::size_t role_index=0;
+        for(const auto& role_value:roles) {
+            const auto role=role_value.GetObject();
+            const auto raw_role=raw_roles.at(role_index++);
+            for(const auto* field:{"id","valueType","initialValue","probes"})
+                (void)original.member(raw_role,field);
+            allowed_keys(role,{"id","valueType","initialValue","probes"},true);
+            CppLocalRole next;
+            next.id=text(role,"id");
+            const auto type=text(role,"valueType");
+            require(type=="int"||type=="double","A local role has explicit int or double type.");
+            next.value_type=type=="int"?CppLocalRoleValueType::integer:CppLocalRoleValueType::real;
+            next.initial_value=numeric(role,"initialValue");
+            const auto probes=array(role,"probes");
+            require(probes.Size()>0&&probes.Size()<=8,"A local role needs private observations.");
+            const auto raw_probes=original.elements(original.member(raw_role,"probes"));
+            require(raw_probes.size()==probes.Size(),"Original probe count differs from its declaration.");
+            std::size_t probe_index=0;
+            for(const auto& probe_value:probes) {
+                const auto probe=probe_value.GetObject();
+                const auto raw_probe=raw_probes.at(probe_index++);
+                (void)original.member(raw_probe,"replacement");
+                (void)original.member(raw_probe,"outputs");
+                allowed_keys(probe,{"replacement","outputs","afterUpdate",
+                                   "expectedIncrease","beforeUpdateOf"});
+                CppLocalRoleProbe observation;
+                observation.replacement=numeric(probe,"replacement");
+                if(probe.HasKey(L"afterUpdate")) {
+                    (void)original.member(raw_probe,"afterUpdate");
+                    const auto after=probe.GetNamedValue(L"afterUpdate");
+                    require(after.ValueType()==JsonValueType::Boolean&&after.GetBoolean(),
+                        "afterUpdate is either absent or true.");
+                    observation.after_update=true;
+                }
+                if(probe.HasKey(L"expectedIncrease")) {
+                    (void)original.member(raw_probe,"expectedIncrease");
+                    const auto increase=numeric(probe,"expectedIncrease");
+                    require(increase>=1&&increase<=2147483647.0&&std::floor(increase)==increase,
+                        "A local-role expected increase is a positive int32.");
+                    observation.expected_increase=static_cast<std::int32_t>(increase);
+                }
+                if(probe.HasKey(L"beforeUpdateOf")) {
+                    (void)original.member(raw_probe,"beforeUpdateOf");
+                    observation.before_update_of=text(probe,"beforeUpdateOf");
+                    require(!observation.before_update_of.empty(),
+                        "beforeUpdateOf must identify another local role.");
+                }
+                const auto outputs=array(probe,"outputs");
+                require(outputs.Size()>0&&outputs.Size()<=4,
+                    "A local-role observation needs 1..4 exact output alternatives.");
+                observation.expected_stdout=strings(outputs);
+                for(const auto& expected:observation.expected_stdout)
+                    require(!std::ranges::any_of(sample.outputs,[&](const auto& visible) {
+                        return cpp_local_int_canonical_stdout(expected)==
+                               cpp_local_int_canonical_stdout(visible);
+                    }),"A local-role observation must distinguish the public result.");
+                next.probes.push_back(std::move(observation));
+            }
+            spec.roles.push_back(std::move(next));
+        }
+        require(cpp_local_role_check_valid(spec),
+            "Invalid, cyclic, duplicate or unbounded local-role observation.");
+        owner->local_role_check=std::move(spec);
+    }
+}
+
 // An opt-in semantic requirement of an existing output-check editor. Each
 // independent probe changes the typed integral local after initialization, then
 // compiles the whole program. The original lesson block, source, output case
@@ -7537,6 +7683,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_local_int_checks(root,lesson);
         read_compiler_local_string_checks(root,lesson);
         read_compiler_input_checks(root,lesson);
+        read_compiler_local_role_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_indexed_unique_transfer_checks(root,lesson);
@@ -7680,6 +7827,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_local_int_checks(root,lesson);
         read_compiler_local_string_checks(root,lesson);
         read_compiler_input_checks(root,lesson);
+        read_compiler_local_role_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_indexed_unique_transfer_checks(root,lesson);

@@ -50,7 +50,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image", "simulation"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerInputChecks", "compilerLocalIntChecks", "compilerLocalStringChecks", "compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerLocalRoleChecks", "compilerInputChecks", "compilerLocalIntChecks", "compilerLocalStringChecks", "compilerDualInterfaceChecks", "compilerPolymorphicCloneChecks", "compilerInterfaceCollectionChecks", "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks", "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks", "compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks", "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks", "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 ORDINARY_EDITORIAL_TYPES = frozenset({"multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code"})
@@ -6571,6 +6571,147 @@ def _validate_order_visual_separators(document: dict) -> None:
                 "Visual separators require an original, evaluated order-code owner")
 
 
+def _local_role_number(value, value_type: str) -> bool:
+    # JSON has one number kind. Integral 7.0 is equivalent to 7; bool is not.
+    if type(value) not in (int, float):
+        return False
+    lower, upper = ((-2147483648, 2147483647) if value_type == "int"
+                    else (-1000000, 1000000))
+    return (lower <= value <= upper and math.isfinite(float(value)) and
+            (value_type == "double" or float(value).is_integer()))
+
+
+def _validate_compiler_local_role_checks(document: dict) -> None:
+    """Bind observed scalar roles while preserving the learner's own names."""
+    if "compilerLocalRoleChecks" not in document:
+        return
+    layout = document.get("stateLayout")
+    require(type(layout) is dict and layout.get("version") == 2 and
+            layout.get("locale") == "es",
+            "Local-role checks require an existing Spanish v2 lesson")
+    checks = document["compilerLocalRoleChecks"]
+    require(type(checks) is list and 1 <= len(checks) <= 32,
+            "Local-role checks require 1..32 distinct owners")
+    owners, seen = _blocks(document), set()
+    forbidden = {
+        "compilerInputChecks", "compilerLocalIntChecks", "compilerLocalStringChecks",
+        "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks",
+        "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks",
+        "compilerIndexedUniqueTransferChecks", "compilerDefaultedMovePolicyChecks",
+        "compilerIndependentCopyAssignmentChecks", "compilerMoveAssignmentInvariantChecks",
+        "compilerArrayOwnerReadChecks", "compilerArrayCopyMoveChecks", "compilerArrayReturnTakeChecks",
+        "compilerPolymorphicDestructionChecks", "compilerVirtualLifetimeDispatchChecks",
+        "compilerDerivedPreparationChecks", "compilerAbstractInterfaceChecks",
+        "compilerInterfaceCollectionChecks", "compilerPolymorphicCloneChecks", "compilerDualInterfaceChecks",
+    }
+    for check in checks:
+        require(type(check) is dict and set(check) == {"activity", "roles"},
+                "A local-role check requires exactly activity and roles")
+        identity = _identity(check["activity"])
+        require(identity not in seen, "Duplicate local-role owner")
+        seen.add(identity)
+        owner = owners.get(identity)
+        require(type(owner) is dict and owner.get("type") == "cpp_compiler" and
+                owner.get("language", "cpp") == "cpp" and
+                type(owner.get("initialCode")) is str and bool(owner["initialCode"]) and
+                type(owner.get("outputCheck")) is dict and
+                type(owner["outputCheck"].get("cases")) is list and
+                len(owner["outputCheck"]["cases"]) == 1 and
+                not ({"compileCheck", "cmake", "projectFiles", "sourceFiles"} & set(owner)),
+                "Local roles require an existing single-file C++ editor with one output case")
+        sample = owner["outputCheck"]["cases"][0]
+        require(type(sample) is dict and sample.get("standardInput") == "" and
+                owner.get("initialStandardInput", "") == "" and
+                type(sample.get("outputs")) is list and bool(sample["outputs"]) and
+                all(type(text) is str for text in sample["outputs"]) and
+                type(sample.get("exitCode", 0)) is int and sample.get("exitCode", 0) == 0 and
+                not ({"target", "standardError", "standardErrorExact"} & set(sample)),
+                "Local roles preserve one normal-exit public case with empty input")
+        for key in forbidden:
+            related = document.get(key, [])
+            if type(related) is list:
+                require(not any(type(item) is dict and item.get("activity") == identity
+                                for item in related),
+                        "A local-role owner cannot share another private runtime objective")
+        roles = check["roles"]
+        require(type(roles) is list and 1 <= len(roles) <= 4,
+                "A local-role check requires 1..4 roles")
+        known = {}
+        visible = {text.replace("\r\n", "\n") for text in sample["outputs"]}
+        total_probes = 0
+        for role in roles:
+            require(type(role) is dict and
+                    set(role) == {"id", "valueType", "initialValue", "probes"},
+                    "A local role requires id, valueType, initialValue and probes")
+            role_id = role["id"]
+            require(type(role_id) is str and
+                    re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,63}", role_id) is not None and
+                    role_id not in known, "Local-role identifiers must be distinct bounded ASCII names")
+            known[role_id] = role
+            value_type = role["valueType"]
+            require(type(value_type) is str and value_type in {"int", "double"},
+                    "A local role has explicit int or double type")
+            require(_local_role_number(role["initialValue"], value_type),
+                    "A local-role initial value must be finite, bounded and correctly typed")
+            probes = role["probes"]
+            require(type(probes) is list and 1 <= len(probes) <= 8,
+                    "A local role requires private observations")
+            total_probes += len(probes)
+            signatures = set()
+            for probe in probes:
+                require(type(probe) is dict and {"replacement", "outputs"} <= set(probe) and
+                        not (set(probe) - {"replacement", "outputs", "afterUpdate",
+                                          "expectedIncrease", "beforeUpdateOf"}),
+                        "A local-role observation has only declared fields")
+                require(_local_role_number(probe["replacement"], value_type),
+                        "A local-role replacement must be finite, bounded and correctly typed")
+                after = "afterUpdate" in probe
+                before = "beforeUpdateOf" in probe
+                require(not after or probe["afterUpdate"] is True,
+                        "afterUpdate is either absent or true")
+                require(not (after and before) and
+                        (not (after or before) or value_type == "int"),
+                        "Temporal local-role observations are separate int operations")
+                require(("expectedIncrease" in probe) == after,
+                        "Every afterUpdate observation requires its actual expected increase")
+                if after:
+                    require(_local_role_number(probe["expectedIncrease"], "int") and
+                            probe["expectedIncrease"] > 0 and probe["replacement"] != 0,
+                            "An afterUpdate needs a positive real increase and nonzero private delta")
+                else:
+                    require(probe["replacement"] != role["initialValue"],
+                            "A local-role observation must change its selected value")
+                target = probe.get("beforeUpdateOf", "")
+                require(not before or
+                        (type(target) is str and
+                         re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,63}", target) is not None and
+                         target != role_id),
+                        "beforeUpdateOf must name a different local role")
+                signature = (after, target, float(probe["replacement"]))
+                require(signature not in signatures, "Repeated local-role observation")
+                signatures.add(signature)
+                outputs = probe["outputs"]
+                require(type(outputs) is list and 1 <= len(outputs) <= 4 and
+                        all(type(text) is str and bool(text) and "\x00" not in text and
+                            len(text.encode("utf-8")) <= 4096 for text in outputs),
+                        "A local-role observation needs 1..4 bounded nonempty exact outputs")
+                canonical = [text.replace("\r\n", "\n") for text in outputs]
+                require(len(set(canonical)) == len(canonical) and
+                        not (set(canonical) & visible),
+                        "Local-role outputs must be distinct and distinguish the public result")
+        require(total_probes <= 8, "A local-role check permits at most eight private observations")
+        for role in roles:
+            for probe in role["probes"]:
+                if "beforeUpdateOf" not in probe:
+                    continue
+                target = known.get(probe["beforeUpdateOf"])
+                require(target is not None and target["valueType"] == "int" and
+                        all("beforeUpdateOf" not in item for item in target["probes"]) and
+                        any(item.get("afterUpdate") is True and "expectedIncrease" in item
+                            for item in target["probes"]),
+                        "beforeUpdateOf needs an independent int role with a witnessed increase")
+
+
 def _input_case_key(value: str, comparison: str):
     # The native evaluator treats exactly these six ASCII bytes as separators.
     # str.split() would also collapse Unicode whitespace, changing its contract.
@@ -6882,6 +7023,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_named_rule_checks(document)
     _validate_compiler_local_int_checks(document)
     _validate_compiler_local_string_checks(document)
+    _validate_compiler_local_role_checks(document)
     _validate_compiler_input_checks(document)
     _validate_compiler_indexed_unique_transfer_checks(document)
     _validate_compiler_defaulted_move_policy_checks(document)
@@ -7656,6 +7798,11 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
              current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
              baseline["compilerLocalIntChecks"]),
             "Published local-int checks cannot be removed, reordered or rewritten")
+    require(not baseline.get("compilerLocalRoleChecks") or
+            (type(current.get("compilerLocalRoleChecks")) is list and
+             current["compilerLocalRoleChecks"][:len(baseline["compilerLocalRoleChecks"])] ==
+             baseline["compilerLocalRoleChecks"]),
+            "Published local-role observations may only be appended")
     require(not baseline.get("compilerInputChecks") or
             (type(current.get("compilerInputChecks")) is list and
              current["compilerInputChecks"][:len(baseline["compilerInputChecks"])] ==
@@ -8257,6 +8404,11 @@ def validate_transition(previous: dict, current: dict) -> None:
              current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
              baseline["compilerLocalIntChecks"]),
             "Published local-int checks cannot be removed, reordered or rewritten")
+    require(not baseline.get("compilerLocalRoleChecks") or
+            (type(current.get("compilerLocalRoleChecks")) is list and
+             current["compilerLocalRoleChecks"][:len(baseline["compilerLocalRoleChecks"])] ==
+             baseline["compilerLocalRoleChecks"]),
+            "Published local-role observations may only be appended")
     require(not baseline.get("compilerInputChecks") or
             (type(current.get("compilerInputChecks")) is list and
              current["compilerInputChecks"][:len(baseline["compilerInputChecks"])] ==

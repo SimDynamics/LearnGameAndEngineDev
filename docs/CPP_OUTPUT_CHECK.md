@@ -3867,6 +3867,187 @@ necesitan sus propias comprobaciones. No deducirlas de este grafo.
 
 
 
+## Roles de variables con nombres elegidos por el estudiante
+
+`compilerLocalRoleChecks` añade observaciones privadas a un editor existente
+sin prescribir identificadores C++. Los nombres `id` de sus roles pertenecen
+al contrato de autoría. El trabajador encuentra objetos escalares del programa,
+comprueba sus tipos y valores mediante ejecuciones instrumentadas y conserva
+una misma vinculación para todas las observaciones de cada rol.
+
+El bloque publicado, su caso público y su dirección de estado permanecen
+idénticos. Se admite un editor C++ de una fuente, sin CMake ni diagnósticos de
+compilación, con un caso público de salida normal y entrada vacía. Un mismo
+propietario no puede combinar este contrato con otra comprobación privada.
+El requisito nuevo no se acredita a partir de un recibo histórico de stdout.
+
+### Valores, momentos y relaciones
+
+Cada entrada declara `activity` y `roles`. Cada rol contiene exactamente `id`,
+`valueType`, `initialValue` y `probes`. `valueType` admite `int` y `double`.
+Los números de `int` deben ser integrales y caber en int32; `7.0` y `7` son
+numéricamente equivalentes, pero `true` no es un número válido. Los `double`
+deben ser finitos y tener magnitud no superior a un millón. El reconocimiento
+de un valor inicial `double` admite como máximo cuatro ULP para conservar
+inicializaciones aritméticamente equivalentes. La comparación de stdout sigue
+siendo exacta, normalizando únicamente CRLF a LF.
+
+Las observaciones requieren `replacement` y `outputs` y admiten tres momentos:
+
+- Sin propiedad temporal: sustituir privadamente el valor después de su
+  inicialización, antes de que los objetos posteriores lo consuman.
+- `afterUpdate: true`, con `expectedIncrease`: comprobar primero el aumento
+  entero real y después aplicar el delta privado. El aumento esperado es
+  positivo y el delta no puede ser cero. Se rechaza desbordar int32.
+- `beforeUpdateOf`: observar un entero conservado inmediatamente antes del
+  aumento del objeto vinculado al rol indicado. Los dos objetos deben ser
+  distintos. El rol referido debe ser entero, no depender de otro
+  `beforeUpdateOf` y declarar un `afterUpdate` con aumento esperado.
+
+`afterUpdate` y `beforeUpdateOf` son excluyentes. `expectedIncrease` es
+obligatorio únicamente para `afterUpdate`. Las sustituciones iniciales y
+anteriores a otro aumento deben diferir de `initialValue`. El orden de los
+roles en JSON no determina el orden de resolución de sus dependencias.
+
+Se admiten 1..32 propietarios, 1..4 roles por propietario y como máximo ocho
+observaciones en total. Cada observación contiene 1..4 salidas no vacías de
+hasta 4096 bytes UTF-8, sin NUL, distintas tras normalizar CRLF y diferentes
+del resultado público. Los IDs de roles son ASCII y cumplen
+`[A-Za-z_][A-Za-z0-9_]{0,63}`. Los campos desconocidos, IDs repetidos,
+referencias circulares y miembros JSON duplicados se rechazan.
+
+### U2L10: copia independiente y orden de actualización
+
+Esta propuesta QA utiliza los dos editores auténticos de U2L10. Para la
+biblioteca, cambiar el dato inicial debe cambiar ambos recuentos; cambiar
+privadamente el objeto conservado después de formarse la copia sólo debe
+cambiar Inicio; variar el estado después del aumento sólo debe cambiar Ahora.
+El aumento original de tres debe ocurrir realmente, incluso cuando la fuente
+usa una devolución literal en vez de guardarla en otra variable.
+
+```json
+[
+  {
+    "activity": "block_0007_0002",
+    "roles": [
+      {
+        "id": "initial",
+        "valueType": "int",
+        "initialValue": 7,
+        "probes": [
+          {
+            "replacement": 11,
+            "outputs": [
+              "Modulo 02\nInicio: 11\nAhora: 14",
+              "Modulo 02\nInicio: 11\nAhora: 14\n"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "current",
+        "valueType": "int",
+        "initialValue": 7,
+        "probes": [
+          {
+            "replacement": 2,
+            "afterUpdate": true,
+            "expectedIncrease": 3,
+            "outputs": [
+              "Modulo 02\nInicio: 7\nAhora: 12",
+              "Modulo 02\nInicio: 7\nAhora: 12\n"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "saved",
+        "valueType": "int",
+        "initialValue": 7,
+        "probes": [
+          {
+            "replacement": 19,
+            "beforeUpdateOf": "current",
+            "outputs": [
+              "Modulo 02\nInicio: 19\nAhora: 10",
+              "Modulo 02\nInicio: 19\nAhora: 10\n"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+Los roles pueden representar el mismo objeto cuando su función lo permita.
+Esto conserva tanto `int actual=7; int inicio=actual;` como
+`int inicio=7; int actual=inicio;`. En cambio, el objeto observado mediante
+`beforeUpdateOf` siempre es diferente del objeto actualizado. Imprimir un
+único objeto antes y después del cambio no demuestra una copia independiente.
+
+La estación declara tres roles `double` con estas observaciones:
+
+| Dato observado | Valor inicial | Sustitución | Total mostrado |
+|---|---:|---:|---:|
+| Primer tramo | 1.5 | 2.5 | 4.75 |
+| Segundo tramo | 2.25 | 4.25 | 5.75 |
+| Total almacenado | 3.75 | 9.25 | 9.25 |
+
+Se conservan el nombre, las mesas, los rótulos y la unidad. Los dos primeros
+cambios comprueban la dependencia de ambas longitudes; el tercero distingue
+la lectura del total guardado de una suma directa que ignore ese objeto.
+Cada salida permite su alternativa con y sin LF final.
+
+### Instrumentación, límites y recibos
+
+La instrumentación se realiza sobre fuentes privadas. Conserva los
+inicializadores originales y su orden, incluidos declaradores agrupados,
+nombres diferentes y declaraciones constantes compatibles. No modifica el
+borrador, los archivos visibles ni la salida de la ejecución pública. Los
+objetos se vinculan de forma consistente a sus roles; no se mezclan éxitos de
+variables distintas dentro de un mismo rol. Los roles pueden tener varias
+vinculaciones semánticas válidas: basta una vinculación completa acreditada.
+
+La búsqueda está limitada a 16 candidatos y 64 intentos de variante, además
+de los límites de compilación, ejecución y cancelación existentes. Una
+búsqueda incompleta no concede un logro. Cada prueba aceptada vincula la
+petición, la fuente original, la especificación, los objetos elegidos y los
+hashes de las fuentes instrumentadas con sus fases reales. stderr conserva
+la política pública de ignorarlo; un diagnóstico inocuo no invalida stdout.
+
+Los nuevos recibos usan un ámbito `local-roles/v1` separado. Así, un recibo
+histórico obtenido con una fuente fija se conserva incluso cuando el alumno
+necesita escribir una fuente diferente para satisfacer las observaciones.
+La reapertura y el reinicio del objetivo nuevo no eliminan los recibos viejos.
+Las preimágenes de las comprobaciones existentes por nombre se conservan.
+
+### Fixtures auténticas y ejecución técnica
+
+`local_role_fixture_source.py` fija U2L10 en la publicación de main
+`2ca32b2337178d1effa3a2c81759e2493cd746d0`, con SHA-256
+`e0d2ec13f6a72e0f1548017e9f4a175a04a0cbad50021a42eafc0f18eef18aa0`.
+Exporta `before.json` exacto, `after.json` que añade únicamente la declaración
+raíz y un manifiesto. Nunca sustituye los bytes de esa publicación por los
+actuales ni descarga objetos Git ausentes.
+
+El exportador de entradas también admite `--extended-input` para las
+publicaciones auténticas de la reparación U2L10, puntuación U3L1 y bandejas
+U3L2. Reutilizan `compilerInputChecks` y mantienen todos sus casos públicos y
+prerrequisitos; las observaciones privadas no acreditan casos opcionales.
+
+Los tests compartidos se registran tanto en el build Windows del producto
+como en el build alojado de QA:
+
+```powershell
+ctest --test-dir <build> -R '^native[.](local_role_probe|current_u2l10_local_role_state|continued_input_dependency_state)$' --verbose --output-on-failure --no-tests=error
+```
+
+`Test-LocalVariableState.ps1` incluye estas comprobaciones junto con los
+objetivos anteriores, usando perfiles QA aislados. La existencia de una
+fixture o de una prueba portable no acredita por sí sola ejecución Windows.
+La aplicación curricular de las declaraciones permanece a cargo de Work.
+
 ## Respuesta del mismo programa a distintas entradas
 
 `compilerInputChecks` permite añadir comprobaciones privadas de entrada a un

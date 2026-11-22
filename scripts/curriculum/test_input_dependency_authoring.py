@@ -238,5 +238,126 @@ class InputDependencyAuthoringTests(unittest.TestCase):
             self.assertEqual(authentic, (output / "before.json").read_bytes())
 
 
+class ExtendedInputDependencyAuthoringTests(unittest.TestCase):
+    def test_three_exact_main_sources_keep_every_old_field_and_other_owners(self):
+        self.assertEqual("2ca32b2337178d1effa3a2c81759e2493cd746d0", fixture.EXTENDED_COMMIT)
+        self.assertEqual(("u2l10", "u3l1", "u3l2"), tuple(fixture.EXTENDED_PUBLICATIONS))
+        for name, source in fixture.EXTENDED_PUBLICATIONS.items():
+            with self.subTest(lesson=name):
+                before, after = fixture.extended_pair(name)
+                self.assertEqual(state.validate(before), state.validate(after))
+                self.assertTrue(before["compilerPuzzlesRequired"])
+                self.assertEqual(set(before) | {"compilerInputChecks"}, set(after))
+                for key in before:
+                    self.assertEqual(before[key], after[key], key)
+                self.assertEqual([source["activity"]],
+                                 [entry["activity"] for entry in after["compilerInputChecks"]])
+                blocks = state._blocks(before)
+                self.assertEqual(source["referenceSha256"],
+                                 hashlib.sha256(blocks[source["reference"]]["code"].encode()).hexdigest())
+                references = [entry for entry in before["referenceAfter"]
+                              if entry["activity"] == source["activity"]]
+                self.assertEqual(1, len(references))
+                self.assertIn(source["reference"], references[0]["blocks"])
+                self.assertEqual(before.get("compilerLocalIntChecks"), after.get("compilerLocalIntChecks"))
+                self.assertTrue(all(entry["activity"] != source["activity"]
+                                    for entry in after.get("compilerLocalIntChecks", [])))
+
+    def test_private_oracles_cover_independent_inputs_and_the_requested_optional_cases(self):
+        for name, source in fixture.EXTENDED_PUBLICATIONS.items():
+            declaration = fixture.extended_declarations(name)[0]
+            self.assertEqual({"activity", "probes"}, set(declaration))
+            public = source["publicCases"]
+            probes = declaration["probes"]
+            self.assertEqual({"u2l10": 3, "u3l1": 2, "u3l2": 4}[name], len(probes))
+            for stdin, expected in (*public, *source["privateCases"]):
+                values = tuple(map(int, stdin.split()))
+                if name == "u2l10":
+                    initial, returned, borrowed = values
+                    computed = f"Inicio: {initial}\nAhora: {initial + returned - borrowed}"
+                elif name == "u3l1":
+                    initial, spent, bonus = values
+                    computed = f"Puntos: {(initial - spent) * 2 + bonus}"
+                else:
+                    amount, capacity = values
+                    self.assertGreater(capacity, 0)
+                    computed = f"Bandejas completas: {amount // capacity}\nSobrantes: {amount % capacity}"
+                self.assertEqual(computed, expected, (name, stdin))
+            for probe, (_, expected) in zip(probes, source["privateCases"]):
+                self.assertEqual({"standardInput", "outputs"}, set(probe))
+                self.assertEqual([expected, expected + "\n"], probe["outputs"])
+            if name == "u2l10":
+                initial = tuple(map(int, public[0][0].split()))
+                changed = []
+                for probe in probes:
+                    values = tuple(map(int, probe["standardInput"].split()))
+                    indices = [i for i, (left, right) in enumerate(zip(initial, values)) if left != right]
+                    self.assertEqual(1, len(indices))
+                    changed.extend(indices)
+                self.assertEqual([0, 1, 2], changed)
+            else:
+                self.assertEqual([stdin for stdin, _ in public[1:]],
+                                 [probe["standardInput"] for probe in probes])
+
+    def test_pinned_main_bytes_reject_corruption_and_another_lesson(self):
+        authentic = {name: fixture.extended_published_bytes(name)
+                     for name in fixture.EXTENDED_PUBLICATIONS}
+        for name, payload in authentic.items():
+            self.assertEqual(payload, fixture.verify_extended_bytes(name, payload))
+            with self.assertRaises(ValueError):
+                fixture.verify_extended_bytes(name, payload + b"\n")
+            other = next(value for key, value in authentic.items() if key != name)
+            with self.assertRaises(ValueError):
+                fixture.verify_extended_bytes(name, other)
+
+    def test_new_private_contract_stays_append_only_and_cannot_borrow_another_owner(self):
+        for name, source in fixture.EXTENDED_PUBLICATIONS.items():
+            before, after = fixture.extended_pair(name)
+            for mutate in (lambda doc: doc.pop("compilerInputChecks"),
+                           lambda doc: doc["compilerInputChecks"][0]["probes"].reverse(),
+                           lambda doc: doc["compilerInputChecks"][0]["probes"][0].update(outputs=["fixed report"])):
+                changed = deepcopy(after)
+                mutate(changed)
+                with self.subTest(lesson=name), self.assertRaises(state.LayoutError):
+                    state.validate_transition(after, changed)
+            if before.get("compilerLocalIntChecks"):
+                changed = deepcopy(after)
+                changed["compilerInputChecks"][0]["activity"] = before["compilerLocalIntChecks"][0]["activity"]
+                with self.assertRaises(state.LayoutError):
+                    state.validate_transition(before, changed)
+            self.assertEqual(source["activity"], after["compilerInputChecks"][0]["activity"])
+
+    def test_extended_export_is_exact_repeatable_and_preflights_all_three_destinations(self):
+        with tempfile.TemporaryDirectory(prefix="lgaed-extended-input-qa-") as temp:
+            output = Path(temp) / "export"
+            self.assertEqual(output, fixture.export_extended(output))
+            for name, source in fixture.EXTENDED_PUBLICATIONS.items():
+                folder = output / name
+                self.assertEqual(fixture.extended_published_bytes(name), (folder / "before.json").read_bytes())
+                manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+                self.assertEqual(fixture.EXTENDED_COMMIT, manifest["publishedCommit"])
+                self.assertEqual(source["path"], manifest["publishedPath"])
+                self.assertEqual([source["activity"]], manifest["activities"])
+                self.assertEqual(source["reference"], manifest["reference"])
+                self.assertEqual(source["referenceSha256"], manifest["referenceSha256"])
+                for filename, digest in manifest["files"].items():
+                    self.assertEqual(digest, hashlib.sha256((folder / filename).read_bytes()).hexdigest())
+            paths = tuple(output.glob("*/*.json"))
+            self.assertEqual(9, len(paths))
+            stamps = {path: (path.stat().st_mtime_ns, path.read_bytes()) for path in paths}
+            fixture.export_extended(output)
+            self.assertEqual(stamps, {path: (path.stat().st_mtime_ns, path.read_bytes()) for path in paths})
+
+            conflict = Path(temp) / "conflict"
+            (conflict / "u3l2").mkdir(parents=True)
+            existing = conflict / "u3l2" / "after.json"
+            existing.write_bytes(b"existing QA")
+            with self.assertRaises(FileExistsError):
+                fixture.export_extended(conflict)
+            self.assertFalse((conflict / "u2l10").exists())
+            self.assertFalse((conflict / "u3l1").exists())
+            self.assertEqual(b"existing QA", existing.read_bytes())
+
+
 if __name__ == "__main__":
     unittest.main()

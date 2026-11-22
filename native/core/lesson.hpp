@@ -23,6 +23,7 @@
 #include "core/cpp_local_int_probe.hpp"
 #include "core/cpp_local_string_probe.hpp"
 #include "core/cpp_input_probe.hpp"
+#include "core/cpp_local_role_probe.hpp"
 #include "core/open_battery_check.hpp"
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
@@ -392,6 +393,8 @@ struct Block {
     std::optional<SimulationSpec> simulation;
     // Private stdin executions retain the original public cases and receipts.
     std::optional<CppInputCheck> input_check;
+    // Authored semantic roles select student locals without prescribing names.
+    std::optional<CppLocalRoleCheck> local_role_check;
 };
 struct Page {
     std::string stable_id;
@@ -661,6 +664,9 @@ struct FreshExecution {
     bool input_check_correct = false;
     std::string input_check_feedback;
     std::string input_request_fingerprint;
+    bool local_role_check_correct = false;
+    std::string local_role_check_feedback;
+    std::string local_role_request_fingerprint;
 };
 enum class OutputVerdict { unavailable, correct, incorrect };
 struct OutputEvaluation {

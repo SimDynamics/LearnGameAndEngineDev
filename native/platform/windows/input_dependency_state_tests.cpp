@@ -628,11 +628,527 @@ void run_owner(const Lesson& original,const Lesson& reviewed,const Lesson& metad
         "optional-case disk isolation, innocuous stderr, 10 capture negatives, cancellation, separate input/v1 seal, "
         "drafts/selections/stdin/preferences and old receipts preserved on disk reopen and reset.\n";
 }
+
+struct ExtendedInputPlan {
+    std::string_view name,path,owner,reference,source_sha256,reference_sha256;
+    std::vector<std::pair<std::string,std::string>> public_cases,private_cases,free_names;
+    std::string read_statement;
+    std::vector<std::pair<std::string,std::string>> fixed_operands;
+};
+const std::array<ExtendedInputPlan,3>& extended_input_plans() {
+    static const std::array<ExtendedInputPlan,3> plans{{
+        {"u2l10",
+         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_representar_procesar_y_recuperar.json",
+         "p1u2l10_reparar_registro","p1u2l10_ejemplo_copia_reparada",
+         "e0d2ec13f6a72e0f1548017e9f4a175a04a0cbad50021a42eafc0f18eef18aa0",
+         "ed1c83bff583431507d0260a596f080294f65561d5b155d8497a91f1aec6e6ed",
+         {{"4 5 2","Inicio: 4\nAhora: 7"},{"0 2 1","Inicio: 0\nAhora: 1"},{"6 0 2","Inicio: 6\nAhora: 4"}},
+         {{"6 5 2","Inicio: 6\nAhora: 9"},{"4 2 2","Inicio: 4\nAhora: 4"},{"4 5 1","Inicio: 4\nAhora: 8"}},
+         {{"libros","saldo_actual"},{"libros_devueltos","entradas"},{"libros_prestados","salidas"},{"libros_iniciales","saldo_al_abrir"}},
+         "    std::cin >> libros >> libros_devueltos >> libros_prestados;\n",
+         {{"libros","4"},{"libros_devueltos","5"},{"libros_prestados","2"}}},
+        {"u3l1",
+         "app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_valores_expresiones_y_prioridad.json",
+         "p1u3l1_construir_puntuacion","p1u3l1_ejemplo_puntuacion",
+         "0c4f3884ae261d3f27015de5e91d776efb4bf1dd521b725f3fc3203134fef716",
+         "8373f6490814b65622005006be6cafbae12b6cb1fc27b64db3812a5878fc100d",
+         {{"10 3 4","Puntos: 18"},{"7 0 2","Puntos: 16"},{"5 5 3","Puntos: 3"}},
+         {{"7 0 2","Puntos: 16"},{"5 5 3","Puntos: 3"}},
+         {{"puntos_iniciales","inicio"},{"puntos_gastados","coste"},{"bono","extra"},{"puntos_finales","resultado"}},
+         "    std::cin >> puntos_iniciales >> puntos_gastados >> bono;\n",
+         {{"puntos_iniciales","10"},{"puntos_gastados","3"},{"bono","4"}}},
+        {"u3l2",
+         "app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_division_y_resto.json",
+         "p1u3l2_construir_informe_bandejas","p1u3l2_ejemplo_bandejas",
+         "0f0fccd697fc9bd24ac1087bb735cdb89ecf362b9b8b35964790b94a5c48b596",
+         "36637787dc00da0ce5874a7974398768cf0d820d979a7aa2fc58fe59751eb588",
+         {{"29 6","Bandejas completas: 4\nSobrantes: 5"},{"24 6","Bandejas completas: 4\nSobrantes: 0"},
+          {"3 6","Bandejas completas: 0\nSobrantes: 3"},{"0 6","Bandejas completas: 0\nSobrantes: 0"},
+          {"29 4","Bandejas completas: 7\nSobrantes: 1"}},
+         {{"24 6","Bandejas completas: 4\nSobrantes: 0"},{"3 6","Bandejas completas: 0\nSobrantes: 3"},
+          {"0 6","Bandejas completas: 0\nSobrantes: 0"},{"29 4","Bandejas completas: 7\nSobrantes: 1"}},
+         {{"fichas","cantidad"},{"capacidad","por_grupo"},{"bandejas_completas","grupos"},{"sobrantes","resto"}},
+         "    std::cin >> fichas >> capacidad;\n",
+         {{"fichas","29"},{"capacidad","6"}}},
+    }};
+    return plans;
+}
+CppInputCheck extended_input_check(const ExtendedInputPlan& plan) {
+    CppInputCheck check;
+    for(const auto& [input,output]:plan.private_cases)
+        check.probes.push_back({input,{output,output+'\n'}});
+    return check;
+}
+std::string extended_free_names(std::string source,const ExtendedInputPlan& plan) {
+    const auto identifier=[](char c) {
+        return (c>='a'&&c<='z')||(c>='A'&&c<='Z')||(c>='0'&&c<='9')||c=='_';
+    };
+    // These exact authenticated sources contain the selected names only as
+    // C++ identifiers. Boundaries avoid changing the prefix of another name.
+    for(const auto& [before,after]:plan.free_names) {
+        std::size_t count=0;
+        for(std::size_t at=0;(at=source.find(before,at))!=source.npos;) {
+            const auto end=at+before.size();
+            if((at==0||!identifier(source[at-1]))&&(end==source.size()||!identifier(source[end]))) {
+                source.replace(at,before.size(),after);at+=after.size();++count;
+            }else at=end;
+        }
+        require(count>=2,"A free-name input solution did not rename its declaration and use");
+    }
+    return source;
+}
+bool extended_reference_available(const state::StateData& data,const Lesson& lesson,
+        const ExtendedInputPlan& plan) {
+    const auto location=stable_block_position(lesson,plan.reference);
+    require(location.has_value(),"The extended input reference has no stable position");
+    const auto& reference=lesson.pages[location->page].blocks[location->block];
+    const auto proofs=compiler_completion_snapshot(lesson,
+        [&](const Block& block){return compiler_puzzle_completed(data,lesson,block);});
+    return compiler_reference_available(lesson,location->page,reference,proofs,
+        [&](const Block& block){return compiler_puzzle_completed(data,lesson,block);});
+}
+state::Preferences extended_input_seals(const state::StateData& data,const Lesson& lesson,
+        const Block& block) {
+    state::Preferences seals;
+    const auto prefix="compiler-puzzle/v1/"+lesson.locale+'/'+lesson.id+'/'+exercise_key(lesson,block)+'/';
+    if(const auto domain=data.preferences.find("native_windows");domain!=data.preferences.end())
+        for(const auto& [key,value]:domain->second)
+            if(key.starts_with(prefix)&&key.find("/input/v1/")!=key.npos&&
+               (key.ends_with("/witness")||key.ends_with("/completed")))seals.emplace(key,value);
+    return seals;
+}
+const Block& prepare_extended_prerequisite(state::StateData& data,const Lesson& lesson,
+        const ExtendedInputPlan& plan,const std::filesystem::path& projects) {
+    const auto& owner=block_at(lesson,plan.owner);
+    const auto dependencies=activity_prerequisites(lesson,owner);
+    require(dependencies.size()==1,"An extended input prerequisite needs an explicit QA audit");
+    const auto& prerequisite=lesson.pages[dependencies[0].page].blocks[dependencies[0].block];
+    std::string source;
+    if(plan.name=="u2l10") {
+        require(prerequisite.stable_id=="block_0007_0002",
+            "The U2L10 input prerequisite is no longer its library report");
+        source=block_at(lesson,"block_0008_0001").code;
+    }else if(plan.name=="u3l1") {
+        require(prerequisite.stable_id=="p1u3l1_reparar_fichas"&&prerequisite.local_int_check,
+            "The U3L1 input prerequisite lost its independent local-variable goal");
+        source=replace_once(prerequisite.initial_code,
+            "(sobres + fichas_sueltas) * fichas_por_sobre",
+            "sobres * fichas_por_sobre + fichas_sueltas");
+    }else {
+        require(plan.name=="u3l2"&&prerequisite.stable_id=="p1u3l2_reparar_conversion_minutos"&&
+                prerequisite.local_int_check,
+            "The U3L2 input prerequisite lost its independent local-variable goal");
+        source=replace_once(prerequisite.initial_code,
+            "const int minutos = total_minutos / minutos_por_hora;",
+            "const int minutos = total_minutos % minutos_por_hora;");
+    }
+    require(prerequisite.output_check&&!prerequisite.output_check->cases.empty()&&!source.empty()&&
+            compiler_puzzle_case_count(data,lesson,prerequisite)==0,
+        "The extended prerequisite is missing or already has invented credit");
+    CppRunRequest request;
+    request.request_id=60000;request.revision=60001;
+    request.project_key=draft_key("programming",lesson,prerequisite);
+    request.source_utf8=std::move(source);
+    request.stdin_utf8=prerequisite.output_check->cases.front().standard_input;
+    request.projects_directory=projects;
+    request.compile_timeout=std::chrono::seconds(60);request.execution_timeout=std::chrono::seconds(8);
+    request.local_int_check=prerequisite.local_int_check;
+    require(compiler_runtime_request_allowed(prerequisite,request),
+        "The real extended prerequisite has an incompatible execution request");
+    const auto result=run_cpp(request);
+    const auto captured=capture_cpp_execution(request,result);
+    require(result.error_utf8.empty()&&result.compilation.succeeded()&&result.execution.succeeded()&&
+            result.execution.stderr_bytes.empty()&&
+            (!prerequisite.local_int_check||captured.local_int_check_correct)&&
+            evaluate_cpp_output_check(*prerequisite.output_check,captured,request.revision).verdict==OutputVerdict::correct&&
+            record_compiler_puzzle_case(data,lesson,prerequisite,request,captured,
+                "Actual declared prerequisite, including its independent local checks")&&
+            compiler_puzzle_completed(data,lesson,prerequisite)&&
+            compiler_puzzle_case_count(data,lesson,prerequisite)==1,
+        "A real extended input prerequisite failed its own independent contract");
+    return prerequisite;
+}
+void validate_extended_fixture(const ExtendedInputPlan& plan,const Lesson& original,
+        const Lesson& reviewed,const Lesson& metadata,const std::filesystem::path& directory) {
+    require(state::sha256(original.raw_json)==plan.source_sha256,
+        "Extended input QA did not load the exact main 2ca32b23 publication");
+    const auto without=JsonObject::Parse(winrt::to_hstring(reviewed.raw_json));
+    require(without.HasKey(L"compilerInputChecks"),"The extended input declaration is missing");
+    without.Remove(L"compilerInputChecks");
+    require(winrt::to_string(without.Stringify())==canonical(original.raw_json)&&
+            original.compiler_puzzles_required&&reviewed.compiler_puzzles_required&&
+            metadata.compiler_puzzles_required&&original.pages.size()==reviewed.pages.size(),
+        "Extended input QA changed a historical field or visible completion policy");
+    for(std::size_t page=0;page<original.pages.size();++page) {
+        require(original.pages[page].blocks.size()==reviewed.pages[page].blocks.size(),
+            "Extended input QA moved an authored block");
+        for(std::size_t index=0;index<original.pages[page].blocks.size();++index) {
+            const auto& before=original.pages[page].blocks[index];
+            const auto& after=reviewed.pages[page].blocks[index];
+            require(canonical(before.raw_json)==canonical(after.raw_json)&&
+                    before.stable_id==after.stable_id&&before.address.page==after.address.page&&
+                    before.address.block==after.address.block&&!before.input_check&&
+                    after.input_check.has_value()==(after.stable_id==plan.owner)&&
+                    before.local_int_check==after.local_int_check,
+                "Extended input QA changed an original block, another local goal or its address");
+        }
+    }
+    const auto& before=block_at(original,plan.owner);
+    const auto& after=block_at(reviewed,plan.owner);
+    const auto& projection=block_at(metadata,plan.owner);
+    const auto expected=extended_input_check(plan);
+    require(after.input_check&&*after.input_check==expected&&after.input_check==projection.input_check&&
+            before.initial_code==after.initial_code&&after.initial_code==projection.initial_code&&
+            before.standard_input==after.standard_input&&after.standard_input==projection.standard_input&&
+            before.output_check&&after.output_check&&projection.output_check&&
+            same_public_cases(*before.output_check,*after.output_check)&&
+            same_public_cases(*after.output_check,*projection.output_check)&&
+            before.output_check->input_comparison==TextComparison::tokens&&
+            before.output_check->cases.size()==plan.public_cases.size()&&
+            draft_key("programming",original,before)==draft_key("programming",reviewed,after),
+        "Extended full/progress loading changed a public case, draft or private input owner");
+    for(std::size_t index=0;index<plan.public_cases.size();++index) {
+        const auto& [input,output]=plan.public_cases[index];
+        const auto& actual=before.output_check->cases[index];
+        require(actual.standard_input==input&&actual.outputs==std::vector<std::string>{output,output+'\n'},
+            "An extended input public case lost its original labels, data or optional final LF");
+    }
+    require(before.standard_input==plan.public_cases.front().first&&
+            state::sha256(block_at(original,plan.reference).code)==plan.reference_sha256,
+        "The extended input source or first public stdin is not authentic");
+    const auto dependency=reference_activity(reviewed,block_at(reviewed,plan.reference));
+    require(dependency&&reviewed.pages[dependency->page].blocks[dependency->block].stable_id==plan.owner,
+        "The extended reference no longer belongs to this exact editor");
+    const auto manifest=JsonObject::Parse(winrt::to_hstring(file_bytes_as_string(directory/"manifest.json")));
+    const auto files=manifest.GetNamedObject(L"files");
+    const auto owners=manifest.GetNamedArray(L"activities");
+    require(winrt::to_string(manifest.GetNamedString(L"publishedCommit"))==
+                "2ca32b2337178d1effa3a2c81759e2493cd746d0"&&
+            winrt::to_string(manifest.GetNamedString(L"publishedPath"))==plan.path&&
+            owners.Size()==1&&winrt::to_string(owners.GetStringAt(0))==plan.owner&&
+            winrt::to_string(manifest.GetNamedString(L"reference"))==plan.reference&&
+            winrt::to_string(manifest.GetNamedString(L"referenceSha256"))==plan.reference_sha256&&
+            winrt::to_string(files.GetNamedString(L"before.json"))==plan.source_sha256&&
+            winrt::to_string(files.GetNamedString(L"after.json"))==state::sha256(reviewed.raw_json),
+        "The extended input export manifest does not authenticate these exact files");
+}
+void run_extended_owner(const ExtendedInputPlan& plan,const Lesson& original,
+        const Lesson& reviewed,const Lesson& metadata) {
+    const auto& former=block_at(original,plan.owner);
+    const auto& current=block_at(reviewed,plan.owner);
+    const auto& projected=block_at(metadata,plan.owner);
+    const auto source=block_at(original,plan.reference).code;
+    const auto& first=plan.public_cases.front();
+    const auto fixed="#include <iostream>\nint main() {\n    std::cout << "+
+        winrt::to_string(JsonValue::CreateStringValue(winrt::to_hstring(first.second)).Stringify())+
+        ";\n    return 0;\n}\n";
+    const auto renamed=extended_free_names(source,plan);
+    const auto final_lf=replace_once(renamed,"    return 0;\n",
+        "    std::cout << '\\n';\n    return 0;\n");
+    require(source!=fixed&&renamed!=source&&final_lf!=renamed,
+        "Extended input positive and historical programs must be distinct sources");
+    const auto options=LaunchOptions{ProfileId::Codex,
+        L"input-dependency-"+std::wstring(winrt::to_hstring(plan.name).c_str())+L"-"+
+        std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
+    const auto environment=resolve_windows_environment(options);
+    require(environment.options.qa_instance&&!environment.options.qa_instance->empty()&&
+            !std::filesystem::exists(environment.paths.root),
+        "Extended input QA requires a fresh isolated profile");
+    initialize_profile_directories(environment.paths);
+    std::uint64_t sequence=40000;
+    const auto make_request=[&](std::string program,bool checked=true,
+                               std::optional<std::string> input=std::nullopt) {
+        CppRunRequest request;
+        request.request_id=++sequence;request.revision=sequence+1000;
+        request.project_key=draft_key("programming",reviewed,current);
+        request.source_utf8=std::move(program);
+        request.stdin_utf8=input.value_or(first.first);
+        request.projects_directory=environment.paths.projects;
+        request.compile_timeout=std::chrono::seconds(60);
+        request.execution_timeout=std::chrono::seconds(8);
+        if(checked)request.input_check=current.input_check;
+        return request;
+    };
+    const auto execute=[&](const CppRunRequest& request,std::string_view expected) {
+        const auto result=run_cpp(request);
+        require(result.error_utf8.empty()&&result.compilation.succeeded()&&
+                result.execution.succeeded()&&result.execution.stderr_bytes.empty()&&
+                cpp_input_normalize_newlines(result.execution.stdout_bytes)==expected,
+            "Real extended public execution failed: "+std::string(plan.owner)+" / "+
+                result.error_utf8+result.compilation.stderr_bytes+result.execution.stderr_bytes);
+        require(file_bytes_as_string(result.run_directory/L"main.cpp")==request.source_utf8&&
+                file_bytes_as_string(result.run_directory/L"stdin.bin")==request.stdin_utf8&&
+                file_bytes_as_string(result.run_directory/L"execution-stdout.bin")==result.execution.stdout_bytes&&
+                file_bytes_as_string(result.run_directory/L"execution-stderr.bin")==result.execution.stderr_bytes,
+            "Extended private checks changed the original public source, stdin or console files");
+        if(request.input_check)require(result.input_executable_sha256.size()==64&&
+            state::sha256(state::read_bytes(result.run_directory/L"program.exe"))==result.input_executable_sha256,
+            "Extended input checks did not retain the same public executable");
+        return result;
+    };
+    const auto private_proof=[&](const CppRunRequest& request,const CppRunResult& result) {
+        const auto captured=capture_cpp_execution(request,result);
+        require(compiler_runtime_request_allowed(current,request)&&captured.input_check_correct&&
+                !cpp_input_request_fingerprint(request).empty()&&
+                captured.input_request_fingerprint==cpp_input_request_fingerprint(request)&&
+                result.input_request_fingerprint==cpp_input_request_fingerprint(request)&&
+                result.input_evidence.size()==current.input_check->probes.size()&&
+                evaluate_cpp_output_check(*current.output_check,captured,request.revision).verdict==OutputVerdict::correct,
+            "An extended correct solution lacks its independently witnessed input observations");
+        for(std::size_t index=0;index<current.input_check->probes.size();++index) {
+            const auto& probe=current.input_check->probes[index];
+            const auto& evidence=result.input_evidence[index];
+            require(evidence.source_sha256==state::sha256(request.source_utf8)&&
+                    evidence.standard_input==probe.standard_input&&
+                    evidence.executable_sha256==result.input_executable_sha256&&
+                    evidence.execution.succeeded()&&evidence.execution.stderr_bytes.empty()&&
+                    cpp_input_expected_output(evidence.execution.stdout_bytes,probe),
+                "Extended private evidence belongs to another source, input, binary or result");
+        }
+        return captured;
+    };
+    state::StateData saved;
+    state::prepare_lesson_state(saved,original);
+    // References use the production dependency snapshot. Only the declared
+    // predecessor is prepared, through its real runner and private checks;
+    // this state-level regression does not claim to navigate a lesson view.
+    const auto& prerequisite=prepare_extended_prerequisite(saved,original,plan,environment.paths.projects);
+    saved.preferences["learning_progress"]["other_course_unchanged"]=std::int64_t{42};
+    saved.preferences["native_windows"]["unrelated_reader_setting"]=std::string("keep");
+    std::vector<std::pair<std::string,state::Draft>> drafts;
+    for(const auto& page:original.pages)for(const auto& editor:page.blocks)
+        if(editor.type==BlockType::cpp_compiler) {
+            state::Draft draft;
+            draft.source=(editor.stable_id==plan.owner?renamed:editor.initial_code)+"// Saved independent draft.\n";
+            draft.input=" \t"+editor.standard_input.value_or("")+"\n";
+            draft.selection_start=9;draft.selection_end=27;
+            const auto key=draft_key("programming",original,editor);
+            state::put_draft(saved,key,draft);drafts.emplace_back(key,std::move(draft));
+        }
+    const auto verify_drafts=[&](const state::StateData& data) {
+        for(const auto& [key,expected]:drafts) {
+            const auto actual=state::get_draft(data,key,"");
+            require(actual.has_saved&&actual.source==expected.source&&actual.input==expected.input&&
+                    actual.selection_start==expected.selection_start&&actual.selection_end==expected.selection_end,
+                "Extended checking, disk reopen or Reset changed a saved draft, stdin or selection");
+        }
+    };
+
+    const auto old_request=make_request(fixed,false);
+    require(compiler_runtime_request_allowed(former,old_request)&&
+            !compiler_runtime_request_allowed(current,old_request),
+        "Extended original and revised requests have become indistinguishable");
+    const auto old_result=execute(old_request,first.second);
+    const auto old_capture=capture_cpp_execution(old_request,old_result);
+    require(record_compiler_puzzle_case(saved,original,former,old_request,old_capture,
+                "Real historical stdout from a distinct fixed-report source")&&
+            compiler_puzzle_completed(saved,original,former)&&
+            compiler_puzzle_case_count(saved,original,former)==1&&!has_input_witness(saved),
+        "The real extended historical stdout receipt is missing");
+    const auto legacy=saved;
+    {
+        state::StateStore writer(environment.paths.root);
+        require(writer.empty(),"The extended QA profile already contains progress");
+        (void)writer.load();writer.save(legacy);
+    }
+    {
+        state::StateStore reader(environment.paths.root);
+        require(!reader.empty(),"The extended historical disk receipt is missing");
+        saved=reader.load();
+    }
+    state::validate_lesson_state(saved,reviewed);
+    validate_compiler_puzzle_state(saved,metadata,projected);
+    require(saved==legacy&&!compiler_puzzle_completed(saved,reviewed,current)&&
+            !compiler_puzzle_completed(saved,metadata,projected)&&
+            compiler_puzzle_case_count(saved,reviewed,current)==0&&
+            !extended_reference_available(saved,reviewed,plan),
+        "Loading the extended input goal promoted stdout history or unlocked its reference");
+    auto replay_request=old_request;replay_request.input_check=current.input_check;
+    const auto replay=capture_cpp_execution(replay_request,old_result);
+    require(compiler_runtime_request_allowed(current,replay_request)&&
+            replay.source_revision==replay_request.revision&&
+            replay.input_request_fingerprint==cpp_input_request_fingerprint(replay_request)&&
+            !replay.input_check_correct&&
+            !record_compiler_puzzle_case(saved,reviewed,current,replay_request,replay,
+                "Same request ID/revision still has no private input evidence")&&saved==legacy,
+        "Extended old stdout was promoted without fresh private evidence");
+
+    std::vector<std::pair<std::string,std::string>> negatives{{"fixed report",fixed}};
+    for(const auto& [operand,value]:plan.fixed_operands)
+        negatives.emplace_back("fixed "+operand,replace_once(source,plan.read_statement,
+            plan.read_statement+"    "+operand+" = "+value+";\n"));
+    for(const auto& [name,program]:negatives) {
+        const auto request=make_request(program);
+        require(compiler_runtime_request_allowed(current,request),
+            "An extended negative was rejected for an unrelated request shape");
+        const auto result=execute(request,first.second);
+        const auto captured=capture_cpp_execution(request,result);
+        require(captured.source_revision==request.revision&&
+                captured.input_request_fingerprint==cpp_input_request_fingerprint(request)&&
+                result.input_evidence.size()==current.input_check->probes.size()&&
+                std::ranges::all_of(result.input_evidence,[](const auto& evidence) {
+                    return evidence.execution.succeeded();
+                })&&
+                evaluate_cpp_output_check(*current.output_check,captured,request.revision).verdict==OutputVerdict::correct&&
+                !captured.input_check_correct&&
+                !record_compiler_puzzle_case(saved,reviewed,current,request,captured,
+                    "Publicly correct but privately fixed operand")&&saved==legacy,
+            "A publicly correct extended fixed-input solution earned credit: "+std::string(plan.owner)+" / "+name);
+    }
+
+    // A voluntary case is a real saved observation, but its return value is
+    // false until the first public case has earned objective completion.
+    const auto optional_request=make_request(source,true,plan.public_cases[1].first);
+    const auto optional_result=execute(optional_request,plan.public_cases[1].second);
+    const auto optional_capture=private_proof(optional_request,optional_result);
+    auto partial=legacy;
+    require(!record_compiler_puzzle_case(partial,reviewed,current,optional_request,optional_capture,
+                "Real optional input before the first public case")&&
+            !compiler_puzzle_completed(partial,reviewed,current)&&
+            compiler_puzzle_case_count(partial,reviewed,current)==1&&!has_input_witness(partial)&&
+            !extended_reference_available(partial,reviewed,plan),
+        "An optional-only extended observation completed or unlocked the mandatory first case");
+    const auto partial_environment=resolve_windows_environment({ProfileId::Codex,
+        *environment.options.qa_instance+L"-optional",false});
+    require(!std::filesystem::exists(partial_environment.paths.root),
+        "The optional extended QA profile is not fresh");
+    initialize_profile_directories(partial_environment.paths);
+    {
+        state::StateStore writer(partial_environment.paths.root);
+        require(writer.empty(),"The optional extended QA profile contains progress");
+        (void)writer.load();writer.save(partial);
+    }
+    {
+        state::StateStore reader(partial_environment.paths.root);
+        require(!reader.empty(),"The optional extended observation was not saved");
+        const auto restored=reader.load();
+        state::validate_lesson_state(restored,reviewed);
+        validate_compiler_puzzle_state(restored,metadata,projected);
+        require(restored==partial&&!compiler_puzzle_completed(restored,metadata,projected)&&
+                compiler_puzzle_case_count(restored,metadata,projected)==1&&!has_input_witness(restored),
+            "Optional-only extended disk state was promoted, corrupted or lost");
+        preserves_old_preferences(restored,legacy);verify_drafts(restored);partial=restored;
+    }
+    const auto request=make_request(source);
+    const auto result=execute(request,first.second);
+    const auto captured=private_proof(request,result);
+    require(record_compiler_puzzle_case(saved,reviewed,current,request,captured,
+                "One public check and the authored private inputs")&&
+            compiler_puzzle_completed(saved,reviewed,current)&&
+            compiler_puzzle_completed(saved,metadata,projected)&&
+            compiler_puzzle_case_count(saved,reviewed,current)==1&&has_input_witness(saved)&&
+            extended_reference_available(saved,reviewed,plan),
+        "One real extended first case failed to complete and open its reference");
+    const auto seals=extended_input_seals(saved,reviewed,current);
+    require(seals.size()==2,"The extended input goal lacks its separate completion and witness seals");
+    require(record_compiler_puzzle_case(partial,reviewed,current,request,captured,
+                "The first public case after an optional disk observation")&&
+            compiler_puzzle_completed(partial,reviewed,current)&&
+            compiler_puzzle_case_count(partial,reviewed,current)==2&&has_input_witness(partial),
+        "The extended first case lost an earlier optional observation");
+
+    for(const bool with_lf:{false,true}) {
+        const auto renamed_request=make_request(with_lf?final_lf:renamed);
+        const auto renamed_result=execute(renamed_request,first.second+(with_lf?"\n":""));
+        const auto renamed_capture=private_proof(renamed_request,renamed_result);
+        for(std::size_t index=0;index<current.input_check->probes.size();++index)
+            require(cpp_input_normalize_newlines(renamed_result.input_evidence[index].execution.stdout_bytes)==
+                        current.input_check->probes[index].outputs[with_lf?1u:0u],
+                "The real renamed program did not exercise both optional-final-LF forms");
+        auto independent=legacy;
+        require(record_compiler_puzzle_case(independent,reviewed,current,renamed_request,renamed_capture,
+                    "Real free-name solution with optional final LF")&&
+                compiler_puzzle_completed(independent,reviewed,current)&&
+                compiler_puzzle_case_count(independent,reviewed,current)==1&&
+                extended_reference_available(independent,reviewed,plan),
+            "The extended input contract imposed authored variable names or a final-LF spelling");
+        preserves_old_preferences(independent,legacy);verify_drafts(independent);
+    }
+    for(std::size_t index=1;index<plan.public_cases.size();++index) {
+        const auto optional=make_request(source,true,plan.public_cases[index].first);
+        const auto observed=execute(optional,plan.public_cases[index].second);
+        const auto proof=private_proof(optional,observed);
+        require(record_compiler_puzzle_case(saved,reviewed,current,optional,proof,
+                    "A voluntary original public input after completion")&&
+                compiler_puzzle_case_count(saved,reviewed,current)==index+1&&
+                extended_input_seals(saved,reviewed,current)==seals,
+            "An optional extended case changed the earned seals or the public case count");
+    }
+    const auto edited=make_request(renamed+"// A new unfinished attempt.\n");
+    invalidate_compiler_puzzle_attempt(saved,reviewed,current,edited);
+    require(compiler_puzzle_completed(saved,reviewed,current)&&
+            extended_input_seals(saved,reviewed,current)==seals,
+        "Editing an extended draft erased its independently earned input achievement");
+    preserves_old_preferences(saved,legacy);verify_drafts(saved);
+    {
+        state::StateStore writer(environment.paths.root);
+        require(!writer.empty()&&writer.load()==legacy,
+            "Extended in-memory experiments changed durable historical state");
+        writer.save(saved);
+    }
+    state::StateStore reader(environment.paths.root);
+    require(!reader.empty(),"The extended input result was not saved");
+    const auto restored=reader.load();
+    state::validate_lesson_state(restored,reviewed);
+    validate_compiler_puzzle_state(restored,metadata,projected);
+    require(restored==saved&&compiler_puzzle_completed(restored,original,former)&&
+            compiler_puzzle_case_count(restored,original,former)==1&&
+            compiler_puzzle_completed(restored,reviewed,current)&&
+            compiler_puzzle_completed(restored,metadata,projected)&&
+            compiler_puzzle_case_count(restored,reviewed,current)==plan.public_cases.size()&&
+            extended_input_seals(restored,reviewed,current)==seals&&
+            extended_reference_available(restored,reviewed,plan),
+        "Extended disk reopen lost history, optional cases, input seals or reference access");
+    preserves_old_preferences(restored,legacy);verify_drafts(restored);
+    auto prerequisite_missing=restored;
+    reset_compiler_puzzle(prerequisite_missing,reviewed,block_at(reviewed,prerequisite.stable_id));
+    require(compiler_puzzle_completed(prerequisite_missing,reviewed,current)&&
+            !extended_reference_available(prerequisite_missing,reviewed,plan),
+        "An extended reference bypassed its actual activityAfter prerequisite");
+    auto reset=restored;
+    reset_compiler_puzzle(reset,reviewed,current);
+    require(!compiler_puzzle_completed(reset,reviewed,current)&&
+            compiler_puzzle_case_count(reset,reviewed,current)==0&&
+            extended_input_seals(reset,reviewed,current).empty()&&
+            compiler_puzzle_completed(reset,original,former)&&
+            compiler_puzzle_case_count(reset,original,former)==1&&
+            !extended_reference_available(reset,reviewed,plan),
+        "Extended Reset erased stdout history or retained the new input achievement");
+    preserves_old_preferences(reset,legacy);verify_drafts(reset);
+    std::cout<<"PASS "<<plan.owner<<": exact main source; "<<plan.private_cases.size()
+        <<" private inputs of the same executable; fixed report and "<<plan.fixed_operands.size()
+        <<" fixed operands rejected; free names and both final-LF forms; one first case passes its reference gate; "
+        <<"all "<<plan.public_cases.size()<<" public cases, optional-only false return, distinct historical source, "
+        <<"actual declared prerequisite, separate seals, drafts/stdin/selections, disk reopen and scoped Reset preserved.\n";
+}
+void run_extended_inputs(const std::filesystem::path& root) {
+    for(const auto& plan:extended_input_plans()) {
+        const auto directory=root/std::filesystem::path(plan.name);
+        const auto before_bytes=state::read_bytes(directory/"before.json");
+        const auto after_bytes=state::read_bytes(directory/"after.json");
+        const auto manifest_bytes=state::read_bytes(directory/"manifest.json");
+        // The first loader initializes WinRT before any JSON helper is used.
+        const auto original=load_lesson(directory/"before.json");
+        const auto reviewed=load_lesson(directory/"after.json");
+        const auto metadata=parse_lesson_progress_metadata(reviewed.raw_json,"es");
+        validate_extended_fixture(plan,original,reviewed,metadata,directory);
+        std::cout<<"RUN extended input "<<plan.owner<<"\n"<<std::flush;
+        run_extended_owner(plan,original,reviewed,metadata);
+        require(state::read_bytes(directory/"before.json")==before_bytes&&
+                state::read_bytes(directory/"after.json")==after_bytes&&
+                state::read_bytes(directory/"manifest.json")==manifest_bytes,
+            "Extended native QA changed its authentic source, proposal or manifest");
+    }
+}
+
 } // namespace
 
 int main(int argc,char** argv) {
+    const bool extended=argc==3&&std::string_view(argv[1])=="--extended-input";
     try {
-        require(argc==2,"Usage: input_dependency_state_tests <exported-fixture-directory>");
+        if(extended){run_extended_inputs(std::filesystem::path(argv[2]));return 0;}
+        require(argc==2&&std::string_view(argv[1])!="--extended-input",
+            "Usage: input_dependency_state_tests <u2l9-fixture-directory> | --extended-input <root>");
         const auto directory=std::filesystem::path(argv[1]);
         // load_lesson initializes WinRT before any JsonObject is constructed.
         const auto original=load_lesson(directory/"before.json");
@@ -644,7 +1160,7 @@ int main(int argc,char** argv) {
             run_owner(original,reviewed,metadata,index);
         return 0;
     }catch(const std::exception& error) {
-        std::cerr<<"FAIL U2L9 input dependency: "<<error.what()<<'\n';
+        std::cerr<<(extended?"FAIL extended input dependency: ":"FAIL U2L9 input dependency: ")<<error.what()<<'\n';
         return 1;
     }
 }

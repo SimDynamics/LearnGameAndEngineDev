@@ -6,6 +6,11 @@ on:
     paths:
       - .github/workflows/codex-local-int-dependency.yml
       - native/core/cpp_local_int_probe.hpp
+      - native/core/cpp_local_role_probe.hpp
+      - native/core/cpp_local_role_probe_tests.cpp
+      - native/platform/windows/local_role_state_tests.cpp
+      - scripts/curriculum/local_role_fixture_source.py
+      - scripts/curriculum/test_local_role_probe_authoring.py
       - native/core/cpp_input_probe.hpp
       - native/core/cpp_input_probe_tests.cpp
       - native/platform/windows/input_dependency_state_tests.cpp
@@ -44,7 +49,7 @@ permissions:
 
 jobs:
   authoring:
-    name: Validate authentic U2 int, char, bool and string editor contracts
+    name: Validate authentic scalar roles, local variables and input contracts
     runs-on: windows-2022
     timeout-minutes: 5
     env:
@@ -61,7 +66,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Verify private inputs and preserved public U2L9 cases
+      - name: Verify name-free local roles against the authenticated U2L10 publication
+        run: python -B -m unittest discover -s scripts/curriculum -p test_local_role_probe_authoring.py -v
+      - name: Verify private inputs and preserved public U2L9 U2L10 U3L1 U3L2 cases
         run: python -B -m unittest discover -s scripts/curriculum -p test_input_dependency_authoring.py -v
       - name: Verify typed char and bool probes against the immutable U2L8 source
         run: python -B -m unittest discover -s scripts/curriculum -p test_local_scalar_probe_authoring.py -v
@@ -102,6 +109,14 @@ jobs:
           }
       - name: Prepare hosted Visual C++ for isolated source tests
         uses: ilammy/msvc-dev-cmd@v1
+      - name: Verify scalar role bindings and instrumentation with MSVC
+        run: |
+          $unit = Join-Path $env:RUNNER_TEMP 'lgaed_local_role_probe_tests.exe'
+          $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_role_probe_tests.obj'
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /utf-8 /I native native\core\cpp_local_role_probe_tests.cpp "/Fe:$unit" "/Fo:$obj"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $unit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify private input limits and output comparisons with MSVC
         run: |
           $unit = Join-Path $env:RUNNER_TEMP 'lgaed_input_probe_tests.exe'
@@ -134,7 +149,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B scripts/curriculum/test_local_string_live_compilation.py --emitter "$emitter" --compiler MSVC
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Compile and execute 55 original/mutated C++ programs on hosted MSVC
+      - name: Compile and execute 57 original/mutated C++ programs on hosted MSVC
         run: |
           $emitter = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_fixtures.exe'
           $obj = Join-Path $env:RUNNER_TEMP 'lgaed_local_int_fixtures.obj'
@@ -187,7 +202,7 @@ jobs:
           [System.IO.File]::WriteAllText(
             (Join-Path $generated 'native_build_config.hpp'), $template,
             [System.Text.UTF8Encoding]::new($false))
-      - name: Compile the two original native integration test translation units
+      - name: Compile four native integration test translation units
         run: |
           $generated = Join-Path $env:RUNNER_TEMP 'local-state-generated'
           $flags = @(
@@ -200,7 +215,8 @@ jobs:
           foreach ($source in @(
               'native/platform/windows/local_int_state_tests.cpp',
               'native/platform/windows/local_string_state_tests.cpp',
-              'native/platform/windows/input_dependency_state_tests.cpp')) {
+              'native/platform/windows/input_dependency_state_tests.cpp',
+              'native/platform/windows/local_role_state_tests.cpp')) {
             $object = Join-Path $env:RUNNER_TEMP (
               [System.IO.Path]::GetFileNameWithoutExtension($source) + '.obj')
             & cl @flags $source "/Fo:$object"

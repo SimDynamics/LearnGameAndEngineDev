@@ -200,9 +200,11 @@ function(lgaed_add_local_variable_state_tests)
         TIMEOUT 360 RUN_SERIAL TRUE)
     include("${CMAKE_SOURCE_DIR}/cmake/InputDependencyTests.cmake")
     lgaed_add_input_dependency_state_tests("${CMAKE_SOURCE_DIR}")
+    lgaed_add_local_role_state_tests("${CMAKE_SOURCE_DIR}")
     add_custom_target(lgaed_local_variable_state_qa_targets
         DEPENDS lgaed_local_int_state_tests lgaed_local_string_state_tests
-            lgaed_input_dependency_state_tests lgaed_input_probe_tests)
+            lgaed_input_dependency_state_tests lgaed_input_probe_tests
+            lgaed_local_role_state_tests lgaed_local_role_probe_tests)
 endfunction()
 
 # Shared native integration probe for all fourteen P3 source owners. Unlike

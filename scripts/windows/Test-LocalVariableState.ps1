@@ -57,8 +57,10 @@ try {
     & (Join-Path $PSScriptRoot 'Build-Native.ps1') @buildArgs
 
     $expected = @('native.local_int_state', 'native.local_string_state',
-        'native.input_probe', 'native.input_dependency_state', 'native.input_dependency_authoring')
-    $regex = '^native[.](local_(int|string)_state|input_(probe|dependency_state|dependency_authoring))$'
+        'native.input_probe', 'native.input_dependency_state', 'native.input_dependency_authoring',
+        'native.continued_input_dependency_state', 'native.local_role_probe',
+        'native.current_u2l10_local_role_state', 'native.local_role_authoring')
+    $regex = '^native[.](local_(int|string)_state|input_(probe|dependency_state|dependency_authoring)|continued_input_dependency_state|local_role_(probe|authoring)|current_u2l10_local_role_state)$'
     Push-Location -LiteralPath $root
     try {
         $json = & $ctest --preset $Preset --show-only=json-v1 -R $regex
@@ -92,7 +94,7 @@ try {
             ArgumentList = @(
                 '--preset', $Preset, '--tests-regex', $regex,
                 '--output-on-failure', '--no-tests=error',
-                '--timeout', '360', '-j', '1'
+                '--timeout', '900', '-j', '1'
             )
             WorkingDirectory = $root
             WindowStyle = 'Hidden'

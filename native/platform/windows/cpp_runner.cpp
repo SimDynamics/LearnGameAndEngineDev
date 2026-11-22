@@ -408,7 +408,7 @@ std::string input_check_fingerprint(const CppRunRequest& request) {
        request.execution_timeout.count()<=0||request.output_limit_bytes==0||
        request.output_limit_bytes>16*1024*1024||
        request.diagnostic||request.cmake||!request.project_files.empty()||
-       !request.source_files.empty()||request.local_int_check||request.local_string_check||
+       !request.source_files.empty()||request.local_int_check||request.local_string_check||request.local_role_check||
        request.named_rule_probe||request.open_battery_probe||request.boolean_battery_probe||
        request.reduction_probe||request.integer_battery_probe||request.adjustment_project_probe||
        request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
@@ -441,11 +441,87 @@ std::string input_check_fingerprint(const CppRunRequest& request) {
     return state::sha256(frame);
 }
 
+// Name-free scalar roles are a new domain. Legacy local-int/string/input
+// preimages remain unchanged when this independent objective is absent.
+std::string local_role_fingerprint(const CppRunRequest& request) {
+    if(!request.local_role_check||
+       !curriculum::cpp_local_role_check_valid(*request.local_role_check)||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||
+       !request.projects_directory.is_absolute()||request.source_utf8.empty()||
+       request.source_utf8.size()>4*1024*1024||request.source_utf8.find('\0')!=std::string::npos||
+       !request.stdin_utf8.empty()||request.compile_timeout.count()<=0||
+       request.execution_timeout.count()<=0||request.output_limit_bytes==0||
+       request.output_limit_bytes>16*1024*1024||request.diagnostic||request.cmake||
+       !request.project_files.empty()||!request.source_files.empty()||request.input_check||
+       request.local_int_check||request.local_string_check||request.named_rule_probe||
+       request.open_battery_probe||request.boolean_battery_probe||request.reduction_probe||
+       request.integer_battery_probe||request.adjustment_project_probe||
+       request.indexed_unique_transfer_probe||request.defaulted_move_policy_probe||
+       request.independent_copy_assignment_probe||request.move_assignment_invariant_probe||
+       request.array_owner_read_probe||request.array_copy_move_probe||request.array_return_take_probe||
+       request.polymorphic_destruction_probe||request.virtual_lifetime_probe||
+       request.derived_preparation_probe||request.abstract_interface_probe||
+       request.interface_collection_probe||request.polymorphic_clone_probe||request.dual_interface_probe||
+       request.rejection_probe||request.observation_probe||request.assertion_mode||
+       request.cmake_graph_check||request.capture_cmake_graph||
+       !request.integer_battery_prerequisite.empty()||
+       !request.cmake_initial_observation_prerequisite.empty())return {};
+    const auto plan=curriculum::cpp_local_role_plan(request.source_utf8,*request.local_role_check);
+    if(!plan)return {};
+    const auto field=[](std::string_view text) {
+        return std::to_string(text.size())+":"+std::string(text);
+    };
+    std::string frame="compiler-local-role-capture-v1/"+
+        field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+field(request.project_key)+
+        field(utf8(request.projects_directory.wstring()))+
+        field(std::to_string(static_cast<int>(request.backend)))+
+        field(std::to_string(static_cast<int>(request.action)))+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes))+
+        field(curriculum::cpp_local_role_check_frame(*request.local_role_check))+
+        field(state::sha256(plan->normalized_source))+
+        field(std::to_string(plan->candidates.size()));
+    for(const auto& candidate:plan->candidates)
+        frame+=field(candidate.name)+field(std::to_string(candidate.initialization_end))+
+            field(std::to_string(static_cast<int>(candidate.declared_type)))+
+            field(candidate.constant_expression?"constexpr":"ordinary");
+    return state::sha256(frame);
+}
+std::optional<std::size_t> local_role_other_candidate(
+        const curriculum::CppLocalRoleCheck& spec,
+        const curriculum::CppLocalRoleProbe& probe,
+        const std::vector<std::uint32_t>& binding) {
+    if(probe.before_update_of.empty())return {};
+    const auto role=std::ranges::find(spec.roles,probe.before_update_of,
+        &curriculum::CppLocalRole::id);
+    if(role==spec.roles.end())return {};
+    const auto index=static_cast<std::size_t>(role-spec.roles.begin());
+    if(index>=binding.size()||binding[index]==std::numeric_limits<std::uint32_t>::max())return {};
+    return binding[index];
+}
+std::string local_role_binding_fingerprint(std::string_view request_frame,
+        const CppLocalRoleEvidence& evidence) {
+    const auto field=[](std::string_view text) {
+        return std::to_string(text.size())+":"+std::string(text);
+    };
+    std::string frame="compiler-local-role-binding-v1/"+field(request_frame)+
+        field(std::to_string(evidence.binding.size()));
+    for(const auto slot:evidence.binding)frame+=field(std::to_string(slot));
+    frame+=field(std::to_string(evidence.observations.size()));
+    for(const auto& observation:evidence.observations)
+        frame+=field(std::to_string(observation.role_index))+
+            field(std::to_string(observation.probe_index))+field(observation.instrumented_source_sha256);
+    return state::sha256(frame);
+}
+
 // Private integer variations bind the exact student source, input and lesson
 // draft identity to all independently authored expected results. Never reuse
 // an ordinary output receipt as proof of these hidden observations.
 std::string local_int_fingerprint(const CppRunRequest& request) {
-    if(!request.local_int_check||request.local_string_check||request.input_check||
+    if(!request.local_int_check||request.local_string_check||request.input_check||request.local_role_check||
        !curriculum::cpp_local_int_check_valid(*request.local_int_check)||
        request.backend!=CppRunRequest::Backend::native_msvc||
        request.action!=CppRunRequest::Action::compile_run||
@@ -490,7 +566,7 @@ std::string local_int_fingerprint(const CppRunRequest& request) {
 }
 
 std::string local_string_fingerprint(const CppRunRequest& request) {
-    if(!request.local_string_check||request.local_int_check||request.input_check||
+    if(!request.local_string_check||request.local_int_check||request.input_check||request.local_role_check||
        !curriculum::cpp_local_string_check_valid(*request.local_string_check)||
        request.backend!=CppRunRequest::Backend::native_msvc||
        request.action!=CppRunRequest::Action::compile_run||
@@ -1066,7 +1142,7 @@ std::string indexed_unique_transfer_fingerprint(const CppRunRequest& request) {
        request.virtual_lifetime_probe || request.derived_preparation_probe ||
        request.abstract_interface_probe || request.interface_collection_probe ||
        request.polymorphic_clone_probe || request.dual_interface_probe ||
-       request.local_int_check ||
+       request.local_int_check || request.local_role_check ||
        request.open_battery_probe || request.boolean_battery_probe ||
        request.reduction_probe || request.integer_battery_probe ||
        request.adjustment_project_probe || request.rejection_probe ||
@@ -3547,6 +3623,41 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             if(passed)fresh.input_check_feedback.clear();
         }
     }
+    if(request.local_role_check) {
+        const auto frame=local_role_fingerprint(request);
+        fresh.local_role_request_fingerprint=frame;
+        fresh.local_role_check_feedback=
+            "La salida coincide, pero todavía no se acreditó que los resultados "
+            "procedan de los valores y estados guardados en las variables.";
+        const auto plan=curriculum::cpp_local_role_plan(request.source_utf8,*request.local_role_check);
+        if(plan&&!frame.empty()&&result.local_role_request_fingerprint==frame&&
+           fresh.compilation_succeeded&&fresh.execution_succeeded&&result.local_role_evidence) {
+            const auto& spec=*request.local_role_check;
+            const auto& evidence=*result.local_role_evidence;
+            std::size_t count=0;
+            for(const auto& role:spec.roles)count+=role.probes.size();
+            bool passed=evidence.request_fingerprint==frame&&
+                evidence.binding.size()==spec.roles.size()&&evidence.observations.size()==count&&
+                evidence.binding_fingerprint==local_role_binding_fingerprint(frame,evidence)&&
+                std::ranges::all_of(evidence.binding,[&](auto slot) {
+                    return slot<plan->candidates.size();
+                });
+            std::size_t index=0;
+            for(std::size_t role=0;passed&&role<spec.roles.size();++role)
+                for(std::size_t probe=0;passed&&probe<spec.roles[role].probes.size();++probe) {
+                    const auto& goal=spec.roles[role].probes[probe];
+                    const auto& observation=evidence.observations[index++];
+                    const auto variant=curriculum::cpp_local_role_variant(*plan,spec,role,probe,
+                        evidence.binding[role],local_role_other_candidate(spec,goal,evidence.binding));
+                    passed=observation.role_index==role&&observation.probe_index==probe&&variant&&
+                        observation.instrumented_source_sha256==state::sha256(*variant)&&
+                        observation.compilation.succeeded()&&observation.execution.succeeded()&&
+                        curriculum::cpp_local_role_expected_output(goal,observation.execution.stdout_bytes);
+                }
+            fresh.local_role_check_correct=passed;
+            if(passed)fresh.local_role_check_feedback.clear();
+        }
+    }
     if(request.local_string_check) {
         const auto frame=local_string_fingerprint(request);
         fresh.local_string_request_fingerprint=frame;
@@ -5722,6 +5833,118 @@ void complete_boolean_battery_probe(const CppRunRequest& request,CppRunResult& r
         result.boolean_battery_evidence=std::move(evidence);
 }
 
+void complete_local_role_check(const CppRunRequest& request,CppRunResult& result,
+        const std::filesystem::path& compiler,const std::vector<wchar_t>& environment,
+        std::string_view initial_toolchain,std::stop_token stop) {
+    if(!request.local_role_check||!result.compilation.succeeded()||
+       !result.execution.succeeded()||!result.error_utf8.empty()||stop.stop_requested())return;
+    const auto frame=local_role_fingerprint(request);
+    const auto& spec=*request.local_role_check;
+    const auto plan=curriculum::cpp_local_role_plan(request.source_utf8,spec);
+    if(frame.empty()||!plan)return;
+
+    // Resolve beforeUpdateOf destinations first, regardless of authored order.
+    // Shared initial/historical bindings are valid; only a before-update pair
+    // must consist of two distinct, already initialized C++ objects.
+    std::vector<std::size_t> order;
+    std::vector<bool> visited(spec.roles.size(),false);
+    const auto append=[&](auto&& self,std::size_t role)->void {
+        if(visited[role])return;
+        visited[role]=true;
+        for(const auto& probe:spec.roles[role].probes)if(!probe.before_update_of.empty()) {
+            const auto other=std::ranges::find(spec.roles,probe.before_update_of,
+                &curriculum::CppLocalRole::id);
+            self(self,static_cast<std::size_t>(other-spec.roles.begin()));
+        }
+        order.push_back(role);
+    };
+    for(std::size_t role=0;role<spec.roles.size();++role)append(append,role);
+    constexpr auto unbound=std::numeric_limits<std::uint32_t>::max();
+    std::vector<std::uint32_t> binding(spec.roles.size(),unbound);
+    std::map<std::string,CppLocalRoleObservation> cache;
+    std::size_t attempts=0;
+    bool interrupted=false;
+    const auto started=std::chrono::steady_clock::now();
+    const auto available=[&] {
+        if(stop.stop_requested()||
+           std::chrono::steady_clock::now()-started>std::chrono::minutes(3)) {
+            interrupted=true;return false;
+        }
+        return true;
+    };
+    const auto observe=[&](std::size_t role,std::size_t probe,std::size_t candidate) {
+        if(!available())return false;
+        const auto& goal=spec.roles[role].probes[probe];
+        const auto source=curriculum::cpp_local_role_variant(*plan,spec,role,probe,candidate,
+            local_role_other_candidate(spec,goal,binding));
+        if(!source)return false;
+        const auto digest=state::sha256(*source);
+        auto found=cache.find(digest);
+        if(found==cache.end()) {
+            if(attempts>=64) { interrupted=true;return false; }
+            ++attempts;
+            CppLocalRoleObservation observation;
+            observation.instrumented_source_sha256=digest;
+            const auto make_source=[&](std::size_t) { return source; };
+            const auto capture=[&](std::size_t,const CppPhaseResult& compilation,
+                                    const CppPhaseResult& execution) {
+                observation.compilation=compilation;observation.execution=execution;
+            };
+            if(!execute_private_single_file_phases(request,result,compiler,environment,
+                    initial_toolchain,1,make_source,capture,stop)) {
+                interrupted=true;return false;
+            }
+            // A normal nonzero exit or a type-guard compilation failure is a
+            // failed candidate. Infrastructure/time/cancellation never becomes
+            // permission to keep a different partial binding.
+            if(observation.compilation.status!=CppPhaseStatus::completed||
+               (observation.compilation.succeeded()&&
+                observation.execution.status!=CppPhaseStatus::completed)) {
+                interrupted=true;return false;
+            }
+            found=cache.emplace(digest,std::move(observation)).first;
+        }
+        return found->second.compilation.succeeded()&&found->second.execution.succeeded()&&
+            curriculum::cpp_local_role_expected_output(goal,found->second.execution.stdout_bytes);
+    };
+    const auto search=[&](auto&& self,std::size_t position)->bool {
+        if(!available())return false;
+        if(position==order.size())return true;
+        const auto role=order[position];
+        for(std::size_t candidate=0;candidate<plan->candidates.size();++candidate) {
+            if(interrupted)return false;
+            if(!curriculum::cpp_local_role_candidate_type(plan->candidates[candidate],
+                    spec.roles[role].value_type))continue;
+            binding[role]=static_cast<std::uint32_t>(candidate);
+            bool matches=true;
+            for(std::size_t probe=0;probe<spec.roles[role].probes.size();++probe)
+                if(!observe(role,probe,candidate)) { matches=false;break; }
+            if(matches&&self(self,position+1))return true;
+        }
+        binding[role]=unbound;
+        return false;
+    };
+    if(!search(search,0)||interrupted||!available())return;
+    CppLocalRoleEvidence evidence;
+    evidence.binding=std::move(binding);
+    evidence.request_fingerprint=frame;
+    for(std::size_t role=0;role<spec.roles.size();++role)
+        for(std::size_t probe=0;probe<spec.roles[role].probes.size();++probe) {
+            const auto& goal=spec.roles[role].probes[probe];
+            const auto source=curriculum::cpp_local_role_variant(*plan,spec,role,probe,
+                evidence.binding[role],local_role_other_candidate(spec,goal,evidence.binding));
+            if(!source)return;
+            const auto found=cache.find(state::sha256(*source));
+            if(found==cache.end())return;
+            auto observation=found->second;
+            observation.role_index=static_cast<std::uint32_t>(role);
+            observation.probe_index=static_cast<std::uint32_t>(probe);
+            evidence.observations.push_back(std::move(observation));
+        }
+    evidence.binding_fingerprint=local_role_binding_fingerprint(frame,evidence);
+    if(available())result.local_role_evidence=std::move(evidence);
+}
+
 void complete_local_int_check(const CppRunRequest& request,CppRunResult& result,
         const std::filesystem::path& compiler,const std::vector<wchar_t>& environment,
         std::string_view initial_toolchain,std::stop_token stop) {
@@ -5829,6 +6052,9 @@ std::string cpp_local_int_request_fingerprint(const CppRunRequest& request) {
 std::string cpp_local_string_request_fingerprint(const CppRunRequest& request) {
     return local_string_fingerprint(request);
 }
+std::string cpp_local_role_request_fingerprint(const CppRunRequest& request) {
+    return local_role_fingerprint(request);
+}
 std::string cpp_input_request_fingerprint(const CppRunRequest& request) {
     return input_check_fingerprint(request);
 }
@@ -5919,6 +6145,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             result.local_int_request_fingerprint=local_int_fingerprint(request);
         if(request.local_string_check)
             result.local_string_request_fingerprint=local_string_fingerprint(request);
+        if(request.local_role_check)
+            result.local_role_request_fingerprint=local_role_fingerprint(request);
         if(request.boolean_battery_probe)
             result.boolean_battery_request_fingerprint=boolean_battery_fingerprint(request);
         if(request.reduction_probe)
@@ -5996,7 +6224,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         if(!request.project_files.empty()){run_multifile(request,result,input,compiler_input,stop);return result;}
         write_exact(source, request.source_utf8);
         const auto arguments=single_file_arguments(result.run_directory);
-        const bool has_private_probe=request.input_check||request.local_int_check||request.local_string_check||request.boolean_battery_probe||request.reduction_probe||
+        const bool has_private_probe=request.input_check||request.local_int_check||request.local_string_check||request.local_role_check||request.boolean_battery_probe||request.reduction_probe||
             named_rule_battery_requested(request)||request.indexed_unique_transfer_probe||
             request.defaulted_move_policy_probe||request.independent_copy_assignment_probe||
             request.move_assignment_invariant_probe||request.array_owner_read_probe||
@@ -6064,6 +6292,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         complete_reduction_probe(request,result,compiler,private_environment,initial_toolchain,stop);
         complete_local_int_check(request,result,compiler,private_environment,initial_toolchain,stop);
         complete_local_string_check(request,result,compiler,private_environment,initial_toolchain,stop);
+        complete_local_role_check(request,result,compiler,private_environment,initial_toolchain,stop);
         complete_input_check(request,result,private_environment,initial_toolchain,input_executable,stop);
     } catch (const std::exception& exception) {
         result.error_utf8 = exception.what();

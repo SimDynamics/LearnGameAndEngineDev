@@ -23,6 +23,7 @@ std::string base(const curriculum::Lesson& lesson, const curriculum::Block& bloc
     // The new objective may be solved with a different source than the old
     // stdout-only achievement. Keep both programs and all historical bytes.
     if(block.input_check)key+="input/v1/";
+    if(block.local_role_check)key+="local-roles/v1/";
     return key;
 }
 // A precise owner, not a generic option to require extra undocumented work.
@@ -258,6 +259,9 @@ bool matches_runtime_capture(const CppRunRequest& captured,const curriculum::Fre
         &&(!captured.input_check||
              (!execution.input_request_fingerprint.empty()&&
               execution.input_request_fingerprint==cpp_input_request_fingerprint(captured)))
+        &&(!captured.local_role_check||
+             (!execution.local_role_request_fingerprint.empty()&&
+              execution.local_role_request_fingerprint==cpp_local_role_request_fingerprint(captured)))
         &&(!captured.local_int_check||
              (!execution.local_int_request_fingerprint.empty()&&
               execution.local_int_request_fingerprint==
@@ -525,6 +529,27 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(request.local_role_check!=block.local_role_check)return false;
+    if(block.local_role_check) {
+        if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||
+           block.compile_check||block.cmake||!block.project_files.empty()||
+           !block.source_files.empty()||block.compiler_workflow_check||block.named_rule_source_check||
+           !curriculum::cpp_local_role_check_valid(*block.local_role_check)||
+           cpp_local_role_request_fingerprint(request).empty()||
+           !block.standard_input.value_or("").empty()||
+           block.output_check->cases.size()!=1||
+           !block.output_check->cases.front().standard_input.empty()||
+           block.output_check->cases.front().executable||
+           block.output_check->cases.front().exit_code!=0||
+           block.output_check->cases.front().standard_error!=curriculum::StandardErrorExpectation::ignored||
+           block.output_check->cases.front().standard_error_exact||
+           block.output_check->cases.front().balance_three_pairs||
+           block.output_check->rejection_operation||block.output_check->observation_report||
+           block.output_check->assertion_check||block.output_check->open_battery_check||
+           block.output_check->boolean_battery_result||block.output_check->reduction_check||
+           block.output_check->integer_battery_check||block.output_check->adjustment_project_check)
+            return false;
+    }
     if(request.input_check!=block.input_check)return false;
     if(block.input_check) {
         if(block.type!=curriculum::BlockType::cpp_compiler||
@@ -1310,6 +1335,11 @@ std::string input_completion_seal(std::string_view key,std::string_view program,
     }
     return state::sha256(frame);
 }
+std::string local_role_completion_seal(std::string_view key,std::string_view program,
+        const curriculum::CppLocalRoleCheck& spec) {
+    return state::sha256(std::string("compiler-local-role-complete-v1/")+
+        token(key)+token(program)+token(curriculum::cpp_local_role_check_frame(spec)));
+}
 std::string local_int_completion_seal(std::string_view key,
         std::string_view program,const curriculum::CppLocalIntCheck& spec) {
     auto frame=std::string("compiler-local-int-complete-v1/")+
@@ -1356,6 +1386,9 @@ static bool stdout_or_diagnostic_completed(const state::StateData& data,const cu
     if(block.input_check&&
        state::string_value(data,"native_windows",key+"witness")!=
            input_completion_seal(key,captured,*block.input_check))return false;
+    if(block.local_role_check&&
+       state::string_value(data,"native_windows",key+"witness")!=
+           local_role_completion_seal(key,captured,*block.local_role_check))return false;
     if(block.local_int_check&&
        state::string_value(data,"native_windows",key+"local-int/v1")!=
            local_int_completion_seal(key,captured,*block.local_int_check))return false;
@@ -1592,6 +1625,23 @@ void validate_compiler_puzzle_state(const state::StateData& data,const curriculu
                    state::string_value(data,"native_windows",key+"completed")))
                 throw std::runtime_error(
                     "Invalid independent input execution receipt; historical state was preserved.");
+        }
+    }
+    if(block.local_role_check) {
+        // New role receipts never read or migrate the preceding stdout-only
+        // program. Both may legitimately belong to different student sources.
+        validate_receipts(data,lesson,block);
+        const auto key=base(lesson,block);
+        if(const auto* stored=state::find(data,"native_windows",key+"witness")) {
+            const auto* receipt=std::get_if<std::string>(stored);
+            const auto program=state::string_value(data,"native_windows",key+"program");
+            const auto cases=case_proofs(data,key);
+            if(!receipt||program.empty()||
+               *receipt!=local_role_completion_seal(key,program,*block.local_role_check)||
+               !valid_completion_seal(block,key,program,cases,
+                   state::string_value(data,"native_windows",key+"completed")))
+                throw std::runtime_error(
+                    "Invalid independent local-role receipt; historical state was preserved.");
         }
     }
     if(block.local_int_check) {
@@ -2044,6 +2094,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
            block.named_rule_source_check->execution_probe->battery_check&&
            !execution.named_rule_battery_correct)||
        (block.input_check&&!execution.input_check_correct)||
+       (block.local_role_check&&!execution.local_role_check_correct)||
        (block.local_int_check&&!execution.local_int_check_correct)||
        (block.local_string_check&&!execution.local_string_check_correct)||
        (block.open_battery_probe&&!execution.open_battery_probe_correct)||
@@ -2062,7 +2113,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
                 compiler_cmake_initial_observation_prerequisite(data,lesson,block,captured))))))return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
-    if(block.input_check)validate_compiler_puzzle_state(data,lesson,block);
+    if(block.input_check||block.local_role_check)validate_compiler_puzzle_state(data,lesson,block);
     // Validate the saved execution receipt before changing a previous
     // rejection. A malformed case vector, program or completion type must
     // not erase that review on the way to throwing an exception.
@@ -2070,7 +2121,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     const bool previously_completed=stdout_or_diagnostic_completed(data,lesson,block);
     auto proofs=case_proofs(data,key);
     const auto stored_program=state::string_value(data,"native_windows",key+"program");
-    if((block.input_check||block.local_int_check||block.local_string_check||block.indexed_unique_transfer_probe||block.defaulted_move_policy_probe||
+    if((block.input_check||block.local_role_check||block.local_int_check||block.local_string_check||block.indexed_unique_transfer_probe||block.defaulted_move_policy_probe||
         block.independent_copy_assignment_probe||block.move_assignment_invariant_probe||
         block.array_owner_read_probe||block.array_copy_move_probe||
         block.array_return_take_probe||
@@ -2087,6 +2138,9 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
         if(block.input_check)
             data.preferences["native_windows"][key+"witness"]=
                 input_completion_seal(key,program,*block.input_check);
+        if(block.local_role_check)
+            data.preferences["native_windows"][key+"witness"]=
+                local_role_completion_seal(key,program,*block.local_role_check);
         if(block.local_int_check)
             data.preferences["native_windows"][key+"local-int/v1"]=
                 local_int_completion_seal(key,program,*block.local_int_check);
@@ -2193,6 +2247,8 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
         // same program only when this public run has earned its first case.
         if(block.input_check)
             values[key+"witness"]=input_completion_seal(key,program,*block.input_check);
+        if(block.local_role_check)
+            values[key+"witness"]=local_role_completion_seal(key,program,*block.local_role_check);
         if(block.local_int_check)
             values[key+"local-int/v1"]=
                 local_int_completion_seal(key,program,*block.local_int_check);
@@ -2393,7 +2449,7 @@ bool record_compiler_diagnostic_case(state::StateData& data,const curriculum::Le
     return true;
 }
 void reset_compiler_puzzle(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
-    const auto prefix=block.input_check?base(lesson,block):root(lesson,block);
+    const auto prefix=(block.input_check||block.local_role_check)?base(lesson,block):root(lesson,block);
     if(const auto domain=data.preferences.find("native_windows");domain!=data.preferences.end())
         std::erase_if(domain->second,[&](const auto& item){return item.first.starts_with(prefix);});
 }

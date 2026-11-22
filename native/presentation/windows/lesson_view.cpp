@@ -2317,6 +2317,7 @@ struct LessonView {
         request.local_int_check=block(index).local_int_check;
         request.local_string_check=block(index).local_string_check;
         request.input_check=block(index).input_check;
+        request.local_role_check=block(index).local_role_check;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
         request.integer_battery_probe=block(index).integer_battery_probe;
@@ -4348,6 +4349,7 @@ struct LessonView {
                     (!block(index).local_int_check||fresh.local_int_check_correct)&&
                     (!block(index).local_string_check||fresh.local_string_check_correct)&&
                     (!block(index).input_check||fresh.input_check_correct)&&
+                    (!block(index).local_role_check||fresh.local_role_check_correct)&&
                     (!block(index).open_battery_probe||
                      fresh.open_battery_probe_correct)&&
                     (!block(index).boolean_battery_probe||
@@ -4396,6 +4398,11 @@ struct LessonView {
                     text+='\n'+(fresh.input_check_feedback.empty()
                         ?std::string("Comprueba que el programa use todos los datos de entrada para calcular y mostrar el resultado.")
                         :fresh.input_check_feedback);
+                if(!fresh.local_role_check_correct&&block(index).local_role_check&&preserved_source&&
+                   evaluation.verdict==curriculum::OutputVerdict::correct)
+                    text+='\n'+(fresh.local_role_check_feedback.empty()
+                        ?std::string("Comprueba que el resultado use los datos guardados y que los valores que debes conservar permanezcan independientes de las actualizaciones.")
+                        :fresh.local_role_check_feedback);
                 if(!independent&&preserved_source&&block(index).open_battery_probe)
                     text+='\n'+ui(
                         "La batería no acreditó los casos originales y el caso nuevo mediante ejecuciones independientes. Comprueba las llamadas, los resultados esperados y que ningún fallo detenga los casos posteriores.",
@@ -4499,7 +4506,8 @@ struct LessonView {
                 if(named_variation_pending&&preserved_source)
                     text+='\n'+fresh.named_rule_constant_variation_feedback;
                 if(!independent&&!named_battery_pending&&!named_variation_pending&&
-                   preserved_source&&!block(index).input_check&&!block(index).open_battery_probe&&
+                   preserved_source&&!block(index).input_check&&!block(index).local_role_check&&
+                   !block(index).open_battery_probe&&
                    !block(index).boolean_battery_probe&&!block(index).reduction_probe&&
                    !block(index).integer_battery_probe&&!block(index).adjustment_project_probe&&
                    !block(index).indexed_unique_transfer_probe&&

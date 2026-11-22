@@ -25,6 +25,7 @@
 #include "core/cpp_local_int_probe.hpp"
 #include "core/cpp_local_string_probe.hpp"
 #include "core/cpp_input_probe.hpp"
+#include "core/cpp_local_role_probe.hpp"
 
 #include <array>
 #include <chrono>
@@ -168,6 +169,18 @@ struct CppRunRequest {
     // Opt-in private stdin observations of the same compiled executable.
     // Last so previously published aggregate request initializers keep meaning.
     std::optional<curriculum::CppInputCheck> input_check;
+    // Name-independent scalar roles have their own capture and receipt domain.
+    std::optional<curriculum::CppLocalRoleCheck> local_role_check;
+};
+struct CppLocalRoleObservation {
+    std::uint32_t role_index=0,probe_index=0;
+    std::string instrumented_source_sha256;
+    CppPhaseResult compilation,execution;
+};
+struct CppLocalRoleEvidence {
+    std::vector<std::uint32_t> binding;
+    std::vector<CppLocalRoleObservation> observations;
+    std::string request_fingerprint,binding_fingerprint;
 };
 struct CppInputEvidence {
     std::string source_sha256, standard_input, executable_sha256;
@@ -399,6 +412,8 @@ struct CppRunResult {
     std::filesystem::path diagnostic_build_directory;
     std::string input_request_fingerprint, input_executable_sha256;
     std::vector<CppInputEvidence> input_evidence;
+    std::optional<CppLocalRoleEvidence> local_role_evidence;
+    std::string local_role_request_fingerprint;
 };
 struct CppCmakeInitialObservationCapture {
     std::string request_fingerprint, component_fingerprint, artifact_fingerprint;
@@ -416,6 +431,8 @@ struct CppProjectAvailability {
 [[nodiscard]] std::string cpp_local_int_request_fingerprint(
     const CppRunRequest& request);
 [[nodiscard]] std::string cpp_local_string_request_fingerprint(
+    const CppRunRequest& request);
+[[nodiscard]] std::string cpp_local_role_request_fingerprint(
     const CppRunRequest& request);
 [[nodiscard]] CppCmakeGraphVerdict evaluate_cmake_graph(
     const CppRunRequest&, const CppRunResult&, const CppCmakeGraphRequirement&);
