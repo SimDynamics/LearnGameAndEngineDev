@@ -1682,9 +1682,91 @@ def preserves_math_prompt_editorial_revision(relative, pn, bn, old, current, *,
         return False
 
 
+def preserves_math_matching_text_revision(relative, pn, bn, old, current, *,
+                                          previous_document=None, current_document=None,
+                                          course_id="cpp_fundamentals"):
+    """Accept a signed matching-text edit without re-grading its historical answer.
+
+    The existing stateLayout validator authenticates the ordered full math
+    payload, public UTF-16 descriptors, original response mapping and editorial
+    lineage. This adapter also binds that proof to the actual published lesson,
+    course and original storage coordinates, just like ordinary text revisions.
+    A merely similar math puzzle or an unsigned changed prompt cannot pass.
+    """
+    if (not is_structural_course_id(course_id)
+            or type(pn) is not int or type(bn) is not int or pn < 0 or bn < 0
+            or type(old) is not dict or type(current) is not dict
+            or old.get("type") != "math_puzzle"
+            or current.get("type") != "math_puzzle"
+            or type(previous_document) is not dict
+            or type(current_document) is not dict):
+        return False
+    try:
+        prefix = PurePosixPath("app/src/main/assets/content/es/programming") / course_id
+        path = PurePosixPath(str(relative).replace("\\", "/")).relative_to(prefix)
+        if (len(path.parts) != 2 or ".." in path.parts
+                or path.suffix != ".json" or not path.stem.startswith("lesson_")
+                or not path.stem[7:]):
+            return False
+        lesson_id = "__".join((course_id, path.parent.name, path.stem[7:]))
+        before_meta = previous_document.get("stateLayout")
+        after_meta = current_document.get("stateLayout")
+        if (previous_document.get("id") != lesson_id
+                or current_document.get("id") != lesson_id
+                or type(before_meta) is not dict or type(after_meta) is not dict
+                or before_meta.get("version") != 2 or after_meta.get("version") != 2
+                or before_meta.get("locale") != "es"
+                or after_meta.get("locale") != "es"):
+            return False
+        previous_records = before_meta.get("mathMatchingTextRevisions", [])
+        revised_records = after_meta.get("mathMatchingTextRevisions", [])
+        if (type(previous_records) is not list or type(revised_records) is not list
+                or len(revised_records) <= len(previous_records)
+                or revised_records[:len(previous_records)] != previous_records):
+            return False
+        baseline = _state_layout.prepare(previous_document)
+        locations = _state_layout.validate(baseline)
+        candidates = [
+            baseline["stateLayout"]["current"][page]["blocks"][block]
+            for (page, block), position in locations.items()
+            if position == (pn, bn)
+        ]
+        if len(candidates) != 1:
+            return False
+        identity = candidates[0]
+        if (_state_layout._math_ordered_json(
+                    _state_layout._blocks(baseline).get(identity)) !=
+                _state_layout._math_ordered_json(old)):
+            return False
+        added = [
+            record for record in revised_records[len(previous_records):]
+            if type(record) is dict and record.get("id") == identity
+        ]
+        if len(added) != 1:
+            return False
+        # A complete transition authenticates the archived rawJson, its
+        # semantic before/after markers and every unrelated lesson field.
+        _state_layout.validate_transition(previous_document, current_document)
+        if (_state_layout._math_ordered_json(
+                    _state_layout._blocks(current_document).get(identity)) !=
+                _state_layout._math_ordered_json(current)):
+            return False
+        aligned = _state_layout.align_for_previous_validation(
+            previous_document, current_document)
+        return (_state_layout._math_ordered_json(
+                    _state_layout._blocks(aligned).get(identity)) ==
+                _state_layout._math_ordered_json(old))
+    except (ValueError, KeyError, TypeError, IndexError, AttributeError, RecursionError):
+        return False
+
+
 def preserves_previous_exercise(relative, pn, bn, old, current, *,
                                 previous_document=None, current_document=None,
                                 course_id="cpp_fundamentals"):
+    if preserves_math_matching_text_revision(
+            relative, pn, bn, old, current, previous_document=previous_document,
+            current_document=current_document, course_id=course_id):
+        return True
     if preserves_math_prompt_editorial_revision(
             relative, pn, bn, old, current, previous_document=previous_document,
             current_document=current_document, course_id=course_id):
