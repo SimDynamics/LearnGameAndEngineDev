@@ -88,14 +88,15 @@ inline std::optional<std::vector<Token>> tokens(std::string_view source) {
         if(begin==source.npos||!std::ranges::all_of(source.substr(offset,begin-offset),code_format::space))return {};
         offset=begin+literal.size();
         if(token.starts_with("comment:"))continue;
-        // The private runner collects CASE and END records from stderr.
-        // A learner-authored string/raw literal containing either complete
-        // marker must not be able to forge a runtime witness by printing it.
-        // Comments are harmless and remain admissible; the check is lexical,
-        // not a ban on arbitrary words in code or on legitimate diagnostics.
+        // Several compiler objectives share this lexer but emit different
+        // private runtime records to stderr. Student-authored string and raw
+        // literals must not impersonate any of their witness prefixes.
+        // Comments are inert, so leave them unrestricted. This source-level
+        // check complements (but does not replace) runtime provenance.
         if(token.starts_with("literal:")&&
-           (token.find("LGAED_BOOLEAN_BATTERY_CALL:")!=token.npos||
-            token.find("LGAED_BOOLEAN_BATTERY_END")!=token.npos))return {};
+           (token.find("LGAED_BOOLEAN_BATTERY_")!=token.npos||
+            token.find("LGAED_OPEN_BATTERY_")!=token.npos||
+            token.find("LGAED_INTEGER_BATTERY_")!=token.npos))return {};
         if(token=="op:#"||token=="op:##"||token=="op:%:"||token=="op:%:%:")return {};
         if(token.starts_with("id:lgaed_boolean_battery_"))return {};
         if(token.starts_with("directive:")) {
