@@ -201,6 +201,28 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 self.assertFalse((ROOT / relative).exists())
 
     @staticmethod
+    def _strip_shell_comment(raw):
+        # A hash inside a quoted shell argument is data, not a comment.
+        # Retain commands chained after that argument; ignore actual trailing
+        # comments mentioning compilers that are no longer installed.
+        quote = None
+        escaped = False
+        for index, char in enumerate(raw):
+            if escaped:
+                escaped = False
+                continue
+            if char in ("\\", chr(96)):
+                escaped = True
+            elif char in ("'", '"'):
+                if quote is None:
+                    quote = char
+                elif quote == char:
+                    quote = None
+            elif char == "#" and quote is None:
+                return raw[:index]
+        return raw
+
+    @staticmethod
     def _uses_unneeded_compiler(source):
         # Detect actual compiler commands, including clang-cl, bare clang
         # and versioned binaries. Log messages about removed compilers are
@@ -212,7 +234,7 @@ class WindowsCompilerPolicy(unittest.TestCase):
             r"(?i)^(?:(?:-\s*)?run:\s*)?(?:echo|write-host)\s+")
         separator = re.compile(r"(?:&&|\|\||[;&|])")
         for raw in source.splitlines():
-            line = raw.partition("#")[0].strip()
+            line = WindowsCompilerPolicy._strip_shell_comment(raw).strip()
             if not line or line.startswith(("name:", "- name:")):
                 continue
             match = report.match(line)
@@ -258,7 +280,12 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 "run: Write-Host 'Clang retired'; & clang-cl.exe /c example.cpp",
                 "run: echo 'clang removed' | clang -c example.c",
                 "run: echo $(clang --version)",
-                "run: echo gcc; gcc -c example.c"):
+                "run: echo gcc; gcc -c example.c",
+                "run: echo '# this is a note' && gcc-14 example.c",
+                "run: Write-Host '# compiled on MSVC' ; & clang-cl.exe /c example.cpp",
+                "run: echo '# heading' && clang++ -std=c++23 example.cpp",
+                "run: echo 'Clang # retired' && gcc -c example.c",
+                'run: Write-Host "# info"; & clang -c example.cpp'):
             with self.subTest(command=source):
                 self.assertTrue(self._uses_unneeded_compiler(source))
         for source in (
@@ -272,7 +299,12 @@ class WindowsCompilerPolicy(unittest.TestCase):
                 "run: echo 'gcc was removed'",
                 "run: Write-Host 'Clang; gcc are not used anymore' | Out-File logs.txt",
                 "run: echo gcc was removed",
-                "run: echo 'gcc' && cl /c example.cpp"):
+                "run: echo 'gcc' && cl /c example.cpp",
+                "run: echo '# no compiler here' && cl /c example.cpp",
+                "run: echo '# it was clang-cl.exe' # clang retired",
+                "run: Write-Host '# clang retired' ; cl /c example.cpp",
+                "run: echo 'Build is # MSVC only'",
+                "run: cl /c sample.cpp # clang++-19 is retired"):
             with self.subTest(allowed=source):
                 self.assertFalse(self._uses_unneeded_compiler(source))
 
