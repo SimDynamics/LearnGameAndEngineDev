@@ -239,9 +239,11 @@ void assetcheck_p2_prompt_revision(const std::filesystem::path& folder,
     state::validate_lesson_state(progress,compact);
     const auto active=state::get_response(progress,revised,current);
     const auto projected=state::get_response(progress,compact,metadata);
+    // put_response adds typed receipt fields to the original opaque JSON.
+    // Compare the exact persisted receipt, not the unencoded input snapshot.
     require(active&&projected&&active->correct&&projected->correct&&
-        active->raw_json==answer.raw_json&&
-        projected->raw_json==answer.raw_json&&
+        active->raw_json==receipt&&
+        projected->raw_json==receipt&&
         state::response_storage_key(revised,current)==key&&
         state::response_storage_key(compact,metadata)==key&&
         state::string_value(progress,"learning_progress",key)==receipt&&
@@ -327,6 +329,7 @@ void assetcheck_p2_published_revision(const std::filesystem::path& folder,
     answer.raw_json=R"({"responses":{"relaciones":{"a":"cero","b":"uno","c":"dos_vacia","d":"dos"}},"opaque":"published-P2-qa"})";
     state::put_response(initial,lesson,current,answer);
     const auto key=state::response_storage_key(lesson,current);
+    const auto receipt=state::string_value(initial,"learning_progress",key);
     narration::Position heard{4,170,0,false};
     heard.heard_prefix=narration::HeardPrefix{old_hash,500000,1000000};
     narration::History prior;
@@ -344,9 +347,11 @@ void assetcheck_p2_published_revision(const std::filesystem::path& folder,
     const auto response=state::get_response(current_state,lesson,current);
     const auto compact_response=state::get_response(current_state,compact,
         compact_block);
+    // StateStore encodes the reviewed status alongside opaque matching data.
     require(response&&compact_response&&response->correct&&
-        compact_response->correct&&response->raw_json==answer.raw_json&&
-        compact_response->raw_json==answer.raw_json&&
+        compact_response->correct&&response->raw_json==receipt&&
+        compact_response->raw_json==receipt&&
+        state::string_value(current_state,"learning_progress",key)==receipt&&
         state::response_storage_key(compact,compact_block)==key&&
         narration::read_history(current_state)==prior_listening&&
         narration::heard_prefix_matches(heard,old_hash,1000000)&&
