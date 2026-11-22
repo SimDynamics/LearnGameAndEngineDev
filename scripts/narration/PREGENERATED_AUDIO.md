@@ -16,9 +16,17 @@ se obtiene otra clave, sin riesgo de reproducir un audio desactualizado.
 
 ## Empaquetar contenido
 
+Esta sección describe el empaquetado para el **APK Android histórico**, no
+el sistema de narración Windows. El script de empaquetado
+`scripts/narration/package_prerendered_opus.py` y el observador ADB
+`scripts/narration/observe_kokoro.ps1` se conservan sin cambios en el
+[repositorio Android independiente](https://github.com/SimDynamics/LearnGraphicsProgramming).
+Sus copias se retiraron exclusivamente de `LearnGameAndEngineDev` para Windows.
+Ningún modelo, WAV u Opus ya existente se ha eliminado.
+
 El archivo WAV debe generarse con la misma versión de la app y el mismo
 motor fonético y modelo. Una vez exportadas las grabaciones desde la caché
-privada de una instalación de depuración, desde la raíz del repositorio:
+privada de una instalación de depuración, desde la raíz del repositorio **Android**:
 
 ```powershell
 python scripts/narration/package_prerendered_opus.py "CARPETA_DE_WAVS_EXPORTADOS"
@@ -87,6 +95,11 @@ La app de depuración escribe automáticamente el archivo
 texto narrado, idioma y voz** del lector. El archivo contiene la lista
 deduplicada de grabaciones necesarias para las tres primeras lecciones.
 
+**Procedimiento histórico de Android:** el siguiente comando se ejecuta desde
+la raíz del [repositorio Android independiente](https://github.com/SimDynamics/LearnGraphicsProgramming),
+que conserva el exportador ADB y sus pruebas originales. El repositorio Windows
+no incluye ese programa y no necesita ADB para exportar su manifiesto.
+
 Cuando el teléfono haya terminado de pregenerar esas grabaciones:
 
 ```powershell
@@ -136,6 +149,11 @@ python scripts/narration/prepare_english_ai_pack.py --assets english_misaki/src/
 python scripts/narration/verify_windows_distribution.py --runtime out/narration/runtime.json
 python scripts/narration/export_first_unit_windows.py --verify-recordings
 ```
+
+La validación WAV de la exportación Windows utiliza
+`scripts/narration/first_unit_audio_contract.py`: el mismo contrato histórico
+RIFF/PCM16, mono y 24 kHz, sin importar ni ejecutar el exportador ADB Android.
+El comando de Windows no reescribe las grabaciones existentes al verificarlas.
 
 La distribución Windows actual utiliza las rutas locales de `runtime.json`,
 incluidos el JDK y los modelos instalados; no constituye un paquete portátil.

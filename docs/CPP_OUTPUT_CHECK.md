@@ -4095,14 +4095,13 @@ comprobante por sí solos; la reapertura verifica su integridad antes de
 acreditar el progreso. Ningún otro curso, borrador o salida se modifica.
 
 Las pruebas de autoría del contrato están en
-`test_local_string_probe_authoring.py`; las variantes reales compiladas
-con GCC, Clang y MSVC en
-`test_local_string_live_compilation.py`; y la integración de los dos
-editores originales U2L7, sus ejecuciones privadas y recibos Win32 en
-`local_string_state_tests.cpp`. Los tests de GCC y Clang acreditan la
-portabilidad de la sonda, no el funcionamiento del motor Windows. La
-validación visual habitual y la autoría definitiva de las salidas del
-currículo corresponden al usuario y a Work respectivamente.
+`test_local_string_probe_authoring.py`; las variantes reales se compilan
+y ejecutan exclusivamente con MSVC en
+`test_local_string_live_compilation.py`. La integración de los dos
+editores originales U2L7, sus ejecuciones privadas y recibos Win32 se
+comprueba en `local_string_state_tests.cpp`. La validación visual
+habitual y la autoría definitiva de las salidas del currículo
+corresponden al usuario y a Work respectivamente.
 
 ### Comprobación local de sondas de variables con MSVC
 
@@ -4116,10 +4115,12 @@ desde el checkout nativo autorizado, en la rama `Codex`, mediante:
 El script comprueba el checkout y la rama antes de compilar, resuelve el
 toolset MSVC y el Windows SDK fijados en el proyecto, y ejecuta las pruebas
 unitarias de `cpp_local_int_probe` y `cpp_local_string_probe`.
-A continuación genera y compila con MSVC los **43 casos de enteros** y
-**30 casos de cadenas**, contrastando las salidas y los rechazos reales
-con los dos validadores Python existentes. Los dos códigos iniciales de
-U2L5 también se compilan y se comprueba que no acrediten sus objetivos.
+A continuación genera, compila y ejecuta con MSVC **55 casos de enteros**
+(43 positivos, 6 rechazados por salidas incorrectas y 6 bloqueados por
+protecciones) y **37 casos de cadenas** (34 positivos y 3 rechazos de
+salidas fijas), contrastando los resultados con los validadores Python.
+Los dos códigos iniciales de U2L5 también se compilan y ejecutan para
+comprobar que no acrediten sus objetivos.
 
 Solo se crean binarios y objetos QA en
 `out/build/<preset>/local-variable-qa/` y registros en
@@ -4161,7 +4162,7 @@ inicia la aplicación completa, no modifica lecciones ni usa el perfil
 del alumno. La prueba de U2L7 usa un perfil de QA propio y aislado.
 
 Esta batería CTest es una **prueba de integración nativa**, distinta
-de las pruebas de código fuente con GCC, Clang o MSVC hospedado.
+de las compilaciones y ejecuciones aisladas de fuentes con MSVC hospedado.
 Hasta obtener una ejecución y sus registros en el Windows autorizado,
 su presencia en CMake no se considera evidencia de éxito.
 

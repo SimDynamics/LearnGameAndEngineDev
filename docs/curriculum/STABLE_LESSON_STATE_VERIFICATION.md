@@ -193,6 +193,12 @@ generador de escritorio equivalente validado.
 
 ## Pendientes de compilación y Android
 
+> **Evidencia histórica del APK.** Esta incidencia de CMake/Ninja se
+> produjo al ensamblar Android; no describe una dependencia del producto
+> Windows. El perfil nativo vigente se consulta en
+> `docs/WINDOWS_NATIVE.md` y `toolchains/windows.versions.json`.
+
+
 La tarea normal de ensamblado informó:
 
 ```text

@@ -431,6 +431,288 @@ class ReviewFeedbackProseRevisionTest(unittest.TestCase):
                             previous_document=previous_doc, current_document=forged))
                 self.assertEqual(asset.read_bytes(), original_bytes)
 
+    def test_published_u12l22_question_precision_preserves_prediction(self):
+        """A changed prediction question is authored prose, not a new answer.
+
+        Work owns the actual lesson update. This only verifies its exact
+        published source and a temporary, independently authenticated revision.
+        """
+        relative = (
+            "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+            "archivos_y_programa_completo/lesson_leer_un_grupo_con_cierre_propio.json")
+        asset = Path(__file__).resolve().parents[2] / relative
+        original_bytes = asset.read_bytes()
+        published = json.loads(original_bytes)
+        origins = layout.validate(published)
+        identity = "block_0001_0002"
+        location = next(
+            (p, b) for p, row in enumerate(published["stateLayout"]["current"])
+            for b, owner in enumerate(row["blocks"]) if owner == identity)
+        old = layout._blocks(published)[identity]
+        self.assertEqual(old["type"], "output_prediction")
+        self.assertEqual(old["id"], "mirar_no_consume")
+        self.assertEqual(old["answers"], ["1:}:fin"])
+        previous_question = (
+            "Predice la salida. Este ejemplo ya comprobó que hay caracteres disponibles.")
+        revised_question = (
+            "Predice la salida. La cadena mostrada contiene una llave de cierre "
+            "después de dos espacios.")
+        if old["question"] == revised_question:
+            # Work may have published the authenticated correction already.
+            # A regression must verify its live provenance, not require
+            # the obsolete wording to remain in the active curriculum.
+            self.assertTrue(any(
+                edge["id"] == identity and
+                edge["afterSha256"] == layout.fingerprint(old)
+                for edge in published["stateLayout"]["editorial"]))
+            current_marker = next(
+                field for field in published["textSemantics"]["fields"]
+                if field["block"] == identity and field["path"] == "/question")
+            # Work can author nonempty marks for the revised question.
+            # The source digest and the shared semantic validator, not a
+            # forced empty span list, authenticate their boundaries.
+            self.assertIsInstance(current_marker["spans"], list)
+            self.assertEqual(
+                current_marker["sourceSha256"],
+                hashlib.sha256(revised_question.encode("utf-8")).hexdigest())
+            unsigned = deepcopy(published)
+            layout._blocks(unsigned)[identity]["question"] = previous_question
+            with self.assertRaises(ValueError):
+                layout.validate_transition(published, unsigned)
+            self.assertEqual(asset.read_bytes(), original_bytes)
+            return
+        self.assertEqual(old["question"], previous_question)
+
+        unsigned = deepcopy(published)
+        layout._blocks(unsigned)[identity]["question"] = revised_question
+        with self.assertRaises(ValueError):
+            layout.validate_transition(published, unsigned)
+
+        revised = layout.revise_ordinary_editorial(published, identity, {
+            "question": {"text": revised_question, "spans": []}})
+        layout.validate_transition(published, revised)
+        actual = layout._blocks(revised)[identity]
+        self.assertEqual(actual["question"], revised_question)
+        self.assertEqual(actual["code"], old["code"])
+        self.assertEqual(actual["answers"], old["answers"])
+        self.assertEqual(actual["reviewFeedback"], old["reviewFeedback"])
+        self.assertEqual(actual["explanation"], old["explanation"])
+        self.assertEqual(layout.state_fingerprint(old),
+                         layout.state_fingerprint(actual))
+        self.assertEqual(layout.ordinary_editorial_paths(old, actual),
+                         ("/question",))
+        self.assertEqual(published["stateLayout"]["origin"],
+                         revised["stateLayout"]["origin"])
+        self.assertEqual(published["stateLayout"]["current"],
+                         revised["stateLayout"]["current"])
+        self.assertEqual(published["stateLayout"]["editorial"],
+                         revised["stateLayout"]["editorial"][:-1])
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *origins[location], old, actual,
+            previous_document=published, current_document=revised))
+        # Ordinary editorial prose remains in the current block when aligning
+        # historical grading. Only the evaluated response contract rewinds.
+        aligned = layout._blocks(layout.align_for_previous_validation(
+            published, revised))[identity]
+        self.assertEqual(aligned["question"], revised_question)
+        self.assertEqual(layout.state_fingerprint(aligned),
+                         layout.state_fingerprint(old))
+        self.assertEqual(aligned["answers"], old["answers"])
+        previous_marks = {
+            entry["path"]: entry for entry in published["textSemantics"]["fields"]
+            if entry["block"] == identity}
+        latest_marks = {
+            entry["path"]: entry for entry in revised["textSemantics"]["fields"]
+            if entry["block"] == identity}
+        self.assertEqual(set(latest_marks), set(previous_marks))
+        self.assertEqual(latest_marks["/question"]["spans"], [])
+        self.assertEqual(latest_marks["/question"]["sourceSha256"],
+                         hashlib.sha256(revised_question.encode("utf-8")).hexdigest())
+        for path in set(previous_marks) - {"/question"}:
+            self.assertEqual(previous_marks[path], latest_marks[path])
+
+        for name in ("new answer", "altered source", "missing review", "wrong mark"):
+            forged = deepcopy(revised)
+            owner = layout._blocks(forged)[identity]
+            if name == "new answer":
+                owner["answers"] = ["0:}:fin"]
+            elif name == "altered source":
+                owner["code"] += "\n// Alteración no autorizada"
+            elif name == "missing review":
+                forged["stateLayout"]["editorial"].pop()
+            else:
+                next(item for item in forged["textSemantics"]["fields"]
+                     if item["block"] == identity and item["path"] == "/question")[
+                         "sourceSha256"] = "0" * 64
+            with self.subTest(forgery=name), self.assertRaises(ValueError):
+                layout.validate_transition(published, forged)
+        self.assertEqual(asset.read_bytes(), original_bytes)
+
+    def test_published_u12_format_explanation_and_question_return_history(self):
+        """Real U12 format exercise reuses its signed prior std::hex edition.
+
+        The format question/explanation were published with explicit std::
+        names and later returned to shortened names. Restoring an earlier
+        complete authored block is a deliberate editorial return, never an
+        anonymous text edit or a new graded question.
+        """
+        relative = (
+            "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+            "archivos_y_programa_completo/"
+            "lesson_estado_del_formato_y_flujos_independientes.json")
+        asset = Path(__file__).resolve().parents[2] / relative
+        original_bytes = asset.read_bytes()
+        published = json.loads(original_bytes)
+        positions = layout.validate(published)
+        identity = "block_0002_0002"
+        location = next(
+            (p, b) for p, row in enumerate(published["stateLayout"]["current"])
+            for b, owner in enumerate(row["blocks"]) if owner == identity)
+        old = layout._blocks(published)[identity]
+        self.assertEqual(old["type"], "multiple_choice")
+        self.assertEqual(old["correctIndex"], 2)
+        self.assertEqual(len(old["options"]), 3)
+
+        abbreviations = (
+            ("texto << hex << 31", "texto << std::hex << 31"),
+            ("texto << dec", "texto << std::dec"))
+        def complete_names(source):
+            result = source
+            for short, full in abbreviations:
+                result = result.replace(short, full)
+            return result
+
+        question = complete_names(old["question"])
+        explanation = complete_names(old["explanation"])
+        if question == old["question"] and explanation == old["explanation"]:
+            # Work already published this correction. Verify its provenance
+            # and exact response contract instead of re-editing it.
+            self.assertIn("std::hex", question)
+            self.assertIn("std::dec", explanation)
+            self.assertTrue(any(
+                entry["id"] == identity and
+                entry["afterSha256"] == layout.fingerprint(old)
+                for entry in published["stateLayout"]["editorial"]))
+            original_marks = {
+                item["path"]: item
+                for item in published["textSemantics"]["fields"]
+                if item["block"] == identity}
+            for path, source in (("/question", question),
+                                 ("/explanation", explanation)):
+                self.assertEqual(
+                    original_marks[path]["sourceSha256"],
+                    hashlib.sha256(source.encode("utf-8")).hexdigest())
+            self.assertEqual(asset.read_bytes(), original_bytes)
+            return
+
+        self.assertNotEqual(question, old["question"])
+        self.assertNotEqual(explanation, old["explanation"])
+        self.assertIn("texto << std::hex << 31", question)
+        self.assertIn("texto << std::dec", explanation)
+        revised_block = deepcopy(old)
+        revised_block["question"] = question
+        revised_block["explanation"] = explanation
+        target_sha = layout.fingerprint(revised_block)
+        owner_edges = [
+            entry for entry in published["stateLayout"]["editorial"]
+            if entry["id"] == identity]
+        self.assertTrue(owner_edges)
+        history = [owner_edges[0]["beforeSha256"]] + [
+            entry["afterSha256"] for entry in owner_edges]
+        prior_versions = [
+            index for index, sha in enumerate(history[:-1])
+            if sha == target_sha]
+        self.assertTrue(prior_versions,
+            "An actual published std::hex edition was not found in the owner history")
+        spans = layout.text_semantics.select
+        changes = {
+            "question": {
+                "text": question,
+                "spans": [
+                    spans(question, "texto << std::hex << 31",
+                          "cpp", reading="technical"),
+                    spans(question, "texto << std::dec",
+                          "cpp", reading="technical")]},
+            "explanation": {
+                "text": explanation,
+                "spans": [
+                    spans(explanation, "texto << std::hex << 31",
+                          "cpp", reading="technical"),
+                    spans(explanation, "1f", "output",
+                          occurrence=1, reading="natural"),
+                    spans(explanation, "texto << std::dec",
+                          "cpp", reading="technical"),
+                    spans(explanation, "1f", "output",
+                          occurrence=2, reading="natural")]},
+        }
+        with self.assertRaises(ValueError):
+            layout.revise_ordinary_editorial(published, identity, changes)
+        updated = layout.revise_ordinary_editorial(
+            published, identity, {**changes, "returnTo": prior_versions[-1]})
+        layout.validate_transition(published, updated)
+        current = layout._blocks(updated)[identity]
+        self.assertEqual(current, revised_block)
+        self.assertEqual(layout.state_fingerprint(old),
+                         layout.state_fingerprint(current))
+        self.assertEqual(layout.ordinary_editorial_paths(old, current),
+                         ("/question", "/explanation"))
+        self.assertEqual(updated["stateLayout"]["origin"],
+                         published["stateLayout"]["origin"])
+        self.assertEqual(updated["stateLayout"]["current"],
+                         published["stateLayout"]["current"])
+        self.assertEqual(updated["stateLayout"]["editorial"][:-1],
+                         published["stateLayout"]["editorial"])
+        self.assertEqual(updated["stateLayout"]["editorial"][-1][
+            "returnTo"]["revision"], prior_versions[-1])
+        self.assertTrue(contract.preserves_previous_exercise(
+            relative, *positions[location], old, current,
+            previous_document=published, current_document=updated))
+        # An editorial return preserves the new visible words, while the
+        # grading identity and historical output requirements remain stable.
+        aligned = layout._blocks(layout.align_for_previous_validation(
+            published, updated))[identity]
+        self.assertEqual(aligned["question"], question)
+        self.assertEqual(aligned["explanation"], explanation)
+        self.assertEqual(layout.state_fingerprint(aligned),
+                         layout.state_fingerprint(old))
+        self.assertEqual(aligned["options"], old["options"])
+        self.assertEqual(aligned["correctIndex"], old["correctIndex"])
+        before_marks = {
+            entry["path"]: entry for entry in published["textSemantics"]["fields"]
+            if entry["block"] == identity}
+        after_marks = {
+            entry["path"]: entry for entry in updated["textSemantics"]["fields"]
+            if entry["block"] == identity}
+        self.assertEqual(before_marks.keys(), after_marks.keys())
+        for path, source in (("/question", question),
+                             ("/explanation", explanation)):
+            self.assertEqual(
+                after_marks[path]["sourceSha256"],
+                hashlib.sha256(source.encode("utf-8")).hexdigest())
+        for path in before_marks.keys() - {"/question", "/explanation"}:
+            self.assertEqual(before_marks[path], after_marks[path])
+
+        for label in ("answer-index", "option", "missing-return",
+                      "forged-reading", "forged-history"):
+            forged = deepcopy(updated)
+            block = layout._blocks(forged)[identity]
+            if label == "answer-index":
+                block["correctIndex"] = 0
+            elif label == "option":
+                block["options"][0] += " Alteración no autorizada."
+            elif label == "missing-return":
+                forged["stateLayout"]["editorial"][-1].pop("returnTo")
+            elif label == "forged-reading":
+                next(field for field in forged["textSemantics"]["fields"]
+                     if field["block"] == identity and
+                     field["path"] == "/question")["sourceSha256"] = "0" * 64
+            else:
+                forged["stateLayout"]["editorial"][-1][
+                    "returnTo"]["revision"] += 1
+            with self.subTest(forgery=label), self.assertRaises(ValueError):
+                layout.validate_transition(published, forged)
+        self.assertEqual(asset.read_bytes(), original_bytes)
+
     def test_rejects_guide_only_addition_and_mismatched_choice_positions(self):
         for kind in ("fill_code", "multiple_choice"):
             before = published(kind)

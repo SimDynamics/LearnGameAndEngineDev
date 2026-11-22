@@ -751,6 +751,105 @@ int identifier_rename_live_windows(const std::filesystem::path& content,
     return 0;
 }
 
+int general_choice_published_windows(const Lesson& published,
+        const std::filesystem::path& path,const std::filesystem::path& qa) {
+    // Work may have published the authenticated U9 wording. Verify its real
+    // journal and saved selections instead of constructing a second revision.
+    constexpr std::string_view id="block_0007_0002";
+    constexpr std::string_view old_text=
+        "La operación incumple su precondición aunque conserve una cantidad válida.";
+    const auto& current=editor(published,id);
+    const auto compact=load_lesson_progress_metadata(path);
+    const auto& smaller=editor(compact,id);
+    require(current.type==BlockType::multiple_choice&&
+        current.correct_index==0&&current.options.size()==3&&
+        current.choice_revision&&
+        current.choice_revision->general_option_index==0&&
+        current.choice_revision->original_options.size()==current.options.size()&&
+        current.choice_revision->original_options[0]==old_text&&
+        current.choice_revision->original_correct_index==current.correct_index&&
+        smaller.options==current.options&&
+        smaller.correct_index==current.correct_index&&
+        smaller.choice_revision&&
+        smaller.choice_revision->original_options==
+            current.choice_revision->original_options&&
+        state::response_storage_key(published,current)==
+            state::response_storage_key(compact,smaller),
+        "Published choice did not preserve its true response and storage owner");
+    for(const auto selected:{std::size_t{0},std::size_t{2}}) {
+        const bool earned=selected==0;
+        auto folder=qa/(earned?"general-choice-published-correct":
+                                "general-choice-published-incorrect");
+        state::StateStore store(folder);
+        auto data=store.load();
+        state::prepare_lesson_state(data,published);
+        state::Response response;
+        response.selected=selected;
+        response.correct=earned;
+        state::put_response(data,published,current,response);
+        data.preferences["guidance-qa"]["foreign"]=std::string("untouched");
+        const auto receipt=state::string_value(
+            data,"learning_progress",state::response_storage_key(published,current));
+        store.save(data);
+        data=reopen(store);
+        state::prepare_lesson_state(data,published);
+        state::validate_lesson_state(data,published,"programming");
+        state::validate_lesson_state(data,compact,"programming");
+        const auto actual=state::get_response(data,published,current);
+        const auto compact_response=state::get_response(data,compact,smaller);
+        require(actual&&compact_response&&
+            actual->selected==selected&&compact_response->selected==selected&&
+            actual->correct==earned&&compact_response->correct==earned&&
+            !actual->historical_choice&&!compact_response->historical_choice&&
+            curriculum::evaluate_choice(current,selected).correct==earned&&
+            state::string_value(data,"learning_progress",
+                state::response_storage_key(published,current))==receipt&&
+            state::string_value(data,"guidance-qa","foreign")=="untouched",
+            "Published correction regraded an existing selection or lost its state");
+        store.save(data);
+        require(reopen(store)==data,
+            "Published choice changed after the second native StateStore reopen");
+    }
+    const auto reject=[&](std::string_view reason,const auto& mutate) {
+        auto forged=JsonObject::Parse(winrt::to_hstring(published.raw_json));
+        mutate(forged);
+        rejects_both(forged,reason);
+    };
+    reject("active choice semantic marker differs",[&](const JsonObject& forged){
+        const auto fields=forged.GetNamedObject(L"textSemantics").
+            GetNamedArray(L"fields");
+        for(unsigned i=0;i<fields.Size();++i) {
+            const auto item=fields.GetObjectAt(i);
+            if(item.GetNamedString(L"block")==winrt::to_hstring(id)&&
+               item.GetNamedString(L"path")==L"/options/0") {
+                item.Insert(L"sourceSha256",JsonValue::CreateStringValue(
+                    winrt::to_hstring(std::string(64,'0'))));
+                return;
+            }
+        }
+        throw std::runtime_error("No authored marker for published choice");
+    });
+    reject("General choice archive must belong",[&](const JsonObject& forged){
+        const auto records=forged.GetNamedObject(L"stateLayout").
+            GetNamedArray(L"choiceRevisions");
+        for(unsigned i=0;i<records.Size();++i) {
+            const auto record=records.GetObjectAt(i);
+            if(record.GetNamedString(L"id")==winrt::to_hstring(id)) {
+                record.GetNamedObject(L"block").Insert(L"correctIndex",
+                    JsonValue::CreateNumberValue(2));
+                return;
+            }
+        }
+        throw std::runtime_error("Missing published choice archive");
+    });
+    require(load_lesson(path).raw_json==published.raw_json,
+        "Published choice QA changed Work's curricular JSON");
+    std::cout<<"PASS published U9 choice on Windows: true signed archive, "
+        "correct and incorrect selections, durable StateStore, "
+        "native/metadata parser and rejected forgery\n";
+    return 0;
+}
+
 int general_choice_live_windows(const std::filesystem::path& content,
         const std::filesystem::path& qa) {
     // The actual published lesson is read only. Authorship and malicious
@@ -763,6 +862,8 @@ int general_choice_live_windows(const std::filesystem::path& content,
     const auto path=content/"datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json";
     const auto original=load_lesson(path);
     const auto& old=editor(original,id);
+    if(old.options.size()==3 && old.options.front()==replacement)
+        return general_choice_published_windows(original,path,qa);
     require(old.type==BlockType::multiple_choice&&old.correct_index==0&&
         old.options.size()==3&&old.options.front()==original_text,
         "The authentic U9L13 option, owner or original correct answer changed");

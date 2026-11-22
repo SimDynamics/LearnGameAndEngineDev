@@ -18,6 +18,57 @@ from test_math_matching_text_compat import RealFrequencyMatchingEditorial, OWNER
 CONTENT = (Path(__file__).resolve().parents[2] /
            "app/src/main/assets/content").resolve()
 
+P2_ASSETCHECK = (CONTENT /
+    "es/programming/programming_practice_tools/proyecto_assetcheck/"
+    "lesson_leer_manifiesto_y_publicar_informe.json")
+P2_OWNER = "block_0002_0005"
+P2_OLD_WORDING = "Las barras inclinadas representan caracteres de escape, no texto literal del manifiesto."
+P2_NEW_WORDING = ("En las etiquetas, las secuencias con barra inversa "
+    "representan LF o CR; no son una barra y una letra escritas en el manifiesto.")
+
+
+def assetcheck_prompt_editions() -> tuple[dict | None, dict]:
+    """Authenticate a real P2 matching prompt without changing the curriculum."""
+    original_bytes = P2_ASSETCHECK.read_bytes()
+    published = json.loads(original_bytes)
+    state.validate(published)
+    block = state._blocks(published)[P2_OWNER]
+    if (block["type"] != "math_puzzle" or
+            block["responses"][0]["type"] != "math_matching_drag"):
+        raise AssertionError("The authentic P2 matching owner changed")
+    if block["prompt"].count(P2_NEW_WORDING) == 1:
+        # Work has integrated the reviewed correction. Keep a native loader
+        # fixture for its REAL signed publication; never forge a second
+        # editorial transition or demand that the old wording remain active.
+        records = [entry for entry in published["stateLayout"].get(
+            "mathMatchingTextRevisions", []) if entry.get("id") == P2_OWNER]
+        if len(records) != 1:
+            raise AssertionError("The published P2 prompt lacks signed history")
+        previous = state.parse_json(records[0]["rawJson"])
+        if (previous["prompt"].count(P2_OLD_WORDING) != 1
+                or previous["responses"] != block["responses"]
+                or records[0]["paths"] != ["/prompt"]):
+            raise AssertionError("The published P2 response or archive changed")
+        if P2_ASSETCHECK.read_bytes() != original_bytes:
+            raise AssertionError("The active P2 source was mutated")
+        return None, published
+    if block["prompt"].count(P2_OLD_WORDING) != 1:
+        raise AssertionError("The authentic P2 matching prompt changed")
+    replacement = block["prompt"].replace(P2_OLD_WORDING, P2_NEW_WORDING)
+    candidate, proof = matching.preview_math_matching_text_review(
+        published, P2_OWNER, {"/prompt": replacement}, {"/prompt": []})
+    if not matching.verify_matching_preview(published, candidate, proof):
+        raise AssertionError("The P2 mathematical prompt lost its authored proof")
+    state.validate(candidate)
+    state.validate_transition(published, candidate)
+    aligned = state.align_for_previous_validation(published, candidate)
+    if (state._blocks(aligned) != state._blocks(published) or
+            state.original_projection(candidate) != state.original_projection(published) or
+            P2_ASSETCHECK.read_bytes() != original_bytes):
+        raise AssertionError("The P2 prompt revision changed the historical answer")
+    return published, candidate
+
+
 
 def export(directory: Path) -> dict[str, Path]:
     directory = directory.resolve()
@@ -77,6 +128,12 @@ def export(directory: Path) -> dict[str, Path]:
         "names-then-cards.json": names_then_cards,
         "cards-then-names.json": cards_then_names,
     }
+    p2_original, p2_revised = assetcheck_prompt_editions()
+    if p2_original is None:
+        documents["assetcheck-p2-published.json"] = p2_revised
+    else:
+        documents["assetcheck-p2-original.json"] = p2_original
+        documents["assetcheck-p2-revised.json"] = p2_revised
     directory.mkdir(parents=True, exist_ok=True)
     output = {}
     for name, document in documents.items():
@@ -91,7 +148,7 @@ def main() -> None:
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
     output = export(args.output_dir)
-    print(f"PASS U5L13 two verified orders: {len(output)} isolated QA documents")
+    print(f"PASS U5L13 and P2 matching prompt: {len(output)} isolated QA documents")
 
 
 if __name__ == "__main__":

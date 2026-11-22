@@ -89,6 +89,7 @@ on:
       - cmake/native_build_config.hpp.in
       - app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/colecciones_y_recorridos/lesson_contar_frecuencias_y_conservar_empates.json
+      - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_leer_manifiesto_y_publicar_informe.json
   workflow_dispatch:
 
 permissions:
@@ -254,7 +255,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Export both U5L13 authoring orders outside the curriculum
+      - name: Export U5L13 source/card and P2 AssetCheck prompt editions for isolated QA
         shell: pwsh
         run: |
           python -B scripts/curriculum/export_u5l13_composition_fixture.py --output-dir "$env:RUNNER_TEMP/u5l13-composed"

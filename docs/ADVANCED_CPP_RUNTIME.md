@@ -1,5 +1,12 @@
 # Advanced C++ / GPU architecture
 
+> **Documento histórico de Android/WASI.** Las versiones, ramas y comandos de
+> esta referencia describen aquella etapa, no la configuración activa de
+> LearnGameAndEngineDev para Windows. Para Windows consulta
+> `docs/WINDOWS_NATIVE.md` y `toolchains/windows.versions.json`.
+> El manifiesto `toolchains/versions.properties` se conserva únicamente como
+> referencia histórica de Android/WASI, no como política de compilación Windows.
+
 Branch: `fix/cpp-stdin-support`
 
 ## Target architecture and actual status

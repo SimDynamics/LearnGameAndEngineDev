@@ -10,6 +10,9 @@ import unittest
 from unittest.mock import patch
 import wave
 
+import export_first_unit_windows as windows_export
+from first_unit_audio_contract import inspect_wav
+
 from export_first_unit_windows import (LESSONS, missing_recordings, read_manifest,
                                        validate_manifest, write_manifest)
 
@@ -51,6 +54,80 @@ class WindowsFirstUnitExportTest(unittest.TestCase):
             mutate(candidate)
             with self.assertRaises(ValueError):
                 validate_manifest(candidate)
+
+    def test_exact_pcm_contract_rejects_corrupt_recordings_without_rewriting_them(self):
+        valid = pcm()
+        self.assertIsNone(inspect_wav(valid))
+        cases = (
+            (b"", "0 bytes"),
+            (valid[:-12], "RIFF"),
+            (b"run-as: package not debuggable\\n" * 4, "Not a RIFF"),
+            (valid[:12] + b"JUNK" + valid[16:], "Unexpected WAV chunk layout"),
+            (valid[:40] + (123).to_bytes(4, "little") + valid[44:], "PCM data length"),
+        )
+        for payload, expected in cases:
+            with self.subTest(error=expected):
+                self.assertIn(expected, inspect_wav(payload))
+        different_rate = bytearray(valid)
+        different_rate[24:28] = (48_000).to_bytes(4, "little")
+        self.assertIn("rate=48000", inspect_wav(bytes(different_rate)))
+
+    def test_android_only_narration_tools_are_not_windows_requirements(self):
+        root = Path(__file__).resolve().parents[2]
+        narration = root / "scripts/narration"
+        for android_only in ("observe_kokoro.ps1", "package_prerendered_opus.py"):
+            with self.subTest(android_only=android_only):
+                self.assertFalse((narration / android_only).exists())
+        historical = (narration / "PREGENERATED_AUDIO.md").read_text(
+            encoding="utf-8")
+        self.assertIn("repositorio Android independiente", historical)
+        self.assertIn("SimDynamics/LearnGraphicsProgramming", historical)
+        self.assertIn("package_prerendered_opus.py", historical)
+        self.assertIn("observe_kokoro.ps1", historical)
+        # Windows runs on its own validated assets and original PCM checks.
+        for needed in (
+                "export_first_unit_windows.py", "first_unit_audio_contract.py",
+                "prepare_english_ai_pack.py", "verify_windows_distribution.py",
+                "export_misaki_bart.py", "export_misaki_spacy_pos.py"):
+            with self.subTest(retained=needed):
+                self.assertTrue((narration / needed).is_file())
+        for source in ("CMakeLists.txt", "CMakePresets.json",
+                       "scripts/windows/Build-Native.ps1",
+                       "scripts/windows/Build-NarrationWorker.ps1",
+                       "native/narration/worker/build_worker.py",
+                       "scripts/narration/export_first_unit_windows.py"):
+            value = (root / source).read_text(encoding="utf-8")
+            with self.subTest(runtime=source):
+                self.assertNotIn("observe_kokoro.ps1", value)
+                self.assertNotIn("package_prerendered_opus.py", value)
+
+    def test_windows_import_has_no_android_adb_dependency(self):
+        self.assertIs(windows_export.inspect_wav, inspect_wav)
+        directory = Path(__file__).resolve().parent
+        self.assertFalse((directory / "export_first_unit_from_android.py").exists())
+        self.assertFalse((directory / "test_export_first_unit_from_android.py").exists())
+        self.assertEqual(3, len(LESSONS))
+        self.assertTrue(all(lesson.startswith("cpp_fundamentals__intro_programming__")
+                            for lesson in LESSONS))
+
+    def test_windows_audio_workflow_watches_existing_native_files(self):
+        root = Path(__file__).resolve().parents[2]
+        workflow = (root / ".github/workflows/codex-windows-first-unit-audio.yml").read_text(
+            encoding="utf-8")
+        self.assertIn("runs-on: windows-2022", workflow)
+        watched = {line.removeprefix("      - ").strip()
+                   for line in workflow.splitlines()
+                   if line.startswith("      - scripts/narration/")}
+        for expected in (
+                "scripts/narration/first_unit_audio_contract.py",
+                "scripts/narration/export_first_unit_windows.py",
+                "scripts/narration/test_export_first_unit_windows.py"):
+            self.assertIn(expected, watched)
+        for path in watched:
+            with self.subTest(path=path):
+                self.assertTrue((root / path).is_file(),
+                                "Windows audio CI watches a missing file")
+                self.assertNotIn("_from_android.py", path)
 
     def test_coverage_reports_missing_and_corrupt_without_touching_existing_audio(self):
         with tempfile.TemporaryDirectory() as directory:
