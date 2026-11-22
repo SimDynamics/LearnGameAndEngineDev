@@ -6,7 +6,6 @@ on:
     paths:
       - .github/workflows/windows-reader-build.yml
       - scripts/windows/Test-NativeCurricularCI.ps1
-      - scripts/windows/Restore-HostedPinnedMsvc.ps1
       - CMakeLists.txt
       - cmake/**
       - toolchains/windows.versions.json
@@ -79,8 +78,6 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Restore the exact pinned MSVC only on this disposable GitHub runner
-        run: .\scripts\windows\Restore-HostedPinnedMsvc.ps1
       - name: Fail early if hosted Windows lacks the exact declared MSVC
         run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild -MsvcPreflightOnly
       - name: Select the declared Python version
