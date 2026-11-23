@@ -6,23 +6,23 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Un problema nuevo: preparar grupos de fichas"
+          "text": "Preparar grupos de fichas"
         },
         {
           "type": "paragraph",
-          "text": "Construye un programa para preparar fichas en grupos. Sus datos se declaran en el código: fichas es una cantidad entera, capacidad es el número de fichas por grupo y acepta_sobrantes es bool. La cantidad válida va de 0 a 30 y la capacidad válida de 1 a 6, incluidos los extremos. No se lee entrada del teclado."
+          "text": "Construye un programa para un taller que quiere repartir fichas. Guarda la cantidad en fichas y el número de fichas que caben en cada grupo en capacidad. Los dos datos son enteros.\n\nLa cantidad admitida va de 0 a 30. La capacidad admitida va de 1 a 6. Ambos intervalos incluyen sus extremos.\n\nEl entero codigo_sobrantes vale 1 si el taller acepta fichas sueltas y 0 si no las acepta. Puedes usar codigo_sobrantes != 0 para obtener el valor bool que guarda acepta_sobrantes. En la primera construcción, escribe los tres enteros en el código."
         },
         {
           "type": "paragraph",
-          "text": "Estos son los requisitos observables, en orden de prioridad. Con cualquier dato fuera de esos intervalos, muestra Datos invalidos. Con datos válidos y cero fichas, muestra Sin trabajo. Con fichas positivas y reparto exacto, muestra Grupos: seguido de un espacio y el número de grupos completos. Con sobrantes y acepta_sobrantes true, muestra esa línea de grupos y una segunda línea Sobrantes: seguida de un espacio y la cantidad sobrante. Con sobrantes y acepta_sobrantes false, muestra Reparto pendiente."
+          "text": "Aplica estas reglas en orden. Usa solo el mensaje o los renglones que pide la regla elegida.\n\nSi la cantidad o la capacidad queda fuera de su intervalo, muestra Datos invalidos.\nSi ambos datos son válidos y hay cero fichas, muestra Sin trabajo.\nSi puedes repartir todas las fichas en grupos completos, muestra Grupos: seguido de un espacio y el número de grupos.\nSi quedan fichas sueltas y el taller las acepta, muestra el renglón de grupos y, en el siguiente renglón, Sobrantes: seguido de un espacio y la cantidad suelta.\nSi quedan fichas sueltas y el taller no las acepta, muestra Reparto pendiente."
         },
         {
           "type": "paragraph",
-          "text": "No muestres mensajes adicionales. Los datos inválidos deben producir sólo el aviso, sin evaluar cálculos de reparto. Elige tú las condiciones y cómo organizar las alternativas. Puedes resolverlo con los tipos, operaciones y decisiones de esta unidad."
+          "text": "Comprueba los datos antes de calcular. Cuando la cantidad o la capacidad sea inválida, muestra el aviso y omite los cálculos del reparto. Así se evita intentar dividir entre cero."
         },
         {
           "type": "note",
-          "text": "Los requisitos fijan la prioridad de los resultados; la estructura de decisiones debe construirla tu programa. El puzzle siguiente permite elegir una salida a partir de esos requisitos antes del intento de construcción."
+          "text": "Escribe las condiciones y elige cómo agrupar las instrucciones. Puedes usar las comparaciones y las estructuras de decisión que ya practicaste."
         }
       ]
     },
@@ -30,30 +30,30 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Preparar resultados esperados"
+          "text": "Predecir qué debe mostrar el programa"
         },
         {
           "type": "paragraph",
-          "text": "Empieza con fichas 14, capacidad 4 y acepta_sobrantes true: deben aparecer Grupos: 3 y Sobrantes: 2 en dos líneas. Cambiar únicamente acepta_sobrantes a false debe producir Reparto pendiente. Con 12 fichas y capacidad 4 debe aparecer Grupos: 3, cualquiera que sea el valor de acepta_sobrantes."
+          "text": "Con 14 fichas y capacidad de 4, puedes llenar tres grupos y quedan dos fichas sueltas. Si el taller las acepta, la consola debe mostrar estos dos renglones.\n\nGrupos: 3\nSobrantes: 2\n\nSi el taller cambia su decisión y deja de aceptar sobrantes, el mismo reparto debe mostrar Reparto pendiente. Con 12 fichas y la misma capacidad salen tres grupos exactos. En ese caso, la aceptación de sobrantes no cambia el resultado Grupos: 3."
         },
         {
           "type": "paragraph",
-          "text": "Comprueba también cero fichas con capacidad 4: Sin trabajo. En el extremo superior, 30 fichas y capacidad 6 deben producir Grupos: 5. Los casos -1 o 31 fichas con capacidad 4, y 12 fichas con capacidad 0 o 7, deben producir Datos invalidos. Incluye el caso cero fichas con capacidad 0: el dato inválido tiene prioridad sobre la ausencia de trabajo."
+          "text": "Algunas pruebas permiten distinguir qué comprobación va primero.\n\nCero fichas y capacidad cuatro. Ambos datos son válidos. Debe aparecer Sin trabajo.\nCero fichas y capacidad cero. La capacidad es inválida. Debe aparecer Datos invalidos.\n\nEl segundo caso verifica que el rechazo se compruebe antes de decidir si hay trabajo."
         },
         {
           "type": "multiple_choice",
-          "question": "Una nueva prueba usa 10 fichas, capacidad 3 y acepta_sobrantes false. ¿Qué salida exige el enunciado?",
+          "question": "El taller tiene 10 fichas y caben 3 por grupo. El taller rechaza las fichas sueltas. ¿Qué debe mostrar el programa?",
           "options": [
             "Datos invalidos",
             "Grupos: 3",
             "Reparto pendiente"
           ],
           "correctIndex": 2,
-          "explanation": "Los datos son válidos, queda una ficha y el modo elegido no acepta sobrantes."
+          "explanation": "Con diez fichas se llenan tres grupos y queda una ficha suelta. Como el taller rechaza sobrantes, se muestra solo Reparto pendiente."
         },
         {
           "type": "paragraph",
-          "text": "Una cantidad positiva menor que la capacidad válida deja cero grupos completos y fichas sobrantes. El resultado depende de si se aceptan: comprueba esa distinción en las actividades de construcción posteriores, a partir de las reglas y no de lo que produzca tu intento."
+          "text": "Con 1 ficha y capacidad de 4, hay una ficha para repartir, aunque no alcance para llenar un grupo. Si se aceptan sobrantes, deben aparecer estos renglones.\n\nGrupos: 0\nSobrantes: 1"
         }
       ]
     },
@@ -61,11 +61,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Construcción libre"
+          "text": "Construir con datos declarados en el programa"
         },
         {
           "type": "paragraph",
-          "text": "El editor contiene sólo la estructura del programa. Declara los tres datos del caso inicial: catorce fichas, capacidad cuatro y aceptación de sobrantes `true`. Construye las condiciones y las instrucciones necesarias para cumplir los requisitos.\n\nPulsa «Compilar, ejecutar y comprobar». Debe mostrar `Grupos: 3` y `Sobrantes: 2` en dos líneas, con salto final opcional. Los datos inválidos deben quedar fuera de cualquier división o resto. Los otros casos disponen de actividades independientes; corregir este mismo intento y volver a comprobarlo sigue disponible."
+          "text": "El editor contiene la estructura de main. Escribe una declaración int para cada dato al comienzo del programa. Usa estos nombres y declara las variables sin const. El comprobador probará otros valores.\n\nfichas vale 14.\ncapacidad vale 4.\ncodigo_sobrantes vale 1.\n\nEscribe las comprobaciones, el reparto y los mensajes. Antes de ejecutar, revisa que las instrucciones con / y % se alcancen solo después de aceptar la cantidad y la capacidad.\n\nSalida esperada\nGrupos: 3\nSobrantes: 2\n\nPulsa «Compilar, ejecutar y comprobar». Puedes terminar con un salto de línea."
         },
         {
           "type": "cpp_compiler",
@@ -84,7 +84,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cuando una salida difiera, localiza la primera condición o instrucción que no corresponde a tu predicción. Corrige una causa y repite el caso. Comprueba después que la corrección también conserva los otros resultados. La siguiente página ofrece una comparación con otros datos."
+          "text": "Si la consola muestra otra salida, sigue las condiciones desde el primer dato y revisa qué rama se ejecuta. Corrige el primer paso que difiere de la regla y vuelve a comprobar."
         }
       ]
     },
@@ -92,11 +92,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Comparar las decisiones"
+          "text": "Seguir el camino para un reparto con sobrantes"
         },
         {
           "type": "paragraph",
-          "text": "Esta versión usa otros datos: 18 fichas, capacidad 5 y permiso para sobrantes. Sigue sus caminos y compárala con tu solución. Dos programas pueden organizar sus bloques de manera distinta y cumplir los mismos requisitos. Revisa dónde evita los cálculos con datos inválidos y cuándo llega a cada mensaje."
+          "text": "La referencia usa 18 fichas y capacidad de 5. Primero comprueba los intervalos y la cantidad cero. Como hay fichas y la capacidad es válida, la división entera cuenta tres grupos completos y el resto cuenta tres fichas sueltas (Stroustrup, 2024). El valor true de acepta_sobrantes permite mostrar los dos renglones."
         },
         {
           "type": "code",
@@ -105,29 +105,87 @@
         },
         {
           "type": "output_prediction",
-          "question": "Otro caso usa 20 fichas, capacidad 6 y no acepta sobrantes. Predice la salida de esta versión.",
+          "question": "El código usa 20 fichas y capacidad de 6. El taller rechaza los sobrantes. Sigue las decisiones y escribe el renglón que muestra el programa.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    const int fichas = 20;\n    int capacidad = 6;\n    const bool acepta_sobrantes = false;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
           "answers": [
             "Reparto pendiente"
           ],
-          "explanation": "Los datos son válidos, sobran 2 fichas y ese modo no acepta sobrantes. No se muestra el cociente por separado en este camino."
+          "explanation": "Veinte fichas permiten llenar tres grupos y sobran dos. La condición sobrantes == 0 da false y acepta_sobrantes vale false. Se ejecuta el último else y aparece solo Reparto pendiente."
         },
         {
           "type": "heading",
-          "text": "Comprobar el dominio original con entradas preparadas"
+          "text": "Mostrar el renglón de grupos una sola vez"
         },
         {
           "type": "paragraph",
-          "text": "El programa adapta la referencia para leer fichas, capacidad y un indicador de aceptación de sobrantes, cero o uno. La condición `codigo_sobrantes != 0` conserva el valor lógico. Comprueba los casos del dominio original de la página de requisitos cambiando sólo Entrada. Por ejemplo, `14 4 1` debe producir grupos tres y sobrantes dos; `14 4 0`, `Reparto pendiente`; `0 4 1`, `Sin trabajo`; `30 6 1`, cinco grupos. Las cantidades fuera de cero a treinta y las capacidades fuera de uno a seis deben producir únicamente `Datos invalidos`, incluso `0 0 1`. Los casos de una ficha y capacidad cuatro distinguen cero grupos de ausencia de trabajo.\n\nTodos los datos de Entrada son enteros escritos válidamente. Separa los datos con espacios o saltos de línea y conserva el código entre pruebas. Pulsa «Compilar, ejecutar y comprobar» para contrastar cada entrada con su objetivo; el salto final es opcional."
+          "text": "Esta solución usa los tres enteros del editor y obtiene acepta_sobrantes de codigo_sobrantes. Después de calcular el resto, comprueba si el taller debe dejar pendiente el reparto. Si puede repartir, escribe el número de grupos y solo añade un segundo renglón cuando sobran fichas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int fichas = 14;\n    int capacidad = 4;\n    int codigo_sobrantes = 1;\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes != 0 && !acepta_sobrantes) {\n            std::cout << \"Reparto pendiente\";\n        } else {\n            std::cout << \"Grupos: \" << grupos;\n            if (sobrantes != 0) {\n                std::cout << \"\\nSobrantes: \" << sobrantes;\n            }\n        }\n    }\n\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Adaptar el programa a un mínimo de una ficha"
+        },
+        {
+          "type": "paragraph",
+          "text": "El taller cambia una regla. Antes aceptaba cantidades de cero a treinta. Ahora exige de una a treinta fichas. Con capacidad válida, un pedido de cero fichas debe pasar de Sin trabajo a Datos invalidos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Piensa en la regla anterior, que admitía cero fichas, y en la nueva, que exige al menos una. ¿Con cuáles de estos datos cambia el mensaje?",
+          "options": [
+            "31 fichas con capacidad 4.",
+            "Cero fichas con capacidad 4.",
+            "Cero fichas con capacidad 0."
+          ],
+          "correctIndex": 1,
+          "explanation": "Cero fichas con capacidad cuatro daba Sin trabajo. Ahora da Datos invalidos. En los otros dos casos ya había un dato fuera de su intervalo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Con la regla anterior, un programa recibe cero fichas y capacidad cero. Muestra Sin trabajo. ¿Qué regla incumple?",
+          "options": [
+            "Todo bool debe mostrarse como texto.",
+            "El rechazo de datos inválidos debe tener prioridad.",
+            "Siempre debe haber al menos un grupo completo."
+          ],
+          "correctIndex": 1,
+          "explanation": "La capacidad de cada grupo debe ser al menos uno. El programa debe rechazar una capacidad cero y mostrar Datos invalidos antes de comprobar si hay fichas para repartir."
+        },
+        {
+          "type": "note",
+          "text": "Las pruebas con una ficha y con treinta ayudan a comprobar que el nuevo mínimo no excluya otro dato válido."
+        },
+        {
+          "type": "heading",
+          "text": "Cambiar la comprobación de la cantidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor ya contiene un programa que aplica la regla anterior. Lee tres enteros del campo «Entrada», en este orden.\n\nCantidad de fichas.\nCapacidad por grupo.\nCódigo de sobrantes, 1 si se aceptan o 0 si se rechazan.\n\nLos datos ya vienen escritos como enteros. Cambia el mínimo admitido de fichas a uno. Los casos que pasan la comprobación ya tienen al menos una ficha. Revisa si todavía les corresponde el mensaje Sin trabajo. Conserva el rechazo de capacidades inválidas y las reglas de reparto y sobrantes.\n\nEntrada\n0 4 1\n\nSalida esperada\nDatos invalidos\n\nPulsa «Compilar, ejecutar y comprobar». Esa es la comprobación obligatoria. Puedes terminar con un salto de línea."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
-          "initialStandardInput": "14 4 1",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n",
+          "initialStandardInput": "0 4 1",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
+              {
+                "standardInput": "0 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
               {
                 "standardInput": "14 4 1",
                 "outputs": [
@@ -154,13 +212,6 @@
                 "outputs": [
                   "Grupos: 3",
                   "Grupos: 3\n"
-                ]
-              },
-              {
-                "standardInput": "0 4 1",
-                "outputs": [
-                  "Sin trabajo",
-                  "Sin trabajo\n"
                 ]
               },
               {
@@ -228,72 +279,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Transferir una regla sin instrucciones dictadas"
+          "text": "Comparar el programa tras cambiar el mínimo"
         },
         {
           "type": "paragraph",
-          "text": "El requisito cambia: una cantidad válida empieza ahora en uno, de modo que cero fichas debe rechazarse. Conserva la capacidad válida de uno a seis y las demás reglas. Los dos puzzles siguientes permiten elegir un caso que distingue el dominio y reconocer la prioridad del rechazo. Después encontrarás el intento de construcción con este requisito nuevo."
-        },
-        {
-          "type": "multiple_choice",
-          "question": "¿Qué caso distingue directamente el dominio original del nuevo, sin añadir otra causa de rechazo?",
-          "options": [
-            "31 fichas con capacidad 4.",
-            "Cero fichas con capacidad 4.",
-            "Cero fichas con capacidad 0."
-          ],
-          "correctIndex": 1,
-          "explanation": "Con capacidad válida, cero era Sin trabajo y ahora debe ser Datos invalidos. Los otros casos ya se rechazaban."
-        },
-        {
-          "type": "multiple_choice",
-          "question": "Una prueba con cero fichas y capacidad cero muestra Sin trabajo. ¿Qué requisito original incumple?",
-          "options": [
-            "Todo bool debe mostrarse como texto.",
-            "El rechazo de datos inválidos debe tener prioridad.",
-            "Siempre debe haber al menos un grupo completo."
-          ],
-          "correctIndex": 1,
-          "explanation": "La capacidad cero es inválida y sólo debe producir Datos invalidos. La cantidad cero no debe ocultar ese rechazo."
-        },
-        {
-          "type": "note",
-          "text": "La construcción exige elegir expresiones, organizar alternativas y comparar resultados con las reglas. El nuevo editor conserva un objetivo propio; los reintentos permiten reparar una condición sin sustituir la actividad anterior."
-        },
-        {
-          "type": "heading",
-          "text": "Construir con el dominio que empieza en uno"
-        },
-        {
-          "type": "paragraph",
-          "text": "Construye desde el esqueleto un programa para el requisito nuevo. Usa cero fichas, capacidad cuatro y aceptación de sobrantes `true`. El rechazo debe ocurrir antes de cualquier reparto. Conserva también en tu código las otras reglas del nuevo dominio.\n\nPulsa «Compilar, ejecutar y comprobar». El objetivo es:\n\nDatos invalidos\n\nEl salto final es opcional."
-        },
-        {
-          "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n",
-          "outputCheck": {
-            "cases": [
-              {
-                "standardInput": "",
-                "outputs": [
-                  "Datos invalidos",
-                  "Datos invalidos\n"
-                ]
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Comparar el cambio de dominio"
-        },
-        {
-          "type": "paragraph",
-          "text": "Con el nuevo requisito, el intervalo de fichas empieza en 1: cero fichas con capacidad 4 debe producir Datos invalidos. El caso 1, capacidad 4 y aceptación de sobrantes produce Grupos: 0 y Sobrantes: 1 en dos líneas; 30 con capacidad 6 conserva Grupos: 5. Los datos inválidos mantienen la prioridad y no llegan a / ni a %."
+          "text": "Esta versión vuelve a usar 18 fichas y capacidad de 5. Sigue dando tres grupos y tres sobrantes, porque dieciocho pertenece a ambos intervalos."
         },
         {
           "type": "code",
@@ -302,60 +292,24 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia cambia la comprobación inferior y elimina la rama `Sin trabajo`, que ya no corresponde a los datos admitidos. Conserva los otros cálculos y decisiones. Las actividades siguientes comprueban las fronteras y la prioridad del requisito nuevo; una estructura distinta también es válida si cumple esos observables."
+          "text": "La primera condición rechaza cualquier cantidad menor que uno. Por eso los casos que alcanzan else ya tienen al menos una ficha y la rama que mostraba Sin trabajo deja de ser necesaria. En la condición de rechazo, la capacidad cero sigue excluida. Las instrucciones con / y % quedan en el bloque que solo se ejecuta con datos válidos (Köppe et al., 2023)."
         },
         {
           "type": "heading",
-          "text": "Comprobar el dominio nuevo"
+          "text": "Comprobar el programa que lee los tres enteros"
         },
         {
           "type": "paragraph",
-          "text": "Este programa lee los mismos tres datos, pero exige al menos una ficha. Comprueba `0 4 1` → `Datos invalidos`; `1 4 1` → `Grupos: 0` y `Sobrantes: 1`; `30 6 1` → `Grupos: 5`; `12 0 1` y `0 0 1` → `Datos invalidos`. Los resultados de dos líneas conservan su separación.\n\nTodos los datos de Entrada son enteros escritos válidamente. Separa los datos con espacios o saltos de línea y conserva el código entre pruebas. Pulsa «Compilar, ejecutar y comprobar» para contrastar cada entrada con su objetivo; el salto final es opcional."
+          "text": "La lectura del campo «Entrada» permite probar el mismo código con datos distintos. Con 1 4 1, el nuevo mínimo permite repartir una ficha. Con 30 6 1, ambos límites superiores siguen siendo válidos."
         },
         {
-          "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
-          "initialStandardInput": "0 4 1",
-          "outputCheck": {
-            "inputComparison": "tokens",
-            "cases": [
-              {
-                "standardInput": "0 4 1",
-                "outputs": [
-                  "Datos invalidos",
-                  "Datos invalidos\n"
-                ]
-              },
-              {
-                "standardInput": "1 4 1",
-                "outputs": [
-                  "Grupos: 0\nSobrantes: 1",
-                  "Grupos: 0\nSobrantes: 1\n"
-                ]
-              },
-              {
-                "standardInput": "30 6 1",
-                "outputs": [
-                  "Grupos: 5",
-                  "Grupos: 5\n"
-                ]
-              },
-              {
-                "standardInput": "12 0 1",
-                "outputs": [
-                  "Datos invalidos",
-                  "Datos invalidos\n"
-                ]
-              },
-              {
-                "standardInput": "0 0 1",
-                "outputs": [
-                  "Datos invalidos",
-                  "Datos invalidos\n"
-                ]
-              }
-            ]
-          }
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes probar estos datos en el editor. Cambia el contenido de «Entrada» en cada prueba.\n\nEntrada\n14 4 1\nSalida esperada\nGrupos: 3\nSobrantes: 2\n\nEntrada\n14 4 0\nSalida esperada\nReparto pendiente\n\nEntrada\n12 4 1\nSalida esperada\nGrupos: 3\n\nEntrada\n12 4 0\nSalida esperada\nGrupos: 3\n\nEntrada\n30 6 1\nSalida esperada\nGrupos: 5\n\nEntrada\n-1 4 1\nSalida esperada\nDatos invalidos\n\nEntrada\n31 4 1\nSalida esperada\nDatos invalidos\n\nEntrada\n12 0 1\nSalida esperada\nDatos invalidos\n\nEntrada\n12 7 1\nSalida esperada\nDatos invalidos\n\nEntrada\n0 0 1\nSalida esperada\nDatos invalidos\n\nEntrada\n1 4 1\nSalida esperada\nGrupos: 0\nSobrantes: 1\n\nEntrada\n1 4 0\nSalida esperada\nReparto pendiente"
         }
       ]
     }
@@ -578,7 +532,7 @@
           "block_0003_0003",
           "block_0003_0004",
           "block_0003_0005",
-          "block_0003_0006"
+          "p1u3l8_ejemplo_original"
         ]
       },
       {
@@ -591,7 +545,7 @@
           "block_0004_0004",
           "block_0004_0005",
           "block_0004_0006",
-          "block_0004_0007"
+          "p1u3l8_cambiar_minimo"
         ]
       },
       {
@@ -603,7 +557,8 @@
           "block_0005_0003",
           "block_0005_0004",
           "block_0005_0005",
-          "block_0005_0006"
+          "p1u3l8_ejemplo_minimo",
+          "p1u3l8_ensayos_minimo"
         ]
       }
     ],
@@ -1074,7 +1029,44 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "p1u3l8_ejemplo_original",
+        "sha256": "ff6959a5c8836799c4814c082d28826f6de9fc4adc317b2e11b53f70a24657a7",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u3l8_cambiar_minimo",
+        "sha256": "cb8970317afa99cab4065963ccb335ac7e49ebdbe6cc30dcc9d143df8174651c",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u3l8_ejemplo_minimo",
+        "sha256": "9d819f877695e385dc7dcb4fef3821eecac5b703e5d36ccdd01f63a18bd79c0d",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u3l8_ensayos_minimo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 3
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0002_0003",
@@ -1105,6 +1097,156 @@
         "id": "block_0000_0003",
         "beforeSha256": "a42c25145cee36ff1574468b212991caa7d8b45f04d16c0ceeead82131b89203",
         "afterSha256": "ff927866f365db806c264a64dde8dee60db2c13a879bf3eea30aa06dcd1c4095"
+      },
+      {
+        "id": "block_0000_0000",
+        "beforeSha256": "d661d63552d7159e85240db2da33d89073645b5eee89b5cd6cabf9650c950188",
+        "afterSha256": "6d01e7c125074bda30c96229133ca00e429c22c2e040b07230363aaef18850c5"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "3fb4b9c24865602b98779324c77f5ba0522d7bb3d755f82797c3eef7cb06898d",
+        "afterSha256": "7eca5a0e6e369b72af089d608816cb7b4015187a8fd867d8b1a5b581768aef42"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "97223715e56b54acc49635b16e7defc44927a4a72b2ce7ab0c576530c5c2cd75",
+        "afterSha256": "80415eb2d6de770778981d2974af6841f1f3792f9ec509d1687b66dbea0605ab"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "ff927866f365db806c264a64dde8dee60db2c13a879bf3eea30aa06dcd1c4095",
+        "afterSha256": "8a22e057c98386a7fb77075c78fba615e553494e5239e02495af4c1cd31b1482"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "4a0de931499ad23fdf3334cf6edb59a1c22bd4440b2fd2f3971ef23e0e8b701c",
+        "afterSha256": "cb145ff3bc2e1e3462f0d118a36b9c3dce91bc20a49f06190d2d1ad1301db68c"
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "fa05d8c6a0e9e9c20f82947f8af7ef8a1633b4affa8561836050a11cd3f398b7",
+        "afterSha256": "5a0530de6a7781363bf9833196b8c73e32b0693109f5f8e973782974502b3c18"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "6366d8dda3ee02cd8dbcf7e8858620555d8ee80529d2716004fbfd8447103c7f",
+        "afterSha256": "2bfc12c37b93f1af641d59ec573ae298373fa704f9d179cf08963b0cbda91eda"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "6606c18dde51546a8a0ca58acd425bcf10a0a2bc00b8d4f50ceb5990033ad2d0",
+        "afterSha256": "ade4cc627ea3e963f70c8144de38b2ae70a597fce858124ae82267c3aedb59da"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "9804c8a799f9a85e38414eb73fa5c28a54be20b0ca95992d5f69ac56696b8296",
+        "afterSha256": "87f88ea84ec5b2abb7784895234fb34aaffbb0e03014365caa8a826a6e23740b"
+      },
+      {
+        "id": "block_0002_0000",
+        "beforeSha256": "51efe0550988dc00e1ed549db09311b4b3a6a9b3c39c816317d156c22c36441f",
+        "afterSha256": "fbd0c3c60f2fa8a248c8752d0abe42c15ca22ba3bc675adf2460be211417b504"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "b0daa79691e673a19100e787908ec23e1f942ceedccbc0324fc046e688ce45b0",
+        "afterSha256": "1fee1adba73fc7cd98b8aa6d2aa7495bb0e9939ecc63e80b2b8d1c5469d1ca13"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "64b919dbf358f530f4e7707e6ecf06394c001d9a45f6339ae1fe1ebf2202116c",
+        "afterSha256": "d93efaef571d431e7705ccd6bcd0b3213249e9afc80bd58a669c1647e0faca0e"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "238b1e48213eb0834f058b6dcbe09dedf741acfe2ff8fe2b57a3713f76d3c1ff",
+        "afterSha256": "0c7414ee1e8dfa6ef066b419e0b6c0c24d61c887d855c90add298e44f70ba735"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "6f64b23e9f662ab82dd64660f929a63f1cd5306cc3f3f8553046a68d5df75334",
+        "afterSha256": "11e07d0e6e494bb049c32f24e62efc30b6ee9e75d53710589a58b24f289a3ec7"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "c8f333c7b64909a96dea02a7f861873aa94c1b942c5faf5afc4826d084c023e6",
+        "afterSha256": "82b700ef8552d5497947304d55a291e1005a595ff0ec1951c7b6ac911321257f"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "5331192324e140123920a2e55e2d87e32b233c4aaa095e8f6423f9acb68949e3",
+        "afterSha256": "9a5086f267ae24d3a055cf5cca90dc9b0704bfbc04a4872e93841f9d13bbe3fc"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "118b380e6e62639793824ab0ad1daa52ba54d20bb53cef903c050ea3e9a57fc5",
+        "afterSha256": "282a41ae07122b1efa834135e7532d30a32696ae6ad67974401e624d3d33bc6d"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "ed952cd959f76b6fcfea638136258b10070bf2e8dbdca9b304a28eb0141759ae",
+        "afterSha256": "f01091e7567ed2e81fef4985080318d363fcf6aca0986bfaa40d31e1daebddf4"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "308b31a15474a67429e3b6b626b1ea9c56ece24d702504e385c8cc2685ff2d3e",
+        "afterSha256": "44825a4401fe8c7610d3d3427ae5e5e46fad8639e71e95d86492b5e0b1c479c2"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "15a0862067f736900053fef4e5e0d7d6078319fa7883b39fa6d4f3942a1405ba",
+        "afterSha256": "337c992ecd968f943dbcde0a391e652eccc54d0367f215a94f72a8d2b88e6de4"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "5eef79118b31dec42c02edcde4b5e833cf9631b55b056b7ef0829e1f255c721f",
+        "afterSha256": "f15fdfac9e69b90cc6d5ca6378709d97b99b6a698357ba1baabd42b6c7f0b686"
+      },
+      {
+        "id": "block_0005_0000",
+        "beforeSha256": "42f2d2b7bbcc03b1e79941b994e736e1a89232e2a43a95b1d3a3f1711dd24692",
+        "afterSha256": "080aa87feafaa5555f5fb2be50a9da5a883373f6ac863a0d9d7278925cd6db20"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "022bd21b8a768cb797afe551e2897fdaf9bfa05d63735a04428ddbf580a2ce4e",
+        "afterSha256": "b93955cd96bbbdf9214b984a911bc2ee55e2c8b54025ced13069c56ed70a62ee"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "91a337668505a4b0d53ab9ac3d474b332b1165e0a03286de5809569428ec9e48",
+        "afterSha256": "d6a6c2e9f9e650e9163ba725db96341cdfac7545e679adfb2264108084ff6534"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "22c3af260cf3db58794278dd8636624e27627a117333afeb989698d92b4874cb",
+        "afterSha256": "66870574ad3b002d803c239af7a6d368162c85d8b20bac7dc3b4d9633167f809"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "95c1594b701d22e82be30e5b0b77dd05330bce5d44059f6b8f18cde1e66b0fc3",
+        "afterSha256": "da0ae06c39fdbfaf603004ed61cdbac97da629a13f1f87ed9faf13adbd727245"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "b8dbfae2bdddc4d4860782a121bbaa0e100caf2d924b0b4c41c2049b388d2dd3",
+        "afterSha256": "0152c51228def206fa5446ada43306e02ead992684319599e7e692ccbb00849d"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "f7c9c18029a4796f5c53a298d2286754fbf8fb33fe74d485c78fcef8c91a9b52",
+        "afterSha256": "c8d7f5a7b5216f7034610148e46fc72d526ecf19fc70e9385ee750642dec64f2"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "e3bfccceaa6ab52bd8c64f8643f18cfc49fcec428b09865078073e60da717c36",
+        "afterSha256": "436af143468880560f58ec3b0791dcdce05ec33f308376ac8c5a1254b61048df"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "097724d7ca68bfc19d54a095e911a1c192209f29c94ca644f6cd492eab673318",
+        "afterSha256": "30ccd1be6bd3f7c533dc46d3a5848870d3d859d4351d542686167b8ac5e86bdf"
       }
     ],
     "sourceFormatRevisions": [
@@ -1124,29 +1266,2177 @@
           "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int capacidad = 5;\n    const bool acepta_sobrantes = true;\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n"
         }
       }
+    ],
+    "retired": [
+      {
+        "id": "block_0003_0006",
+        "page": "page_0003",
+        "next": "",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "14 4 1",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "14 4 1",
+                "outputs": [
+                  "Grupos: 3\nSobrantes: 2",
+                  "Grupos: 3\nSobrantes: 2\n"
+                ]
+              },
+              {
+                "standardInput": "14 4 0",
+                "outputs": [
+                  "Reparto pendiente",
+                  "Reparto pendiente\n"
+                ]
+              },
+              {
+                "standardInput": "12 4 1",
+                "outputs": [
+                  "Grupos: 3",
+                  "Grupos: 3\n"
+                ]
+              },
+              {
+                "standardInput": "12 4 0",
+                "outputs": [
+                  "Grupos: 3",
+                  "Grupos: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0 4 1",
+                "outputs": [
+                  "Sin trabajo",
+                  "Sin trabajo\n"
+                ]
+              },
+              {
+                "standardInput": "30 6 1",
+                "outputs": [
+                  "Grupos: 5",
+                  "Grupos: 5\n"
+                ]
+              },
+              {
+                "standardInput": "-1 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "31 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "12 0 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "12 7 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "0 0 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "1 4 1",
+                "outputs": [
+                  "Grupos: 0\nSobrantes: 1",
+                  "Grupos: 0\nSobrantes: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 4 0",
+                "outputs": [
+                  "Reparto pendiente",
+                  "Reparto pendiente\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0007",
+        "page": "page_0004",
+        "next": "",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0006",
+        "page": "page_0005",
+        "next": "",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "0 4 1",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "1 4 1",
+                "outputs": [
+                  "Grupos: 0\nSobrantes: 1",
+                  "Grupos: 0\nSobrantes: 1\n"
+                ]
+              },
+              {
+                "standardInput": "30 6 1",
+                "outputs": [
+                  "Grupos: 5",
+                  "Grupos: 5\n"
+                ]
+              },
+              {
+                "standardInput": "12 0 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "0 0 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "retirementHistory": [
+      {
+        "retired": [
+          "block_0003_0006",
+          "block_0004_0007",
+          "block_0005_0006"
+        ],
+        "current": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              "block_0000_0000",
+              "block_0000_0001",
+              "block_0000_0002",
+              "block_0000_0003",
+              "block_0000_0004"
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              "block_0001_0000",
+              "block_0001_0001",
+              "block_0001_0002",
+              "block_0001_0003",
+              "block_0001_0004"
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              "block_0002_0000",
+              "block_0002_0001",
+              "block_0002_0002",
+              "block_0002_0003"
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              "block_0003_0000",
+              "block_0003_0001",
+              "block_0003_0002",
+              "block_0003_0003",
+              "block_0003_0004",
+              "block_0003_0005",
+              "block_0003_0006"
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              "block_0004_0000",
+              "block_0004_0001",
+              "block_0004_0002",
+              "block_0004_0003",
+              "block_0004_0004",
+              "block_0004_0005",
+              "block_0004_0006",
+              "block_0004_0007"
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              "block_0005_0000",
+              "block_0005_0001",
+              "block_0005_0002",
+              "block_0005_0003",
+              "block_0005_0004",
+              "block_0005_0005",
+              "block_0005_0006"
+            ]
+          }
+        ],
+        "pages": [
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Un problema nuevo: preparar grupos de fichas"
+              },
+              {
+                "type": "paragraph",
+                "text": "Construye un programa para preparar fichas en grupos. Sus datos se declaran en el código: fichas es una cantidad entera, capacidad es el número de fichas por grupo y acepta_sobrantes es bool. La cantidad válida va de 0 a 30 y la capacidad válida de 1 a 6, incluidos los extremos. No se lee entrada del teclado."
+              },
+              {
+                "type": "paragraph",
+                "text": "Estos son los requisitos observables, en orden de prioridad. Con cualquier dato fuera de esos intervalos, muestra Datos invalidos. Con datos válidos y cero fichas, muestra Sin trabajo. Con fichas positivas y reparto exacto, muestra Grupos: seguido de un espacio y el número de grupos completos. Con sobrantes y acepta_sobrantes true, muestra esa línea de grupos y una segunda línea Sobrantes: seguida de un espacio y la cantidad sobrante. Con sobrantes y acepta_sobrantes false, muestra Reparto pendiente."
+              },
+              {
+                "type": "paragraph",
+                "text": "No muestres mensajes adicionales. Los datos inválidos deben producir sólo el aviso, sin evaluar cálculos de reparto. Elige tú las condiciones y cómo organizar las alternativas. Puedes resolverlo con los tipos, operaciones y decisiones de esta unidad."
+              },
+              {
+                "type": "note",
+                "text": "Los requisitos fijan la prioridad de los resultados; la estructura de decisiones debe construirla tu programa. El puzzle siguiente permite elegir una salida a partir de esos requisitos antes del intento de construcción."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Preparar resultados esperados"
+              },
+              {
+                "type": "paragraph",
+                "text": "Empieza con fichas 14, capacidad 4 y acepta_sobrantes true: deben aparecer Grupos: 3 y Sobrantes: 2 en dos líneas. Cambiar únicamente acepta_sobrantes a false debe producir Reparto pendiente. Con 12 fichas y capacidad 4 debe aparecer Grupos: 3, cualquiera que sea el valor de acepta_sobrantes."
+              },
+              {
+                "type": "paragraph",
+                "text": "Comprueba también cero fichas con capacidad 4: Sin trabajo. En el extremo superior, 30 fichas y capacidad 6 deben producir Grupos: 5. Los casos -1 o 31 fichas con capacidad 4, y 12 fichas con capacidad 0 o 7, deben producir Datos invalidos. Incluye el caso cero fichas con capacidad 0: el dato inválido tiene prioridad sobre la ausencia de trabajo."
+              },
+              {
+                "type": "multiple_choice",
+                "question": "Una nueva prueba usa 10 fichas, capacidad 3 y acepta_sobrantes false. ¿Qué salida exige el enunciado?",
+                "options": [
+                  "Datos invalidos",
+                  "Grupos: 3",
+                  "Reparto pendiente"
+                ],
+                "correctIndex": 2,
+                "explanation": "Los datos son válidos, queda una ficha y el modo elegido no acepta sobrantes."
+              },
+              {
+                "type": "paragraph",
+                "text": "Una cantidad positiva menor que la capacidad válida deja cero grupos completos y fichas sobrantes. El resultado depende de si se aceptan: comprueba esa distinción en las actividades de construcción posteriores, a partir de las reglas y no de lo que produzca tu intento."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Construcción libre"
+              },
+              {
+                "type": "paragraph",
+                "text": "El editor contiene sólo la estructura del programa. Declara los tres datos del caso inicial: catorce fichas, capacidad cuatro y aceptación de sobrantes `true`. Construye las condiciones y las instrucciones necesarias para cumplir los requisitos.\n\nPulsa «Compilar, ejecutar y comprobar». Debe mostrar `Grupos: 3` y `Sobrantes: 2` en dos líneas, con salto final opcional. Los datos inválidos deben quedar fuera de cualquier división o resto. Los otros casos disponen de actividades independientes; corregir este mismo intento y volver a comprobarlo sigue disponible."
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n",
+                "outputCheck": {
+                  "cases": [
+                    {
+                      "standardInput": "",
+                      "outputs": [
+                        "Grupos: 3\nSobrantes: 2",
+                        "Grupos: 3\nSobrantes: 2\n"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "paragraph",
+                "text": "Cuando una salida difiera, localiza la primera condición o instrucción que no corresponde a tu predicción. Corrige una causa y repite el caso. Comprueba después que la corrección también conserva los otros resultados. La siguiente página ofrece una comparación con otros datos."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Comparar las decisiones"
+              },
+              {
+                "type": "paragraph",
+                "text": "Esta versión usa otros datos: 18 fichas, capacidad 5 y permiso para sobrantes. Sigue sus caminos y compárala con tu solución. Dos programas pueden organizar sus bloques de manera distinta y cumplir los mismos requisitos. Revisa dónde evita los cálculos con datos inválidos y cuándo llega a cada mensaje."
+              },
+              {
+                "type": "code",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int capacidad = 5;\n    const bool acepta_sobrantes = true;\n\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n"
+              },
+              {
+                "type": "output_prediction",
+                "question": "Otro caso usa 20 fichas, capacidad 6 y no acepta sobrantes. Predice la salida de esta versión.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int fichas = 20;\n    int capacidad = 6;\n    const bool acepta_sobrantes = false;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
+                "answers": [
+                  "Reparto pendiente"
+                ],
+                "explanation": "Los datos son válidos, sobran 2 fichas y ese modo no acepta sobrantes. No se muestra el cociente por separado en este camino."
+              },
+              {
+                "type": "heading",
+                "text": "Comprobar el dominio original con entradas preparadas"
+              },
+              {
+                "type": "paragraph",
+                "text": "El programa adapta la referencia para leer fichas, capacidad y un indicador de aceptación de sobrantes, cero o uno. La condición `codigo_sobrantes != 0` conserva el valor lógico. Comprueba los casos del dominio original de la página de requisitos cambiando sólo Entrada. Por ejemplo, `14 4 1` debe producir grupos tres y sobrantes dos; `14 4 0`, `Reparto pendiente`; `0 4 1`, `Sin trabajo`; `30 6 1`, cinco grupos. Las cantidades fuera de cero a treinta y las capacidades fuera de uno a seis deben producir únicamente `Datos invalidos`, incluso `0 0 1`. Los casos de una ficha y capacidad cuatro distinguen cero grupos de ausencia de trabajo.\n\nTodos los datos de Entrada son enteros escritos válidamente. Separa los datos con espacios o saltos de línea y conserva el código entre pruebas. Pulsa «Compilar, ejecutar y comprobar» para contrastar cada entrada con su objetivo; el salto final es opcional."
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
+                "initialStandardInput": "14 4 1",
+                "outputCheck": {
+                  "inputComparison": "tokens",
+                  "cases": [
+                    {
+                      "standardInput": "14 4 1",
+                      "outputs": [
+                        "Grupos: 3\nSobrantes: 2",
+                        "Grupos: 3\nSobrantes: 2\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "14 4 0",
+                      "outputs": [
+                        "Reparto pendiente",
+                        "Reparto pendiente\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "12 4 1",
+                      "outputs": [
+                        "Grupos: 3",
+                        "Grupos: 3\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "12 4 0",
+                      "outputs": [
+                        "Grupos: 3",
+                        "Grupos: 3\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "0 4 1",
+                      "outputs": [
+                        "Sin trabajo",
+                        "Sin trabajo\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "30 6 1",
+                      "outputs": [
+                        "Grupos: 5",
+                        "Grupos: 5\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "-1 4 1",
+                      "outputs": [
+                        "Datos invalidos",
+                        "Datos invalidos\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "31 4 1",
+                      "outputs": [
+                        "Datos invalidos",
+                        "Datos invalidos\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "12 0 1",
+                      "outputs": [
+                        "Datos invalidos",
+                        "Datos invalidos\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "12 7 1",
+                      "outputs": [
+                        "Datos invalidos",
+                        "Datos invalidos\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "0 0 1",
+                      "outputs": [
+                        "Datos invalidos",
+                        "Datos invalidos\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "1 4 1",
+                      "outputs": [
+                        "Grupos: 0\nSobrantes: 1",
+                        "Grupos: 0\nSobrantes: 1\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "1 4 0",
+                      "outputs": [
+                        "Reparto pendiente",
+                        "Reparto pendiente\n"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Transferir una regla sin instrucciones dictadas"
+              },
+              {
+                "type": "paragraph",
+                "text": "El requisito cambia: una cantidad válida empieza ahora en uno, de modo que cero fichas debe rechazarse. Conserva la capacidad válida de uno a seis y las demás reglas. Los dos puzzles siguientes permiten elegir un caso que distingue el dominio y reconocer la prioridad del rechazo. Después encontrarás el intento de construcción con este requisito nuevo."
+              },
+              {
+                "type": "multiple_choice",
+                "question": "¿Qué caso distingue directamente el dominio original del nuevo, sin añadir otra causa de rechazo?",
+                "options": [
+                  "31 fichas con capacidad 4.",
+                  "Cero fichas con capacidad 4.",
+                  "Cero fichas con capacidad 0."
+                ],
+                "correctIndex": 1,
+                "explanation": "Con capacidad válida, cero era Sin trabajo y ahora debe ser Datos invalidos. Los otros casos ya se rechazaban."
+              },
+              {
+                "type": "multiple_choice",
+                "question": "Una prueba con cero fichas y capacidad cero muestra Sin trabajo. ¿Qué requisito original incumple?",
+                "options": [
+                  "Todo bool debe mostrarse como texto.",
+                  "El rechazo de datos inválidos debe tener prioridad.",
+                  "Siempre debe haber al menos un grupo completo."
+                ],
+                "correctIndex": 1,
+                "explanation": "La capacidad cero es inválida y sólo debe producir Datos invalidos. La cantidad cero no debe ocultar ese rechazo."
+              },
+              {
+                "type": "note",
+                "text": "La construcción exige elegir expresiones, organizar alternativas y comparar resultados con las reglas. El nuevo editor conserva un objetivo propio; los reintentos permiten reparar una condición sin sustituir la actividad anterior."
+              },
+              {
+                "type": "heading",
+                "text": "Construir con el dominio que empieza en uno"
+              },
+              {
+                "type": "paragraph",
+                "text": "Construye desde el esqueleto un programa para el requisito nuevo. Usa cero fichas, capacidad cuatro y aceptación de sobrantes `true`. El rechazo debe ocurrir antes de cualquier reparto. Conserva también en tu código las otras reglas del nuevo dominio.\n\nPulsa «Compilar, ejecutar y comprobar». El objetivo es:\n\nDatos invalidos\n\nEl salto final es opcional."
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n",
+                "outputCheck": {
+                  "cases": [
+                    {
+                      "standardInput": "",
+                      "outputs": [
+                        "Datos invalidos",
+                        "Datos invalidos\n"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Comparar el cambio de dominio"
+              },
+              {
+                "type": "paragraph",
+                "text": "Con el nuevo requisito, el intervalo de fichas empieza en 1: cero fichas con capacidad 4 debe producir Datos invalidos. El caso 1, capacidad 4 y aceptación de sobrantes produce Grupos: 0 y Sobrantes: 1 en dos líneas; 30 con capacidad 6 conserva Grupos: 5. Los datos inválidos mantienen la prioridad y no llegan a / ni a %."
+              },
+              {
+                "type": "code",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int capacidad = 5;\n    const bool acepta_sobrantes = true;\n\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n\n    return 0;\n}\n"
+              },
+              {
+                "type": "paragraph",
+                "text": "La referencia cambia la comprobación inferior y elimina la rama `Sin trabajo`, que ya no corresponde a los datos admitidos. Conserva los otros cálculos y decisiones. Las actividades siguientes comprueban las fronteras y la prioridad del requisito nuevo; una estructura distinta también es válida si cumple esos observables."
+              },
+              {
+                "type": "heading",
+                "text": "Comprobar el dominio nuevo"
+              },
+              {
+                "type": "paragraph",
+                "text": "Este programa lee los mismos tres datos, pero exige al menos una ficha. Comprueba `0 4 1` → `Datos invalidos`; `1 4 1` → `Grupos: 0` y `Sobrantes: 1`; `30 6 1` → `Grupos: 5`; `12 0 1` y `0 0 1` → `Datos invalidos`. Los resultados de dos líneas conservan su separación.\n\nTodos los datos de Entrada son enteros escritos válidamente. Separa los datos con espacios o saltos de línea y conserva el código entre pruebas. Pulsa «Compilar, ejecutar y comprobar» para contrastar cada entrada con su objetivo; el salto final es opcional."
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
+                "initialStandardInput": "0 4 1",
+                "outputCheck": {
+                  "inputComparison": "tokens",
+                  "cases": [
+                    {
+                      "standardInput": "0 4 1",
+                      "outputs": [
+                        "Datos invalidos",
+                        "Datos invalidos\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "1 4 1",
+                      "outputs": [
+                        "Grupos: 0\nSobrantes: 1",
+                        "Grupos: 0\nSobrantes: 1\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "30 6 1",
+                      "outputs": [
+                        "Grupos: 5",
+                        "Grupos: 5\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "12 0 1",
+                      "outputs": [
+                        "Datos invalidos",
+                        "Datos invalidos\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "0 0 1",
+                      "outputs": [
+                        "Datos invalidos",
+                        "Datos invalidos\n"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "compilerPuzzlesRequired": true,
+        "referenceAfter": [
+          {
+            "activity": "block_0002_0002",
+            "blocks": [
+              "block_0003_0000",
+              "block_0003_0001",
+              "block_0003_0002"
+            ]
+          },
+          {
+            "activity": "block_0004_0007",
+            "blocks": [
+              "block_0005_0000",
+              "block_0005_0001",
+              "block_0005_0002",
+              "block_0005_0003"
+            ]
+          }
+        ],
+        "activityAfter": [
+          {
+            "activity": "block_0003_0006",
+            "requires": [
+              "block_0002_0002"
+            ]
+          },
+          {
+            "activity": "block_0004_0007",
+            "requires": [
+              "block_0002_0002"
+            ]
+          },
+          {
+            "activity": "block_0005_0006",
+            "requires": [
+              "block_0004_0007"
+            ]
+          },
+          {
+            "activity": "block_0003_0003",
+            "requires": [
+              "block_0002_0002"
+            ]
+          }
+        ],
+        "textSemantics": {
+          "version": 1,
+          "fields": [
+            {
+              "block": "block_0000_0000",
+              "path": "/text",
+              "sourceSha256": "2aa19f2f7106d32f7d9330ff2845ab5ea8eacf65368eeecad4e42b8516712d92",
+              "spans": []
+            },
+            {
+              "block": "block_0000_0001",
+              "path": "/text",
+              "sourceSha256": "b285e574e19fbc1829adc4e4e8711775c4248282a3a69845ab095461d98aea14",
+              "spans": [
+                {
+                  "start": 90,
+                  "end": 96,
+                  "text": "fichas",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 121,
+                  "end": 130,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 166,
+                  "end": 182,
+                  "text": "acepta_sobrantes",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 186,
+                  "end": 190,
+                  "text": "bool",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 217,
+                  "end": 218,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 221,
+                  "end": 223,
+                  "text": "30",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 249,
+                  "end": 250,
+                  "text": "1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 253,
+                  "end": 254,
+                  "text": "6",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0002",
+              "path": "/text",
+              "sourceSha256": "7cbb2ee49567f65bbc20f33a93036806ac8475d61d6516f6240015ba8631da38",
+              "spans": [
+                {
+                  "start": 114,
+                  "end": 129,
+                  "text": "Datos invalidos",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 151,
+                  "end": 155,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 172,
+                  "end": 183,
+                  "text": "Sin trabajo",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 232,
+                  "end": 239,
+                  "text": "Grupos:",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 251,
+                  "end": 253,
+                  "text": "un",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 311,
+                  "end": 327,
+                  "text": "acepta_sobrantes",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 328,
+                  "end": 332,
+                  "text": "true",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 382,
+                  "end": 392,
+                  "text": "Sobrantes:",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 404,
+                  "end": 406,
+                  "text": "un",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 455,
+                  "end": 471,
+                  "text": "acepta_sobrantes",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 472,
+                  "end": 477,
+                  "text": "false",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 487,
+                  "end": 504,
+                  "text": "Reparto pendiente",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0003",
+              "path": "/text",
+              "sourceSha256": "665b579e2ab58ebc07faa49e94c78a32f79e997f4f54fe2fc8ea2c45399d02fe",
+              "spans": []
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/text",
+              "sourceSha256": "181fc585298cfa7c07fb9a8cb7805874a868fe4570931f5df8d3ebaf585ea2be",
+              "spans": []
+            },
+            {
+              "block": "block_0001_0000",
+              "path": "/text",
+              "sourceSha256": "80fd1ee204bb09a6ef154bbbf13b1802320f66ce8e61da3b7d5e6e1f3b4e4c33",
+              "spans": []
+            },
+            {
+              "block": "block_0001_0001",
+              "path": "/text",
+              "sourceSha256": "0083e47c16e7f3c41f5efa009df4a31a2bd29b35fa439f84b1ba2b1737df6fc6",
+              "spans": [
+                {
+                  "start": 12,
+                  "end": 18,
+                  "text": "fichas",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 19,
+                  "end": 21,
+                  "text": "14",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 23,
+                  "end": 32,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 33,
+                  "end": 34,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 37,
+                  "end": 53,
+                  "text": "acepta_sobrantes",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 54,
+                  "end": 58,
+                  "text": "true",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 75,
+                  "end": 84,
+                  "text": "Grupos: 3",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 87,
+                  "end": 99,
+                  "text": "Sobrantes: 2",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 103,
+                  "end": 106,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 134,
+                  "end": 150,
+                  "text": "acepta_sobrantes",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 153,
+                  "end": 158,
+                  "text": "false",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 173,
+                  "end": 190,
+                  "text": "Reparto pendiente",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 196,
+                  "end": 198,
+                  "text": "12",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 208,
+                  "end": 217,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 218,
+                  "end": 219,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 234,
+                  "end": 243,
+                  "text": "Grupos: 3",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 276,
+                  "end": 292,
+                  "text": "acepta_sobrantes",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0002",
+              "path": "/text",
+              "sourceSha256": "c27712f6ecfc6bf331984bd52ccbb61ffd63c544d748304b0aa4b25a80d40a42",
+              "spans": [
+                {
+                  "start": 18,
+                  "end": 22,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 34,
+                  "end": 43,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 44,
+                  "end": 45,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 47,
+                  "end": 58,
+                  "text": "Sin trabajo",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 84,
+                  "end": 86,
+                  "text": "30",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 96,
+                  "end": 105,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 106,
+                  "end": 107,
+                  "text": "6",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 123,
+                  "end": 132,
+                  "text": "Grupos: 5",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 144,
+                  "end": 146,
+                  "text": "-1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 149,
+                  "end": 151,
+                  "text": "31",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 163,
+                  "end": 172,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 173,
+                  "end": 174,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 178,
+                  "end": 180,
+                  "text": "12",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 192,
+                  "end": 201,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 202,
+                  "end": 203,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 206,
+                  "end": 207,
+                  "text": "7",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 224,
+                  "end": 239,
+                  "text": "Datos invalidos",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 257,
+                  "end": 261,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 273,
+                  "end": 282,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 283,
+                  "end": 284,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/question",
+              "sourceSha256": "fb60853de38afe9aa4d585632730a8e1a628c00c046bb169befc2587a37fff12",
+              "spans": [
+                {
+                  "start": 21,
+                  "end": 23,
+                  "text": "10",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 32,
+                  "end": 41,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 42,
+                  "end": 43,
+                  "text": "3",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 46,
+                  "end": 62,
+                  "text": "acepta_sobrantes",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 63,
+                  "end": 68,
+                  "text": "false",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/explanation",
+              "sourceSha256": "170a43230b402b0d350c50cf8d0fecc302d22754c9cfd923ea20d647bce938a9",
+              "spans": [
+                {
+                  "start": 29,
+                  "end": 32,
+                  "text": "una",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/options/0",
+              "sourceSha256": "5cb68768a1886a3133b018b4682f0060a1e6c2627a1aec5717a7e86221b8c570",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 15,
+                  "text": "Datos invalidos",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/options/1",
+              "sourceSha256": "a30e31a6745a29384b2360f9605d4466e19f3eb3a22f8fb62afe5253b11a2c3f",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 9,
+                  "text": "Grupos: 3",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/options/2",
+              "sourceSha256": "4e5429c7cd35c38177a85bad9665917b1bac4fe7c7b77d41a68f6dcba26b524c",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 17,
+                  "text": "Reparto pendiente",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0004",
+              "path": "/text",
+              "sourceSha256": "c1c3f9e02e51f798e42d07becb590d49dd2ec4fe3e669de5d00e31cd11400d22",
+              "spans": [
+                {
+                  "start": 57,
+                  "end": 61,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0000",
+              "path": "/text",
+              "sourceSha256": "ca999e02def7cd1311ca7754d90915eaad375de26dfa4df925f816bf44546f9c",
+              "spans": []
+            },
+            {
+              "block": "block_0002_0001",
+              "path": "/text",
+              "sourceSha256": "87deca79b19a572144921f2a79dfbdfb2066e2e7ded708b67b9c2c104e1c3d76",
+              "spans": [
+                {
+                  "start": 64,
+                  "end": 68,
+                  "text": "tres",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 93,
+                  "end": 100,
+                  "text": "catorce",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 109,
+                  "end": 118,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 119,
+                  "end": 125,
+                  "text": "cuatro",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 153,
+                  "end": 157,
+                  "text": "true",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 301,
+                  "end": 310,
+                  "text": "Grupos: 3",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 315,
+                  "end": 327,
+                  "text": "Sobrantes: 2",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 332,
+                  "end": 335,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0003",
+              "path": "/text",
+              "sourceSha256": "a3171810ce478eda9bd256abbea66fae62e543cd42e838cde51ce9982aa3f9b4",
+              "spans": []
+            },
+            {
+              "block": "block_0003_0000",
+              "path": "/text",
+              "sourceSha256": "f0ae897c0169f739c0a7fb029200419be30943c001c0f9305a213d9837bdcd4b",
+              "spans": []
+            },
+            {
+              "block": "block_0003_0001",
+              "path": "/text",
+              "sourceSha256": "7460bf1f5628f9c22d9aa8fc8cc296205dfd4a0423f93ee6babd01f17aa2c776",
+              "spans": [
+                {
+                  "start": 30,
+                  "end": 32,
+                  "text": "18",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 41,
+                  "end": 50,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 51,
+                  "end": 52,
+                  "text": "5",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 126,
+                  "end": 129,
+                  "text": "Dos",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0003",
+              "path": "/question",
+              "sourceSha256": "a41f9963158853e50134a7001998253d9938a2de7d60d6dac7ff1727a49c6a44",
+              "spans": [
+                {
+                  "start": 14,
+                  "end": 16,
+                  "text": "20",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 25,
+                  "end": 34,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 35,
+                  "end": 36,
+                  "text": "6",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0003",
+              "path": "/explanation",
+              "sourceSha256": "c6f24c73723ff9a63af5d4ccfcf5c4a0ee1ed6d09de6f527bd2928b66e4f24eb",
+              "spans": [
+                {
+                  "start": 30,
+                  "end": 31,
+                  "text": "2",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0004",
+              "path": "/text",
+              "sourceSha256": "99f76b79af427355f2f9f34e6984e9cdf36e4da1ae6b4613be7b155b5e0c4251",
+              "spans": []
+            },
+            {
+              "block": "block_0003_0005",
+              "path": "/text",
+              "sourceSha256": "0e4d7c2bc63d134cc0c0b36eb2f56745aa6d5d4c686b67861ab3db93f1758285",
+              "spans": [
+                {
+                  "start": 43,
+                  "end": 49,
+                  "text": "fichas",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 51,
+                  "end": 60,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 104,
+                  "end": 108,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 111,
+                  "end": 114,
+                  "text": "uno",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 130,
+                  "end": 151,
+                  "text": "codigo_sobrantes != 0",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 285,
+                  "end": 291,
+                  "text": "14 4 1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 314,
+                  "end": 318,
+                  "text": "tres",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 331,
+                  "end": 334,
+                  "text": "dos",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 337,
+                  "end": 343,
+                  "text": "14 4 0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 347,
+                  "end": 364,
+                  "text": "Reparto pendiente",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 368,
+                  "end": 373,
+                  "text": "0 4 1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 377,
+                  "end": 388,
+                  "text": "Sin trabajo",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 392,
+                  "end": 398,
+                  "text": "30 6 1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 401,
+                  "end": 406,
+                  "text": "cinco",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 439,
+                  "end": 443,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 446,
+                  "end": 453,
+                  "text": "treinta",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 481,
+                  "end": 484,
+                  "text": "uno",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 487,
+                  "end": 491,
+                  "text": "seis",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 519,
+                  "end": 534,
+                  "text": "Datos invalidos",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 546,
+                  "end": 551,
+                  "text": "0 0 1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 567,
+                  "end": 570,
+                  "text": "una",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 579,
+                  "end": 588,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 589,
+                  "end": 595,
+                  "text": "cuatro",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 607,
+                  "end": 611,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0000",
+              "path": "/text",
+              "sourceSha256": "6365d0294c143e5283411228a067b5abb610a53d85a230acf2f1f0efac78b2de",
+              "spans": []
+            },
+            {
+              "block": "block_0004_0001",
+              "path": "/text",
+              "sourceSha256": "8f17e93da6bcf57499680875ca31abc4ce0c16f6b45d452423abcb7006b3a292",
+              "spans": [
+                {
+                  "start": 58,
+                  "end": 61,
+                  "text": "uno",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 75,
+                  "end": 79,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 136,
+                  "end": 139,
+                  "text": "uno",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 142,
+                  "end": 146,
+                  "text": "seis",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 171,
+                  "end": 174,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/question",
+              "sourceSha256": "946bf06aec668b5e72a2e30e1c7a8c34db6953eb16d36e317f05354c5a0e722e",
+              "spans": []
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/explanation",
+              "sourceSha256": "a1069c0d09cb2f2c2ec15a090b215ebb7533841f35c21e70a22e65776668f54a",
+              "spans": [
+                {
+                  "start": 22,
+                  "end": 26,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 31,
+                  "end": 42,
+                  "text": "Sin trabajo",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 60,
+                  "end": 75,
+                  "text": "Datos invalidos",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/options/0",
+              "sourceSha256": "aef2bdeae9eba88e531c7245fa2712f891523c2f9351e10e141aa2201db3c260",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 2,
+                  "text": "31",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 14,
+                  "end": 23,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 24,
+                  "end": 25,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/options/1",
+              "sourceSha256": "d655af71538f859896e07429aaa27fcdbfd3255a48b3a31cf35eeaf07bafb923",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 4,
+                  "text": "Cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 16,
+                  "end": 25,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 26,
+                  "end": 27,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/options/2",
+              "sourceSha256": "02a1ad83a87ab27bd59249612ba01166321e28962a68f99774bf673fdb0cc0c7",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 4,
+                  "text": "Cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 16,
+                  "end": 25,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 26,
+                  "end": 27,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0003",
+              "path": "/question",
+              "sourceSha256": "331933a83523071a0297587c122f2497b70e7a59679fdf9013d444d1024bc120",
+              "spans": [
+                {
+                  "start": 15,
+                  "end": 19,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 29,
+                  "end": 38,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 39,
+                  "end": 43,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 52,
+                  "end": 63,
+                  "text": "Sin trabajo",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0003",
+              "path": "/explanation",
+              "sourceSha256": "79201bc1f32f938917b9e0f42d118ac696b3f80cb06a7db5be3c359995ffadfe",
+              "spans": [
+                {
+                  "start": 3,
+                  "end": 12,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 13,
+                  "end": 17,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 51,
+                  "end": 66,
+                  "text": "Datos invalidos",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 80,
+                  "end": 84,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0003",
+              "path": "/options/0",
+              "sourceSha256": "d77eee8a60c61ff18c557770b218bd5fae1b00decf1398b4d3a5c9533dfa0d14",
+              "spans": [
+                {
+                  "start": 5,
+                  "end": 9,
+                  "text": "bool",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0003",
+              "path": "/options/1",
+              "sourceSha256": "d46e256c8339e1d801e999f1b0c5243679db6c05e39a9d9934f1c5e401f2c8e2",
+              "spans": []
+            },
+            {
+              "block": "block_0004_0003",
+              "path": "/options/2",
+              "sourceSha256": "c18e58f2d5fdc1dfc642121093b8a431125e95713df38b33d93836e37b696922",
+              "spans": [
+                {
+                  "start": 28,
+                  "end": 30,
+                  "text": "un",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0004",
+              "path": "/text",
+              "sourceSha256": "8848d65b1b7175e5ce94843fde2e5d9be63579a68503ceefb07ad029a45f485e",
+              "spans": []
+            },
+            {
+              "block": "block_0004_0005",
+              "path": "/text",
+              "sourceSha256": "92d8123d5346986409620ced4d27fd5b40de77155024de66f2384dfae830f58c",
+              "spans": [
+                {
+                  "start": 40,
+                  "end": 43,
+                  "text": "uno",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0006",
+              "path": "/text",
+              "sourceSha256": "8d723735b83928a5aa34305e91de5a608cc418e63898247226aa3148c03ed894",
+              "spans": [
+                {
+                  "start": 70,
+                  "end": 74,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 83,
+                  "end": 92,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 93,
+                  "end": 99,
+                  "text": "cuatro",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 127,
+                  "end": 131,
+                  "text": "true",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 310,
+                  "end": 325,
+                  "text": "Datos invalidos",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0000",
+              "path": "/text",
+              "sourceSha256": "8eb5f6a45e8b2d12f52014874444ca9a5f77ccafe2f6e9f69d2ab682588c6b10",
+              "spans": []
+            },
+            {
+              "block": "block_0005_0001",
+              "path": "/text",
+              "sourceSha256": "8e17c5ef773dee55bbf6a143140dff4d73adf330d45184cec6b03e9db7b2cf39",
+              "spans": [
+                {
+                  "start": 58,
+                  "end": 59,
+                  "text": "1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 61,
+                  "end": 65,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 77,
+                  "end": 86,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 87,
+                  "end": 88,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 103,
+                  "end": 118,
+                  "text": "Datos invalidos",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 128,
+                  "end": 129,
+                  "text": "1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 131,
+                  "end": 140,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 141,
+                  "end": 142,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 177,
+                  "end": 186,
+                  "text": "Grupos: 0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 189,
+                  "end": 201,
+                  "text": "Sobrantes: 1",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 205,
+                  "end": 208,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 217,
+                  "end": 219,
+                  "text": "30",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 224,
+                  "end": 233,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 234,
+                  "end": 235,
+                  "text": "6",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 245,
+                  "end": 254,
+                  "text": "Grupos: 5",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 313,
+                  "end": 314,
+                  "text": "/",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 320,
+                  "end": 321,
+                  "text": "%",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0003",
+              "path": "/text",
+              "sourceSha256": "9ceff6cdbdea38609dd5f394957f5476b9db70c35559255c8ffad500dc65d3ce",
+              "spans": [
+                {
+                  "start": 65,
+                  "end": 76,
+                  "text": "Sin trabajo",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0004",
+              "path": "/text",
+              "sourceSha256": "24027484e6ede4bd4b605f53dbd3dbca3157ce8c40365da078cf534d637a558b",
+              "spans": []
+            },
+            {
+              "block": "block_0005_0005",
+              "path": "/text",
+              "sourceSha256": "7b87be448104b75d889ad5dcfc20fa25827348d027048ade6b06666e07ba2525",
+              "spans": [
+                {
+                  "start": 29,
+                  "end": 33,
+                  "text": "tres",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 61,
+                  "end": 64,
+                  "text": "una",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 83,
+                  "end": 88,
+                  "text": "0 4 1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 93,
+                  "end": 108,
+                  "text": "Datos invalidos",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 112,
+                  "end": 117,
+                  "text": "1 4 1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 122,
+                  "end": 131,
+                  "text": "Grupos: 0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 136,
+                  "end": 148,
+                  "text": "Sobrantes: 1",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 152,
+                  "end": 158,
+                  "text": "30 6 1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 163,
+                  "end": 172,
+                  "text": "Grupos: 5",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 176,
+                  "end": 182,
+                  "text": "12 0 1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 187,
+                  "end": 192,
+                  "text": "0 0 1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 197,
+                  "end": 212,
+                  "text": "Datos invalidos",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 233,
+                  "end": 236,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            }
+          ],
+          "rootFields": [
+            {
+              "path": "/title",
+              "sourceSha256": "bb45cd438fda5d7e4c0d3968d861a3ade9297259341c5bb9202b7cbef74d8285",
+              "spans": []
+            }
+          ]
+        },
+        "editorialPrefix": {
+          "count": 6,
+          "sha256": "e8bd700bf3831c46d2d604a24b97c62b115c00fce61d2454185927c55278f61b"
+        }
+      }
     ]
   },
   "activityAfter": [
     {
-      "activity": "block_0003_0006",
-      "requires": [
-        "block_0002_0002"
-      ]
-    },
-    {
-      "activity": "block_0004_0007",
-      "requires": [
-        "block_0002_0002"
-      ]
-    },
-    {
-      "activity": "block_0005_0006",
-      "requires": [
-        "block_0004_0007"
-      ]
-    },
-    {
       "activity": "block_0003_0003",
+      "requires": [
+        "block_0002_0002"
+      ]
+    },
+    {
+      "activity": "p1u3l8_cambiar_minimo",
       "requires": [
         "block_0002_0002"
       ]
@@ -1158,16 +3448,23 @@
       "blocks": [
         "block_0003_0000",
         "block_0003_0001",
-        "block_0003_0002"
+        "block_0003_0002",
+        "block_0003_0004",
+        "block_0003_0005",
+        "p1u3l8_ejemplo_original"
       ]
     },
     {
-      "activity": "block_0004_0007",
+      "activity": "p1u3l8_cambiar_minimo",
       "blocks": [
         "block_0005_0000",
         "block_0005_0001",
         "block_0005_0002",
-        "block_0005_0003"
+        "block_0005_0003",
+        "block_0005_0004",
+        "block_0005_0005",
+        "p1u3l8_ejemplo_minimo",
+        "p1u3l8_ensayos_minimo"
       ]
     }
   ],
@@ -1178,157 +3475,136 @@
       {
         "block": "block_0000_0000",
         "path": "/text",
-        "sourceSha256": "2aa19f2f7106d32f7d9330ff2845ab5ea8eacf65368eeecad4e42b8516712d92",
+        "sourceSha256": "3cadd5fa28947660fcb5023df064f37e237c311ef83cc24bd10c0330bb4dbfcf",
         "spans": []
       },
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "b285e574e19fbc1829adc4e4e8711775c4248282a3a69845ab095461d98aea14",
+        "sourceSha256": "488be4d773e0a025cecb9d6773f1fb0d6ebb1c8df8520e7f563993f9a57cdb15",
         "spans": [
           {
-            "start": 90,
-            "end": 96,
+            "start": 87,
+            "end": 93,
             "text": "fichas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 121,
-            "end": 130,
+            "start": 143,
+            "end": 152,
             "text": "capacidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 166,
-            "end": 182,
-            "text": "acepta_sobrantes",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 186,
-            "end": 190,
-            "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 217,
-            "end": 218,
+            "start": 209,
+            "end": 210,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 221,
-            "end": 223,
+            "start": 213,
+            "end": 215,
             "text": "30",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 246,
+            "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 249,
             "end": 250,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 319,
+            "text": "codigo_sobrantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 325,
+            "end": 326,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 253,
-            "end": 254,
-            "text": "6",
+            "start": 364,
+            "end": 365,
+            "text": "0",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 396,
+            "end": 417,
+            "text": "codigo_sobrantes != 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 440,
+            "end": 444,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 456,
+            "end": 472,
+            "text": "acepta_sobrantes",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "7cbb2ee49567f65bbc20f33a93036806ac8475d61d6516f6240015ba8631da38",
+        "sourceSha256": "39c209fecd73198bca87f592b31b4e5eb710d83bad461f59e1f66d9792d1d8cf",
         "spans": [
           {
-            "start": 114,
-            "end": 129,
+            "start": 161,
+            "end": 176,
             "text": "Datos invalidos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 151,
-            "end": 155,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 172,
-            "end": 183,
+            "start": 232,
+            "end": 243,
             "text": "Sin trabajo",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 232,
-            "end": 239,
+            "start": 310,
+            "end": 317,
             "text": "Grupos:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 251,
-            "end": 253,
-            "text": "un",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 311,
-            "end": 327,
-            "text": "acepta_sobrantes",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 328,
-            "end": 332,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 382,
-            "end": 392,
+            "start": 469,
+            "end": 479,
             "text": "Sobrantes:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 404,
-            "end": 406,
-            "text": "un",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 455,
-            "end": 471,
-            "text": "acepta_sobrantes",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 472,
-            "end": 477,
-            "text": "false",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 487,
-            "end": 504,
+            "start": 584,
+            "end": 601,
             "text": "Reparto pendiente",
             "role": "output",
             "reading": "natural"
@@ -1338,290 +3614,94 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "665b579e2ab58ebc07faa49e94c78a32f79e997f4f54fe2fc8ea2c45399d02fe",
+        "sourceSha256": "5c5d8a037bd8de3c3e90200666470b8c32bd29a08631ace314b3b072a62aa724",
         "spans": []
       },
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "181fc585298cfa7c07fb9a8cb7805874a868fe4570931f5df8d3ebaf585ea2be",
+        "sourceSha256": "0e344d5395a256dd2df16a6f3292a73d082724e7690e25d39e0d0201737b001d",
         "spans": []
       },
       {
         "block": "block_0001_0000",
         "path": "/text",
-        "sourceSha256": "80fd1ee204bb09a6ef154bbbf13b1802320f66ce8e61da3b7d5e6e1f3b4e4c33",
+        "sourceSha256": "b9460c142f5f58d97c355123adbc9877422a98f68bfcd03e38bf29961e4d2871",
         "spans": []
       },
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "0083e47c16e7f3c41f5efa009df4a31a2bd29b35fa439f84b1ba2b1737df6fc6",
+        "sourceSha256": "656f6c812e2a27f21df794813d792274d882f51f458d9c2db705988784601807",
         "spans": [
           {
-            "start": 12,
-            "end": 18,
-            "text": "fichas",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 19,
-            "end": 21,
+            "start": 4,
+            "end": 6,
             "text": "14",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 23,
-            "end": 32,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 33,
-            "end": 34,
+            "start": 29,
+            "end": 30,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 37,
-            "end": 53,
-            "text": "acepta_sobrantes",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 54,
-            "end": 58,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 75,
-            "end": 84,
+            "start": 158,
+            "end": 167,
             "text": "Grupos: 3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 87,
-            "end": 99,
+            "start": 168,
+            "end": 180,
             "text": "Sobrantes: 2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 103,
-            "end": 106,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 134,
-            "end": 150,
-            "text": "acepta_sobrantes",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 153,
-            "end": 158,
-            "text": "false",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 173,
-            "end": 190,
+            "start": 273,
+            "end": 290,
             "text": "Reparto pendiente",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 196,
-            "end": 198,
+            "start": 296,
+            "end": 298,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 208,
-            "end": 217,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 218,
-            "end": 219,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 234,
-            "end": 243,
+            "start": 417,
+            "end": 426,
             "text": "Grupos: 3",
             "role": "output",
             "reading": "natural"
-          },
-          {
-            "start": 276,
-            "end": 292,
-            "text": "acepta_sobrantes",
-            "role": "cpp",
-            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "c27712f6ecfc6bf331984bd52ccbb61ffd63c544d748304b0aa4b25a80d40a42",
+        "sourceSha256": "e8d7800384a63b0a46d355749b8ed0d663f56c637c194e97a4b824df14b9d790",
         "spans": [
           {
-            "start": 18,
-            "end": 22,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 34,
-            "end": 43,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 44,
-            "end": 45,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 47,
-            "end": 58,
+            "start": 137,
+            "end": 148,
             "text": "Sin trabajo",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 84,
-            "end": 86,
-            "text": "30",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 96,
-            "end": 105,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 106,
-            "end": 107,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 123,
-            "end": 132,
-            "text": "Grupos: 5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 144,
-            "end": 146,
-            "text": "-1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 149,
-            "end": 151,
-            "text": "31",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 163,
-            "end": 172,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 173,
-            "end": 174,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 178,
-            "end": 180,
-            "text": "12",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 192,
-            "end": 201,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 202,
-            "end": 203,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 206,
-            "end": 207,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 224,
-            "end": 239,
+            "start": 220,
+            "end": 235,
             "text": "Datos invalidos",
             "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 257,
-            "end": 261,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 273,
-            "end": 282,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 283,
-            "end": 284,
-            "text": "0",
-            "role": "data",
             "reading": "natural"
           }
         ]
@@ -1629,54 +3709,33 @@
       {
         "block": "block_0001_0003",
         "path": "/question",
-        "sourceSha256": "fb60853de38afe9aa4d585632730a8e1a628c00c046bb169befc2587a37fff12",
+        "sourceSha256": "1148f94781da7774d7f9c9ad08bf70a260f7062f61dec5f8681f984ee082160a",
         "spans": [
           {
-            "start": 21,
-            "end": 23,
+            "start": 16,
+            "end": 18,
             "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 32,
-            "end": 41,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 42,
-            "end": 43,
+            "start": 34,
+            "end": 35,
             "text": "3",
             "role": "data",
             "reading": "natural"
-          },
-          {
-            "start": 46,
-            "end": 62,
-            "text": "acepta_sobrantes",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 63,
-            "end": 68,
-            "text": "false",
-            "role": "cpp",
-            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "170a43230b402b0d350c50cf8d0fecc302d22754c9cfd923ea20d647bce938a9",
+        "sourceSha256": "7467fc681a1f01dfa567395ec9a4860a4f6d53fcaebe41b4c55abd6706bc8022",
         "spans": [
           {
-            "start": 29,
-            "end": 32,
-            "text": "una",
+            "start": 114,
+            "end": 131,
+            "text": "Reparto pendiente",
             "role": "output",
             "reading": "natural"
           }
@@ -1727,12 +3786,33 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "c1c3f9e02e51f798e42d07becb590d49dd2ec4fe3e669de5d00e31cd11400d22",
+        "sourceSha256": "e2fee400812058c063636fb0900e48eda41dd907829f28a2c8443493fae7f1b0",
         "spans": [
           {
-            "start": 57,
-            "end": 61,
-            "text": "cero",
+            "start": 4,
+            "end": 5,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 166,
+            "text": "Grupos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 179,
+            "text": "Sobrantes: 1",
             "role": "output",
             "reading": "natural"
           }
@@ -1741,68 +3821,103 @@
       {
         "block": "block_0002_0000",
         "path": "/text",
-        "sourceSha256": "ca999e02def7cd1311ca7754d90915eaad375de26dfa4df925f816bf44546f9c",
+        "sourceSha256": "4aee0234b7410ee45a4d212aafd592377ac123c39c905f84d5bd7f1fc6f8d200",
         "spans": []
       },
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "87deca79b19a572144921f2a79dfbdfb2066e2e7ded708b67b9c2c104e1c3d76",
+        "sourceSha256": "f81e5e67d40bfabb0f818221239ba109eca622715ace790a6e1549c7c134cd07",
         "spans": [
           {
-            "start": 64,
-            "end": 68,
-            "text": "tres",
+            "start": 36,
+            "end": 40,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 69,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 162,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 209,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 215,
+            "end": 217,
+            "text": "14",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 93,
-            "end": 100,
-            "text": "catorce",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 109,
-            "end": 118,
+            "start": 219,
+            "end": 228,
             "text": "capacidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 119,
-            "end": 125,
-            "text": "cuatro",
+            "start": 234,
+            "end": 235,
+            "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 153,
-            "end": 157,
-            "text": "true",
+            "start": 237,
+            "end": 253,
+            "text": "codigo_sobrantes",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 301,
-            "end": 310,
+            "start": 259,
+            "end": 260,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 371,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 374,
+            "end": 375,
+            "text": "%",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 457,
+            "end": 466,
             "text": "Grupos: 3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 315,
-            "end": 327,
+            "start": 467,
+            "end": 479,
             "text": "Sobrantes: 2",
             "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 332,
-            "end": 335,
-            "text": "dos",
-            "role": "data",
             "reading": "natural"
           }
         ]
@@ -1810,54 +3925,61 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "a3171810ce478eda9bd256abbea66fae62e543cd42e838cde51ce9982aa3f9b4",
+        "sourceSha256": "bb22f53d69a14599d0b356b01b7b5542cf882ebbadce37e8427e3a763df44f37",
         "spans": []
       },
       {
         "block": "block_0003_0000",
         "path": "/text",
-        "sourceSha256": "f0ae897c0169f739c0a7fb029200419be30943c001c0f9305a213d9837bdcd4b",
+        "sourceSha256": "7224ca745cdb336149c4aef29a1add578b831698c3c6d3b2fe754ece429d8b00",
         "spans": []
       },
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "7460bf1f5628f9c22d9aa8fc8cc296205dfd4a0423f93ee6babd01f17aa2c776",
+        "sourceSha256": "ea5669036d170a8bda45b3e882d5dfb7648d846164bc2cb10899357bdbdfdc23",
         "spans": [
           {
-            "start": 30,
-            "end": 32,
+            "start": 18,
+            "end": 20,
             "text": "18",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 41,
-            "end": 50,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 51,
-            "end": 52,
+            "start": 43,
+            "end": 44,
             "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 126,
-            "end": 129,
-            "text": "Dos",
-            "role": "data",
+            "start": 227,
+            "end": 245,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 260,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 264,
+            "end": 280,
+            "text": "acepta_sobrantes",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0003_0003",
         "path": "/question",
-        "sourceSha256": "a41f9963158853e50134a7001998253d9938a2de7d60d6dac7ff1727a49c6a44",
+        "sourceSha256": "44cbb07486a8f107391a9c8429d8a64cb3672fbe135ef2572105198bf5ca524a",
         "spans": [
           {
             "start": 14,
@@ -1867,15 +3989,8 @@
             "reading": "natural"
           },
           {
-            "start": 25,
-            "end": 34,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 35,
-            "end": 36,
+            "start": 39,
+            "end": 40,
             "text": "6",
             "role": "data",
             "reading": "natural"
@@ -1885,12 +4000,47 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "c6f24c73723ff9a63af5d4ccfcf5c4a0ee1ed6d09de6f527bd2928b66e4f24eb",
+        "sourceSha256": "5642e35ff916d3ae6124fbc7581102f7cc5e8b0f548ca3794a0a54811927160b",
         "spans": [
           {
-            "start": 30,
-            "end": 31,
-            "text": "2",
+            "start": 69,
+            "end": 83,
+            "text": "sobrantes == 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 92,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 111,
+            "text": "acepta_sobrantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 117,
+            "end": 122,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 145,
+            "end": 149,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 165,
+            "end": 182,
+            "text": "Reparto pendiente",
             "role": "output",
             "reading": "natural"
           }
@@ -1899,228 +4049,53 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "99f76b79af427355f2f9f34e6984e9cdf36e4da1ae6b4613be7b155b5e0c4251",
+        "sourceSha256": "4109d5a8662b0fd400bb52bf8173bd877bf2498cdec5ab014377d48691364408",
         "spans": []
       },
       {
         "block": "block_0003_0005",
         "path": "/text",
-        "sourceSha256": "0e4d7c2bc63d134cc0c0b36eb2f56745aa6d5d4c686b67861ab3db93f1758285",
+        "sourceSha256": "e6c8fb6553f9ac9b22c789406d15adbd5da5c6b84deef3938d32095d60f9eb73",
         "spans": [
           {
-            "start": 43,
-            "end": 49,
-            "text": "fichas",
+            "start": 56,
+            "end": 72,
+            "text": "acepta_sobrantes",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 51,
-            "end": 60,
-            "text": "capacidad",
+            "start": 76,
+            "end": 92,
+            "text": "codigo_sobrantes",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 104,
-            "end": 108,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 111,
-            "end": 114,
-            "text": "uno",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 130,
-            "end": 151,
-            "text": "codigo_sobrantes != 0",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 285,
-            "end": 291,
-            "text": "14 4 1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 314,
-            "end": 318,
-            "text": "tres",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 331,
-            "end": 334,
-            "text": "dos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 337,
-            "end": 343,
-            "text": "14 4 0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 347,
-            "end": 364,
-            "text": "Reparto pendiente",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 368,
-            "end": 373,
-            "text": "0 4 1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 377,
-            "end": 388,
-            "text": "Sin trabajo",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 392,
-            "end": 398,
-            "text": "30 6 1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 401,
-            "end": 406,
-            "text": "cinco",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 439,
-            "end": 443,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 446,
-            "end": 453,
-            "text": "treinta",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 481,
-            "end": 484,
-            "text": "uno",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 487,
-            "end": 491,
-            "text": "seis",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 519,
-            "end": 534,
-            "text": "Datos invalidos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 546,
-            "end": 551,
-            "text": "0 0 1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 567,
-            "end": 570,
-            "text": "una",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 579,
-            "end": 588,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 589,
-            "end": 595,
-            "text": "cuatro",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 607,
-            "end": 611,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0004_0000",
         "path": "/text",
-        "sourceSha256": "6365d0294c143e5283411228a067b5abb610a53d85a230acf2f1f0efac78b2de",
+        "sourceSha256": "606e5401a697486b6b541a88e1314d6c6390ea8a403e286e4feb42249e16c35d",
         "spans": []
       },
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "8f17e93da6bcf57499680875ca31abc4ce0c16f6b45d452423abcb7006b3a292",
+        "sourceSha256": "7bf628f0bdfff6cc76a1fa6de2e887e820341b1828fc5aba0407500e61cb2885",
         "spans": [
           {
-            "start": 58,
-            "end": 61,
-            "text": "uno",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 75,
-            "end": 79,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 136,
-            "end": 139,
-            "text": "uno",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 142,
-            "end": 146,
-            "text": "seis",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
             "start": 171,
-            "end": 174,
-            "text": "dos",
-            "role": "data",
+            "end": 182,
+            "text": "Sin trabajo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 200,
+            "text": "Datos invalidos",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2128,24 +4103,17 @@
       {
         "block": "block_0004_0002",
         "path": "/question",
-        "sourceSha256": "946bf06aec668b5e72a2e30e1c7a8c34db6953eb16d36e317f05354c5a0e722e",
+        "sourceSha256": "0fedcf0ea3bebe61ce9d2ff8d7c3660b1b4d0ee2ff1747d70013e7dfe78fd911",
         "spans": []
       },
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "a1069c0d09cb2f2c2ec15a090b215ebb7533841f35c21e70a22e65776668f54a",
+        "sourceSha256": "69fdc854ea8d8a9aca20124f21bab5f1c7dddda27db92796b769e30cdcfb3fa4",
         "spans": [
           {
-            "start": 22,
-            "end": 26,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 31,
-            "end": 42,
+            "start": 38,
+            "end": 49,
             "text": "Sin trabajo",
             "role": "output",
             "reading": "natural"
@@ -2246,32 +4214,11 @@
       {
         "block": "block_0004_0003",
         "path": "/question",
-        "sourceSha256": "331933a83523071a0297587c122f2497b70e7a59679fdf9013d444d1024bc120",
+        "sourceSha256": "88c04b6addc5520da4cc016221e267d93bd09078706b31a29409370d319e420e",
         "spans": [
           {
-            "start": 15,
-            "end": 19,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 29,
-            "end": 38,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 39,
-            "end": 43,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 52,
-            "end": 63,
+            "start": 80,
+            "end": 91,
             "text": "Sin trabajo",
             "role": "output",
             "reading": "natural"
@@ -2281,34 +4228,13 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "79201bc1f32f938917b9e0f42d118ac696b3f80cb06a7db5be3c359995ffadfe",
+        "sourceSha256": "91dc96d714a336412c51ca2ff5cb58453b175fb648fb35a0ad0ad23b9f761674",
         "spans": [
           {
-            "start": 3,
-            "end": 12,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 13,
-            "end": 17,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 51,
-            "end": 66,
+            "start": 105,
+            "end": 120,
             "text": "Datos invalidos",
             "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 80,
-            "end": 84,
-            "text": "cero",
-            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2350,59 +4276,51 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "8848d65b1b7175e5ce94843fde2e5d9be63579a68503ceefb07ad029a45f485e",
+        "sourceSha256": "b4bff72f109f92238e9da32ded51267d073d77f1d9013300be375bbf67f1a088",
         "spans": []
       },
       {
         "block": "block_0004_0005",
         "path": "/text",
-        "sourceSha256": "92d8123d5346986409620ced4d27fd5b40de77155024de66f2384dfae830f58c",
-        "spans": [
-          {
-            "start": 40,
-            "end": 43,
-            "text": "uno",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "0fdb33e7a87f2a6aebb40afafc11052a69975b2e1d28c162632845a4e4d6396c",
+        "spans": []
       },
       {
         "block": "block_0004_0006",
         "path": "/text",
-        "sourceSha256": "8d723735b83928a5aa34305e91de5a608cc418e63898247226aa3148c03ed894",
+        "sourceSha256": "71f0be78153e52844c6c64a0ad24c5e8183a11ae884ec4bb556115010c57f67c",
         "spans": [
           {
-            "start": 70,
-            "end": 74,
-            "text": "cero",
+            "start": 180,
+            "end": 181,
+            "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 83,
-            "end": 92,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 93,
-            "end": 99,
-            "text": "cuatro",
+            "start": 198,
+            "end": 199,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 127,
-            "end": 131,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 414,
+            "end": 425,
+            "text": "Sin trabajo",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 310,
-            "end": 325,
+            "start": 518,
+            "end": 523,
+            "text": "0 4 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 541,
+            "end": 556,
             "text": "Datos invalidos",
             "role": "output",
             "reading": "natural"
@@ -2412,145 +4330,68 @@
       {
         "block": "block_0005_0000",
         "path": "/text",
-        "sourceSha256": "8eb5f6a45e8b2d12f52014874444ca9a5f77ccafe2f6e9f69d2ab682588c6b10",
+        "sourceSha256": "473c1ae7a6d1962e1262a61d459eda462da1393a89838568b0447ce78184ac98",
         "spans": []
       },
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "8e17c5ef773dee55bbf6a143140dff4d73adf330d45184cec6b03e9db7b2cf39",
+        "sourceSha256": "23bc41781c845d22b083f6b829167766ff2381506dcbdcb595fe42ffd288e15f",
         "spans": [
           {
-            "start": 58,
-            "end": 59,
-            "text": "1",
+            "start": 27,
+            "end": 29,
+            "text": "18",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 61,
-            "end": 65,
-            "text": "cero",
+            "start": 52,
+            "end": 53,
+            "text": "5",
             "role": "data",
             "reading": "natural"
-          },
-          {
-            "start": 77,
-            "end": 86,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 87,
-            "end": 88,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 103,
-            "end": 118,
-            "text": "Datos invalidos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 128,
-            "end": 129,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 131,
-            "end": 140,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 141,
-            "end": 142,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 177,
-            "end": 186,
-            "text": "Grupos: 0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 189,
-            "end": 201,
-            "text": "Sobrantes: 1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 205,
-            "end": 208,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 217,
-            "end": 219,
-            "text": "30",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 224,
-            "end": 233,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 234,
-            "end": 235,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 245,
-            "end": 254,
-            "text": "Grupos: 5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 313,
-            "end": 314,
-            "text": "/",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 320,
-            "end": 321,
-            "text": "%",
-            "role": "cpp",
-            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "9ceff6cdbdea38609dd5f394957f5476b9db70c35559255c8ffad500dc65d3ce",
+        "sourceSha256": "b7be81b62894a33d9bf5ab915a089a82e5a2dffe5c6550e3e56e92aeac2d9377",
         "spans": [
           {
-            "start": 65,
-            "end": 76,
+            "start": 94,
+            "end": 98,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 162,
             "text": "Sin trabajo",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 271,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 275,
+            "text": "%",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 334,
+            "end": 354,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
             "reading": "natural"
           }
         ]
@@ -2558,103 +4399,215 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "24027484e6ede4bd4b605f53dbd3dbca3157ce8c40365da078cf534d637a558b",
+        "sourceSha256": "fcc575e0452d46075e5419cfe2a04a27a75b38ae98ba57c61a13e13c95f7910b",
         "spans": []
       },
       {
         "block": "block_0005_0005",
         "path": "/text",
-        "sourceSha256": "7b87be448104b75d889ad5dcfc20fa25827348d027048ade6b06666e07ba2525",
+        "sourceSha256": "780e2fe73abe5f747848b882cc220be4d9463a7bb2410c1ccff283e83a0291b8",
         "spans": [
           {
-            "start": 29,
-            "end": 33,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 61,
-            "end": 64,
-            "text": "una",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 83,
-            "end": 88,
-            "text": "0 4 1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 93,
-            "end": 108,
-            "text": "Datos invalidos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 112,
-            "end": 117,
+            "start": 87,
+            "end": 92,
             "text": "1 4 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 122,
-            "end": 131,
-            "text": "Grupos: 0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 136,
+            "start": 142,
             "end": 148,
-            "text": "Sobrantes: 1",
+            "text": "30 6 1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u3l8_ensayos_minimo",
+        "path": "/text",
+        "sourceSha256": "b98db3512700a1bf3be1ae71a0dbdf782452bc4e32ef988780161e4ca7b0399a",
+        "spans": [
+          {
+            "start": 98,
+            "end": 104,
+            "text": "14 4 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 130,
+            "text": "Grupos: 3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 152,
-            "end": 158,
+            "start": 131,
+            "end": 143,
+            "text": "Sobrantes: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 159,
+            "text": "14 4 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 193,
+            "text": "Reparto pendiente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 203,
+            "end": 209,
+            "text": "12 4 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 226,
+            "end": 235,
+            "text": "Grupos: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 251,
+            "text": "12 4 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 268,
+            "end": 277,
+            "text": "Grupos: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 293,
             "text": "30 6 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 163,
-            "end": 172,
+            "start": 310,
+            "end": 319,
             "text": "Grupos: 5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 176,
-            "end": 182,
-            "text": "12 0 1",
+            "start": 329,
+            "end": 335,
+            "text": "-1 4 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 187,
-            "end": 192,
-            "text": "0 0 1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 197,
-            "end": 212,
+            "start": 352,
+            "end": 367,
             "text": "Datos invalidos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 233,
-            "end": 236,
-            "text": "dos",
+            "start": 377,
+            "end": 383,
+            "text": "31 4 1",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 400,
+            "end": 415,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 425,
+            "end": 431,
+            "text": "12 0 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 448,
+            "end": 463,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 473,
+            "end": 479,
+            "text": "12 7 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 496,
+            "end": 511,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 521,
+            "end": 526,
+            "text": "0 0 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 543,
+            "end": 558,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 568,
+            "end": 573,
+            "text": "1 4 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 590,
+            "end": 599,
+            "text": "Grupos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 600,
+            "end": 612,
+            "text": "Sobrantes: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 622,
+            "end": 627,
+            "text": "1 4 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 644,
+            "end": 661,
+            "text": "Reparto pendiente",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2667,5 +4620,76 @@
         "spans": []
       }
     ]
-  }
+  },
+  "compilerLocalIntChecks": [
+    {
+      "activity": "block_0002_0002",
+      "probes": [
+        {
+          "variable": "fichas",
+          "replacement": 0,
+          "outputs": [
+            "Sin trabajo",
+            "Sin trabajo\n"
+          ]
+        },
+        {
+          "variable": "fichas",
+          "replacement": 12,
+          "outputs": [
+            "Grupos: 3",
+            "Grupos: 3\n"
+          ]
+        },
+        {
+          "variable": "capacidad",
+          "replacement": -1,
+          "outputs": [
+            "Datos invalidos",
+            "Datos invalidos\n"
+          ]
+        },
+        {
+          "variable": "fichas",
+          "replacement": -1,
+          "outputs": [
+            "Datos invalidos",
+            "Datos invalidos\n"
+          ]
+        },
+        {
+          "variable": "fichas",
+          "replacement": 31,
+          "outputs": [
+            "Datos invalidos",
+            "Datos invalidos\n"
+          ]
+        },
+        {
+          "variable": "capacidad",
+          "replacement": 6,
+          "outputs": [
+            "Grupos: 2\nSobrantes: 2",
+            "Grupos: 2\nSobrantes: 2\n"
+          ]
+        },
+        {
+          "variable": "capacidad",
+          "replacement": 7,
+          "outputs": [
+            "Datos invalidos",
+            "Datos invalidos\n"
+          ]
+        },
+        {
+          "variable": "codigo_sobrantes",
+          "replacement": 0,
+          "outputs": [
+            "Reparto pendiente",
+            "Reparto pendiente\n"
+          ]
+        }
+      ]
+    }
+  ]
 }
