@@ -6,11 +6,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "El tipo de los operandos decide la división"
+          "text": "Elegir entre división entera y división con decimales"
         },
         {
           "type": "paragraph",
-          "text": "En la unidad anterior viste que 7 / 2 y 7.0 / 2 producen resultados de tipos distintos. Ahora usa esa diferencia para elegir un cálculo. Si ambos operandos son int, / realiza división entera: obtiene el cociente y descarta la parte fraccionaria hacia cero. Con operandos positivos, 11 / 4 produce 2. Si al menos un operando es double, 11.0 / 4 produce 2.75 (Köppe et al., 2023)."
+          "text": "Si repartes once metros de cinta en cuatro partes iguales, cada parte mide 2.75 metros. Para conservar esa medida en C++, puedes escribir 11.0 / 4. El valor 11.0 es de tipo double. C++ convierte el 4 de int a double antes de dividir.\n\nEn 11 / 4, los dos valores son de tipo int. El cociente es el resultado de la división. Al dividir dos valores int, C++ da un cociente de tipo int y descarta la parte fraccionaria. Esta regla se llama truncar hacia cero. El valor matemático de dividir once entre cuatro es 2.75. En C++, 11 / 4 da 2. Al dividir menos once entre cuatro, el valor matemático es -2.75 y -11 / 4 da -2 (Köppe et al., 2023)."
         },
         {
           "type": "code",
@@ -19,17 +19,17 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida es 2 2.75 2. En despues, la división entera ya produjo 2 antes de convertirlo a double para inicializar el objeto. Cambiar sólo el tipo del destino no recupera una fracción descartada. Si necesitas la división en double y los datos son int, convierte un operando antes de dividir, por ejemplo static_cast<double>(cantidad) / grupos (Köppe et al., 2023)."
+          "text": "El programa muestra 2 2.75 2.\n\nEn la primera declaración, la división entera da 2, que se guarda en entero.\n\nEn la segunda, 11.0 / 4 da 2.75, que se guarda en fraccion.\n\nEn la tercera, 11 / 4 da el entero 2. C++ convierte ese dos a double para guardarlo en despues.\n\nSi tus datos ya están guardados como enteros y necesitas conservar la fracción, convierte uno de ellos antes de dividir. Imagina que distancia guarda los metros de un recorrido y tramos guarda en cuántas partes iguales lo divides. En static_cast<double>(distancia) / tramos, static_cast<double>(distancia) proporciona los metros como un double para calcular la longitud de un tramo. La variable distancia sigue siendo int (Köppe et al., 2023)."
         },
         {
           "type": "output_prediction",
-          "question": "Predice los dos resultados. Mantén un espacio entre ellos.",
+          "question": "El programa reparte nueve metros en cuatro tramos iguales de dos formas. ¿Qué dos números muestra? Escríbelos en el orden en que aparecen, separados por un espacio.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    const int distancia = 9;\n    const int tramos = 4;\n\n    const double primero = distancia / tramos;\n    const double segundo = static_cast<double>(distancia) / tramos;\n\n    std::cout << primero << \" \" << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "2 2.25"
           ],
-          "explanation": "primero recibe el cociente entero 2. La conversión en segundo ocurre antes de /, por lo que se obtiene 2.25."
+          "explanation": "distancia / tramos divide dos enteros y da 2. En static_cast<double>(distancia) / tramos, la distancia se usa como double antes de dividir y se obtiene 2.25."
         }
       ]
     },
@@ -37,36 +37,36 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "El resto conserva lo que no completa un grupo"
+          "text": "Contar grupos completos y elementos sueltos"
         },
         {
           "type": "paragraph",
-          "text": "El operador % obtiene el resto de una división entera. En 17 / 5 caben 3 grupos completos y 17 % 5 da 2 elementos sobrantes: 17 = 3 * 5 + 2. / y % responden preguntas distintas sobre los mismos datos. % requiere operandos enteros; no se usa con double. % comparte prioridad con * y /, por encima de + y - (Köppe et al., 2023). Si combinas esas operaciones, agrupa con paréntesis el cálculo que pide el requisito."
+          "text": "Tienes 17 tornillos y necesitas 5 para llenar cada bolsa. Llenas tres bolsas con un total de quince tornillos. Quedan dos tornillos sueltos.\n\nEn 17 / 5, el valor a la derecha de / es el número por el que divides. Se llama divisor. Aquí es el tamaño de cada grupo. La división entera da el cociente 3, que cuenta las bolsas completas. El operador % usa los mismos dos números para calcular el resto. La expresión 17 % 5 da 2, que cuenta los tornillos sueltos. Usa dos valores int con % en estos cálculos. Este operador tiene la misma prioridad que * y / (Köppe et al., 2023).\n\nPuedes recuperar el total con 3 × 5 + 2 = 17. Multiplicas las tres bolsas completas por cinco tornillos por bolsa y luego sumas los dos sueltos."
         },
         {
           "type": "paragraph",
-          "text": "En esta lección las cantidades son enteros no negativos y el tamaño de grupo es un entero positivo. En ese dominio, el resto está entre 0 y tamaño - 1. El resto 0 significa que la cantidad se reparte exactamente (Köppe et al., 2023). Esta interpretación de elementos sobrantes depende del dominio elegido; no estamos definiendo un reparto de cantidades negativas."
+          "text": "En un reparto, la cantidad de elementos es un entero mayor o igual a cero y el tamaño del grupo es un entero mayor que cero. Si tienes 15 tornillos y caben 5 en cada bolsa, llenas tres bolsas y sobran 0 tornillos. Con 3 tornillos, llenas 0 bolsas y sobran 3 tornillos.\n\nUn grupo de cinco admite restos de cero a cuatro. Si quedaran cinco tornillos, podrías llenar otra bolsa. Por eso, con estos datos, el resto siempre es menor que el tamaño del grupo (Köppe et al., 2023)."
         },
         {
           "type": "output_prediction",
-          "question": "Hay 29 fichas y caben 6 en cada bandeja. Escribe el cociente y el resto que muestra el programa.",
+          "question": "Hay veintinueve fichas y caben seis en cada bandeja. Escribe cuántas bandejas se llenan y cuántas fichas quedan sueltas. Separa los números con un espacio.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    const int fichas = 29;\n    const int por_bandeja = 6;\n\n    std::cout << fichas / por_bandeja << \" \" << fichas % por_bandeja;\n\n    return 0;\n}\n",
           "answers": [
             "4 5"
           ],
-          "explanation": "Cuatro bandejas contienen 24 fichas y quedan 5. 4 * 6 + 5 reconstruye las 29 fichas."
+          "explanation": "Cuatro bandejas reúnen veinticuatro fichas y quedan cinco sueltas. La cuenta 4 × 6 + 5 recupera las veintinueve fichas."
         },
         {
           "type": "multiple_choice",
-          "question": "Con una cantidad no negativa y grupos de tamaño 4, ¿qué restos son posibles?",
+          "question": "Cada bandeja admite cuatro fichas. Si partes de una cantidad de fichas mayor o igual a cero, ¿cuántas fichas pueden quedar sueltas al llenar todas las bandejas posibles?",
           "options": [
             "0, 1, 2 y 3",
             "Cualquier número mayor que 4",
             "1, 2, 3 y 4"
           ],
           "correctIndex": 0,
-          "explanation": "Si sobraran 4 elementos habría otro grupo completo. El resto puede ser 0 y siempre es menor que 4."
+          "explanation": "Pueden sobrar cero, una, dos o tres fichas. Con cuatro fichas sueltas podrías llenar otra bandeja."
         }
       ]
     },
@@ -74,7 +74,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Elegir el operador según la pregunta"
+          "text": "Contar cajas completas"
         },
         {
           "type": "code",
@@ -83,27 +83,28 @@
         },
         {
           "type": "paragraph",
-          "text": "Este informe muestra 5 cajas completas y 3 piezas sobrantes. No calcula las cajas totales necesarias para guardar todas las piezas: esa pregunta también debe considerar una caja incompleta. Antes de programar, concreta qué significa cada resultado."
+          "text": "El programa cuenta 5 cajas completas con 4 piezas cada una. Esas cajas reúnen veinte de las veintitrés piezas. Quedan 3 piezas sueltas.\n\nEl informe pide cuántas cajas quedan llenas. Si el encargo fuera guardar todas las piezas, haría falta una sexta caja para las tres que sobran."
         },
         {
           "type": "inline_fill_code",
-          "question": "Completa los operadores para informar cuántos grupos completos se pueden formar y cuántos elementos quedan fuera de esos grupos. Escribe sólo un operador por hueco, según la finalidad de cada resultado.",
+          "question": "Completa el cálculo de grupos_completos y el de sobrantes. Escribe un operador en cada hueco.",
           "template": "#include <iostream>\n\nint main() {\n    const int cantidad = 31;\n    const int capacidad = 5;\n\n    const int grupos_completos = cantidad [] capacidad;\n    const int sobrantes = cantidad [] capacidad;\n\n    std::cout << grupos_completos << \" \" << sobrantes;\n\n    return 0;\n}\n",
           "answers": [
             "/",
             "%"
-          ]
+          ],
+          "explanation": "Con / se cuentan seis grupos completos de cinco elementos. Con % se obtiene el elemento que queda suelto. La consola muestra 6 1."
         },
         {
           "type": "multiple_choice",
-          "question": "¿Qué comprueba que 6 grupos y 1 sobrante corresponden a 31 elementos con capacidad 5?",
+          "question": "Hay treinta y un elementos. Cada grupo completo tiene cinco. El programa informa seis grupos completos y un elemento suelto. ¿Qué cuenta recupera el total a partir de ese resultado?",
           "options": [
             "6 * 5 + 1 = 31",
             "31 * 5 = 6 + 1",
             "6 + 1 = 31"
           ],
           "correctIndex": 0,
-          "explanation": "Cada grupo representa 5 elementos; los sobrantes se añaden al total agrupado."
+          "explanation": "Seis grupos de cinco contienen treinta elementos. Al sumar el elemento suelto se recuperan los treinta y uno."
         }
       ]
     },
@@ -111,19 +112,73 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Laboratorio: horas completas y minutos restantes"
-        },
-        {
-          "type": "note",
-          "text": "En la actividad anterior, / produce 6 y % produce 1. Los nombres del resultado ayudaban a elegir la operación antes de calcular."
+          "text": "Comprobar los datos antes de calcular"
         },
         {
           "type": "paragraph",
-          "text": "El programa utiliza `total_minutos` igual a `137` y `minutos_por_hora` igual a `60`. La división obtiene horas completas y el resto obtiene los minutos que quedan. El formato no añade un cero delante de un minuto de una cifra.\n\nEl objetivo de este editor es comprobar el informe de ese caso mediante «Compilar, ejecutar y comprobar», con salto final opcional. El puzzle posterior trata otro dato; sus variantes tienen editores independientes."
+          "text": "Para contar cuántas cajas de cuatro piezas puedes llenar con veinte piezas, divides 20 entre 4. Si una caja no admite ninguna pieza, su capacidad es cero y el cálculo intentaría dividir entre cero. C++ no define qué hace un programa si ejecuta / o % con dos enteros y el divisor es cero. Que el compilador acepte el código no garantiza que los datos recibidos al ejecutarlo sean válidos (Köppe et al., 2023).\n\nEn el reparto, cada caja debe admitir una o más piezas. Por eso una capacidad negativa también es inválida para este problema. Una cantidad de cero piezas sí es válida. Si cada caja admite cuatro piezas, puedes llenar cero cajas y sobran cero piezas."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La cantidad de piezas ya es válida. ¿Qué condición debe cumplir la variable capacidad para que el programa pueda repartirlas en cajas?",
+          "options": [
+            "Que capacidad tenga un nombre corto.",
+            "Que capacidad sea positiva para este modelo de reparto.",
+            "Que la salida contenga al menos dos líneas."
+          ],
+          "correctIndex": 1,
+          "explanation": "Una caja debe poder guardar al menos una pieza. Una capacidad mayor que cero también evita dividir entre cero."
+        },
+        {
+          "type": "multiple_choice",
+          "correctIndex": 2,
+          "id": "p1u3l2_distinguir_cero_en_reparto",
+          "question": "Cada par indica la cantidad de fichas y la capacidad de una bandeja, en ese orden. ¿Con qué par puedes hacer el reparto?",
+          "options": [
+            "12 0",
+            "12 -3",
+            "0 3"
+          ],
+          "reviewFeedback": [
+            "Revisa el segundo dato. El tamaño de cada grupo debe ser mayor que cero.",
+            "Una bandeja debe admitir una cantidad positiva de fichas. Revisa el signo del segundo dato.",
+            "Ninguna ficha completa una bandeja y tampoco sobran fichas."
+          ],
+          "explanation": "Con cero fichas y espacio para tres por bandeja, puedes calcular ambos resultados. El cociente y el resto dan cero. La capacidad debe ser positiva incluso cuando no hay fichas."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Hay ocho piezas registradas y tres nuevas. El programa cuenta los pares completos después de reunirlas. ¿Qué número muestra la consola?",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int registrados = 8;\n    const int nuevos = 3;\n\n    const int pares_completos = (registrados + nuevos) / 2;\n\n    std::cout << pares_completos;\n\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "explanation": "Los paréntesis reúnen ocho y tres para obtener once. Al dividir once entre dos con int, obtienes cinco pares completos. Una pieza queda suelta."
+        },
+        {
+          "type": "note",
+          "text": "Las entradas de prueba de los dos editores cumplen los límites de sus consignas. En una lección posterior aprenderás a hacer que un programa compruebe la capacidad y decida si puede calcular el reparto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar el informe de horas y minutos"
+        },
+        {
+          "type": "note",
+          "text": "Cada hora contiene sesenta minutos. Dos horas completas suman ciento veinte minutos. Tres horas completas suman ciento ochenta."
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor parte de 137 minutos. El programa muestra 2 h 2 min. Usa la misma operación para contar las horas completas y los minutos que sobran.\n\nCorrige el cálculo de minutos. Conserva las variables total_minutos y minutos_por_hora como variables int con sus valores iniciales y úsalas en el cálculo. La salida muestra las horas completas, un espacio, la letra h, otro espacio, los minutos restantes, un espacio y el texto min.\n\nSalida esperada\n2 h 17 min\n\nPulsa «Compilar, ejecutar y comprobar». Puedes terminar la salida con un salto de línea."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n\n    std::cout << horas << \" h \" << minutos << \" min\";\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total_minutos = 137;\n    int minutos_por_hora = 60;\n\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos / minutos_por_hora;\n\n    std::cout << horas << \" h \" << minutos << \" min\";\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -138,60 +193,67 @@
         },
         {
           "type": "multiple_choice",
-          "question": "Después de cambiar total_minutos a 127, ¿qué informe cumple este formato?",
+          "question": "Si cambias total_minutos a 127 en el programa reparado, ¿qué línea imprime la consola?",
           "options": [
             "2 h 7 min",
             "2 h 07 min",
             "2 h 67 min"
           ],
           "correctIndex": 0,
-          "explanation": "Dos horas consumen 120 minutos y quedan 7. El programa no contiene una instrucción para agregar un cero a ese número."
+          "explanation": "Dos horas completas suman ciento veinte minutos y quedan siete. El programa imprime 7 sin un cero delante."
         },
         {
           "type": "paragraph",
-          "text": "Los casos 0 y 60 ayudan a comprobar el resto 0. Cambiar los datos de uno en uno facilita explicar una diferencia. Para cualquier minuto del dominio elegido, puedes reconstruir el total como horas * 60 + minutos."
+          "text": "Compara dos cantidades que se diferencian en un minuto.\n\nCon 59 minutos aún no hay una hora completa. La salida es 0 h 59 min.\nCon 60 minutos se completa una hora y el resto vuelve a cero. La salida es 1 h 0 min."
         },
         {
           "type": "heading",
-          "text": "Otros minutos, el mismo informe"
+          "text": "Construir un informe de bandejas"
         },
         {
           "type": "paragraph",
-          "text": "Este programa lee el total de minutos; conserva sesenta minutos por hora y el mismo cálculo. Utiliza totales entre cero y seiscientos. Comprueba `137` → `2 h 17 min`, `127` → `2 h 7 min`, `0` → `0 h 0 min` y `60` → `1 h 0 min`.\n\nTodos los datos de Entrada son enteros escritos válidamente. Separa los datos con espacios o saltos de línea y conserva el código entre pruebas. Pulsa «Compilar, ejecutar y comprobar» para contrastar cada entrada con su objetivo; el salto final es opcional."
+          "text": "Un taller guarda fichas en bandejas. Escribe un programa que lea dos enteros del campo «Entrada».\n\nPrimero, la cantidad de fichas, de cero a ciento veinte.\nLuego, la capacidad de cada bandeja, de una a doce fichas.\n Usa ambos valores para calcular cuántas bandejas se llenan y cuántas fichas quedan sueltas. El campo ya contiene el primer caso.\n\nEntrada\n29 6\n\nSalida esperada\nBandejas completas: 4\nSobrantes: 5\n\nPulsa «Compilar, ejecutar y comprobar». Este primer caso permite avanzar. Puedes añadir un salto de línea después del segundo renglón."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int total_minutos{0};\n    std::cin >> total_minutos;\n\n    const int minutos_por_hora = 60;\n\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n\n    std::cout << horas << \" h \" << minutos << \" min\";\n\n    return 0;\n}\n",
-          "initialStandardInput": "137",
+          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n",
+          "initialStandardInput": "29 6",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
               {
-                "standardInput": "137",
+                "standardInput": "29 6",
                 "outputs": [
-                  "2 h 17 min",
-                  "2 h 17 min\n"
+                  "Bandejas completas: 4\nSobrantes: 5",
+                  "Bandejas completas: 4\nSobrantes: 5\n"
                 ]
               },
               {
-                "standardInput": "127",
+                "standardInput": "24 6",
                 "outputs": [
-                  "2 h 7 min",
-                  "2 h 7 min\n"
+                  "Bandejas completas: 4\nSobrantes: 0",
+                  "Bandejas completas: 4\nSobrantes: 0\n"
                 ]
               },
               {
-                "standardInput": "0",
+                "standardInput": "3 6",
                 "outputs": [
-                  "0 h 0 min",
-                  "0 h 0 min\n"
+                  "Bandejas completas: 0\nSobrantes: 3",
+                  "Bandejas completas: 0\nSobrantes: 3\n"
                 ]
               },
               {
-                "standardInput": "60",
+                "standardInput": "0 6",
                 "outputs": [
-                  "1 h 0 min",
-                  "1 h 0 min\n"
+                  "Bandejas completas: 0\nSobrantes: 0",
+                  "Bandejas completas: 0\nSobrantes: 0\n"
+                ]
+              },
+              {
+                "standardInput": "29 4",
+                "outputs": [
+                  "Bandejas completas: 7\nSobrantes: 1",
+                  "Bandejas completas: 7\nSobrantes: 1\n"
                 ]
               }
             ]
@@ -203,61 +265,37 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Una operación también necesita datos válidos"
+          "text": "Revisar el cálculo de horas y minutos"
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar / o % con enteros, su divisor debe ser distinto de cero. Una división o un resto con divisor cero no tiene un resultado válido que debamos predecir (Köppe et al., 2023). Que el programa compile no garantiza que los valores sean adecuados al ejecutar. Por ahora, cada programa declara divisores positivos; más adelante usaremos decisiones para rechazar datos inválidos antes de calcular."
-        },
-        {
-          "type": "multiple_choice",
-          "question": "Un informe usa capacidad como divisor para formar cajas. ¿Qué dato debes verificar además del requisito sobre la cantidad?",
-          "options": [
-            "Que capacidad tenga un nombre corto.",
-            "Que capacidad sea positiva para este modelo de reparto.",
-            "Que la salida contenga al menos dos líneas."
-          ],
-          "correctIndex": 1,
-          "explanation": "El modelo necesita cajas con una capacidad positiva; así el divisor tampoco será cero."
-        },
-        {
-          "type": "output_prediction",
-          "question": "Recupera paréntesis y división entera. Predice la salida.",
-          "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int registrados = 8;\n    const int nuevos = 3;\n\n    const int pares_completos = (registrados + nuevos) / 2;\n\n    std::cout << pares_completos;\n\n    return 0;\n}\n",
-          "answers": [
-            "5"
-          ],
-          "explanation": "La suma agrupada da 11. La división entera entre 2 cuenta 5 pares completos."
-        },
-        {
-          "type": "note",
-          "text": "La división entera descarta hacia cero, no redondea al entero más próximo (Köppe et al., 2023). Los ejercicios usan valores pequeños cuya representación y resultados caben en int, sin suponer el mismo rango de int en todas las plataformas."
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Comparación posterior del laboratorio"
-        },
-        {
-          "type": "paragraph",
-          "text": "Los resultados completos del laboratorio son 2 h 17 min para 137, 2 h 7 min para 127, 0 h 0 min para 0 y 1 h 0 min para 60. La referencia calcula horas completas y minutos restantes con el mismo divisor positivo 60; no añade ceros de presentación."
+          "text": "Al dividir 137 minutos entre sesenta, obtienes dos horas completas. La expresión con % calcula los diecisiete minutos que quedan después de esas dos horas."
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n\n    std::cout << horas << \" h \" << minutos << \" min\";\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int total_minutos = 137;\n    int minutos_por_hora = 60;\n\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n\n    std::cout << horas << \" h \" << minutos << \" min\";\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Para cada total entre 0 y 600 comprueba dos propiedades: el resto está entre 0 y 59 y horas * 60 + minutos reconstruye el total. El extremo 600 debe producir 10 h 0 min. Estas comprobaciones explican por qué se necesitan dos operaciones diferentes y por qué se conserva el divisor positivo."
+          "text": "Para revisar un resultado, multiplica el número de horas por sesenta y suma los minutos restantes. Con 2 h 17 min, la cuenta 2 × 60 + 17 = 137 recupera el dato inicial. Además, los minutos restantes deben estar entre cero y cincuenta y nueve. Si obtuvieras setenta y siete, alcanzaría para una hora completa más."
+        },
+        {
+          "type": "heading",
+          "text": "Revisar el informe de bandejas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int fichas = 0;\n    int capacidad = 0;\n    std::cin >> fichas >> capacidad;\n\n    const int bandejas_completas = fichas / capacidad;\n    const int sobrantes = fichas % capacidad;\n\n    std::cout << \"Bandejas completas: \" << bandejas_completas << '\\n';\n    std::cout << \"Sobrantes: \" << sobrantes;\n    return 0;\n}\n"
         },
         {
           "type": "note",
-          "text": "Cada editor comprueba el objetivo de su actividad mediante «Compilar, ejecutar y comprobar». Si una salida difiere, revisa la primera condición, operación o instrucción de salida que produce la diferencia y reintenta el mismo objetivo. La coincidencia de salida no sustituye revisar que el código exprese las reglas del problema."
+          "text": "En el informe de bandejas puedes hacer la misma revisión. Multiplica las bandejas completas por las fichas que caben en cada bandeja. Añade las fichas sueltas. La suma debe dar el total. La cantidad de fichas sueltas debe ser mayor o igual que cero y menor que la capacidad. Por ejemplo, cinco bandejas de seis con un sobrante de menos uno suman veintinueve, pero no puedes tener menos de cero fichas sueltas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes probar estos casos en el campo «Entrada».\n\nVeinticuatro fichas llenan cuatro bandejas.\n\nEntrada\n24 6\n\nSalida esperada\nBandejas completas: 4\nSobrantes: 0\n\nTres fichas quedan sueltas porque cada bandeja admite seis.\n\nEntrada\n3 6\n\nSalida esperada\nBandejas completas: 0\nSobrantes: 3\n\nCon cero fichas, todas las bandejas quedan vacías.\n\nEntrada\n0 6\n\nSalida esperada\nBandejas completas: 0\nSobrantes: 0\n\nCon capacidad para cuatro fichas, veintinueve fichas llenan siete bandejas.\n\nEntrada\n29 4\n\nSalida esperada\nBandejas completas: 7\nSobrantes: 1"
         }
       ]
     }
@@ -466,27 +504,28 @@
         ]
       },
       {
-        "id": "page_0003",
-        "blocks": [
-          "block_0003_0000",
-          "block_0003_0001",
-          "block_0003_0002",
-          "block_0003_0003",
-          "block_0003_0004",
-          "block_0003_0005",
-          "block_0003_0006",
-          "block_0003_0007",
-          "block_0003_0008"
-        ]
-      },
-      {
         "id": "page_0004",
         "blocks": [
           "block_0004_0000",
           "block_0004_0001",
           "block_0004_0002",
+          "p1u3l2_distinguir_cero_en_reparto",
           "block_0004_0003",
           "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "p1u3l2_reparar_conversion_minutos",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007",
+          "p1u3l2_construir_informe_bandejas"
         ]
       },
       {
@@ -494,9 +533,12 @@
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
-          "block_0005_0002",
+          "p1u3l2_ejemplo_minutos",
           "block_0005_0003",
-          "block_0005_0004"
+          "p1u3l2_revisar_reparto_bandejas",
+          "p1u3l2_ejemplo_bandejas",
+          "block_0005_0004",
+          "p1u3l2_probar_otros_repartos"
         ]
       }
     ],
@@ -991,7 +1033,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "p1u3l2_distinguir_cero_en_reparto",
+        "sha256": "8a5cb2fece351a8d8420a558d1ca3226fc54364b38bf23c3adfce01919dd0e58",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "p1u3l2_reparar_conversion_minutos",
+        "sha256": "c62c10a740f9f3054638a6d979d38262a74be59372b0c1eae640d0fe5970cb94",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u3l2_construir_informe_bandejas",
+        "sha256": "b74de821a4f392d496eba9ab760a42479287118944529fe9cf22bf671a14bf0d",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u3l2_ejemplo_minutos",
+        "sha256": "f8a7fc46ad56bf78c6a398c3b6fbc17bdeb54556b95d256aa0f133be9dd06816",
+        "storage": {
+          "page": 6,
+          "block": 3
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u3l2_revisar_reparto_bandejas",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u3l2_ejemplo_bandejas",
+        "sha256": "dd800f769607612540adaf60c2bc8e0b40868e29d29f38ae19df7b9268cc0c8a",
+        "storage": {
+          "page": 6,
+          "block": 5
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u3l2_probar_otros_repartos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1072,6 +1178,151 @@
         "id": "block_0005_0002",
         "beforeSha256": "5e96b6853639755348319dd3ed04eed50d9d688877adc083b967b5a595c24f37",
         "afterSha256": "3bf02bdcef7549abc25a847f413b3d0441d97678f81380eee54862922e654b0f"
+      },
+      {
+        "id": "block_0000_0000",
+        "beforeSha256": "1d6efce00d75c80e972f9156a47ee1cd345bec06828e6d592672700b0d847b31",
+        "afterSha256": "77f9e081c923470f9e0debf866b367494b2542d0ef1b6f33008fcc7c91d3bf2b"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "f7ee08539dd63b3ff504881223c701757fc6b1aef48ff30e51909934fbe02e01",
+        "afterSha256": "ed660ac265c3953bbe18ecbb2df7a574e39c906f314345ca9d306d7a2d51efd1"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "86ff2c630b289912041846bc737c8b89723760e01cb38796d22fe7ebe25664d3",
+        "afterSha256": "7f041ab27e993c4efb6fc2a7c76735c5ccac7bc7ca369e3fba1343a7ea39c383"
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "86a6be1943ab13b14ce1cab83acc26eae9fcd79b8f91cc6498f6df379ac5853d",
+        "afterSha256": "1f65e8b6e9433029e00dae4d0e33973fd720c37fe1633846ae5ee6b51508c424"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "b882849627ce15b87c2ba0b03052285459e1814a59f5f3a14a95a7c8f64f0d2d",
+        "afterSha256": "35977d47d0b2df2dd6a2f286acb8ceb591d5d89d1625e57a7106b32f06daf685"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "f7058677eea383504c2a5216f92a2e753ef3e17f6c08c6c00d08530e12910efc",
+        "afterSha256": "f8605c55ae62e32ccf629262db258de1db2b71711566123fb6d0f06112362389"
+      },
+      {
+        "id": "block_0002_0000",
+        "beforeSha256": "fbaa6ca1539f5a6c3d19e4fedfc5ff87f29eb878dd3c7a8dcaf52476ea3806e4",
+        "afterSha256": "e02ed2d3ce5794937acb9cfba1b050b4227faca3e47ec7b6afd280f2990575b5"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "a2b457237c171229d3cb33d23bc1707e0ec7a22d4e6da204b2b5853c30752667",
+        "afterSha256": "00a00b048058eaa8064092ea79def35213c98d75119973254d51685b3ae1b2a2"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "cfe252612bda74fd710abeaf2ff4ca2e9f04c68ce96e6560e9cfffa7fd60f0e1",
+        "afterSha256": "07d0c226e887148381d56c56b8c836e796eda1c9262d251c7e6aa49c22678bb6"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "edd01be6084133843fab7bd1f7fc6bb6a54d3919c390379289ea2beb1a3b6c7c",
+        "afterSha256": "f5650626fc26113694adc2cc01e473e22650d8172781b451cd168f4492de0821"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "10f1bafd3387d640aa796ad07cd30fdfdec576844bee3c85deb89bde1bcab361",
+        "afterSha256": "f8a3c4e1fc2dfa7852718b217a5c2af40902920058824071b6eee202a6dce04b"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "9f340968b52af8f8603c6729f8d031bb00e42baabf711f57a0c9630a53bd74f1",
+        "afterSha256": "a3c8b80251844c78a61c4b880bbb79077c0abaae2b33c7b4679ddf1e12d1e1f4"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "628b69f3b96bac67626c6c08d3e39fffb07d44d86dffb1eaf5d4188a426568f0",
+        "afterSha256": "ca3e2682ab069b3dc35e0d3d56397849f32da503604cd24351306709e8bd3c05"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "0f8a4e3224984f3a04c22ef57e1581ec7e54e375f5267c8ce16af6ebfb08b966",
+        "afterSha256": "a7b1e56dd0c454003a6d650aab12213c2c1fe8c30c25b2e3c69de67aea0112a3"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "7e86903457e40662968b9d19f35dba327166f096ff2fa55ce7b5370e5b844322",
+        "afterSha256": "a617b67141c5908ebae7b55816e61d02837928ec3115a8a6eb43bd4ff48a9617"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "b6127bc80ead21081a4398a507eedb32cdb24f12edb59b71ac0b7446f5f01e04",
+        "afterSha256": "6bf88d1aad4ee7a12baa0e0647886c4b39811583a9f370660166179848caa6f1"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "fd67622f05fcf6f5479197fe2fcc8d869e51308a49dd5ddfe6c445f571b7523a",
+        "afterSha256": "3e612c45198835c67c46bca75424bb826049907d3fbecc89b7f3e5f4561a044f"
+      },
+      {
+        "id": "block_0005_0000",
+        "beforeSha256": "d07323146661f59d187688a8b784a122eba0addf168f289cc3b5f6bf96d3595c",
+        "afterSha256": "6a6de5bc243afdb0c5431bb6f2cc2cf11b788a924265fda19c86229c3b092008"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "16774f2ceaef222bd65dcbaad96e874eee486997c3516145f2900d05f352a119",
+        "afterSha256": "a8bcefdf4cbea137ade75a843a2fabf44974dc61dd423422fc2bd91641a89083"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "4bb75f3b7785b603855f43313973dbd463e11271c330fb0b35c6d4f0ce52514e",
+        "afterSha256": "73c91e5171939d685916963ab6dc6dbda97bad147535277b43d2888503f385ee"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "7e427954c88ffec7a1a00d73f66a14ccecf0407f917b9d0d174ffb8ddd737261",
+        "afterSha256": "ec821c3584ddf6d25a612e03df41e0d5393a50fd25ff425bd9b67eab9e544a6e"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "40e2addd142e28f7b4f6ecd7a7368fc234a66fe1c96ca6a2318ad65196f9e526",
+        "afterSha256": "42db8ba5e5326cf0bd0f2a56ae370d6f6322775310e2fe8e6ee545377fac5147"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "a2081dd76af8a28416fd1aafc64fa15d42912c66a3cfdc2a717265becc434b8e",
+        "afterSha256": "ec8c914d94ed7670ae532c3335672d280af5a14d5d40e05783c237bdc105043c"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "cc69575418e00d67c07a8bfcc24c556fb8915f2d7d5918af9db68892ff7f8b3b",
+        "afterSha256": "ae9ad323f70768363529bd898bad16757369f4b15673b0af24adea787b74429f"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "c1a4343ab671323cffe860ca38e53cc077ac5b39cbdfd8c10e4de6f2c63285f2",
+        "afterSha256": "4e738b910fb7ddc1f62de8cefad377e5bd620ce87659c611d9f481097f1ac375"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "e38964ca0b8cda7d5dcedf24581153025c34a46345e6512a516acbb2b1aef9df",
+        "afterSha256": "758e7228a133747667c012b8d0e92d81e9e96144fca8bef202cb4fb464aa9526"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "577fc13703c93c5d081f61b0700b25dd602dabf24e5d6a12af3d83bb42bf6fc5",
+        "afterSha256": "098e11d0ef4d041c230f52f47a7f3c8147c9069707fbfff35d3a689e4d732fca"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "db4e194332c3ce4db48fc365358cda99606cc14d84c5f1ddeef3fb7a582b3581",
+        "afterSha256": "a055c06cd3362439d17dc77ec26e3a5e1c8c7edc30c972d582d4faeda323f08c"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "ce04a23bdfdddb44f778320804842201914cd53a512694ec13a5e7819b2a714d",
+        "afterSha256": "266bb62518dcf30db23ca098674a54ff25021d19603bccc7c5108e637fe80fd5"
       }
     ],
     "sourceFormatRevisions": [
@@ -1209,6 +1460,1722 @@
           "code": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n    std::cout << horas << \" h \" << minutos << \" min\";\n    return 0;\n}\n"
         }
       }
+    ],
+    "retired": [
+      {
+        "id": "block_0003_0003",
+        "page": "page_0003",
+        "next": "block_0003_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n\n    std::cout << horas << \" h \" << minutos << \" min\";\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "2 h 17 min",
+                  "2 h 17 min\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0003_0008",
+        "page": "page_0003",
+        "next": "",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total_minutos{0};\n    std::cin >> total_minutos;\n\n    const int minutos_por_hora = 60;\n\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n\n    std::cout << horas << \" h \" << minutos << \" min\";\n\n    return 0;\n}\n",
+          "initialStandardInput": "137",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "137",
+                "outputs": [
+                  "2 h 17 min",
+                  "2 h 17 min\n"
+                ]
+              },
+              {
+                "standardInput": "127",
+                "outputs": [
+                  "2 h 7 min",
+                  "2 h 7 min\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0 h 0 min",
+                  "0 h 0 min\n"
+                ]
+              },
+              {
+                "standardInput": "60",
+                "outputs": [
+                  "1 h 0 min",
+                  "1 h 0 min\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "page": "page_0005",
+        "next": "block_0005_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n\n    std::cout << horas << \" h \" << minutos << \" min\";\n\n    return 0;\n}\n"
+        }
+      }
+    ],
+    "retirementHistory": [
+      {
+        "retired": [
+          "block_0003_0003",
+          "block_0003_0008",
+          "block_0005_0002"
+        ],
+        "current": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              "block_0000_0000",
+              "block_0000_0001",
+              "block_0000_0002",
+              "block_0000_0003",
+              "block_0000_0004"
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              "block_0001_0000",
+              "block_0001_0001",
+              "block_0001_0002",
+              "block_0001_0003",
+              "block_0001_0004"
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              "block_0002_0000",
+              "block_0002_0001",
+              "block_0002_0002",
+              "block_0002_0003",
+              "block_0002_0004"
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              "block_0003_0000",
+              "block_0003_0001",
+              "block_0003_0002",
+              "block_0003_0003",
+              "block_0003_0004",
+              "block_0003_0005",
+              "block_0003_0006",
+              "block_0003_0007",
+              "block_0003_0008"
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              "block_0004_0000",
+              "block_0004_0001",
+              "block_0004_0002",
+              "block_0004_0003",
+              "block_0004_0004"
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              "block_0005_0000",
+              "block_0005_0001",
+              "block_0005_0002",
+              "block_0005_0003",
+              "block_0005_0004"
+            ]
+          }
+        ],
+        "pages": [
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "El tipo de los operandos decide la división"
+              },
+              {
+                "type": "paragraph",
+                "text": "En la unidad anterior viste que 7 / 2 y 7.0 / 2 producen resultados de tipos distintos. Ahora usa esa diferencia para elegir un cálculo. Si ambos operandos son int, / realiza división entera: obtiene el cociente y descarta la parte fraccionaria hacia cero. Con operandos positivos, 11 / 4 produce 2. Si al menos un operando es double, 11.0 / 4 produce 2.75 (Köppe et al., 2023)."
+              },
+              {
+                "type": "code",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int entero = 11 / 4;\n    const double fraccion = 11.0 / 4;\n    const double despues = 11 / 4;\n\n    std::cout << entero << \" \" << fraccion << \" \" << despues;\n\n    return 0;\n}\n"
+              },
+              {
+                "type": "paragraph",
+                "text": "La salida es 2 2.75 2. En despues, la división entera ya produjo 2 antes de convertirlo a double para inicializar el objeto. Cambiar sólo el tipo del destino no recupera una fracción descartada. Si necesitas la división en double y los datos son int, convierte un operando antes de dividir, por ejemplo static_cast<double>(cantidad) / grupos (Köppe et al., 2023)."
+              },
+              {
+                "type": "output_prediction",
+                "question": "Predice los dos resultados. Mantén un espacio entre ellos.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int distancia = 9;\n    const int tramos = 4;\n\n    const double primero = distancia / tramos;\n    const double segundo = static_cast<double>(distancia) / tramos;\n\n    std::cout << primero << \" \" << segundo;\n\n    return 0;\n}\n",
+                "answers": [
+                  "2 2.25"
+                ],
+                "explanation": "primero recibe el cociente entero 2. La conversión en segundo ocurre antes de /, por lo que se obtiene 2.25."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "El resto conserva lo que no completa un grupo"
+              },
+              {
+                "type": "paragraph",
+                "text": "El operador % obtiene el resto de una división entera. En 17 / 5 caben 3 grupos completos y 17 % 5 da 2 elementos sobrantes: 17 = 3 * 5 + 2. / y % responden preguntas distintas sobre los mismos datos. % requiere operandos enteros; no se usa con double. % comparte prioridad con * y /, por encima de + y - (Köppe et al., 2023). Si combinas esas operaciones, agrupa con paréntesis el cálculo que pide el requisito."
+              },
+              {
+                "type": "paragraph",
+                "text": "En esta lección las cantidades son enteros no negativos y el tamaño de grupo es un entero positivo. En ese dominio, el resto está entre 0 y tamaño - 1. El resto 0 significa que la cantidad se reparte exactamente (Köppe et al., 2023). Esta interpretación de elementos sobrantes depende del dominio elegido; no estamos definiendo un reparto de cantidades negativas."
+              },
+              {
+                "type": "output_prediction",
+                "question": "Hay 29 fichas y caben 6 en cada bandeja. Escribe el cociente y el resto que muestra el programa.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int fichas = 29;\n    const int por_bandeja = 6;\n\n    std::cout << fichas / por_bandeja << \" \" << fichas % por_bandeja;\n\n    return 0;\n}\n",
+                "answers": [
+                  "4 5"
+                ],
+                "explanation": "Cuatro bandejas contienen 24 fichas y quedan 5. 4 * 6 + 5 reconstruye las 29 fichas."
+              },
+              {
+                "type": "multiple_choice",
+                "question": "Con una cantidad no negativa y grupos de tamaño 4, ¿qué restos son posibles?",
+                "options": [
+                  "0, 1, 2 y 3",
+                  "Cualquier número mayor que 4",
+                  "1, 2, 3 y 4"
+                ],
+                "correctIndex": 0,
+                "explanation": "Si sobraran 4 elementos habría otro grupo completo. El resto puede ser 0 y siempre es menor que 4."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Elegir el operador según la pregunta"
+              },
+              {
+                "type": "code",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int piezas = 23;\n    const int capacidad = 4;\n\n    const int cajas_completas = piezas / capacidad;\n    const int sobrantes = piezas % capacidad;\n\n    std::cout << \"Cajas: \" << cajas_completas << \"\\n\";\n    std::cout << \"Sobrantes: \" << sobrantes;\n\n    return 0;\n}\n"
+              },
+              {
+                "type": "paragraph",
+                "text": "Este informe muestra 5 cajas completas y 3 piezas sobrantes. No calcula las cajas totales necesarias para guardar todas las piezas: esa pregunta también debe considerar una caja incompleta. Antes de programar, concreta qué significa cada resultado."
+              },
+              {
+                "type": "inline_fill_code",
+                "question": "Completa los operadores para informar cuántos grupos completos se pueden formar y cuántos elementos quedan fuera de esos grupos. Escribe sólo un operador por hueco, según la finalidad de cada resultado.",
+                "template": "#include <iostream>\n\nint main() {\n    const int cantidad = 31;\n    const int capacidad = 5;\n\n    const int grupos_completos = cantidad [] capacidad;\n    const int sobrantes = cantidad [] capacidad;\n\n    std::cout << grupos_completos << \" \" << sobrantes;\n\n    return 0;\n}\n",
+                "answers": [
+                  "/",
+                  "%"
+                ]
+              },
+              {
+                "type": "multiple_choice",
+                "question": "¿Qué comprueba que 6 grupos y 1 sobrante corresponden a 31 elementos con capacidad 5?",
+                "options": [
+                  "6 * 5 + 1 = 31",
+                  "31 * 5 = 6 + 1",
+                  "6 + 1 = 31"
+                ],
+                "correctIndex": 0,
+                "explanation": "Cada grupo representa 5 elementos; los sobrantes se añaden al total agrupado."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Laboratorio: horas completas y minutos restantes"
+              },
+              {
+                "type": "note",
+                "text": "En la actividad anterior, / produce 6 y % produce 1. Los nombres del resultado ayudaban a elegir la operación antes de calcular."
+              },
+              {
+                "type": "paragraph",
+                "text": "El programa utiliza `total_minutos` igual a `137` y `minutos_por_hora` igual a `60`. La división obtiene horas completas y el resto obtiene los minutos que quedan. El formato no añade un cero delante de un minuto de una cifra.\n\nEl objetivo de este editor es comprobar el informe de ese caso mediante «Compilar, ejecutar y comprobar», con salto final opcional. El puzzle posterior trata otro dato; sus variantes tienen editores independientes."
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n\n    std::cout << horas << \" h \" << minutos << \" min\";\n\n    return 0;\n}\n",
+                "outputCheck": {
+                  "cases": [
+                    {
+                      "standardInput": "",
+                      "outputs": [
+                        "2 h 17 min",
+                        "2 h 17 min\n"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "multiple_choice",
+                "question": "Después de cambiar total_minutos a 127, ¿qué informe cumple este formato?",
+                "options": [
+                  "2 h 7 min",
+                  "2 h 07 min",
+                  "2 h 67 min"
+                ],
+                "correctIndex": 0,
+                "explanation": "Dos horas consumen 120 minutos y quedan 7. El programa no contiene una instrucción para agregar un cero a ese número."
+              },
+              {
+                "type": "paragraph",
+                "text": "Los casos 0 y 60 ayudan a comprobar el resto 0. Cambiar los datos de uno en uno facilita explicar una diferencia. Para cualquier minuto del dominio elegido, puedes reconstruir el total como horas * 60 + minutos."
+              },
+              {
+                "type": "heading",
+                "text": "Otros minutos, el mismo informe"
+              },
+              {
+                "type": "paragraph",
+                "text": "Este programa lee el total de minutos; conserva sesenta minutos por hora y el mismo cálculo. Utiliza totales entre cero y seiscientos. Comprueba `137` → `2 h 17 min`, `127` → `2 h 7 min`, `0` → `0 h 0 min` y `60` → `1 h 0 min`.\n\nTodos los datos de Entrada son enteros escritos válidamente. Separa los datos con espacios o saltos de línea y conserva el código entre pruebas. Pulsa «Compilar, ejecutar y comprobar» para contrastar cada entrada con su objetivo; el salto final es opcional."
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    int total_minutos{0};\n    std::cin >> total_minutos;\n\n    const int minutos_por_hora = 60;\n\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n\n    std::cout << horas << \" h \" << minutos << \" min\";\n\n    return 0;\n}\n",
+                "initialStandardInput": "137",
+                "outputCheck": {
+                  "inputComparison": "tokens",
+                  "cases": [
+                    {
+                      "standardInput": "137",
+                      "outputs": [
+                        "2 h 17 min",
+                        "2 h 17 min\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "127",
+                      "outputs": [
+                        "2 h 7 min",
+                        "2 h 7 min\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "0",
+                      "outputs": [
+                        "0 h 0 min",
+                        "0 h 0 min\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "60",
+                      "outputs": [
+                        "1 h 0 min",
+                        "1 h 0 min\n"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Una operación también necesita datos válidos"
+              },
+              {
+                "type": "paragraph",
+                "text": "Antes de ejecutar / o % con enteros, su divisor debe ser distinto de cero. Una división o un resto con divisor cero no tiene un resultado válido que debamos predecir (Köppe et al., 2023). Que el programa compile no garantiza que los valores sean adecuados al ejecutar. Por ahora, cada programa declara divisores positivos; más adelante usaremos decisiones para rechazar datos inválidos antes de calcular."
+              },
+              {
+                "type": "multiple_choice",
+                "question": "Un informe usa capacidad como divisor para formar cajas. ¿Qué dato debes verificar además del requisito sobre la cantidad?",
+                "options": [
+                  "Que capacidad tenga un nombre corto.",
+                  "Que capacidad sea positiva para este modelo de reparto.",
+                  "Que la salida contenga al menos dos líneas."
+                ],
+                "correctIndex": 1,
+                "explanation": "El modelo necesita cajas con una capacidad positiva; así el divisor tampoco será cero."
+              },
+              {
+                "type": "output_prediction",
+                "question": "Recupera paréntesis y división entera. Predice la salida.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int registrados = 8;\n    const int nuevos = 3;\n\n    const int pares_completos = (registrados + nuevos) / 2;\n\n    std::cout << pares_completos;\n\n    return 0;\n}\n",
+                "answers": [
+                  "5"
+                ],
+                "explanation": "La suma agrupada da 11. La división entera entre 2 cuenta 5 pares completos."
+              },
+              {
+                "type": "note",
+                "text": "La división entera descarta hacia cero, no redondea al entero más próximo (Köppe et al., 2023). Los ejercicios usan valores pequeños cuya representación y resultados caben en int, sin suponer el mismo rango de int en todas las plataformas."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Comparación posterior del laboratorio"
+              },
+              {
+                "type": "paragraph",
+                "text": "Los resultados completos del laboratorio son 2 h 17 min para 137, 2 h 7 min para 127, 0 h 0 min para 0 y 1 h 0 min para 60. La referencia calcula horas completas y minutos restantes con el mismo divisor positivo 60; no añade ceros de presentación."
+              },
+              {
+                "type": "code",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n\n    std::cout << horas << \" h \" << minutos << \" min\";\n\n    return 0;\n}\n"
+              },
+              {
+                "type": "paragraph",
+                "text": "Para cada total entre 0 y 600 comprueba dos propiedades: el resto está entre 0 y 59 y horas * 60 + minutos reconstruye el total. El extremo 600 debe producir 10 h 0 min. Estas comprobaciones explican por qué se necesitan dos operaciones diferentes y por qué se conserva el divisor positivo."
+              },
+              {
+                "type": "note",
+                "text": "Cada editor comprueba el objetivo de su actividad mediante «Compilar, ejecutar y comprobar». Si una salida difiere, revisa la primera condición, operación o instrucción de salida que produce la diferencia y reintenta el mismo objetivo. La coincidencia de salida no sustituye revisar que el código exprese las reglas del problema."
+              }
+            ]
+          }
+        ],
+        "compilerPuzzlesRequired": true,
+        "referenceAfter": [],
+        "activityAfter": [],
+        "textSemantics": {
+          "version": 1,
+          "fields": [
+            {
+              "block": "block_0000_0000",
+              "path": "/text",
+              "sourceSha256": "de34abb281fe7a78634ef00a875610cb636992473573eca2c80f38ca76510afd",
+              "spans": []
+            },
+            {
+              "block": "block_0000_0001",
+              "path": "/text",
+              "sourceSha256": "3d997f77e8d135be8a3af3578222121126cf753114876646808a29cdbd4e81fe",
+              "spans": [
+                {
+                  "start": 32,
+                  "end": 37,
+                  "text": "7 / 2",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 40,
+                  "end": 47,
+                  "text": "7.0 / 2",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 160,
+                  "end": 163,
+                  "text": "int",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 165,
+                  "end": 166,
+                  "text": "/",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 251,
+                  "end": 255,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 282,
+                  "end": 288,
+                  "text": "11 / 4",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 297,
+                  "end": 298,
+                  "text": "2",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 327,
+                  "end": 333,
+                  "text": "double",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 335,
+                  "end": 343,
+                  "text": "11.0 / 4",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 352,
+                  "end": 356,
+                  "text": "2.75",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 357,
+                  "end": 377,
+                  "text": "(Köppe et al., 2023)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0003",
+              "path": "/text",
+              "sourceSha256": "a08875add295d56baf57c1c5b468fe7ce21745c857d2197718ae10e4b808fc70",
+              "spans": [
+                {
+                  "start": 13,
+                  "end": 21,
+                  "text": "2 2.75 2",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 26,
+                  "end": 33,
+                  "text": "despues",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 65,
+                  "end": 66,
+                  "text": "2",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 90,
+                  "end": 96,
+                  "text": "double",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 223,
+                  "end": 229,
+                  "text": "double",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 246,
+                  "end": 249,
+                  "text": "int",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 303,
+                  "end": 341,
+                  "text": "static_cast<double>(cantidad) / grupos",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 342,
+                  "end": 362,
+                  "text": "(Köppe et al., 2023)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/question",
+              "sourceSha256": "b9dc7c12a7aca63d149cb08087bb63b97508597927822c75c94bbbf2f51fedcd",
+              "spans": [
+                {
+                  "start": 12,
+                  "end": 15,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/explanation",
+              "sourceSha256": "dace1553a67db9be66cd057bf877ee4c40a7ddb9df1eb05082ac7207ff2b3ab9",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 7,
+                  "text": "primero",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 34,
+                  "end": 35,
+                  "text": "2",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 54,
+                  "end": 61,
+                  "text": "segundo",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 78,
+                  "end": 79,
+                  "text": "/",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 103,
+                  "end": 107,
+                  "text": "2.25",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0000",
+              "path": "/text",
+              "sourceSha256": "3d79e58f8c68635ffa542151fc7c3c93d375e449d7623e509d1ab85d6009e23c",
+              "spans": []
+            },
+            {
+              "block": "block_0001_0001",
+              "path": "/text",
+              "sourceSha256": "3e4cc8c8de155deda00f7fb50aaa6c60c7188e90b1e3a1d418c44669954d90c5",
+              "spans": [
+                {
+                  "start": 12,
+                  "end": 13,
+                  "text": "%",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 58,
+                  "end": 64,
+                  "text": "17 / 5",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 71,
+                  "end": 72,
+                  "text": "3",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 92,
+                  "end": 98,
+                  "text": "17 % 5",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 102,
+                  "end": 103,
+                  "text": "2",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 125,
+                  "end": 139,
+                  "text": "17 = 3 * 5 + 2",
+                  "role": "math"
+                },
+                {
+                  "start": 141,
+                  "end": 142,
+                  "text": "/",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 145,
+                  "end": 146,
+                  "text": "%",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 201,
+                  "end": 202,
+                  "text": "%",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 245,
+                  "end": 251,
+                  "text": "double",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 253,
+                  "end": 254,
+                  "text": "%",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 278,
+                  "end": 279,
+                  "text": "*",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 282,
+                  "end": 283,
+                  "text": "/",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 299,
+                  "end": 300,
+                  "text": "+",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 303,
+                  "end": 304,
+                  "text": "-",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 305,
+                  "end": 325,
+                  "text": "(Köppe et al., 2023)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0002",
+              "path": "/text",
+              "sourceSha256": "6733fad8eaeb2150ff54856bfbfae3ba25a1f882a83790ce098b52cfc29bdcac",
+              "spans": [
+                {
+                  "start": 136,
+                  "end": 137,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 140,
+                  "end": 150,
+                  "text": "tamaño - 1",
+                  "role": "math"
+                },
+                {
+                  "start": 161,
+                  "end": 162,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 212,
+                  "end": 232,
+                  "text": "(Köppe et al., 2023)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/question",
+              "sourceSha256": "9b556f9a2a25fb318f6814764afeffd929f4aac79c51a085213dcb0fe9ffd632",
+              "spans": [
+                {
+                  "start": 4,
+                  "end": 6,
+                  "text": "29",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 22,
+                  "end": 23,
+                  "text": "6",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/explanation",
+              "sourceSha256": "43df6a7a43ecd9fd246e8e9bbebae7996643bdb1b0effe3fd336251883908945",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 6,
+                  "text": "Cuatro",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 26,
+                  "end": 28,
+                  "text": "24",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 45,
+                  "end": 46,
+                  "text": "5",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 48,
+                  "end": 57,
+                  "text": "4 * 6 + 5",
+                  "role": "math"
+                },
+                {
+                  "start": 74,
+                  "end": 76,
+                  "text": "29",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0004",
+              "path": "/question",
+              "sourceSha256": "bb423d73a8558e7afd9b6e016b54fa1cd48e05b58553148e808a23402582462d",
+              "spans": [
+                {
+                  "start": 48,
+                  "end": 49,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0004",
+              "path": "/explanation",
+              "sourceSha256": "70a8851b6db7a5c4d83e4ee3c62eae5b5229dc1bd9bf52a72a0c467b1d8718c9",
+              "spans": [
+                {
+                  "start": 12,
+                  "end": 13,
+                  "text": "4",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 71,
+                  "end": 72,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 96,
+                  "end": 97,
+                  "text": "4",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0004",
+              "path": "/options/0",
+              "sourceSha256": "f1aa1922a22646e2ce956d20278a8b5101991c44a38ede13f21cc9a49e104e71",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 11,
+                  "text": "0, 1, 2 y 3",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0004",
+              "path": "/options/1",
+              "sourceSha256": "be096ac81fcfc443007e33e6cbeb926ff1029fcd143a52f123ed21ad195585dc",
+              "spans": [
+                {
+                  "start": 27,
+                  "end": 28,
+                  "text": "4",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0004",
+              "path": "/options/2",
+              "sourceSha256": "b27686936a5dcb66abc785881c7cc8b4dd15795916a907ffb9e37c754bda82b3",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 11,
+                  "text": "1, 2, 3 y 4",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0000",
+              "path": "/text",
+              "sourceSha256": "e3d7345eb392fd33277fca30e4cdd0d923ba5bee20244fa32ed5e4c64cf07af2",
+              "spans": []
+            },
+            {
+              "block": "block_0002_0002",
+              "path": "/text",
+              "sourceSha256": "d68c20eca234d2c91f7798520aba5c892a9146449df262874209765050214227",
+              "spans": [
+                {
+                  "start": 21,
+                  "end": 22,
+                  "text": "5",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 41,
+                  "end": 42,
+                  "text": "3",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0003",
+              "path": "/question",
+              "sourceSha256": "3728752049579b945b352d033daed1f9bf9da7466bf9a1aac4ec8280e48a8e97",
+              "spans": []
+            },
+            {
+              "block": "block_0002_0004",
+              "path": "/question",
+              "sourceSha256": "e943b042bfcf3d99f73bc5561b336afc57ea0a040ca2760d53b7347177b3405e",
+              "spans": [
+                {
+                  "start": 19,
+                  "end": 20,
+                  "text": "6",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 30,
+                  "end": 31,
+                  "text": "1",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 56,
+                  "end": 58,
+                  "text": "31",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 83,
+                  "end": 84,
+                  "text": "5",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0004",
+              "path": "/explanation",
+              "sourceSha256": "200d3796aef5910920c37479a3c32cca382547daf50de1dc7d4868f04c2d321d",
+              "spans": [
+                {
+                  "start": 22,
+                  "end": 23,
+                  "text": "5",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0004",
+              "path": "/options/0",
+              "sourceSha256": "954f0f8043143cf2be5d40d5227f5f2f30391000eb10e5f5562a985c205e0078",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 14,
+                  "text": "6 * 5 + 1 = 31",
+                  "role": "math"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0004",
+              "path": "/options/1",
+              "sourceSha256": "444d7438264ad2c84d5bcc6866190bfdc3b7879ec07c4ad49768382ed99ffcdc",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 14,
+                  "text": "31 * 5 = 6 + 1",
+                  "role": "math"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0004",
+              "path": "/options/2",
+              "sourceSha256": "bdc5ad6be424e98fe772a57d67d6ba7e20a65e5427a5c6c19734716da115ec13",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 10,
+                  "text": "6 + 1 = 31",
+                  "role": "math"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0000",
+              "path": "/text",
+              "sourceSha256": "679f4ec079b37b1eb30e637c705d08bccba5c048acd70567ad69609ff9f0e9d8",
+              "spans": []
+            },
+            {
+              "block": "block_0003_0001",
+              "path": "/text",
+              "sourceSha256": "b11eb4e44cc9e172d4119a59b463cbd0924c743be7fae33e13bd06d142cb19d0",
+              "spans": [
+                {
+                  "start": 26,
+                  "end": 27,
+                  "text": "/",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 36,
+                  "end": 37,
+                  "text": "6",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 40,
+                  "end": 41,
+                  "text": "%",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 50,
+                  "end": 51,
+                  "text": "1",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0002",
+              "path": "/text",
+              "sourceSha256": "1cb03a66862dd304bcc8369b18d0273a6373e981b356b396c596d5ecf8b73091",
+              "spans": [
+                {
+                  "start": 21,
+                  "end": 34,
+                  "text": "total_minutos",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 45,
+                  "end": 48,
+                  "text": "137",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 53,
+                  "end": 69,
+                  "text": "minutos_por_hora",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 80,
+                  "end": 82,
+                  "text": "60",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 187,
+                  "end": 191,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 216,
+                  "end": 219,
+                  "text": "una",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0004",
+              "path": "/question",
+              "sourceSha256": "9760c22619a11ac89ea8de70107dba5e78c93c432e9a5a6d32f534abcd58a14f",
+              "spans": [
+                {
+                  "start": 19,
+                  "end": 32,
+                  "text": "total_minutos",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 35,
+                  "end": 38,
+                  "text": "127",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0004",
+              "path": "/explanation",
+              "sourceSha256": "aaffd993d6dc968de62a1dcade6b2d898b2ae0adef19b847b769e431816f71ee",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 3,
+                  "text": "Dos",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 19,
+                  "end": 22,
+                  "text": "120",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 40,
+                  "end": 41,
+                  "text": "7",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 99,
+                  "end": 103,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0004",
+              "path": "/options/0",
+              "sourceSha256": "a43654b270cd2e053bb4e27f3950e622a2cff675ba1472b1eff3a72d2f93a74f",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 9,
+                  "text": "2 h 7 min",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0004",
+              "path": "/options/1",
+              "sourceSha256": "4b5783d6404d4183bc3d82868e9ca77461db7bcaf21ec319d6cdd831e69dff27",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 10,
+                  "text": "2 h 07 min",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0004",
+              "path": "/options/2",
+              "sourceSha256": "7b39bc04849f1fc395259bd4c87218b645ba98b23334cee592e96868d70bc532",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 10,
+                  "text": "2 h 67 min",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0005",
+              "path": "/text",
+              "sourceSha256": "042ac27a3c98cce46d24a848d8dc40f79b0d3a116a92bb293fa11c2c5e7b2828",
+              "spans": [
+                {
+                  "start": 10,
+                  "end": 11,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 14,
+                  "end": 16,
+                  "text": "60",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 45,
+                  "end": 46,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 190,
+                  "end": 210,
+                  "text": "horas * 60 + minutos",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0006",
+              "path": "/text",
+              "sourceSha256": "678cb429e1342733e41efed9f9c096923d68b59fc8046606d8978a9ae4ea530b",
+              "spans": []
+            },
+            {
+              "block": "block_0003_0007",
+              "path": "/text",
+              "sourceSha256": "0fafd84d3f1265f8ac82dfa1c648ed638bc9c014302fd2858ddc7db5a6765e9b",
+              "spans": [
+                {
+                  "start": 48,
+                  "end": 55,
+                  "text": "sesenta",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 115,
+                  "end": 119,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 122,
+                  "end": 133,
+                  "text": "seiscientos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 146,
+                  "end": 149,
+                  "text": "137",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 154,
+                  "end": 164,
+                  "text": "2 h 17 min",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 168,
+                  "end": 171,
+                  "text": "127",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 176,
+                  "end": 185,
+                  "text": "2 h 7 min",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 189,
+                  "end": 190,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 195,
+                  "end": 204,
+                  "text": "0 h 0 min",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 209,
+                  "end": 211,
+                  "text": "60",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 216,
+                  "end": 225,
+                  "text": "1 h 0 min",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0000",
+              "path": "/text",
+              "sourceSha256": "bcdbafa9ce19f1035c29bb4bf7a6ac10e4ff4c4163a32c11c74d03e54869dd67",
+              "spans": []
+            },
+            {
+              "block": "block_0004_0001",
+              "path": "/text",
+              "sourceSha256": "656e5c6c7f8d4ee2e5c5a7eddff56a9d6b260deb2bba1a64d976468ade4233a4",
+              "spans": [
+                {
+                  "start": 18,
+                  "end": 19,
+                  "text": "/",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 22,
+                  "end": 23,
+                  "text": "%",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 69,
+                  "end": 73,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 111,
+                  "end": 115,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 166,
+                  "end": 186,
+                  "text": "(Köppe et al., 2023)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/question",
+              "sourceSha256": "b07973211dfcf982bb7314faba8bdf9822cd2d3a72db4b5923534e78c62555ca",
+              "spans": [
+                {
+                  "start": 15,
+                  "end": 24,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/explanation",
+              "sourceSha256": "43f49eddf12cd405fff3f082b810da186b35424f5a3e194acd9dd8d61dd5f33e",
+              "spans": [
+                {
+                  "start": 81,
+                  "end": 85,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/options/0",
+              "sourceSha256": "c9d0d48c8382f3626191806ab55ce9d5a9d77592c9ce0a8555c8fd76184d2f37",
+              "spans": [
+                {
+                  "start": 4,
+                  "end": 13,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/options/1",
+              "sourceSha256": "9abf46be79bfad87df875987b61682f2d2c121b9c6588aa99a6a2146d6ed1627",
+              "spans": [
+                {
+                  "start": 4,
+                  "end": 13,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/options/2",
+              "sourceSha256": "868ba706ad5ceada4e0c5faf07d16c3e0cf32a8a18cd844f60d2bb5d9ef3f551",
+              "spans": [
+                {
+                  "start": 32,
+                  "end": 35,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0003",
+              "path": "/question",
+              "sourceSha256": "f0aeabf98bc9b5e9d85ec464815d54276838e448626432e793be2324f8462693",
+              "spans": []
+            },
+            {
+              "block": "block_0004_0003",
+              "path": "/explanation",
+              "sourceSha256": "eac10ca443835cf80c54468e00a2c06669463f78399c8b35c2e1437a1dc06f21",
+              "spans": [
+                {
+                  "start": 20,
+                  "end": 22,
+                  "text": "11",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 49,
+                  "end": 50,
+                  "text": "2",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 58,
+                  "end": 59,
+                  "text": "5",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0004",
+              "path": "/text",
+              "sourceSha256": "2087528ff70ff51a4138f477657902ab2b3d7c2ec656d1abf6de6e8cbdd6445b",
+              "spans": [
+                {
+                  "start": 34,
+                  "end": 38,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 74,
+                  "end": 94,
+                  "text": "(Köppe et al., 2023)",
+                  "role": "citation",
+                  "reading": "natural"
+                },
+                {
+                  "start": 175,
+                  "end": 178,
+                  "text": "int",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 210,
+                  "end": 213,
+                  "text": "int",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0000",
+              "path": "/text",
+              "sourceSha256": "be5f890565fec1e4f2830714dacc70848a1edf901992075289cecbbe164c273e",
+              "spans": []
+            },
+            {
+              "block": "block_0005_0001",
+              "path": "/text",
+              "sourceSha256": "5a1504718e80c12eda9501d3de35c3ae204fe501915632bee8042d1f9cb0ce3d",
+              "spans": [
+                {
+                  "start": 45,
+                  "end": 55,
+                  "text": "2 h 17 min",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 61,
+                  "end": 64,
+                  "text": "137",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 66,
+                  "end": 75,
+                  "text": "2 h 7 min",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 81,
+                  "end": 84,
+                  "text": "127",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 86,
+                  "end": 95,
+                  "text": "0 h 0 min",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 101,
+                  "end": 102,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 105,
+                  "end": 114,
+                  "text": "1 h 0 min",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 120,
+                  "end": 122,
+                  "text": "60",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 212,
+                  "end": 214,
+                  "text": "60",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0003",
+              "path": "/text",
+              "sourceSha256": "68e940442c72808e9a6321ffad957025413b33e378c450c667a1155c457abb37",
+              "spans": [
+                {
+                  "start": 22,
+                  "end": 23,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 26,
+                  "end": 29,
+                  "text": "600",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 40,
+                  "end": 43,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 77,
+                  "end": 78,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 81,
+                  "end": 83,
+                  "text": "59",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 86,
+                  "end": 106,
+                  "text": "horas * 60 + minutos",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 140,
+                  "end": 143,
+                  "text": "600",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 158,
+                  "end": 168,
+                  "text": "10 h 0 min",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 221,
+                  "end": 224,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0004",
+              "path": "/text",
+              "sourceSha256": "ce8e2b7738e1c6747191e1454403fc7130c41f699814cb402494c143603b49e9",
+              "spans": []
+            }
+          ],
+          "rootFields": [
+            {
+              "path": "/title",
+              "sourceSha256": "08d3dda00553b112b9760c26cb8e15bfb7dc062fb11f5b1821cd810b9d720451",
+              "spans": []
+            }
+          ]
+        },
+        "editorialPrefix": {
+          "count": 16,
+          "sha256": "ef885a5be318ce0318a7cff11b5619b753b6885f87045fb5e219475d7703fe0c"
+        }
+      }
     ]
   },
   "textSemantics": {
@@ -1217,87 +3184,136 @@
       {
         "block": "block_0000_0000",
         "path": "/text",
-        "sourceSha256": "de34abb281fe7a78634ef00a875610cb636992473573eca2c80f38ca76510afd",
+        "sourceSha256": "9b2e23c30eb2f9bee0d813f2dffc0f19197745b18f0c1cbfd9ea6fd890dc47a3",
         "spans": []
       },
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "3d997f77e8d135be8a3af3578222121126cf753114876646808a29cdbd4e81fe",
+        "sourceSha256": "acd9fdc7ce394f947c07dc8e08e38f405fa360ae60d79a9316db7890d667a4d4",
         "spans": [
           {
-            "start": 32,
-            "end": 37,
-            "text": "7 / 2",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 40,
-            "end": 47,
-            "text": "7.0 / 2",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 160,
-            "end": 163,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 165,
-            "end": 166,
-            "text": "/",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 251,
-            "end": 255,
-            "text": "cero",
+            "start": 75,
+            "end": 79,
+            "text": "2.75",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 282,
-            "end": 288,
-            "text": "11 / 4",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 297,
-            "end": 298,
-            "text": "2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 327,
-            "end": 333,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 335,
-            "end": 343,
+            "start": 138,
+            "end": 146,
             "text": "11.0 / 4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 352,
-            "end": 356,
+            "start": 157,
+            "end": 161,
+            "text": "11.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 179,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 198,
+            "end": 199,
+            "text": "4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 206,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 215,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 238,
+            "end": 244,
+            "text": "11 / 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 277,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 346,
+            "end": 349,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 378,
+            "end": 381,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 508,
+            "end": 512,
             "text": "2.75",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 357,
-            "end": 377,
+            "start": 522,
+            "end": 528,
+            "text": "11 / 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 532,
+            "end": 533,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 594,
+            "end": 599,
+            "text": "-2.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 602,
+            "end": 609,
+            "text": "-11 / 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 613,
+            "end": 615,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 616,
+            "end": 636,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1307,60 +3323,130 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "a08875add295d56baf57c1c5b468fe7ce21745c857d2197718ae10e4b808fc70",
+        "sourceSha256": "86badd21ada7c80fce86083b9b5dd5431040f1ef2241edf8a0262347d2e4090d",
         "spans": [
           {
-            "start": 13,
-            "end": 21,
+            "start": 20,
+            "end": 28,
             "text": "2 2.75 2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 26,
-            "end": 33,
+            "start": 80,
+            "end": 81,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 106,
+            "text": "entero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 132,
+            "text": "11.0 / 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 140,
+            "text": "2.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 167,
+            "text": "fraccion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 185,
+            "end": 191,
+            "text": "11 / 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 205,
+            "end": 206,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 238,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 264,
             "text": "despues",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 65,
-            "end": 66,
-            "text": "2",
-            "role": "output",
-            "reading": "natural"
+            "start": 400,
+            "end": 409,
+            "text": "distancia",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 90,
-            "end": 96,
+            "start": 446,
+            "end": 452,
+            "text": "tramos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 501,
+            "end": 540,
+            "text": "static_cast<double>(distancia) / tramos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 542,
+            "end": 572,
+            "text": "static_cast<double>(distancia)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 604,
+            "end": 610,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 223,
-            "end": 229,
-            "text": "double",
+            "start": 662,
+            "end": 671,
+            "text": "distancia",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 246,
-            "end": 249,
+            "start": 685,
+            "end": 688,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 303,
-            "end": 341,
-            "text": "static_cast<double>(cantidad) / grupos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 342,
-            "end": 362,
+            "start": 689,
+            "end": 709,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1370,12 +3456,19 @@
       {
         "block": "block_0000_0004",
         "path": "/question",
-        "sourceSha256": "b9dc7c12a7aca63d149cb08087bb63b97508597927822c75c94bbbf2f51fedcd",
+        "sourceSha256": "1df85a98ffa2b24d050c2bd0b975e2f117c0f8d2c0c9afd1aa1d2bb2a055c6d9",
         "spans": [
           {
-            "start": 12,
-            "end": 15,
-            "text": "dos",
+            "start": 20,
+            "end": 25,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 42,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           }
@@ -1384,39 +3477,39 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "dace1553a67db9be66cd057bf877ee4c40a7ddb9df1eb05082ac7207ff2b3ab9",
+        "sourceSha256": "72c5b676dd5db1fcdea7493a5d79c53f66f9e18eecd99528653d82188636bf1e",
         "spans": [
           {
             "start": 0,
-            "end": 7,
-            "text": "primero",
+            "end": 18,
+            "text": "distancia / tramos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 34,
-            "end": 35,
+            "start": 43,
+            "end": 44,
             "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 54,
-            "end": 61,
-            "text": "segundo",
+            "start": 49,
+            "end": 88,
+            "text": "static_cast<double>(distancia) / tramos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 78,
-            "end": 79,
-            "text": "/",
+            "start": 115,
+            "end": 121,
+            "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 103,
-            "end": 107,
+            "start": 152,
+            "end": 156,
             "text": "2.25",
             "role": "output",
             "reading": "natural"
@@ -1426,123 +3519,110 @@
       {
         "block": "block_0001_0000",
         "path": "/text",
-        "sourceSha256": "3d79e58f8c68635ffa542151fc7c3c93d375e449d7623e509d1ab85d6009e23c",
+        "sourceSha256": "56689905dd4513a32894c34c857409ba951835782c3a1b36bf3db67d4367624d",
         "spans": []
       },
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "3e4cc8c8de155deda00f7fb50aaa6c60c7188e90b1e3a1d418c44669954d90c5",
+        "sourceSha256": "76889361b379078caad2392a597a112378d2e6a1c1c667f4a568883417b096df",
         "spans": [
           {
-            "start": 12,
-            "end": 13,
-            "text": "%",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 7,
+            "end": 9,
+            "text": "17",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 58,
-            "end": 64,
+            "start": 32,
+            "end": 33,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 151,
             "text": "17 / 5",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 71,
-            "end": 72,
+            "start": 178,
+            "end": 179,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 298,
+            "end": 299,
             "text": "3",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 92,
-            "end": 98,
+            "start": 346,
+            "end": 347,
+            "text": "%",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 412,
+            "end": 418,
             "text": "17 % 5",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 102,
-            "end": 103,
+            "start": 422,
+            "end": 423,
             "text": "2",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 125,
-            "end": 139,
-            "text": "17 = 3 * 5 + 2",
-            "role": "math"
-          },
-          {
-            "start": 141,
-            "end": 142,
-            "text": "/",
+            "start": 475,
+            "end": 478,
+            "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 145,
-            "end": 146,
+            "start": 483,
+            "end": 484,
             "text": "%",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 201,
-            "end": 202,
-            "text": "%",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 245,
-            "end": 251,
-            "text": "double",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 253,
-            "end": 254,
-            "text": "%",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 278,
-            "end": 279,
+            "start": 547,
+            "end": 548,
             "text": "*",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 282,
-            "end": 283,
+            "start": 551,
+            "end": 552,
             "text": "/",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 299,
-            "end": 300,
-            "text": "+",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 303,
-            "end": 304,
-            "text": "-",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 305,
-            "end": 325,
+            "start": 553,
+            "end": 573,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 606,
+            "end": 620,
+            "text": "3 × 5 + 2 = 17",
+            "role": "math",
             "reading": "natural"
           }
         ]
@@ -1550,31 +3630,53 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "6733fad8eaeb2150ff54856bfbfae3ba25a1f882a83790ce098b52cfc29bdcac",
+        "sourceSha256": "32278aa7343cc8562374babf9bce736c45e3248f1e685e2e379b53d86ff4caff",
         "spans": [
           {
-            "start": 136,
+            "start": 135,
             "end": 137,
+            "text": "15",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 157,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 202,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 140,
-            "end": 150,
-            "text": "tamaño - 1",
-            "role": "math"
-          },
-          {
-            "start": 161,
-            "end": 162,
-            "text": "0",
-            "role": "output",
+            "start": 218,
+            "end": 219,
+            "text": "3",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 212,
-            "end": 232,
+            "start": 238,
+            "end": 239,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 257,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 452,
+            "end": 472,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1584,19 +3686,19 @@
       {
         "block": "block_0001_0003",
         "path": "/question",
-        "sourceSha256": "9b556f9a2a25fb318f6814764afeffd929f4aac79c51a085213dcb0fe9ffd632",
+        "sourceSha256": "38e6c451315650a43768a66ac66215fbd3de23e809b0675f1eb770bec002dfb5",
         "spans": [
           {
             "start": 4,
-            "end": 6,
-            "text": "29",
+            "end": 15,
+            "text": "veintinueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 22,
-            "end": 23,
-            "text": "6",
+            "start": 31,
+            "end": 35,
+            "text": "seis",
             "role": "data",
             "reading": "natural"
           }
@@ -1605,40 +3707,13 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "43df6a7a43ecd9fd246e8e9bbebae7996643bdb1b0effe3fd336251883908945",
+        "sourceSha256": "6683d8e49e48610d07c74566bb0b9241819e05dbfa6d904cace7dc03a62f04c8",
         "spans": [
           {
-            "start": 0,
-            "end": 6,
-            "text": "Cuatro",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 26,
-            "end": 28,
-            "text": "24",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 45,
-            "end": 46,
-            "text": "5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 48,
-            "end": 57,
-            "text": "4 * 6 + 5",
-            "role": "math"
-          },
-          {
-            "start": 74,
-            "end": 76,
-            "text": "29",
-            "role": "data",
+            "start": 77,
+            "end": 86,
+            "text": "4 × 6 + 5",
+            "role": "math",
             "reading": "natural"
           }
         ]
@@ -1646,12 +3721,19 @@
       {
         "block": "block_0001_0004",
         "path": "/question",
-        "sourceSha256": "bb423d73a8558e7afd9b6e016b54fa1cd48e05b58553148e808a23402582462d",
+        "sourceSha256": "45a6eaa4c181a2b84699a8274a03d8ae753ff0d77c83717305bd3294e2164ef3",
         "spans": [
           {
-            "start": 48,
-            "end": 49,
-            "text": "4",
+            "start": 20,
+            "end": 26,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 91,
+            "text": "cero",
             "role": "data",
             "reading": "natural"
           }
@@ -1660,27 +3742,41 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "70a8851b6db7a5c4d83e4ee3c62eae5b5229dc1bd9bf52a72a0c467b1d8718c9",
+        "sourceSha256": "8bee211d31a880b46dd5b108eede39c8f9c7a391d43755e8aabe16bf05f8557b",
         "spans": [
           {
-            "start": 12,
-            "end": 13,
-            "text": "4",
-            "role": "output",
+            "start": 14,
+            "end": 18,
+            "text": "cero",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 71,
-            "end": 72,
-            "text": "0",
-            "role": "output",
+            "start": 20,
+            "end": 23,
+            "text": "una",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 96,
-            "end": 97,
-            "text": "4",
-            "role": "output",
+            "start": 25,
+            "end": 28,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 35,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 54,
+            "text": "cuatro",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -1730,26 +3826,33 @@
       {
         "block": "block_0002_0000",
         "path": "/text",
-        "sourceSha256": "e3d7345eb392fd33277fca30e4cdd0d923ba5bee20244fa32ed5e4c64cf07af2",
+        "sourceSha256": "4e0244d4339b929b3e8ccd285b5f4b564e5a8d5fd4e9b2ca09ada135a9cc0f9a",
         "spans": []
       },
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "d68c20eca234d2c91f7798520aba5c892a9146449df262874209765050214227",
+        "sourceSha256": "e363503a23b614c5d3212c6df35e9f541229f279d867e8b976e19dbf2c08846d",
         "spans": [
           {
-            "start": 21,
-            "end": 22,
+            "start": 19,
+            "end": 20,
             "text": "5",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
             "start": 41,
             "end": 42,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 119,
             "text": "3",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -1757,39 +3860,54 @@
       {
         "block": "block_0002_0003",
         "path": "/question",
-        "sourceSha256": "3728752049579b945b352d033daed1f9bf9da7466bf9a1aac4ec8280e48a8e97",
-        "spans": []
+        "sourceSha256": "541aebf6f926cebe85f6bb94bc40d50ab09ef7460c0180986b89e313d734f935",
+        "spans": [
+          {
+            "start": 23,
+            "end": 39,
+            "text": "grupos_completos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 57,
+            "text": "sobrantes",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
         "path": "/question",
-        "sourceSha256": "e943b042bfcf3d99f73bc5561b336afc57ea0a040ca2760d53b7347177b3405e",
+        "sourceSha256": "922781892f320676f00fc3947e0aa0b7b8202e833a6336d34ed451c258c55aac",
         "spans": [
           {
-            "start": 19,
-            "end": 20,
-            "text": "6",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 30,
-            "end": 31,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 56,
-            "end": 58,
-            "text": "31",
+            "start": 4,
+            "end": 16,
+            "text": "treinta y un",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 83,
-            "end": 84,
-            "text": "5",
+            "start": 54,
+            "end": 59,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 85,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 107,
+            "text": "un",
             "role": "data",
             "reading": "natural"
           }
@@ -1798,12 +3916,19 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "200d3796aef5910920c37479a3c32cca382547daf50de1dc7d4868f04c2d321d",
+        "sourceSha256": "5115e9794ff0e344171373df28f7ca31a7a3bf58f13b5dcfa556a0e00b9c65e1",
         "spans": [
           {
-            "start": 22,
-            "end": 23,
-            "text": "5",
+            "start": 31,
+            "end": 38,
+            "text": "treinta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 108,
+            "text": "treinta y uno",
             "role": "data",
             "reading": "natural"
           }
@@ -1851,89 +3976,81 @@
       {
         "block": "block_0003_0000",
         "path": "/text",
-        "sourceSha256": "679f4ec079b37b1eb30e637c705d08bccba5c048acd70567ad69609ff9f0e9d8",
+        "sourceSha256": "d2c3c94e851ad02708e1b5664b2ee2d114fe0d4ef11c9fde9cadb1dde0b1cc62",
         "spans": []
       },
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "b11eb4e44cc9e172d4119a59b463cbd0924c743be7fae33e13bd06d142cb19d0",
-        "spans": [
-          {
-            "start": 26,
-            "end": 27,
-            "text": "/",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 36,
-            "end": 37,
-            "text": "6",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 40,
-            "end": 41,
-            "text": "%",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 50,
-            "end": 51,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "3c5ce63fe5a9800bd8019e418480dc5a808f466e60497748e20a78635fece860",
+        "spans": []
       },
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "1cb03a66862dd304bcc8369b18d0273a6373e981b356b396c596d5ecf8b73091",
+        "sourceSha256": "2e8e4fd82cec004aac2861e99be88e45be03dd66862a6e1eb732f1687f1a6fc4",
         "spans": [
           {
-            "start": 21,
-            "end": 34,
+            "start": 19,
+            "end": 22,
+            "text": "137",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 61,
+            "text": "2 h 2 min",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 174,
+            "text": "minutos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 199,
+            "end": 212,
             "text": "total_minutos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 45,
-            "end": 48,
-            "text": "137",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 53,
-            "end": 69,
+            "start": 215,
+            "end": 231,
             "text": "minutos_por_hora",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 80,
-            "end": 82,
-            "text": "60",
+            "start": 247,
+            "end": 250,
+            "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 187,
-            "end": 191,
-            "text": "cero",
-            "role": "output",
+            "start": 361,
+            "end": 362,
+            "text": "h",
+            "role": "string",
             "reading": "natural"
           },
           {
-            "start": 216,
-            "end": 219,
-            "text": "una",
-            "role": "data",
+            "start": 423,
+            "end": 426,
+            "text": "min",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 445,
+            "end": 455,
+            "text": "2 h 17 min",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1941,54 +4058,33 @@
       {
         "block": "block_0003_0004",
         "path": "/question",
-        "sourceSha256": "9760c22619a11ac89ea8de70107dba5e78c93c432e9a5a6d32f534abcd58a14f",
+        "sourceSha256": "2d6af98153bb19b130ea7a08d8b2cd7d47e067b998f979b0158c36aada4f30d0",
         "spans": [
           {
-            "start": 19,
-            "end": 32,
+            "start": 11,
+            "end": 24,
             "text": "total_minutos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 38,
+            "start": 27,
+            "end": 30,
             "text": "127",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "aaffd993d6dc968de62a1dcade6b2d898b2ae0adef19b847b769e431816f71ee",
+        "sourceSha256": "25ddd6d308e18335b883fa66ccb3962f571fa49d58d287f225b764f4c356d434",
         "spans": [
           {
-            "start": 0,
-            "end": 3,
-            "text": "Dos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 19,
-            "end": 22,
-            "text": "120",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 40,
-            "end": 41,
+            "start": 84,
+            "end": 85,
             "text": "7",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 99,
-            "end": 103,
-            "text": "cero",
             "role": "output",
             "reading": "natural"
           }
@@ -2039,123 +4135,67 @@
       {
         "block": "block_0003_0005",
         "path": "/text",
-        "sourceSha256": "042ac27a3c98cce46d24a848d8dc40f79b0d3a116a92bb293fa11c2c5e7b2828",
+        "sourceSha256": "8fc28d626b5727afaa1f92c4784b92e9ea0f58fff3bc50cb9168b4827cf294f1",
         "spans": [
           {
-            "start": 10,
-            "end": 11,
-            "text": "0",
+            "start": 61,
+            "end": 63,
+            "text": "59",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 14,
-            "end": 16,
+            "start": 115,
+            "end": 125,
+            "text": "0 h 59 min",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 133,
             "text": "60",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 45,
-            "end": 46,
-            "text": "0",
+            "start": 202,
+            "end": 211,
+            "text": "1 h 0 min",
             "role": "output",
             "reading": "natural"
-          },
-          {
-            "start": 190,
-            "end": 210,
-            "text": "horas * 60 + minutos",
-            "role": "cpp",
-            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "678cb429e1342733e41efed9f9c096923d68b59fc8046606d8978a9ae4ea530b",
+        "sourceSha256": "5f215813f34c8dd4cc9ace3ec7220c3dd4f9d2864c482f769738dd5ed587a836",
         "spans": []
       },
       {
         "block": "block_0003_0007",
         "path": "/text",
-        "sourceSha256": "0fafd84d3f1265f8ac82dfa1c648ed638bc9c014302fd2858ddc7db5a6765e9b",
+        "sourceSha256": "ad5f3b880451ab6a4df73ba7c55aa19465c09514fccb16e6dac55ef59d4c605a",
         "spans": [
           {
-            "start": 48,
-            "end": 55,
-            "text": "sesenta",
+            "start": 354,
+            "end": 358,
+            "text": "29 6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 115,
-            "end": 119,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 122,
-            "end": 133,
-            "text": "seiscientos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 146,
-            "end": 149,
-            "text": "137",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 154,
-            "end": 164,
-            "text": "2 h 17 min",
+            "start": 376,
+            "end": 397,
+            "text": "Bandejas completas: 4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 168,
-            "end": 171,
-            "text": "127",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 176,
-            "end": 185,
-            "text": "2 h 7 min",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 189,
-            "end": 190,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 195,
-            "end": 204,
-            "text": "0 h 0 min",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 209,
-            "end": 211,
-            "text": "60",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 216,
-            "end": 225,
-            "text": "1 h 0 min",
+            "start": 398,
+            "end": 410,
+            "text": "Sobrantes: 5",
             "role": "output",
             "reading": "natural"
           }
@@ -2164,45 +4204,45 @@
       {
         "block": "block_0004_0000",
         "path": "/text",
-        "sourceSha256": "bcdbafa9ce19f1035c29bb4bf7a6ac10e4ff4c4163a32c11c74d03e54869dd67",
+        "sourceSha256": "ae063a0d45f82fb6369d8c0c0d0738649c8c40846fc86d8c6ae109ed5f38ae69",
         "spans": []
       },
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "656e5c6c7f8d4ee2e5c5a7eddff56a9d6b260deb2bba1a64d976468ade4233a4",
+        "sourceSha256": "d11117739836e61940f0874b6ab6fbe21b5880e70e197b3e83f9647e244ff7d7",
         "spans": [
           {
-            "start": 18,
-            "end": 19,
+            "start": 84,
+            "end": 86,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 94,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 244,
+            "end": 245,
             "text": "/",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 22,
-            "end": 23,
+            "start": 248,
+            "end": 249,
             "text": "%",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 69,
-            "end": 73,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 111,
-            "end": 115,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 166,
-            "end": 186,
+            "start": 387,
+            "end": 407,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -2212,11 +4252,11 @@
       {
         "block": "block_0004_0002",
         "path": "/question",
-        "sourceSha256": "b07973211dfcf982bb7314faba8bdf9822cd2d3a72db4b5923534e78c62555ca",
+        "sourceSha256": "5d03b734f108ccbed179cb2aa6c39942bb4706ace56851c23c5be48b914d5b31",
         "spans": [
           {
-            "start": 15,
-            "end": 24,
+            "start": 76,
+            "end": 85,
             "text": "capacidad",
             "role": "cpp",
             "reading": "technical"
@@ -2226,11 +4266,18 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "43f49eddf12cd405fff3f082b810da186b35424f5a3e194acd9dd8d61dd5f33e",
+        "sourceSha256": "4842ccc403586cc14bb3061e8bc124391f84796e39e61faf6a5af180cfc7779a",
         "spans": [
           {
-            "start": 81,
-            "end": 85,
+            "start": 52,
+            "end": 61,
+            "text": "capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 76,
             "text": "cero",
             "role": "data",
             "reading": "natural"
@@ -2282,214 +4329,88 @@
       {
         "block": "block_0004_0003",
         "path": "/question",
-        "sourceSha256": "f0aeabf98bc9b5e9d85ec464815d54276838e448626432e793be2324f8462693",
-        "spans": []
-      },
-      {
-        "block": "block_0004_0003",
-        "path": "/explanation",
-        "sourceSha256": "eac10ca443835cf80c54468e00a2c06669463f78399c8b35c2e1437a1dc06f21",
+        "sourceSha256": "32ed4dba2b15cf2345f4c59f93215bdf7a3505b38e8e22e05ea91aa01bbcd0f5",
         "spans": [
           {
-            "start": 20,
-            "end": 22,
-            "text": "11",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 49,
-            "end": 50,
-            "text": "2",
+            "start": 4,
+            "end": 8,
+            "text": "ocho",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 58,
-            "end": 59,
-            "text": "5",
-            "role": "output",
+            "start": 30,
+            "end": 34,
+            "text": "tres",
+            "role": "data",
             "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/explanation",
+        "sourceSha256": "ee701530a6d207a5889060153dfb7f7239e3d7f23350ec1111351e7f28e031f9",
+        "spans": [
+          {
+            "start": 83,
+            "end": 86,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "2087528ff70ff51a4138f477657902ab2b3d7c2ec656d1abf6de6e8cbdd6445b",
-        "spans": [
-          {
-            "start": 34,
-            "end": 38,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 74,
-            "end": 94,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 175,
-            "end": 178,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 210,
-            "end": 213,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          }
-        ]
+        "sourceSha256": "4be83deaeb5b15721e045b0fc663cbeb34de0258df3f059a9fb62535d8574285",
+        "spans": []
       },
       {
         "block": "block_0005_0000",
         "path": "/text",
-        "sourceSha256": "be5f890565fec1e4f2830714dacc70848a1edf901992075289cecbbe164c273e",
+        "sourceSha256": "e8a062f29b2e8d113f7062d2360118dbfd1cebf179c1e930e73b5466fe6ddbf9",
         "spans": []
       },
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "5a1504718e80c12eda9501d3de35c3ae204fe501915632bee8042d1f9cb0ce3d",
+        "sourceSha256": "81c4ebac4d81de453f2f9c6e6becc7c6635a88ad6fea30e449b0f1a04a876fe2",
         "spans": [
           {
-            "start": 45,
-            "end": 55,
-            "text": "2 h 17 min",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 61,
-            "end": 64,
+            "start": 11,
+            "end": 14,
             "text": "137",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 66,
-            "end": 75,
-            "text": "2 h 7 min",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 81,
-            "end": 84,
-            "text": "127",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 86,
-            "end": 95,
-            "text": "0 h 0 min",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 101,
-            "end": 102,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 105,
-            "end": 114,
-            "text": "1 h 0 min",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 120,
-            "end": 122,
-            "text": "60",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 212,
-            "end": 214,
-            "text": "60",
-            "role": "data",
-            "reading": "natural"
+            "start": 85,
+            "end": 86,
+            "text": "%",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "68e940442c72808e9a6321ffad957025413b33e378c450c667a1155c457abb37",
+        "sourceSha256": "b4e83e0880fb270684d41825343d2bcbb94212b0afff00d85e2b43a1f8911641",
         "spans": [
           {
-            "start": 22,
-            "end": 23,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 26,
-            "end": 29,
-            "text": "600",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 40,
-            "end": 43,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 77,
-            "end": 78,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 81,
-            "end": 83,
-            "text": "59",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 86,
-            "end": 106,
-            "text": "horas * 60 + minutos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 140,
-            "end": 143,
-            "text": "600",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 158,
-            "end": 168,
-            "text": "10 h 0 min",
+            "start": 103,
+            "end": 113,
+            "text": "2 h 17 min",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 221,
-            "end": 224,
-            "text": "dos",
-            "role": "data",
+            "start": 125,
+            "end": 142,
+            "text": "2 × 60 + 17 = 137",
+            "role": "math",
             "reading": "natural"
           }
         ]
@@ -2497,8 +4418,205 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "ce8e2b7738e1c6747191e1454403fc7130c41f699814cb402494c143603b49e9",
+        "sourceSha256": "632e0375ef21f5d166ab670c3b3b2b796979942db7f44692d39374e202a82962",
         "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "0a5a11acbee92207edb0a3e5e6defa7ec951f88b537ddc60760a4be9908a0bd4",
+        "spans": [
+          {
+            "start": 4,
+            "end": 5,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 64,
+            "text": "%",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 128,
+            "text": "6 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u3l2_distinguir_cero_en_reparto",
+        "path": "/question",
+        "sourceSha256": "ad7971bb1a9f95dd4e031e54ca534134a43fb9c4b3633077d732a0610ac08516",
+        "spans": []
+      },
+      {
+        "block": "p1u3l2_distinguir_cero_en_reparto",
+        "path": "/explanation",
+        "sourceSha256": "0cc71a2b5d7ce7e355afc52fd216a254e0d3686490bf4fb1648cd92bc5d80197",
+        "spans": []
+      },
+      {
+        "block": "p1u3l2_distinguir_cero_en_reparto",
+        "path": "/options/0",
+        "sourceSha256": "d0b1916f91ad97d20384f8dad57a3b215981bbb976e6d57ca66f42081f23447a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "12 0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u3l2_distinguir_cero_en_reparto",
+        "path": "/options/1",
+        "sourceSha256": "d8fca38854b35ba1842396fd90c7190d9586fb49e6afbc1349d158601ee94240",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "12 -3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u3l2_distinguir_cero_en_reparto",
+        "path": "/options/2",
+        "sourceSha256": "dcbcbaa9a7fe7a87d60bf64c2691b57a08647b9eee8d0fca9252a28de282514f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "0 3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "p1u3l2_distinguir_cero_en_reparto",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "d5b57ba94d1ddb8fa2600b57585bc00159349097c6625c5b315944c46f6b2dd8",
+        "spans": []
+      },
+      {
+        "block": "p1u3l2_distinguir_cero_en_reparto",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "c02e685b155bd6b94b9114a4f9dc369711e59f15f004fe89645538cf2e3ab303",
+        "spans": []
+      },
+      {
+        "block": "p1u3l2_distinguir_cero_en_reparto",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "8624b0b22906c637e537ab45dfc987064ddd68faf279b0d554b61062207a676c",
+        "spans": []
+      },
+      {
+        "block": "p1u3l2_revisar_reparto_bandejas",
+        "path": "/text",
+        "sourceSha256": "0fb14f3e55fe7875cc852ad412c7b0fa82da84eb3ff14a50fdb5771fd285c889",
+        "spans": []
+      },
+      {
+        "block": "p1u3l2_probar_otros_repartos",
+        "path": "/text",
+        "sourceSha256": "782b86a30b5be7b87795fa91279a8e52db19cad8efd25248825dce8b11bf451a",
+        "spans": [
+          {
+            "start": 103,
+            "end": 107,
+            "text": "24 6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 146,
+            "text": "Bandejas completas: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 159,
+            "text": "Sobrantes: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 230,
+            "end": 233,
+            "text": "3 6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 251,
+            "end": 272,
+            "text": "Bandejas completas: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 285,
+            "text": "Sobrantes: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 347,
+            "end": 350,
+            "text": "0 6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 368,
+            "end": 389,
+            "text": "Bandejas completas: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 390,
+            "end": 402,
+            "text": "Sobrantes: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 489,
+            "end": 493,
+            "text": "29 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 511,
+            "end": 532,
+            "text": "Bandejas completas: 7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 533,
+            "end": 545,
+            "text": "Sobrantes: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2508,5 +4626,72 @@
         "spans": []
       }
     ]
-  }
+  },
+  "compilerLocalIntChecks": [
+    {
+      "activity": "p1u3l2_reparar_conversion_minutos",
+      "probes": [
+        {
+          "variable": "total_minutos",
+          "replacement": 127,
+          "outputs": [
+            "2 h 7 min",
+            "2 h 7 min\n"
+          ]
+        },
+        {
+          "variable": "total_minutos",
+          "replacement": 0,
+          "outputs": [
+            "0 h 0 min",
+            "0 h 0 min\n"
+          ]
+        },
+        {
+          "variable": "total_minutos",
+          "replacement": 60,
+          "outputs": [
+            "1 h 0 min",
+            "1 h 0 min\n"
+          ]
+        },
+        {
+          "variable": "minutos_por_hora",
+          "replacement": 50,
+          "outputs": [
+            "2 h 37 min",
+            "2 h 37 min\n"
+          ]
+        }
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "p1u3l2_construir_informe_bandejas",
+      "requires": [
+        "p1u3l2_reparar_conversion_minutos"
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "p1u3l2_reparar_conversion_minutos",
+      "blocks": [
+        "block_0005_0000",
+        "block_0005_0001",
+        "p1u3l2_ejemplo_minutos",
+        "block_0005_0003"
+      ]
+    },
+    {
+      "activity": "p1u3l2_construir_informe_bandejas",
+      "blocks": [
+        "p1u3l2_revisar_reparto_bandejas",
+        "p1u3l2_ejemplo_bandejas",
+        "block_0005_0004",
+        "p1u3l2_probar_otros_repartos"
+      ]
+    }
+  ]
 }

@@ -6,11 +6,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Una condición puede proteger la que viene después"
+          "text": "Comprobar el divisor antes de dividir"
         },
         {
           "type": "paragraph",
-          "text": "Los operadores && y || tienen una regla de evaluación llamada cortocircuito. && evalúa primero su operando izquierdo; si es false, el resultado ya es false y no evalúa el derecho. || también evalúa primero el izquierdo; si es true, el resultado ya es true y no evalúa el derecho. Si ese primer resultado no decide la respuesta, sí se evalúa el segundo operando (Köppe et al., 2023)."
+          "text": "Imagina que quieres saber si puedes llenar al menos tres cajas con diecinueve piezas. Antes de dividir la cantidad de piezas entre la capacidad de cada caja, comprueba que esa capacidad sea positiva.\n\nEn el programa, capacidad > 0 está a la izquierda de &&. C++ evalúa primero esa comparación. Si da false, el resultado de toda la expresión ya es false y la comparación de la derecha se omite. A esa forma de omitir el segundo cálculo cuando la primera respuesta basta se le llama cortocircuito (Köppe et al., 2023)."
         },
         {
           "type": "code",
@@ -19,18 +19,18 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida es 0. La primera comparación es false; por eso la división no se evalúa. Con capacidad positiva, la segunda comparación sí se evalúa. La comprobación debe aparecer a la izquierda de && y la operación que depende de ella, a la derecha. Esta es una garantía concreta de esos operadores; la prioridad aritmética estudiada antes no garantiza por sí sola un orden general de evaluación (Köppe et al., 2023)."
+          "text": "En el ejemplo, la capacidad vale 0. Como capacidad > 0 da false, el programa omite piezas / capacidad >= 3. Guarda false en alcanza_tres y std::cout muestra 0.\n\nCon capacidad 6, la primera comparación resulta verdadera. Entonces se evalúa la de la derecha. La división entera da tres cajas completas y la comparación confirma que alcanzan el mínimo de tres. En ese caso se mostraría 1.\n\nAquí el orden de evaluación es parte de la regla de &&. La prioridad de los operadores indica cómo se agrupa una expresión. Para saber qué se calcula y cuándo, consulta también la regla de evaluación de cada operador (Köppe et al., 2023)."
         },
         {
           "type": "multiple_choice",
-          "question": "En A && B, A resulta false. ¿Qué ocurre con B?",
+          "question": "En A && B, A da false. ¿Qué ocurre con B?",
           "options": [
             "No se evalúa; el resultado completo ya es false.",
             "Se evalúa siempre para mostrar su valor.",
             "Se evalúa antes que A."
           ],
           "correctIndex": 0,
-          "explanation": "La conjunción se decide con el primer false y omite su operando derecho."
+          "explanation": "Con && las dos respuestas deben ser verdaderas. Una vez que A da false, el resultado ya es falso y se omite B."
         }
       ]
     },
@@ -38,36 +38,47 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Comprobar la precondición antes del resto"
+          "text": "Comprobar una condición antes del resto"
         },
         {
           "type": "paragraph",
-          "text": "Una precondición es un requisito que los datos deben cumplir antes de una operación (Stroustrup, 2024). Para repartir una cantidad no negativa, exigiremos capacidad positiva. La condición (capacidad > 0) && (cantidad % capacidad == 0) responde si la capacidad es válida y el reparto es exacto. Si capacidad es cero o negativa, el segundo operando se omite."
+          "text": "En este reparto se usan cantidades de fichas que pueden ser cero o positivas. La capacidad de un grupo debe ser mayor que cero. Un requisito que los datos deben cumplir antes de realizar una operación se llama precondición (Stroustrup, 2024).\n\nEn (capacidad > 0) && (cantidad % capacidad == 0), la comparación de la izquierda comprueba esa capacidad. Si la capacidad vale cero o es negativa, el resultado es false y se omite todo el lado derecho. Si es positiva, % calcula cuántas fichas sobran y la comparación con cero indica si el reparto es exacto (Köppe et al., 2023)."
         },
         {
           "type": "fill_code",
-          "question": "El modelo acepta únicamente divisores positivos. Completa el operador de comparación que protege el resto; escribe sólo ese operador.",
+          "question": "El reparto admite solo divisores positivos. Escribe un operador de comparación en el hueco para comprobar el divisor antes de calcular el resto.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 24;\n    const int divisor = 0;\n\n    const bool exacto_y_valido = (divisor ___ 0) && (cantidad % divisor == 0);\n\n    std::cout << exacto_y_valido;\n\n    return 0;\n}\n",
           "answers": [
             ">"
           ],
-          "explanation": "> admite sólo divisores positivos. Con divisor igual a 0, la primera condición es false y % no se evalúa."
+          "explanation": "> comprueba que el divisor sea mayor que cero. Como aquí el divisor vale 0, && omite el cálculo con % y la consola muestra 0."
         },
         {
           "type": "multiple_choice",
-          "question": "¿Qué orden permite comprobar el divisor antes de calcular el resto?",
+          "question": "El divisor podría valer cero. ¿Qué expresión comprueba el divisor antes de llegar al cálculo del resto?",
           "options": [
             "(cantidad % divisor == 0) && (divisor > 0)",
             "Ambos órdenes protegen por igual, porque && significa «y».",
             "(divisor > 0) && (cantidad % divisor == 0)"
           ],
           "correctIndex": 2,
-          "explanation": "Sólo la comprobación a la izquierda puede evitar que se evalúe el resto. El significado lógico no elimina esta dependencia de evaluación."
+          "explanation": "&& empieza por la expresión de la izquierda. Si comienza con divisor > 0 y el divisor vale 0, la comparación da false y el programa omite el cálculo con %."
         },
         {
           "type": "note",
-          "text": "No ejecutes una versión que haga el resto antes de comprobar un divisor igual a cero. Esa versión no ofrece una salida válida para comparar. El ejemplo correcto evita la operación, en lugar de confiar en lo que parezca suceder en un dispositivo."
+          "text": "El cálculo queda protegido mientras cantidad % divisor esté dentro de la expresión que puede omitirse. Si escribes int resto = cantidad % divisor; en una instrucción anterior, el resto se calcula antes de llegar a &&. La condición que viene después no puede evitarlo. Con divisor cero, % y / entre enteros no tienen un resultado definido por C++ (Köppe et al., 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Dónde puedes calcular y guardar el resto para evitar la operación cuando el divisor vale cero?",
+          "options": [
+            "Calcula cantidad % divisor antes del if y guarda el resto.",
+            "Calcula cantidad % divisor dentro del bloque de if (divisor > 0).",
+            "Calcula cantidad % divisor después del if, fuera de su bloque."
+          ],
+          "correctIndex": 1,
+          "explanation": "El bloque solo se ejecuta cuando divisor > 0 da true. Si calculas el resto en una instrucción anterior o posterior fuera del bloque, el if no protege esa instrucción."
         }
       ]
     },
@@ -75,36 +86,36 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Una alternativa puede reconocer el rechazo"
+          "text": "Omitir el cálculo cuando ya hace falta revisar"
         },
         {
           "type": "paragraph",
-          "text": "Con || también se puede proteger una operación. La condición (capacidad <= 0) || (cantidad % capacidad != 0) responde si la capacidad es inválida o si quedan sobrantes. Para una capacidad inválida, el primer operando ya es true y se omite el resto. Para una capacidad positiva, se comprueba la segunda pregunta (Köppe et al., 2023)."
+          "text": "También puedes empezar por buscar un motivo de rechazo. En (capacidad <= 0) || (cantidad % capacidad != 0), la comparación de la izquierda pregunta si la capacidad es inválida. Si da true, el programa marca el reparto para revisión y omite el lado derecho. Si da false, el programa calcula el resto y revisa si sobran fichas. Con ||, el segundo operando solo se evalúa si el primero da false (Köppe et al., 2023)."
         },
         {
           "type": "output_prediction",
-          "question": "Predice la salida de este detector de un reparto que requiere revisión.",
+          "question": "Hay veinticinco fichas y la capacidad vale cero. ¿Qué número muestra el programa?",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 0;\n\n    const bool requiere_revision = (capacidad <= 0) || (cantidad % capacidad != 0);\n\n    std::cout << requiere_revision;\n\n    return 0;\n}\n",
           "answers": [
             "1"
           ],
-          "explanation": "La capacidad no es positiva. El primer operando es true y || omite el cálculo del resto."
+          "explanation": "capacidad <= 0 da true. Con ||, esa primera respuesta basta y se omite el cálculo del resto. La consola muestra 1."
         },
         {
           "type": "multiple_choice",
-          "question": "En A || B, ¿cuándo hace falta evaluar B para conocer el resultado?",
+          "question": "En A || B, ¿con qué valor de A se evalúa también B?",
           "options": [
             "Cuando A es true.",
             "Cuando A es false.",
             "Nunca."
           ],
           "correctIndex": 1,
-          "explanation": "Si A es false, B todavía puede hacer verdadera la alternativa. Si A es true, el resultado ya está decidido."
+          "explanation": "Si A da false, B todavía puede hacer verdadera toda la expresión. Si A da true, C++ ya tiene el resultado y omite B."
         },
         {
           "type": "paragraph",
-          "text": "El aviso de revisión reúne dos motivos distintos. true no dice por sí solo si la capacidad era inválida o si había sobrantes. Cuando necesites mensajes diferentes, conserva las preguntas por separado y elige el recorrido que permita distinguirlas."
+          "text": "Con veinticinco fichas y una capacidad de cinco, la capacidad es válida y el resto vale cero. Los dos lados de || dan false, así que el reparto no requiere revisión. Con la misma cantidad y capacidad cuatro, queda una ficha suelta. En ese caso el segundo lado da true.\n\nCuando el resultado es true, puede indicar una capacidad inválida o un reparto válido con fichas sobrantes. Si necesitas dar un aviso diferente para cada caso, conserva ambas preguntas en el programa."
         }
       ]
     },
@@ -112,22 +123,22 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Laboratorio: dividir sólo después de validar"
+          "text": "Reparar la comprobación del resto"
         },
         {
           "type": "paragraph",
-          "text": "El programa utiliza `total` igual a veintiocho y `capacidad` igual a cuatro. La primera línea informa si la capacidad es positiva y el reparto exacto; la segunda muestra los grupos completos sólo con capacidad positiva. La condición evita evaluar el resto para una capacidad no positiva.\n\nEl objetivo de este editor es comprobar el caso inicial con «Compilar, ejecutar y comprobar», con salto final opcional. La actividad siguiente registra la interpretación del caso de capacidad cero antes de su editor específico."
+          "text": "El taller tiene veintiocho fichas y usa grupos de seis. El programa calcula cuatro grupos completos y sobran cuatro fichas. Debe mostrar 0 en el primer renglón porque el reparto no es exacto. El borrador muestra 1.\n\nCorrige la comparación que interpreta total % capacidad al calcular valido_y_exacto. Mantén capacidad > 0 a la izquierda de && y conserva las declaraciones de total y capacidad. La división que obtiene los grupos completos debe seguir dentro del if que comprueba la capacidad.\n\nSalida esperada\n0\nGrupos: 4\n\nPulsa «Compilar, ejecutar y comprobar». Puedes terminar con un salto de línea."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    const int capacidad = 4;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total = 28;\n    int capacidad = 6;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad != 0);\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
                 "standardInput": "",
                 "outputs": [
-                  "1\nGrupos: 7",
-                  "1\nGrupos: 7\n"
+                  "0\nGrupos: 4",
+                  "0\nGrupos: 4\n"
                 ]
               }
             ]
@@ -135,64 +146,18 @@
         },
         {
           "type": "multiple_choice",
-          "question": "Al cambiar únicamente capacidad a 0, ¿qué salida corresponde al programa?",
+          "question": "Imagina el programa reparado con capacidad igual a 0. ¿Qué dos renglones debe mostrar?",
           "options": [
             "0\nCapacidad invalida",
             "0\nGrupos: 0",
             "1\nCapacidad invalida"
           ],
           "correctIndex": 0,
-          "explanation": "&& omite % y produce false. El if también omite / y muestra el rechazo."
+          "explanation": "capacidad > 0 da false. && omite el cálculo del resto y la primera línea es 0. El if tampoco ejecuta su bloque y el else muestra Capacidad invalida."
         },
         {
           "type": "paragraph",
-          "text": "Con capacidad igual a 6, la capacidad es válida aunque el reparto no sea exacto: hay 4 grupos completos y 4 sobrantes. Con 0 o -1, el modelo rechaza la capacidad. Esos motivos son distintos aunque la primera línea tenga el mismo valor bool."
-        },
-        {
-          "type": "heading",
-          "text": "Validez y exactitud con distintas capacidades"
-        },
-        {
-          "type": "paragraph",
-          "text": "Este programa lee una capacidad por ejecución y conserva veintiocho fichas. Hay cuatro casos independientes que debes comprobar con «Compilar, ejecutar y comprobar». Cada salida contiene dos líneas:\n\nPrueba 1. Entrada `4` → `1` y `Grupos: 7`.\nPrueba 2. Entrada `0` → `0` y `Capacidad invalida`.\nPrueba 3. Entrada `-1` → `0` y `Capacidad invalida`.\nPrueba 4. Entrada `6` → `0` y `Grupos: 4`.\n\nAunque `0` y `-1` produzcan la misma salida, son dos entradas diferentes y deben comprobarse por separado. Conserva el código entre pruebas y cambia únicamente el valor de Entrada. La condición positiva debe seguir protegiendo las operaciones de reparto. Todos los datos de Entrada son enteros escritos válidamente; el salto al final de la segunda línea es opcional."
-        },
-        {
-          "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    int capacidad{0};\n\n    std::cin >> capacidad;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n",
-          "initialStandardInput": "4",
-          "outputCheck": {
-            "inputComparison": "tokens",
-            "cases": [
-              {
-                "standardInput": "4",
-                "outputs": [
-                  "1\nGrupos: 7",
-                  "1\nGrupos: 7\n"
-                ]
-              },
-              {
-                "standardInput": "0",
-                "outputs": [
-                  "0\nCapacidad invalida",
-                  "0\nCapacidad invalida\n"
-                ]
-              },
-              {
-                "standardInput": "-1",
-                "outputs": [
-                  "0\nCapacidad invalida",
-                  "0\nCapacidad invalida\n"
-                ]
-              },
-              {
-                "standardInput": "6",
-                "outputs": [
-                  "0\nGrupos: 4",
-                  "0\nGrupos: 4\n"
-                ]
-              }
-            ]
-          }
+          "text": "Si la capacidad vale 0, se omiten tanto el lado derecho de && como el bloque del if. La primera omisión evita calcular el resto. La segunda evita calcular el cociente.\n\nEl programa también rechaza la capacidad -1 y omite ambos cálculos. Aunque se pueda calcular el resto o el cociente de estos enteros con divisor negativo, una capacidad negativa no sirve para este reparto."
         }
       ]
     },
@@ -200,32 +165,32 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Elegir pruebas para una condición protectora"
+          "text": "Elegir capacidades que distingan resultados"
         },
         {
           "type": "multiple_choice",
-          "question": "Con total igual a 28, ¿qué plan observa capacidad negativa, cero, reparto exacto y reparto con sobrantes?",
+          "question": "Hay veintiocho fichas. ¿Qué conjunto de capacidades permite probar una negativa, cero, un reparto exacto y otro con sobrantes?",
           "options": [
             "Capacidades 4, 4, 4 y 4.",
             "Capacidades 4 y 7.",
             "Capacidades -1, 0, 4 y 6."
           ],
           "correctIndex": 2,
-          "explanation": "Los dos primeros valores prueban rechazo; 4 produce resto 0 y 6 produce resto 4. Cada caso responde una pregunta distinta."
+          "explanation": "Con -1 y 0, el programa rechaza la capacidad. Con 4, se forman siete grupos sin sobrantes. Con 6, se forman cuatro grupos y sobran cuatro fichas."
         },
         {
           "type": "output_prediction",
-          "question": "Recupera el resto y una condición compuesta con datos válidos. Escribe los dos valores mostrados.",
+          "question": "El programa reparte veintidós unidades en grupos de cinco. Escribe los dos números que aparecen en la consola, separados por un espacio.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    const int unidades = 22;\n    const int capacidad = 5;\n\n    const bool valido_y_exacto = (capacidad > 0) && (unidades % capacidad == 0);\n\n    std::cout << valido_y_exacto << \" \" << unidades % capacidad;\n\n    return 0;\n}\n",
           "answers": [
             "0 2"
           ],
-          "explanation": "El divisor es positivo y el resto se evalúa. El resto 2 hace falsa la pregunta sobre exactitud."
+          "explanation": "La capacidad es positiva y se calcula el resto. Sobran dos unidades. Como el resto no es cero, valido_y_exacto guarda false. La consola muestra 0 2."
         },
         {
           "type": "note",
-          "text": "Cambiar el orden de dos condiciones puede cambiar la seguridad del programa, aunque parezcan decir lo mismo con palabras. Una comprobación debe preceder a la operación que protege y decidir si ésta se evalúa."
+          "text": "En el editor de construcción de la página siguiente, usa veintiocho fichas y cambia solo la capacidad al comparar los resultados. Prueba cero y un valor negativo para comprobar el rechazo. Usa dos capacidades positivas que den restos distintos para comprobar la exactitud y el número de grupos."
         }
       ]
     },
@@ -233,26 +198,93 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Una respuesta false no explica todo el estado"
+          "text": "Distinguir rechazo y reparto con sobrantes"
         },
         {
           "type": "multiple_choice",
-          "question": "valido_y_exacto es false para (capacidad > 0) && (total % capacidad == 0). ¿Qué puedes concluir sin conocer los datos?",
+          "question": "La expresión (capacidad > 0) && (total % capacidad == 0) dio false. ¿Qué se puede concluir solo con ese resultado?",
           "options": [
             "No se cumplen juntos validez y exactitud; falta distinguir el motivo.",
             "El reparto es necesariamente válido y tiene sobrantes.",
             "La capacidad es necesariamente cero."
           ],
           "correctIndex": 0,
-          "explanation": "Puede ser una capacidad rechazada o un reparto válido con sobrantes. La conjunción no conserva cuál de sus requisitos falló."
+          "explanation": "Si capacidad > 0 dio false, se omitió el resto. Si dio true, el resto fue distinto de cero. El resultado false por sí solo no indica cuál ocurrió."
         },
         {
           "type": "paragraph",
-          "text": "Para explicar un resultado, vuelve a los datos y a la condición que lo produjo. Una respuesta bool comprime información: true o false es útil para elegir, pero puede reunir varios motivos. La siguiente lección organizará decisiones para producir mensajes diferentes y probar cada uno."
+          "text": "La primera línea resume dos comprobaciones en un valor lógico. Con 28 6, la capacidad es positiva y quedan cuatro fichas, por eso la primera línea es 0. Con 28 0, la primera línea también es 0, esta vez porque la capacidad fue rechazada. El segundo renglón indica si se pudo hacer el reparto."
         },
         {
           "type": "note",
-          "text": "Las garantías de cortocircuito utilizadas aquí corresponden a && y || con operandos bool (Köppe et al., 2023). Todos los cálculos ejecutados usan cantidades pequeñas, divisores positivos y resultados representables. Los datos rechazados no llegan a / ni a %."
+          "text": "En la siguiente lección organizarás decisiones para mostrar distintos mensajes cuando se incumplan requisitos distintos."
+        },
+        {
+          "type": "heading",
+          "text": "Construir un programa que decide antes de calcular"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lee dos enteros del campo «Entrada», en este orden.\n\nTotal de fichas. Recibirás un entero entre cero y ciento veinte.\nCapacidad por grupo. Recibirás un entero entre menos doce y doce.\n\nLos dos números ya están escritos como enteros válidos. El programa decide si la capacidad permite hacer el reparto. Con capacidad positiva, el programa calcula cuántos grupos completos puede llenar, aunque sean cero. Con cero o con una capacidad negativa, se omiten la división y el resto.\n\nMuestra dos renglones. En el primero, escribe 1 si la capacidad es positiva y el resto vale cero. En los demás casos, escribe 0. Usa && para que el resto se calcule solo con capacidad positiva.\n\nEn el segundo renglón, escribe Grupos: seguido de un espacio y el número de grupos completos si la capacidad es positiva. En caso contrario, escribe Capacidad invalida. Usa if para decidir si se calcula el cociente.\n\nEntrada\n28 0\n\nSalida esperada\n0\nCapacidad invalida\n\nAntes de ejecutar, revisa que con capacidad cero el programa omita los dos cálculos. Pulsa «Compilar, ejecutar y comprobar». Esta es la comprobación obligatoria. Puedes terminar con un salto de línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n",
+          "initialStandardInput": "28 0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "28 0",
+                "outputs": [
+                  "0\nCapacidad invalida",
+                  "0\nCapacidad invalida\n"
+                ]
+              },
+              {
+                "standardInput": "28 -1",
+                "outputs": [
+                  "0\nCapacidad invalida",
+                  "0\nCapacidad invalida\n"
+                ]
+              },
+              {
+                "standardInput": "28 4",
+                "outputs": [
+                  "1\nGrupos: 7",
+                  "1\nGrupos: 7\n"
+                ]
+              },
+              {
+                "standardInput": "28 6",
+                "outputs": [
+                  "0\nGrupos: 4",
+                  "0\nGrupos: 4\n"
+                ]
+              },
+              {
+                "standardInput": "0 4",
+                "outputs": [
+                  "1\nGrupos: 0",
+                  "1\nGrupos: 0\n"
+                ]
+              },
+              {
+                "standardInput": "1 4",
+                "outputs": [
+                  "0\nGrupos: 0",
+                  "0\nGrupos: 0\n"
+                ]
+              },
+              {
+                "standardInput": "120 12",
+                "outputs": [
+                  "1\nGrupos: 10",
+                  "1\nGrupos: 10\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -260,93 +292,41 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Comparación posterior del laboratorio"
+          "text": "Revisar qué cálculos se ejecutan"
         },
         {
           "type": "paragraph",
-          "text": "Con total 28 y capacidad 4, la salida es 1 y Grupos: 7 en dos líneas. Con capacidad 0 o -1 es 0 y Capacidad invalida. Con capacidad 6 es 0 y Grupos: 4. La referencia conserva la condición que comprueba positividad antes del resto y la rama que protege la división."
+          "text": "Con veintiocho fichas y capacidad seis, total % capacidad da cuatro. Como cuatro no es cero, valido_y_exacto guarda false. La capacidad positiva permite ejecutar la división y mostrar los cuatro grupos completos."
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    const int capacidad = 4;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int total = 28;\n    int capacidad = 6;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La protección exige dos condiciones distintas: ningún dato rechazado debe llegar a / ni a %, y una capacidad positiva permite mostrar grupos aunque el reparto no sea exacto. Tener cero grupos completos no basta para decidir si la capacidad es inválida: también puede haber menos fichas que plazas por grupo.\n\nLa práctica siguiente incluye un total de cero y mantiene los totales entre 0 y 120 y las capacidades positivas entre 1 y 12. Esos límites describen los datos de los experimentos; el programa no valida sus límites superiores.",
-          "emphasis": [
-            {
-              "text": "dos condiciones distintas"
-            },
-            {
-              "text": "cero grupos completos"
-            }
-          ]
+          "text": "Con capacidad positiva, comprueba que tanto un reparto exacto como uno con sobrantes muestran grupos. Una salida correcta para una capacidad positiva tampoco te dice qué haría el programa con cero. Revisa que el cálculo del resto siga a la derecha de la comprobación de capacidad y que la división permanezca dentro del bloque que exige una capacidad positiva."
         },
         {
           "type": "heading",
-          "text": "Distinguir cero fichas de una capacidad inválida"
+          "text": "Comparar los repartos con distintas entradas"
         },
         {
           "type": "paragraph",
-          "text": "Este editor lee dos enteros, en orden: total de fichas y capacidad de cada grupo. Conserva el programa y utiliza estas cuatro entradas; cada resultado ocupa dos líneas:\n\n0 4 → 1 y Grupos: 0\n1 4 → 0 y Grupos: 0\n28 6 → 0 y Grupos: 4\n120 12 → 1 y Grupos: 10\n\nLa primera línea informa si la capacidad es positiva y el reparto es exacto. La segunda muestra los grupos completos. Pulsa Compilar, ejecutar y comprobar para cada par; el salto después de la segunda línea es opcional. Compara especialmente las dos primeras entradas: ambas producen cero grupos, pero solo una tiene resto cero.",
-          "emphasis": [
-            {
-              "text": "total de fichas y capacidad de cada grupo"
-            },
-            {
-              "text": "Conserva el programa"
-            },
-            {
-              "text": "las dos primeras entradas"
-            }
-          ]
+          "text": "Con 0 4 y con 1 4 se forman cero grupos. En el primer caso no quedan fichas sueltas y el resto vale cero. En el segundo sobra una ficha. Por eso las primeras líneas de salida son distintas."
         },
         {
-          "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    int capacidad{0};\n\n    std::cin >> total >> capacidad;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n",
-          "initialStandardInput": "0 4",
-          "outputCheck": {
-            "inputComparison": "tokens",
-            "cases": [
-              {
-                "standardInput": "0 4",
-                "outputs": [
-                  "1\nGrupos: 0",
-                  "1\nGrupos: 0\n"
-                ],
-                "explanation": "La capacidad positiva permite evaluar el resto. Cero fichas dejan resto cero y forman cero grupos; un total cero no hace inválida la capacidad."
-              },
-              {
-                "standardInput": "1 4",
-                "outputs": [
-                  "0\nGrupos: 0",
-                  "0\nGrupos: 0\n"
-                ],
-                "explanation": "La capacidad es positiva, pero una ficha no completa un grupo de cuatro. El reparto no es exacto aunque haya cero grupos completos."
-              },
-              {
-                "standardInput": "28 6",
-                "outputs": [
-                  "0\nGrupos: 4",
-                  "0\nGrupos: 4\n"
-                ],
-                "explanation": "La capacidad positiva permite dividir. Se forman cuatro grupos completos y quedan fichas, por lo que la primera línea indica que el reparto no es exacto."
-              },
-              {
-                "standardInput": "120 12",
-                "outputs": [
-                  "1\nGrupos: 10",
-                  "1\nGrupos: 10\n"
-                ],
-                "explanation": "Ciento veinte fichas completan diez grupos de doce sin resto. La capacidad es positiva y el reparto es exacto."
-              }
-            ]
-          }
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 0;\n    int capacidad = 0;\n    std::cin >> total >> capacidad;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes probar estas entradas en el mismo editor.\n\nEntrada\n28 -1\n\nSalida esperada\n0\nCapacidad invalida\n\nEntrada\n28 4\n\nSalida esperada\n1\nGrupos: 7\n\nEntrada\n28 6\n\nSalida esperada\n0\nGrupos: 4\n\nEntrada\n0 4\n\nSalida esperada\n1\nGrupos: 0\n\nEntrada\n1 4\n\nSalida esperada\n0\nGrupos: 0\n\nEntrada\n120 12\n\nSalida esperada\n1\nGrupos: 10"
         },
         {
           "type": "note",
-          "text": "Cada editor comprueba el objetivo de su actividad mediante «Compilar, ejecutar y comprobar». Si una salida difiere, revisa la primera condición, operación o instrucción de salida que produce la diferencia y reintenta el mismo objetivo. La coincidencia de salida no sustituye revisar que el código exprese las reglas del problema."
+          "text": "Toma la regla y los datos de cada prueba como referencia al revisar el código. Con capacidad inválida, el programa debe llegar al mensaje de rechazo sin calcular el resto ni el cociente."
         }
       ]
     }
@@ -553,7 +533,8 @@
           "block_0001_0001",
           "block_0001_0002",
           "block_0001_0003",
-          "block_0001_0004"
+          "block_0001_0004",
+          "p1u3l6_guardar_resto"
         ]
       },
       {
@@ -571,12 +552,9 @@
         "blocks": [
           "block_0003_0000",
           "block_0003_0001",
-          "block_0003_0002",
+          "p1u3l6_reparar_resto",
           "block_0003_0003",
-          "block_0003_0004",
-          "block_0003_0005",
-          "block_0003_0006",
-          "block_0003_0007"
+          "block_0003_0004"
         ]
       },
       {
@@ -594,7 +572,10 @@
           "block_0005_0000",
           "block_0005_0001",
           "block_0005_0002",
-          "block_0005_0003"
+          "block_0005_0003",
+          "block_0003_0005",
+          "block_0003_0006",
+          "p1u3l6_construir_reparto"
         ]
       },
       {
@@ -602,11 +583,12 @@
         "blocks": [
           "block_0006_0000",
           "block_0006_0001",
-          "block_0006_0002",
+          "p1u3l6_ejemplo_resto",
           "block_0006_0003",
           "cero_y_totales_validos_titulo",
           "cero_y_totales_validos_consigna",
-          "cero_y_totales_validos_editor",
+          "p1u3l6_ejemplo_reparto",
+          "p1u3l6_probar_repartos",
           "block_0006_0004"
         ]
       }
@@ -1168,6 +1150,60 @@
           "block": 2
         },
         "progressPage": "page_0006"
+      },
+      {
+        "id": "p1u3l6_guardar_resto",
+        "sha256": "f0bb09c8f078ab8cf78d082e745364ec8a6000b08fd20b535dfaec264b67be41",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "p1u3l6_reparar_resto",
+        "sha256": "61eb6204930095991963b69c7a8189b8117e00cb0f8b6bdf7377ba7fb299c005",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "p1u3l6_construir_reparto",
+        "sha256": "8059ddacea098cb42ed8c14c499f50d84483ad4beaf4fdf0e89066ba26581fa5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "p1u3l6_ejemplo_resto",
+        "sha256": "c755640717ff795eeb7489521bce6ff61723e6d1fe131ebe9d4a0308cd602dc2",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "p1u3l6_ejemplo_reparto",
+        "sha256": "13dafac112ca19d6549351f765eabb90c405de71f81082ef1888a8526dd69675",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "p1u3l6_probar_repartos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0006"
       }
     ],
     "editorial": [
@@ -1245,6 +1281,176 @@
         "id": "cero_y_totales_validos_editor",
         "beforeSha256": "820cd9637ccc9e61dc24d7b9169798e25f882967393ff8a0be13123680c99155",
         "afterSha256": "99493e4ca4a0edf1232d1ac57fe3f318b094f2f01aa882539d89a8114bee6fa7"
+      },
+      {
+        "id": "block_0000_0000",
+        "beforeSha256": "4ea16151d7e60076730d0de10af63ded280f68a7801fc9e4942cb5e9f3c21a08",
+        "afterSha256": "3f3a9ac11fdf20db4a56dd69be6a5a0e5f5a5681d9d0c123cf06282047d5c80e"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "7105eee8043fd6ddb40f849bc80044e6b0d7d5a87bc19141af1b87aeb81c1064",
+        "afterSha256": "f6d5f2a94dacca731bd3aeb272fdcb4fd5a54eb2ed0ab5c6efd65010a80ec5c4"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "8ce85bb0498141d0a4aeb2dfe818bb8512240a7c628c3057febbd9d73876d7b2",
+        "afterSha256": "37b74258a76dad9647b813b7142d463cb899882f38d27f3189fd7ae386d26855"
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "0b083866937e104b3ff51bd564d31cec5972d63dc0c168b72d507f7236285738",
+        "afterSha256": "bb7c19d960967bd55d01f6a1ce2f8b5193b989eabaf39ee1bb5baeef1379d264"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "94f79ca134d0b11a1ff4b660f25b09552b33fd13175aed4e31278b3a506a93bb",
+        "afterSha256": "47fcd144cf0fef63aea099336ef58e5d237cca41f64aa259f116f0613a417acd"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "07a2519bee51ba02b50a1aee1ec32e716bf785b35e7a05314d06e2bbd1eacf94",
+        "afterSha256": "78822a72a787838d9883b267c9881a7a4f4db95c13249da2d3194ad9dacd70a8"
+      },
+      {
+        "id": "block_0002_0000",
+        "beforeSha256": "eb23c26f1d99693eeca60f728f29217068c0e7a5602ff12a408fcd71b4d96c74",
+        "afterSha256": "3a9186a9b44db813994c152220a6d88de257412110089f38a2ce762a8f2d892e"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "82bb8afcffcd97dd1b8968f500a208e320bb84fba9e33cebc5835f8ce011956c",
+        "afterSha256": "a65659f822466ba09ff1b39e1c958f57305ff0acef846368054b162d5be42220"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "315d74725d1d5eead6eb216d72c84c0a1dbab157db293cee08807af14370a6ea",
+        "afterSha256": "b36d03144b00ec3666aa489d302e64086e113d1b39e48bb57b40ce1783d5863f"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "f78af5d0b3db7284808544f567064cdde3a56f64e4e1b612e1e65f471b6c8ef7",
+        "afterSha256": "9e89fa2088530bb1ba766b1b580872c5fe04dd2c9cb2e1d5aaeb04ec758a2d93"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "4cc41c0322b23a50d3a417eb5f028fabb73f76c0242cba6c324b49c1e371b89a",
+        "afterSha256": "1234c55b76eba9ac7f6298ea70a10daab3761a5b79a03d033451f9062ac4ace2"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "595ad1d5a834dfa226fb7275192de0e907e4733ed69982453de0f7fa49ebb6c9",
+        "afterSha256": "55de534850817e1b2dd52287e277cd19a689e23735c36bf4d17be714475602bc"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "c61087ca60a6279df05a84cd173938bde4cf85c0e4d95ec13ab89c1855ddc852",
+        "afterSha256": "7d2093dd0bee6122f7b704d88e8ff671408e40951d47f5b7191cf5005f266379"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "10c4c7919351713b912164fcd3d40b6b04f9a766052de689910e09c88c186c84",
+        "afterSha256": "fad3637ecdbed1b929182e63dcc83050ca8a088f9f15cec1491c0b79dad913c5"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "0b56b1566f1459630002da86d046c6311e33257c424eb299da7b0bc7c6976bba",
+        "afterSha256": "7d8bd0d44933a38b005cbabbd1260d696f41f1079937c89062a9f0fc0149bfc7"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "d6655fd8fc236d18472462f0801307508b96f097e6c8c8466adb201bb301e8b0",
+        "afterSha256": "d43b00ed648f2db991a0d9ee89f82bb4e9bbd0b4b5e32bc46d7b574cbdefc5c1"
+      },
+      {
+        "id": "block_0005_0000",
+        "beforeSha256": "aca94e2aa031568f83a445fe3ee79727e51994d86f5e86154e16d2cdc7aa6586",
+        "afterSha256": "910166dfba383c8573c24da3343d51cd500036a0bd4f3243543eb8a0f9df2f4e"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "5ef6089d8351673ad15d5ed866962dd750192fca29c31281c79f596745e7f036",
+        "afterSha256": "1aa43e99fcf9818aa3bf4e1d4ce3d1e1495aa53f4a84d5aaaf3201c9003f9002"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "556144968172a0f16be27f0d56c759f4735c029ea7b3b099f13b338b33cf67ff",
+        "afterSha256": "726b0bd1f881da62bcf0b36935893ca6192e4b7a282b6e631a8cf24046c9968e"
+      },
+      {
+        "id": "block_0006_0000",
+        "beforeSha256": "d07323146661f59d187688a8b784a122eba0addf168f289cc3b5f6bf96d3595c",
+        "afterSha256": "f27adf5dceeaffddf16ff7fe76476223ad02654d044a11a375cef7a7ebb5fc1c"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "0ffaa90b90aa1af81d3e8c73ab85a3280c3639917d504f4086f833f155a474df",
+        "afterSha256": "ab991fd52c288ce96652572d9fb29584131f0b770c5625645c648434d7c906af"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "a698177a8cd78126d163ba6543be4c5e735a672320c696a4df2e5767ee4209ae",
+        "afterSha256": "acaa5338034947e885c6d01f841dcf27de32c5105098d805aab4e680e8655693"
+      },
+      {
+        "id": "cero_y_totales_validos_titulo",
+        "beforeSha256": "f32d66f1f41dea2a061e695c09d28e5377ad495e125999de578a168ba31dd78e",
+        "afterSha256": "f607f536843f1e9cfc3e0c642a4e8b47e8a70ca9c09f69741a030a31cbb9b7a3"
+      },
+      {
+        "id": "cero_y_totales_validos_consigna",
+        "beforeSha256": "31ad1b28d073f9a1f4b0c136cec5184b4ef917dab15bf4054cf61812d2a8f76a",
+        "afterSha256": "a5294a47f200dbfad79732353b3118a696efa07361d871e78981172bbc9a54ba"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "7e427954c88ffec7a1a00d73f66a14ccecf0407f917b9d0d174ffb8ddd737261",
+        "afterSha256": "0a8bcdd9d276d1d532ad81c58f5d5e41f8147f892661fc5e23a8901514ac2953"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "4350a381a4b8c8508c4032b1c3bea3be47a01149f774af1d6f7c11029b6371aa",
+        "afterSha256": "9c9fd057a4e59e2328da1ba7befa9ca3ee606bef4422f672c35033d8010676a4"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "e858a5f390eab71797cc35089f7b5be91b297537bcb11a9548873bf9a4f81a41",
+        "afterSha256": "ed00bbd3de26f5a7b4284a759457250bb0f1c868bbf5a755238f27222bc70226"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "81d428651ec0cc2a313c0503387ccb20b5fcf47370d52e763d314e5a26ab0287",
+        "afterSha256": "3fdd3df95b1d12dbe0bd3ae13fc2525a88c9a937750b68e4f76fa534ce27b138"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "815a5c45af4a73f984e2885fde0592300a6b07246c02fd0990a1069c8547c0d9",
+        "afterSha256": "8a8f708376f9e7ef552d62405b7cacb0c172055ada980ecbc933fbbeded33983"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "673752f53635c42220c7e5945590a4dcbf8df5d53dea19551c0a97dac15f4b29",
+        "afterSha256": "c2a3b5457b1cec86eb3885bc70324412bec70abc79ab9e465fec12d7816410e9"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "794b3c438a6c5ae56e83fb88ffe11b46c4b5bd4b95f25f333ca0b282a3931e0d",
+        "afterSha256": "d68a4cbf547c3e2039673847321dee6c59736d12499499df8b8d71db998d3856"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "cbc3a42eaa2f9c3019896c5f2c2fd6fa6d6c39ff1076aa1c8602ef8819d71339",
+        "afterSha256": "855b8c5e2c09e529f13997d833e864f45796d7da52876067112dc01278f0a1f9"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "5b28c7f7d9dd052d39c4e96155ea76185b399adb4ae9f576b4f7b27ddf1a2d4e",
+        "afterSha256": "1d189efdac0bfde4becb935b40d2c8cfdaf55e955932d54b9f0757c54d6a298d"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "4ad054b2c052e5212040f837618de806dfe13f69147cd358d7e4adc32bf6a640",
+        "afterSha256": "7deda8a4d78ffa8ab5e8d7d81616efcc5e520750f72f496d476296356fcd0081"
       }
     ],
     "sourceFormatRevisions": [
@@ -1407,6 +1613,2302 @@
           }
         }
       }
+    ],
+    "retired": [
+      {
+        "id": "block_0003_0002",
+        "page": "page_0003",
+        "next": "block_0003_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    const int capacidad = 4;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1\nGrupos: 7",
+                  "1\nGrupos: 7\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0003_0007",
+        "page": "page_0003",
+        "next": "",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    int capacidad{0};\n\n    std::cin >> capacidad;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n",
+          "initialStandardInput": "4",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4",
+                "outputs": [
+                  "1\nGrupos: 7",
+                  "1\nGrupos: 7\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0\nCapacidad invalida",
+                  "0\nCapacidad invalida\n"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "0\nCapacidad invalida",
+                  "0\nCapacidad invalida\n"
+                ]
+              },
+              {
+                "standardInput": "6",
+                "outputs": [
+                  "0\nGrupos: 4",
+                  "0\nGrupos: 4\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "page": "page_0006",
+        "next": "block_0006_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    const int capacidad = 4;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "cero_y_totales_validos_editor",
+        "page": "page_0006",
+        "next": "block_0006_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    int capacidad{0};\n\n    std::cin >> total >> capacidad;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n",
+          "initialStandardInput": "0 4",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 4",
+                "outputs": [
+                  "1\nGrupos: 0",
+                  "1\nGrupos: 0\n"
+                ],
+                "explanation": "La capacidad positiva permite evaluar el resto. Cero fichas dejan resto cero y forman cero grupos; un total cero no hace inválida la capacidad."
+              },
+              {
+                "standardInput": "1 4",
+                "outputs": [
+                  "0\nGrupos: 0",
+                  "0\nGrupos: 0\n"
+                ],
+                "explanation": "La capacidad es positiva, pero una ficha no completa un grupo de cuatro. El reparto no es exacto aunque haya cero grupos completos."
+              },
+              {
+                "standardInput": "28 6",
+                "outputs": [
+                  "0\nGrupos: 4",
+                  "0\nGrupos: 4\n"
+                ],
+                "explanation": "La capacidad positiva permite dividir. Se forman cuatro grupos completos y quedan fichas, por lo que la primera línea indica que el reparto no es exacto."
+              },
+              {
+                "standardInput": "120 12",
+                "outputs": [
+                  "1\nGrupos: 10",
+                  "1\nGrupos: 10\n"
+                ],
+                "explanation": "Ciento veinte fichas completan diez grupos de doce sin resto. La capacidad es positiva y el reparto es exacto."
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "retirementHistory": [
+      {
+        "retired": [
+          "block_0003_0002",
+          "block_0003_0007",
+          "block_0006_0002",
+          "cero_y_totales_validos_editor"
+        ],
+        "current": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              "block_0000_0000",
+              "block_0000_0001",
+              "block_0000_0002",
+              "block_0000_0003",
+              "block_0000_0004"
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              "block_0001_0000",
+              "block_0001_0001",
+              "block_0001_0002",
+              "block_0001_0003",
+              "block_0001_0004"
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              "block_0002_0000",
+              "block_0002_0001",
+              "block_0002_0002",
+              "block_0002_0003",
+              "block_0002_0004"
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              "block_0003_0000",
+              "block_0003_0001",
+              "block_0003_0002",
+              "block_0003_0003",
+              "block_0003_0004",
+              "block_0003_0005",
+              "block_0003_0006",
+              "block_0003_0007"
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              "block_0004_0000",
+              "block_0004_0001",
+              "block_0004_0002",
+              "block_0004_0003"
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              "block_0005_0000",
+              "block_0005_0001",
+              "block_0005_0002",
+              "block_0005_0003"
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              "block_0006_0000",
+              "block_0006_0001",
+              "block_0006_0002",
+              "block_0006_0003",
+              "cero_y_totales_validos_titulo",
+              "cero_y_totales_validos_consigna",
+              "cero_y_totales_validos_editor",
+              "block_0006_0004"
+            ]
+          }
+        ],
+        "pages": [
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Una condición puede proteger la que viene después"
+              },
+              {
+                "type": "paragraph",
+                "text": "Los operadores && y || tienen una regla de evaluación llamada cortocircuito. && evalúa primero su operando izquierdo; si es false, el resultado ya es false y no evalúa el derecho. || también evalúa primero el izquierdo; si es true, el resultado ya es true y no evalúa el derecho. Si ese primer resultado no decide la respuesta, sí se evalúa el segundo operando (Köppe et al., 2023)."
+              },
+              {
+                "type": "code",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int piezas = 19;\n    const int capacidad = 0;\n\n    const bool alcanza_tres = (capacidad > 0) && (piezas / capacidad >= 3);\n\n    std::cout << alcanza_tres;\n\n    return 0;\n}\n"
+              },
+              {
+                "type": "paragraph",
+                "text": "La salida es 0. La primera comparación es false; por eso la división no se evalúa. Con capacidad positiva, la segunda comparación sí se evalúa. La comprobación debe aparecer a la izquierda de && y la operación que depende de ella, a la derecha. Esta es una garantía concreta de esos operadores; la prioridad aritmética estudiada antes no garantiza por sí sola un orden general de evaluación (Köppe et al., 2023)."
+              },
+              {
+                "type": "multiple_choice",
+                "question": "En A && B, A resulta false. ¿Qué ocurre con B?",
+                "options": [
+                  "No se evalúa; el resultado completo ya es false.",
+                  "Se evalúa siempre para mostrar su valor.",
+                  "Se evalúa antes que A."
+                ],
+                "correctIndex": 0,
+                "explanation": "La conjunción se decide con el primer false y omite su operando derecho."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Comprobar la precondición antes del resto"
+              },
+              {
+                "type": "paragraph",
+                "text": "Una precondición es un requisito que los datos deben cumplir antes de una operación (Stroustrup, 2024). Para repartir una cantidad no negativa, exigiremos capacidad positiva. La condición (capacidad > 0) && (cantidad % capacidad == 0) responde si la capacidad es válida y el reparto es exacto. Si capacidad es cero o negativa, el segundo operando se omite."
+              },
+              {
+                "type": "fill_code",
+                "question": "El modelo acepta únicamente divisores positivos. Completa el operador de comparación que protege el resto; escribe sólo ese operador.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 24;\n    const int divisor = 0;\n\n    const bool exacto_y_valido = (divisor ___ 0) && (cantidad % divisor == 0);\n\n    std::cout << exacto_y_valido;\n\n    return 0;\n}\n",
+                "answers": [
+                  ">"
+                ],
+                "explanation": "> admite sólo divisores positivos. Con divisor igual a 0, la primera condición es false y % no se evalúa."
+              },
+              {
+                "type": "multiple_choice",
+                "question": "¿Qué orden permite comprobar el divisor antes de calcular el resto?",
+                "options": [
+                  "(cantidad % divisor == 0) && (divisor > 0)",
+                  "Ambos órdenes protegen por igual, porque && significa «y».",
+                  "(divisor > 0) && (cantidad % divisor == 0)"
+                ],
+                "correctIndex": 2,
+                "explanation": "Sólo la comprobación a la izquierda puede evitar que se evalúe el resto. El significado lógico no elimina esta dependencia de evaluación."
+              },
+              {
+                "type": "note",
+                "text": "No ejecutes una versión que haga el resto antes de comprobar un divisor igual a cero. Esa versión no ofrece una salida válida para comparar. El ejemplo correcto evita la operación, en lugar de confiar en lo que parezca suceder en un dispositivo."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Una alternativa puede reconocer el rechazo"
+              },
+              {
+                "type": "paragraph",
+                "text": "Con || también se puede proteger una operación. La condición (capacidad <= 0) || (cantidad % capacidad != 0) responde si la capacidad es inválida o si quedan sobrantes. Para una capacidad inválida, el primer operando ya es true y se omite el resto. Para una capacidad positiva, se comprueba la segunda pregunta (Köppe et al., 2023)."
+              },
+              {
+                "type": "output_prediction",
+                "question": "Predice la salida de este detector de un reparto que requiere revisión.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 0;\n\n    const bool requiere_revision = (capacidad <= 0) || (cantidad % capacidad != 0);\n\n    std::cout << requiere_revision;\n\n    return 0;\n}\n",
+                "answers": [
+                  "1"
+                ],
+                "explanation": "La capacidad no es positiva. El primer operando es true y || omite el cálculo del resto."
+              },
+              {
+                "type": "multiple_choice",
+                "question": "En A || B, ¿cuándo hace falta evaluar B para conocer el resultado?",
+                "options": [
+                  "Cuando A es true.",
+                  "Cuando A es false.",
+                  "Nunca."
+                ],
+                "correctIndex": 1,
+                "explanation": "Si A es false, B todavía puede hacer verdadera la alternativa. Si A es true, el resultado ya está decidido."
+              },
+              {
+                "type": "paragraph",
+                "text": "El aviso de revisión reúne dos motivos distintos. true no dice por sí solo si la capacidad era inválida o si había sobrantes. Cuando necesites mensajes diferentes, conserva las preguntas por separado y elige el recorrido que permita distinguirlas."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Laboratorio: dividir sólo después de validar"
+              },
+              {
+                "type": "paragraph",
+                "text": "El programa utiliza `total` igual a veintiocho y `capacidad` igual a cuatro. La primera línea informa si la capacidad es positiva y el reparto exacto; la segunda muestra los grupos completos sólo con capacidad positiva. La condición evita evaluar el resto para una capacidad no positiva.\n\nEl objetivo de este editor es comprobar el caso inicial con «Compilar, ejecutar y comprobar», con salto final opcional. La actividad siguiente registra la interpretación del caso de capacidad cero antes de su editor específico."
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    const int capacidad = 4;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n",
+                "outputCheck": {
+                  "cases": [
+                    {
+                      "standardInput": "",
+                      "outputs": [
+                        "1\nGrupos: 7",
+                        "1\nGrupos: 7\n"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "multiple_choice",
+                "question": "Al cambiar únicamente capacidad a 0, ¿qué salida corresponde al programa?",
+                "options": [
+                  "0\nCapacidad invalida",
+                  "0\nGrupos: 0",
+                  "1\nCapacidad invalida"
+                ],
+                "correctIndex": 0,
+                "explanation": "&& omite % y produce false. El if también omite / y muestra el rechazo."
+              },
+              {
+                "type": "paragraph",
+                "text": "Con capacidad igual a 6, la capacidad es válida aunque el reparto no sea exacto: hay 4 grupos completos y 4 sobrantes. Con 0 o -1, el modelo rechaza la capacidad. Esos motivos son distintos aunque la primera línea tenga el mismo valor bool."
+              },
+              {
+                "type": "heading",
+                "text": "Validez y exactitud con distintas capacidades"
+              },
+              {
+                "type": "paragraph",
+                "text": "Este programa lee una capacidad por ejecución y conserva veintiocho fichas. Hay cuatro casos independientes que debes comprobar con «Compilar, ejecutar y comprobar». Cada salida contiene dos líneas:\n\nPrueba 1. Entrada `4` → `1` y `Grupos: 7`.\nPrueba 2. Entrada `0` → `0` y `Capacidad invalida`.\nPrueba 3. Entrada `-1` → `0` y `Capacidad invalida`.\nPrueba 4. Entrada `6` → `0` y `Grupos: 4`.\n\nAunque `0` y `-1` produzcan la misma salida, son dos entradas diferentes y deben comprobarse por separado. Conserva el código entre pruebas y cambia únicamente el valor de Entrada. La condición positiva debe seguir protegiendo las operaciones de reparto. Todos los datos de Entrada son enteros escritos válidamente; el salto al final de la segunda línea es opcional."
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    int capacidad{0};\n\n    std::cin >> capacidad;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n",
+                "initialStandardInput": "4",
+                "outputCheck": {
+                  "inputComparison": "tokens",
+                  "cases": [
+                    {
+                      "standardInput": "4",
+                      "outputs": [
+                        "1\nGrupos: 7",
+                        "1\nGrupos: 7\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "0",
+                      "outputs": [
+                        "0\nCapacidad invalida",
+                        "0\nCapacidad invalida\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "-1",
+                      "outputs": [
+                        "0\nCapacidad invalida",
+                        "0\nCapacidad invalida\n"
+                      ]
+                    },
+                    {
+                      "standardInput": "6",
+                      "outputs": [
+                        "0\nGrupos: 4",
+                        "0\nGrupos: 4\n"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Elegir pruebas para una condición protectora"
+              },
+              {
+                "type": "multiple_choice",
+                "question": "Con total igual a 28, ¿qué plan observa capacidad negativa, cero, reparto exacto y reparto con sobrantes?",
+                "options": [
+                  "Capacidades 4, 4, 4 y 4.",
+                  "Capacidades 4 y 7.",
+                  "Capacidades -1, 0, 4 y 6."
+                ],
+                "correctIndex": 2,
+                "explanation": "Los dos primeros valores prueban rechazo; 4 produce resto 0 y 6 produce resto 4. Cada caso responde una pregunta distinta."
+              },
+              {
+                "type": "output_prediction",
+                "question": "Recupera el resto y una condición compuesta con datos válidos. Escribe los dos valores mostrados.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int unidades = 22;\n    const int capacidad = 5;\n\n    const bool valido_y_exacto = (capacidad > 0) && (unidades % capacidad == 0);\n\n    std::cout << valido_y_exacto << \" \" << unidades % capacidad;\n\n    return 0;\n}\n",
+                "answers": [
+                  "0 2"
+                ],
+                "explanation": "El divisor es positivo y el resto se evalúa. El resto 2 hace falsa la pregunta sobre exactitud."
+              },
+              {
+                "type": "note",
+                "text": "Cambiar el orden de dos condiciones puede cambiar la seguridad del programa, aunque parezcan decir lo mismo con palabras. Una comprobación debe preceder a la operación que protege y decidir si ésta se evalúa."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Una respuesta false no explica todo el estado"
+              },
+              {
+                "type": "multiple_choice",
+                "question": "valido_y_exacto es false para (capacidad > 0) && (total % capacidad == 0). ¿Qué puedes concluir sin conocer los datos?",
+                "options": [
+                  "No se cumplen juntos validez y exactitud; falta distinguir el motivo.",
+                  "El reparto es necesariamente válido y tiene sobrantes.",
+                  "La capacidad es necesariamente cero."
+                ],
+                "correctIndex": 0,
+                "explanation": "Puede ser una capacidad rechazada o un reparto válido con sobrantes. La conjunción no conserva cuál de sus requisitos falló."
+              },
+              {
+                "type": "paragraph",
+                "text": "Para explicar un resultado, vuelve a los datos y a la condición que lo produjo. Una respuesta bool comprime información: true o false es útil para elegir, pero puede reunir varios motivos. La siguiente lección organizará decisiones para producir mensajes diferentes y probar cada uno."
+              },
+              {
+                "type": "note",
+                "text": "Las garantías de cortocircuito utilizadas aquí corresponden a && y || con operandos bool (Köppe et al., 2023). Todos los cálculos ejecutados usan cantidades pequeñas, divisores positivos y resultados representables. Los datos rechazados no llegan a / ni a %."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Comparación posterior del laboratorio"
+              },
+              {
+                "type": "paragraph",
+                "text": "Con total 28 y capacidad 4, la salida es 1 y Grupos: 7 en dos líneas. Con capacidad 0 o -1 es 0 y Capacidad invalida. Con capacidad 6 es 0 y Grupos: 4. La referencia conserva la condición que comprueba positividad antes del resto y la rama que protege la división."
+              },
+              {
+                "type": "code",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    const int capacidad = 4;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n"
+              },
+              {
+                "type": "paragraph",
+                "text": "La protección exige dos condiciones distintas: ningún dato rechazado debe llegar a / ni a %, y una capacidad positiva permite mostrar grupos aunque el reparto no sea exacto. Tener cero grupos completos no basta para decidir si la capacidad es inválida: también puede haber menos fichas que plazas por grupo.\n\nLa práctica siguiente incluye un total de cero y mantiene los totales entre 0 y 120 y las capacidades positivas entre 1 y 12. Esos límites describen los datos de los experimentos; el programa no valida sus límites superiores.",
+                "emphasis": [
+                  {
+                    "text": "dos condiciones distintas"
+                  },
+                  {
+                    "text": "cero grupos completos"
+                  }
+                ]
+              },
+              {
+                "type": "heading",
+                "text": "Distinguir cero fichas de una capacidad inválida"
+              },
+              {
+                "type": "paragraph",
+                "text": "Este editor lee dos enteros, en orden: total de fichas y capacidad de cada grupo. Conserva el programa y utiliza estas cuatro entradas; cada resultado ocupa dos líneas:\n\n0 4 → 1 y Grupos: 0\n1 4 → 0 y Grupos: 0\n28 6 → 0 y Grupos: 4\n120 12 → 1 y Grupos: 10\n\nLa primera línea informa si la capacidad es positiva y el reparto es exacto. La segunda muestra los grupos completos. Pulsa Compilar, ejecutar y comprobar para cada par; el salto después de la segunda línea es opcional. Compara especialmente las dos primeras entradas: ambas producen cero grupos, pero solo una tiene resto cero.",
+                "emphasis": [
+                  {
+                    "text": "total de fichas y capacidad de cada grupo"
+                  },
+                  {
+                    "text": "Conserva el programa"
+                  },
+                  {
+                    "text": "las dos primeras entradas"
+                  }
+                ]
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    int capacidad{0};\n\n    std::cin >> total >> capacidad;\n\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n\n    std::cout << valido_y_exacto << \"\\n\";\n\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n\n    return 0;\n}\n",
+                "initialStandardInput": "0 4",
+                "outputCheck": {
+                  "inputComparison": "tokens",
+                  "cases": [
+                    {
+                      "standardInput": "0 4",
+                      "outputs": [
+                        "1\nGrupos: 0",
+                        "1\nGrupos: 0\n"
+                      ],
+                      "explanation": "La capacidad positiva permite evaluar el resto. Cero fichas dejan resto cero y forman cero grupos; un total cero no hace inválida la capacidad."
+                    },
+                    {
+                      "standardInput": "1 4",
+                      "outputs": [
+                        "0\nGrupos: 0",
+                        "0\nGrupos: 0\n"
+                      ],
+                      "explanation": "La capacidad es positiva, pero una ficha no completa un grupo de cuatro. El reparto no es exacto aunque haya cero grupos completos."
+                    },
+                    {
+                      "standardInput": "28 6",
+                      "outputs": [
+                        "0\nGrupos: 4",
+                        "0\nGrupos: 4\n"
+                      ],
+                      "explanation": "La capacidad positiva permite dividir. Se forman cuatro grupos completos y quedan fichas, por lo que la primera línea indica que el reparto no es exacto."
+                    },
+                    {
+                      "standardInput": "120 12",
+                      "outputs": [
+                        "1\nGrupos: 10",
+                        "1\nGrupos: 10\n"
+                      ],
+                      "explanation": "Ciento veinte fichas completan diez grupos de doce sin resto. La capacidad es positiva y el reparto es exacto."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "note",
+                "text": "Cada editor comprueba el objetivo de su actividad mediante «Compilar, ejecutar y comprobar». Si una salida difiere, revisa la primera condición, operación o instrucción de salida que produce la diferencia y reintenta el mismo objetivo. La coincidencia de salida no sustituye revisar que el código exprese las reglas del problema."
+              }
+            ]
+          }
+        ],
+        "compilerPuzzlesRequired": true,
+        "referenceAfter": [],
+        "activityAfter": [],
+        "textSemantics": {
+          "version": 1,
+          "fields": [
+            {
+              "block": "block_0000_0000",
+              "path": "/text",
+              "sourceSha256": "5c7a61e4bfaade3677f23a943b27b405bca9204f348ca49b95ff218da3f783bf",
+              "spans": []
+            },
+            {
+              "block": "block_0000_0001",
+              "path": "/text",
+              "sourceSha256": "fd4271f245cc6a7ef2e2b15ad2a17261f430915154ea83003f9e5edbad725654",
+              "spans": [
+                {
+                  "start": 15,
+                  "end": 17,
+                  "text": "&&",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 20,
+                  "end": 22,
+                  "text": "||",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 77,
+                  "end": 79,
+                  "text": "&&",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 124,
+                  "end": 129,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 150,
+                  "end": 155,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 180,
+                  "end": 182,
+                  "text": "||",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 226,
+                  "end": 230,
+                  "text": "true",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 251,
+                  "end": 255,
+                  "text": "true",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 361,
+                  "end": 381,
+                  "text": "(Köppe et al., 2023)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0003",
+              "path": "/text",
+              "sourceSha256": "4acd6da309cbc726c3cf8d247e69939e6a5016882aa659ccfce28bb9cf417d73",
+              "spans": [
+                {
+                  "start": 13,
+                  "end": 14,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 42,
+                  "end": 47,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 192,
+                  "end": 194,
+                  "text": "&&",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 391,
+                  "end": 411,
+                  "text": "(Köppe et al., 2023)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/question",
+              "sourceSha256": "3d19468549c0f750b0ffa454547ae251cd08d872de6ac8d8d44dee344b1b7016",
+              "spans": [
+                {
+                  "start": 3,
+                  "end": 9,
+                  "text": "A && B",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 11,
+                  "end": 12,
+                  "text": "A",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 21,
+                  "end": 26,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 44,
+                  "end": 45,
+                  "text": "B",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/explanation",
+              "sourceSha256": "44fde6002180a2e1b77a8038c694a417f290fdf8222e8b371dc2a0d8ef90c8a7",
+              "spans": [
+                {
+                  "start": 38,
+                  "end": 43,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/options/0",
+              "sourceSha256": "172e2e9e853eee1a6c8dd145d93b824783461725333d1815acd3054472191e68",
+              "spans": [
+                {
+                  "start": 42,
+                  "end": 47,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/options/1",
+              "sourceSha256": "4bcd79e7ba77cec1db7464785548eb24b89de2c599f347805a640923f9c30e2a",
+              "spans": []
+            },
+            {
+              "block": "block_0000_0004",
+              "path": "/options/2",
+              "sourceSha256": "e30ff7014a048de1efc67292969f1a74b852ae9f6df040404d727e3179368f19",
+              "spans": [
+                {
+                  "start": 20,
+                  "end": 21,
+                  "text": "A",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0000",
+              "path": "/text",
+              "sourceSha256": "436ce9e5b2a3a0cf4c0e26b9ed65422171e038fbde509e3551c82cc568176f74",
+              "spans": []
+            },
+            {
+              "block": "block_0001_0001",
+              "path": "/text",
+              "sourceSha256": "80c8aa4396c675a554575e26751cb3602ce9ff458190001109e6b90b76002320",
+              "spans": [
+                {
+                  "start": 84,
+                  "end": 102,
+                  "text": "(Stroustrup, 2024)",
+                  "role": "citation",
+                  "reading": "natural"
+                },
+                {
+                  "start": 188,
+                  "end": 234,
+                  "text": "(capacidad > 0) && (cantidad % capacidad == 0)",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 297,
+                  "end": 306,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 310,
+                  "end": 314,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0002",
+              "path": "/question",
+              "sourceSha256": "ca103275cbbd0bdc522a9cfa50816eb3ca663e47f0419143ad95598d29779c75",
+              "spans": []
+            },
+            {
+              "block": "block_0001_0002",
+              "path": "/explanation",
+              "sourceSha256": "3e0da6deb0656bbe3b2f9cf27a7756d4a312ba9cd4a7ee0bc83558730e3136aa",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 1,
+                  "text": ">",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 39,
+                  "end": 46,
+                  "text": "divisor",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 55,
+                  "end": 56,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 82,
+                  "end": 87,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 90,
+                  "end": 91,
+                  "text": "%",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/question",
+              "sourceSha256": "30743232106f37945ae326111d15c860169f9159a77f5050e8cab9dd4e3cbf8e",
+              "spans": []
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/explanation",
+              "sourceSha256": "46d21bbd73876b0fa49fbe9b0e6afa2f5e7ab43955b0f8d9f07a192ff585293d",
+              "spans": []
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/options/0",
+              "sourceSha256": "59d3cc263b9e8f006403a464bfc85e147d1b8c8d827704f2013b2ffb7dfc1537",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 42,
+                  "text": "(cantidad % divisor == 0) && (divisor > 0)",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/options/1",
+              "sourceSha256": "2f75347cfa423ed6c5d2082523ce77b6a3cbd12d9f2fa69e153f3f5a7e8b4912",
+              "spans": [
+                {
+                  "start": 41,
+                  "end": 43,
+                  "text": "&&",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0003",
+              "path": "/options/2",
+              "sourceSha256": "2a412d9a94791c6cac157f449551d6c09023a0847e2421c06f9b386ef8850de4",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 42,
+                  "text": "(divisor > 0) && (cantidad % divisor == 0)",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0001_0004",
+              "path": "/text",
+              "sourceSha256": "ccf4e0a474d91f656cf63663247fac46f3db0b86c3986f15e50a01445ec9a185",
+              "spans": [
+                {
+                  "start": 80,
+                  "end": 84,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0000",
+              "path": "/text",
+              "sourceSha256": "66b0a5c73da3ada76e75ed129b85ec5e5337d8ef3b58ce033cc78bd8874b9f17",
+              "spans": []
+            },
+            {
+              "block": "block_0002_0001",
+              "path": "/text",
+              "sourceSha256": "7a4ed529b415101aed0855c2c7ac6c34403fed3c24e5a2134742e2bec8e626d6",
+              "spans": [
+                {
+                  "start": 4,
+                  "end": 6,
+                  "text": "||",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 61,
+                  "end": 108,
+                  "text": "(capacidad <= 0) || (cantidad % capacidad != 0)",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 223,
+                  "end": 227,
+                  "text": "true",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 311,
+                  "end": 331,
+                  "text": "(Köppe et al., 2023)",
+                  "role": "citation",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0002",
+              "path": "/question",
+              "sourceSha256": "e60b44ef47a65a875d9330eeedbcdc608c3844ddd1efe5189ddf1064b048db33",
+              "spans": []
+            },
+            {
+              "block": "block_0002_0002",
+              "path": "/explanation",
+              "sourceSha256": "ad687e9869e4d5ea3f18936bb9602b93a7a6ff30c233b30a9b5ba94a86deed08",
+              "spans": [
+                {
+                  "start": 51,
+                  "end": 55,
+                  "text": "true",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 58,
+                  "end": 60,
+                  "text": "||",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0003",
+              "path": "/question",
+              "sourceSha256": "c09c6651c15f00a80ef4548986bb1e42d4f005f0fae1b4158e2db0089a51713b",
+              "spans": [
+                {
+                  "start": 3,
+                  "end": 9,
+                  "text": "A || B",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 38,
+                  "end": 39,
+                  "text": "B",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0003",
+              "path": "/explanation",
+              "sourceSha256": "658084056a9e590ff1d64a198d3fc2723a56a71a86f7c5279eb5ea8baf839f01",
+              "spans": [
+                {
+                  "start": 3,
+                  "end": 4,
+                  "text": "A",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 8,
+                  "end": 13,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 15,
+                  "end": 16,
+                  "text": "B",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 66,
+                  "end": 67,
+                  "text": "A",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 71,
+                  "end": 75,
+                  "text": "true",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0003",
+              "path": "/options/0",
+              "sourceSha256": "254350293bb98f946429d5bd6bd4eaee9af2d1c2b532d5fb4aa818b2f5d2aeab",
+              "spans": [
+                {
+                  "start": 7,
+                  "end": 8,
+                  "text": "A",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 12,
+                  "end": 16,
+                  "text": "true",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0003",
+              "path": "/options/1",
+              "sourceSha256": "6c1e159a8fd0b2d922460ec9b555e0d2ae8fb3e1133dd983c6bc4e0ed1b7ceb1",
+              "spans": [
+                {
+                  "start": 7,
+                  "end": 8,
+                  "text": "A",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 12,
+                  "end": 17,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0002_0003",
+              "path": "/options/2",
+              "sourceSha256": "4de0d70364e7d105fccdce85c22db7f985e8c4c2cef0e80948b7bf418f8f17a3",
+              "spans": []
+            },
+            {
+              "block": "block_0002_0004",
+              "path": "/text",
+              "sourceSha256": "33c387203fe6a3433c658cc10b588e7d602d9f4c8da643ecef9963d8b3a668ca",
+              "spans": [
+                {
+                  "start": 27,
+                  "end": 30,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 50,
+                  "end": 54,
+                  "text": "true",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0000",
+              "path": "/text",
+              "sourceSha256": "542f313c47155999aab9e84d4211af8300fa2b0ba5235a8d7e9c3bed837e8b64",
+              "spans": []
+            },
+            {
+              "block": "block_0003_0001",
+              "path": "/text",
+              "sourceSha256": "c22268c304929007ce009dc0d464094ffdcc2518a3c111dbc33533daa236c0e4",
+              "spans": [
+                {
+                  "start": 21,
+                  "end": 26,
+                  "text": "total",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 36,
+                  "end": 46,
+                  "text": "veintiocho",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 50,
+                  "end": 59,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 69,
+                  "end": 75,
+                  "text": "cuatro",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 481,
+                  "end": 485,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0003",
+              "path": "/question",
+              "sourceSha256": "aaf9d8283e8e949233d7379b82fa3c454f88ef525f7d10fa09cb1e14800e9113",
+              "spans": [
+                {
+                  "start": 22,
+                  "end": 31,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 34,
+                  "end": 35,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0003",
+              "path": "/explanation",
+              "sourceSha256": "07a0754606b779d2fbf99f0611702db66871d83dac1585d3fb03593be7337c31",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 2,
+                  "text": "&&",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 9,
+                  "end": 10,
+                  "text": "%",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 21,
+                  "end": 26,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 31,
+                  "end": 33,
+                  "text": "if",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 48,
+                  "end": 49,
+                  "text": "/",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0003",
+              "path": "/options/0",
+              "sourceSha256": "ed955cb6a96caa41493d577d2059da32e2797b73e46491ee87a788a69cc83e92",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 20,
+                  "text": "0\nCapacidad invalida",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0003",
+              "path": "/options/1",
+              "sourceSha256": "5038560cea534c0c518e2c2a8eb0f16178a2c6e22c58e47e5bf1cef02b0d7a8c",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 11,
+                  "text": "0\nGrupos: 0",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0003",
+              "path": "/options/2",
+              "sourceSha256": "a0e67810ca7710312fbef0dd09caa9b5ddb93eabec102bfb78b2522510402405",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 20,
+                  "text": "1\nCapacidad invalida",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0004",
+              "path": "/text",
+              "sourceSha256": "8b14bb8a5d9fb20e1fd78949d17afddb1f07fc9c46cc1a6f6f9e07b94a065483",
+              "spans": [
+                {
+                  "start": 4,
+                  "end": 13,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 22,
+                  "end": 23,
+                  "text": "6",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 85,
+                  "end": 86,
+                  "text": "4",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 106,
+                  "end": 107,
+                  "text": "4",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 123,
+                  "end": 124,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 127,
+                  "end": 129,
+                  "text": "-1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 235,
+                  "end": 239,
+                  "text": "bool",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0003_0005",
+              "path": "/text",
+              "sourceSha256": "5d55bfcb8b997d9661e38529b00ac7145592d9b8b4cfed1cc549d46c0111df5e",
+              "spans": []
+            },
+            {
+              "block": "block_0003_0006",
+              "path": "/text",
+              "sourceSha256": "64079794fe083d8c5807fed2283490acf9c2f233fdde88ab7c7fe01d0619d44a",
+              "spans": [
+                {
+                  "start": 57,
+                  "end": 67,
+                  "text": "veintiocho",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 80,
+                  "end": 92,
+                  "text": "cuatro casos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 187,
+                  "end": 197,
+                  "text": "dos líneas",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 219,
+                  "end": 220,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 225,
+                  "end": 226,
+                  "text": "1",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 231,
+                  "end": 240,
+                  "text": "Grupos: 7",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 262,
+                  "end": 263,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 268,
+                  "end": 269,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 274,
+                  "end": 292,
+                  "text": "Capacidad invalida",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 314,
+                  "end": 316,
+                  "text": "-1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 321,
+                  "end": 322,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 327,
+                  "end": 345,
+                  "text": "Capacidad invalida",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 367,
+                  "end": 368,
+                  "text": "6",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 373,
+                  "end": 374,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 379,
+                  "end": 388,
+                  "text": "Grupos: 4",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 400,
+                  "end": 401,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 406,
+                  "end": 408,
+                  "text": "-1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 441,
+                  "end": 453,
+                  "text": "dos entradas",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0000",
+              "path": "/text",
+              "sourceSha256": "c99bd735a23cc1891f28864c0668662a7fb4e56fe9ce4ba1db159fccd08e3c1f",
+              "spans": []
+            },
+            {
+              "block": "block_0004_0001",
+              "path": "/question",
+              "sourceSha256": "1f265bf1d693eebb5ae4af24ed558898c622b875a54228fe24123dd4559335b4",
+              "spans": [
+                {
+                  "start": 4,
+                  "end": 9,
+                  "text": "total",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 18,
+                  "end": 20,
+                  "text": "28",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 60,
+                  "end": 64,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0001",
+              "path": "/explanation",
+              "sourceSha256": "46abd37f24010f76252efae73b7d0d042385177d6fb39e254680c0f41d953b97",
+              "spans": [
+                {
+                  "start": 4,
+                  "end": 7,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 42,
+                  "end": 43,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 58,
+                  "end": 59,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 62,
+                  "end": 63,
+                  "text": "6",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 78,
+                  "end": 79,
+                  "text": "4",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0001",
+              "path": "/options/0",
+              "sourceSha256": "453ec5f00601ded58f2f8c484c10774367794a0bb6f0887e213047fc876206be",
+              "spans": [
+                {
+                  "start": 12,
+                  "end": 13,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 15,
+                  "end": 16,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 18,
+                  "end": 19,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 22,
+                  "end": 23,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0001",
+              "path": "/options/1",
+              "sourceSha256": "e5d8f2e49142aec8dbdf46967e24a82aa42295e32f8cfd2f7e112b1eeb80021c",
+              "spans": [
+                {
+                  "start": 12,
+                  "end": 13,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 16,
+                  "end": 17,
+                  "text": "7",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0001",
+              "path": "/options/2",
+              "sourceSha256": "962903f7846465886a348122f0ecb90156e59d6b7eb34716812cbb7ba9520766",
+              "spans": [
+                {
+                  "start": 12,
+                  "end": 14,
+                  "text": "-1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 16,
+                  "end": 17,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 19,
+                  "end": 20,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 23,
+                  "end": 24,
+                  "text": "6",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/question",
+              "sourceSha256": "fd3c51ff1bb0ea3fe769004fbb9cc8e0428e414349be7678437715a32b384646",
+              "spans": [
+                {
+                  "start": 75,
+                  "end": 78,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0002",
+              "path": "/explanation",
+              "sourceSha256": "8fe734f9b1144e03c00c127bb44ec531639e037bf08a1d10862c0c301024c4e1",
+              "spans": [
+                {
+                  "start": 54,
+                  "end": 55,
+                  "text": "2",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0004_0003",
+              "path": "/text",
+              "sourceSha256": "4c61c6e755f92b1e40291243a7efac486adda77c6e53b8c51ffaa427068241b1",
+              "spans": [
+                {
+                  "start": 20,
+                  "end": 23,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0000",
+              "path": "/text",
+              "sourceSha256": "8d2c7dc3a9977b932fb731461de83f805575c89eb8c2756b42e8e96ea0360589",
+              "spans": [
+                {
+                  "start": 14,
+                  "end": 19,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0001",
+              "path": "/question",
+              "sourceSha256": "604b00c0cf98105149e16c0336f7f596c7e6cb8326b8efd7bd9cf75c51892c99",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 15,
+                  "text": "valido_y_exacto",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 19,
+                  "end": 24,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 30,
+                  "end": 73,
+                  "text": "(capacidad > 0) && (total % capacidad == 0)",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0001",
+              "path": "/explanation",
+              "sourceSha256": "15ffbc870d3514b88b828c094aea37349860e340dc46317b0e66722b0323b3d9",
+              "spans": []
+            },
+            {
+              "block": "block_0005_0001",
+              "path": "/options/0",
+              "sourceSha256": "1e30b1b0ac458f9c16cd8720caa935c1ca52a2d0850463275196bd3038845b44",
+              "spans": []
+            },
+            {
+              "block": "block_0005_0001",
+              "path": "/options/1",
+              "sourceSha256": "c2d824248e92288d2b4a18e92b314a4660493108ffc2a6244fb7ecd488c2d3c5",
+              "spans": []
+            },
+            {
+              "block": "block_0005_0001",
+              "path": "/options/2",
+              "sourceSha256": "c8486d95431c0a9e57960fdfecf50151de94d9c9ecde74074c2db12d785e32d5",
+              "spans": [
+                {
+                  "start": 31,
+                  "end": 35,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0002",
+              "path": "/text",
+              "sourceSha256": "6f3fadb07ebc03a9bcf365c23df70404847692179d1ec7c461782648d04adb33",
+              "spans": [
+                {
+                  "start": 94,
+                  "end": 98,
+                  "text": "bool",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 121,
+                  "end": 125,
+                  "text": "true",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 128,
+                  "end": 133,
+                  "text": "false",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0005_0003",
+              "path": "/text",
+              "sourceSha256": "00ce26ae2d38eacba817985d519d7d99d406bcfd792133268a32466e06d3033b",
+              "spans": [
+                {
+                  "start": 62,
+                  "end": 64,
+                  "text": "&&",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 67,
+                  "end": 69,
+                  "text": "||",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 84,
+                  "end": 88,
+                  "text": "bool",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 89,
+                  "end": 109,
+                  "text": "(Köppe et al., 2023)",
+                  "role": "citation",
+                  "reading": "natural"
+                },
+                {
+                  "start": 249,
+                  "end": 250,
+                  "text": "/",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 256,
+                  "end": 257,
+                  "text": "%",
+                  "role": "cpp",
+                  "reading": "technical"
+                }
+              ]
+            },
+            {
+              "block": "block_0006_0000",
+              "path": "/text",
+              "sourceSha256": "be5f890565fec1e4f2830714dacc70848a1edf901992075289cecbbe164c273e",
+              "spans": []
+            },
+            {
+              "block": "block_0006_0001",
+              "path": "/text",
+              "sourceSha256": "d483c6e194a1b0dcc71e56e2e6a42f550f191765a60a22ad378a091bffc2e97c",
+              "spans": [
+                {
+                  "start": 4,
+                  "end": 9,
+                  "text": "total",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 10,
+                  "end": 12,
+                  "text": "28",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 15,
+                  "end": 24,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 25,
+                  "end": 26,
+                  "text": "4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 41,
+                  "end": 42,
+                  "text": "1",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 45,
+                  "end": 54,
+                  "text": "Grupos: 7",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 58,
+                  "end": 61,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 74,
+                  "end": 83,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 84,
+                  "end": 85,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 88,
+                  "end": 90,
+                  "text": "-1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 94,
+                  "end": 95,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 98,
+                  "end": 116,
+                  "text": "Capacidad invalida",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 122,
+                  "end": 131,
+                  "text": "capacidad",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 132,
+                  "end": 133,
+                  "text": "6",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 137,
+                  "end": 138,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 141,
+                  "end": 150,
+                  "text": "Grupos: 4",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0006_0003",
+              "path": "/text",
+              "sourceSha256": "5ee8f2cee38e1547b816414306e745408208826633c907ca466015b5b80f2ee8",
+              "spans": [
+                {
+                  "start": 20,
+                  "end": 23,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 83,
+                  "end": 84,
+                  "text": "/",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 90,
+                  "end": 91,
+                  "text": "%",
+                  "role": "cpp",
+                  "reading": "technical"
+                },
+                {
+                  "start": 180,
+                  "end": 184,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 351,
+                  "end": 355,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 385,
+                  "end": 386,
+                  "text": "0",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 389,
+                  "end": 392,
+                  "text": "120",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 427,
+                  "end": 428,
+                  "text": "1",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 431,
+                  "end": 433,
+                  "text": "12",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "cero_y_totales_validos_titulo",
+              "path": "/text",
+              "sourceSha256": "09a2c96d456469933f1e9e5ebad66ccdbcaa9ceecf596a18dbeef7203d5aeefd",
+              "spans": [
+                {
+                  "start": 11,
+                  "end": 15,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "cero_y_totales_validos_consigna",
+              "path": "/text",
+              "sourceSha256": "a244cfe461919466d0498c6a3b31e8934ec750f60b17012fd7d41eb05f5b537e",
+              "spans": [
+                {
+                  "start": 16,
+                  "end": 19,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 119,
+                  "end": 125,
+                  "text": "cuatro",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 157,
+                  "end": 160,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 170,
+                  "end": 173,
+                  "text": "0 4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 176,
+                  "end": 177,
+                  "text": "1",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 180,
+                  "end": 189,
+                  "text": "Grupos: 0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 190,
+                  "end": 193,
+                  "text": "1 4",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 196,
+                  "end": 197,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 200,
+                  "end": 209,
+                  "text": "Grupos: 0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 210,
+                  "end": 214,
+                  "text": "28 6",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 217,
+                  "end": 218,
+                  "text": "0",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 221,
+                  "end": 230,
+                  "text": "Grupos: 4",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 231,
+                  "end": 237,
+                  "text": "120 12",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 240,
+                  "end": 241,
+                  "text": "1",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 244,
+                  "end": 254,
+                  "text": "Grupos: 10",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 502,
+                  "end": 505,
+                  "text": "dos",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 540,
+                  "end": 544,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 563,
+                  "end": 566,
+                  "text": "una",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 579,
+                  "end": 583,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "cero_y_totales_validos_editor",
+              "path": "/outputCheck/cases/0/explanation",
+              "sourceSha256": "faa1aca87944d62176d1d2557e348284edbfa5c33b11d798c5f5f58c27f69bfc",
+              "spans": [
+                {
+                  "start": 48,
+                  "end": 52,
+                  "text": "Cero",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 72,
+                  "end": 76,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 86,
+                  "end": 90,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 108,
+                  "end": 112,
+                  "text": "cero",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "cero_y_totales_validos_editor",
+              "path": "/outputCheck/cases/1/explanation",
+              "sourceSha256": "e3df21bb039e638d1b56f36ec963f3e337c6d126591436eff36b234a20b6398e",
+              "spans": [
+                {
+                  "start": 31,
+                  "end": 40,
+                  "text": "una ficha",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 65,
+                  "end": 71,
+                  "text": "cuatro",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 109,
+                  "end": 113,
+                  "text": "cero",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "cero_y_totales_validos_editor",
+              "path": "/outputCheck/cases/2/explanation",
+              "sourceSha256": "77fae97698530fa3e37cc1ba4fd39bc51a26418f856da375da5b1b473d1a36ca",
+              "spans": [
+                {
+                  "start": 49,
+                  "end": 55,
+                  "text": "cuatro",
+                  "role": "output",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "cero_y_totales_validos_editor",
+              "path": "/outputCheck/cases/3/explanation",
+              "sourceSha256": "da5b5327bcee0016cd545cf3cd5399a395b7adb4d2da08d9cfa9e5bf33724f6b",
+              "spans": [
+                {
+                  "start": 0,
+                  "end": 13,
+                  "text": "Ciento veinte",
+                  "role": "data",
+                  "reading": "natural"
+                },
+                {
+                  "start": 31,
+                  "end": 35,
+                  "text": "diez",
+                  "role": "output",
+                  "reading": "natural"
+                },
+                {
+                  "start": 46,
+                  "end": 50,
+                  "text": "doce",
+                  "role": "data",
+                  "reading": "natural"
+                }
+              ]
+            },
+            {
+              "block": "block_0006_0004",
+              "path": "/text",
+              "sourceSha256": "ce8e2b7738e1c6747191e1454403fc7130c41f699814cb402494c143603b49e9",
+              "spans": []
+            }
+          ],
+          "rootFields": [
+            {
+              "path": "/title",
+              "sourceSha256": "4dfe25a911c36c8659bdb5ad7c9311bbe6ad9fb4ef729c37eafcd32c8dd7b44f",
+              "spans": []
+            }
+          ]
+        },
+        "editorialPrefix": {
+          "count": 15,
+          "sha256": "40535b2a2bbba2955cab7acf5cfd81ab08d0f710c30e04975bb4156654cac6cb"
+        }
+      }
     ]
   },
   "compilerPuzzlesRequired": true,
@@ -1416,73 +3918,45 @@
       {
         "block": "block_0000_0000",
         "path": "/text",
-        "sourceSha256": "5c7a61e4bfaade3677f23a943b27b405bca9204f348ca49b95ff218da3f783bf",
+        "sourceSha256": "74da24e17fb24a4cdc826c652c14574333803985d44dda9aa830fdca5726bb5c",
         "spans": []
       },
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "fd4271f245cc6a7ef2e2b15ad2a17261f430915154ea83003f9e5edbad725654",
+        "sourceSha256": "017005ea484abf222f0d8338d9b576ecd3461cdcaf991ad94192a14ab414f91a",
         "spans": [
           {
-            "start": 15,
-            "end": 17,
-            "text": "&&",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 20,
-            "end": 22,
-            "text": "||",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 77,
-            "end": 79,
-            "text": "&&",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 124,
-            "end": 129,
-            "text": "false",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 150,
-            "end": 155,
-            "text": "false",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 180,
-            "end": 182,
-            "text": "||",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 226,
+            "start": 217,
             "end": 230,
-            "text": "true",
-            "role": "output",
-            "reading": "natural"
+            "text": "capacidad > 0",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 251,
-            "end": 255,
-            "text": "true",
-            "role": "output",
-            "reading": "natural"
+            "start": 254,
+            "end": 256,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 361,
-            "end": 381,
+            "start": 300,
+            "end": 305,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 347,
+            "end": 352,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 495,
+            "end": 515,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1492,32 +3966,88 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "4acd6da309cbc726c3cf8d247e69939e6a5016882aa659ccfce28bb9cf417d73",
+        "sourceSha256": "436e66a4abd7d4bf4612443c1d18d274f886af876d4d2da9a5704d9e0246c41b",
         "spans": [
           {
-            "start": 13,
-            "end": 14,
+            "start": 33,
+            "end": 34,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 54,
+            "text": "capacidad > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 63,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 106,
+            "text": "piezas / capacidad >= 3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 115,
+            "end": 120,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 136,
+            "text": "alcanza_tres",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 148,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 158,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 42,
-            "end": 47,
-            "text": "false",
+            "start": 175,
+            "end": 176,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 384,
+            "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 192,
-            "end": 194,
+            "start": 439,
+            "end": 441,
             "text": "&&",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 391,
-            "end": 411,
+            "start": 604,
+            "end": 624,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1527,7 +4057,7 @@
       {
         "block": "block_0000_0004",
         "path": "/question",
-        "sourceSha256": "3d19468549c0f750b0ffa454547ae251cd08d872de6ac8d8d44dee344b1b7016",
+        "sourceSha256": "8295c88d67b141ea10f715af5f5a421de8213d32c293e1ad438441f75f9ca984",
         "spans": [
           {
             "start": 3,
@@ -1544,15 +4074,15 @@
             "reading": "technical"
           },
           {
-            "start": 21,
-            "end": 26,
+            "start": 16,
+            "end": 21,
             "text": "false",
-            "role": "output",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 44,
-            "end": 45,
+            "start": 39,
+            "end": 40,
             "text": "B",
             "role": "cpp",
             "reading": "technical"
@@ -1562,14 +4092,35 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "44fde6002180a2e1b77a8038c694a417f290fdf8222e8b371dc2a0d8ef90c8a7",
+        "sourceSha256": "632eddb2407beda80ca0c4cd5d5b6c425072fe2332bcf53b9a06b46c45e3634b",
         "spans": [
           {
-            "start": 38,
-            "end": 43,
+            "start": 4,
+            "end": 6,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 61,
+            "text": "A",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 70,
             "text": "false",
-            "role": "output",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 109,
+            "text": "B",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1610,40 +4161,47 @@
       {
         "block": "block_0001_0000",
         "path": "/text",
-        "sourceSha256": "436ce9e5b2a3a0cf4c0e26b9ed65422171e038fbde509e3551c82cc568176f74",
+        "sourceSha256": "93bb0f50d6140960439f2c97aeaad8c85becf2e1e8e0c74c4f9ddf1b66787dba",
         "spans": []
       },
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "80c8aa4396c675a554575e26751cb3602ce9ff458190001109e6b90b76002320",
+        "sourceSha256": "b968e33fad6047227d36f305027600ac1d32b29607c390b116dad136c1b4e713",
         "spans": [
           {
-            "start": 84,
-            "end": 102,
+            "start": 223,
+            "end": 241,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 188,
-            "end": 234,
+            "start": 247,
+            "end": 293,
             "text": "(capacidad > 0) && (cantidad % capacidad == 0)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 297,
-            "end": 306,
-            "text": "capacidad",
+            "start": 408,
+            "end": 413,
+            "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 310,
-            "end": 314,
-            "text": "cero",
-            "role": "data",
+            "start": 463,
+            "end": 464,
+            "text": "%",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 552,
+            "end": 572,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
             "reading": "natural"
           }
         ]
@@ -1651,13 +4209,13 @@
       {
         "block": "block_0001_0002",
         "path": "/question",
-        "sourceSha256": "ca103275cbbd0bdc522a9cfa50816eb3ca663e47f0419143ad95598d29779c75",
+        "sourceSha256": "ef70c3d7c2cfbf9938927e9a2f5a66bdf573f408b791af6e4217e71d55e34b2e",
         "spans": []
       },
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "3e0da6deb0656bbe3b2f9cf27a7756d4a312ba9cd4a7ee0bc83558730e3136aa",
+        "sourceSha256": "8ca26b0ca5f1893a68d91cb8d88e4587a210caabbdbef9cc3e2a60202b9a799c",
         "spans": [
           {
             "start": 0,
@@ -1667,46 +4225,82 @@
             "reading": "technical"
           },
           {
-            "start": 39,
-            "end": 46,
-            "text": "divisor",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 55,
-            "end": 56,
+            "start": 73,
+            "end": 74,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 82,
-            "end": 87,
-            "text": "false",
-            "role": "output",
-            "reading": "natural"
+            "start": 76,
+            "end": 78,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 90,
-            "end": 91,
+            "start": 100,
+            "end": 101,
             "text": "%",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 123,
+            "end": 124,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0001_0003",
         "path": "/question",
-        "sourceSha256": "30743232106f37945ae326111d15c860169f9159a77f5050e8cab9dd4e3cbf8e",
+        "sourceSha256": "2d71bf38516213a0f960a4243b908f4b61988a681c156b5ccd7969b5608e23f4",
         "spans": []
       },
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "46d21bbd73876b0fa49fbe9b0e6afa2f5e7ab43955b0f8d9f07a192ff585293d",
-        "spans": []
+        "sourceSha256": "b14bef9ae479227e767cd482bf733fd454699f4e6b835c7cc51d0f016b7ca629",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 72,
+            "text": "divisor > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 92,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 117,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 154,
+            "text": "%",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1753,13 +4347,48 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "ccf4e0a474d91f656cf63663247fac46f3db0b86c3986f15e50a01445ec9a185",
+        "sourceSha256": "851329d54bdc86c6c4bc34a8a61917ea37543f14bd2f99db56d7219c1a2ffb99",
         "spans": [
           {
-            "start": 80,
-            "end": 84,
-            "text": "cero",
-            "role": "data",
+            "start": 36,
+            "end": 54,
+            "text": "cantidad % divisor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 115,
+            "end": 146,
+            "text": "int resto = cantidad % divisor;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 214,
+            "end": 216,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 286,
+            "end": 287,
+            "text": "%",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 291,
+            "text": "/",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 346,
+            "end": 366,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
             "reading": "natural"
           }
         ]
@@ -1767,38 +4396,52 @@
       {
         "block": "block_0002_0000",
         "path": "/text",
-        "sourceSha256": "66b0a5c73da3ada76e75ed129b85ec5e5337d8ef3b58ce033cc78bd8874b9f17",
+        "sourceSha256": "eb370c3e66ac702a1959a91d04cf35ac0c9c979a94af776373bce5fb84f4ec84",
         "spans": []
       },
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "7a4ed529b415101aed0855c2c7ac6c34403fed3c24e5a2134742e2bec8e626d6",
+        "sourceSha256": "69b4fb300564970a059fc6b676160a666ea863b2f8e34968a7b75e70d7518481",
         "spans": [
           {
-            "start": 4,
-            "end": 6,
-            "text": "||",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 61,
-            "end": 108,
+            "start": 59,
+            "end": 106,
             "text": "(capacidad <= 0) || (cantidad % capacidad != 0)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 223,
-            "end": 227,
+            "start": 183,
+            "end": 187,
             "text": "true",
-            "role": "output",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 311,
-            "end": 331,
+            "start": 263,
+            "end": 268,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 330,
+            "end": 332,
+            "text": "||",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 391,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 392,
+            "end": 412,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1808,34 +4451,63 @@
       {
         "block": "block_0002_0002",
         "path": "/question",
-        "sourceSha256": "e60b44ef47a65a875d9330eeedbcdc608c3844ddd1efe5189ddf1064b048db33",
-        "spans": []
+        "sourceSha256": "27e786f2fc884c1ef44bf4d0ab0baa9a71add89ba738a2a85384efd532187233",
+        "spans": [
+          {
+            "start": 4,
+            "end": 15,
+            "text": "veinticinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 47,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "ad687e9869e4d5ea3f18936bb9602b93a7a6ff30c233b30a9b5ba94a86deed08",
+        "sourceSha256": "52dee21550eaafc6e85c8e088059ddba058892f1679da8801ef34992ab7f5796",
         "spans": [
           {
-            "start": 51,
-            "end": 55,
-            "text": "true",
-            "role": "output",
-            "reading": "natural"
+            "start": 0,
+            "end": 14,
+            "text": "capacidad <= 0",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 58,
-            "end": 60,
+            "start": 18,
+            "end": 22,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 28,
+            "end": 30,
             "text": "||",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 113,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0002_0003",
         "path": "/question",
-        "sourceSha256": "c09c6651c15f00a80ef4548986bb1e42d4f005f0fae1b4158e2db0089a51713b",
+        "sourceSha256": "74d489e0c077b1cc9c3913b5663c55e75a060b0c2303517c7ddf0d376b9c4d15",
         "spans": [
           {
             "start": 3,
@@ -1845,8 +4517,15 @@
             "reading": "technical"
           },
           {
-            "start": 38,
-            "end": 39,
+            "start": 29,
+            "end": 30,
+            "text": "A",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 50,
             "text": "B",
             "role": "cpp",
             "reading": "technical"
@@ -1856,7 +4535,7 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "658084056a9e590ff1d64a198d3fc2723a56a71a86f7c5279eb5ea8baf839f01",
+        "sourceSha256": "9484d2041fba3260ae9585f43539e5c5361c469e345b421c4899403e75a87f05",
         "spans": [
           {
             "start": 3,
@@ -1869,8 +4548,8 @@
             "start": 8,
             "end": 13,
             "text": "false",
-            "role": "output",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 15,
@@ -1880,18 +4559,25 @@
             "reading": "technical"
           },
           {
-            "start": 66,
-            "end": 67,
+            "start": 69,
+            "end": 70,
             "text": "A",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 71,
-            "end": 75,
+            "start": 74,
+            "end": 78,
             "text": "true",
-            "role": "output",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 115,
+            "text": "B",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1946,68 +4632,124 @@
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "33c387203fe6a3433c658cc10b588e7d602d9f4c8da643ecef9963d8b3a668ca",
+        "sourceSha256": "e5cd960474eeddae1e607433fb5f1bbc1f06ae4823f441a0bf90809d927208a2",
         "spans": [
           {
-            "start": 27,
-            "end": 30,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 111,
+            "end": 113,
+            "text": "||",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 50,
-            "end": 54,
+            "start": 118,
+            "end": 123,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 263,
+            "end": 267,
             "text": "true",
-            "role": "output",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 293,
+            "end": 297,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0003_0000",
         "path": "/text",
-        "sourceSha256": "542f313c47155999aab9e84d4211af8300fa2b0ba5235a8d7e9c3bed837e8b64",
+        "sourceSha256": "30499dae37d71db0174afdb53a186d76dc2ba294c0622ce6aa59b91e274a1244",
         "spans": []
       },
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "c22268c304929007ce009dc0d464094ffdcc2518a3c111dbc33533daa236c0e4",
+        "sourceSha256": "49424395882911fe7d17fa837f10f86ad215943168d7b713f80ff285bd4d7d5a",
         "spans": [
           {
-            "start": 21,
-            "end": 26,
+            "start": 137,
+            "end": 138,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 213,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 271,
+            "text": "total % capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 284,
+            "end": 299,
+            "text": "valido_y_exacto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 308,
+            "end": 321,
+            "text": "capacidad > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 340,
+            "end": 342,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 375,
+            "end": 380,
             "text": "total",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 36,
-            "end": 46,
-            "text": "veintiocho",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 50,
-            "end": 59,
+            "start": 383,
+            "end": 392,
             "text": "capacidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 69,
-            "end": 75,
-            "text": "cuatro",
-            "role": "data",
+            "start": 462,
+            "end": 464,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 510,
+            "end": 511,
+            "text": "0",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 481,
-            "end": 485,
-            "text": "cero",
-            "role": "data",
+            "start": 512,
+            "end": 521,
+            "text": "Grupos: 4",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2015,18 +4757,18 @@
       {
         "block": "block_0003_0003",
         "path": "/question",
-        "sourceSha256": "aaf9d8283e8e949233d7379b82fa3c454f88ef525f7d10fa09cb1e14800e9113",
+        "sourceSha256": "6a895c6acf963e930165d32a239f980c0c2cbf60aba24a1af1c2dc6094305e6c",
         "spans": [
           {
-            "start": 22,
-            "end": 31,
+            "start": 33,
+            "end": 42,
             "text": "capacidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 34,
-            "end": 35,
+            "start": 51,
+            "end": 52,
             "text": "0",
             "role": "data",
             "reading": "natural"
@@ -2036,42 +4778,56 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "07a0754606b779d2fbf99f0611702db66871d83dac1585d3fb03593be7337c31",
+        "sourceSha256": "514b392afb407705305ae65c9ce5b3feb3d46657eaedcfac8ca6feebee45ce4c",
         "spans": [
           {
             "start": 0,
-            "end": 2,
+            "end": 13,
+            "text": "capacidad > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 17,
+            "end": 22,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 24,
+            "end": 26,
             "text": "&&",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 9,
-            "end": 10,
-            "text": "%",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 21,
-            "end": 26,
-            "text": "false",
+            "start": 76,
+            "end": 77,
+            "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 31,
-            "end": 33,
+            "start": 82,
+            "end": 84,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 48,
-            "end": 49,
-            "text": "/",
+            "start": 116,
+            "end": 120,
+            "text": "else",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 147,
+            "text": "Capacidad invalida",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2120,194 +4876,110 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "8b14bb8a5d9fb20e1fd78949d17afddb1f07fc9c46cc1a6f6f9e07b94a065483",
+        "sourceSha256": "83c2afc847f209ed5ff0d5543dc2b59b4b8b9d95fdc65711b48b9f9efb4134d3",
         "spans": [
           {
-            "start": 4,
-            "end": 13,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 22,
-            "end": 23,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 85,
-            "end": 86,
-            "text": "4",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 106,
-            "end": 107,
-            "text": "4",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 123,
-            "end": 124,
+            "start": 21,
+            "end": 22,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 127,
-            "end": 129,
+            "start": 59,
+            "end": 61,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 81,
+            "end": 83,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 210,
+            "end": 212,
             "text": "-1",
             "role": "data",
             "reading": "natural"
-          },
-          {
-            "start": 235,
-            "end": 239,
-            "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0003_0005",
         "path": "/text",
-        "sourceSha256": "5d55bfcb8b997d9661e38529b00ac7145592d9b8b4cfed1cc549d46c0111df5e",
+        "sourceSha256": "00041ec488ea55b38d28e07a8e77104046846a69875bd413588cae14bd8b14c4",
         "spans": []
       },
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "64079794fe083d8c5807fed2283490acf9c2f233fdde88ab7c7fe01d0619d44a",
+        "sourceSha256": "ea4e8fafd7e58a34dda655462e68b90dbdd3e984bc1375558996bb0b0f52360e",
         "spans": [
           {
-            "start": 57,
-            "end": 67,
-            "text": "veintiocho",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 80,
-            "end": 92,
-            "text": "cuatro casos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 187,
-            "end": 197,
-            "text": "dos líneas",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 219,
-            "end": 220,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 225,
-            "end": 226,
+            "start": 523,
+            "end": 524,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 231,
-            "end": 240,
-            "text": "Grupos: 7",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 262,
-            "end": 263,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 268,
-            "end": 269,
+            "start": 603,
+            "end": 604,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 274,
-            "end": 292,
+            "start": 610,
+            "end": 612,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 703,
+            "end": 710,
+            "text": "Grupos:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 821,
+            "end": 839,
             "text": "Capacidad invalida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 314,
-            "end": 316,
-            "text": "-1",
+            "start": 845,
+            "end": 847,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 897,
+            "end": 901,
+            "text": "28 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 321,
-            "end": 322,
+            "start": 919,
+            "end": 920,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 327,
-            "end": 345,
+            "start": 921,
+            "end": 939,
             "text": "Capacidad invalida",
             "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 367,
-            "end": 368,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 373,
-            "end": 374,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 379,
-            "end": 388,
-            "text": "Grupos: 4",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 400,
-            "end": 401,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 406,
-            "end": 408,
-            "text": "-1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 441,
-            "end": 453,
-            "text": "dos entradas",
-            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2315,32 +4987,18 @@
       {
         "block": "block_0004_0000",
         "path": "/text",
-        "sourceSha256": "c99bd735a23cc1891f28864c0668662a7fb4e56fe9ce4ba1db159fccd08e3c1f",
+        "sourceSha256": "f4e7f8c0e1ef6a1a3eeebf0f4bbe828918f5cac7ec6ae3e797f22384e34534a7",
         "spans": []
       },
       {
         "block": "block_0004_0001",
         "path": "/question",
-        "sourceSha256": "1f265bf1d693eebb5ae4af24ed558898c622b875a54228fe24123dd4559335b4",
+        "sourceSha256": "1b09cdcfa486ef96c9b53cecc2a0b0cf0dc812bd4d911b3452d9e2c0591215ae",
         "spans": [
           {
             "start": 4,
-            "end": 9,
-            "text": "total",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 18,
-            "end": 20,
-            "text": "28",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 60,
-            "end": 64,
-            "text": "cero",
+            "end": 14,
+            "text": "veintiocho",
             "role": "data",
             "reading": "natural"
           }
@@ -2349,41 +5007,34 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "46abd37f24010f76252efae73b7d0d042385177d6fb39e254680c0f41d953b97",
+        "sourceSha256": "13c95c9ebb8d36afc0fa79e13d9a17d3d0771ee15bb043dc2169b07f9cfc1c21",
         "spans": [
           {
             "start": 4,
-            "end": 7,
-            "text": "dos",
+            "end": 6,
+            "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 42,
-            "end": 43,
+            "start": 9,
+            "end": 10,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 51,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 58,
-            "end": 59,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 62,
-            "end": 63,
+            "start": 95,
+            "end": 96,
             "text": "6",
             "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 78,
-            "end": 79,
-            "text": "4",
-            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2482,12 +5133,19 @@
       {
         "block": "block_0004_0002",
         "path": "/question",
-        "sourceSha256": "fd3c51ff1bb0ea3fe769004fbb9cc8e0428e414349be7678437715a32b384646",
+        "sourceSha256": "1b43747e37207f62151688fd2b07e5d677f6e74c09e4f9d4749eacef4ac082b6",
         "spans": [
           {
-            "start": 75,
-            "end": 78,
-            "text": "dos",
+            "start": 20,
+            "end": 29,
+            "text": "veintidós",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 57,
+            "text": "cinco",
             "role": "data",
             "reading": "natural"
           }
@@ -2496,12 +5154,26 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "8fe734f9b1144e03c00c127bb44ec531639e037bf08a1d10862c0c301024c4e1",
+        "sourceSha256": "a6bc85b184af4bd6507c6f4e5cd0198b46f336ae91425cc310259ffdfc84f5c7",
         "spans": [
           {
-            "start": 54,
-            "end": 55,
-            "text": "2",
+            "start": 95,
+            "end": 110,
+            "text": "valido_y_exacto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 123,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 147,
+            "text": "0 2",
             "role": "output",
             "reading": "natural"
           }
@@ -2510,54 +5182,31 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "4c61c6e755f92b1e40291243a7efac486adda77c6e53b8c51ffaa427068241b1",
-        "spans": [
-          {
-            "start": 20,
-            "end": 23,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "58854e22e58c6fc600377da0a900d5429fcc882ae9196b628d8afec90bea5080",
+        "spans": []
       },
       {
         "block": "block_0005_0000",
         "path": "/text",
-        "sourceSha256": "8d2c7dc3a9977b932fb731461de83f805575c89eb8c2756b42e8e96ea0360589",
-        "spans": [
-          {
-            "start": 14,
-            "end": 19,
-            "text": "false",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "a74d72ec538567c41334c2b39e839c9088a2bb654790eaa4cd7cec30ec509162",
+        "spans": []
       },
       {
         "block": "block_0005_0001",
         "path": "/question",
-        "sourceSha256": "604b00c0cf98105149e16c0336f7f596c7e6cb8326b8efd7bd9cf75c51892c99",
+        "sourceSha256": "7d33366a6db041501d903e290c51ec8caf779887dc6819dd666cbb685952ce45",
         "spans": [
           {
-            "start": 0,
-            "end": 15,
-            "text": "valido_y_exacto",
+            "start": 13,
+            "end": 56,
+            "text": "(capacidad > 0) && (total % capacidad == 0)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 19,
-            "end": 24,
+            "start": 61,
+            "end": 66,
             "text": "false",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 30,
-            "end": 73,
-            "text": "(capacidad > 0) && (total % capacidad == 0)",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2566,8 +5215,37 @@
       {
         "block": "block_0005_0001",
         "path": "/explanation",
-        "sourceSha256": "15ffbc870d3514b88b828c094aea37349860e340dc46317b0e66722b0323b3d9",
-        "spans": []
+        "sourceSha256": "65f21331ad1391dcf4a524599639a6721bae35ba7ade7afe11c075844009a202",
+        "spans": [
+          {
+            "start": 3,
+            "end": 16,
+            "text": "capacidad > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 21,
+            "end": 26,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 59,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 105,
+            "end": 110,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0001",
@@ -2598,26 +5276,33 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "6f3fadb07ebc03a9bcf365c23df70404847692179d1ec7c461782648d04adb33",
+        "sourceSha256": "0eea207608db659d5837462ef5b5340b60be1f354ae35dbc5aa1905cbfd381e8",
         "spans": [
           {
-            "start": 94,
-            "end": 98,
-            "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 67,
+            "end": 71,
+            "text": "28 6",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 121,
-            "end": 125,
-            "text": "true",
+            "start": 150,
+            "end": 151,
+            "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 128,
-            "end": 133,
-            "text": "false",
+            "start": 157,
+            "end": 161,
+            "text": "28 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 192,
+            "text": "0",
             "role": "output",
             "reading": "natural"
           }
@@ -2626,501 +5311,71 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "00ce26ae2d38eacba817985d519d7d99d406bcfd792133268a32466e06d3033b",
-        "spans": [
-          {
-            "start": 62,
-            "end": 64,
-            "text": "&&",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 67,
-            "end": 69,
-            "text": "||",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 84,
-            "end": 88,
-            "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 89,
-            "end": 109,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 249,
-            "end": 250,
-            "text": "/",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 256,
-            "end": 257,
-            "text": "%",
-            "role": "cpp",
-            "reading": "technical"
-          }
-        ]
+        "sourceSha256": "d16015d9f2992fe0d75a49069406acb8dfbc1ea0df2f5ef92137f9ecd7932aa7",
+        "spans": []
       },
       {
         "block": "block_0006_0000",
         "path": "/text",
-        "sourceSha256": "be5f890565fec1e4f2830714dacc70848a1edf901992075289cecbbe164c273e",
+        "sourceSha256": "a1b2c1ab8e29befd3a270585a7081c1b8ef15c7377e7ef25ec58f22c0715ccd4",
         "spans": []
       },
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "d483c6e194a1b0dcc71e56e2e6a42f550f191765a60a22ad378a091bffc2e97c",
+        "sourceSha256": "06c3c2bf6c04087460b0b9c323f6dce065d110da6b0e5049c99b900dfb86a605",
         "spans": [
           {
-            "start": 4,
-            "end": 9,
-            "text": "total",
+            "start": 40,
+            "end": 57,
+            "text": "total % capacidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 10,
-            "end": 12,
-            "text": "28",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 15,
-            "end": 24,
-            "text": "capacidad",
+            "start": 93,
+            "end": 108,
+            "text": "valido_y_exacto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 25,
-            "end": 26,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 41,
-            "end": 42,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 45,
-            "end": 54,
-            "text": "Grupos: 7",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 58,
-            "end": 61,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 74,
-            "end": 83,
-            "text": "capacidad",
+            "start": 116,
+            "end": 121,
+            "text": "false",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 84,
-            "end": 85,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 88,
-            "end": 90,
-            "text": "-1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 94,
-            "end": 95,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 98,
-            "end": 116,
-            "text": "Capacidad invalida",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 122,
-            "end": 131,
-            "text": "capacidad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 132,
-            "end": 133,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 137,
-            "end": 138,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 141,
-            "end": 150,
-            "text": "Grupos: 4",
-            "role": "output",
-            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "5ee8f2cee38e1547b816414306e745408208826633c907ca466015b5b80f2ee8",
-        "spans": [
-          {
-            "start": 20,
-            "end": 23,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 83,
-            "end": 84,
-            "text": "/",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 90,
-            "end": 91,
-            "text": "%",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 180,
-            "end": 184,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 351,
-            "end": 355,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 385,
-            "end": 386,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 389,
-            "end": 392,
-            "text": "120",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 427,
-            "end": 428,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 431,
-            "end": 433,
-            "text": "12",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "e51022056cca64cf325ae3982ac5a1c7b434d05f9938516a93cd95eb7bd038bc",
+        "spans": []
       },
       {
         "block": "cero_y_totales_validos_titulo",
         "path": "/text",
-        "sourceSha256": "09a2c96d456469933f1e9e5ebad66ccdbcaa9ceecf596a18dbeef7203d5aeefd",
-        "spans": [
-          {
-            "start": 11,
-            "end": 15,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "253de7170071f85565e00d3d3c4888818960c6c21b1b53c94aed10a1e0e068b2",
+        "spans": []
       },
       {
         "block": "cero_y_totales_validos_consigna",
         "path": "/text",
-        "sourceSha256": "a244cfe461919466d0498c6a3b31e8934ec750f60b17012fd7d41eb05f5b537e",
+        "sourceSha256": "f83e325d6f611e171bacc707ff6a63a3f1fb5d617590737ce3ddd792f1965f70",
         "spans": [
           {
-            "start": 16,
-            "end": 19,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 119,
-            "end": 125,
-            "text": "cuatro",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 157,
-            "end": 160,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 170,
-            "end": 173,
+            "start": 4,
+            "end": 7,
             "text": "0 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 176,
-            "end": 177,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 180,
-            "end": 189,
-            "text": "Grupos: 0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 190,
-            "end": 193,
+            "start": 14,
+            "end": 17,
             "text": "1 4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 196,
-            "end": 197,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 200,
-            "end": 209,
-            "text": "Grupos: 0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 210,
-            "end": 214,
-            "text": "28 6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 217,
-            "end": 218,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 221,
-            "end": 230,
-            "text": "Grupos: 4",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 231,
-            "end": 237,
-            "text": "120 12",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 240,
-            "end": 241,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 244,
-            "end": 254,
-            "text": "Grupos: 10",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 502,
-            "end": 505,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 540,
-            "end": 544,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 563,
-            "end": 566,
-            "text": "una",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 579,
-            "end": 583,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "cero_y_totales_validos_editor",
-        "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "faa1aca87944d62176d1d2557e348284edbfa5c33b11d798c5f5f58c27f69bfc",
-        "spans": [
-          {
-            "start": 48,
-            "end": 52,
-            "text": "Cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 72,
-            "end": 76,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 86,
-            "end": 90,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 108,
-            "end": 112,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "cero_y_totales_validos_editor",
-        "path": "/outputCheck/cases/1/explanation",
-        "sourceSha256": "e3df21bb039e638d1b56f36ec963f3e337c6d126591436eff36b234a20b6398e",
-        "spans": [
-          {
-            "start": 31,
-            "end": 40,
-            "text": "una ficha",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 65,
-            "end": 71,
-            "text": "cuatro",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 109,
-            "end": 113,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "cero_y_totales_validos_editor",
-        "path": "/outputCheck/cases/2/explanation",
-        "sourceSha256": "77fae97698530fa3e37cc1ba4fd39bc51a26418f856da375da5b1b473d1a36ca",
-        "spans": [
-          {
-            "start": 49,
-            "end": 55,
-            "text": "cuatro",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "cero_y_totales_validos_editor",
-        "path": "/outputCheck/cases/3/explanation",
-        "sourceSha256": "da5b5327bcee0016cd545cf3cd5399a395b7adb4d2da08d9cfa9e5bf33724f6b",
-        "spans": [
-          {
-            "start": 0,
-            "end": 13,
-            "text": "Ciento veinte",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 31,
-            "end": 35,
-            "text": "diez",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 46,
-            "end": 50,
-            "text": "doce",
             "role": "data",
             "reading": "natural"
           }
@@ -3129,8 +5384,238 @@
       {
         "block": "block_0006_0004",
         "path": "/text",
-        "sourceSha256": "ce8e2b7738e1c6747191e1454403fc7130c41f699814cb402494c143603b49e9",
+        "sourceSha256": "933f6d76022f8395ae4be1264e7e71617220f39b1895cdd30e5a3bfc96296b35",
         "spans": []
+      },
+      {
+        "block": "p1u3l6_guardar_resto",
+        "path": "/question",
+        "sourceSha256": "6b76d4252878ce4a60013ccb7c1a980371b01375578a2da783440f5b2aa5110a",
+        "spans": []
+      },
+      {
+        "block": "p1u3l6_guardar_resto",
+        "path": "/explanation",
+        "sourceSha256": "557a957fac469aa5694e9967aaa349393584e4e0d562a5a2230887b7715ffdb2",
+        "spans": [
+          {
+            "start": 33,
+            "end": 44,
+            "text": "divisor > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 52,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 138,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u3l6_guardar_resto",
+        "path": "/options/0",
+        "sourceSha256": "97e3081708b973d6a7967b986bdc4e3a1ff914047e9ff1a4c215132c29177d05",
+        "spans": [
+          {
+            "start": 8,
+            "end": 26,
+            "text": "cantidad % divisor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 39,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u3l6_guardar_resto",
+        "path": "/options/1",
+        "sourceSha256": "407fc43c2348bcde36f1e90b424949ba9fd3a5f7cb77824fd5b4b77ce52f484e",
+        "spans": [
+          {
+            "start": 8,
+            "end": 26,
+            "text": "cantidad % divisor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 64,
+            "text": "if (divisor > 0)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u3l6_guardar_resto",
+        "path": "/options/2",
+        "sourceSha256": "ebbd33f3802981daff9549787b38a5a5c01208d637753065980d5cc36cc2e759",
+        "spans": [
+          {
+            "start": 8,
+            "end": 26,
+            "text": "cantidad % divisor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 41,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "p1u3l6_probar_repartos",
+        "path": "/text",
+        "sourceSha256": "70f9a7c0bf8d5d1354cedc4029cc0fb2b448f1692516f249615376ea3ea7cab0",
+        "spans": [
+          {
+            "start": 58,
+            "end": 63,
+            "text": "28 -1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 101,
+            "text": "Capacidad invalida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 115,
+            "text": "28 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 134,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 144,
+            "text": "Grupos: 7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 158,
+            "text": "28 6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 177,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 187,
+            "text": "Grupos: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 200,
+            "text": "0 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 219,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 220,
+            "end": 229,
+            "text": "Grupos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 242,
+            "text": "1 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 261,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 271,
+            "text": "Grupos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 281,
+            "end": 287,
+            "text": "120 12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 306,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 307,
+            "end": 317,
+            "text": "Grupos: 10",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -3140,5 +5625,64 @@
         "spans": []
       }
     ]
-  }
+  },
+  "compilerLocalIntChecks": [
+    {
+      "activity": "p1u3l6_reparar_resto",
+      "probes": [
+        {
+          "variable": "total",
+          "replacement": 30,
+          "outputs": [
+            "1\nGrupos: 5",
+            "1\nGrupos: 5\n"
+          ]
+        },
+        {
+          "variable": "capacidad",
+          "replacement": 4,
+          "outputs": [
+            "1\nGrupos: 7",
+            "1\nGrupos: 7\n"
+          ]
+        },
+        {
+          "variable": "capacidad",
+          "replacement": -1,
+          "outputs": [
+            "0\nCapacidad invalida",
+            "0\nCapacidad invalida\n"
+          ]
+        }
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "p1u3l6_construir_reparto",
+      "requires": [
+        "p1u3l6_reparar_resto"
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "p1u3l6_reparar_resto",
+      "blocks": [
+        "block_0006_0000",
+        "block_0006_0001",
+        "p1u3l6_ejemplo_resto",
+        "block_0006_0003"
+      ]
+    },
+    {
+      "activity": "p1u3l6_construir_reparto",
+      "blocks": [
+        "cero_y_totales_validos_titulo",
+        "cero_y_totales_validos_consigna",
+        "p1u3l6_ejemplo_reparto",
+        "p1u3l6_probar_repartos"
+      ]
+    }
+  ]
 }
