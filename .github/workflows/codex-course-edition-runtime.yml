@@ -10,6 +10,24 @@ on:
       - cmake/GeneralChoiceProseTests.cmake
       - cmake/ReaderRevisionTests.cmake
       - cmake/NestedCmakeFormatTests.cmake
+      - cmake/FormatFixtureHistoryTests.cmake
+      - cmake/NamedRuleFeedbackTests.cmake
+      - cmake/StateImportTests.cmake
+      - scripts/curriculum/named_rule_feedback_fixture_source.py
+      - scripts/curriculum/test_named_rule_feedback_history.py
+      - scripts/curriculum/validate_programming_practice_tools.py
+      - scripts/curriculum/auditar_estructura_multicurso.py
+      - scripts/curriculum/validar_json_programacion.py
+      - scripts/curriculum/code_format_fixture_source.py
+      - scripts/curriculum/compile_check_source_format_fixture.py
+      - scripts/curriculum/test_compile_check_source_format.py
+      - scripts/curriculum/format_batch_history.py
+      - scripts/curriculum/windows_cpp_ci.py
+      - scripts/curriculum/test_code_format_compat.py
+      - scripts/curriculum/test_reviewed_diagnostic_structural_format.py
+      - scripts/curriculum/test_published_u12_question_editorials.py
+      - scripts/curriculum/editorial_fixture_history.py
+      - native/platform/windows/u6_compilecheck_format_runner_tests.cpp
       - native/platform/windows/nested_cmake_format_tests.cpp
       - scripts/curriculum/nested_cmake_format_fixture_source.py
       - scripts/curriculum/test_nested_cmake_format.py
@@ -26,6 +44,8 @@ on:
       - native/presentation/windows/local_dependency_view_tests.cpp
       - scripts/curriculum/local_dependency_view_fixture_source.py
       - scripts/curriculum/test_local_dependency_view_authoring.py
+      - scripts/curriculum/joint_local_int_fixture_source.py
+      - scripts/curriculum/test_joint_local_int_fixture_source.py
       - cmake/CurricularWindows.cmake
       - cmake/native_build_config.hpp.in
       - native/platform/windows/course_edition_tests.cpp
@@ -111,6 +131,51 @@ permissions:
   contents: read
 
 jobs:
+  run-format-fixture-history:
+    name: Build authenticated format fixtures and verify original MSVC diagnostics
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 25
+    steps:
+      - name: Read complete Codex and Work publication history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select Python for the three original fixture generators
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate hosted MSVC without modifying the product pin
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure the original Windows loaders and diagnostic runner
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Write-Host 'Hosted QA only; product MSVC 14.51.36231 and cl.exe 19.51.36260.0 remain unchanged.'
+          Get-Command cl, cmake, ninja | Select-Object Name, Source | Format-Table | Out-Host
+          $qaFormatBuild = Join-Path $env:RUNNER_TEMP 'lgaed-format-fixture-history'
+          cmake -S cmake/HostedCourseEditionQA -B $qaFormatBuild -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build $qaFormatBuild --target lgaed_code_format_loader_tests lgaed_format_fixture_diagnostics_msvc_tests --parallel 3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify both full publications, canonical archives and real diagnostics
+        shell: pwsh
+        run: |
+          $qaFormatBuild = Join-Path $env:RUNNER_TEMP 'lgaed-format-fixture-history'
+          ctest --test-dir $qaFormatBuild -R '^native[.]format_fixture_' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $qaFormatBuild 'format-fixture-history.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve fixture and native diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-format-fixture-history-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/lgaed-format-fixture-history/format-fixture-history.xml
+            ${{ runner.temp }}/lgaed-format-fixture-history/Testing/Temporary/LastTest.log
+            ${{ runner.temp }}/lgaed-format-fixture-history/CMakeFiles/CMakeConfigureLog.yaml
+            ${{ runner.temp }}/lgaed-format-fixture-history/test-fixtures/format-history/**
   run-real-course-edition:
     name: Run Win32 edition, simulation and first required C++ case
     runs-on: windows-2025-vs2026
@@ -196,7 +261,7 @@ jobs:
         shell: pwsh
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
-          ctest --test-dir $build -R '^native[.](named_rule_feedback_view|named_rule_runtime)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u3-named-rules-win32.xml')
+          ctest --test-dir $build -R '^native[.](named_rule_feedback_(view|authoring)|named_rule_runtime)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'u3-named-rules-win32.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve composed U2L9 semantics and same-page first-case access
         shell: pwsh
@@ -233,6 +298,12 @@ jobs:
         run: |
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           ctest --test-dir $build -R '^native[.]local_dependency_view_u[23]l[0-9]+$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'local-dependency-view.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify joint U3L7 and U3L8 observations through real Win32 MSVC
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]joint_local_int_(authoring|view)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'joint-local-int.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve earlier reading snapshots across an authenticated option review
         shell: pwsh
@@ -343,11 +414,14 @@ jobs:
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-runtime-*/transport.jsonl
             ${{ runner.temp }}/lgaed-course-edition-qa/reader-revision-order.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/nested-cmake-format.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/named-rule-feedback/**
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l9-semantic-composition-and-reference.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u3-current-controls-and-history.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/choice-prose-and-prediction.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-receipts.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-view.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/joint-local-int.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/joint-local-int/**
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l10-local-roles.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/continued-input-dependency.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l9-input-dependency.xml

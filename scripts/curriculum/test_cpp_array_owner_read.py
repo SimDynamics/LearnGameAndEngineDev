@@ -15,6 +15,8 @@ import subprocess
 import sys
 import tempfile
 
+import stable_state_layout as state
+
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT/("app/src/main/assets/content/es/programming/cpp_language_memory_oop/"
              "estado_y_ciclo_de_vida_de_clases/"
@@ -374,13 +376,11 @@ def initial_code():
     return block["initialCode"]
 
 def compose(original:str,configure:str,read_body:str):
-    config="bool Lote::configurar(int cantidad) noexcept {"
-    read="bool Lote::leer(int indice, int& resultado) const noexcept {"
+    config="bool Lote::configurar(int cantidad) noexcept"
+    read="bool Lote::leer(int indice, int& resultado) const noexcept"
     assert original.count(config)==1 and original.count(read)==1
-    a=original.index(config)+len(config)
-    b=original.index("\n}\nbool Lote::leer",a)+1
-    c=original.index(read)+len(read)
-    d=original.index("\n}\nbool Lote::escribir",c)+1
+    a,b=state._named_rule_body_span(original,config)
+    c,d=state._named_rule_body_span(original,read)
     assert a<b<c<d
     return original[:a]+configure+original[b:c]+read_body+original[d:]
 

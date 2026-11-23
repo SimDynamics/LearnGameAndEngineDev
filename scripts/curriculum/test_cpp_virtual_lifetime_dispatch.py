@@ -14,6 +14,8 @@ import subprocess
 import sys
 import tempfile
 
+import stable_state_layout as layout
+
 ROOT = Path(__file__).resolve().parents[2]
 LESSON = ROOT / (
     "app/src/main/assets/content/es/programming/cpp_language_memory_oop/"
@@ -218,6 +220,7 @@ int main() {
 
 def original_editor() -> str:
     lesson=json.loads(LESSON.read_text(encoding="utf-8"))
+    layout.validate(lesson)
     positions=[
         (p,b) for p,page in enumerate(lesson["stateLayout"]["current"])
         for b,identity in enumerate(page["blocks"]) if identity==OWNER
@@ -235,9 +238,9 @@ def original_editor() -> str:
 
 def body_span(source: str, signature: str, end: str) -> tuple[int,int]:
     assert source.count(signature)==1
-    at=source.index(signature)+len(signature)
-    close=source.index(end,at)+1
-    assert source[close]=="}"
+    assert signature.endswith("{")
+    at,close=layout._named_rule_body_span(source,signature[:-1].rstrip())
+    assert source[at-1]=="{" and source[close]=="}"
     return at,close
 
 

@@ -14,6 +14,8 @@ import subprocess
 import sys
 import tempfile
 
+import stable_state_layout as layout
+
 ROOT = Path(__file__).resolve().parents[2]
 LESSON = ROOT / (
     "app/src/main/assets/content/es/programming/cpp_language_memory_oop/"
@@ -258,6 +260,11 @@ def compile_source(compiler: str, source: Path, binary: Path,
     return run(command)
 
 
+def body_span(original: str) -> tuple[int, int]:
+    return layout._named_rule_body_span(
+        original, "Celda& Celda::operator=(const Celda& otra)")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--compiler", required=True)
@@ -265,6 +272,7 @@ def main() -> None:
     options = parser.parse_args()
 
     data = json.loads(LESSON.read_text(encoding="utf-8"))
+    layout.validate(data)
     matches = [(p, b) for p, page in enumerate(data["stateLayout"]["current"])
                for b, identity in enumerate(page["blocks"]) if identity == OWNER]
     assert len(matches) == 1, "The historical U6L7 editor identity changed"
@@ -275,9 +283,7 @@ def main() -> None:
     original = block["initialCode"]
 
     signature = "Celda& Celda::operator=(const Celda& otra) {"
-    next_function = "\n}\nbool Celda::poner(int valor)"
-    opening = original.index(signature) + len(signature)
-    closing = original.index(next_function, opening) + 1
+    opening, closing = body_span(original)
     prefix, suffix = original[:opening], original[closing:]
     assert original[closing] == "}" and original.count(signature) == 1
     assert "return *this;" in original[opening:closing]

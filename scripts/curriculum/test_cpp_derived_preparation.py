@@ -12,6 +12,8 @@ import subprocess
 import sys
 import tempfile
 
+import stable_state_layout as layout
+
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT/(
     "app/src/main/assets/content/es/programming/cpp_language_memory_oop/"
@@ -241,6 +243,7 @@ int main() {
 
 def original_editor() -> str:
     lesson=json.loads(LESSON.read_text(encoding="utf-8"))
+    layout.validate(lesson)
     positions=[
         (p,b) for p,page in enumerate(lesson["stateLayout"]["current"])
         for b,identity in enumerate(page["blocks"]) if identity==OWNER
@@ -255,9 +258,9 @@ def original_editor() -> str:
 
 
 def compose(original: str, body: str) -> str:
-    begin=original.index(SIGNATURE)+len(SIGNATURE)
-    end=original.index(FOLLOWING,begin)+1
-    assert original[end]=="}"
+    assert SIGNATURE.endswith("{")
+    begin,end=layout._named_rule_body_span(original,SIGNATURE[:-1].rstrip())
+    assert original[begin-1]=="{" and original[end]=="}"
     return original[:begin]+body+original[end:]
 
 

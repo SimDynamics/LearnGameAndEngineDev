@@ -1379,8 +1379,13 @@ std::string local_role_completion_seal(std::string_view key,std::string_view pro
 }
 std::string local_int_completion_seal(std::string_view key,
         std::string_view program,const curriculum::CppLocalIntCheck& spec) {
-    auto frame=std::string("compiler-local-int-complete-v1/")+
+    const bool joint=std::ranges::any_of(spec.probes,
+        [](const auto& probe){return !probe.additional_replacements.empty();});
+    const auto domain=joint?"compiler-local-int-joint-complete-v1/":
+        "compiler-local-int-complete-v1/";
+    auto frame=std::string(domain)+
         token(key)+token(program);
+    if(joint)frame+=token(std::to_string(spec.probes.size()));
     for(const auto& item:spec.probes) {
         // The int receipt is already published; only new types extend it.
         if(item.value_type!=curriculum::CppLocalValueType::integer)
@@ -1391,6 +1396,13 @@ std::string local_int_completion_seal(std::string_view key,
         if(item.expected_increase)
             frame+=token("exact-increase-v1")+
                 token(std::to_string(*item.expected_increase));
+        if(joint) {
+            frame+=token("additional-replacements-v1")+
+                token(std::to_string(item.additional_replacements.size()));
+            for(const auto& replacement:item.additional_replacements)
+                frame+=token(replacement.variable)+token(std::to_string(replacement.replacement));
+            frame+=token("expected-stdout-v1")+token(std::to_string(item.expected_stdout.size()));
+        }
         for(const auto& output:item.expected_stdout)frame+=token(output);
     }
     return state::sha256(frame);

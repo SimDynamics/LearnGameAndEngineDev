@@ -14,6 +14,8 @@ import subprocess
 import sys
 import tempfile
 
+import stable_state_layout as layout
+
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT/("app/src/main/assets/content/es/programming/"
              "cpp_language_memory_oop/estado_y_ciclo_de_vida_de_clases/"
@@ -416,6 +418,7 @@ def compile_cpp(compiler:str,source:Path,binary:Path,windows:bool):
 
 def original_block():
     lesson=json.loads(LESSON.read_text(encoding="utf-8"))
+    layout.validate(lesson)
     positions=[(p,b) for p,page in enumerate(lesson["stateLayout"]["current"])
                for b,identity in enumerate(page["blocks"]) if identity==OWNER]
     assert len(positions)==1,"U6L12 original v2 owner lost"
@@ -428,10 +431,8 @@ def compose(original:str,copy:str,take:str)->str:
     copy_sig="Tramo copia_modificada(const Tramo& origen, int indice, int valor) {"
     take_sig="bool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept {"
     assert original.count(copy_sig)==1 and original.count(take_sig)==1
-    a=original.index(copy_sig)+len(copy_sig)
-    b=original.index("\n}\nbool tomar_si_cabe",a)+1
-    c=original.index(take_sig)+len(take_sig)
-    d=original.index("\n}\nvoid mostrar",c)+1
+    a,b=layout._named_rule_body_span(original,copy_sig[:-1].rstrip())
+    c,d=layout._named_rule_body_span(original,take_sig[:-1].rstrip())
     assert a<b<c<d
     return original[:a]+copy+original[b:c]+take+original[d:]
 

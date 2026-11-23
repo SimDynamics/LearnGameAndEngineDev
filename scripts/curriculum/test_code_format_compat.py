@@ -3,8 +3,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 import importlib.util
+import json
 from pathlib import Path
 import unittest
+
+from format_batch_history import (
+    Publication, active_owners, publication_bytes, verify_publication_bytes,
+)
 
 ROOT = Path(__file__).parent
 fmt_spec = importlib.util.spec_from_file_location("code_format_compat", ROOT / "code_format_compat.py")
@@ -13,6 +18,133 @@ fmt_spec.loader.exec_module(fmt)
 layout_spec = importlib.util.spec_from_file_location("stable_state_layout", ROOT / "stable_state_layout.py")
 layout = importlib.util.module_from_spec(layout_spec)
 layout_spec.loader.exec_module(layout)
+
+# Both inputs are complete Git publications.  The first has no format archive
+# for the owners below; the second is the publication that exposed the fixture
+# assumptions.  English/French bytes are identical in these two real releases.
+REAL_FORMAT_COMMITS = {
+    "first-format": "921e1df9171992ab7a9f1b3803b963b02fd45bbc",
+    "coexisting-format": "50b479912dd0e598ad0b717332a15bf7d8606e69",
+}
+REAL_FORMAT_PINS = {
+    "programming/cpp_fundamentals/aleatoriedad_y_reproducibilidad/lesson_combinar_ensayos_generados_y_casos_elegidos.json": {
+        "es": [
+            "26da228b3df2d13088897768a4823ff641fe7b0babe1788093c6c60216a86e6a",
+            "b5319bcf554f6f5347375feee6c2ab778f50505cc6c013e2b101bffc74fbaf7d"
+        ],
+        "en": "de1956f975fb4c876d95acd9502d73eb71e2b796aa34820e2fdb668e4a416194",
+        "fr": "2a76dfb5c62cef396dd283b16d5c1a3a0690665406d6cbc1ae0a9b031497ec43"
+    },
+    "programming/cpp_fundamentals/archivos_y_programa_completo/lesson_cerrar_reemplazar_y_anadir_datos.json": {
+        "es": [
+            "a4c53aaac795de6410e137d0db89e0f607f5aad8d1779bd8a64111e8a993ebea",
+            "1c906e101da5593c3686184b28ce1ae4c7d33f80a3304f0212c518de95a52f7d"
+        ],
+        "en": "e1ee5510ea9a7e2451103b298f29c695a23cf6d76cdd95cef245b376988501cd",
+        "fr": "d1c22d2c6da13a48bd2310fd72235319d6a3de899bd129444e4853e2e0c426f8"
+    },
+    "programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_nombrar_alternativas_con_enum_class.json": {
+        "es": [
+            "e8e154b4e95f36f477a1585377ea36090946d43a252617fe5017dc5646647fa4",
+            "cfef31a0b8261b74ed64c55ed19604712dfb16be8e072d5d548e3a17925eaef3"
+        ],
+        "en": "22bc8b1b2d4ce6410e8d9d3d265ae573f261bdbb09e3b86adf99fb1bb5bb58ec",
+        "fr": "e972b4f72c9899f828405d981d0d4f9796911d8b3300feb2cd672dfc06698b76"
+    },
+    "programming/cpp_fundamentals/errores_y_construccion_gradual/lesson_validar_antes_y_elegir_reporte.json": {
+        "es": [
+            "d65de29e472e1f1518559c7e6e785d68943bf1378ff80f0b55278786bbd9f788",
+            "84ae6c2c5f4bd7da82782def62d1b6adf9f6a78e4fad440c6e5a6c1206273c80"
+        ],
+        "en": "0e0eab9f7fda4ea638596f1f81e5e523ef0fbd9fc59ef42646ed1e765168c4d0",
+        "fr": "9ae89d6b6d74e9b65fc5b70efec82d3b80f9fd84bc384d07b97f222844a25288"
+    },
+    "programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_construir_un_interprete_con_historial_y_pruebas.json": {
+        "es": [
+            "b1d0206bc4ea3e3fcb960cb0b91322a850be3ddb2ef3a34221334215e24abfe2",
+            "7b8704f4d738e56cb873358929b36b49ca9f159f2652fa414470395c1408f1a9"
+        ],
+        "en": "b821159b28e8165c10e4bf6b23361b59d8eba0e1213dde4c3f617952616d86b6",
+        "fr": "853f786bf08cb1ea0434df6ac45026b5c95de6cee09c26097feda5dae92de83b"
+    },
+    "programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json": {
+        "es": [
+            "6ce999bc1d2ed19ce71c5f995380c51f4ea734fc2ae04ed9915fa7bdf0a4cbb8",
+            "65b762c8cff56c1fbf5c33094be61dc3d0e989ad1798d110cf80344b21e91393"
+        ],
+        "en": "4225fef70fc80bdd8323a1e4b6f9284d0c0f6d6e6bb3366a039edefbcfa4078b",
+        "fr": "1ce3751a6d16370ac784eb783df3bf74dce26fdbb6c90b38b3bbd6cf2f7e34f7"
+    },
+    "programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_numeros_de_varios_digitos_y_limites.json": {
+        "es": [
+            "6b4187b4411467892240ae00b0311d325b48150f90fd547c706bb5e93cfc0f0d",
+            "605e256e4bb03ce748160bac51c7d3af95191d68fff0ffe661bed34d0ffd64b2"
+        ],
+        "en": "f52fede751dcdcbf93465cf67e84704dcb871fc9197b56e552021255ffe0b4a5",
+        "fr": "66d3d0f63299004ded9d190af1d3cf04c908246d18625049fa7f1294d85bc714"
+    },
+    "programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_resto_y_asociacion_en_el_interprete.json": {
+        "es": [
+            "6ca35f0d3cb348e453009a3fa8d98e8e45efd927d211598265828a3f3320895d",
+            "b7179c7e6a1e5e0a51106878a556a08b7a7606b0552910b97c1d16651db6b205"
+        ],
+        "en": "dfe05ab3d615f38091aecbfd3bd8ef49cec0b489cdd55a31c21aa729ad2ec8cf",
+        "fr": "fa5eae36ab2bc32544d37839476e63ae7f687228d80ffcfbbaa7870552a93f87"
+    },
+    "programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_signos_unarios_parentesis_y_progreso_recursivo.json": {
+        "es": [
+            "222111911e25b890ea9a8582b7d66d3394f69178b219c9c5282bd61c8fd69a49",
+            "88534164406bfcf3ed951e029eef924e9d1de1ff4488d3dd26b8ba791c4462b2"
+        ],
+        "en": "22a26b0108a011becc8d718694b622c467c50693cb3f4975c4ee9a5eccd5b1ea",
+        "fr": "a394dc2158317e2c7b3ee5298a970d79b449269b0432dd452513d91dab21dd5c"
+    },
+    "programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_terminos_prioridad_y_division_segura.json": {
+        "es": [
+            "c5f88dcd96187ebd74e3a40221d79893a979991d073a1e9aaad0309a07d920ac",
+            "4f672a4b47a8a641678219709d0d28cd9daf602c2992fce8d81fe48df5c283b6"
+        ],
+        "en": "d650e04c0b2d5ab59ec459e21c65964e5e29a9989fc99a14d94ca770f3eec631",
+        "fr": "5a3166666b5a0f818e88dd465c9804567dff6cca8097f49add5c2a248b2a2471"
+    },
+    "programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_tokens_con_categoria_y_valor.json": {
+        "es": [
+            "82bb7c21d96e30674b470beeed3cc19a4c4d2b0fd21409163579678ae45173db",
+            "5cf2807129ac1b3fbb42fe0dea9576db74a7d5a47db32e89dea386f24ccbf870"
+        ],
+        "en": "067b6be16cd36e5606d0c45a99ef50fa573c7f42812617df34243b7265e3f603",
+        "fr": "21d0dd8dd3394b10677a08994e19f2fd18a98d19ed64b29b232c81945412a6b2"
+    },
+    "programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_una_gramatica_para_sumar_y_restar.json": {
+        "es": [
+            "70772736b2b4ba184a33afbd1348fbbe5d6ff342cd96cb6f386b1b33d1d0d331",
+            "ae347151fd875d7dc0f1b5449a6087050e13cbd7c33597641c5fa7671ac244ac"
+        ],
+        "en": "482d555a8f8abc517c362acc608dac5e5a3110b058a7b72035dab940a245400b",
+        "fr": "f2155f5046c14bbb0827057569bb92a160c8347f48d969221227c6cac40f5bcf"
+    }
+}
+
+
+def real_format_path(locale: str, relative: str) -> Path:
+    return Path(__file__).resolve().parents[2] / "app/src/main/assets/content" / locale / relative
+
+
+def real_format_family(relative: str, publication: str) -> dict:
+    if publication == "working-tree":
+        return {locale: json.loads(real_format_path(locale, relative).read_bytes())
+                for locale in ("es", "en", "fr")}
+    commit = REAL_FORMAT_COMMITS[publication]
+    edition = tuple(REAL_FORMAT_COMMITS).index(publication)
+    family = {}
+    for locale, digests in REAL_FORMAT_PINS[relative].items():
+        digest = digests[edition] if locale == "es" else digests
+        expected = Publication(commit, digest)
+        path = f"app/src/main/assets/content/{locale}/{relative}"
+        payload = publication_bytes(Path(__file__).resolve().parents[2], path, expected)
+        family[locale] = json.loads(verify_publication_bytes(payload, expected))
+    return family
+
 
 def fixture():
     return {
@@ -703,28 +835,103 @@ class SourceFormatTest(unittest.TestCase):
                          prose["pages"][0]["blocks"][1])
 
 
+    def _for_real_publications(self, relative, identities, check):
+        first = real_format_family(relative, "first-format")
+        coexisting = real_format_family(relative, "coexisting-format")
+        old = active_owners(first["es"])[0]
+        first_archives = {entry["id"] for entry in
+                          first["es"]["stateLayout"].get("sourceFormatRevisions", [])}
+        current_archives = {entry["id"]: entry["block"] for entry in
+                            coexisting["es"]["stateLayout"]["sourceFormatRevisions"]}
+        # Keep both original cases: first formatting really creates the owner
+        # snapshot, while a later format release must retain that exact snapshot.
+        self.assertTrue(set(identities).isdisjoint(first_archives))
+        self.assertTrue(set(identities) <= current_archives.keys())
+        for identity in identities:
+            self.assertEqual(current_archives[identity], old[identity], identity)
+        layout.validate_transition(first["es"], coexisting["es"])
+        current = real_format_family(relative, "working-tree")
+        layout.validate_transition(coexisting["es"], current["es"])
+        for field in ("sourceFormatRevisions", "editorial"):
+            published = coexisting["es"]["stateLayout"][field]
+            self.assertEqual(current["es"]["stateLayout"][field][:len(published)], published)
+        files = {locale: real_format_path(locale, relative).read_bytes()
+                 for locale in ("es", "en", "fr")}
+        for publication, family in (("first-format", first),
+                                    ("coexisting-format", coexisting),
+                                    ("working-tree", current)):
+            with self.subTest(publication=publication, lesson=relative):
+                unchanged = deepcopy(family)
+                check(relative, family)
+                self.assertEqual(family, unchanged)
+                for locale, payload in files.items():
+                    self.assertEqual(real_format_path(locale, relative).read_bytes(), payload)
+
+    def _assert_real_format_history(self, before, after, identities):
+        original, current = active_owners(before)[0], active_owners(after)[0]
+        old_meta, new_meta = before["stateLayout"], after["stateLayout"]
+        old = old_meta.get("sourceFormatRevisions", [])
+        records = new_meta["sourceFormatRevisions"]
+        old_archives = {entry["id"]: entry for entry in old}
+        archives = {entry["id"]: entry for entry in records}
+        self.assertEqual(len(old_archives), len(old))
+        self.assertEqual(len(archives), len(records))
+        self.assertEqual(records[:len(old)], old)
+        missing = set(identities) - old_archives.keys()
+        self.assertEqual(len(records), len(old) + len(missing))
+        self.assertEqual(set(archives), set(old_archives) | set(identities))
+        self.assertEqual({entry["id"] for entry in records[len(old):]}, missing)
+        for identity in identities:
+            expected = old_archives.get(identity, {"block": original[identity]})["block"]
+            self.assertEqual(archives[identity]["block"], expected, identity)
+        for identity in original.keys() - set(identities):
+            self.assertEqual(current[identity], original[identity], identity)
+        self.assertEqual(current.keys(), original.keys())
+        editorial = old_meta["editorial"]
+        self.assertEqual(new_meta["editorial"][:len(editorial)], editorial)
+        expected_edges = [{"id": identity,
+                           "beforeSha256": layout.fingerprint(original[identity]),
+                           "afterSha256": layout.fingerprint(current[identity])}
+                          for identity in identities]
+        self.assertEqual(sorted(new_meta["editorial"][len(editorial):], key=lambda edge: edge["id"]),
+                         sorted(expected_edges, key=lambda edge: edge["id"]))
+        excluded = {"sourceFormatRevisions", "editorial"}
+        self.assertEqual({key: value for key, value in old_meta.items() if key not in excluded},
+                         {key: value for key, value in new_meta.items() if key not in excluded})
+        self.assertEqual(layout.validate(before), layout.validate(after))
+
+    def test_complete_real_format_publication_pins_reject_changed_bytes(self):
+        for relative, locales in REAL_FORMAT_PINS.items():
+            for edition, (name, commit) in enumerate(REAL_FORMAT_COMMITS.items()):
+                for locale, digests in locales.items():
+                    with self.subTest(lesson=relative, publication=name, locale=locale):
+                        digest = digests[edition] if locale == "es" else digests
+                        expected = Publication(commit, digest)
+                        path = f"app/src/main/assets/content/{locale}/{relative}"
+                        payload = publication_bytes(Path(__file__).resolve().parents[2], path, expected)
+                        self.assertEqual(verify_publication_bytes(payload, expected), payload)
+                        with self.assertRaisesRegex(ValueError, "pinned complete publication"):
+                            verify_publication_bytes(payload + b"\n", expected)
+
     def test_real_u7_l3_question_and_source_spacing_share_published_owner(self):
+        relative = ("programming/cpp_fundamentals/errores_y_construccion_gradual/"
+                    "lesson_validar_antes_y_elegir_reporte.json")
+        self._for_real_publications(
+            relative, ("block_0000_0003",), self._check_real_u7_question_and_source_spacing)
+
+    def _check_real_u7_question_and_source_spacing(self, relative, family):
         """The authored question, explanation and source each keep their own proof."""
         import hashlib
         import json
         import validar_json_programacion as contract
 
-        root = Path(__file__).resolve().parents[2]
-        relative = ("programming/cpp_fundamentals/errores_y_construccion_gradual/"
-                    "lesson_validar_antes_y_elegir_reporte.json")
-        family = {
-            locale: json.loads((root / "app/src/main/assets/content" /
-                                locale / relative).read_text(encoding="utf-8"))
-            for locale in ("es", "en", "fr")
-        }
         published = family["es"]
         layout.validate(published)
-        identity, p, b = "block_0000_0003", 0, 3
-        original = published["pages"][p]["blocks"][b]
-        self.assertEqual(published["stateLayout"]["current"][p]["blocks"][b], identity)
+        identity = "block_0000_0003"
+        originals, positions = active_owners(published)
+        p, b = positions[identity]
+        original = originals[identity]
         self.assertEqual(original["type"], "output_prediction")
-        self.assertNotIn(identity, [entry["id"] for entry in
-                                   published["stateLayout"].get("sourceFormatRevisions", [])])
 
         draft = deepcopy(published)
         block = draft["pages"][p]["blocks"][b]
@@ -745,19 +952,16 @@ class SourceFormatTest(unittest.TestCase):
         self.assertEqual(published["stateLayout"]["origin"], reviewed["stateLayout"]["origin"])
         self.assertEqual(published["stateLayout"]["current"], reviewed["stateLayout"]["current"])
         self.assertEqual(published["stateLayout"]["family"], reviewed["stateLayout"]["family"])
-        self.assertEqual(len(reviewed["stateLayout"]["sourceFormatRevisions"]),
-                         len(published["stateLayout"].get("sourceFormatRevisions", [])) + 1)
-        archive = next(item for item in reviewed["stateLayout"]["sourceFormatRevisions"]
-                       if item["id"] == identity)
-        self.assertEqual(archive["block"], original)
+        self._assert_real_format_history(published, reviewed, (identity,))
         self.assertEqual(original["answers"], block["answers"])
         self.assertEqual(fmt.source_projection(block, original)["code"], original["code"])
         full_path = "app/src/main/assets/content/es/" + relative
+        storage_p, storage_b = layout.validate(published)[p, b]
         self.assertTrue(contract.preserves_previous_exercise(
-            full_path, p, b, original, reviewed["pages"][p]["blocks"][b],
+            full_path, storage_p, storage_b, original, reviewed["pages"][p]["blocks"][b],
             previous_document=published, current_document=reviewed))
         self.assertTrue(contract.preserves_source_format_revision(
-            full_path, p, b, original, reviewed["pages"][p]["blocks"][b],
+            full_path, storage_p, storage_b, original, reviewed["pages"][p]["blocks"][b],
             previous_document=published, current_document=reviewed))
 
         stale = deepcopy(draft)
@@ -781,19 +985,18 @@ class SourceFormatTest(unittest.TestCase):
             layout.validate_transition(published, changed_code)
 
     def test_combined_question_cannot_repaint_unchanged_explanation(self):
+        relative = ("programming/cpp_fundamentals/errores_y_construccion_gradual/"
+                    "lesson_validar_antes_y_elegir_reporte.json")
+        self._for_real_publications(
+            relative, ("block_0000_0003",), self._check_combined_question_preserves_unchanged_explanation)
+
+    def _check_combined_question_preserves_unchanged_explanation(self, relative, family):
         import hashlib
         import json
 
-        root = Path(__file__).resolve().parents[2]
-        relative = ("programming/cpp_fundamentals/errores_y_construccion_gradual/"
-                    "lesson_validar_antes_y_elegir_reporte.json")
-        family = {
-            locale: json.loads((root / "app/src/main/assets/content" /
-                                locale / relative).read_text(encoding="utf-8"))
-            for locale in ("es", "en", "fr")
-        }
         published = family["es"]
-        identity, p, b = "block_0000_0003", 0, 3
+        identity = "block_0000_0003"
+        p, b = active_owners(published)[1][identity]
         draft = deepcopy(published)
         block = draft["pages"][p]["blocks"][b]
         block["code"] = block["code"].replace(
@@ -804,6 +1007,7 @@ class SourceFormatTest(unittest.TestCase):
         marker["sourceSha256"] = hashlib.sha256(block["question"].encode()).hexdigest()
         accepted = layout.prepare_v2(draft, "es", family, published)
         layout.validate_transition(published, accepted)
+        self._assert_real_format_history(published, accepted, (identity,))
 
         forged = deepcopy(draft)
         explanation = next(item for item in forged["textSemantics"]["fields"]
@@ -839,6 +1043,12 @@ class SourceFormatTest(unittest.TestCase):
 
 
     def test_real_u9_l3_three_source_and_explanation_revisions(self):
+        relative = ("programming/cpp_fundamentals/datos_propios_y_estado_valido/"
+                    "lesson_nombrar_alternativas_con_enum_class.json")
+        self._for_real_publications(
+            relative, ("block_0001_0002", "block_0002_0002", "block_0004_0003"), self._check_real_u9_sources_and_explanations)
+
+    def _check_real_u9_sources_and_explanations(self, relative, family):
         """The reported enum-class slots can change spacing with authored prose.
 
         Nothing is written back to Work's lessons. All three published blocks
@@ -848,20 +1058,10 @@ class SourceFormatTest(unittest.TestCase):
         import json
         import validar_json_programacion as contract
 
-        root = Path(__file__).resolve().parents[2]
-        relative = ("programming/cpp_fundamentals/datos_propios_y_estado_valido/"
-                    "lesson_nombrar_alternativas_con_enum_class.json")
-        family = {
-            locale: json.loads((root / "app/src/main/assets/content" /
-                                locale / relative).read_text(encoding="utf-8"))
-            for locale in ("es", "en", "fr")
-        }
         before = family["es"]
         layout.validate(before)
-        positions = ((1, 2, "block_0001_0002"),
-                     (2, 2, "block_0002_0002"),
-                     (4, 3, "block_0004_0003"))
-        original_archives = len(before["stateLayout"].get("sourceFormatRevisions", []))
+        identities = ("block_0001_0002", "block_0002_0002", "block_0004_0003")
+        positions = [(*active_owners(before)[1][identity], identity) for identity in identities]
         changed = deepcopy(before)
         original_sources = {}
         for page, index, identity in positions:
@@ -891,66 +1091,86 @@ class SourceFormatTest(unittest.TestCase):
         self.assertEqual(before["stateLayout"]["origin"], reviewed["stateLayout"]["origin"])
         self.assertEqual(before["stateLayout"]["family"], reviewed["stateLayout"]["family"])
         self.assertEqual(before["stateLayout"]["current"], reviewed["stateLayout"]["current"])
-        new_archives = reviewed["stateLayout"]["sourceFormatRevisions"][original_archives:]
-        self.assertEqual([identity for _, _, identity in positions],
-                         [item["id"] for item in new_archives])
+        self._assert_real_format_history(before, reviewed, identities)
         path = "app/src/main/assets/content/es/" + relative
         for page, index, identity in positions:
             previous_block = before["pages"][page]["blocks"][index]
             revised_block = reviewed["pages"][page]["blocks"][index]
-            archive = next(item for item in new_archives if item["id"] == identity)
-            self.assertEqual(archive["block"], previous_block)
             self.assertEqual(previous_block["code"], original_sources[identity])
             self.assertEqual(previous_block["answers"], revised_block["answers"])
+            storage_p, storage_b = layout.validate(before)[page, index]
             self.assertTrue(contract.preserves_previous_exercise(
-                path, page, index, previous_block, revised_block,
+                path, storage_p, storage_b, previous_block, revised_block,
                 previous_document=before, current_document=reviewed))
             self.assertTrue(contract.preserves_source_format_revision(
-                path, page, index, previous_block, revised_block,
+                path, storage_p, storage_b, previous_block, revised_block,
                 previous_document=before, current_document=reviewed))
         tampered = deepcopy(reviewed)
-        tampered["pages"][2]["blocks"][2]["answers"] = ["4"]
+        active_owners(tampered)[0]["block_0002_0002"]["answers"] = ["4"]
         with self.assertRaises(layout.LayoutError):
             layout.validate_transition(before, tampered)
         tampered = deepcopy(reviewed)
-        tampered["pages"][4]["blocks"][3]["code"] = (
-            tampered["pages"][4]["blocks"][3]["code"].replace(
+        tampered_block = active_owners(tampered)[0]["block_0004_0003"]
+        tampered_block["code"] = (
+            tampered_block["code"].replace(
                 "Estado::cancelado", "Estado::preparado", 1))
         with self.assertRaises(layout.LayoutError):
             layout.validate_transition(before, tampered)
-        for language in ("es", "en", "fr"):
-            self.assertEqual(json.loads((root / "app/src/main/assets/content" /
-                                         language / relative).read_text(encoding="utf-8")),
-                             family[language])
+
+
+    def test_real_format_reorder_keeps_historical_addresses_and_archives(self):
+        relative = ("programming/cpp_fundamentals/datos_propios_y_estado_valido/"
+                    "lesson_nombrar_alternativas_con_enum_class.json")
+        moved = ("block_0001_0002", "block_0002_0002")
+        for publication in REAL_FORMAT_COMMITS:
+            with self.subTest(publication=publication):
+                family = real_format_family(relative, publication)
+                unchanged = deepcopy(family)
+                before = family["es"]
+                positions = active_owners(before)[1]
+                plan = deepcopy(before["stateLayout"]["current"])
+                (p, b), (q, c) = (positions[owner] for owner in moved)
+                plan[p]["blocks"][b], plan[q]["blocks"][c] = moved[1], moved[0]
+                reordered = layout.reorder(before, plan)
+                after_positions = active_owners(reordered)[1]
+                old_storage, storage = layout.validate(before), layout.validate(reordered)
+                for owner in moved:
+                    self.assertNotEqual(positions[owner], after_positions[owner])
+                    self.assertEqual(old_storage[positions[owner]], storage[after_positions[owner]])
+                for field in ("sourceFormatRevisions", "editorial"):
+                    self.assertEqual(before["stateLayout"].get(field),
+                                     reordered["stateLayout"].get(field))
+                # This also changes the visual order of newly archived owners.
+                # Canonical snapshots and guard addresses still bind by identity.
+                self._check_real_u9_sources_and_explanations(
+                    relative, {**family, "es": reordered})
+                self.assertEqual(family, unchanged)
 
     def test_real_u10_l4_combined_format_and_authored_guide(self):
+        relative = ("programming/cpp_fundamentals/aleatoriedad_y_reproducibilidad/"
+                    "lesson_combinar_ensayos_generados_y_casos_elegidos.json")
+        self._for_real_publications(
+            relative, ("block_0004_0007",), self._check_real_u10_compiler_and_authored_guide)
+
+    def _check_real_u10_compiler_and_authored_guide(self, relative, family):
         """Authenticate a real published compiler owner without editing its JSON."""
         import hashlib
         import json
         import validar_json_programacion as contract
 
-        root = Path(__file__).resolve().parents[2]
-        relative = ("programming/cpp_fundamentals/aleatoriedad_y_reproducibilidad/"
-                    "lesson_combinar_ensayos_generados_y_casos_elegidos.json")
-        family = {
-            locale: json.loads((root / "app/src/main/assets/content" /
-                                locale / relative).read_text(encoding="utf-8"))
-            for locale in ("es", "en", "fr")
-        }
         published = family["es"]
         layout.validate(published)
         identity = "block_0004_0007"
-        self.assertEqual(published["stateLayout"]["current"][4]["blocks"][7], identity)
-        original = published["pages"][4]["blocks"][7]
+        originals, positions = active_owners(published)
+        p, b = positions[identity]
+        original = originals[identity]
         self.assertEqual(original["type"], "cpp_compiler")
-        self.assertFalse(any(item["id"] == identity for item in
-                             published["stateLayout"].get("sourceFormatRevisions", [])))
         before_code = "    int cantidad=0;\n    for(int dato:datos)"
         after_code = "    int cantidad=0;\n\n    for(int dato:datos)"
         self.assertEqual(original["initialCode"].count(before_code), 1)
 
         updated = deepcopy(published)
-        editor = updated["pages"][4]["blocks"][7]
+        editor = updated["pages"][p]["blocks"][b]
         editor["initialCode"] = editor["initialCode"].replace(
             before_code, after_code, 1)
         case = editor["outputCheck"]["cases"][0]
@@ -959,9 +1179,12 @@ class SourceFormatTest(unittest.TestCase):
         marker = next(field for field in updated["textSemantics"]["fields"]
                       if field["block"] == identity and
                       field["path"] == "/outputCheck/cases/0/explanation")
-        # Append after the existing 17 genuine semantic spans; no highlight
-        # is shifted or silently given a new meaning.
-        self.assertEqual(len(marker["spans"]), 17)
+        # Appending prose must preserve every genuine semantic span.
+        published_marker = next(field for field in published["textSemantics"]["fields"]
+                                if field["block"] == identity and
+                                field["path"] == "/outputCheck/cases/0/explanation")
+        self.assertTrue(published_marker["spans"])
+        self.assertEqual(marker["spans"], published_marker["spans"])
         marker["sourceSha256"] = hashlib.sha256(
             case["explanation"].encode("utf-8")).hexdigest()
         self.assertNotEqual(original["initialCode"], editor["initialCode"])
@@ -975,22 +1198,24 @@ class SourceFormatTest(unittest.TestCase):
                          published["stateLayout"]["family"])
         self.assertEqual(reviewed["stateLayout"]["current"],
                          published["stateLayout"]["current"])
-        archives = [item for item in reviewed["stateLayout"]["sourceFormatRevisions"]
-                    if item["id"] == identity]
-        self.assertEqual(len(archives), 1)
-        self.assertEqual(archives[0]["block"], original)
-        self.assertEqual(reviewed["pages"][4]["blocks"][7]["outputCheck"]
+        self._assert_real_format_history(published, reviewed, (identity,))
+        revised_marker = next(field for field in reviewed["textSemantics"]["fields"]
+                              if field["block"] == identity and
+                              field["path"] == "/outputCheck/cases/0/explanation")
+        self.assertEqual(revised_marker["spans"], published_marker["spans"])
+        self.assertEqual(reviewed["pages"][p]["blocks"][b]["outputCheck"]
                          ["cases"][0]["outputs"], original["outputCheck"]["cases"][0]["outputs"])
         full_path = "app/src/main/assets/content/es/" + relative
+        storage_p, storage_b = layout.validate(published)[p, b]
         self.assertTrue(contract.preserves_source_format_revision(
-            full_path, 4, 7, original, reviewed["pages"][4]["blocks"][7],
+            full_path, storage_p, storage_b, original, reviewed["pages"][p]["blocks"][b],
             previous_document=published, current_document=reviewed))
         self.assertTrue(contract.preserves_previous_exercise(
-            full_path, 4, 7, original, reviewed["pages"][4]["blocks"][7],
+            full_path, storage_p, storage_b, original, reviewed["pages"][p]["blocks"][b],
             previous_document=published, current_document=reviewed))
 
         incorrect = deepcopy(reviewed)
-        incorrect["pages"][4]["blocks"][7]["initialCode"] = (
+        incorrect["pages"][p]["blocks"][b]["initialCode"] = (
             editor["initialCode"].replace("dato>minimo", "dato>=minimo", 1))
         with self.assertRaises(layout.LayoutError):
             layout.validate_transition(published, incorrect)
@@ -1008,40 +1233,37 @@ class SourceFormatTest(unittest.TestCase):
 
 
     def test_real_u11_l11_combined_format_and_review_feedback(self):
+        relative = ("programming/cpp_fundamentals/texto_interpretacion_y_flujos/"
+                    "lesson_una_gramatica_para_sumar_y_restar.json")
+        self._for_real_publications(
+            relative, ("block_0002_0001",), self._check_real_u11_prediction_and_review_feedback)
+
+    def _check_real_u11_prediction_and_review_feedback(self, relative, family):
         """A published prediction keeps its answer and original guide spans."""
         import hashlib
         import json
         import validar_json_programacion as contract
 
-        root = Path(__file__).resolve().parents[2]
-        relative = ("programming/cpp_fundamentals/texto_interpretacion_y_flujos/"
-                    "lesson_una_gramatica_para_sumar_y_restar.json")
-        family = {
-            locale: json.loads((root / "app/src/main/assets/content" /
-                                locale / relative).read_text(encoding="utf-8"))
-            for locale in ("es", "en", "fr")
-        }
         published = family["es"]
         layout.validate(published)
         identity = "block_0002_0001"
-        self.assertEqual(published["stateLayout"]["current"][2]["blocks"][1], identity)
-        original = published["pages"][2]["blocks"][1]
+        originals, positions = active_owners(published)
+        p, b = positions[identity]
+        original = originals[identity]
         self.assertEqual(original["type"], "output_prediction")
-        self.assertFalse(any(item["id"] == identity for item in
-                             published["stateLayout"].get("sourceFormatRevisions", [])))
         before_code = "    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();"
         after_code = "    const int resultado = leer_expresion(lector);\n\n    const Token fin = lector.leer();"
         self.assertEqual(original["code"].count(before_code), 1)
 
         updated = deepcopy(published)
-        puzzle = updated["pages"][2]["blocks"][1]
+        puzzle = updated["pages"][p]["blocks"][b]
         puzzle["code"] = puzzle["code"].replace(before_code, after_code, 1)
         puzzle["reviewFeedback"] += (
             "\nEl terminador recuperado pertenece a la misma operación.")
         marker = next(field for field in updated["textSemantics"]["fields"]
                       if field["block"] == identity and
                       field["path"] == "/reviewFeedback")
-        self.assertEqual(len(marker["spans"]), 2)
+        self.assertTrue(marker["spans"])
         marker["sourceSha256"] = hashlib.sha256(
             puzzle["reviewFeedback"].encode("utf-8")).hexdigest()
         reviewed = layout.prepare_v2(updated, "es", family, published)
@@ -1053,10 +1275,7 @@ class SourceFormatTest(unittest.TestCase):
                          published["stateLayout"]["current"])
         self.assertEqual(reviewed["stateLayout"]["family"],
                          published["stateLayout"]["family"])
-        archives = [item for item in reviewed["stateLayout"]["sourceFormatRevisions"]
-                    if item["id"] == identity]
-        self.assertEqual(len(archives), 1)
-        self.assertEqual(archives[0]["block"], original)
+        self._assert_real_format_history(published, reviewed, (identity,))
         self.assertEqual(puzzle["answers"], original["answers"])
         revised_marker = next(field for field in reviewed["textSemantics"]["fields"]
                               if field["block"] == identity and
@@ -1066,15 +1285,16 @@ class SourceFormatTest(unittest.TestCase):
                                 field["path"] == "/reviewFeedback")
         self.assertEqual(revised_marker["spans"], published_marker["spans"])
         full_path = "app/src/main/assets/content/es/" + relative
+        storage_p, storage_b = layout.validate(published)[p, b]
         self.assertTrue(contract.preserves_source_format_revision(
-            full_path, 2, 1, original, reviewed["pages"][2]["blocks"][1],
+            full_path, storage_p, storage_b, original, reviewed["pages"][p]["blocks"][b],
             previous_document=published, current_document=reviewed))
         self.assertTrue(contract.preserves_previous_exercise(
-            full_path, 2, 1, original, reviewed["pages"][2]["blocks"][1],
+            full_path, storage_p, storage_b, original, reviewed["pages"][p]["blocks"][b],
             previous_document=published, current_document=reviewed))
 
         forged = deepcopy(reviewed)
-        forged["pages"][2]["blocks"][1]["answers"] = ["Resultado falsificado"]
+        forged["pages"][p]["blocks"][b]["answers"] = ["Resultado falsificado"]
         with self.assertRaises(layout.LayoutError):
             layout.validate_transition(published, forged)
         stale = deepcopy(reviewed)
@@ -1320,8 +1540,6 @@ class SourceFormatTest(unittest.TestCase):
 
     def test_real_u11_compiler_references_allow_later_physical_spacing(self):
         """Nine real expanded references, without replacing their paired compiler."""
-        import json
-        import validar_json_programacion as contract
 
         names = {
             "tokens_con_categoria_y_valor": ("block_0007_0001",),
@@ -1334,130 +1552,122 @@ class SourceFormatTest(unittest.TestCase):
                 ("block_0009_0001", "block_0010_0001"),
             "resto_y_asociacion_en_el_interprete": ("block_0006_0001",),
         }
-        root = Path(__file__).resolve().parents[2] / "app/src/main/assets/content"
+        for name, identities in names.items():
+            relative = ("programming/cpp_fundamentals/texto_interpretacion_y_flujos/"
+                        f"lesson_{name}.json")
+            self._for_real_publications(
+                relative, identities,
+                lambda path, family, owners=identities:
+                    self._check_real_u11_compiler_references(path, family, owners))
+
+    def _check_real_u11_compiler_references(self, relative, family, identities):
+        import validar_json_programacion as contract
+
         before_code = "    return 0;\n}\n"
         after_code = "\n    return 0;\n}\n"
-        for name, identities in names.items():
-            with self.subTest(lesson=name):
-                relative = ("programming/cpp_fundamentals/texto_interpretacion_y_flujos/"
-                            f"lesson_{name}.json")
-                paths = {lang: root / lang / relative for lang in ("es", "en", "fr")}
-                original_bytes = paths["es"].read_bytes()
-                family = {lang: json.loads(path.read_text(encoding="utf-8"))
-                          for lang, path in paths.items()}
-                published = family["es"]
-                layout.validate(published)
-                old_meta = published["stateLayout"]
-                historical_refs = {
-                    reference["id"] for owner in old_meta.get("compilerRevisions", [])
-                    for reference in owner.get("references", [])
-                }
-                updated = deepcopy(published)
-                positions = {}
-                for p, record in enumerate(old_meta["current"]):
-                    for b, identity in enumerate(record["blocks"]):
-                        if identity in identities:
-                            positions[identity] = (p, b)
-                self.assertEqual(set(positions), set(identities))
-                self.assertTrue(set(identities) <= historical_refs)
-                prior_archives = {item["id"] for item in
-                                  old_meta.get("sourceFormatRevisions", [])}
-                self.assertTrue(set(identities).isdisjoint(prior_archives))
-                for identity in identities:
-                    p, b = positions[identity]
-                    original = published["pages"][p]["blocks"][b]
-                    candidate = updated["pages"][p]["blocks"][b]
-                    self.assertEqual(original["type"], "code")
-                    self.assertEqual(original["code"].count(before_code), 1)
-                    candidate["code"] = candidate["code"].replace(
-                        before_code, after_code, 1)
-                    self.assertTrue(fmt.require_source_format(original, candidate))
-                    self.assertEqual(original, fmt.source_projection(candidate, original))
+        published = family["es"]
+        layout.validate(published)
+        old_meta = published["stateLayout"]
+        historical_refs = {
+            reference["id"] for owner in old_meta.get("compilerRevisions", [])
+            for reference in owner.get("references", [])
+        }
+        updated = deepcopy(published)
+        positions = {}
+        for p, record in enumerate(old_meta["current"]):
+            for b, identity in enumerate(record["blocks"]):
+                if identity in identities:
+                    positions[identity] = (p, b)
+        self.assertEqual(set(positions), set(identities))
+        self.assertTrue(set(identities) <= historical_refs)
+        for identity in identities:
+            p, b = positions[identity]
+            original = published["pages"][p]["blocks"][b]
+            candidate = updated["pages"][p]["blocks"][b]
+            self.assertEqual(original["type"], "code")
+            self.assertEqual(original["code"].count(before_code), 1)
+            candidate["code"] = candidate["code"].replace(
+                before_code, after_code, 1)
+            self.assertTrue(fmt.require_source_format(original, candidate))
+            self.assertEqual(original, fmt.source_projection(candidate, original))
 
-                revised = layout.prepare_v2(updated, "es", family, published)
-                self.assertEqual(layout.validate(published), layout.validate(revised))
-                layout.validate_transition(published, revised)
-                for key in ("origin", "current", "family", "additions", "compilerRevisions",
-                            "choiceRevisions", "retired", "retirementHistory"):
-                    self.assertEqual(old_meta.get(key), revised["stateLayout"].get(key), key)
-                self.assertEqual(old_meta["editorial"],
-                                 revised["stateLayout"]["editorial"][:len(old_meta["editorial"])])
-                self.assertEqual(paths["es"].read_bytes(), original_bytes)
-                self.assertEqual(
-                    [archive["id"] for archive in
-                     revised["stateLayout"]["sourceFormatRevisions"][-len(identities):]],
-                    list(identities))
-                for identity in identities:
-                    p, b = positions[identity]
-                    original = published["pages"][p]["blocks"][b]
-                    changed = revised["pages"][p]["blocks"][b]
-                    archived = next(
-                        item for item in revised["stateLayout"]["sourceFormatRevisions"]
+        revised = layout.prepare_v2(updated, "es", family, published)
+        self.assertEqual(layout.validate(published), layout.validate(revised))
+        layout.validate_transition(published, revised)
+        for key in ("origin", "current", "family", "additions", "compilerRevisions",
+                    "choiceRevisions", "retired", "retirementHistory"):
+            self.assertEqual(old_meta.get(key), revised["stateLayout"].get(key), key)
+        self.assertEqual(old_meta["editorial"],
+                         revised["stateLayout"]["editorial"][:len(old_meta["editorial"])])
+        self._assert_real_format_history(published, revised, identities)
+        for identity in identities:
+            p, b = positions[identity]
+            original = published["pages"][p]["blocks"][b]
+            changed = revised["pages"][p]["blocks"][b]
+            self.assertEqual(changed["code"], updated["pages"][p]["blocks"][b]["code"])
+            storage_p, storage_b = layout.validate(published)[p, b]
+            self.assertTrue(contract.preserves_source_format_revision(
+                "app/src/main/assets/content/es/" + relative, storage_p, storage_b,
+                original, changed, previous_document=published,
+                current_document=revised))
+            self.assertTrue(contract.preserves_previous_exercise(
+                "app/src/main/assets/content/es/" + relative, storage_p, storage_b,
+                original, changed, previous_document=published,
+                current_document=revised))
+
+        # Rehashing a different program is not a whitespace revision,
+        # and rewriting the archived complete predecessor is forbidden.
+        identity = identities[0]
+        p, b = positions[identity]
+        forged = deepcopy(revised)
+        forged_block = forged["pages"][p]["blocks"][b]
+        forged_block["code"] = forged_block["code"].replace(
+            "    return 0;\n}\n", "    return 1;\n}\n", 1)
+        proof = next(item for item in reversed(forged["stateLayout"]["editorial"])
+                     if item["id"] == identity)
+        proof["afterSha256"] = layout.fingerprint(forged_block)
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(forged)
+        altered_archive = deepcopy(revised)
+        snapshot = next(item for item in
+                        altered_archive["stateLayout"]["sourceFormatRevisions"]
                         if item["id"] == identity)
-                    self.assertEqual(archived["block"], original)
-                    self.assertEqual(changed["code"], updated["pages"][p]["blocks"][b]["code"])
-                    self.assertTrue(contract.preserves_source_format_revision(
-                        "app/src/main/assets/content/es/" + relative, p, b,
-                        original, changed, previous_document=published,
-                        current_document=revised))
-                    self.assertTrue(contract.preserves_previous_exercise(
-                        "app/src/main/assets/content/es/" + relative, p, b,
-                        original, changed, previous_document=published,
-                        current_document=revised))
-
-                # Rehashing a different program is not a whitespace revision,
-                # and rewriting the archived complete predecessor is forbidden.
-                identity = identities[0]
-                p, b = positions[identity]
-                forged = deepcopy(revised)
-                forged_block = forged["pages"][p]["blocks"][b]
-                forged_block["code"] = forged_block["code"].replace(
-                    "    return 0;\n}\n", "    return 1;\n}\n", 1)
-                proof = next(item for item in reversed(forged["stateLayout"]["editorial"])
-                             if item["id"] == identity)
-                proof["afterSha256"] = layout.fingerprint(forged_block)
-                with self.assertRaises(layout.LayoutError):
-                    layout.validate(forged)
-                altered_archive = deepcopy(revised)
-                snapshot = next(item for item in
-                                altered_archive["stateLayout"]["sourceFormatRevisions"]
-                                if item["id"] == identity)
-                snapshot["block"]["code"] += "\n// forged"
-                with self.assertRaises(layout.LayoutError):
-                    layout.validate(altered_archive)
+        snapshot["block"]["code"] += "\n// forged"
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(altered_archive)
 
 
 
     def test_real_u12_identical_references_preserve_distinct_owners_after_formatting(self):
+        relative = ("programming/cpp_fundamentals/archivos_y_programa_completo/"
+                    "lesson_cerrar_reemplazar_y_anadir_datos.json")
+        self._for_real_publications(
+            relative, ("block_0006_0001", "block_0008_0001"),
+            self._check_real_u12_identical_references)
+
+    def _check_real_u12_identical_references(self, relative, family):
         """Signed physical formatting is not a transfer to a matching code owner."""
         import json
         import validar_json_programacion as validator
 
-        root = Path(__file__).resolve().parents[2]
-        relative = ("programming/cpp_fundamentals/archivos_y_programa_completo/"
-                    "lesson_cerrar_reemplazar_y_anadir_datos.json")
-        family = {
-            language: json.loads((root / "app/src/main/assets/content" /
-                                  language / relative).read_text(encoding="utf-8"))
-            for language in ("es", "en", "fr")
-        }
         published = family["es"]
         layout.validate(published)
         original = published["stateLayout"]
         same_source_owner = "block_0004_0001"
         repeated = ("block_0006_0001", "block_0008_0001")
-        self.assertEqual(original["current"][4]["blocks"][1], same_source_owner)
-        self.assertEqual(original["current"][6]["blocks"][1], repeated[0])
-        self.assertEqual(original["current"][8]["blocks"][1], repeated[1])
-        source = published["pages"][4]["blocks"][1]["code"]
+        originals, positions = active_owners(published)
+        source = originals[same_source_owner]["code"]
+        # If Work has already matched this exact whitespace, the two distinct
+        # owners still receive one common, new physical format in this QA draft.
+        if any(originals[owner]["code"] == source for owner in repeated):
+            source = "\n" + source
         self.assertTrue(any(item["id"] == same_source_owner
                             for item in original.get("sourceFormatRevisions", [])))
-        self.assertFalse(any(item["id"] in repeated
-                             for item in original.get("sourceFormatRevisions", [])))
         updated = deepcopy(published)
-        for page, owner in ((6, repeated[0]), (8, repeated[1])):
-            previous = published["pages"][page]["blocks"][1]
-            changed = updated["pages"][page]["blocks"][1]
+        for owner in repeated:
+            page, index = positions[owner]
+            previous = published["pages"][page]["blocks"][index]
+            changed = updated["pages"][page]["blocks"][index]
             self.assertEqual(previous["type"], "code")
             self.assertEqual(changed["code"].count("    return 0;\n}\n"), 1)
             self.assertNotEqual(previous["code"], source)
@@ -1471,24 +1681,23 @@ class SourceFormatTest(unittest.TestCase):
             self.assertEqual(original.get(key), revised["stateLayout"].get(key), key)
         self.assertEqual(original["editorial"],
                          revised["stateLayout"]["editorial"][:len(original["editorial"])])
-        for page, owner in ((6, repeated[0]), (8, repeated[1])):
-            before_block = published["pages"][page]["blocks"][1]
-            after_block = revised["pages"][page]["blocks"][1]
+        self._assert_real_format_history(published, revised, repeated)
+        for owner in repeated:
+            page, index = positions[owner]
+            before_block = published["pages"][page]["blocks"][index]
+            after_block = revised["pages"][page]["blocks"][index]
             self.assertEqual(after_block["code"], source)
-            snapshot = next(entry for entry in
-                            revised["stateLayout"]["sourceFormatRevisions"]
-                            if entry["id"] == owner)
-            self.assertEqual(snapshot["block"], before_block)
+            storage_p, storage_b = layout.validate(published)[page, index]
             self.assertTrue(validator.preserves_source_format_revision(
-                "app/src/main/assets/content/es/" + relative, page, 1,
+                "app/src/main/assets/content/es/" + relative, storage_p, storage_b,
                 before_block, after_block, previous_document=published,
                 current_document=revised))
             self.assertTrue(validator.preserves_previous_exercise(
-                "app/src/main/assets/content/es/" + relative, page, 1,
+                "app/src/main/assets/content/es/" + relative, storage_p, storage_b,
                 before_block, after_block, previous_document=published,
                 current_document=revised))
         forged_source = deepcopy(revised)
-        block = forged_source["pages"][6]["blocks"][1]
+        block = active_owners(forged_source)[0][repeated[0]]
         block["code"] = block["code"].replace("    return 0;\n}\n",
                                               "    return 1;\n}\n", 1)
         latest = next(edge for edge in reversed(forged_source["stateLayout"]["editorial"])

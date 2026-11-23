@@ -1624,6 +1624,19 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
             previous_document, current_document, identity)
         if _state_layout._blocks(current_document).get(identity) != current:
             return False
+        if "compileCheck" in predecessor:
+            # Both visible owners and the complete transition are already
+            # authenticated. A previously formatted closed diagnostic needs
+            # its canonical source only for contract lookup; comparing it as
+            # a standalone block would reject a legitimate later format.
+            # Keep the actual physical change independent of that projection.
+            changed = _state_layout.code_format.require_source_lexical(predecessor, current)
+            original_contract = _state_layout._historical_source_format_contract(
+                current_document, identity, predecessor)
+            current_contract = _state_layout._historical_source_format_contract(
+                current_document, identity, current)
+            _state_layout.require_source_format_with_editorial(original_contract, current_contract)
+            return changed
         return _state_layout.require_source_format_with_editorial(predecessor, current)
     except (ValueError, KeyError, TypeError, IndexError, AttributeError):
         return False

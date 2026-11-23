@@ -52,8 +52,10 @@ void rejects_both(const JsonObject& root,std::string_view expected){
     const auto raw=winrt::to_string(root.Stringify());
     for(const bool metadata:{false,true}){bool rejected=false;
         try{if(metadata)(void)parse_lesson_progress_metadata(raw,"es");else(void)parse_lesson_json(raw,"es");}
-        catch(const std::exception& error){rejected=true;require(std::string_view(error.what()).find(expected)!=std::string_view::npos,
-            "A malformed snapshot failed for an unrelated reason");}
+        catch(const std::exception& error){rejected=true;
+            if(std::string_view(error.what()).find(expected)==std::string_view::npos)
+                throw std::runtime_error("Malformed snapshot parser="+std::string(metadata?"metadata":"full")+
+                    " expected ["+std::string(expected)+"] but received ["+error.what()+"]");}
         require(rejected,"An unpublished or changed diagnostic snapshot was admitted");}
 }
 Block& editor(Lesson& lesson,std::string_view id){const auto at=stable_block_position(lesson,id);
@@ -148,6 +150,14 @@ void sole_output_sequence(const Lesson& actual,std::string_view id,const std::fi
     // accesses a learner profile, and cannot certify a student's real program.
     const auto original=guidance(actual,id,"");const auto& old=editor(original,id);
     require(old.output_check&&old.output_check->cases.size()==1,"QA requires one actual authored output case");
+    if(old.source_format_original_initial_code){
+        // The loader must reject a physical edit that disagrees with its
+        // authenticated canonical source, before any model is queried.
+        const auto forged=JsonObject::Parse(winrt::to_hstring(actual.raw_json));
+        editor(forged,actual,id).Insert(L"initialCode",JsonValue::CreateStringValue(
+            winrt::to_hstring(old.initial_code+"\n// changed authored source")));
+        rejects_both(forged,"Source formatting modified tokens, literals, comments or preprocessor lines");
+    }
     auto revised=guidance(original,id,"QA current guide N=1");auto& current=editor(revised,id);
     current.text_semantics[std::string(explanation_path)]={"QA current guide N=1",{{0,20,"QA current guide N=1",SemanticRole::output}}};
     // Correct UTF-16 descriptor text, without guessing an origin from wording.
@@ -205,7 +215,12 @@ void sole_output_sequence(const Lesson& actual,std::string_view id,const std::fi
         // Contract changes cannot reuse the earned proof. Each mutation is of
         // the actual current model rather than a disconnected Block copy.
         for(unsigned change=0;change<7;++change){auto hostile=second;auto& bad=editor(hostile,id);
-            if(change==0)bad.initial_code+="\n// changed authored source";
+            if(change==0){bad.initial_code+="\n// changed authored source";
+                // A validated format archive owns the original objective.
+                // Mutate that contract too, not only its visible formatting.
+                if(bad.source_format_original_initial_code)
+                    *bad.source_format_original_initial_code+="\n// changed authored source";
+            }
             if(change==1)bad.output_check->cases.front().outputs.front()+='x';
             if(change==2)bad.output_check->cases.front().standard_input+='x';
             if(change==3)bad.output_check->cases.push_back(bad.output_check->cases.front());
@@ -213,6 +228,8 @@ void sole_output_sequence(const Lesson& actual,std::string_view id,const std::fi
             if(change==5)bad.output_check->cases.front().executable="another-target";
             if(change==6)bad.output_check->cases.front().standard_error=bad.output_check->cases.front().standard_error==StandardErrorExpectation::ignored?
                 StandardErrorExpectation::non_blank:StandardErrorExpectation::ignored;
+            require(reference_objective_frame(hostile,bad)!=reference_objective_frame(second,latest),
+                "Contract mutation "+std::to_string(change)+" did not change the earned objective frame");
             require(!compiler_puzzle_completed(data,hostile,bad)&&!compiler_puzzle_current_feedback(data,hostile,bad,captured),
                 "A changed source/input/output/count/status/target/stderr borrowed an old success");
         }
@@ -263,7 +280,15 @@ void diagnostic_sequence(const std::filesystem::path& content,const std::filesys
     rejects_both(forged,"exact occurrence");
     const auto wrong_diagnostic=JsonObject::Parse(winrt::to_hstring(archived.raw_json));
     snapshot_editor(wrong_diagnostic).Insert(L"diagnostic",JsonValue::CreateStringValue(L"unknown-qa-diagnostic"));
-    rejects_both(wrong_diagnostic,"Unknown reviewed compilation diagnostic");
+    // A formatted historical block must first be an exact published node.
+    // A source without that archive reaches the diagnostic selector directly.
+    rejects_both(wrong_diagnostic,old.source_format_original_initial_code?
+        "A historical formatted source needs an exact occurrence in its owner's editorial chain":
+        "Unknown reviewed compilation diagnostic");
+    const auto wrong_active_diagnostic=JsonObject::Parse(winrt::to_hstring(archived.raw_json));
+    editor(wrong_active_diagnostic,archived,id).GetNamedObject(L"compileCheck").Insert(
+        L"diagnostic",JsonValue::CreateStringValue(L"unknown-qa-diagnostic"));
+    rejects_both(wrong_active_diagnostic,"Unknown reviewed compilation diagnostic");
     state::StateStore store(qa/"diagnostic");auto data=store.load();seed(data,original,id);const auto capture=diagnostic_request(old);
     require(record_compiler_diagnostic_case(data,original,old,capture,diagnostic_capture(capture),"Correcto\nQA original diagnostic guide"),
         "Could not seed explicit accepted diagnostic model");

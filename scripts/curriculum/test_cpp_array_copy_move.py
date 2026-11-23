@@ -14,6 +14,8 @@ import subprocess
 import sys
 import tempfile
 
+import stable_state_layout as state
+
 ROOT = Path(__file__).resolve().parents[2]
 LESSON = ROOT / (
     "app/src/main/assets/content/es/programming/cpp_language_memory_oop/"
@@ -444,13 +446,11 @@ def original_block():
     return block
 
 def compose(original: str, copy_body: str, move_body: str) -> str:
-    copy="Tramo& Tramo::operator=(const Tramo& otra) {"
-    move="Tramo& Tramo::operator=(Tramo&& otra) noexcept {"
+    copy="Tramo& Tramo::operator=(const Tramo& otra)"
+    move="Tramo& Tramo::operator=(Tramo&& otra) noexcept"
     assert original.count(copy)==1 and original.count(move)==1
-    copy_begin=original.index(copy)+len(copy)
-    copy_end=original.index("\n}\nTramo& Tramo::operator=(Tramo&&",copy_begin)+1
-    move_begin=original.index(move)+len(move)
-    move_end=original.index("\n}\nbool Tramo::configurar",move_begin)+1
+    copy_begin,copy_end=state._named_rule_body_span(original,copy)
+    move_begin,move_end=state._named_rule_body_span(original,move)
     assert copy_begin<copy_end<move_begin<move_end
     return (original[:copy_begin]+copy_body+original[copy_end:move_begin]+
             move_body+original[move_end:])

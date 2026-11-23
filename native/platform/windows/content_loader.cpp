@@ -5004,14 +5004,15 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
                     "A local-int owner cannot share another compiler runtime check.");
         }
         const auto authored=array(item,"probes");
-        require(authored.Size()>0&&authored.Size()<=8,
-            "A local-int owner requires 1..8 private mutations.");
+        require(authored.Size()>0&&authored.Size()<=16,
+            "A local-int owner requires 1..16 private mutations.");
         const auto raw_probes=original.elements(
             original.member(raw_item,"probes"));
         require(raw_probes.size()==authored.Size(),
             "Original local-int probe count differs from the parsed document.");
         CppLocalIntCheck spec;
         std::size_t probe_index=0;
+        std::size_t simple_count=0,joint_count=0;
         for(const auto& variant:authored) {
             const auto probe=variant.GetObject();
             const auto raw_probe=raw_probes.at(probe_index++);
@@ -5023,7 +5024,8 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
                 (void)original.member(raw_probe,"expectedIncrease");
             if(probe.HasKey(L"valueType"))
                 (void)original.member(raw_probe,"valueType");
-            allowed_keys(probe,{"variable","replacement","outputs","afterUpdate","expectedIncrease","valueType"});
+            allowed_keys(probe,{"variable","replacement","outputs","afterUpdate",
+                               "expectedIncrease","valueType","additionalReplacements"});
             CppLocalIntProbe next;
             next.variable=text(probe,"variable");
             const auto value_type=probe.HasKey(L"valueType")?text(probe,"valueType"):"int";
@@ -5073,6 +5075,37 @@ void read_compiler_local_int_checks(const JsonObject& root,Lesson& lesson) {
                     "expectedIncrease requires a positive signed 32-bit integer and afterUpdate.");
                 next.expected_increase=static_cast<std::int32_t>(delta.GetNumber());
             }
+            if(probe.HasKey(L"additionalReplacements")) {
+                require(next.value_type==CppLocalValueType::integer&&
+                        !probe.HasKey(L"afterUpdate")&&!probe.HasKey(L"expectedIncrease"),
+                    "Joint local-int probes only replace initialized int values.");
+                const auto additional=array(probe,"additionalReplacements");
+                const auto raw_additional=original.elements(
+                    original.member(raw_probe,"additionalReplacements"));
+                require(additional.Size()>0&&additional.Size()<=7&&
+                        raw_additional.size()==additional.Size(),
+                    "Joint local-int probes require 1..7 additional replacements.");
+                std::size_t additional_index=0;
+                for(const auto& entry:additional) {
+                    const auto replacement_object=entry.GetObject();
+                    const auto raw_replacement=raw_additional.at(additional_index++);
+                    (void)original.member(raw_replacement,"variable");
+                    (void)original.member(raw_replacement,"replacement");
+                    allowed_keys(replacement_object,{"variable","replacement"},true);
+                    const auto value=replacement_object.GetNamedValue(L"replacement");
+                    require(value.ValueType()==JsonValueType::Number&&
+                            std::isfinite(value.GetNumber())&&
+                            std::trunc(value.GetNumber())==value.GetNumber()&&
+                            value.GetNumber()>=std::numeric_limits<std::int32_t>::min()&&
+                            value.GetNumber()<=std::numeric_limits<std::int32_t>::max(),
+                        "An additional integer variation requires a signed 32-bit replacement.");
+                    next.additional_replacements.push_back({text(replacement_object,"variable"),
+                        static_cast<std::int32_t>(value.GetNumber())});
+                }
+                ++joint_count;
+            }else ++simple_count;
+            require(simple_count<=8&&joint_count<=8,
+                "A local-int owner allows at most 8 simple and 8 joint mutations.");
             // A variant with the same permitted output as the published
             // unchanged program could never distinguish a hard-coded value.
             for(const auto& expected:next.expected_stdout)

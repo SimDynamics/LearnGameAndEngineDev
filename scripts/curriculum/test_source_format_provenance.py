@@ -20,9 +20,13 @@ class SourceFormatProvenanceTest(unittest.TestCase):
     def setUp(self):
         self.previous = deepcopy(self.before)
         self.current_doc = deepcopy(self.after)
-        self.page, self.index = fixture.POSITIONS[0]
-        self.old = self.previous['pages'][self.page]['blocks'][self.index]
-        self.current = self.current_doc['pages'][self.page]['blocks'][self.index]
+        self.identity = fixture.OWNERS[0]
+        previous_position = fixture.position(self.previous, self.identity)
+        # The guard receives historical storage coordinates. Resolve each
+        # physical block by its stable owner, independently of visual order.
+        self.page, self.index = fixture.layout.validate(self.previous)[previous_position]
+        self.old = fixture.owner(self.previous, self.identity)
+        self.current = fixture.owner(self.current_doc, self.identity)
 
     def tearDown(self):
         self.assertEqual(self.asset_bytes, self.asset_path.read_bytes())
@@ -35,11 +39,13 @@ class SourceFormatProvenanceTest(unittest.TestCase):
         return contract.preserves_source_format_revision(**args)
 
     def test_three_authentic_owners_preserve_their_archived_format(self):
-        for p, b in fixture.POSITIONS:
-            with self.subTest(owner=(p, b)):
+        storage = fixture.layout.validate(self.previous)
+        for identity in fixture.OWNERS:
+            p, b = storage[fixture.position(self.previous, identity)]
+            with self.subTest(owner=identity, storage=(p, b)):
                 self.assertTrue(self.accepts(pn=p, bn=b,
-                    old=self.previous['pages'][p]['blocks'][b],
-                    current=self.current_doc['pages'][p]['blocks'][b]))
+                    old=fixture.owner(self.previous, identity),
+                    current=fixture.owner(self.current_doc, identity)))
 
     def test_equivalent_windows_path_spelling_stays_valid(self):
         self.assertTrue(self.accepts(relative=self.relative.replace('/', '\\')))
@@ -88,7 +94,7 @@ class SourceFormatProvenanceTest(unittest.TestCase):
                 self.assertFalse(self.accepts(pn=pn, bn=bn))
 
     def test_missing_archive_and_duplicate_identity_stay_rejected(self):
-        identity = self.current_doc['stateLayout']['current'][self.page]['blocks'][self.index]
+        identity = self.identity
         for mode in ('missing', 'duplicate'):
             forged = deepcopy(self.current_doc)
             archives = forged['stateLayout']['sourceFormatRevisions']
@@ -102,7 +108,7 @@ class SourceFormatProvenanceTest(unittest.TestCase):
 
     def test_changed_tokens_do_not_become_a_format_revision(self):
         forged = deepcopy(self.current_doc)
-        changed = forged['pages'][self.page]['blocks'][self.index]
+        changed = fixture.owner(forged, self.identity)
         changed['initialCode'] += '\nint unapproved = 1;\n'
         self.assertFalse(self.accepts(current_document=forged, current=changed))
 

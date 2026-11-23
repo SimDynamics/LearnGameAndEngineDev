@@ -83,8 +83,12 @@ def _block(contract, block, where, *, root, document, position, structure_only):
     if kind == "simulation":
         _validate(contract, where, contract.validate_simulation_contract, block, where)
     if kind == "cpp_compiler":
-        kwargs = {} if structure_only else {"document": document, "position": position}
-        _validate(contract, where, contract.validate_cpp_compiler, block, where, **kwargs)
+        # A closed compileCheck may need its authenticated source-format
+        # archive even in a structural audit. The block validator verifies
+        # that proof before projecting bytes; this is no global approval of
+        # state maps, Git history or translated families.
+        _validate(contract, where, contract.validate_cpp_compiler, block, where,
+                  document=document, position=position)
     if kind == "image":
         _validate(contract, where, contract.validate_image_contract, block, where,
                   root / "app/src/main/assets/content")
@@ -161,8 +165,10 @@ def validate(contract, root: Path, base_commit: str | None, *,
              course_id: str = COURSE_ID, structure_only: bool = False) -> dict:
     """Reuse exact block/index validators for full validation or a bounded audit.
 
-    structure_only deliberately does NOT authenticate stateLayout, editorial
-    history or translations; its result must never be reported as accepted.
+    structure_only does not certify global stateLayout, Git history or
+    translations. A closed compileCheck still authenticates its complete
+    document before projecting historical source bytes for that one contract;
+    this bounded result must never be reported as a publication approval.
     """
     state = contract._state_layout
     require = contract.require

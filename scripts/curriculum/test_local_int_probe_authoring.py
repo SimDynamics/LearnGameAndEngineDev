@@ -192,6 +192,191 @@ class LocalIntAuthoringTests(unittest.TestCase):
         self.rejected(item)
 
 
+    def test_joint_replacements_preserve_the_single_probe_and_integer_bounds(self):
+        document = fixture()
+        original = deepcopy(document)
+        joint = {"variable": "llaves", "replacement": -(2 ** 31),
+                 "additionalReplacements": [
+                     {"variable": "cajas", "replacement": 2 ** 31 - 1},
+                     {"variable": "sobres", "replacement": 0}],
+                 "outputs": ["Variacion conjunta", "Variacion conjunta\n"]}
+        document["compilerLocalIntChecks"][0]["probes"].append(joint)
+        self.valid(document)
+        self.assertEqual(document["pages"], original["pages"])
+        self.assertEqual(document["stateLayout"], original["stateLayout"])
+        self.assertEqual(document["compilerLocalIntChecks"][0]["probes"][0],
+                         original["compilerLocalIntChecks"][0]["probes"][0])
+        joint["valueType"] = "int"
+        self.valid(document)
+        joint["additionalReplacements"] = [
+            {"variable": f"dato_{index}", "replacement": index} for index in range(7)]
+        self.valid(document)
+
+    def test_joint_schema_and_initialized_int_mode_are_strict(self):
+        def joint_document():
+            document = fixture()
+            document["compilerLocalIntChecks"][0]["probes"][0]["additionalReplacements"] = [
+                {"variable": "cajas", "replacement": 2}]
+            return document
+
+        for additional in (None, {}, "cajas", [], [None], [{}],
+                           [{"variable": "cajas"}],
+                           [{"replacement": 2}],
+                           [{"variable": "cajas", "replacement": 2, "valueType": "int"}],
+                           [{"variable": "cajas", "replacement": 2, "outputs": ["x"]}],
+                           [{"variable": f"dato_{index}", "replacement": index}
+                            for index in range(8)]):
+            with self.subTest(additional=additional):
+                document = joint_document()
+                document["compilerLocalIntChecks"][0]["probes"][0]["additionalReplacements"] = additional
+                self.rejected(document)
+        for value in (True, False, 2.0, "2", None, -(2 ** 31) - 1, 2 ** 31):
+            with self.subTest(replacement=value):
+                document = joint_document()
+                document["compilerLocalIntChecks"][0]["probes"][0]["additionalReplacements"][0]["replacement"] = value
+                self.rejected(document)
+        for name in ("llaves", "main", "__private", "_Reserved", "9cajas", "cajas;", "", "a" * 129):
+            with self.subTest(variable=name):
+                document = joint_document()
+                document["compilerLocalIntChecks"][0]["probes"][0]["additionalReplacements"][0]["variable"] = name
+                self.rejected(document)
+        for fields in ({"valueType": "char", "replacement": "D"},
+                       {"valueType": "bool", "replacement": True},
+                       {"afterUpdate": True}, {"expectedIncrease": 3},
+                       {"afterUpdate": True, "expectedIncrease": 3}):
+            with self.subTest(fields=fields):
+                document = joint_document()
+                document["compilerLocalIntChecks"][0]["probes"][0].update(fields)
+                self.rejected(document)
+
+    def test_joint_maps_cannot_repeat_or_retype_any_variable(self):
+        document = fixture()
+        probes = document["compilerLocalIntChecks"][0]["probes"]
+        joint = {"variable": "llaves", "replacement": 13,
+                 "additionalReplacements": [{"variable": "cajas", "replacement": 2},
+                                            {"variable": "sobres", "replacement": 3}],
+                 "outputs": ["Conjunta"]}
+        probes.append(joint)
+        # The old single replacement and another complete joint map are
+        # independent observations even though their primary value agrees.
+        other = deepcopy(joint)
+        other["additionalReplacements"][0]["replacement"] = 4
+        probes.append(other)
+        self.valid(document)
+        for duplicate in (deepcopy(joint),
+                          {**deepcopy(joint), "additionalReplacements":
+                           joint["additionalReplacements"][::-1]},
+                          {"variable": "cajas", "replacement": 2,
+                           "additionalReplacements": [{"variable": "sobres", "replacement": 3},
+                                                      {"variable": "llaves", "replacement": 13}],
+                           "outputs": ["Otra expectativa no legitima la misma mutacion"]}):
+            with self.subTest(duplicate=duplicate):
+                wrong = deepcopy(document)
+                wrong["compilerLocalIntChecks"][0]["probes"].append(duplicate)
+                self.rejected(wrong)
+        wrong = deepcopy(document)
+        wrong["compilerLocalIntChecks"][0]["probes"][1]["additionalReplacements"].append(
+            {"variable": "cajas", "replacement": 5})
+        self.rejected(wrong)
+        for kind, value in (("char", "D"), ("bool", False)):
+            typed = {"variable": "cajas", "valueType": kind,
+                     "replacement": value, "outputs": ["Tipada"]}
+            for ordered in ([typed, joint], [joint, typed]):
+                with self.subTest(kind=kind, first=ordered[0]["variable"]):
+                    wrong = fixture()
+                    wrong["compilerLocalIntChecks"][0]["probes"] = deepcopy(ordered)
+                    self.rejected(wrong)
+
+    def test_joint_outputs_keep_all_original_discriminating_guards(self):
+        for outputs in (["Llaves: 7"], ["Llaves: 7\r\n"], [], [""],
+                        ["\x00"], ["x" * 4097],
+                        ["Conjunta\n", "Conjunta\r\n"], [str(i) for i in range(5)]):
+            with self.subTest(outputs=str(outputs)[:40]):
+                document = fixture()
+                probe = document["compilerLocalIntChecks"][0]["probes"][0]
+                probe["additionalReplacements"] = [{"variable": "cajas", "replacement": 2}]
+                probe["outputs"] = outputs
+                self.rejected(document)
+
+    def test_joint_counts_keep_the_eight_simple_probe_limit(self):
+        simple = [{"variable": "llaves", "replacement": 20 + index,
+                   "outputs": [f"Llaves: {20 + index}"]} for index in range(9)]
+        joint = [{"variable": "llaves", "replacement": 13,
+                  "additionalReplacements": [{"variable": "cajas", "replacement": index}],
+                  "outputs": [f"Conjunta: {index}"]} for index in range(9)]
+        for valid in (simple[:8], joint[:8], simple[:8] + joint[:8]):
+            document = fixture()
+            document["compilerLocalIntChecks"][0]["probes"] = deepcopy(valid)
+            self.valid(document)
+        # Nine simple probes remain invalid, with or without any joint ones.
+        for invalid in (simple, joint, simple + joint[:1], simple[:1] + joint,
+                        simple[:8] + joint):
+            with self.subTest(simple=sum("additionalReplacements" not in p for p in invalid),
+                              total=len(invalid)):
+                document = fixture()
+                document["compilerLocalIntChecks"][0]["probes"] = deepcopy(invalid)
+                self.rejected(document)
+
+    def test_joint_epoch_only_appends_to_an_exact_real_probe_prefix(self):
+        path = (Path(__file__).resolve().parents[2] /
+                "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                "objetos_y_estado/lesson_declarar_e_inicializar.json")
+        published = json.loads(path.read_text(encoding="utf-8-sig"))
+        legacy = deepcopy(published)
+        legacy["compilerLocalIntChecks"] = [{
+            "activity": "block_0004_0002",
+            "probes": [{"variable": "cajas", "replacement": 13,
+                        "outputs": ["Cajas: 13\nSobres: 9"]}]}]
+        state.validate_transition(published, legacy)
+        joint = deepcopy(legacy)
+        joint["compilerLocalIntChecks"][0]["probes"].append({
+            "variable": "cajas", "replacement": 6,
+            "additionalReplacements": [{"variable": "sobres", "replacement": 2}],
+            "outputs": ["Cajas: 6\nSobres: 2"]})
+        state.validate_transition(legacy, joint)
+        scalar = {"variable": "cajas", "replacement": 17,
+                  "outputs": ["Cajas: 17\nSobres: 9"]}
+        extended = deepcopy(joint)
+        extended["compilerLocalIntChecks"][0]["probes"].append(scalar)
+        state.validate_transition(joint, extended)
+        state.validate_transition(legacy, extended)
+        for key in published.keys() | extended.keys():
+            if key != "compilerLocalIntChecks":
+                self.assertEqual(extended.get(key), published.get(key), key)
+        self.assertEqual(extended["compilerLocalIntChecks"][0]["probes"][:1],
+                         legacy["compilerLocalIntChecks"][0]["probes"])
+
+        scalar_only = deepcopy(legacy)
+        scalar_only["compilerLocalIntChecks"][0]["probes"].append(scalar)
+        state.validate(scalar_only)
+        with self.assertRaisesRegex(state.LayoutError, "joint-check epoch"):
+            state.validate_transition(legacy, scalar_only)
+
+        def changed_plan(change):
+            result = deepcopy(extended)
+            change(result["compilerLocalIntChecks"][0])
+            return result
+
+        alterations = {
+            "removed-probe": changed_plan(lambda owner: owner["probes"].pop()),
+            "reordered-probes": changed_plan(lambda owner: owner["probes"].reverse()),
+            "rewritten-output": changed_plan(lambda owner: owner["probes"][0].update(outputs=["Distinta"])),
+            "rewritten-replacement": changed_plan(lambda owner: owner["probes"][0].update(replacement=19)),
+            "another-owner": changed_plan(lambda owner: owner.update(activity="block_0004_0006")),
+            "same-map-different-primary": changed_plan(lambda owner: owner["probes"][1].update(
+                variable="sobres", replacement=2,
+                additionalReplacements=[{"variable": "cajas", "replacement": 6}])),
+            "removed-declaration": deepcopy(published),
+        }
+        for name, altered in alterations.items():
+            with self.subTest(alteration=name):
+                # Each complete document is valid alone; this must reach the
+                # publication-prefix guard, not fail for a malformed fixture.
+                state.validate(altered)
+                with self.assertRaisesRegex(state.LayoutError, "exact prefix"):
+                    state.validate_transition(extended, altered)
+
+
     def test_six_live_u2_editors_accept_append_only_root_probes(self):
         """Check the six existing owners with in-memory declarations only.
 

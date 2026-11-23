@@ -13,6 +13,8 @@ import subprocess
 import sys
 import tempfile
 
+import stable_state_layout as layout
+
 ROOT=Path(__file__).resolve().parents[2]
 LESSON=ROOT/("app/src/main/assets/content/es/programming/"
              "cpp_language_memory_oop/composicion_y_herencia_publica/"
@@ -209,6 +211,7 @@ int main() {
 
 def original_editor()->str:
     document=json.loads(LESSON.read_text(encoding="utf-8"))
+    layout.validate(document)
     positions=[(i,j) for i,page in enumerate(document["stateLayout"]["current"])
                for j,identity in enumerate(page["blocks"]) if identity==OWNER]
     assert len(positions)==1,"U8L8 original owner missing or repeated"
@@ -228,20 +231,21 @@ def original_editor()->str:
 def editable_spans(source: str)->list[tuple[int,int]]:
     signature="void escribir(std::ostream& salida) const override {"
     positions=[]
-    for i in range(2):
-        start=source.index(signature,positions[-1][1] if positions else 0)+len(signature)
-        close=source.index("\n    }\nprivate:",start)+5
-        assert source[close]=="}"
+    for class_signature in ("class MuestraSimple : public Muestra",
+                            "class MuestraIdentificada : public Muestra"):
+        class_begin,class_end=layout._named_rule_body_span(source,class_signature)
+        start,close=layout._named_rule_body_span(
+            source[class_begin:class_end],signature[:-1].rstrip())
+        start,close=class_begin+start,class_begin+close
+        assert source[start-1]=="{" and source[close]=="}"
         positions.append((start,close))
     factory="std::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {"
-    begin=source.index(factory)+len(factory)
-    end=source.index("\n}\nvoid presentar",begin)+1
-    assert source[end]=="}"
+    begin,end=layout._named_rule_body_span(source,factory[:-1].rstrip())
+    assert source[begin-1]=="{" and source[end]=="}"
     positions.append((begin,end))
     presentation="void presentar(const Muestra& dato, std::ostream& salida) {"
-    begin=source.index(presentation)+len(presentation)
-    end=source.index("\n}\nint main()",begin)+1
-    assert source[end]=="}"
+    begin,end=layout._named_rule_body_span(source,presentation[:-1].rstrip())
+    assert source[begin-1]=="{" and source[end]=="}"
     positions.append((begin,end))
     assert all(positions[i][1]<positions[i+1][0] for i in range(3))
     return positions

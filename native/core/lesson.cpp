@@ -435,6 +435,30 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             ? "windows-msvc-assertion-abort-v2"
             : *activity.output_check->assertion_check==AssertionMode::disabled
                 ? "windows-msvc-assertion-suppressed-v2" : "windows-msvc-assertion-repair-v2");
+    if(activity.local_int_check&&std::ranges::any_of(
+            activity.local_int_check->probes,[](const auto& probe) {
+                return !probe.additional_replacements.empty();
+            })) {
+        // Existing scalar plans keep their exact objective and receipt keys.
+        // A joint plan owns its complete contract, including later appended
+        // scalar probes, in a separate epoch without moving the saved draft.
+        token("local-int-joint-probes-v1");
+        token(std::to_string(activity.local_int_check->probes.size()));
+        for(const auto& probe:activity.local_int_check->probes) {
+            token(probe.variable);token(std::to_string(probe.replacement));
+            token(probe.value_type==CppLocalValueType::integer?"int":
+                probe.value_type==CppLocalValueType::character?"char":"bool");
+            token(probe.after_update?"after-update":"after-initialization");
+            token(probe.expected_increase?"exact-increase":"no-exact-increase");
+            if(probe.expected_increase)token(std::to_string(*probe.expected_increase));
+            token(std::to_string(probe.additional_replacements.size()));
+            for(const auto& replacement:probe.additional_replacements) {
+                token(replacement.variable);token(std::to_string(replacement.replacement));
+            }
+            token(std::to_string(probe.expected_stdout.size()));
+            for(const auto& output:probe.expected_stdout)token(output);
+        }
+    }
     // An authored source prerequisite changes the objective, not the stable
     // student identity. Old stdout-only receipts must never grant it.
     if(activity.named_rule_source_check) {

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -42,7 +43,7 @@ void emit(const std::filesystem::path& directory,std::string_view name,
 }
 }
 int main(int argc,char** argv) try {
-    if(argc!=2)return 2;
+    if(argc!=2&&argc!=3)return 2;
     const std::filesystem::path directory=argv[1];
     std::filesystem::create_directories(directory);
     const std::array<Scenario,13> examples{{
@@ -421,7 +422,37 @@ std::cout<<"Antes: "<<anterior<<"\nAhora: "<<(aforo-2);})CPP";
          "",false,true);
     ++emitted;
     if(emitted!=55)throw std::runtime_error("Unexpected live fixture count");
-    std::cout<<"PASS generated 55 isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
+    // Keep every original source and adversary unchanged. The driver verifies
+    // complete Git publications before supplying the two exact current U2L5
+    // references; exercise the production mutator on their physical bytes too.
+    if(argc==3) {
+        const std::filesystem::path current_directory=argv[2];
+        std::size_t current_count=0;
+        for(const auto& example:examples) {
+            if(std::string_view(example.name)!="u2l5_division_variable"&&
+               std::string_view(example.name)!="u2l5_suma_agrupada")continue;
+            std::ifstream input(current_directory/(std::string(example.name)+".cpp"),
+                                std::ios::binary);
+            if(!input)throw std::runtime_error("Missing current U2L5 reference");
+            const std::string source{std::istreambuf_iterator<char>{input},
+                                     std::istreambuf_iterator<char>{}};
+            if(input.bad()||source.empty())
+                throw std::runtime_error("Cannot read complete current U2L5 reference");
+            const std::string name=std::string(example.name)+"_current";
+            emit(directory,name,source,example.visible,true);
+            ++current_count;
+            for(std::size_t i=0;i<example.probe_count;++i) {
+                const auto variant=cpp_local_int_override(source,example.probes[i]);
+                if(!variant)throw std::runtime_error("Cannot instrument current U2L5 reference");
+                emit(directory,name+"_probe_"+std::to_string(i),
+                     *variant,example.expected[i],true);
+                ++current_count;
+            }
+        }
+        if(current_count!=6)throw std::runtime_error("Unexpected current U2L5 fixture count");
+        emitted+=current_count;
+    }
+    std::cout<<"PASS generated "<<emitted<<" isolated C++ executions for U2 integer owners, grouped declarations, homonyms and six adversaries\n";
     return 0;
 }catch(const std::exception& e) {
     std::cerr<<"FAIL local-int real compiler fixtures: "<<e.what()<<'\n';

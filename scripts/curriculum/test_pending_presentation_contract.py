@@ -68,12 +68,19 @@ def verified_u2l8_explanations(document):
             location, {"type": kind, "explanation": explanation}, reviewed)
         layout.require(reviewed["type"] == kind and restored["explanation"] == explanation,
                        "The archived U2L8 explanation differs from its pinned reviewed source")
-        layout.require({key: value for key, value in previous.items() if key not in prose}
-                       == {key: value for key, value in active.items() if key not in prose},
+        # Compare the protected contract through the published format archive,
+        # while retaining the complete physical blocks for provenance below.
+        source_changed = layout.code_format.require_source_lexical(previous, active)
+        previous_contract = layout._historical_source_format_contract(
+            document, identity, previous, editorial_prefix=prefix if snapshots else None)
+        active_contract = layout._historical_source_format_contract(document, identity, active)
+        layout.require({key: value for key, value in previous_contract.items() if key not in prose}
+                       == {key: value for key, value in active_contract.items() if key not in prose},
                        "A revised U2L8 explanation changed its program, answer or other protected field")
         if active != previous:
-            paths = layout.ordinary_editorial_paths(previous, active)
-            layout.require(bool(paths), "The active U2L8 change is not an ordinary authored prose revision")
+            paths = layout.ordinary_editorial_paths(previous_contract, active_contract)
+            layout.require(bool(paths) or source_changed,
+                           "The active U2L8 change is not an authored prose or source-format revision")
             proofs = [edge for edge in metadata["editorial"][prefix:] if edge["id"] == identity]
             layout.require(bool(proofs)
                            and proofs[0]["beforeSha256"] == layout.fingerprint(previous)
@@ -81,7 +88,7 @@ def verified_u2l8_explanations(document):
                            "The active U2L8 explanation lost its complete previous/current provenance")
             layout.require(all((identity, path) in markers for path in paths),
                            "A revised U2L8 field lost its authored reading descriptor")
-            required_reviews = set(layout.ordinary_feedback_paths(previous, active))
+            required_reviews = set(layout.ordinary_feedback_paths(previous_contract, active_contract))
             recorded_reviews = {path for proof in proofs for path in proof.get("reviewPaths", [])}
             available_reviews = {path for path in layout.text_semantics.public_text_fields(active)
                                  if path == "/reviewFeedback" or path.startswith("/reviewFeedback/")}
@@ -137,7 +144,10 @@ class PendingPresentationContractTest(unittest.TestCase):
         for location, kind, explanation, reviewed, previous, active in reviewed_sources:
             lesson, page, block = location
             self.assertEqual(previous["answers"], active["answers"])
-            self.assertEqual(previous["code"], active["code"])
+            identity = f"block_{page - 1:04d}_{block - 1:04d}"
+            self.assertEqual(
+                layout._historical_source_format_contract(source, identity, previous)["code"],
+                layout._historical_source_format_contract(source, identity, active)["code"])
             old = {"type": kind, "id": "stable", "question": "Original question",
                    "code": "Original C++ source", "answers": ["original"],
                    "language": "cpp", "explanation": "Previous wording"}
@@ -149,6 +159,51 @@ class PendingPresentationContractTest(unittest.TestCase):
                 with self.subTest(page=page, block=block, changed=key):
                     self.assertFalse(contract.preserves_previous_exercise(relative, page - 1, block - 1, old, changed))
             self.assertFalse(contract.preserves_previous_exercise(relative, page - 1, block, old, current))
+
+    def test_u2l8_later_source_formats_preserve_real_blocks_archives_and_editorial_proofs(self):
+        source = json.loads((contract.CONTENT / U2L8_LESSON).read_text(encoding="utf-8-sig"))
+        original = copy.deepcopy(source)
+        published = source
+        reviewed_sources = verified_u2l8_explanations(source)
+        identity = "block_0000_0004"
+        for revision in range(2):
+            with self.subTest(revision=revision):
+                formatted = copy.deepcopy(source)
+                before = layout._blocks(source)[identity]
+                after = layout._blocks(formatted)[identity]
+                after["code"] = "\n" + before["code"]
+                metadata = formatted["stateLayout"]
+                archives = metadata.setdefault("sourceFormatRevisions", [])
+                if not any(entry["id"] == identity for entry in archives):
+                    # A first format archives its complete real predecessor;
+                    # later formats retain that same canonical publication.
+                    archives.append({"id": identity, "block": copy.deepcopy(before)})
+                metadata["editorial"].append({
+                    "id": identity, "beforeSha256": layout.fingerprint(before),
+                    "afterSha256": layout.fingerprint(after)})
+                layout.validate_transition(source, formatted)
+                previous_archives = source["stateLayout"].get("sourceFormatRevisions", [])
+                self.assertEqual(previous_archives, archives[:len(previous_archives)])
+                previous_history = source["stateLayout"]["editorial"]
+                self.assertEqual(previous_history, metadata["editorial"][:len(previous_history)])
+                self.assertEqual(
+                    {key: value for key, value in source["stateLayout"].items()
+                     if key not in {"editorial", "sourceFormatRevisions"}},
+                    {key: value for key, value in metadata.items()
+                     if key not in {"editorial", "sourceFormatRevisions"}})
+                later_sources = verified_u2l8_explanations(formatted)
+                self.assertEqual(len(later_sources), 8)
+                for old_record, new_record in zip(reviewed_sources, later_sources):
+                    self.assertEqual(old_record[:5], new_record[:5])
+                    location, _, _, _, _, active = new_record
+                    _, page, block = location
+                    owner = f"block_{page - 1:04d}_{block - 1:04d}"
+                    self.assertIs(active, layout._blocks(formatted)[owner])
+                    if owner != identity:
+                        self.assertEqual(old_record[5], active)
+                self.assertEqual("\n" + before["code"], after["code"])
+                self.assertEqual(original, published)
+                source, reviewed_sources = formatted, later_sources
 
     def test_u2l8_rejects_unproven_active_text_and_rehashed_program_or_answer_changes(self):
         source = json.loads((contract.CONTENT / U2L8_LESSON).read_text(encoding="utf-8-sig"))

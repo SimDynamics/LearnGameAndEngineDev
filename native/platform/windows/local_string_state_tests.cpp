@@ -133,8 +133,8 @@ void run() {
     const auto original_reference=source_of(original,"block_0008_0003");
     std::string repaired=owner(original,second).initial_code;
     replace_once(repaired,
-        "    codigo = \"07\";\n    std::cout << etiqueta;",
-        "    codigo = \"07\";\n    etiqueta = edificio + \"-\" + codigo;\n    std::cout << etiqueta;");
+        "codigo = \"07\";",
+        "codigo = \"07\";\n    etiqueta = edificio + \"-\" + codigo;");
 
     const auto options=LaunchOptions{ProfileId::Codex,
         L"local-string-u2l7-"+std::to_wstring(GetCurrentProcessId())+

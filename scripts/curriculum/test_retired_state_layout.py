@@ -151,9 +151,12 @@ class RetiredStateLayoutTest(unittest.TestCase):
                         [identity for snapshot in history[len(old_history):]
                          for identity in snapshot["retired"]],
                         current_ids[len(old_ids):])
-                    with self.assertRaisesRegex(
-                            layout.LayoutError,
-                            "One transition can archive only its actual previous reading layout"):
+                    # Later releases can also add source-format archives whose
+                    # owners were active only after this old edition. Keep the
+                    # compound jump rejected without prescribing which guard
+                    # runs first; the isolated test below reaches the history
+                    # guard with every existing canonical archive preserved.
+                    with self.assertRaises(layout.LayoutError):
                         layout.validate_transition(previous, published)
                     return
                 self.assertEqual(len(old_history) + 1, len(history))
@@ -261,10 +264,13 @@ class RetiredStateLayoutTest(unittest.TestCase):
             published, current = layout._all_blocks(before), layout._all_blocks(after)
             self.assertLessEqual(published.keys(), current.keys())
             for identity in published:
-                # The two reviewed line refinements display the same original
-                # groups as separate lines; compare their validated historical
-                # response contract as the runtime migration does.
-                projected = layout._historical_order_contract(after, identity, current[identity])
+                # Authenticate later source spacing before restoring only its
+                # code bytes. Existing option and line-refinement archives
+                # recover the original wording/groups after full validation,
+                # retaining the entire answer and evaluation contract.
+                projected = layout._historical_source_format_contract(after, identity, current[identity])
+                projected = layout._historical_choice_contract(after, identity, projected)
+                projected = layout._historical_order_contract(after, identity, projected)
                 self.assertEqual(layout.state_payload(published[identity]), layout.state_payload(projected))
             references = REFERENCE_RETIREMENTS.get(filename, ())
             # The original compiler and reference retirements remain exact
@@ -306,8 +312,10 @@ class RetiredStateLayoutTest(unittest.TestCase):
                 self.assertEqual(intermediate.get("activityAfter", []), history[1]["activityAfter"])
                 self.assertEqual(intermediate.get("referenceAfter", []), history[1]["referenceAfter"])
                 self.assertEqual(intermediate["compilerPuzzlesRequired"], history[1]["compilerPuzzlesRequired"])
-                with self.assertRaisesRegex(layout.LayoutError,
-                                            "One transition can archive only its actual previous reading layout"):
+                # This whole published jump can violate more than one gate;
+                # the focused regression below isolates the reading-history
+                # rejection without removing any later canonical archives.
+                with self.assertRaises(layout.LayoutError):
                     layout.validate_transition(before, after)
             self.assertTrue(set(identities + references).isdisjoint(layout._blocks(after)))
             with self.assertRaisesRegex(layout.LayoutError, "Only active identities"):
@@ -329,6 +337,51 @@ class RetiredStateLayoutTest(unittest.TestCase):
                 self.assertTrue(current["compilerPuzzlesRequired"])
             useful_compilers += count
         self.assertEqual(9, useful_compilers)
+
+    def test_skipped_retirement_history_is_rejected_with_current_format_archives_intact(self):
+        for filename, _ in PLANS:
+            with self.subTest(filename=filename):
+                before = integrated_source(filename)
+                original = deepcopy(before)
+                layout.validate(before)
+                canonical = before["stateLayout"].get("sourceFormatRevisions", [])
+                self.assertTrue(canonical)
+                # These two retirements exist only inside this test. Begin
+                # with the complete live publication, choosing active owners
+                # by identity rather than rebuilding an earlier edition.
+                identities = [identity for identity, block in layout._blocks(before).items()
+                              if block.get("type") == "paragraph"][:2]
+                self.assertEqual(2, len(identities))
+                previous = before
+                for identity in identities:
+                    following = retired(previous, [identity])
+                    layout.validate_transition(previous, following)
+                    old_meta, new_meta = previous["stateLayout"], following["stateLayout"]
+                    self.assertEqual(canonical, new_meta["sourceFormatRevisions"])
+                    self.assertEqual(layout._all_blocks(previous), layout._all_blocks(following))
+                    for field in ("retired", "retirementHistory"):
+                        prefix = old_meta.get(field, [])
+                        self.assertEqual(prefix, new_meta[field][:len(prefix)])
+                        self.assertEqual(len(prefix) + 1, len(new_meta[field]))
+                    # This equality includes every editorial prefix, original
+                    # family/storage declaration and canonical revision map.
+                    moving = {"current", "retired", "retirementHistory"}
+                    self.assertEqual(
+                        {key: value for key, value in old_meta.items() if key not in moving},
+                        {key: value for key, value in new_meta.items() if key not in moving})
+                    captured = new_meta["retirementHistory"][-1]
+                    self.assertEqual([identity], captured["retired"])
+                    self.assertEqual(previous["pages"], captured["pages"])
+                    self.assertEqual(old_meta["current"], captured["current"])
+                    previous = following
+                self.assertEqual(original, before)
+                # Each intervening publication is valid. Presenting both as
+                # one transition must reach this particular history guard,
+                # without an earlier source-owner or archive failure.
+                with self.assertRaisesRegex(
+                        layout.LayoutError,
+                        "^One transition can archive only its actual previous reading layout$"):
+                    layout.validate_transition(before, previous)
 
     def test_three_real_retirements_preserve_every_contract_and_historical_slot(self):
         useful_compilers = 0

@@ -389,33 +389,40 @@ void naming_options(){
     check(state::read_bytes(path)==original,"Technical-option QA changed the current authored JSON");
     std::cout<<"PASS actual U2L4 naming options: all three valid/invalid samples equally backed, ordinary explanation choices preserved, no solution exposure, selection/reopen, source/narration/state and static backgrounds\n";
 }
-void verify_u2_text_semantic_ranges(View& fixture,HWND target,const curriculum::Block& block){
+struct U2SemanticRoles {
+    std::size_t code=0,neutral=0,data=0,output=0,citations=0;
+};
+U2SemanticRoles verify_u2_semantic_ranges(View& fixture,HWND target,
+        const curriculum::Block& block,std::string_view field,const std::string& source,
+        std::string_view prefix={}){
     // The author owns exact UTF-16 ranges; the test must follow the active
     // wording, not an earlier lesson's a/b variable names or literal numbers.
-    const auto at=block.text_semantics.find("/text");
-    check(at!=block.text_semantics.end()&&at->second.source==block.text&&
+    const auto at=block.text_semantics.find(std::string(field));
+    check(at!=block.text_semantics.end()&&at->second.source==source&&
           !at->second.spans.empty(),
         "Current U2 technical prose has no exact authored semantic ranges");
     const auto displayed=wide(edit_text(target));
+    const auto visible_prefix=wide(visible_prose(std::string(prefix)));
+    check(displayed.starts_with(visible_prefix),
+        "The actual U2 semantic field lost its independently supplied feedback prefix");
     // Authored starts/ends index UTF-16 positions, NOT UTF-8 bytes. Map them
     // back to exact source bytes before slicing Spanish text with accents or
     // future supplementary Unicode scalars. The native visible index also
     // accounts for any hidden inline-code delimiter before the selection.
-    const auto source_boundaries=semantic_utf8_boundaries(block.text);
+    const auto source_boundaries=semantic_utf8_boundaries(source);
     // Inspect EVERY projected UTF-16 glyph, not just a sample from each
     // authored range. A marker may not leak into punctuation or prose.
     std::vector<bool> expected_references(displayed.size(),false);
-    const auto prose_ink=displayed.empty()?COLORREF{}:character(target,0).crTextColor;
-    std::size_t code_count=0,neutral_count=0,citations=0;
+    U2SemanticRoles roles;
     for(const auto& span:at->second.spans){
         check(span.start<span.end&&span.end<source_boundaries.size()&&
               source_boundaries[span.start]!=std::string_view::npos&&
               source_boundaries[span.end]!=std::string_view::npos,
             "A U2 semantic range starts or ends inside a Unicode scalar");
         const auto begin=source_boundaries[span.start],end=source_boundaries[span.end];
-        check(std::string_view(block.text).substr(begin,end-begin)==span.text,
+        check(std::string_view(source).substr(begin,end-begin)==span.text,
             "A U2 semantic range changed its exact original source text");
-        const auto start=wide(visible_prose(block.text.substr(0,begin))).size();
+        const auto start=visible_prefix.size()+wide(visible_prose(source.substr(0,begin))).size();
         const auto token=wide(visible_prose(span.text));
         check(!token.empty()&&start+token.size()<=displayed.size()&&
               std::wstring_view(displayed).substr(start,token.size())==token,
@@ -429,21 +436,31 @@ void verify_u2_text_semantic_ranges(View& fixture,HWND target,const curriculum::
         }
         if(span.role==curriculum::SemanticRole::cpp){
             role_reference(fixture,target,token,token,false,start);
-            ++code_count;
+            ++roles.code;
         }else if(span.role==curriculum::SemanticRole::data||
                  span.role==curriculum::SemanticRole::math||
                  span.role==curriculum::SemanticRole::output){
             role_reference(fixture,target,token,token,true,start);
-            ++neutral_count;
+            ++roles.neutral;
+            if(span.role==curriculum::SemanticRole::data)++roles.data;
+            if(span.role==curriculum::SemanticRole::output)++roles.output;
         }else if(span.role==curriculum::SemanticRole::citation){
             ordinary_span(target,token,token);
-            ++citations;
+            ++roles.citations;
         }else{
             check(false,"Unexpected authored U2 semantic role in the selected prose");
         }
     }
-    check(code_count>=2&&neutral_count>0&&citations==1,
-        "The current U2 prose lost its independent code, data or citation roles");
+    // A question may begin with an authored C++ name. Sample ordinary ink
+    // from an unmarked glyph, never from that technical reference.
+    COLORREF prose_ink{};bool has_prose=false;
+    for(std::size_t index=visible_prefix.size();index<displayed.size();++index){
+        if(expected_references[index]||displayed[index]==L'\n'||displayed[index]==L'\r'
+            ||displayed[index]==L' '||displayed[index]==L'\t')continue;
+        prose_ink=character(target,static_cast<LONG>(index)).crTextColor;
+        has_prose=true;break;
+    }
+    check(has_prose,"The audited U2 semantic field lost its ordinary prose");
     const auto actual_references=rich_text_reference_ranges(target);
     for(std::size_t index=0;index<displayed.size();++index){
         const bool actual=std::ranges::any_of(actual_references,[&](const auto& range){
@@ -458,13 +475,24 @@ void verify_u2_text_semantic_ranges(View& fixture,HWND target,const curriculum::
             "U2 RichEdit reference extent differs from the exact authored ranges");
         // Paragraph separators have native RichEdit formatting rules.
         // Ordinary visible glyphs must remain entirely unhighlighted.
-        if(actual||displayed[index]==L'\n'||displayed[index]==L'\r')continue;
+        if(index<visible_prefix.size()||actual||displayed[index]==L'\n'||displayed[index]==L'\r')continue;
         const auto style=character(target,static_cast<LONG>(index));
         check(style.crTextColor==prose_ink&&
               (style.dwEffects&CFE_AUTOBACKCOLOR)&&
               !(style.dwEffects&CFE_UNDERLINE),
             "Unmarked U2 prose changed its ink, background or underline");
     }
+    return roles;
+}
+void verify_u2_text_semantic_ranges(View& fixture,HWND target,
+        const curriculum::Block& block,bool require_data_and_output){
+    const auto roles=verify_u2_semantic_ranges(fixture,target,block,"/text",block.text);
+    // The active numbered steps and multiplication explanation use words
+    // for quantities. The already-mounted comparison paragraph owns the
+    // independent data/output ranges; do not invent them in ordinary prose.
+    check(roles.code>=2&&roles.citations==1&&
+        (require_data_and_output?(roles.data>0&&roles.output>0):roles.neutral==0),
+        "The current U2 prose lost its authored code, data/output or citation roles: "+block.stable_id);
 }
 
 // Formatting-only entry: exercise the real authored ordinary evaluators in
@@ -911,7 +939,7 @@ void current_u2_roles(){
         const auto verify=[&]{
             if(page==3){const auto index=block_at("block_0003_0001",page);const auto target=fixture.item(index,0);
                 const auto& paragraph=lesson.pages[page].blocks[index];
-                verify_u2_text_semantic_ranges(fixture,target,paragraph);
+                verify_u2_text_semantic_ranges(fixture,target,paragraph,false);
                 const auto semantic=paragraph.text_semantics.find("/text");
                 check(semantic!=paragraph.text_semantics.end(),
                     "The current boletos paragraph lost its authored semantic map");
@@ -954,12 +982,22 @@ void current_u2_roles(){
                 }
                 source_and_shading(fixture,target,paragraph.text,paragraph.emphasis);
                 const auto order=block_at("block_0003_0002",page);const auto prompt=fixture.item(order,0);
-                role_reference(fixture,prompt,L"valor 3 en anterior",L"anterior");role_reference(fixture,prompt,L"valor 3 en anterior",L"3",true);
-                role_reference(fixture,prompt,L"imprimir 8 3",L"8",true);role_reference(fixture,prompt,L"imprimir 8 3",L"3",true);
-                source_and_shading(fixture,prompt,lesson.pages[page].blocks[order].question);
+                const auto& goal=lesson.pages[page].blocks[order];
+                const auto roles=verify_u2_semantic_ranges(fixture,prompt,goal,"/question",goal.question);
+                check(roles.neutral==1&&roles.output==1&&roles.citations==0,
+                    "The current copy-order prompt lost its one output range or marked ordinary quantities");
+                const auto& spans=goal.text_semantics.at("/question").spans;
+                for(const std::string_view name:{"anterior","actual","std::cout"})
+                    check(std::ranges::any_of(spans,[&](const auto& span){
+                        return span.role==curriculum::SemanticRole::cpp&&span.text==name;
+                    }),"The current copy-order prompt lost an authored C++ reference");
+                check(std::ranges::any_of(spans,[](const auto& span){
+                    return span.role==curriculum::SemanticRole::output&&span.text=="8 3";
+                }),"The current copy-order prompt changed its independent output");
+                source_and_shading(fixture,prompt,goal.question);
             }else if(page==5){const auto index=block_at("block_0005_0001",page);const auto target=fixture.item(index,0);
                 const auto& paragraph=lesson.pages[page].blocks[index];
-                verify_u2_text_semantic_ranges(fixture,target,paragraph);
+                verify_u2_text_semantic_ranges(fixture,target,paragraph,false);
                 source_and_shading(fixture,target,paragraph.text,paragraph.emphasis);
                 const auto choice=block_at("block_0005_0003",page);role_reference(fixture,fixture.item(choice,0),L"entero turnos",L"turnos");
                 for(std::size_t option=0;option<3;++option){const auto control=fixture.item(choice,21+static_cast<int>(option)*2);
@@ -967,35 +1005,20 @@ void current_u2_roles(){
                     source_and_shading(fixture,control,lesson.pages[page].blocks[choice].options[option]);}
                 const auto fill=block_at("block_0005_0004",page);
                 const auto& goal=lesson.pages[page].blocks[fill];
-                // The active authoring declares a role independently of any
-                // optional backtick wrapper. The old literal-based heuristic
-                // was treating a marked C++ value as neutral prose.
-                const auto descriptor=goal.text_semantics.find("/question");
-                check(descriptor!=goal.text_semantics.end()&&descriptor->second.source==goal.question,
-                    "The current duplication question has no matching authored semantic descriptor");
-                const auto token=std::ranges::find_if(descriptor->second.spans,[](const auto& span){
-                    return span.text=="4";
-                });
-                check(token!=descriptor->second.spans.end()&&
-                    (token->role==curriculum::SemanticRole::cpp||
-                     token->role==curriculum::SemanticRole::data||
-                     token->role==curriculum::SemanticRole::math||
-                     token->role==curriculum::SemanticRole::output),
-                    "The current exercise has no explicitly typed value reference");
-                const auto boundaries=semantic_utf8_boundaries(goal.question);
-                check(token->start<token->end&&token->end<boundaries.size()&&
-                    boundaries[token->start]!=std::string_view::npos&&
-                    boundaries[token->end]!=std::string_view::npos,
-                    "The authored value reference crosses an invalid UTF-16 boundary");
-                const auto position=wide(visible_prose(goal.question.substr(0,boundaries[token->start]))).size();
-                const auto visible=wide(visible_prose(token->text));
-                check(!visible.empty(),"The authored value reference is invisible");
-                role_reference(fixture,fixture.item(fill,0),visible,visible,
-                    token->role!=curriculum::SemanticRole::cpp,position);
+                // The current question writes four/two as ordinary words.
+                // Inspect both actual C++ names and every unmarked glyph;
+                // no old literal numeral may stand in for authored ranges.
+                const auto roles=verify_u2_semantic_ranges(fixture,fixture.item(fill,0),
+                    goal,"/question",goal.question);
+                check(roles.code==2&&roles.neutral==0&&roles.citations==0&&
+                    std::ranges::all_of(goal.text_semantics.at("/question").spans,[](const auto& span){
+                        return span.role==curriculum::SemanticRole::cpp&&span.text=="cantidad";
+                    }),"The current duplication question lost its two names or marked ordinary quantities");
                 check(edit_text(fixture.item(choice,4)).empty(),"Unanswered U2 choice exposed its solution for color inference");
             }else{
                 const std::vector<std::string_view> ids=page==6?std::vector<std::string_view>{"block_0006_0001","block_0006_0005"}:std::vector<std::string_view>{"block_0008_0002"};
                 for(const auto id:ids){const auto index=block_at(id,page);const auto target=fixture.item(index,0);const auto text=wide(edit_text(target));
+                    if(page==8)verify_u2_text_semantic_ranges(fixture,target,lesson.pages[page].blocks[index],true);
                     std::size_t checked=0;for(const auto label:{L"Antes: ",L"Ahora: "})for(std::size_t at=0;(at=text.find(label,at))!=text.npos;){
                         const auto number=at+std::wstring_view(label).size();
                         // The current paragraph also discusses the literal
@@ -1067,7 +1090,20 @@ void current_u2_roles(){
     check(edit_text(prediction_code)==original_code,"Checking the prediction changed its read-only C++ source");
     const auto verify_prediction=[&]{const auto target=fixture.item(prediction_at.block,4);
         const auto raw=std::string("✓ Correcto\n\n")+prediction.explanation;check(edit_text(target)==visible_prose(raw),"The actual U2 trace feedback is incomplete");
-        for(const auto token:{L"1",L"2",L"6",L"5"})role_reference(fixture,target,L"Los valores sucesivos son 1, 2, 6 y 5.",token,true);
+        const auto roles=verify_u2_semantic_ranges(fixture,target,prediction,
+            "/explanation",prediction.explanation,"✓ Correcto\n\n");
+        check(roles.data==1&&roles.output==1&&roles.neutral==2&&roles.citations==0,
+            "The current trace feedback lost its initial datum/result or marked ordinary quantities");
+        const auto& spans=prediction.text_semantics.at("/explanation").spans;
+        for(const std::string_view instruction:{"++puntos;","puntos += 4;","--puntos;"})
+            check(std::ranges::any_of(spans,[&](const auto& span){
+                return span.role==curriculum::SemanticRole::cpp&&span.text==instruction;
+            }),"The current trace feedback lost one of its actual C++ instructions");
+        check(std::ranges::any_of(spans,[](const auto& span){
+            return span.role==curriculum::SemanticRole::data&&span.text=="1";
+        })&&std::ranges::any_of(spans,[](const auto& span){
+            return span.role==curriculum::SemanticRole::output&&span.text=="5";
+        }),"The current trace feedback changed its independent initial datum or result");
         source_and_shading(fixture,target,raw);
     };
     verify_prediction();check(flush_lesson_view(fixture.view),"Cannot persist actual trace feedback");

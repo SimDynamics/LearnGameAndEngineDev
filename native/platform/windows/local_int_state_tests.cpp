@@ -906,9 +906,175 @@ void validate_u2l8_scalars(const std::filesystem::path& directory) {
         "private evidence and saved draft/selection/preferences after StateStore reopen.\n";
 }
 
+// Exercise the joint authoring boundary through BOTH WinRT loaders using the
+// complete, current U2L2 publication. Only this in-memory root declaration is
+// new; pages, canonical archives, identities and visible goals stay intact.
+void validate_joint_local_int_authoring() {
+    const auto file=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_declarar_e_inicializar.json";
+    const auto original=load_lesson(file);
+    const auto lookup=[](const Lesson& lesson)->const Block& {
+        const auto at=stable_block_position(lesson,"block_0004_0006");
+        require(at.has_value(),"Joint authoring lost the real U2L2 owner");
+        return lesson.pages.at(at->page).blocks.at(at->block);
+    };
+    const auto& former=lookup(original);
+    const auto root=JsonObject::Parse(winrt::to_hstring(original.raw_json));
+    require(!root.HasKey(L"compilerLocalIntChecks")&&!former.local_int_check&&
+            former.output_check&&former.output_check->cases.size()==1,
+        "Joint authoring needs the original complete, unchecked U2L2 lesson");
+    const auto canonical=winrt::to_string(root.Stringify());
+    const auto document=[&](std::string_view probes) {
+        // Keep this raw: JsonObject would merge the duplicate-key negatives.
+        return std::string("{\"compilerLocalIntChecks\":[{\"activity\":")+
+            "\"block_0004_0006\",\"probes\":"+std::string(probes)+"}],"+
+            canonical.substr(1);
+    };
+    const auto array=[](const std::vector<std::string>& probes) {
+        std::string result="[";
+        for(const auto& probe:probes) {
+            if(result.size()>1)result+=',';
+            result+=probe;
+        }
+        return result+"]";
+    };
+    unsigned accepted=0,rejected=0;
+    const auto accepts=[&](std::string_view probes,std::size_t count) {
+        const auto serialized=document(probes);
+        const auto full=parse_lesson_json(serialized,"es");
+        const auto metadata=parse_lesson_progress_metadata(serialized,"es");
+        const auto& loaded=lookup(full);
+        const auto& compact=lookup(metadata);
+        require(loaded.local_int_check&&loaded.local_int_check->probes.size()==count&&
+                compact.local_int_check==loaded.local_int_check&&
+                loaded.initial_code==former.initial_code&&
+                loaded.address.page==former.address.page&&
+                loaded.address.block==former.address.block&&
+                loaded.address.addition_namespace==former.address.addition_namespace&&
+                loaded.address.progress_page==former.address.progress_page&&
+                winrt::to_string(JsonObject::Parse(winrt::to_hstring(loaded.raw_json)).Stringify())==
+                winrt::to_string(JsonObject::Parse(winrt::to_hstring(former.raw_json)).Stringify()),
+            "Joint authoring changed an original U2L2 block or disagreed between loaders");
+        auto without=JsonObject::Parse(winrt::to_hstring(serialized));
+        without.Remove(L"compilerLocalIntChecks");
+        require(winrt::to_string(without.Stringify())==canonical,
+            "Joint authoring changed bytes outside its in-memory root declaration");
+        ++accepted;
+        return *loaded.local_int_check;
+    };
+    const auto rejects_probes=[&](std::string_view probes) {
+        rejects_raw(document(probes));
+        ++rejected;
+    };
+    const std::string joint=R"JSON({"variable":"cajas","replacement":17,
+        "additionalReplacements":[{"variable":"sobres","replacement":19}],
+        "outputs":["Cajas: 17\nSobres: 19"]})JSON";
+    const auto parsed=accepts(array({joint}),1);
+    const auto& probe=parsed.probes.front();
+    require(probe.variable=="cajas"&&probe.replacement==17&&
+            probe.value_type==CppLocalValueType::integer&&!probe.after_update&&
+            !probe.expected_increase&&probe.additional_replacements.size()==1&&
+            probe.additional_replacements.front().variable=="sobres"&&
+            probe.additional_replacements.front().replacement==19&&
+            cpp_local_int_override(former.initial_code,probe).has_value(),
+        "The two real initialized U2L2 ints did not retain one joint observation");
+
+    const auto extremes=accepts(R"JSON([{"variable":"cajas","replacement":-2147483648,
+        "additionalReplacements":[{"variable":"sobres","replacement":2147483647}],
+        "outputs":["Cajas: -2147483648\nSobres: 2147483647"]}])JSON",1);
+    require(extremes.probes.front().replacement==(-2147483647-1)&&
+            extremes.probes.front().additional_replacements.front().replacement==2147483647,
+        "Joint authoring changed an int32 endpoint");
+
+    // These names check the schema capacity only. The learner's actual source
+    // must still declare every additional int before any execution is allowed.
+    const std::string seven=R"JSON([{"variable":"sobres","replacement":19},
+        {"variable":"extra_a","replacement":1},{"variable":"extra_b","replacement":2},
+        {"variable":"extra_c","replacement":3},{"variable":"extra_d","replacement":4},
+        {"variable":"extra_e","replacement":5},{"variable":"extra_f","replacement":6}])JSON";
+    const auto wide_probe=overwrite_first(joint,
+        R"JSON([{"variable":"sobres","replacement":19}])JSON",seven);
+    const auto maximum=accepts(array({wide_probe}),1);
+    require(maximum.probes.front().additional_replacements.size()==7&&
+            !cpp_local_int_override(former.initial_code,maximum.probes.front()),
+        "Seven authored replacements bypassed an absent learner variable");
+    rejects_probes(array({overwrite_first(wide_probe,
+        R"JSON({"variable":"extra_f","replacement":6}])JSON",
+        R"JSON({"variable":"extra_f","replacement":6},{"variable":"extra_g","replacement":7}])JSON")}));
+
+    const auto counted_probe=[](int value,bool joint_probe) {
+        std::string result="{\"variable\":\"cajas\",\"replacement\":"+
+            std::to_string(value)+",\"outputs\":[\"Cajas: "+std::to_string(value)+
+            (joint_probe?"\\nSobres: 19\"]":"\\nSobres: 9\"]");
+        if(joint_probe)result+=
+            ",\"additionalReplacements\":[{\"variable\":\"sobres\",\"replacement\":19}]";
+        return result+"}";
+    };
+    std::vector<std::string> simple,eight_joint;
+    for(int i=0;i<8;++i) {
+        simple.push_back(counted_probe(100+i,false));
+        eight_joint.push_back(counted_probe(200+i,true));
+    }
+    auto sixteen=simple;
+    sixteen.insert(sixteen.end(),eight_joint.begin(),eight_joint.end());
+    (void)accepts(array(sixteen),16);
+    simple.push_back(counted_probe(108,false));
+    rejects_probes(array(simple)); // Nine old-style probes must still fail.
+    eight_joint.push_back(counted_probe(208,true));
+    rejects_probes(array(eight_joint));
+    sixteen.push_back(counted_probe(208,true));
+    rejects_probes(array(sixteen));
+
+    const auto alter_joint=[&](std::string_view before,std::string_view after) {
+        rejects_probes(array({overwrite_first(joint,before,after)}));
+    };
+    const std::string extra=R"JSON([{"variable":"sobres","replacement":19}])JSON";
+    alter_joint(extra,"[]");
+    alter_joint(extra,R"JSON({"variable":"sobres","replacement":19})JSON");
+    alter_joint(extra,R"JSON([{"replacement":19}])JSON");
+    alter_joint(extra,R"JSON([{"variable":"sobres"}])JSON");
+    alter_joint(extra,R"JSON([{"variable":"sobres","replacement":19,"valueType":"int"}])JSON");
+    alter_joint(R"JSON("variable":"sobres")JSON",R"JSON("variable":"cajas")JSON");
+    alter_joint(R"JSON("variable":"sobres")JSON",R"JSON("variable":"main")JSON");
+    alter_joint(extra,R"JSON([{"variable":"sobres","replacement":19},{"variable":"sobres","replacement":20}])JSON");
+    rejects_probes(array({joint,joint}));
+    const auto swapped=R"JSON({"variable":"sobres","replacement":19,
+        "additionalReplacements":[{"variable":"cajas","replacement":17}],
+        "outputs":["Cajas: 17\nSobres: 19"]})JSON";
+    rejects_probes(array({joint,swapped}));
+    const auto ordered=overwrite_first(joint,extra,
+        R"JSON([{"variable":"sobres","replacement":19},{"variable":"extra_a","replacement":23}])JSON");
+    const auto reversed=overwrite_first(joint,extra,
+        R"JSON([{"variable":"extra_a","replacement":23},{"variable":"sobres","replacement":19}])JSON");
+    (void)accepts(array({ordered}),1);
+    rejects_probes(array({ordered,reversed}));
+    alter_joint(R"JSON("replacement":17)JSON",R"JSON("replacement":"A","valueType":"char")JSON");
+    alter_joint(R"JSON("replacement":17)JSON",R"JSON("replacement":true,"valueType":"bool")JSON");
+    alter_joint(R"JSON("replacement":17)JSON",R"JSON("replacement":17,"afterUpdate":true)JSON");
+    alter_joint(R"JSON("replacement":17)JSON",R"JSON("replacement":17,"afterUpdate":false)JSON");
+    alter_joint(R"JSON("replacement":17)JSON",R"JSON("replacement":17,"expectedIncrease":3)JSON");
+    rejects_probes(array({joint,R"JSON({"variable":"sobres","replacement":"A","valueType":"char","outputs":["A"]})JSON"}));
+    rejects_probes(array({R"JSON({"variable":"sobres","replacement":true,"valueType":"bool","outputs":["true"]})JSON",joint}));
+    // Preserve lexical spelling: 19.0 and 19e0 must fail even though WinRT
+    // represents both as the same Number as integer 19 after parsing.
+    for(const auto replacement:{"-2147483649","2147483648","true","\"19\"","19.0","19e0"})
+        alter_joint(R"JSON("replacement":19)JSON",
+            std::string("\"replacement\":")+replacement);
+    alter_joint(R"JSON("variable":"sobres")JSON",
+        R"JSON("variable":"sobres","variable":"sobres")JSON");
+    alter_joint(R"JSON("replacement":19)JSON",
+        R"JSON("replacement":19,"replacement":20)JSON");
+    alter_joint(std::string("\"additionalReplacements\":")+extra,
+        std::string("\"additionalReplacements\":")+extra+",\"additionalReplacements\":"+extra);
+    std::cout<<"PASS joint local-int WinRT authoring: "<<accepted<<
+        " positives and "<<rejected<<" independent negatives on both full/metadata loaders; "
+        "complete U2L2 preserved, no learner execution claimed.\n";
+}
+
 void run() {
     validate_other_u2_editors();
     validate_current_u2l5_editor_state();
+    validate_joint_local_int_authoring();
     const auto file=std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_objetos_valores_y_tipos.json";
     const auto old=load_lesson(file);

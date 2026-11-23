@@ -43,6 +43,28 @@ const Block& owner(const Lesson& lesson,std::string_view identity) {
     require(result!=nullptr,"Missing stable diagnostic owner");
     return *result;
 }
+const SourceFormatRevision* source_archive(const Lesson& lesson,std::string_view identity) {
+    const auto& entries=lesson.state_layout.source_format_revisions;
+    const auto found=std::ranges::find(entries,identity,&SourceFormatRevision::id);
+    return found==entries.end()?nullptr:&*found;
+}
+void preserve_format_history(const Lesson& before,const Lesson& after) {
+    using namespace winrt::Windows::Data::Json;
+    const auto& original=before.state_layout.source_format_revisions;
+    const auto& current=after.state_layout.source_format_revisions;
+    require(current.size()>=original.size(),"A diagnostic publication removed a source archive");
+    for(std::size_t index=0;index<original.size();++index)
+        require(current[index].id==original[index].id&&
+                current[index].raw_json==original[index].raw_json&&
+                current[index].sha256==original[index].sha256,
+                "A diagnostic publication rewrote or reassigned a complete canonical archive");
+    const auto prior=JsonObject::Parse(winrt::to_hstring(before.state_layout.raw_json)).GetNamedArray(L"editorial");
+    const auto revised=JsonObject::Parse(winrt::to_hstring(after.state_layout.raw_json)).GetNamedArray(L"editorial");
+    require(revised.Size()>=prior.Size(),"A diagnostic publication dropped a historical editorial edge");
+    for(std::uint32_t index=0;index<prior.Size();++index)
+        require(prior.GetAt(index).Stringify()==revised.GetAt(index).Stringify(),
+                "A diagnostic publication changed its authenticated editorial prefix");
+}
 struct Statement { std::string_view diagnostic,source,error; };
 constexpr std::array statements{
     Statement{"const-member-call","fija.cambiar_a(4,2);","C2662"},
@@ -185,6 +207,12 @@ int main(int argc,char** argv)try {
                 after.state_layout.signatures==metadata.state_layout.signatures&&
                 before.state_layout.lineage==after.state_layout.lineage,
                 "Physical spacing changed the published lesson lineage");
+        preserve_format_history(before,after);
+        preserve_format_history(after,metadata);
+        require(after.state_layout.source_format_revisions.size()==
+                    metadata.state_layout.source_format_revisions.size(),
+                "The progress-only loader changed the complete diagnostic archive census");
+        auto expected_archives=before.state_layout.source_format_revisions.size();
         for(const auto& goal:item.GetNamedArray(L"owners")) {
             const auto declaration=goal.GetObject();
             const auto identity=winrt::to_string(declaration.GetNamedString(L"id"));
@@ -193,6 +221,13 @@ int main(int argc,char** argv)try {
             const auto& old=owner(before,identity);
             const auto& formatted=owner(after,identity);
             const auto& restored=owner(metadata,identity);
+            const auto prior=source_archive(before,identity),current=source_archive(after,identity);
+            require(current!=nullptr,"The formatted diagnostic has no complete canonical archive");
+            if(!prior)++expected_archives;
+            const auto& canonical=prior?prior->raw_json:old.raw_json;
+            require(JsonObject::Parse(winrt::to_hstring(canonical)).Stringify()==
+                        JsonObject::Parse(winrt::to_hstring(current->raw_json)).Stringify(),
+                    "The formatted diagnostic replaced its complete original snapshot with a later presentation");
             require(old.compile_check&&formatted.compile_check&&restored.compile_check&&
                     old.compile_check->diagnostic==diagnostic&&
                     formatted.compile_check->diagnostic==diagnostic&&
@@ -204,8 +239,18 @@ int main(int argc,char** argv)try {
                     formatted.address.block==restored.address.block&&
                     old.initial_code!=formatted.initial_code&&
                     formatted.source_format_original_initial_code&&
-                    *formatted.source_format_original_initial_code==old.initial_code,
+                    *formatted.source_format_original_initial_code==
+                        old.source_format_original_initial_code.value_or(old.initial_code)&&
+                    formatted.source_format_original_initial_code==restored.source_format_original_initial_code&&
+                    formatted.source_format_original_project_files==restored.source_format_original_project_files&&
+                    reference_objective_frame(before,old)==reference_objective_frame(after,formatted)&&
+                    reference_objective_frame(after,formatted)==reference_objective_frame(metadata,restored),
                     "The original diagnostic owner, source selection or archive changed");
+            if(!old.project_files.empty())
+                require(formatted.source_format_original_project_files&&
+                        *formatted.source_format_original_project_files==
+                            old.source_format_original_project_files.value_or(old.project_files),
+                        "A repeated diagnostic format replaced its canonical multi-file project");
             auto legacy=exercise(before,old,environment,sequence++);
             const auto saved=legacy;
             state::prepare_lesson_state(legacy,after);
@@ -220,9 +265,11 @@ int main(int argc,char** argv)try {
                     "The progress-only loader lost a newly earned formatted receipt");
             validate_compiler_puzzle_state(fresh,metadata,restored);
         }
+        require(after.state_layout.source_format_revisions.size()==expected_archives,
+                "Diagnostic formatting added an unrelated source archive");
     }
     require(diagnostics.size()==17&&sequence==35,
-            "Not all 17 closed goals ran in both original and formatted forms");
+            "Not all 17 closed goals ran in both before and after source-format publications");
     std::cout<<"PASS 34 real MSVC diagnostics; 17 historical and new receipts preserved\n";
     return 0;
 }catch(const std::exception& error) {

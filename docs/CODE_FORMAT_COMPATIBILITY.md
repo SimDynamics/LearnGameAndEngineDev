@@ -30,6 +30,39 @@ espaciado se preparan sólo en sus fixtures de QA para los diez editores
 afectados. El contenido curricular se integra mediante el flujo de autoría
 descrito a continuación.
 
+## Generadores de QA con revisiones coexistentes
+
+Los generadores de compilación seleccionan cada ejercicio por su identidad
+estable. La presencia de una revisión anterior o de archivos históricos de
+otros ejercicios no exige borrar ni reconstruir el historial de la lección.
+Una nueva revisión conserva el bloque canónico completo ya archivado y añade
+su prueba al prefijo editorial publicado. Si todavía no existe un archivo de
+formato para ese propietario, se incorpora su bloque anterior completo.
+
+`compile_check_source_format_fixture.py` y `test_real_code_format_pilot.py`
+usan por defecto la publicación del árbol de trabajo. Su opción
+`--publication` permite además comprobar las familias completas de
+`921e1df` y `83e2d4e6`, autenticadas por commit y SHA-256. El generador
+`code_format_fixture_source.py` conserva el escenario U7 anterior y el
+escenario posterior con archivos coexistentes. Una publicación histórica
+ausente o con bytes diferentes produce un error; no se sustituye por una
+copia actual ni por un documento reconstruido desde bloques sueltos.
+
+El piloto conserva las aristas del formato original de sus dos ejemplos,
+los demás archivos y los compiladores retirados. Su vista de comparación de
+fuentes antiguas nunca se exporta como una publicación histórica válida.
+Los fixtures cargables conservan la publicación completa y el lector obtiene
+las fuentes anteriores de sus archivos autenticados.
+
+Las pruebas `native.format_fixture_history_original` y
+`native.format_fixture_history_coexisting` ejercitan los dos cargadores y
+la conservación del estado. Las correspondientes pruebas
+`native.format_fixture_diagnostics_original` y
+`native.format_fixture_diagnostics_coexisting` usan el runner original de
+MSVC para los 17 diagnósticos antes y después del espaciado. El job adicional
+de QA Windows conserva estos resultados y los de autoría sin cambiar el
+toolset fijado para el producto ni los contenidos curriculares.
+
 ## Autoría de Work: conservar el origen publicado
 
 Para cada lección con `stateLayout` v2, Work edita únicamente los campos

@@ -2,6 +2,7 @@
 // This models receipt compatibility; the independent C++ compiler probe
 // is run separately and never replaced by the modeled public output.
 #include "core/cpp_array_owner_read_check.hpp"
+#include "core/cpp_member_body_check.hpp"
 #include "core/lesson.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
@@ -96,17 +97,15 @@ int array_owner_read_state_windows(const std::filesystem::path& content,
         "Additional policy changed published U6L10 source, answers or owners");
 
     constexpr std::string_view configure=
-        "bool Lote::configurar(int cantidad) noexcept {";
+        "bool Lote::configurar(int cantidad) noexcept";
     constexpr std::string_view read=
-        "bool Lote::leer(int indice, int& resultado) const noexcept {";
+        "bool Lote::leer(int indice, int& resultado) const noexcept";
     auto program=before.initial_code;
-    const auto config_at=program.find(configure);
-    require(config_at!=program.npos,"Original U6L10 configure method missing");
-    const auto config_end=program.find("\n}\nbool Lote::leer",
-        config_at+configure.size());
-    require(config_end!=program.npos,"Original U6L10 configure body not delimited");
-    program.replace(config_at+configure.size(),
-        config_end-config_at-configure.size(),R"cpp(
+    const CppMemberBodyCheck configure_check{program,std::string(configure)};
+    const auto configure_body=cpp_member_body_span(configure_check);
+    require(configure_body.has_value(),"Original U6L10 configure body not delimited");
+    program.replace(configure_body->begin,
+        configure_body->end-configure_body->begin,R"cpp(
     if(cantidad<0||cantidad>4)return false;
     if(cantidad==0) {datos_.reset();cantidad_=0;return true;}
     try {
@@ -114,17 +113,21 @@ int array_owner_read_state_windows(const std::filesystem::path& content,
         datos_.swap(candidate);
         cantidad_=cantidad;
         return true;
-    }catch(const std::bad_alloc&) {return false;})cpp");
-    const auto read_at=program.find(read);
-    require(read_at!=program.npos,"Original U6L10 read method missing");
-    const auto read_end=program.find("\n}\nbool Lote::escribir",
-        read_at+read.size());
-    require(read_end!=program.npos,"Original U6L10 read body not delimited");
-    program.replace(read_at+read.size(),
-        read_end-read_at-read.size(),R"cpp(
+    }catch(const std::bad_alloc&) {return false;}
+)cpp");
+    require(cpp_member_body_preserves_source(configure_check,program),
+        "U6L10 QA changed source outside its configure body");
+    const CppMemberBodyCheck read_check{program,std::string(read)};
+    const auto read_body=cpp_member_body_span(read_check);
+    require(read_body.has_value(),"Original U6L10 read body not delimited");
+    program.replace(read_body->begin,
+        read_body->end-read_body->begin,R"cpp(
     if(indice<0||indice>=cantidad_)return false;
     resultado=datos_[indice];
-    return true;)cpp");
+    return true;
+)cpp");
+    require(cpp_member_body_preserves_source(read_check,program),
+        "U6L10 QA changed source outside its read body");
     require(cpp_array_owner_read_matches(
                 *editor.array_owner_read_probe,program)&&
             cpp_array_owner_read_private_driver(

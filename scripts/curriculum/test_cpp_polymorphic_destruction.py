@@ -13,6 +13,8 @@ import subprocess
 import sys
 import tempfile
 
+import stable_state_layout as layout
+
 ROOT = Path(__file__).resolve().parents[2]
 LESSON = ROOT / (
     "app/src/main/assets/content/es/programming/cpp_language_memory_oop/"
@@ -209,6 +211,7 @@ int main() {
 
 def original_editor() -> str:
     lesson = json.loads(LESSON.read_text(encoding="utf-8"))
+    layout.validate(lesson)
     locations = [
         (page_index, block_index)
         for page_index, page in enumerate(lesson["stateLayout"]["current"])
@@ -229,10 +232,11 @@ def original_editor() -> str:
 
 def body_span(source: str, signature: str, end_marker: str) -> tuple[int, int]:
     assert source.count(signature) == 1, f"missing or duplicated {signature}"
-    start = source.index(signature) + len(signature)
-    assert source.count(end_marker, start) == 1, f"unexpected end of {signature}"
-    close = source.index(end_marker, start) + 1
-    assert source[close] == "}"
+    assert signature.endswith("{")
+    # A later source-format review may separate the following definition by
+    # blank lines. Bind the original body itself, preserving every outer byte.
+    start, close = layout._named_rule_body_span(source, signature[:-1].rstrip())
+    assert source[start - 1] == "{" and source[close] == "}"
     return start, close
 
 
