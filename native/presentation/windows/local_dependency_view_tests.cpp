@@ -526,9 +526,16 @@ void reference_visible(View& view,const Plan& plan) {
     const auto field=view.maybe_control(at.block,1);
     check(field&&(GetWindowLongPtrW(field,GWL_STYLE)&WS_VISIBLE)&&edit_text(field)==reference.code,
         "The earned reference is not rendered from its authentic code");
-    check(std::ranges::any_of(lesson_reading_regions(view.view),[&](const auto& region) {
-        return region.block_index==at.block&&region.target==field&&region.source_text==reference.code;
-    }),"The earned reference is absent from the actual reading regions");
+    // The reader names a code example; its source stays in the visual control
+    // and is deliberately excluded from the narration script.
+    const auto caption=view.maybe_control(at.block,16);
+    const auto regions=lesson_reading_regions(view.view);
+    check(caption&&(GetWindowLongPtrW(caption,GWL_STYLE)&WS_VISIBLE)&&
+            std::ranges::any_of(regions,[&](const auto& region) {
+                return region.block_index==at.block&&region.target==caption&&region.passive_label&&
+                    region.source_text=="Ejemplo de código C más más.";
+            })&&std::ranges::none_of(regions,[&](const auto& region){return region.target==field;}),
+        "The earned reference lost its passive reading caption or exposed code as narration");
 }
 void blocked(View& view,const Plan& plan,std::size_t bookmark) {
     const auto target=position(view.lesson,plan.activity);
