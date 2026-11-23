@@ -1,9 +1,14 @@
 #include "core/lesson.hpp"
+#include "core/compiler_flow.hpp"
+#include "core/lesson_entry_policy.hpp"
+#include "core/lesson_page_reach.hpp"
 #include "core/profile.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/cpp_runner.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/winrt_apartment.hpp"
 #include "presentation/windows/code_editor.hpp"
 #include "presentation/windows/code_gutter.hpp"
 #include "presentation/windows/lesson_view.hpp"
@@ -14,11 +19,16 @@
 #include <commctrl.h>
 #include <ole2.h>
 #include <richedit.h>
+#include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Foundation.h>
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -361,6 +371,131 @@ void authored_caption_first(){
     check(failures==0,"The reported first-frame caption differs from its identical peer or changes after unrelated input; inspect the recorded native metrics and pixel bounds");
     std::cout<<"PASS current U1L3 first captions: identical native glyphs before/after answer EN_CHANGE, raw metrics and offscreen paint; no desktop acceptance\n";
 }
+void execute_prediction_prerequisite(state::StateData& data,const curriculum::Lesson& lesson,
+        const curriculum::Block& owner){
+    check(owner.stable_id=="block_0004_0002"&&owner.output_check&&
+        !owner.output_check->cases.empty(),"A new prediction compiler prerequisite needs an audited solution");
+    const auto reference_at=curriculum::stable_block_position(lesson,"p1u2l10_ejemplo_informe");
+    check(reference_at.has_value(),"The active station report reference is missing");
+    const auto& reference=lesson.pages.at(reference_at->page).blocks.at(reference_at->block);
+    const auto reference_owner=curriculum::reference_activity(lesson,reference);
+    check(reference.type==curriculum::BlockType::code&&!reference.code.empty()&&reference_owner&&
+        lesson.pages.at(reference_owner->page).blocks.at(reference_owner->block).stable_id==owner.stable_id,
+        "The published station reference belongs to another activity");
+    const auto environment=resolve_windows_environment({ProfileId::Codex,
+        L"prediction-prerequisite-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+        std::to_wstring(GetTickCount64()),false});
+    check(environment.options.qa_instance&&!environment.options.qa_instance->empty()&&
+        !std::filesystem::exists(environment.paths.root),"The prerequisite must use a fresh Codex QA profile");
+    initialize_profile_directories(environment.paths);
+    windows::CppRunRequest request;request.request_id=1;request.revision=1;
+    request.project_key=curriculum::draft_key("programming",lesson,owner);
+    request.projects_directory=environment.paths.projects;request.source_utf8=reference.code;
+    request.stdin_utf8=owner.output_check->cases.front().standard_input;
+    request.project_files=owner.project_files;request.source_files=owner.source_files;request.cmake=owner.cmake;
+    request.local_int_check=owner.local_int_check;request.local_string_check=owner.local_string_check;
+    request.input_check=owner.input_check;request.local_role_check=owner.local_role_check;
+    request.compile_timeout=std::chrono::seconds(30);request.execution_timeout=std::chrono::seconds(8);
+    check(windows::compiler_puzzle_case_count(data,lesson,owner)==0&&
+        !windows::compiler_puzzle_completed(data,lesson,owner)&&
+        windows::compiler_runtime_request_allowed(owner,request),
+        "The prerequisite is already credited or its request differs from its authored contract");
+    const auto result=windows::run_cpp(request);
+    const auto captured=windows::capture_cpp_execution(request,result);
+    check(result.error_utf8.empty()&&result.compilation.succeeded()&&result.execution.succeeded()&&
+        result.execution.stderr_bytes.empty()&&
+        (!owner.local_int_check||captured.local_int_check_correct)&&
+        (!owner.local_string_check||captured.local_string_check_correct)&&
+        (!owner.input_check||captured.input_check_correct)&&
+        (!owner.local_role_check||captured.local_role_check_correct)&&
+        windows::evaluate_cpp_output_check(*owner.output_check,captured,request.revision).verdict==
+            curriculum::OutputVerdict::correct,
+        "The real station prerequisite failed: "+result.error_utf8+result.compilation.stderr_bytes);
+    check(windows::record_compiler_puzzle_case(data,lesson,owner,request,captured,
+            "QA prerequisite: actual execution of the published station report")&&
+        windows::compiler_puzzle_completed(data,lesson,owner)&&
+        windows::compiler_puzzle_case_count(data,lesson,owner)==1,
+        "The first real station case did not produce its own completion receipt");
+    std::cout<<"QA_PREDICTION executed prerequisite="<<owner.stable_id
+        <<" reference="<<reference.stable_id<<" cases=1 source_sha256="<<state::sha256(reference.code)<<'\n';
+}
+void prepare_prediction_prerequisites(state::StateData& data,const curriculum::Lesson& lesson,
+        curriculum::StatePosition target){
+    using curriculum::BlockType;
+    using namespace winrt::Windows::Data::Json;
+    windows::ensure_winrt_apartment();
+    std::vector<curriculum::EntryRequirement> requirements;
+    // Earlier quizzes are QA setup evaluated by the real core, not claimed UI
+    // interactions. The one earlier compiler gets an actual captured execution.
+    // Current-page answers and all later objectives remain untouched.
+    for(std::size_t page=0;page<target.page;++page){
+        for(const auto& block:lesson.pages.at(page).blocks){
+            state::Response response;
+            switch(block.type){
+            case BlockType::heading:case BlockType::paragraph:case BlockType::note:
+            case BlockType::code:case BlockType::image:continue;
+            case BlockType::cpp_compiler:
+                execute_prediction_prerequisite(data,lesson,block);
+                requirements.push_back({page,windows::compiler_puzzle_completed(data,lesson,block)?
+                    curriculum::EntryCompletion::complete:curriculum::EntryCompletion::incomplete});
+                continue;
+            case BlockType::multiple_choice:
+                check(block.correct_index.has_value(),"An earlier choice has no authored answer");
+                response.selected=static_cast<std::int64_t>(*block.correct_index);
+                response.correct=curriculum::evaluate_choice(block,*block.correct_index).correct;
+                break;
+            case BlockType::fill_code:case BlockType::output_prediction:
+                check(!block.answers.empty(),"An earlier text exercise has no authored answer");
+                response.answer=block.answers.front();
+                response.correct=curriculum::evaluate_text_answer(block,response.answer).correct;
+                break;
+            case BlockType::order_code:
+                for(const auto index:block.correct_order)response.order.push_back(static_cast<std::int64_t>(index));
+                response.correct=curriculum::evaluate_order(block,block.correct_order).correct;
+                break;
+            case BlockType::inline_fill_code:{
+                JsonArray answers;
+                for(const auto& answer:block.answers)answers.Append(JsonValue::CreateStringValue(winrt::to_hstring(answer)));
+                JsonObject raw;raw.Insert(L"answers",answers);response.raw_json=winrt::to_string(raw.Stringify());
+                response.correct=curriculum::evaluate_hole_answers(block,block.answers).correct;
+                break;
+            }
+            case BlockType::drag_fill_code:{
+                JsonArray slots;
+                for(const auto slot:block.correct_order)slots.Append(JsonValue::CreateNumberValue(static_cast<double>(slot)));
+                JsonObject raw;raw.Insert(L"slots",slots);response.raw_json=winrt::to_string(raw.Stringify());
+                response.correct=curriculum::evaluate_drag_answers(block,block.correct_order).correct;
+                break;
+            }
+            default:check(false,"A new earlier activity needs an explicitly audited prediction setup");
+            }
+            check(response.correct,"An authored prediction prerequisite failed its real evaluator: "+block.stable_id);
+            state::put_response(data,lesson,block,response);
+            const auto saved=state::get_response(data,lesson,block);
+            check(saved&&saved->correct,"An evaluated prerequisite did not retain its correct response");
+            requirements.push_back({page,saved->correct?
+                curriculum::EntryCompletion::complete:curriculum::EntryCompletion::incomplete});
+            std::cout<<"QA_PREDICTION evaluated quiz="<<block.stable_id<<'\n';
+        }
+        const auto admission=curriculum::lesson_entry_decision(page,lesson.pages.size(),requirements);
+        check(admission.page==page&&!admission.pending_math&&state::can_reach_page(data,lesson,page),
+            "A preceding prediction page still has an unmet entry gate");
+        (void)state::mark_page_reached(data,lesson,page);
+    }
+    state::validate_lesson_state(data,lesson);
+    const auto proofs=curriculum::compiler_completion_snapshot(lesson,[&](const auto& block){
+        return windows::compiler_puzzle_completed(data,lesson,block);
+    });
+    for(std::size_t page=0;page<=target.page;++page)
+        for(const auto& block:lesson.pages.at(page).blocks)
+            check(curriculum::compiler_activity_available(lesson,block,proofs),
+                "A prediction page still has an unmet activity prerequisite");
+    const auto admission=curriculum::lesson_entry_decision(target.page,lesson.pages.size(),requirements);
+    check(admission.page==target.page&&!admission.pending_math&&state::can_reach_page(data,lesson,target.page),
+        "The validated QA profile cannot enter its actual prediction page");
+    check(!state::get_response(data,lesson,lesson.pages.at(target.page).blocks.at(target.block)),
+        "Preparing earlier prerequisites credited or drafted the target prediction");
+}
 void authored_prediction_newline(){
     const auto path=std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_representar_procesar_y_recuperar.json";
@@ -382,28 +517,7 @@ void authored_prediction_newline(){
             !prediction.code.empty()&&!curriculum::uses_single_line_answer(prediction),
             "The authored prediction no longer requires its multiline answer control");
         state::StateData data;state::prepare_lesson_state(data,lesson);
-        // This temporary Codex QA profile has no student records. Mark only
-        // earlier page prerequisites complete so the real page can be mounted;
-        // never credit the target response or touch a personal profile.
-        seed_other_objectives(data,lesson,prediction.stable_id);
-        for(std::size_t page=0;page<position->page;++page){
-            for(const auto& preceding:lesson.pages[page].blocks){
-                using curriculum::BlockType;
-                if(preceding.type!=BlockType::multiple_choice&&preceding.type!=BlockType::output_prediction
-                    &&preceding.type!=BlockType::order_code&&preceding.type!=BlockType::fill_code
-                    &&preceding.type!=BlockType::inline_fill_code&&preceding.type!=BlockType::drag_fill_code)continue;
-                state::Response proof;proof.correct=true;
-                if(preceding.type==BlockType::multiple_choice&&preceding.correct_index)
-                    proof.selected=static_cast<std::int64_t>(*preceding.correct_index);
-                if((preceding.type==BlockType::output_prediction||preceding.type==BlockType::fill_code)
-                    &&!preceding.answers.empty())proof.answer=preceding.answers.front();
-                if(preceding.type==BlockType::order_code)
-                    for(std::size_t part=0;part<preceding.fragments.size();++part)
-                        proof.order.push_back(static_cast<std::int64_t>(part));
-                state::put_response(data,lesson,preceding,proof);
-            }
-            (void)state::mark_page_reached(data,lesson,page);
-        }
+        prepare_prediction_prerequisites(data,lesson,*position);
         state::save_current_page(data,lesson,position->page);
         data.preferences["native_windows"]["ui_language"]=std::string("es");
         data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{150};
