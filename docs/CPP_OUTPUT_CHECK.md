@@ -4209,8 +4209,9 @@ española v2 sin modificar los editores ya publicados. Ejemplo:
 }]
 ```
 
-El modelo admite entre una y ocho variaciones por editor, y hasta cuatro
-salidas exactas por variación. Cada salida alternativa debe distinguirse
+El modelo admite hasta ocho variaciones simples y hasta ocho conjuntas
+por editor, con al menos una variación y un máximo de dieciséis en total.
+Cada variación admite hasta cuatro salidas exactas. Cada salida alternativa debe distinguirse
 de las publicadas para el primer caso obligatorio. Los nombres de
 variables en las sondas deben ser identificadores léxicos C++ reales:
 `9llaves`, `llaves-extra`, `true` o `nullptr` se rechazan antes de
@@ -4254,6 +4255,55 @@ Esta capacidad se limita de momento a editores C++ de una sola fuente
 y ejecución MSVC nativa. La revisión curricular y sus valores esperados
 pertenecen a Work.
 
+### Variaciones conjuntas de enteros inicializados
+
+Una sonda puede conservar sus campos `variable`, `replacement` y `outputs`
+y añadir `additionalReplacements`, una lista de uno a siete objetos con
+exactamente `variable` y `replacement`. Todas esas sustituciones pertenecen
+a la **misma variante del programa**, que se compila y ejecuta una vez contra
+las salidas privadas declaradas. La siguiente sonda vuelve a partir del
+programa original; no acumula las modificaciones de la anterior.
+
+```json
+{
+  "variable": "solicitadas",
+  "replacement": 6,
+  "additionalReplacements": [
+    {"variable": "codigo_permiso", "replacement": 1}
+  ],
+  "outputs": ["Pendiente: 2", "Pendiente: 2\n"]
+}
+```
+
+La variable principal y las adicionales deben ser `int` locales cuya
+inicialización se pueda localizar de forma segura en el programa comprobado.
+Todos los valores son enteros JSON de 32 bits con signo; booleanos, cadenas,
+decimales y exponentes no sustituyen esos enteros. Una sonda conjunta no
+admite `afterUpdate` ni `expectedIncrease`, ni tipos principales `char` o
+`bool`. Cada nombre aparece una sola vez en la sonda y conserva el mismo
+tipo en todo el plan del editor. Una lista adicional vacía es inválida;
+omitirla conserva la sonda simple anterior.
+
+Dos sondas conjuntas con el mismo mapa de nombres y valores constituyen una
+observación duplicada aunque cambie su orden o cuál figura como principal.
+En cambio, compartir el valor principal con una sonda simple o con otra
+combinación distinta es válido. Nueve sondas simples siguen siendo inválidas:
+la capacidad nueva añade un cupo separado de ocho combinaciones.
+
+La evolución de un owner publicado sólo permite **añadir sondas al final**.
+Se conservan íntegros el prefijo de sondas, sus alternativas de salida, el
+orden de las sustituciones y todos los demás campos del owner. También se
+conservan las posiciones de los owners publicados dentro de la declaración
+raíz. No se permite retirar, sustituir ni reordenar sondas antiguas.
+
+La primera ampliación de un owner que sólo tenía sondas simples debe incluir
+al menos una conjunta. Eso activa una identidad de objetivo independiente
+que incorpora el plan completo. Después se pueden anexar sondas simples o
+conjuntas dentro de sus respectivos límites. Los planes anteriores que no
+incorporan esta capacidad conservan su representación y sus recibos; un
+recibo anterior no acredita automáticamente el nuevo plan ampliado. El
+borrador visible y la salida pública no se reescriben por estas variaciones.
+
 ### Tipos explícitos para caracteres y valores lógicos
 
 Cada sonda puede declarar `valueType`. Si se omite, mantiene exactamente
@@ -4277,7 +4327,7 @@ automáticamente los números `0`/`1` ni las cadenas `"true"`/`"false"`.
 El localizador exige el tipo declarado por la sonda. `int pasillo` no
 acredita un objetivo `char`, ni `int abierta` acredita uno `bool`. Se
 admiten las inicializaciones mediante `=`, `{}` o `()`, las expresiones
-equivalentes y una asignación inicial separada inequívoca. Cada variante
+equivalentes y una asignación inicial separada inequívoca. Cada sonda simple
 parte del programa original y cambia una sola variable; las sondas no
 se acumulan entre sí. La salida pública y sus alternativas de salto final
 siguen siendo las del caso ya publicado.

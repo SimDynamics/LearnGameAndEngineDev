@@ -44,6 +44,8 @@ on:
       - native/presentation/windows/local_dependency_view_tests.cpp
       - scripts/curriculum/local_dependency_view_fixture_source.py
       - scripts/curriculum/test_local_dependency_view_authoring.py
+      - scripts/curriculum/joint_local_int_fixture_source.py
+      - scripts/curriculum/test_joint_local_int_fixture_source.py
       - cmake/CurricularWindows.cmake
       - cmake/native_build_config.hpp.in
       - native/platform/windows/course_edition_tests.cpp
@@ -297,6 +299,12 @@ jobs:
           $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
           ctest --test-dir $build -R '^native[.]local_dependency_view_u[23]l[0-9]+$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'local-dependency-view.xml')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify joint U3L7 and U3L8 observations through real Win32 MSVC
+        shell: pwsh
+        run: |
+          $build = Join-Path $env:RUNNER_TEMP 'lgaed-course-edition-qa'
+          ctest --test-dir $build -R '^native[.]joint_local_int_(authoring|view)$' --verbose --output-on-failure --no-tests=error --output-junit (Join-Path $build 'joint-local-int.xml')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve earlier reading snapshots across an authenticated option review
         shell: pwsh
         run: |
@@ -412,6 +420,8 @@ jobs:
             ${{ runner.temp }}/lgaed-course-edition-qa/choice-prose-and-prediction.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-receipts.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/local-dependency-view.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/joint-local-int.xml
+            ${{ runner.temp }}/lgaed-course-edition-qa/test-fixtures/joint-local-int/**
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l10-local-roles.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/continued-input-dependency.xml
             ${{ runner.temp }}/lgaed-course-edition-qa/u2l9-input-dependency.xml

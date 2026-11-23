@@ -543,8 +543,13 @@ std::string local_int_fingerprint(const CppRunRequest& request) {
     const auto field=[](std::string_view part) {
         return std::to_string(part.size())+":"+std::string(part);
     };
-    std::string frame="compiler-local-int-dependency-v1/"+field(request.project_key)+
+    const bool joint=std::ranges::any_of(request.local_int_check->probes,
+        [](const auto& probe){return !probe.additional_replacements.empty();});
+    const auto domain=joint?"compiler-local-int-joint-dependency-v1/":
+        "compiler-local-int-dependency-v1/";
+    std::string frame=std::string(domain)+field(request.project_key)+
         field(request.source_utf8)+field(request.stdin_utf8);
+    if(joint)frame+=field(std::to_string(request.local_int_check->probes.size()));
     for(const auto& probe:request.local_int_check->probes) {
         const auto variant=curriculum::cpp_local_int_override(request.source_utf8,probe);
         if(!variant)return {};
@@ -559,6 +564,13 @@ std::string local_int_fingerprint(const CppRunRequest& request) {
         if(probe.expected_increase)
             frame+=field("exact-increase-v1")+
                 field(std::to_string(*probe.expected_increase));
+        if(joint) {
+            frame+=field("additional-replacements-v1")+
+                field(std::to_string(probe.additional_replacements.size()));
+            for(const auto& replacement:probe.additional_replacements)
+                frame+=field(replacement.variable)+field(std::to_string(replacement.replacement));
+            frame+=field("expected-stdout-v1")+field(std::to_string(probe.expected_stdout.size()));
+        }
         for(const auto& expected:probe.expected_stdout)
             frame+=field(expected);
     }
@@ -3715,15 +3727,24 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                         probe,captured.execution.stdout_bytes);
                 if(!exact) {
                     passed=false;
-                    const std::string value_type=
-                        probe.value_type==curriculum::CppLocalValueType::character?"char":
-                        probe.value_type==curriculum::CppLocalValueType::boolean?"bool":"int";
-                    const auto fixed=probe.value_type==curriculum::CppLocalValueType::integer
-                        ?"una cifra fija. ":"un valor fijo. ";
-                    fresh.local_int_check_feedback=
-                        "Comprueba que los resultados proceden de la variable "+value_type+
-                        " '"+probe.variable+"' y no de "+fixed+
-                        "La prueba independiente no reprodujo el cambio solicitado.";
+                    if(!probe.additional_replacements.empty()) {
+                        fresh.local_int_check_feedback=
+                            "Comprueba cómo se combinan los valores de las variables '"+probe.variable+"'";
+                        for(const auto& replacement:probe.additional_replacements)
+                            fresh.local_int_check_feedback+=", '"+replacement.variable+"'";
+                        fresh.local_int_check_feedback+=
+                            ". La comprobación con otros valores no produjo el resultado esperado.";
+                    }else {
+                        const std::string value_type=
+                            probe.value_type==curriculum::CppLocalValueType::character?"char":
+                            probe.value_type==curriculum::CppLocalValueType::boolean?"bool":"int";
+                        const auto fixed=probe.value_type==curriculum::CppLocalValueType::integer
+                            ?"una cifra fija. ":"un valor fijo. ";
+                        fresh.local_int_check_feedback=
+                            "Comprueba que los resultados proceden de la variable "+value_type+
+                            " '"+probe.variable+"' y no de "+fixed+
+                            "La prueba independiente no reprodujo el cambio solicitado.";
+                    }
                     break;
                 }
             }

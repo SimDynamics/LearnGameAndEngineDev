@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <charconv>
 #include <cstdint>
+#include <map>
 #include <set>
 #include <optional>
 #include <string>
@@ -15,6 +16,12 @@
 namespace lgaed::curriculum {
 
 enum class CppLocalValueType { integer, character, boolean };
+
+struct CppLocalIntReplacement {
+    std::string variable;
+    std::int32_t replacement = 0;
+    bool operator==(const CppLocalIntReplacement&) const = default;
+};
 
 // An opt-in source perturbation only. The caller must compile and run both
 // the unchanged student program and each isolated probe against independent
@@ -34,10 +41,16 @@ struct CppLocalIntProbe {
     // This is independent of the replacement delta and visible stdout.
     // An absent value preserves the previously published afterUpdate contract.
     std::optional<std::int32_t> expected_increase = std::nullopt;
-    // Kept last so existing aggregate initializers retain the int contract.
+    // Kept in its published position so existing aggregate initializers
+    // retain the int contract.
     // Character probes carry one printable ASCII byte; boolean probes carry
     // exactly zero or one. Their authored JSON replacements remain typed.
     CppLocalValueType value_type = CppLocalValueType::integer;
+    // Optional values changed in the SAME private execution as the primary
+    // variable. Joint scenarios only replace initialized ints; they do not
+    // combine after-update witnesses or character/boolean conversions.
+    // Appended so every historical aggregate keeps its original meaning.
+    std::vector<CppLocalIntReplacement> additional_replacements{};
     bool operator==(const CppLocalIntProbe&) const = default;
 };
 
@@ -47,6 +60,10 @@ struct CppLocalIntCheck {
 };
 
 inline bool cpp_local_int_probe_value_valid(const CppLocalIntProbe& probe) {
+    if(!probe.additional_replacements.empty()&&
+       (probe.additional_replacements.size()>7||
+        probe.value_type!=CppLocalValueType::integer||probe.after_update||
+        probe.expected_increase))return false;
     switch(probe.value_type) {
     case CppLocalValueType::integer:
         return !probe.expected_increase ||
@@ -76,6 +93,18 @@ inline bool cpp_local_int_probe_value_valid(const CppLocalIntProbe& probe) {
     return true;
 }
 
+[[nodiscard]] inline bool cpp_local_int_probe_replacements_valid(
+        const CppLocalIntProbe& probe) {
+    if(!cpp_local_probe_identifier(probe.variable)||probe.variable=="main"||
+       !cpp_local_int_probe_value_valid(probe))return false;
+    std::set<std::string_view> names{probe.variable};
+    for(const auto& additional:probe.additional_replacements)
+        if(!cpp_local_probe_identifier(additional.variable)||
+           additional.variable=="main"||
+           !names.insert(additional.variable).second)return false;
+    return true;
+}
+
 // A console may spell one line ending as LF or CRLF. Normalize those
 // spellings before deciding whether two expected observations really differ.
 [[nodiscard]] inline std::string cpp_local_int_canonical_stdout(
@@ -90,23 +119,46 @@ inline bool cpp_local_int_probe_value_valid(const CppLocalIntProbe& probe) {
 }
 
 inline bool cpp_local_int_check_valid(const CppLocalIntCheck& check) {
-    if(check.probes.empty() || check.probes.size()>8)return false;
+    if(check.probes.empty() || check.probes.size()>16)return false;
+    std::size_t simple_count=0,joint_count=0;
+    std::map<std::string,CppLocalValueType> types;
+    std::set<std::vector<std::pair<std::string,std::int32_t>>> joint_scenarios;
+    const auto consistent_type=[&](const std::string& name,CppLocalValueType type) {
+        const auto [found,inserted]=types.emplace(name,type);
+        return inserted||found->second==type;
+    };
     for(std::size_t index=0;index<check.probes.size();++index) {
         const auto& probe=check.probes[index];
-        if(!cpp_local_probe_identifier(probe.variable)||
-           probe.variable=="main"||probe.expected_stdout.empty()||
+        const bool joint=!probe.additional_replacements.empty();
+        if((joint?++joint_count:++simple_count)>8||
+           !cpp_local_int_probe_replacements_valid(probe)||
+           probe.expected_stdout.empty()||
            probe.expected_stdout.size()>4||
-           !cpp_local_int_probe_value_valid(probe))return false;
+           !consistent_type(probe.variable,probe.value_type))return false;
+        for(const auto& additional:probe.additional_replacements)
+            if(!consistent_type(additional.variable,CppLocalValueType::integer))
+                return false;
         std::set<std::string> distinct;
         for(const auto& output:probe.expected_stdout)
             if(output.empty()||output.size()>4096||
                output.find('\0')!=std::string::npos||
                !distinct.insert(cpp_local_int_canonical_stdout(output)).second)return false;
-        for(std::size_t prior=0;prior<index;++prior)
-            if(check.probes[prior].variable==probe.variable&&
-               (check.probes[prior].value_type!=probe.value_type ||
-                (check.probes[prior].replacement==probe.replacement&&
-                 check.probes[prior].after_update==probe.after_update)))return false;
+        if(joint) {
+            std::vector<std::pair<std::string,std::int32_t>> scenario{
+                {probe.variable,probe.replacement}};
+            for(const auto& additional:probe.additional_replacements)
+                scenario.emplace_back(additional.variable,additional.replacement);
+            std::ranges::sort(scenario);
+            // A different primary name or ordering cannot disguise the same
+            // simultaneous assignment as independent additional evidence.
+            if(!joint_scenarios.insert(std::move(scenario)).second)return false;
+        }else {
+            for(std::size_t prior=0;prior<index;++prior)
+                if(check.probes[prior].additional_replacements.empty()&&
+                   check.probes[prior].variable==probe.variable&&
+                   check.probes[prior].replacement==probe.replacement&&
+                   check.probes[prior].after_update==probe.after_update)return false;
+        }
     }
     return true;
 }
@@ -739,9 +791,24 @@ inline std::optional<std::pair<std::size_t,std::size_t>> first_state_update(
 // substituting coincidental names in strings, comments or unrelated code.
 [[nodiscard]] inline std::optional<std::string> cpp_local_int_override(
         std::string_view source, const CppLocalIntProbe& probe) {
-    if (!cpp_local_probe_identifier(probe.variable) ||
-        probe.variable == "main" ||
-        !cpp_local_int_probe_value_valid(probe)) return {};
+    if(!cpp_local_int_probe_replacements_valid(probe))return {};
+    if(!probe.additional_replacements.empty()) {
+        // Each component uses the same declaration/type/initialization guards
+        // as a historical int probe. Keep all substitutions in one variant;
+        // the caller still starts every independent scenario from the draft.
+        // No partially instrumented source escapes if any component fails.
+        auto component=probe;
+        component.additional_replacements.clear();
+        auto variant=cpp_local_int_override(source,component);
+        if(!variant)return {};
+        for(const auto& additional:probe.additional_replacements) {
+            component.variable=additional.variable;
+            component.replacement=additional.replacement;
+            variant=cpp_local_int_override(*variant,component);
+            if(!variant)return {};
+        }
+        return variant;
+    }
     const auto code = cpp_local_int_probe_detail::lexical(source);
     if (!code) return {};
     const auto body = cpp_local_int_probe_detail::main_body(*code);

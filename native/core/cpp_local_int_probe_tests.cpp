@@ -1072,6 +1072,169 @@ void old_int_aggregate_and_emitted_source_remain_identical() {
         "Adding explicit scalar types changed an old int aggregate or its bytes");
 }
 
+CppLocalIntProbe joint_probe(std::string variable,std::int32_t replacement,
+        std::vector<lgaed::curriculum::CppLocalIntReplacement> additional) {
+    CppLocalIntProbe probe{std::move(variable),replacement,{"changed"}};
+    probe.additional_replacements=std::move(additional);
+    return probe;
+}
+
+void joint_initial_values_share_one_variant_without_changing_the_draft() {
+    const auto joint=joint_probe("fichas",0,{{"capacidad",0}});
+    const std::string declarations[]{
+        "int fichas{14}; int capacidad=4;",
+        "int capacidad(4); signed fichas{14};",
+        "signed int fichas{14}, capacidad{4};",
+        "int fichas, capacidad; fichas=14; capacidad=4;"
+    };
+    for(const auto& declaration:declarations) {
+        const auto source=std::string("int main() noexcept { ")+declaration+
+            " std::cout<<fichas<<capacidad; }";
+        const auto original=source;
+        const auto changed=cpp_local_int_override(source,joint);
+        require(changed&&source==original&&
+            changed->find("fichas = 0;")!=std::string::npos&&
+            changed->find("capacidad = 0;")!=std::string::npos&&
+            changed->find("std::cout<<fichas<<capacidad;")!=std::string::npos&&
+            changed->find("int main() noexcept {")!=std::string::npos,
+            "A joint scenario lost an initialized value, observation or original draft");
+        const auto single=cpp_local_int_override(source,{"fichas",0});
+        require(single&&single->find("capacidad = 0;")==std::string::npos,
+            "The joint scenario contaminated a later independent single probe");
+    }
+    const std::string grouped="int main(){int fichas=14, capacidad=4;return 0;}";
+    const auto changed=cpp_local_int_override(grouped,joint);
+    require(changed&&changed->find("int fichas=14, capacidad=4;")<
+            changed->find("fichas = 0;")&&
+            changed->find("int fichas=14, capacidad=4;")<
+            changed->find("capacidad = 0;"),
+        "A joint replacement was inserted inside a grouped declaration");
+    auto limits=joint_probe("fichas",INT32_MIN,{{"capacidad",INT32_MAX}});
+    const auto boundary=cpp_local_int_override(grouped,limits);
+    require(boundary&&boundary->find("fichas = -2147483648;")!=std::string::npos&&
+            boundary->find("capacidad = 2147483647;")!=std::string::npos,
+        "Joint initialized ints lost their signed 32-bit boundary values");
+}
+
+void joint_scenarios_require_every_original_local_to_be_safe() {
+    const auto joint=joint_probe("fichas",0,{{"capacidad",0}});
+    for(const auto* companion:{
+        "int desconocida=4;", "const int capacidad=4;",
+        "bool capacidad=true;", "char capacidad='4';",
+        "unsigned capacidad=4;", "auto capacidad=4;",
+        "{int capacidad=4;}", "int capacidad;",
+        "int capacidad; std::cout<<capacidad; capacidad=4;",
+        "int capacidad; capacidad=capacidad+4;",
+        "int capacidad=4; int capacidad=5;"}) {
+        const auto source=std::string("int main(){int fichas=14;")+companion+
+            "std::cout<<fichas;}";
+        require(cpp_local_int_override(source,{"fichas",0}).has_value()&&
+                !cpp_local_int_override(source,joint),
+            "A valid primary local hid a missing, unsafe or differently typed companion");
+    }
+    for(const auto* source:{
+        "#define capacidad otra\nint main(){int fichas=14;int capacidad=4;}",
+        "int main(){int fichas=14, capacidad=fichas+4;}",
+        "int main(){int fichas=14;int capacidad=4;std::cout<<__LINE__;}",
+        "int main(){int fichas=14;int capacidad=4;exit(0);}"})
+        require(!cpp_local_int_override(source,joint),
+            "A joint override bypassed an existing lexical or observation guard");
+    const std::string inert="int main(){int fichas=14;int capacidad=4;"
+        "/* capacidad __LINE__ */ std::cout<<R\"(fichas capacidad exit)\"; }";
+    require(cpp_local_int_override(inert,joint).has_value(),
+        "Inert comments or literals were confused with joint local identifiers");
+}
+
+void joint_contracts_reject_duplicate_names_and_incompatible_modes() {
+    using lgaed::curriculum::cpp_local_int_check_valid;
+    const std::string source="int main(){int fichas=14;int capacidad=4;}";
+    const auto valid=joint_probe("fichas",0,{{"capacidad",0}});
+    require(cpp_local_int_check_valid({{valid}}),
+        "A valid joint integer scenario was rejected");
+    for(const auto* name:{"fichas","main","true","0","capacidad extra",""}) {
+        auto invalid=valid;
+        invalid.additional_replacements.front().variable=name;
+        require(!cpp_local_int_check_valid({{invalid}})&&
+                !cpp_local_int_override(source,invalid),
+            "A duplicate, reserved or malformed additional variable was admitted");
+    }
+    auto duplicate=valid;
+    duplicate.additional_replacements.push_back({"capacidad",7});
+    require(!cpp_local_int_check_valid({{duplicate}})&&
+            !cpp_local_int_override(source,duplicate),
+        "Conflicting repeated replacements within one scenario were admitted");
+    for(int mode=0;mode<4;++mode) {
+        auto invalid=valid;
+        if(mode==0)invalid.after_update=true;
+        if(mode==1)invalid.expected_increase=3;
+        if(mode==2)invalid.value_type=CppLocalValueType::character;
+        if(mode==3)invalid.value_type=CppLocalValueType::boolean;
+        require(!cpp_local_int_check_valid({{invalid}})&&
+                !cpp_local_int_override(source,invalid),
+            "A joint scenario silently mixed integer initialization with another mode");
+    }
+    const auto character=typed_probe("capacidad",68,CppLocalValueType::character);
+    const auto boolean=typed_probe("capacidad",0,CppLocalValueType::boolean);
+    for(const auto& other:{character,boolean})
+        require(!cpp_local_int_check_valid({{other,valid}})&&
+                !cpp_local_int_check_valid({{valid,other}}),
+            "An additional int conflicted with another probe's declared scalar type");
+}
+
+void joint_scenario_identity_includes_every_value_but_not_primary_order() {
+    using lgaed::curriculum::cpp_local_int_check_valid;
+    const auto first=joint_probe("fichas",0,{{"capacidad",0},{"permiso",1}});
+    auto different=first;
+    different.additional_replacements[0].replacement=-1;
+    require(cpp_local_int_check_valid({{first,different}}),
+        "Distinct combinations sharing a primary mutation were collapsed");
+    auto reordered=first;
+    std::swap(reordered.additional_replacements[0],reordered.additional_replacements[1]);
+    const auto other_primary=joint_probe("permiso",1,{{"capacidad",0},{"fichas",0}});
+    require(!cpp_local_int_check_valid({{first,reordered}})&&
+            !cpp_local_int_check_valid({{first,other_primary}}),
+        "Permuting a joint scenario fabricated another independent observation");
+    CppLocalIntProbe single{"fichas",0,{"changed"}};
+    require(cpp_local_int_check_valid({{single,first}})&&
+            !cpp_local_int_check_valid({{single,first,single}}),
+        "Adding a joint scenario changed the identity guard for original simple probes");
+}
+
+void joint_limits_preserve_all_eight_original_single_probes() {
+    using lgaed::curriculum::CppLocalIntCheck;
+    using lgaed::curriculum::cpp_local_int_check_valid;
+    CppLocalIntCheck simple,joint;
+    for(int index=0;index<8;++index) {
+        simple.probes.push_back({"fichas",index,{"changed"}});
+        joint.probes.push_back(joint_probe("fichas",index,{{"capacidad",0}}));
+    }
+    auto combined=simple;
+    combined.probes.insert(combined.probes.end(),joint.probes.begin(),joint.probes.end());
+    require(cpp_local_int_check_valid(simple)&&cpp_local_int_check_valid(joint)&&
+            cpp_local_int_check_valid(combined),
+        "Joint capacity required deleting or replacing an original simple probe");
+    simple.probes.push_back({"fichas",8,{"changed"}});
+    joint.probes.push_back(joint_probe("fichas",8,{{"capacidad",0}}));
+    combined.probes.push_back(joint_probe("fichas",8,{{"capacidad",0}}));
+    require(!cpp_local_int_check_valid(simple)&&!cpp_local_int_check_valid(joint)&&
+            !cpp_local_int_check_valid(combined),
+        "The separate eight-simple/eight-joint limits or total bound were lost");
+    auto eight=joint_probe("fichas",0,{});
+    std::string source="int main(){int fichas=14;";
+    for(int index=0;index<7;++index) {
+        const auto name="valor"+std::to_string(index);
+        eight.additional_replacements.push_back({name,index});
+        source+="int "+name+"=1;";
+    }
+    source+='}';
+    require(cpp_local_int_check_valid({{eight}})&&
+            cpp_local_int_override(source,eight).has_value(),
+        "The declared maximum of eight jointly initialized locals was rejected");
+    eight.additional_replacements.push_back({"noveno",9});
+    require(!cpp_local_int_check_valid({{eight}})&&!cpp_local_int_override(source,eight),
+        "A joint scenario exceeded its eight-local bound");
+}
+
 } // namespace
 
 int main() {
@@ -1103,10 +1266,17 @@ int main() {
         typed_probes_reject_other_types_and_ambiguous_owners();
         typed_probe_value_contract_is_strict_and_consistent();
         old_int_aggregate_and_emitted_source_remain_identical();
+        joint_initial_values_share_one_variant_without_changing_the_draft();
+        joint_scenarios_require_every_original_local_to_be_safe();
+        joint_contracts_reject_duplicate_names_and_incompatible_modes();
+        joint_scenario_identity_includes_every_value_but_not_primary_order();
+        joint_limits_preserve_all_eight_original_single_probes();
         std::cout << "PASS local int probes: equivalent initialization, independent "
                      "variables, copy state, safe token positions.\n"
                      "PASS typed local probes: char/bool initialization, independent "
-                     "values, strict types and preserved int contracts.\n";
+                     "values, strict types and preserved int contracts.\n"
+                     "PASS joint local probes: simultaneous values, strict complete "
+                     "scenarios, independent bounds and preserved scalar probes.\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "FAIL local int probes: " << error.what() << '\n';

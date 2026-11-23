@@ -195,4 +195,31 @@ function(lgaed_add_local_dependency_view_tests source_root presentation_target)
         COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
             -s "${source_root}/scripts/curriculum" -p test_local_dependency_view_authoring.py -v)
     set_tests_properties(native.local_dependency_view_authoring PROPERTIES TIMEOUT 120)
+
+    # Separate complete U3 publications exercise append-only joint observations
+    # without changing the nine historical manifests or their sixteen owners.
+    set(_joint_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/joint-local-int")
+    set(_joint_fixture_files "${_joint_fixture_dir}/manifest.json")
+    foreach(_lesson IN ITEMS u3l7 u3l8)
+        foreach(_file IN ITEMS before.json after.json)
+            list(APPEND _joint_fixture_files "${_joint_fixture_dir}/${_lesson}/${_file}")
+        endforeach()
+    endforeach()
+    add_custom_command(OUTPUT ${_joint_fixture_files}
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${source_root}/scripts/curriculum/joint_local_int_fixture_source.py"
+            --output-dir "${_joint_fixture_dir}"
+        DEPENDS "${source_root}/scripts/curriculum/joint_local_int_fixture_source.py"
+            "${source_root}/scripts/curriculum/diagnostic_fixture_source.py"
+            "${source_root}/scripts/curriculum/stable_state_layout.py"
+        VERBATIM)
+    add_custom_target(lgaed_joint_local_int_fixtures DEPENDS ${_joint_fixture_files})
+    add_dependencies(lgaed_local_dependency_view_tests lgaed_joint_local_int_fixtures)
+    add_test(NAME native.joint_local_int_authoring
+        COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+            -s "${source_root}/scripts/curriculum" -p test_joint_local_int_fixture_source.py -v)
+    set_tests_properties(native.joint_local_int_authoring PROPERTIES TIMEOUT 120)
+    add_test(NAME native.joint_local_int_view
+        COMMAND lgaed_local_dependency_view_tests --joint-local-int "${_joint_fixture_dir}/manifest.json")
+    set_tests_properties(native.joint_local_int_view PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
 endfunction()

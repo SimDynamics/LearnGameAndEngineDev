@@ -331,10 +331,186 @@ void run_contract(const Contract& contract) {
     std::cout<<"PASS dependency review "<<contract.name<<": real public-correct/private-failed run, nine capture negatives plus empty capture, "
         "four replay and four saved-review tamper negatives, exact disk reopen, different corrected source, preserved stdout/draft, scoped Reset.\n";
 }
+
+void joint_contract_evolution() {
+    const auto environment=resolve_windows_environment({ProfileId::Codex,
+        L"joint-local-receipts-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+        std::to_wstring(GetTickCount64()),false});
+    require(environment.options.qa_instance&&!environment.options.qa_instance->empty()&&
+        !std::filesystem::exists(environment.paths.root),"Joint receipt QA would open an existing profile");
+    initialize_profile_directories(environment.paths);
+    const std::string source="#include <iostream>\nint main(){int primero=2;int segundo=3;"
+        "int tercero=4;int cuarto=5;std::cout<<primero+segundo+tercero+cuarto;}";
+    Lesson scalar;scalar.id="isolated_joint_local_int_receipts";scalar.locale="es";
+    scalar.compiler_puzzles_required=true;
+    Page page;page.blocks.push_back(compiler("joint-integer","14"));
+    page.blocks.front().initial_code=source;
+    page.blocks.front().local_int_check=CppLocalIntCheck{{{"primero",5,{"17"}}}};
+    scalar.pages.push_back(std::move(page));
+    auto joint=scalar;
+    CppLocalIntProbe pair{"primero",5,{"28"}};
+    pair.additional_replacements={{"segundo",7},{"tercero",11}};
+    joint.pages.front().blocks.front().local_int_check->probes.push_back(pair);
+    auto appended=joint;
+    appended.pages.front().blocks.front().local_int_check->probes.push_back({"segundo",13,{"24"}});
+    const std::array lessons{scalar,joint,appended};
+    const auto& first=lessons.front().pages.front().blocks.front();
+    auto public_only=first;public_only.local_int_check.reset();
+    require(reference_objective_frame(scalar,first)==reference_objective_frame(scalar,public_only),
+        "An empty additional-replacement vector changed the published scalar objective");
+    const auto saved_draft_key=draft_key("programming",scalar,first);
+    const auto make_request=[&](const Lesson& lesson,std::uint64_t number) {
+        const auto& block=lesson.pages.front().blocks.front();
+        CppRunRequest request;request.request_id=number;request.revision=number+500;
+        request.source_utf8=source;request.stdin_utf8=block.standard_input.value_or("");
+        request.project_key=draft_key("programming",lesson,block);
+        request.projects_directory=environment.paths.projects;
+        request.compile_timeout=std::chrono::seconds(60);request.execution_timeout=std::chrono::seconds(8);
+        request.local_int_check=block.local_int_check;
+        return request;
+    };
+    std::array<CppRunRequest,3> requests;
+    std::array<CppRunResult,3> results;
+    std::array<FreshExecution,3> captures;
+    std::array<state::StateData,3> histories;
+    state::StateData saved;
+    saved.preferences["learning_progress"]["unrelated"]=std::int64_t{42};
+    saved.preferences["native_windows"]["reader-setting"]=std::string("unchanged");
+    state::Draft draft;draft.source=source+"\n// unfinished saved edit\n";
+    draft.input="saved input is not an execution";draft.selection_start=3;draft.selection_end=19;
+    state::put_draft(saved,saved_draft_key,draft);
+    const auto verify_draft=[&](const state::StateData& data) {
+        const auto actual=state::get_draft(data,saved_draft_key,source);
+        require(actual.has_saved&&actual.source==draft.source&&actual.input==draft.input&&
+            actual.selection_start==draft.selection_start&&actual.selection_end==draft.selection_end,
+            "A joint contract revision changed the source, input or selection of the existing draft");
+    };
+    const auto reopen=[&](const state::StateData& data) {
+        {state::StateStore writer(environment.paths.root);(void)writer.load();writer.save(data);}
+        state::StateStore reader(environment.paths.root);const auto reopened=reader.load();
+        require(reopened==data,"A joint contract disk reopen changed saved history");
+        verify_draft(reopened);return reopened;
+    };
+    for(std::size_t stage=0;stage<lessons.size();++stage) {
+        const auto& lesson=lessons[stage];const auto& block=lesson.pages.front().blocks.front();
+        requests[stage]=make_request(lesson,100+stage);
+        const auto& request=requests[stage];
+        require(request.project_key==saved_draft_key&&compiler_runtime_request_allowed(block,request),
+            "A joint revision moved the draft or rejected the valid real source");
+        const auto fingerprint=cpp_local_int_request_fingerprint(request);
+        require(!fingerprint.empty(),"A valid joint receipt request lacks its complete frame");
+        if(stage==0) {
+            // Freeze a published preimage independently of the new serializer.
+            // The original scalar override inserts precisely this assignment.
+            auto variant=source;const auto at=variant.find("int primero=2;");
+            require(at!=variant.npos,"The historical scalar preimage lost its declaration");
+            variant.insert(at+std::string_view("int primero=2;").size(),"\n    primero = 5;\n");
+            const auto historical=std::string("compiler-local-int-dependency-v1/")+
+                field(request.project_key)+field(source)+field(request.stdin_utf8)+
+                field("primero")+field("5")+field(state::sha256(variant))+field("17");
+            require(fingerprint==state::sha256(historical),
+                "A scalar request no longer has its byte-exact published fingerprint");
+        }else {
+            const auto& previous=lessons[stage-1];const auto& old=previous.pages.front().blocks.front();
+            require(current_key(lesson,block)!=current_key(previous,old)&&
+                fingerprint!=cpp_local_int_request_fingerprint(requests[stage-1]),
+                "Appending a joint or later scalar probe reused the earlier objective or capture frame");
+            const auto before=saved;
+            validate_compiler_puzzle_state(saved,lesson,block);
+            require(saved==before&&!compiler_puzzle_completed(saved,lesson,block)&&
+                compiler_puzzle_case_count(saved,lesson,block)==0,
+                "The stronger plan read, mutated or credited an old private receipt");
+            prepare_compiler_puzzle_revisions(saved,lesson);preserve(saved,before);
+            const auto prepared=saved;
+            require(!record_compiler_puzzle_case(saved,lesson,block,request,captures[stage-1],"borrowed")&&
+                !record_compiler_puzzle_review(saved,lesson,block,request,captures[stage-1],"borrowed")&&
+                saved==prepared,"A stronger plan borrowed an earlier success or review capture");
+            require(!capture_cpp_execution(request,results[stage-1]).local_int_check_correct,
+                "A previous private execution was rebound to an appended plan");
+            auto relocated=saved;
+            const auto old_key=current_key(previous,old),new_key=current_key(lesson,block);
+            for(const auto& [name,value]:before.preferences.at("native_windows"))
+                if(name.starts_with(old_key))
+                    relocated.preferences["native_windows"][new_key+name.substr(old_key.size())]=value;
+            const auto forged=relocated;bool rejected=false;
+            try{validate_compiler_puzzle_state(relocated,lesson,block);}catch(const std::exception&){rejected=true;}
+            require(rejected&&relocated==forged,"Relocated old seals were accepted or altered during rejection");
+        }
+        results[stage]=run_cpp(request);const auto& result=results[stage];
+        require(result.error_utf8.empty()&&result.compilation.succeeded()&&result.execution.succeeded()&&
+            result.target_type=="EXECUTABLE"&&result.artifact.extension()==L".exe"&&
+            std::filesystem::is_regular_file(result.artifact)&&
+            result.local_int_evidence.size()==block.local_int_check->probes.size(),
+            "A real MSVC joint receipt run did not execute all public and private phases");
+        captures[stage]=capture_cpp_execution(request,result);
+        require(captures[stage].local_int_check_correct&&
+            captures[stage].local_int_request_fingerprint==fingerprint&&
+            evaluate_cpp_output_check(*block.output_check,captures[stage],request.revision).verdict==OutputVerdict::correct,
+            "The actual joint source did not earn its public case and exact private evidence");
+        const auto before=saved;
+        require(record_compiler_puzzle_case(saved,lesson,block,request,captures[stage],"Fresh joint dependency evidence"),
+            "Fresh joint evidence failed to create its own receipt");
+        preserve(saved,before);verify_draft(saved);
+        if(stage==0) {
+            const auto key=current_key(lesson,block);
+            require(state::string_value(saved,"native_windows",key+"local-int/v1")==
+                v1_local_seal(key,compiler_program_frame(request),block),
+                "The published scalar completion preimage changed");
+        }
+        saved=reopen(saved);
+        for(std::size_t old=0;old<=stage;++old) {
+            const auto& older=lessons[old];const auto& owner=older.pages.front().blocks.front();
+            require(compiler_puzzle_completed(saved,older,owner)&&compiler_puzzle_case_count(saved,older,owner)==1,
+                "A joint revision lost an earlier success or inserted private public-case receipts");
+        }
+        histories[stage]=saved;
+    }
+    const auto& joint_block=lessons[1].pages.front().blocks.front();
+    for(int mutation=0;mutation<8;++mutation) {
+        auto changed=lessons[1];auto& owner=changed.pages.front().blocks.front();
+        auto& probes=owner.local_int_check->probes;auto& replacements=probes.back().additional_replacements;
+        switch(mutation) {
+        case 0:++replacements.front().replacement;break;
+        case 1:replacements.front().variable="cuarto";break;
+        case 2:std::reverse(replacements.begin(),replacements.end());break;
+        case 3:replacements.push_back({"cuarto",13});break;
+        case 4:replacements.pop_back();break;
+        case 5:probes.back().expected_stdout.front()="29";break;
+        case 6:++probes.front().replacement;break;
+        case 7:probes.push_back({"segundo",13,{"24"}});break;
+        }
+        auto request=requests[1];request.local_int_check=owner.local_int_check;
+        const auto frame=cpp_local_int_request_fingerprint(request);
+        require(compiler_runtime_request_allowed(owner,request)&&!frame.empty()&&
+            frame!=cpp_local_int_request_fingerprint(requests[1])&&
+            reference_objective_frame(changed,owner)!=reference_objective_frame(lessons[1],joint_block)&&
+            !capture_cpp_execution(request,results[1]).local_int_check_correct,
+            "A changed joint name, value, order, count, expectation or plan retained an earlier identity");
+    }
+    auto tampered=results[1];
+    tampered.local_int_evidence.back().instrumented_source_sha256=
+        results[0].local_int_evidence.front().instrumented_source_sha256;
+    const auto rejected_joint=capture_cpp_execution(requests[1],tampered);
+    require(!rejected_joint.local_int_check_correct&&rejected_joint.local_int_check_feedback==
+        "Comprueba cómo se combinan los valores de las variables 'primero', 'segundo', 'tercero'. "
+        "La comprobación con otros valores no produjo el resultado esperado.",
+        "A scalar-only source impersonated a joint run or its feedback exposed values/claimed only one variable");
+    const auto& final=lessons.back();const auto& owner=final.pages.front().blocks.front();
+    reset_compiler_puzzle(saved,final,owner);prepare_compiler_puzzle_revisions(saved,final);
+    preserve(saved,histories[1]);saved=reopen(saved);
+    require(!compiler_puzzle_completed(saved,final,owner)&&compiler_puzzle_case_count(saved,final,owner)==0&&
+        compiler_puzzle_completed(saved,lessons[0],first)&&
+        compiler_puzzle_completed(saved,lessons[1],joint_block),
+        "Reset resurrected the expanded plan or erased either historical private achievement");
+    std::cout<<"PASS joint local-int receipt evolution: three real MSVC requests, nine public/private phases, "
+        "scalar -> joint -> appended scalar, exact legacy preimages, eight changed-plan bindings, "
+        "no capture/seal borrowing, preserved old achievements/draft, disk reopen and scoped Reset.\n";
+}
 }
 int main()try {
     winrt::init_apartment();
     for(const auto& contract:contracts())run_contract(contract);
+    joint_contract_evolution();
     std::cout<<"NOTE no-plan scope: no private execution is claimed or persisted without a valid frame; "
         "visible structural guidance is covered by the separate LessonView QA.\n";
     return 0;

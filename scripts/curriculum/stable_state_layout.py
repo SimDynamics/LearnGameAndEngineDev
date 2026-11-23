@@ -6981,6 +6981,37 @@ def _validate_compiler_input_checks(document: dict) -> None:
                     "Private output must be distinct and distinguish the first public result")
 
 
+def _preserves_compiler_local_int_checks(previous: dict, current: dict) -> bool:
+    """Keep every published owner and probe; only extend a joint-check epoch.
+
+    Legacy scalar-only receipts retain their exact objective representation.
+    The first extension of an existing scalar-only owner must therefore add a
+    joint probe, whose independent objective binds the complete appended plan.
+    Once present, that epoch may acquire any valid suffix without rewriting
+    the exact authored prefix, including its additional-replacement order.
+    """
+    old = previous.get("compilerLocalIntChecks")
+    if not old:
+        return True
+    new = current.get("compilerLocalIntChecks")
+    if type(old) is not list or type(new) is not list or len(new) < len(old):
+        return False
+    for before, after in zip(old, new):
+        if type(before) is not dict or type(after) is not dict:
+            return False
+        prior, probes = before.get("probes"), after.get("probes")
+        if (type(prior) is not list or type(probes) is not list or
+                len(probes) < len(prior) or probes[:len(prior)] != prior or
+                {key: value for key, value in before.items() if key != "probes"} !=
+                {key: value for key, value in after.items() if key != "probes"}):
+            return False
+        if len(probes) > len(prior) and not any(
+                type(probe) is dict and bool(probe.get("additionalReplacements"))
+                for probe in probes):
+            return False
+    return True
+
+
 def _validate_compiler_local_int_checks(document: dict) -> None:
     """Require real, independently checked variable dependence, not stdout alone."""
     if "compilerLocalIntChecks" not in document:
@@ -7038,22 +7069,28 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
                                 for item in related),
                         "Local-int owner conflicts with an existing runtime objective")
         probes = check["probes"]
-        require(type(probes) is list and 1 <= len(probes) <= 8,
-                "Local-int owner requires 1..8 private variations")
+        require(type(probes) is list and 1 <= len(probes) <= 16,
+                "Local-int owner requires 1..16 private variations")
         known = set()
         variable_types = {}
+        simple_count, joint_count = 0, 0
+
+        def variable_name(value):
+            require(type(value) is str and re.fullmatch(
+                    r"[A-Za-z_][A-Za-z_0-9]{0,127}", value) is not None and
+                    value != "main" and not value.startswith("__") and
+                    not (value.startswith("_") and len(value) > 1 and value[1].isupper()),
+                    "Invalid local-int variable name")
+            return value
+
         for probe in probes:
             require(type(probe) is dict and
                     {"variable", "replacement", "outputs"} <= set(probe) <=
-                    {"variable", "replacement", "outputs", "afterUpdate", "expectedIncrease", "valueType"},
+                    {"variable", "replacement", "outputs", "afterUpdate", "expectedIncrease",
+                     "valueType", "additionalReplacements"},
                     "Local-int variation requires variable, replacement and outputs")
             variable, replacement, outputs = (
-                probe["variable"], probe["replacement"], probe["outputs"])
-            require(type(variable) is str and re.fullmatch(
-                r"[A-Za-z_][A-Za-z_0-9]{0,127}", variable) is not None and
-                variable != "main" and not variable.startswith("__") and
-                not (variable.startswith("_") and len(variable) > 1 and variable[1].isupper()),
-                "Invalid local-int variable name")
+                variable_name(probe["variable"]), probe["replacement"], probe["outputs"])
             value_type = probe.get("valueType", "int")
             require(type(value_type) is str and value_type in {"int", "char", "bool"},
                     "Local valueType must be int, char or bool")
@@ -7082,9 +7119,39 @@ def _validate_compiler_local_int_checks(document: dict) -> None:
                 require(after_update and type(increase) is int and
                         1 <= increase < 2 ** 31,
                         "Local-int expectedIncrease requires positive int32 and afterUpdate")
-            require((variable, value_type, replacement, after_update) not in known,
+            if "additionalReplacements" in probe:
+                require(value_type == "int" and
+                        not ({"afterUpdate", "expectedIncrease"} & set(probe)),
+                        "Joint local-int probes only replace initialized int values")
+                additional = probe["additionalReplacements"]
+                require(type(additional) is list and 1 <= len(additional) <= 7,
+                        "Joint local-int probes require 1..7 additional replacements")
+                names, replacements = {variable}, [(variable, replacement)]
+                for entry in additional:
+                    require(type(entry) is dict and set(entry) == {"variable", "replacement"},
+                            "Additional local-int replacements require variable and replacement only")
+                    name = variable_name(entry["variable"])
+                    value = entry["replacement"]
+                    require(name not in names, "A joint local-int probe cannot repeat a variable")
+                    require(type(value) is int and -(2 ** 31) <= value < 2 ** 31,
+                            "Additional local-int replacement requires a signed 32-bit integer")
+                    require(name not in variable_types or variable_types[name] == "int",
+                            "A local variable cannot have conflicting authored types")
+                    names.add(name)
+                    variable_types[name] = "int"
+                    replacements.append((name, value))
+                # One simultaneous assignment map is one observation, even
+                # when the author permutes it or chooses another primary.
+                signature = ("joint", tuple(sorted(replacements)))
+                joint_count += 1
+            else:
+                signature = ("simple", variable, value_type, replacement, after_update)
+                simple_count += 1
+            require(simple_count <= 8 and joint_count <= 8,
+                    "Local-int owner allows at most 8 simple and 8 joint variations")
+            require(signature not in known,
                     "A local-int variation cannot repeat a prior replacement")
-            known.add((variable, value_type, replacement, after_update))
+            known.add(signature)
             require(type(outputs) is list and 1 <= len(outputs) <= 4 and
                     all(type(o) is str and o and "\x00" not in o and
                         len(o.encode("utf-8")) <= 4096 and
@@ -7986,11 +8053,8 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerNamedRuleChecks") or
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
-    require(not baseline.get("compilerLocalIntChecks") or
-            (type(current.get("compilerLocalIntChecks")) is list and
-             current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
-             baseline["compilerLocalIntChecks"]),
-            "Published local-int checks cannot be removed, reordered or rewritten")
+    require(_preserves_compiler_local_int_checks(baseline, current),
+            "Published local-int checks require an exact prefix and a joint-check epoch for extensions")
     require(not baseline.get("compilerLocalRoleChecks") or
             (type(current.get("compilerLocalRoleChecks")) is list and
              current["compilerLocalRoleChecks"][:len(baseline["compilerLocalRoleChecks"])] ==
@@ -8592,11 +8656,8 @@ def validate_transition(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerNamedRuleChecks") or
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
-    require(not baseline.get("compilerLocalIntChecks") or
-            (type(current.get("compilerLocalIntChecks")) is list and
-             current["compilerLocalIntChecks"][:len(baseline["compilerLocalIntChecks"])] ==
-             baseline["compilerLocalIntChecks"]),
-            "Published local-int checks cannot be removed, reordered or rewritten")
+    require(_preserves_compiler_local_int_checks(baseline, current),
+            "Published local-int checks require an exact prefix and a joint-check epoch for extensions")
     require(not baseline.get("compilerLocalRoleChecks") or
             (type(current.get("compilerLocalRoleChecks")) is list and
              current["compilerLocalRoleChecks"][:len(baseline["compilerLocalRoleChecks"])] ==
