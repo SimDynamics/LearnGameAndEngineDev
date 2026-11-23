@@ -11,6 +11,7 @@
 #include "presentation/windows/lesson_reader.hpp"
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/rich_text.hpp"
 #include "native_build_config.hpp"
 
 #include <commctrl.h>
